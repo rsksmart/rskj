@@ -250,7 +250,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (this.config.isAccountTxRateLimitEnabled()) {
             TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.getWeb3.get());
-            if (!this.quotaChecker.acceptTx(tx, replacedTx, currentContext)) {
+            if (!this.quotaChecker.acceptTx(tx, replacedTx.orElse(null), currentContext)) {
                 return TransactionPoolAddResult.withError("account exceeds quota");
             }
         }

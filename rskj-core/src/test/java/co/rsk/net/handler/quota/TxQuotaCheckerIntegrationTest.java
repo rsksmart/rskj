@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
-import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -114,29 +113,29 @@ public class TxQuotaCheckerIntegrationTest {
         // initial quota granted will be MAX_GAS_PER_SECOND (6_120_000) at this point
         // this tx consumes ~6_138_154vg, slightly more than MAX_GAS_PER_SECOND => is not enough
         Transaction firstTx = txFromAccountAToAccountB(accountANonce, 650_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertFalse("firstTx consuming more than MAX_GAS_PER_SECOND should've been rejected", quotaChecker.acceptTx(firstTx, Optional.empty(), currentContext));
+        assertFalse("firstTx consuming more than MAX_GAS_PER_SECOND should've been rejected", quotaChecker.acceptTx(firstTx, null, currentContext));
 
         // enough quota ~6_126_120: this tx consumes ~1_684_195vg (factor ~165.5)
         Transaction smallTx = txFromAccountAToAccountB(accountANonce, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 12_500);
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1); // 1 ms after last tx
-        assertTrue("Initial tx consuming less than MAX_GAS_PER_SECOND should've been accepted", quotaChecker.acceptTx(smallTx, Optional.empty(), currentContext));
+        assertTrue("Initial tx consuming less than MAX_GAS_PER_SECOND should've been accepted", quotaChecker.acceptTx(smallTx, null, currentContext));
 
         // receiver's quota was modified as well: ~12_246_120vg (MAX_GAS_PER_SECOND initial + MAX_GAS_PER_SECOND * 1s - consumed on received tx)
         // this tx consumes 12_205_986vg (almost 2*MAX_GAS_PER_SECOND) => is enough
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1s after last tx
         Transaction txFromAccountB = txFromAccountBToAccountC(0, 1_000_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
-        assertTrue("txFromAccountB consuming almost ~MAX_GAS_PER_SECOND*2 should've been accepted", quotaChecker.acceptTx(txFromAccountB, Optional.empty(), currentContext));
+        assertTrue("txFromAccountB consuming almost ~MAX_GAS_PER_SECOND*2 should've been accepted", quotaChecker.acceptTx(txFromAccountB, null, currentContext));
 
         long smallTxReplacementGasPrice = (long) (smallTx.getGasPrice().asBigInteger().longValue() * 1.1d);
 
         // enough quota 1_112_161_924vg: this tx consumes ~921_722_072vg (factor ~151)
         Transaction smallTxReplacement = txFromAccountAToAccountB(accountANonce, MAX_GAS_PER_SECOND, smallTxReplacementGasPrice, 60_750);
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 3 * 60 * 1000); // 3 minutes after last tx
-        assertTrue("smallTxReplacement should've been accepted 3 minutes after the previous tx", quotaChecker.acceptTx(smallTxReplacement, Optional.of(smallTx), currentContext));
+        assertTrue("smallTxReplacement should've been accepted 3 minutes after the previous tx", quotaChecker.acceptTx(smallTxReplacement, smallTx, currentContext));
 
         // not enough quota 190_445_971vg for the same tx replacing itself (~921_722_072vg)
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1); // 1 ms after last tx
-        assertFalse("smallTxReplacement should've been rejected 1 ms after the same tx was executed", quotaChecker.acceptTx(smallTxReplacement, Optional.of(smallTx), currentContext));
+        assertFalse("smallTxReplacement should've been rejected 1 ms after the same tx was executed", quotaChecker.acceptTx(smallTxReplacement, smallTx, currentContext));
 
         // simulate future nonce on tx
         long futureNonce = accountANonce + 3;
@@ -144,22 +143,22 @@ public class TxQuotaCheckerIntegrationTest {
         // not enough quota 557_645_971vg: this tx consumes ~6_405_600_000 (factor ~942)
         Transaction hugeTx = txFromAccountAToAccountB(futureNonce, 6_800_000, BLOCK_MIN_GAS_PRICE, 92_750);
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 60 * 1000); // 1 minute after last tx
-        assertFalse("hugeTx should've been rejected 1 minute after last tx", quotaChecker.acceptTx(hugeTx, Optional.empty(), currentContext));
+        assertFalse("hugeTx should've been rejected 1 minute after last tx", quotaChecker.acceptTx(hugeTx, null, currentContext));
 
         // enough quota 6_432_845_971vg: this tx consumes ~6_405_600_000vg (factor ~942)
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 16 * 60 * 1000); // 16 minutes after last tx
-        assertTrue("hugeTx should've been accepted 16 minutes after last tx", quotaChecker.acceptTx(hugeTx, Optional.empty(), currentContext));
+        assertTrue("hugeTx should've been accepted 16 minutes after last tx", quotaChecker.acceptTx(hugeTx, null, currentContext));
 
         long hugeTxReplacementGasPrice = (long) (hugeTx.getGasPrice().asBigInteger().longValue() * 1.1d);
 
         // not enough quota 11_043_245_971vg: this tx consumes ~12_228_038_181vg (factor ~1798)
         Transaction hugeTxReplacement = txFromAccountAToAccountB(futureNonce, 6_800_000, hugeTxReplacementGasPrice, 92_750);
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 30 * 60 * 1000); // 30 minutes after last tx
-        assertFalse("hugeTxReplacement should've been rejected 30 minutes after last tx", quotaChecker.acceptTx(hugeTxReplacement, Optional.of(hugeTx), currentContext));
+        assertFalse("hugeTxReplacement should've been rejected 30 minutes after last tx", quotaChecker.acceptTx(hugeTxReplacement, hugeTx, currentContext));
 
         // enough quota 12_240_000_000vg (maxQuota in this case, accumulated was more): this tx consumes ~12_228_038_181vg (factor ~1798)
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 3.3 * 60 * 1000); // 3.3 minutes after last tx (~33.3 minutes are needed to fill max quota)
-        assertTrue("hugeTxReplacement should've been accepted 3.3 minutes after last tx", quotaChecker.acceptTx(hugeTxReplacement, Optional.of(hugeTx), currentContext));
+        assertTrue("hugeTxReplacement should've been accepted 3.3 minutes after last tx", quotaChecker.acceptTx(hugeTxReplacement, hugeTx, currentContext));
 
         // simulate multiple txs were processed
         accountANonce = 100;
@@ -168,7 +167,7 @@ public class TxQuotaCheckerIntegrationTest {
         // contractA does not exist on state, therefore a quota will be added for it in the map (even being it a contract)
         // therefore accountA will be removed from the map, that is full, as the least recently accessed one
         Transaction txToContractA = txFromAccountCToContractA(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertTrue("txToContractA should've been accepted", quotaChecker.acceptTx(txToContractA, Optional.empty(), currentContext));
+        assertTrue("txToContractA should've been accepted", quotaChecker.acceptTx(txToContractA, null, currentContext));
         assertNotNull("contractA should create a quota when receiving a transaction", quotaChecker.getTxQuota(contractA.getAddress()));
 
         // contractA is added again to the map with this tx
@@ -176,11 +175,11 @@ public class TxQuotaCheckerIntegrationTest {
         // this tx consumes 665_928_712vg (factor ~377), more than MAX_GAS_PER_SECOND and less than MAX_QUOTA => is enough
         Transaction txAfterReinsertOnMap = txFromAccountAToAccountB(accountANonce, 6_800_000, BLOCK_MIN_GAS_PRICE, 92_750);
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 50); // 50 ms after quota was created
-        assertTrue("txAfterReinsertOnMap should've been accepted 1 minute after last tx", quotaChecker.acceptTx(txAfterReinsertOnMap, Optional.empty(), currentContext));
+        assertTrue("txAfterReinsertOnMap should've been accepted 1 minute after last tx", quotaChecker.acceptTx(txAfterReinsertOnMap, null, currentContext));
 
         // contractB exists on state, therefore NO quota be added for it in the map
         Transaction txToContractB = txFromAccountCToContractB(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertTrue("txToContractB should've been accepted", quotaChecker.acceptTx(txToContractB, Optional.empty(), currentContext));
+        assertTrue("txToContractB should've been accepted", quotaChecker.acceptTx(txToContractB, null, currentContext));
         assertNull("contractB should not create a quota when receiving a transaction", quotaChecker.getTxQuota(contractB.getAddress()));
     }
 
@@ -190,24 +189,24 @@ public class TxQuotaCheckerIntegrationTest {
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime);
 
         Transaction txFromAccountAToB = txFromAccountAToAccountB(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertTrue("txFromAccountAToB should've been accepted", quotaChecker.acceptTx(txFromAccountAToB, Optional.empty(), currentContext));
+        assertTrue("txFromAccountAToB should've been accepted", quotaChecker.acceptTx(txFromAccountAToB, null, currentContext));
 
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 60L * 1000); // 1 minute after last tx
 
         Transaction txFromAccountBToAccountA = txFromAccountBToAccountA(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
-        assertTrue("txFromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(txFromAccountBToAccountA, Optional.empty(), currentContext));
+        assertTrue("txFromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(txFromAccountBToAccountA, null, currentContext));
 
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 33L * 60 * 1000); // 33 minutes after last tx
 
         // Now both accountA and accountB have maxQuota
 
         Transaction tx2FromAccountBToAccountA = txFromAccountBToAccountA(1, 750_000, BLOCK_AVG_GAS_PRICE - 100_000, 15_250);
-        assertTrue("tx2FromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(tx2FromAccountBToAccountA, Optional.empty(), currentContext));
+        assertTrue("tx2FromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(tx2FromAccountBToAccountA, null, currentContext));
 
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1 second after last tx
 
         Transaction txFromAccountCToContractB = txFromAccountCToContractB(1, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertTrue("txFromAccountCToContractB should've been accepted", quotaChecker.acceptTx(txFromAccountCToContractB, Optional.empty(), currentContext));
+        assertTrue("txFromAccountCToContractB should've been accepted", quotaChecker.acceptTx(txFromAccountCToContractB, null, currentContext));
 
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1 second after last tx
 

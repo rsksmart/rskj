@@ -53,7 +53,7 @@ public class TxVirtualGasCalculatorTest {
     public Transaction newTransaction;
 
     @Parameterized.Parameter(value = 2)
-    public Optional<Transaction> replacedTransaction;
+    public Transaction replacedTransaction;
 
     @Parameterized.Parameter(value = 3)
     public long accountNonce;
@@ -92,14 +92,14 @@ public class TxVirtualGasCalculatorTest {
         Transaction topFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
 
         return Arrays.asList(new Object[][]{
-                {"Small factor", smallFactorsTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824},
-                {"High nonce factor", highNonceFactorTx, Optional.empty(), smallNonce, 1, 1, 5, 1.04096, 1, 1.058824},
-                {"High future nonce factor", highFutureNonceFactorTx, Optional.empty(), DEFAULT_NONCE, 2, 1, 1.039604, 1.04096, 1, 1.058824},
-                {"High size factor", highSizeFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 5, 1, 1.058824},
-                {"High low gasPrice factor", highLowGasPriceFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824},
-                {"High gasLimit factor", highGasLimitFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5},
-                {"High replacement factor", highReplacementFactorTx, Optional.of(highReplacementFactorTxReplaced), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824},
-                {"Top factors", topFactorsTx, Optional.of(topFactorsTxReplaced), smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
+                {"Small factor", smallFactorsTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824},
+                {"High nonce factor", highNonceFactorTx, null, smallNonce, 1, 1, 5, 1.04096, 1, 1.058824},
+                {"High future nonce factor", highFutureNonceFactorTx, null, DEFAULT_NONCE, 2, 1, 1.039604, 1.04096, 1, 1.058824},
+                {"High size factor", highSizeFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 5, 1, 1.058824},
+                {"High low gasPrice factor", highLowGasPriceFactorTx, null, DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824},
+                {"High gasLimit factor", highGasLimitFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5},
+                {"High replacement factor", highReplacementFactorTx, highReplacementFactorTxReplaced, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824},
+                {"Top factors", topFactorsTx, topFactorsTxReplaced, smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
         });
     }
 
