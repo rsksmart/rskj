@@ -204,7 +204,7 @@ public class PeerAndModeDecidingSyncStateTest {
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration,
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
                 blockStore);
