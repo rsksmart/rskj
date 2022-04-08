@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
 
+@java.lang.SuppressWarnings("squid:S100")
 public interface Web3DebugModule {
 
     default String debug_wireProtocolQueueSize() {
@@ -46,7 +47,6 @@ public interface Web3DebugModule {
         return getDebugModule().traceBlock(blockHash, traceOptions);
     }
 
-    @SuppressWarnings("squid:S1166")
     default TxQuota debug_accountTransactionQuota(String address) {
         return getDebugModule().accountTransactionQuota(address);
     }
