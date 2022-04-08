@@ -30,6 +30,7 @@ import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -67,7 +68,7 @@ public class TxQuotaChecker {
      * @param currentContext Some contextual information of the time <code>newTx</code> is being processed
      * @return true if the <code>newTx</code> was accepted, false otherwise
      */
-    public synchronized boolean acceptTx(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
+    public synchronized boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
         updateLastBlockGasLimit(currentContext.bestBlock.getGasLimitAsInteger());
 
         TxQuota senderQuota = updateQuota(newTx, true, currentContext);
@@ -160,7 +161,7 @@ public class TxQuotaChecker {
         return maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
     }
 
-    private double calculateConsumedVirtualGas(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
+    private double calculateConsumedVirtualGas(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
         long accountNonce = currentContext.state.getNonce(newTx.getSender()).longValue();
         long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
         long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();

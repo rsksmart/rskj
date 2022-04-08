@@ -22,6 +22,7 @@ import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -58,7 +59,7 @@ class TxVirtualGasCalculator {
      * @param replacedTx The tx replaced by <code>newTx</code> if any
      * @return The virtualGas consumed by the provided <code>newTx</code>
      */
-    double calculate(Transaction newTx, Optional<Transaction> replacedTx) {
+    double calculate(Transaction newTx, @Nullable Transaction replacedTx) {
         long txGasLimit = newTx.getGasLimitAsInteger().longValue();
 
         long newTxNonce = newTx.getNonceAsInteger().longValue();
@@ -94,9 +95,9 @@ class TxVirtualGasCalculator {
         }
     }
 
-    private double calculateReplacementFactor(Transaction newTx, Optional<Transaction> replacedTx) {
+    private double calculateReplacementFactor(Transaction newTx, @Nullable Transaction replacedTx) {
         double newTxGasPrice = newTx.getGasPrice().asBigInteger().doubleValue();
-        double replacementRatio = replacedTx
+        double replacementRatio = Optional.ofNullable(replacedTx)
                 .map(Transaction::getGasPrice)
                 .map(rtxGasPrice -> rtxGasPrice.asBigInteger().doubleValue())
                 .map(rtxGasPrice -> newTxGasPrice / rtxGasPrice)

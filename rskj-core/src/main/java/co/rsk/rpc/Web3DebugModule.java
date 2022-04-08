@@ -46,6 +46,7 @@ public interface Web3DebugModule {
         return getDebugModule().traceBlock(blockHash, traceOptions);
     }
 
+    @SuppressWarnings("squid:S1166")
     default TxQuota debug_accountTransactionQuota(String address) {
         return getDebugModule().accountTransactionQuota(address);
     }
