@@ -367,6 +367,10 @@ public class PeerScoringManager {
     }
 
     private void logRecordedEvent(NodeID id, InetAddress address, EventType event, String message, Object[] messageArgs) {
+        if (!logger.isDebugEnabled()) {
+            return;
+        }
+
         String completeMessage = "Recorded {} from node [{}]";
         if (message != null) {
             completeMessage += " => " + message;
