@@ -122,6 +122,30 @@ public class InetAddressBlockTest {
     }
 
     @Test
+    public void usingIPV4With32BitsMask() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        InetAddress address2 = InetAddress.getByAddress(address.getAddress());
+        InetAddress address3 = InetAddress.getByAddress(generateIPAddressV4().getAddress());
+
+        InetAddressBlock mask = new InetAddressBlock(address, 32);
+
+        Assert.assertTrue(mask.contains(address2));
+        Assert.assertFalse(mask.contains(address3));
+    }
+
+    @Test
+    public void usingIPV6With32BitsMask() throws UnknownHostException {
+        InetAddress address = generateIPAddressV6();
+        InetAddress address2 = InetAddress.getByAddress(address.getAddress());
+        InetAddress address3 = InetAddress.getByAddress(generateIPAddressV6().getAddress());
+
+        InetAddressBlock mask = new InetAddressBlock(address, 32);
+
+        Assert.assertTrue(mask.contains(address2));
+        Assert.assertFalse(mask.contains(address3));
+    }
+
+    @Test
     public void doesNotContainIPV4() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         InetAddress address2 = generateIPAddressV4();

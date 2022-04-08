@@ -26,7 +26,10 @@ public class InetAddressBlock {
     public InetAddressBlock(InetAddress address, int bits) {
         this.description = address.getHostAddress() + "/" + bits;
         this.bytes = address.getAddress();
-        this.nbytes = this.bytes.length - (bits + 7) / 8;
+
+        int tmpNBytes = this.bytes.length - (bits + 7) / 8;
+        this.nbytes = tmpNBytes == 0 ? this.bytes.length : tmpNBytes;
+
         this.mask = (byte)(0xff << (bits % 8));
     }
 
