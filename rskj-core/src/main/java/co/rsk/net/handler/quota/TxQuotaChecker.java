@@ -35,7 +35,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * This class hosts a map with the available virtualGas for a set of addresses and validates or rejects a transaction accordingly.
