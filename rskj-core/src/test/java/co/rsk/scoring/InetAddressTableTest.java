@@ -37,6 +37,26 @@ public class InetAddressTableTest {
     }
 
     @Test
+    public void containExactAddressForMask32() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+
+        InetAddressTable table = new InetAddressTable();
+        InetAddressBlock addressBlock = new InetAddressBlock(address, 32);
+
+        table.addAddressBlock(addressBlock);
+        Assert.assertTrue(table.contains(address));
+    }
+
+    @Test
+    public void doesNotContainRandomAddressForMask32() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddressBlock addressBlock = new InetAddressBlock(generateIPAddressV4(), 32);
+
+        table.addAddressBlock(addressBlock);
+        Assert.assertFalse(table.contains(generateIPAddressV4()));
+    }
+
+    @Test
     public void addAndRemoveIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
