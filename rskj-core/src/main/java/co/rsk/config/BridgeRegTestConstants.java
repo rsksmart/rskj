@@ -161,6 +161,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
 
         maxInputsPerPegoutTransaction = 10;
+
+        numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
     }
 
     public static BridgeRegTestConstants getInstance() {

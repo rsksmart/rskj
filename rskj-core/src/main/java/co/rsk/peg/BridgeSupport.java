@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 
 /**
@@ -818,7 +819,7 @@ public class BridgeSupport {
     private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
-            int pegoutSize = getRegularPegoutTxSize(getActiveFederation());
+            int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
             Coin feePerKB = getFeePerKb();
             // The pegout transaction has a cost related to its size and the current feePerKB
             // The actual cost cannot be asserted exactly so the calculation is approximated
@@ -909,7 +910,7 @@ public class BridgeSupport {
 
         processFundsMigration(rskTx);
 
-        processReleaseRequests();
+        processReleaseRequests(rskTx);
 
         processReleaseTransactions(rskTx);
 
@@ -1027,14 +1028,20 @@ public class BridgeSupport {
      * and failed attempts are kept in the release queue for future
      * processing.
      *
+     * @param rskTx
      */
-    private void processReleaseRequests() {
+    private void processReleaseRequests(Transaction rskTx) {
         final Wallet activeFederationWallet;
         final ReleaseRequestQueue releaseRequestQueue;
+        final List<UTXO> availableUTXOs;
+        final ReleaseTransactionSet releaseTransactionSet;
 
         try {
+            // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
             activeFederationWallet = getActiveFederationWallet(true);
             releaseRequestQueue = provider.getReleaseRequestQueue();
+            availableUTXOs = getActiveFederationBtcUTXOs();
+            releaseTransactionSet = provider.getReleaseTransactionSet();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process release requests", e);
             return;
@@ -1050,78 +1057,147 @@ public class BridgeSupport {
                 activations
         );
 
+        if (activations.isActive(RSKIP271)) {
+            processPegoutsInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet, rskTx);
+        } else {
+            processPegoutsIndividually(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
+        }
+    }
+
+    private void addPegoutTxToReleaseTransactionSet(
+        BtcTransaction generatedTransaction,
+        ReleaseTransactionSet releaseTransactionSet,
+        Keccak256 rskTxHash,
+        Coin amount
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            // Add the TX
+            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+            // For a short time period, there could be items in the release request queue that don't have the rskTxHash
+            // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
+            // We shouldn't generate the event for those releases
+            if (rskTxHash != null) {
+                // Log the Release request
+                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, amount);
+            }
+        } else {
+            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+        }
+    }
+
+    private void processPegoutsIndividually(
+        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseTransactionBuilder txBuilder,
+        List<UTXO> availableUTXOs,
+        ReleaseTransactionSet releaseTransactionSet,
+        Wallet wallet
+    ) {
+        Coin walletBalance = wallet.getBalance();
+        boolean canProcessAtLeastOnePegout = releaseRequestQueue.getEntries()
+            .stream()
+            .anyMatch(entry -> walletBalance.isGreaterThan(entry.getAmount()) || walletBalance.equals(entry.getAmount()));
+        if (!canProcessAtLeastOnePegout) {
+            logger.warn("[processPegoutsIndividually] wallet balance {} cannot process at least one pegout", walletBalance);
+            return;
+        }
+
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
-                    releaseRequest.getDestination(),
-                    releaseRequest.getAmount()
+            ReleaseTransactionBuilder.BuildResult result = txBuilder.buildAmountTo(
+                releaseRequest.getDestination(),
+                releaseRequest.getAmount()
             );
 
+            if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
             // Couldn't build a transaction to release these funds
             // Log the event and return false so that the request remains in the
             // queue for future processing.
             // Further logging is done at the tx builder level.
-            if (!result.isPresent()) {
                 logger.warn(
-                        "Couldn't build a release BTC tx for <{}, {}>",
-                        releaseRequest.getDestination().toBase58(),
-                        releaseRequest.getAmount());
+                    "Couldn't build a release BTC tx for <{}, {}>. Reason: {}",
+                    releaseRequest.getDestination().toBase58(),
+                    releaseRequest.getAmount(),
+                    result.getResponseCode());
                 return false;
             }
 
-            // We have a BTC transaction, mark the UTXOs as spent and add the tx
-            // to the release set.
-
-            List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
-            BtcTransaction generatedTransaction = result.get().getBtcTx();
-            List<UTXO> availableUTXOs;
-            ReleaseTransactionSet releaseTransactionSet;
-
-            // Attempt access to storage first
-            // (any of these could fail and would invalidate both
-            // the tx build and utxo selection, so treat as atomic)
-            try {
-                availableUTXOs = getActiveFederationBtcUTXOs();
-                releaseTransactionSet = provider.getReleaseTransactionSet();
-            } catch (IOException exception) {
-                // Unexpected error accessing storage, log and fail
-                logger.error(
-                        String.format(
-                                "Unexpected error accessing storage while attempting to add a release BTC tx for <%s, %s>",
-                                releaseRequest.getDestination().toString(),
-                                releaseRequest.getAmount().toString()
-                        ),
-                        exception
-                );
-                return false;
-            }
-
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
-                Keccak256 rskTxHash = releaseRequest.getRskTxHash();
-                // Add the TX
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-                // For a short time period, there could be items in the release request queue that don't have the rskTxHash
-                // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
-                // We shouldn't generate the event for those releases
-                if (rskTxHash != null) {
-                    // Log the Release request
-                    eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
-                }
-            } else {
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
-            }
+            BtcTransaction generatedTransaction = result.getBtcTx();
+            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, releaseRequest.getRskTxHash(), releaseRequest.getAmount());
 
             // Mark UTXOs as spent
+            List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
             availableUTXOs.removeAll(selectedUTXOs);
 
-            // TODO: (Ariel Mendelzon, 07/12/2017)
-            // TODO: Balance adjustment assumes that change output is output with index 1.
-            // TODO: This will change if we implement multiple releases per BTC tx, so
-            // TODO: it would eventually need to be fixed.
-            // Adjust balances in edge cases
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount(), wallet);
 
             return true;
         });
+    }
+
+    private void processPegoutsInBatch(
+        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseTransactionBuilder txBuilder,
+        List<UTXO> availableUTXOs,
+        ReleaseTransactionSet releaseTransactionSet,
+        Wallet wallet,
+        Transaction rskTx) {
+        long currentBlockNumber = rskExecutionBlock.getNumber();
+        long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
+
+        if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
+            List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
+            Coin totalPegoutValue = pegoutEntries
+                .stream()
+                .map(ReleaseRequestQueue.Entry::getAmount)
+                .reduce(Coin.ZERO, Coin::add);
+
+            if (wallet.getBalance().isLessThan(totalPegoutValue)) {
+                logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
+                return;
+            }
+
+            if (!pegoutEntries.isEmpty()) {
+                logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
+                ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
+
+                while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+                    logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
+                    int firstHalfSize = pegoutEntries.size() / 2;
+                    pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                    result = txBuilder.buildBatchedPegouts(pegoutEntries);
+                }
+
+                if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
+                    logger.warn(
+                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
+                        releaseRequestQueue.getEntries().size(),
+                        totalPegoutValue,
+                        result.getResponseCode());
+                    return;
+                }
+
+                BtcTransaction generatedTransaction = result.getBtcTx();
+                addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, rskTx.getHash(), totalPegoutValue);
+
+                // Remove batched requests from the queue after successfully batching pegouts
+                releaseRequestQueue.removeEntries(pegoutEntries);
+
+                // Mark UTXOs as spent
+                List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
+                availableUTXOs.removeAll(selectedUTXOs);
+
+                eventLogger.logBatchPegoutCreated(generatedTransaction,
+                    pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
+
+                adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
+            }
+
+            // update next Pegout height even if there were no request in queue
+            if (releaseRequestQueue.getEntries().isEmpty()) {
+                long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
+                provider.setNextPegoutHeight(nextPegoutHeight);
+                logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
+            }
+        }
     }
 
     /**
@@ -1195,7 +1271,7 @@ public class BridgeSupport {
      * @param btcTx      The btc tx that was just completed
      * @param sentByUser The number of sBTC originaly sent by the user
      */
-    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser) {
+    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser, Wallet wallet) {
         if (btcTx.getOutputs().size() <= 1) {
             // If there is no change, do-nothing
             return;
@@ -1204,7 +1280,8 @@ public class BridgeSupport {
         for (TransactionInput transactionInput : btcTx.getInputs()) {
             sumInputs = sumInputs.add(transactionInput.getValue());
         }
-        Coin change = btcTx.getOutput(1).getValue();
+
+        Coin change = btcTx.getValueSentToMe(wallet);
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
@@ -2518,6 +2595,40 @@ public class BridgeSupport {
         return activeFederationCreationBlockHeightOpt.orElse(0L);
     }
 
+    public long getNextPegoutCreationBlockNumber() {
+        return activations.isActive(RSKIP271) ? provider.getNextPegoutHeight().orElse(0L) : 0L;
+    }
+
+    public int getQueuedPegoutsCount() throws IOException {
+        if (activations.isActive(RSKIP271)) {
+            return provider.getReleaseRequestQueueSize();
+        }
+        return 0;
+    }
+
+    public Coin getEstimatedFeesForNextPegOutEvent() throws IOException {
+        //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
+        //  where N is the number of peg-outs requests waiting in the queue.
+
+        final int INPUT_MULTIPLIER = 2; // 2 inputs
+
+        int pegoutRequestsCount = getQueuedPegoutsCount();
+
+        if (!activations.isActive(RSKIP271) || pegoutRequestsCount == 0) {
+            return Coin.ZERO;
+        }
+
+        int totalOutputs = pegoutRequestsCount + 2; // N + 2 outputs
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
+
+        Coin feePerKB = getFeePerKb();
+
+        return feePerKB
+                .multiply(pegoutTxSize) // times the size in bytes
+                .divide(1000);
+    }
+
     public BigInteger registerFastBridgeBtcTransaction(
         Transaction rskTx,
         byte[] btcTxSerialized,
@@ -2868,18 +2979,18 @@ public class BridgeSupport {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.isPresent()) {
+        ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
+        if (buildReturnResult.getResponseCode() == ReleaseTransactionBuilder.Response.SUCCESS) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
-                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
+                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
+                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.getBtcTx(), totalAmount);
             } else {
-                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+                provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
             }
-            logger.info("Rejecting peg-in: return tx build successful to {}. Tx {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
+            logger.info("Rejecting peg-in due to {}: return tx build successful to {}. Tx {}. Value {}.", buildReturnResult.getResponseCode(), btcRefundAddress, rskTxHash, totalAmount);
         } else {
-            logger.warn("Rejecting peg-in: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount));
+            logger.warn("Rejecting peg-in due to {}: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", buildReturnResult.getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
+            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
         }
     }
 

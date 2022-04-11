@@ -80,6 +80,8 @@ public class BridgeConstants {
 
     protected int maxInputsPerPegoutTransaction;
 
+    protected int numberOfBlocksBetweenPegouts;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -168,5 +170,9 @@ public class BridgeConstants {
 
     public int getMaxInputsPerPegoutTransaction() {
         return maxInputsPerPegoutTransaction;
+    }
+
+    public int getNumberOfBlocksBetweenPegouts() {
+        return numberOfBlocksBetweenPegouts;
     }
 }

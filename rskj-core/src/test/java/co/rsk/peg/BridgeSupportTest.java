@@ -7670,6 +7670,178 @@ public class BridgeSupportTest {
         Assert.assertTrue(expectedInputSizes.isEmpty()); // All expected sizes should have been found and removed
     }
 
+    @Test
+    public void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .build();
+
+        assertEquals(0L, bridgeSupport.getNextPegoutCreationBlockNumber());
+    }
+
+    @Test
+    public void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(10L));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(10L, bridgeSupport.getNextPegoutCreationBlockNumber());
+    }
+
+    @Test
+    public void getQueuedPegoutsCount_before_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withProvider(provider)
+                .build();
+
+        verify(provider, never()).getReleaseRequestQueueSize();
+        assertEquals(0, bridgeSupport.getQueuedPegoutsCount());
+    }
+
+    @Test
+    public void getQueuedPegoutsCount_after_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(2);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(2, bridgeSupport.getQueuedPegoutsCount());
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withProvider(provider)
+                .build();
+
+        verify(provider, never()).getFeePerKb();
+        assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        int pegoutRequestsCount = 5;
+        Coin feePerKB = Coin.MILLICOIN;
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        when(provider.getNewFederation()).thenReturn(federation);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation_with_erpFederation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        int pegoutRequestsCount = 5;
+        Coin feePerKB = Coin.MILLICOIN;
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        List<BtcECKey> defaultFederationKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        );
+        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa03")),
+            BtcECKey.fromPrivate(Hex.decode("fa04")),
+            BtcECKey.fromPrivate(Hex.decode("fa05"))
+        );
+        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams(),
+            erpFederationPublicKeys,
+            500L,
+            activations
+        );
+
+        when(provider.getNewFederation()).thenReturn(erpFederation);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_zero_pegouts() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(0);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
