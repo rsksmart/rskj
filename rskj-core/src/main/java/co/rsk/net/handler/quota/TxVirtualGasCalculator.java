@@ -30,6 +30,14 @@ import java.util.Optional;
  */
 class TxVirtualGasCalculator {
 
+    private static final int FUTURE_NONCE_FACTOR = 2;
+    private static final int NONCE_FACTOR = 5;
+    private static final int SIZE_FACTOR = 5;
+    private static final int LOW_GAS_PRICE_FACTOR = 4;
+    private static final double REPLACEMENT_FACTOR = 1.9;
+    private static final int GAS_LIMIT_FACTOR = 5;
+    private static final double MAX_FACTOR = FUTURE_NONCE_FACTOR * NONCE_FACTOR * SIZE_FACTOR * LOW_GAS_PRICE_FACTOR * REPLACEMENT_FACTOR * GAS_LIMIT_FACTOR;
+
     private static final double GAS_LIMIT_WEIGHT = 4;
     private static final double NONCE_WEIGHT = 4;
     private static final double LOW_GAS_PRICE_WEIGH = 3;
@@ -77,7 +85,7 @@ class TxVirtualGasCalculator {
 
         double compositeFactor = futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
 
-        double result = safeMultiply(txGasLimit, compositeFactor);
+        double result = capeResult(txGasLimit, compositeFactor);
 
         logger.trace("virtualGasConsumed calculation for tx [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
 
@@ -110,11 +118,12 @@ class TxVirtualGasCalculator {
     }
 
     @SuppressWarnings("squid:S1244")
-    private double safeMultiply(double op1, double op2) {
-        double result = op1 * op2;
+    // extra security measure
+    private double capeResult(double gasLimit, double factor) {
+        double result = gasLimit * factor;
 
         if (Double.POSITIVE_INFINITY == result) {
-            throw new ArithmeticException("Overflow detected on virtualGas calculation");
+            return gasLimit * MAX_FACTOR;
         }
 
         return result;
