@@ -28,7 +28,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.rpc.Web3;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
 import org.junit.After;
@@ -94,7 +94,7 @@ public class TransactionPoolImplTest {
                 10,
                 100,
                 Mockito.mock(TxQuotaChecker.class),
-                Mockito.mock(Supplier.class));
+                Mockito.mock(GasPriceTracker.class));
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);

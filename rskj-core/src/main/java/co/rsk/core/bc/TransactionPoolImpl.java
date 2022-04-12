@@ -31,7 +31,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.rpc.Web3;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -43,7 +43,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -80,9 +79,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxQuotaChecker quotaChecker;
 
-    private final Supplier<Web3> getWeb3;
+    private final GasPriceTracker gasPriceTracker;
 
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, Supplier<Web3> getWeb3Deferred) {
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -93,7 +92,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
         this.quotaChecker = txQuotaChecker;
-        this.getWeb3 = getWeb3Deferred;
+        this.gasPriceTracker = gasPriceTracker;
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
 
@@ -249,7 +248,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (this.config.isAccountTxRateLimitEnabled()) {
-            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.getWeb3.get());
+            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.gasPriceTracker);
             if (!this.quotaChecker.acceptTx(tx, replacedTx.orElse(null), currentContext)) {
                 return TransactionPoolAddResult.withError("account exceeds quota");
             }

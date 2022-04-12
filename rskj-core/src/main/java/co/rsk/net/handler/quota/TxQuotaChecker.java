@@ -26,7 +26,7 @@ import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.Web3;
+import org.ethereum.listener.GasPriceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,7 +164,7 @@ public class TxQuotaChecker {
         long accountNonce = currentContext.state.getNonce(newTx.getSender()).longValue();
         long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
         long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();
-        long avgGasPrice = HexUtils.stringHexToBigInteger(currentContext.web3.eth_gasPrice()).longValue();
+        long avgGasPrice = currentContext.gasPriceTracker.getGasPrice().asBigInteger().longValue();
 
         TxVirtualGasCalculator calculator = new TxVirtualGasCalculator(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice);
         return calculator.calculate(newTx, replacedTx);
@@ -177,13 +177,13 @@ public class TxQuotaChecker {
         private final Block bestBlock;
         private final PendingState state;
         private final RepositorySnapshot repository;
-        private final Web3 web3;
+        private final GasPriceTracker gasPriceTracker;
 
-        public CurrentContext(Block bestBlock, PendingState state, RepositorySnapshot repository, Web3 web3) {
+        public CurrentContext(Block bestBlock, PendingState state, RepositorySnapshot repository, GasPriceTracker gasPriceTracker) {
             this.bestBlock = bestBlock;
             this.state = state;
             this.repository = repository;
-            this.web3 = web3;
+            this.gasPriceTracker = gasPriceTracker;
         }
     }
 
