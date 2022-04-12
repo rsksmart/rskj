@@ -26,7 +26,7 @@ import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
-import org.ethereum.rpc.Web3;
+import org.ethereum.listener.GasPriceTracker;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
@@ -89,10 +89,10 @@ public class TxQuotaCheckerIntegrationTest {
         when(repository.isContract(contractA.getAddress())).thenReturn(true);
         when(repository.isContract(contractB.getAddress())).thenReturn(true);
 
-        Web3 web3 = mock(Web3.class);
-        when(web3.eth_gasPrice()).thenReturn("0x" + Long.toHexString(BLOCK_AVG_GAS_PRICE));
+        GasPriceTracker gasPriceTracker = mock(GasPriceTracker.class);
+        when(gasPriceTracker.getGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
 
-        currentContext = new TxQuotaChecker.CurrentContext(mockedBlock, state, repository, web3);
+        currentContext = new TxQuotaChecker.CurrentContext(mockedBlock, state, repository, gasPriceTracker);
 
         timeProvider = mock(TimeProvider.class);
 

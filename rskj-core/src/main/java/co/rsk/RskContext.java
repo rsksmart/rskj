@@ -106,6 +106,7 @@ import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -249,6 +250,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
     private TxQuotaChecker txQuotaChecker;
+    private GasPriceTracker gasPriceTracker;
 
     private volatile boolean closed;
 
@@ -386,7 +388,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout(),
                     getTxQuotaChecker(),
-                    this::getWeb3); // Supplier to bypass cyclic dependency: TransactionPool needs Web3 and Web3 needs TransactionPool
+                    getGasPriceTracker());
         }
 
         return transactionPool;
@@ -528,11 +530,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getCompositeEthereumListener(),
-                    getBlockchain()
+                    getBlockchain(),
+                    getGasPriceTracker()
             );
         }
 
         return rsk;
+    }
+
+    private GasPriceTracker getGasPriceTracker() {
+        if (this.gasPriceTracker == null) {
+            this.gasPriceTracker = GasPriceTracker.create(blockchain);
+        }
+        return this.gasPriceTracker;
     }
 
     public synchronized ReversibleTransactionExecutor getReversibleTransactionExecutor() {
@@ -971,7 +981,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             ));
         }
 
-        if(getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
+        if (getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
             internalServices.add(getPeerScoringReporterService());
         }
 
@@ -1102,7 +1112,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
         checkIfNotClosed();
 
-        if(peerScoringReporterService == null) {
+        if (peerScoringReporterService == null) {
             this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
         }
 
@@ -1115,10 +1125,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /**
      * This method closes this RSK context.
-     *
+     * <p>
      * Internally it stops a node runner, if started,
      * and closes / disposes data storages (db instances), if some has already been instantiated.
-     *
+     * <p>
      * Note that this method is idempotent, which means that calling this method more than once does not have any
      * visible side effect.
      */
