@@ -450,29 +450,11 @@ public class Transaction {
     }
 
     public byte[] getEncoded() {
-        if (this.rlpEncoding == null) {
-            byte[] v;
-            byte[] r;
-            byte[] s;
-
-            if (this.signature != null) {
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
-                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
-            } else {
-                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
-                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            }
-
-            this.rlpEncoding = encode(v, r, s);
-        }
-
-        return ByteUtil.cloneBytes(this.rlpEncoding);
+        return ByteUtil.cloneBytes(rlpEncode());
     }
 
     public long getSize() {
-        return this.getEncoded().length;
+        return rlpEncode().length;
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {
@@ -570,5 +552,29 @@ public class Transaction {
         return Coin.ZERO.equals(getValue()) &&
                 BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
                 Coin.ZERO.equals(getGasPrice());
+    }
+
+    // returning a mutable object from a private method is not that bad and is convenient this time
+    @java.lang.SuppressWarnings("squid:S2384")
+    private byte[] rlpEncode() {
+        if (this.rlpEncoding == null) {
+            byte[] v;
+            byte[] r;
+            byte[] s;
+
+            if (this.signature != null) {
+                v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
+                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
+            } else {
+                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            }
+
+            this.rlpEncoding = encode(v, r, s);
+        }
+
+        return this.rlpEncoding;
     }
 }
