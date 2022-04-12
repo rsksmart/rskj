@@ -21,7 +21,6 @@ package co.rsk.net.handler.quota;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.util.HexUtils;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
 import org.ethereum.core.Block;
