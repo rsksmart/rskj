@@ -46,7 +46,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +54,7 @@ import java.util.stream.Collectors;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
-import static co.rsk.peg.PegTestUtils.createRandomBtcAddress;
+import static co.rsk.peg.PegTestUtils.createRandomP2PKHBtcAddress;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -675,8 +674,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
 
-        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
-        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address userRefundBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         Repository repository = createRepository();
         // For simplicity of this test, the half of the max rbtc value is set as the current balance for the repository
@@ -1455,7 +1454,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc(), retiringFederationAddress);
+                tx.addOutput(bridgeConstants.getMaxRbtc(), retiringFederationAddress);
                 return tx;
             },
             false,
@@ -1469,7 +1468,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc(), retiringFederationAddress);
+                tx.addOutput(bridgeConstants.getMaxRbtc(), retiringFederationAddress);
                 return tx;
             },
             false,
@@ -1483,7 +1482,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc().div(2), activeFederationAddress);
+                tx.addOutput(bridgeConstants.getMaxRbtc().div(2), activeFederationAddress);
                 tx.addOutput(Coin.COIN, retiringFederationAddress);
                 return tx;
             },
@@ -1498,7 +1497,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc().div(2), activeFederationAddress);
+                tx.addOutput(bridgeConstants.getMaxRbtc().div(2), activeFederationAddress);
                 tx.addOutput(Coin.COIN, retiringFederationAddress);
                 return tx;
             },
@@ -1513,9 +1512,9 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc().div(2).minus(Coin.COIN), activeFederationAddress);
+                tx.addOutput(bridgeConstants.getMaxRbtc().div(2).minus(Coin.COIN), activeFederationAddress);
                 tx.addOutput(Coin.COIN, retiringFederationAddress);
-                tx.addOutput(Coin.COIN, createRandomBtcAddress());
+                tx.addOutput(Coin.COIN, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
                 return tx;
             },
             false,
@@ -1529,8 +1528,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstantsRegtest.getMaxRbtc().minus(Coin.COIN), createRandomBtcAddress());
-                tx.addOutput(Coin.COIN, createRandomBtcAddress());
+                tx.addOutput(bridgeConstants.getMaxRbtc().minus(Coin.COIN), createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
+                tx.addOutput(Coin.COIN, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
                 return tx;
             },
             false,
