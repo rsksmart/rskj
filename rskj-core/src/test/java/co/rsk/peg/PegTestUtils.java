@@ -170,9 +170,9 @@ public class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Address createRandomP2PKHBtcAddress() {
+    public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
-        return key.toAddress(RegTestParams.get());
+        return key.toAddress(networkParameters);
     }
 
     public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
@@ -197,7 +197,7 @@ public class PegTestUtils {
     }
 
     public static UTXO createUTXO(int nHash, long index, Coin value) {
-        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress());
+        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress(RegTestParams.get()));
     }
 
     public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
@@ -223,7 +223,7 @@ public class PegTestUtils {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
             ReleaseRequestQueue.Entry entry = new ReleaseRequestQueue.Entry(
-                createRandomP2PKHBtcAddress(),
+                createRandomP2PKHBtcAddress(RegTestParams.get()),
                 Coin.COIN.add(Coin.valueOf(i))
             );
             entries.add(entry);

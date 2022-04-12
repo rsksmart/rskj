@@ -1215,7 +1215,7 @@ public class BridgeUtilsTest {
             activations
         ));
 
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
         BtcTransaction fromRetiringFederationTx = new BtcTransaction(networkParameters);
         fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
         TransactionInput fromRetiringFederationTxInput = new TransactionInput(
@@ -1311,7 +1311,7 @@ public class BridgeUtilsTest {
             bridgeConstantsRegtest.getBtcParams()
         );
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1351,7 +1351,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the fast bridge fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1426,7 +1426,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1502,7 +1502,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the fast bridge erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1545,7 +1545,7 @@ public class BridgeUtilsTest {
     @Test
     public void testIsPegOutTx_noRedeemScript() {
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1563,7 +1563,7 @@ public class BridgeUtilsTest {
     @Test
     public void testIsPegOutTx_invalidRedeemScript() {
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
@@ -1581,7 +1581,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void testChangeBetweenFederations() {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Context btcContext = new Context(networkParameters);
 
         List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
@@ -2696,7 +2696,7 @@ public class BridgeUtilsTest {
     @Test
     public void scriptCorrectlySpends_fromGenesisFederation_ok() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -2715,7 +2715,7 @@ public class BridgeUtilsTest {
     @Test
     public void scriptCorrectlySpends_invalidScript() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -3098,7 +3098,7 @@ public class BridgeUtilsTest {
     }
 
     private BtcTransaction createPegOutTx(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
-        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
@@ -3267,9 +3267,9 @@ public class BridgeUtilsTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
 
-        Address btcAddressReceivingFundsBelowMin = PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddressReceivingFundsBelowMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams());
 
         btcTx.addOutput(valueBelowMinimum, btcAddressReceivingFundsBelowMin);
         btcTx.addOutput(minimumPegInTxValue, btcAddressReceivingFundsEqualToMin);
@@ -3358,15 +3358,15 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Address btcAddressReceivingFunds = PegTestUtils.createRandomBtcAddress();
-        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Context btcContext = new Context(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.ZERO, btcAddressReceivingFunds);
         /* Send funds also to random addresses in order to assure the method distinguishes that those funds
         were not sent to the given address(normally the federation address */
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         Assert.assertEquals(
             FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
@@ -3385,8 +3385,8 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Address addressReceivingFundsBelowMinimum = PegTestUtils.createRandomBtcAddress();
-        Address addressReceivingFundsAboveMinimum = PegTestUtils.createRandomBtcAddress();
+        Address addressReceivingFundsBelowMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address addressReceivingFundsAboveMinimum = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
@@ -3415,10 +3415,10 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFunds = PegTestUtils.createRandomBtcAddress();
+        Context btcContext = new Context(networkParameters);
+        Address btcAddressReceivingFunds = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
         Coin valueBelowMinimum = BridgeUtils
             .getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
             .minus(Coin.SATOSHI);
@@ -3443,8 +3443,8 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress();
-        Address secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress();
+        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         Coin minimumPegInTxValue = BridgeUtils
             .getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
@@ -3470,8 +3470,8 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress();
-        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomBtcAddress();
+        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddressReceivingFundsAboveMin = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
         Coin minimumPegInTxValue = BridgeUtils
@@ -3500,14 +3500,14 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(bech32Output);
         btcTx.addOutput(Coin.COIN, btcAddress);
         btcTx.addOutput(Coin.ZERO, btcAddress);
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         BridgeUtils.getUTXOsSentToAddresses(
             activations,
@@ -3524,10 +3524,10 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.COIN, btcAddress1);
@@ -3564,9 +3564,9 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.COIN, btcAddress1);
@@ -3581,7 +3581,7 @@ public class BridgeUtilsTest {
             btcTx,
             /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
             it. This is due the legacy logic before RSKIP293 */
-            Arrays.asList(PegTestUtils.createRandomBtcAddress(), btcAddress1, btcAddress3)
+            Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters), btcAddress1, btcAddress3)
         );
 
         Assert.assertTrue(foundUTXOs.isEmpty());
@@ -3592,15 +3592,15 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress = PegTestUtils.createRandomBtcAddress();
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
         TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addOutput(bech32Output);
         btcTx.addOutput(Coin.COIN, btcAddress);
         btcTx.addOutput(Coin.ZERO, btcAddress);
-        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         List<UTXO> expectedResult = new ArrayList<>();
         expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.COIN));
@@ -3626,13 +3626,13 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
-        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addOutput(Coin.COIN, btcAddress1);
         btcTx.addOutput(Coin.ZERO, btcAddress1);
         btcTx.addOutput(Coin.COIN, btcAddress2);
@@ -3656,8 +3656,8 @@ public class BridgeUtilsTest {
                 btcAddress1,
                 btcAddress2,
                 btcAddress3,
-                PegTestUtils.createRandomBtcAddress(),
-                PegTestUtils.createRandomBtcAddress()
+                PegTestUtils.createRandomP2PKHBtcAddress(networkParameters),
+                PegTestUtils.createRandomP2PKHBtcAddress(networkParameters)
             )
         );
 
@@ -3673,13 +3673,13 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
-        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+        Context btcContext = new Context(networkParameters);
+        Address btcAddress1 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress2 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress3 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        Address btcAddress4 = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addOutput(Coin.COIN, btcAddress1);
         btcTx.addOutput(Coin.ZERO, btcAddress1);
         btcTx.addOutput(Coin.COIN, btcAddress2);
@@ -3692,7 +3692,7 @@ public class BridgeUtilsTest {
             networkParameters,
             btcContext,
             btcTx,
-            Arrays.asList(PegTestUtils.createRandomBtcAddress())
+            Arrays.asList(PegTestUtils.createRandomP2PKHBtcAddress(networkParameters))
         );
 
         Assert.assertTrue(foundUTXOs.isEmpty());
