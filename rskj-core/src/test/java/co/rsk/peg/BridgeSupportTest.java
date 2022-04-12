@@ -6782,12 +6782,12 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
         when(provider.getFeePerKb()).thenReturn(feePerKB);
 
-        Federation federation = bridgeConstants.getGenesisFederation();
+        Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         when(provider.getNewFederation()).thenReturn(federation);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activations)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
             .build();
 
@@ -6828,7 +6828,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            bridgeConstants.getBtcParams(),
+            bridgeConstantsRegtest.getBtcParams(),
             erpFederationPublicKeys,
             500L,
             activations
@@ -6838,7 +6838,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activations)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
             .build();
 
@@ -6864,25 +6864,6 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
                 .build();
 
         assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
-    }
-
-    private Address getFastBridgeFederationAddress() {
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            PegTestUtils.createHash(1)
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-    }
-
-    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(amount, btcAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
-        return tx;
     }
 
     private void assertRefundInProcessPegInVersion1(

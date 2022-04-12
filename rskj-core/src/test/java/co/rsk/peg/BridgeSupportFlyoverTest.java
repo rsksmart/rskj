@@ -96,8 +96,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederation()).thenReturn(activeFederation);
 
-        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
-        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -237,8 +237,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         when(provider.getNewFederation()).thenReturn(activeFederation);
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
-        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -380,8 +380,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         when(provider.getNewFederation()).thenReturn(activeFederation);
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
-        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -547,8 +547,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         when(provider.getNewFederation()).thenReturn(activeFederation);
         when(provider.getOldFederation()).thenReturn(retiringFederation);
 
-        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
-        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         Repository repository = createRepository();
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
