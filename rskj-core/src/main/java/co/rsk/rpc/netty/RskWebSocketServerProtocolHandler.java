@@ -15,7 +15,7 @@ public class RskWebSocketServerProtocolHandler extends WebSocketServerProtocolHa
 
     public RskWebSocketServerProtocolHandler(String websocketPath, int maxFrameSize) {
         // there are no subprotocols nor extensions
-        super(websocketPath, null, false, maxFrameSize);
+        super(websocketPath, null, false, maxFrameSize, true);
     }
 
     @Override
