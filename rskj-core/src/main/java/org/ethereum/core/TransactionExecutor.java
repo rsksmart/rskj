@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
@@ -76,6 +77,7 @@ public class TransactionExecutor {
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
     private final boolean enableRemasc;
+    private LongAccumulator remascFee;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -106,7 +108,7 @@ public class TransactionExecutor {
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache, LongAccumulator remascFee) {
         this.constants = constants;
         this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
@@ -125,6 +127,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.remascFee = remascFee;
     }
 
     /**
@@ -529,7 +532,7 @@ public class TransactionExecutor {
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if (enableRemasc) {
             logger.trace("Adding fee to remasc contract account");
-            track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+            remascFee.accumulate(summaryFee.asBigInteger().longValue());
         } else {
             track.addBalance(coinbase, summaryFee);
         }

@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertFalse;
@@ -78,7 +79,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, precompiledContracts, deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache, new LongAccumulator(Long::sum, 0)
         );
 
 
@@ -184,7 +185,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, precompiledContracts, deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache, new LongAccumulator(Long::sum, 0)
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
@@ -217,7 +218,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, precompiledContracts, deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache, new LongAccumulator(Long::sum, 0)
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
@@ -294,7 +295,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, precompiledContracts, deletedAccounts,
-                blockTxSignatureCache
+                blockTxSignatureCache, new LongAccumulator(Long::sum, 0)
         );
 
         return txExecutor.executeTransaction();

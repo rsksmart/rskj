@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -60,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
 
@@ -104,6 +106,7 @@ public class StateTestRunner {
 
     protected ProgramResult executeTransaction(Transaction tx) {
         Repository track = repository.startTracking();
+        LongAccumulator remascFee = new LongAccumulator(Long::sum, 0);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -114,13 +117,17 @@ public class StateTestRunner {
                 precompiledContracts,
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0, remascFee);
 
         try{
             executor.executeTransaction();
-        } catch (StackOverflowError soe){
+        } catch (StackOverflowError soe) {
             logger.error(" !!! StackOverflowError: update your java run command with -Xss32M !!!");
             System.exit(-1);
+        }
+
+        if (remascFee.get() > 0) {
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(remascFee.get()));
         }
 
         track.commit();
