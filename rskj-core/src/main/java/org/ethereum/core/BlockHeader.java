@@ -628,7 +628,7 @@ public class BlockHeader {
 
     public short[] getTxExecutionListsEdges() { return this.txExecutionListsEdges; }
 
-    public void setTxExecutionListsEdges(short[] bucketOrder) {
-        this.txExecutionListsEdges = bucketOrder;
+    public void setTxExecutionListsEdges(short[] txEdges) {
+        this.txExecutionListsEdges = txEdges;
     }
 }

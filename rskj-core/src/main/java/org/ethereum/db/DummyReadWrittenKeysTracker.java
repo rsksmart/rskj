@@ -27,16 +27,16 @@ public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
     @Override
     public void addNewReadKey(ByteArrayWrapper key) {
-
+        //Dummy tracker does not store added keys
     }
 
     @Override
     public void addNewWrittenKey(ByteArrayWrapper key) {
-
+        //Dummy tracker does not store added keys
     }
 
     @Override
     public void clear() {
-
+        //Dummy tracker does not store added keys
     }
 }

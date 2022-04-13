@@ -150,7 +150,7 @@ public class BlockExecutor {
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
-        header.setTxExecutionListsEdges(result.getBucketOrder());
+        header.setTxExecutionListsEdges(result.getTxEdges());
 
         block.flushRLP();
         profiler.stop(metric);
@@ -622,7 +622,9 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
         short buckets = 2;
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
+
+        //TODO(Juli): Is there a better way to calculate the bucket gas limit?
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit())/buckets);
 
         int txindex = 0;
 
@@ -671,6 +673,14 @@ public class BlockExecutor {
             } else {
                 bucketId = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
+
+            if (!bucketId.isPresent()) {
+                logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                        block.getNumber(), tx.getHash());
+                profiler.stop(metric);
+                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            }
+
             readWrittenKeysTracker.clear();
 
             if (this.registerProgramResults) {
@@ -688,9 +698,17 @@ public class BlockExecutor {
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            long totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucketId.get());
+            long totalGasUsedInBucket;
 
-            totalGasUsedInBucket += gasUsed;
+            try {
+                totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucketId.get());
+            } catch (RuntimeException e) {
+                logger.warn("block: [{}] execution was interrupted", block.getNumber());
+                logger.trace("", e);
+                profiler.stop(metric);
+                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            }
+
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);

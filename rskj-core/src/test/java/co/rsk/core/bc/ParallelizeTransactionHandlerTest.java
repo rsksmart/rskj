@@ -61,7 +61,7 @@ public class ParallelizeTransactionHandlerTest {
         aWrappedKey = new ByteArrayWrapper(aKey);
         buckets = 2;
         sequentialBucketNumber = buckets;
-        handler = new ParallelizeTransactionHandler(buckets, blockGasLimit);
+        handler = new ParallelizeTransactionHandler(buckets, blockGasLimit/buckets);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
@@ -226,19 +226,21 @@ public class ParallelizeTransactionHandlerTest {
     @Test
     public void addTwoIndependentTxsAndAThirdOneCollidingWithBothAndShouldBeAddedInTheSequential() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
+        long tx3GasLimit = GasCost.toGas(tx3.getGasLimit());
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> differentWrittenKeys = createAMapAndAddAKey(aDifferentWrapperKey);
 
         Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
         Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), differentWrittenKeys, GasCost.toGas(tx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, GasCost.toGas(tx3.getGasLimit()));
+        Optional<Short> bucketId3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, tx3GasLimit);
 
         assertTrue(bucketId.isPresent() && bucketId2.isPresent() && bucketId3.isPresent());
 
         assertEquals((short) 0, (short) bucketId.get());
         assertEquals((short) 1, (short) bucketId2.get());
         assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertEquals(handler.getGasUsedIn(sequentialBucketNumber), tx3GasLimit);
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(tx);
@@ -437,7 +439,7 @@ public class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    public void aRemasTxAddedShouldBeInTheSequentialBucket() {
+    public void aRemascTxAddedShouldBeInTheSequentialBucket() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
         Optional<Short> bucketId = handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
         assertEquals(sequentialBucketNumber, (short) bucketId.get());
@@ -448,6 +450,28 @@ public class ParallelizeTransactionHandlerTest {
     public void ifItsSequentialTheEdgesListShouldHaveSizeZero() {
         handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
         assertEquals(0, handler.getTransactionsPerBucketInOrder().length);
+    }
+
+    @Test
+    public void callGetGasUsedInWithAnInvalidBucketShouldThrowAnError() {
+        short invalidBucketId = (short) (buckets+1);
+        try {
+            handler.getGasUsedIn(invalidBucketId);
+            fail();
+        } catch (NoSuchElementException e) {
+            assertTrue(true);
+        }
+    }
+
+    @Test
+    public void callGetGasUsedInWithAnInvalidBucketShouldThrowAnError2() {
+        short invalidBucketId = -1;
+        try {
+            handler.getGasUsedIn(invalidBucketId);
+            fail();
+        } catch (NoSuchElementException e) {
+            assertTrue(true);
+        }
     }
 
     private HashSet<ByteArrayWrapper> createAMapAndAddAKey(ByteArrayWrapper aKey) {
