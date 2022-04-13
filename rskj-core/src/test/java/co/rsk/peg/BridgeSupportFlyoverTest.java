@@ -650,9 +650,10 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     private BigInteger sendFundsSurpassesLockingCapToAnyAddress(
+        boolean isRskip293Active,
+        Coin lockingCapValue,
         BtcTransactionProvider btcTransactionProvider,
-        boolean shouldTransferToContract,
-        boolean isRskip293Active
+        boolean shouldTransferToContract
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -669,7 +670,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederation()).thenReturn(activeFederation);
         when(provider.getOldFederation()).thenReturn(retiringFederation);
-        when(provider.getLockingCap()).thenReturn(bridgeConstantsRegtest.getMaxRbtc());
+        when(provider.getLockingCap()).thenReturn(lockingCapValue);
 
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
@@ -678,10 +679,9 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         Address lpBtcAddress = createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
 
         Repository repository = createRepository();
-        // For simplicity of this test, the half of the max rbtc value is set as the current balance for the repository
-        // This means an amount sent over the half of the max rbtc value will surpass the locking cap which is set equal to that value
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstantsRegtest.getMaxRbtc().div(2)));
-
+        // For simplicity of this test, the max rbtc value is set as the current balance for the repository
+        // This simulates that no pegin has ever been processed
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(bridgeConstantsRegtest.getMaxRbtc()));
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -689,14 +689,10 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
 
-        BtcLockSender btcLockSender = mock(BtcLockSender.class);
-        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
-
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
-            .withBtcLockSenderProvider(btcLockSenderProvider)
+            .withBtcLockSenderProvider(mock(BtcLockSenderProvider.class))
             .withActivations(activations)
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
@@ -805,11 +801,15 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
                     result.longValue() == FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value() ? lpBtcAddress : userRefundBtcAddress
                 ));
 
-            // For simplicity of this test an estimated fee of 1% of the amount is being used
+            // For simplicity of this test we are using as estimated fee of 10% of the amount sent in order to check
+            // that the amount to refund is at least above the amount sent minus the estimated fee
             Coin estimatedFee = amountSent.divide(10);
             Coin estimatedAmountToRefund = amountSent.minus(estimatedFee);
 
-            Assert.assertTrue("Pegout value should be bigger than zero and smaller than pegin value", amountToRefund.isGreaterThan(estimatedAmountToRefund) && amountToRefund.isLessThan(amountSent));
+            Assert.assertTrue("Pegout value should be bigger than the estimated fee(" + estimatedFee + ") and " +
+                "smaller than pegin value(" + amountSent + ")", amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
+                amountToRefund.isLessThan(amountSent)
+            );
         }
 
         return result;
@@ -1450,90 +1450,113 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_should_refund_user_before_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_no_refund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            false,
+            Coin.FIFTY_COINS,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc(), retiringFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS.div(2), activeFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS, retiringFederationAddress);
                 return tx;
             },
-            false,
-            false
-        );
-        Assert.assertEquals(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
-    }
-
-    @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_should_refund_user_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc(), retiringFederationAddress);
-                return tx;
-            },
-            false,
             true
         );
-        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.FIFTY_COINS.div(2)).asBigInteger(), result);
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_sum_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_LP() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            false,
+            Coin.FIFTY_COINS,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc().div(2), activeFederationAddress);
-                tx.addOutput(Coin.COIN, retiringFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS.add(Coin.COIN), activeFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS.add(Coin.COIN), retiringFederationAddress);
                 return tx;
             },
-            true,
-            false
-        );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(bridgeConstantsRegtest.getMaxRbtc().div(2)).asBigInteger(), result);
-    }
-
-    @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_should_refund_lp_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc().div(2), activeFederationAddress);
-                tx.addOutput(Coin.COIN, retiringFederationAddress);
-                return tx;
-            },
-            true,
             true
         );
         Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_sent_many_utxos_but_funds_sent_to_fed_no_surpasses_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_user() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            false,
+            Coin.FIFTY_COINS,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc().div(2).minus(Coin.COIN), activeFederationAddress);
-                tx.addOutput(Coin.COIN, retiringFederationAddress);
-                tx.addOutput(Coin.COIN, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
+                tx.addOutput(Coin.FIFTY_COINS.add(Coin.COIN), activeFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS.add(Coin.COIN), retiringFederationAddress);
                 return tx;
             },
-            false,
-            true
+            false
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(bridgeConstantsRegtest.getMaxRbtc().div(2)).asBigInteger(), result);
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_random_addresses_trying_to_surpass_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_should_refund_user_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            true,
+            Coin.FIFTY_COINS,
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(bridgeConstants.getMaxRbtc().minus(Coin.COIN), createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
+                tx.addOutput(Coin.FIFTY_COINS.add(Coin.COIN), retiringFederationAddress);
+                return tx;
+            },
+            false
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_should_refund_lp_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            true,
+            Coin.FIFTY_COINS,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(Coin.FIFTY_COINS, activeFederationAddress);
+                tx.addOutput(Coin.COIN, retiringFederationAddress);
+                return tx;
+            },
+            true
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_sum_of_all_utxos_surpass_locking_cap_but_not_funds_sent_to_fed_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            true,
+            Coin.FIFTY_COINS,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(Coin.COIN, activeFederationAddress);
+                tx.addOutput(Coin.COIN, retiringFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
+                return tx;
+            },
+            false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2, 0)).asBigInteger(), result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_funds_sent_to_random_addresses_surpass_locking_cap_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            true,
+            Coin.FIFTY_COINS,
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(Coin.FIFTY_COINS, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
                 tx.addOutput(Coin.COIN, createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()));
                 return tx;
             },
-            false,
-            true
+            false
         );
         Assert.assertEquals(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
