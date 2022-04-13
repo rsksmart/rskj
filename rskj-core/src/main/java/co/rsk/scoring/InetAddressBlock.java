@@ -3,6 +3,7 @@ package co.rsk.scoring;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -14,54 +15,38 @@ import java.util.Arrays;
 public class InetAddressBlock {
     private final String description;
     private final byte[] bytes;
-    private final int nbytes;
-    private final byte mask;
+    private final int mask;
+    private final int subnet;
 
     /**
-     * Creates an InetAddressBlock given an address and the number of bits to ignore
+     * Creates an InetAddressBlock given an address and the number of cidr to ignore
      *
-     * @param address   the address
-     * @param bits      the numbers of bits to ignore
+     * @param address the address
+     * @param cidr    the cidr bits used to define a subnet
      */
-    public InetAddressBlock(InetAddress address, int bits) {
-        this.description = address.getHostAddress() + "/" + bits;
+    public InetAddressBlock(InetAddress address, int cidr) {
+        this.description = address.getHostAddress() + "/" + cidr;
         this.bytes = address.getAddress();
-        this.nbytes = this.bytes.length - (bits + 7) / 8;
-        this.mask = (byte)(0xff << (bits % 8));
+        this.mask = calculateMask(cidr);
+        int addressAsInt = getAddressAsInt(this.bytes);
+        this.subnet = addressAsInt & mask;
     }
 
     /**
      * Returns if a given address is included or not in the address block
      *
-     * @param   address     the address to check
-     * @return  <tt>true</tt> if the address belongs to the address range
+     * @param address the address to check
+     * @return <tt>true</tt> if the address belongs to the address range
      */
     public boolean contains(InetAddress address) {
-        byte[] addressBytes = address.getAddress();
-
-        if (addressBytes.length != this.bytes.length) {
-            return false;
-        }
-
-        int k;
-
-        for (k = 0; k < this.nbytes; k++) {
-            if (addressBytes[k] != this.bytes[k]) {
-                return false;
-            }
-        }
-
-        if (this.mask != (byte)0xff) {
-            return (addressBytes[k] & this.mask) == (this.bytes[k] & this.mask);
-        }
-
-        return true;
+        int addressAsInt = getAddressAsInt(address.getAddress());
+        return (addressAsInt & this.mask) == subnet;
     }
 
     /**
      * Returns the string representation of the address block
      *
-     * @return  the string description of this block
+     * @return the string description of this block
      * ie "192.168.51.1/16"
      */
     public String getDescription() {
@@ -93,7 +78,7 @@ public class InetAddressBlock {
             return false;
         }
 
-        InetAddressBlock block = (InetAddressBlock)obj;
+        InetAddressBlock block = (InetAddressBlock) obj;
 
         return block.mask == this.mask && Arrays.equals(block.bytes, this.bytes);
     }
@@ -104,7 +89,15 @@ public class InetAddressBlock {
     }
 
     @VisibleForTesting
-    public byte getMask() {
+    public int getMask() {
         return this.mask;
+    }
+
+    private int calculateMask(int cidr) {
+        return 0xffffffff << (32 - cidr);
+    }
+
+    private int getAddressAsInt(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getInt();
     }
 }

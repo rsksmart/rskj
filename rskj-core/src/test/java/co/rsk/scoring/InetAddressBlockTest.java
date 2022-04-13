@@ -107,6 +107,18 @@ public class InetAddressBlockTest {
     }
 
     @Test
+    public void usingIPV4With24BitsMask() throws UnknownHostException {
+        InetAddress address1 = InetAddress.getByName("192.168.0.47");
+        InetAddress address2 = InetAddress.getByName("192.168.0.48");
+        InetAddress address3 = InetAddress.getByName("192.1.0.47");
+
+        InetAddressBlock mask = new InetAddressBlock(address1, 24);
+
+        Assert.assertTrue(mask.contains(address2));
+        Assert.assertTrue(mask.contains(address3));
+    }
+
+    @Test
     public void usingIPV6With18BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         byte[] bytes = address.getAddress();
