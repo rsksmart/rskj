@@ -41,27 +41,27 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
-    private static final long MAX_TIMESTAMPS_DIFF_IN_SECS = Constants.getMaxTimestampsDiffInSecs();
-
     private final int validPeriodLength;
     private final ActivationConfig activationConfig;
+    private final Constants constants;
     private final TimeProvider timeProvider;
     private final NetworkParameters bitcoinNetworkParameters;
 
-    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig,
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants,
                                         TimeProvider timeProvider, NetworkParameters bitcoinNetworkParameters) {
         this.validPeriodLength = validPeriodLength;
         this.activationConfig = Objects.requireNonNull(activationConfig);
+        this.constants = Objects.requireNonNull(constants);
         this.timeProvider = Objects.requireNonNull(timeProvider);
         this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters);
     }
 
-    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, TimeProvider timeProvider) {
-        this(validPeriodLength, activationConfig, timeProvider, RegTestParams.get());
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants, TimeProvider timeProvider) {
+        this(validPeriodLength, activationConfig, constants, timeProvider, RegTestParams.get());
     }
 
-    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig) {
-        this(validPeriodLength, activationConfig, System::currentTimeMillis, RegTestParams.get());
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants) {
+        this(validPeriodLength, activationConfig, constants, System::currentTimeMillis, RegTestParams.get());
     }
 
     @Override
@@ -130,11 +130,12 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
         long rskTimestampInSecs = header.getTimestamp();
 
-        boolean valid = Math.abs(bitcoinTimestampInSecs - rskTimestampInSecs) < MAX_TIMESTAMPS_DIFF_IN_SECS;
+        long maxTimestampsDiffInSecs = constants.getMaxTimestampsDiffInSecs(activationConfig.forBlock(header.getNumber()));
+        boolean valid = Math.abs(bitcoinTimestampInSecs - rskTimestampInSecs) < maxTimestampsDiffInSecs;
 
         if (!valid) {
             logger.warn("Error validating block. RSK block timestamp {} and BTC block timestamp {} differ by more than {} secs.",
-                    rskTimestampInSecs, bitcoinTimestampInSecs, MAX_TIMESTAMPS_DIFF_IN_SECS);
+                    rskTimestampInSecs, bitcoinTimestampInSecs, maxTimestampsDiffInSecs);
         }
 
         return valid;
