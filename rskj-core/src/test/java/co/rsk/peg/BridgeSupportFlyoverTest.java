@@ -692,7 +692,6 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
             .withBridgeConstants(bridgeConstants)
-            .withBtcLockSenderProvider(mock(BtcLockSenderProvider.class))
             .withActivations(activations)
             .withBtcBlockStoreFactory(mockFactory)
             .withExecutionBlock(executionBlock)
@@ -792,7 +791,9 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
                 bridgeConstants.getBtcParams(),
                 btcContext,
                 btcTx,
-                Arrays.asList(activeFederationAddress, retiringFederationAddress));
+                isRskip293Active? Arrays.asList(activeFederationAddress, retiringFederationAddress):
+                    Collections.singletonList(activeFederationAddress)
+            );
             Coin amountToRefund = BridgeUtils.getAmountSentToAddresses(activations,
                 bridgeConstants.getBtcParams(),
                 btcContext,
@@ -806,8 +807,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             Coin estimatedFee = amountSent.divide(10);
             Coin estimatedAmountToRefund = amountSent.minus(estimatedFee);
 
-            Assert.assertTrue("Pegout value should be bigger than the estimated fee(" + estimatedFee + ") and " +
-                "smaller than pegin value(" + amountSent + ")", amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
+            Assert.assertTrue("Pegout value should be bigger than the estimated amount to refund(" + estimatedAmountToRefund + ") and " +
+                "smaller than the amount sent(" + amountSent + ")", amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
                 amountToRefund.isLessThan(amountSent)
             );
         }
