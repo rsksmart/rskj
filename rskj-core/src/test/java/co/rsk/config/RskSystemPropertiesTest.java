@@ -18,10 +18,13 @@
 
 package co.rsk.config;
 
+import co.rsk.cli.CliArgs;
+import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 
 import java.util.List;
 
@@ -35,6 +38,8 @@ import static org.mockito.Mockito.mock;
 public class RskSystemPropertiesTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    @Mock
+    private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     @Test
     public void defaultValues() {
@@ -94,5 +99,35 @@ public class RskSystemPropertiesTest {
         assertEquals(12, bloomNumberOfConfirmations);
         assertTrue(expectedConfig.hasPath(configKeyCaptorForHasPath.getValue()));
         assertTrue(expectedConfig.hasPath(configKeyCaptorForGetInt.getValue()));
+    }
+
+    @Test
+    public void testRpcModules() {
+        RskSystemProperties rskSystemProperties = new RskSystemProperties(
+                new ConfigLoader(
+                        new CliArgs.Parser<>(
+                                NodeCliOptions.class,
+                                NodeCliFlags.class
+                        ).parse(new String[]{})
+                )
+        );
+        assertFalse(
+                rskSystemProperties.getRpcModules().stream()
+                .filter(md -> md.getName().equals("trace"))
+                .map(ModuleDescription::isEnabled)
+                .findFirst().orElse(true)
+        );
+        assertFalse(
+                rskSystemProperties.getRpcModules().stream()
+                        .filter(md -> md.getName().equals("debug"))
+                        .map(ModuleDescription::isEnabled)
+                        .findFirst().orElse(true)
+        );
+        assertFalse(
+                rskSystemProperties.getRpcModules().stream()
+                        .filter(md -> md.getName().equals("sco"))
+                        .map(ModuleDescription::isEnabled)
+                        .findFirst().orElse(true)
+        );
     }
 }
