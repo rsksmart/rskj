@@ -22,11 +22,15 @@ import co.rsk.cli.CliArgs;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.doReturn;
@@ -111,23 +115,19 @@ public class RskSystemPropertiesTest {
                         ).parse(new String[]{})
                 )
         );
-        assertFalse(
-                rskSystemProperties.getRpcModules().stream()
-                .filter(md -> md.getName().equals("trace"))
-                .map(ModuleDescription::isEnabled)
-                .findFirst().orElse(true)
-        );
-        assertFalse(
-                rskSystemProperties.getRpcModules().stream()
-                        .filter(md -> md.getName().equals("debug"))
-                        .map(ModuleDescription::isEnabled)
-                        .findFirst().orElse(true)
-        );
-        assertFalse(
-                rskSystemProperties.getRpcModules().stream()
-                        .filter(md -> md.getName().equals("sco"))
-                        .map(ModuleDescription::isEnabled)
-                        .findFirst().orElse(true)
-        );
+
+        List<String> disabledModuleNames = Stream.of("sco", "debug", "trace").collect(Collectors.toList());
+
+        Map<String, List<ModuleDescription>> moduleNameEnabledMap = rskSystemProperties.getRpcModules()
+                .stream()
+                .collect(Collectors.groupingBy(ModuleDescription::getName));
+
+        assertTrue(disabledModuleNames.stream().noneMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
+
+        List<String> enabledModuleNames = moduleNameEnabledMap.keySet()
+                .stream().filter(k -> disabledModuleNames.stream().noneMatch(k::equals))
+                .collect(Collectors.toList());
+
+        assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
     }
 }
