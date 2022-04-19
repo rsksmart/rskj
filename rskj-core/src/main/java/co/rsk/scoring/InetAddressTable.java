@@ -71,7 +71,7 @@ public class InetAddressTable {
         //TODO(mmarquez): we need to check if this is thread safe
         InetAddressBlock[] bs = this.blocks.toArray(new InetAddressBlock[0]);
         for (InetAddressBlock mask : bs) {
-            if (mask.contains(address)) {
+            if (mask.subnetContains(address)) {
                 return true;
             }
         }

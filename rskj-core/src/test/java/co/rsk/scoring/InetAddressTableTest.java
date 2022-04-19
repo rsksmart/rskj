@@ -109,9 +109,9 @@ public class InetAddressTableTest {
     @Test
     public void addAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = generateIPAddressV4();
-        InetAddress address2 = alterByte(address, 3);
-        InetAddress address3 = alterByte(address, 2);
+        InetAddress address = InetAddress.getByName("192.168.0.100");
+        InetAddress address2 = InetAddress.getByName("192.122.122.122");
+        InetAddress address3 = InetAddress.getByName("193.0.0.1");
 
         table.addAddressBlock(new InetAddressBlock(address, 8));
 
@@ -127,9 +127,9 @@ public class InetAddressTableTest {
     @Test
     public void addAndRemoveAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = generateIPAddressV4();
-        InetAddress address2 = alterByte(address, 3);
-        InetAddress address3 = alterByte(address, 2);
+        InetAddress address = InetAddress.getByName("192.168.0.100");
+        InetAddress address2 = InetAddress.getByName("192.122.122.122");
+        InetAddress address3 = InetAddress.getByName("193.0.0.1");
 
         table.addAddressBlock(new InetAddressBlock(address, 8));
 
@@ -156,14 +156,6 @@ public class InetAddressTableTest {
         byte[] bytes = new byte[16];
 
         random.nextBytes(bytes);
-
-        return InetAddress.getByAddress(bytes);
-    }
-
-    private static InetAddress alterByte(InetAddress address, int nbyte) throws UnknownHostException {
-        byte[] bytes = address.getAddress();
-
-        bytes[nbyte]++;
 
         return InetAddress.getByAddress(bytes);
     }
