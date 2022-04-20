@@ -630,17 +630,6 @@ public class BlockExecutor {
 
         for (Transaction tx : transactionsList) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
-            if (!parallelizeTransactionHandler.sequentialBucketHasGasAvailable(tx)) {
-                if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
-                    continue;
-                } else {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), tx.getHash());
-                    profiler.stop(metric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-                }
-            }
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
