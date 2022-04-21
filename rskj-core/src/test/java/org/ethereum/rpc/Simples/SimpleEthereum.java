@@ -20,6 +20,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.core.Coin;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -73,6 +74,6 @@ public class SimpleEthereum implements Ethereum {
 
     @Override
     public Coin getGasPrice() {
-        return GasPriceTracker.create(blockchain).getGasPrice();
+        return GasPriceTracker.create(mock(BlockStore.class)).getGasPrice();
     }
 }
