@@ -537,7 +537,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private GasPriceTracker getGasPriceTracker() {
         if (this.gasPriceTracker == null) {
-            this.gasPriceTracker = GasPriceTracker.create(blockchain);
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
         }
         return this.gasPriceTracker;
     }

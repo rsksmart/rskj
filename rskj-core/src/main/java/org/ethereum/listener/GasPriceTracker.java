@@ -23,9 +23,9 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,21 +52,21 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final Coin[] window = new Coin[WINDOW_SIZE];
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
-    private final Blockchain blockchain;
+    private final BlockStore blockStore;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int idx = WINDOW_SIZE - 1;
 
     private Coin lastVal;
 
-    public static GasPriceTracker create(Blockchain blockchain) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockchain);
+    public static GasPriceTracker create(BlockStore blockStore) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore);
         gasPriceTracker.initializeWindowFromDB();
         return gasPriceTracker;
     }
 
-    private GasPriceTracker(Blockchain blockchain) {
-        this.blockchain = blockchain;
+    private GasPriceTracker(BlockStore blockStore) {
+        this.blockStore = blockStore;
     }
 
     @Override
@@ -121,7 +121,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private void initializeWindowFromDB() {
         List<Block> blocks = getRequiredBlocksToFillWindowFromDB();
-        if (blocks.size() == 0) {
+        if (blocks.isEmpty()) {
             return;
         }
 
@@ -132,13 +132,13 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     private List<Block> getRequiredBlocksToFillWindowFromDB() {
         List<Block> blocks = new ArrayList<>();
 
-        Optional<Block> block = Optional.ofNullable(blockchain.getBestBlock());
+        Optional<Block> block = Optional.ofNullable(blockStore.getBestBlock());
 
         int txCount = 0;
         while (txCount < WINDOW_SIZE && block.isPresent()) {
             blocks.add(block.get());
             txCount += block.get().getTransactionsList().stream().filter(tx -> !(tx instanceof RemascTransaction)).count();
-            block = block.map(Block::getParentHash).map(Keccak256::getBytes).map(blockchain::getBlockByHash);
+            block = block.map(Block::getParentHash).map(Keccak256::getBytes).map(blockStore::getBlockByHash);
         }
 
         if (txCount < WINDOW_SIZE) {
