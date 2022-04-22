@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.bc.ParallelizeTransactionHandler.TransactionBucket;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -656,14 +657,14 @@ public class BlockExecutor {
                 }
             }
 
-            Optional<Short> bucketId;
+            Optional<TransactionBucket> bucket;
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
-                bucketId = parallelizeTransactionHandler.addRemascTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucket = parallelizeTransactionHandler.addRemascTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             } else {
-                bucketId = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucket = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
 
-            if (!bucketId.isPresent()) {
+            if (!bucket.isPresent()) {
                 logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                         block.getNumber(), tx.getHash());
                 profiler.stop(metric);
@@ -690,7 +691,7 @@ public class BlockExecutor {
             long totalGasUsedInBucket;
 
             try {
-                totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucketId.get());
+                totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucket.get().getId());
             } catch (RuntimeException e) {
                 logger.warn("block: [{}] execution was interrupted", block.getNumber());
                 logger.trace("", e);

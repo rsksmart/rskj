@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.bc.ParallelizeTransactionHandler.TransactionBucket;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
@@ -89,12 +90,12 @@ public class ParallelizeTransactionHandlerTest {
 
     @Test
     public void addTransactionIntoTheHandlerAndShouldBeAddedInTheFirstParallelBucket() {
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), 0);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), 0);
         short[] expectedTransactionEdgeList = new short[]{1};
         short expectedBucketId = 0;
 
-        assertTrue(bucketId.isPresent());
-        assertEquals((Short) expectedBucketId, bucketId.get());
+        assertTrue(bucket.isPresent());
+        assertEquals(expectedBucketId, bucket.get().getId());
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(tx);
@@ -105,10 +106,10 @@ public class ParallelizeTransactionHandlerTest {
     @Test
     public void addTransactionIntoTheHandlerAndShouldBeSubtractedGasUsedInTheBucket() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
 
-        assertTrue(bucketId.isPresent());
-        assertEquals(gasUsedByTx, handler.getGasUsedIn(bucketId.get()));
+        assertTrue(bucket.isPresent());
+        assertEquals(gasUsedByTx, handler.getGasUsedIn(bucket.get().getId()));
     }
 
     @Test
@@ -118,10 +119,10 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx);
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -132,10 +133,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys2 = createAMapAndAddAKey(aDifferentWrapperKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -145,10 +146,10 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
 
-        assertEquals(bucketId, bucketId2);
+        assertEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -160,10 +161,10 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys2 = createAMapAndAddAKey(aDifferentWrapperKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, GasCost.toGas(tx2.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -174,10 +175,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
 
-        assertEquals(bucketId, bucketId2);
+        assertEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -188,10 +189,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
 
-        assertEquals(bucketId, bucketId2);
+        assertEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -202,10 +203,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aDifferentWrapperKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -216,10 +217,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aDifferentWrapperKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, writtenKeys,  new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, writtenKeys,  new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), GasCost.toGas(tx2.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
     }
 
@@ -231,15 +232,15 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> differentWrittenKeys = createAMapAndAddAKey(aDifferentWrapperKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), differentWrittenKeys, GasCost.toGas(tx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, tx3GasLimit);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), differentWrittenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, tx3GasLimit);
 
-        assertTrue(bucketId.isPresent() && bucketId2.isPresent() && bucketId3.isPresent());
+        assertTrue(bucket.isPresent() && bucket2.isPresent() && bucket3.isPresent());
 
-        assertEquals((short) 0, (short) bucketId.get());
-        assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertEquals(0, bucket.get().getId());
+        assertEquals(1, bucket2.get().getId());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
         assertEquals(handler.getGasUsedIn(sequentialBucketNumber), tx3GasLimit);
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
@@ -257,15 +258,15 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, GasCost.toGas(tx3.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, GasCost.toGas(tx3.getGasLimit()));
 
-        assertTrue(bucketId.isPresent() && bucketId2.isPresent() && bucketId3.isPresent());
+        assertTrue(bucket.isPresent() && bucket2.isPresent() && bucket3.isPresent());
 
-        assertEquals((short) 0, (short) bucketId.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId2.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertEquals(0, bucket.get().getId());
+        assertEquals(sequentialBucketNumber, bucket2.get().getId());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(bigTx);
@@ -282,10 +283,10 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
     }
 
@@ -296,10 +297,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, readKeys, new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, readKeys, new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
     }
 
@@ -310,10 +311,10 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
         HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx, readKeys, new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
 
-        assertNotEquals(bucketId, bucketId2);
+        assertNotEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
     }
 
@@ -322,10 +323,10 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Optional<Short> bucketId2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
 
-        assertEquals(bucketId, bucketId2);
+        assertEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx, expectedTransactionEdgeList);
     }
 
@@ -336,10 +337,10 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Short> bucketId2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        assertEquals(bucketId, bucketId2);
+        assertEquals(bucket, bucket2);
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx, expectedTransactionEdgeList);
     }
 
@@ -350,16 +351,16 @@ public class ParallelizeTransactionHandlerTest {
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
 
-        Optional<Short> bucketId = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Optional<Short> bucketId2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<TransactionBucket> bucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, GasCost.toGas(tx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        assertNotEquals(bucketId, bucketId2);
-        assertNotEquals(bucketId, bucketId3);
-        assertNotEquals(bucketId2, bucketId3);
+        assertNotEquals(bucket, bucket2);
+        assertNotEquals(bucket, bucket3);
+        assertNotEquals(bucket2, bucket3);
 
-        assertTrue(bucketId3.isPresent());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertTrue(bucket3.isPresent());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(tx);
@@ -380,16 +381,16 @@ public class ParallelizeTransactionHandlerTest {
         expectedListOfTxs.add(bigTx2);
         expectedListOfTxs.add(bigTx);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Short> bucketId2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Short> bucketId4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<TransactionBucket> bucket4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
 
-        assertEquals((short) 0, (short) bucketId.get());
-        assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
-        assertFalse(bucketId4.isPresent());
-
+        assertFalse(bucket4.isPresent());
+        assertTrue(bucket.isPresent() && bucket2.isPresent() && bucket3.isPresent());
+        assertEquals(0, bucket.get().getId());
+        assertEquals(1, bucket2.get().getId());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
         assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
     }
@@ -403,13 +404,14 @@ public class ParallelizeTransactionHandlerTest {
         expectedListOfTxs.add(bigTx2);
         expectedListOfTxs.add(tx);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
 
-        assertEquals((short) 0, (short) bucketId.get());
-        assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertTrue(bucket.isPresent() && bucket2.isPresent() && bucket3.isPresent());
+        assertEquals(0, bucket.get().getId());
+        assertEquals(1, bucket2.get().getId());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
 
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
         assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
@@ -424,15 +426,17 @@ public class ParallelizeTransactionHandlerTest {
         expectedListOfTxs.add(bigTx2);
         expectedListOfTxs.add(bigTx);
 
-        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> bucketId2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
-        Optional<Short> bucketId3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
-        Optional<Short> emptyBucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Optional<TransactionBucket> bucket = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> bucket2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
+        Optional<TransactionBucket> bucket3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> emptyBucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+
 
         assertFalse(emptyBucket.isPresent());
-        assertEquals((short) 0, (short) bucketId.get());
-        assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
+        assertTrue(bucket.isPresent() && bucket2.isPresent() && bucket3.isPresent());
+        assertEquals(0, bucket.get().getId());
+        assertEquals(1,bucket2.get().getId());
+        assertEquals(sequentialBucketNumber, bucket3.get().getId());
 
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
         assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
@@ -441,8 +445,9 @@ public class ParallelizeTransactionHandlerTest {
     @Test
     public void aRemascTxAddedShouldBeInTheSequentialBucket() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
-        Optional<Short> bucketId = handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
-        assertEquals(sequentialBucketNumber, (short) bucketId.get());
+        Optional<TransactionBucket> transactionBucket = handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        assertTrue(transactionBucket.isPresent());
+        assertEquals(sequentialBucketNumber, transactionBucket.get().getId());
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
     }
 
