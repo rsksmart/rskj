@@ -201,6 +201,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER = BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER.getFunction();
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
 
+    public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
+
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
