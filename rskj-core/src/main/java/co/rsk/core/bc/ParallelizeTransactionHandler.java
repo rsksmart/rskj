@@ -28,7 +28,7 @@ import java.util.*;
 public class ParallelizeTransactionHandler {
     private final HashMap<ByteArrayWrapper, Short> bucketByWrittenKey;
     private final HashMap<ByteArrayWrapper, Set<Short>> bucketByReadKey;
-    private final Map<RskAddress, Set<Short>> bucketBySender;
+    private final Map<RskAddress, Short> bucketBySender;
     private final ArrayList<TransactionBucket> buckets;
 
     public ParallelizeTransactionHandler(short buckets, long bucketGasLimit) {
@@ -104,9 +104,9 @@ public class ParallelizeTransactionHandler {
             bucketByReadKey.put(key, bucketIds);
         }
 
-        Set<Short> bucketIdsBySender = bucketBySender.getOrDefault(sender, new HashSet<>());
-        bucketIdsBySender.add(bucketId);
-        bucketBySender.put(sender, bucketIdsBySender);
+        if (isSequentialId(bucketId) || !bucketBySender.containsKey(sender)) {
+            bucketBySender.put(sender, bucketId);
+        }
 
         if (bucketId.equals(getSequentialBucket().getId())) {
             return;
@@ -117,7 +117,11 @@ public class ParallelizeTransactionHandler {
         }
     }
 
-    private Optional<Set<Short>> getBucketBySender(Transaction tx) {
+    private boolean isSequentialId(Short bucketId) {
+        return getSequentialBucket().getId() == bucketId;
+    }
+
+    private Optional<Short> getBucketBySender(Transaction tx) {
         return Optional.ofNullable(bucketBySender.get(tx.getSender()));
     }
 
@@ -137,68 +141,72 @@ public class ParallelizeTransactionHandler {
 
 
     private TransactionBucket getBucketCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
-        Set<Short> bucketCandidates = new HashSet<>();
+        Optional<Short> bucketCandidate = getBucketBySender(tx);
 
-        getBucketBySender(tx).ifPresent(bucketCandidates::addAll);
-
-        if (bucketCandidates.size() > 1) {
+        if (bucketCandidate.isPresent() && isSequentialId(bucketCandidate.get())) {
             return getSequentialBucket();
         }
 
         // read - written
-        getCandidatesByReadWriteKeyCollisions(newReadKeys, bucketCandidates);
-
-        if (bucketCandidates.size() > 1) {
-            return getSequentialBucket();
-        }
-
-        // written - written, written - read
-        getCandidatesByWrittenKeysCollisions(newWrittenKeys, bucketCandidates);
-
-        return getTransactionBucket(tx, bucketCandidates);
-    }
-
-    private TransactionBucket getTransactionBucket(Transaction tx, Set<Short> bucketCandidates) {
-        if (bucketCandidates.size() > 1) {
-            return getSequentialBucket();
-        } else if (bucketCandidates.size() == 1) {
-            return this.buckets.get(bucketCandidates.stream().iterator().next());
-        } else {
-            Optional<Short> availableBucketWithLessUsedGas = getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit()));
-            if (!availableBucketWithLessUsedGas.isPresent()) {
-                return getSequentialBucket();
-            }
-
-            return this.buckets.get(availableBucketWithLessUsedGas.get());
-        }
-    }
-
-    private void getCandidatesByWrittenKeysCollisions(Set<ByteArrayWrapper> newWrittenKeys, Set<Short> bucketCandidates) {
-        for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
-            if (bucketByWrittenKey.containsKey(newWrittenKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newWrittenKey));
-            }
-
-            if (bucketCandidates.size() > 1) {
-                break;
-            }
-
-            if (bucketByReadKey.containsKey(newWrittenKey)) {
-                bucketCandidates.addAll(bucketByReadKey.get(newWrittenKey));
-            }
-        }
-    }
-
-    private void getCandidatesByReadWriteKeyCollisions(Set<ByteArrayWrapper> newReadKeys, Set<Short> bucketCandidates) {
         for (ByteArrayWrapper newReadKey : newReadKeys) {
             if (bucketByWrittenKey.containsKey(newReadKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newReadKey));
+                Short bucketId = bucketByWrittenKey.get(newReadKey);
 
-                if (bucketCandidates.size() > 1) {
-                    break;
+                if (bucketCandidate.isPresent()) {
+                    if(!bucketCandidate.get().equals(bucketId)) {
+                       return getSequentialBucket();
+                    }
+                } else {
+                    bucketCandidate = Optional.of(bucketId);
                 }
             }
         }
+
+        for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
+            // written - written,
+            if (bucketByWrittenKey.containsKey(newWrittenKey)) {
+                Short bucketId = bucketByWrittenKey.get(newWrittenKey);
+
+                if (bucketCandidate.isPresent()) {
+                    if(!bucketCandidate.get().equals(bucketId)) {
+                        return getSequentialBucket();
+                    }
+                } else {
+                    bucketCandidate = Optional.of(bucketId);
+                }
+            }
+            // read - written
+            if (bucketByReadKey.containsKey(newWrittenKey)) {
+                Set<Short> bucketIds = bucketByReadKey.get(newWrittenKey);
+
+                if (bucketIds.size() > 1) {
+                    return getSequentialBucket();
+                }
+
+                if (bucketCandidate.isPresent()) {
+                    if(!bucketIds.contains(bucketCandidate.get())) {
+                        return getSequentialBucket();
+                    }
+                } else {
+                    bucketCandidate = Optional.of(bucketIds.iterator().next());
+                }
+            }
+        }
+
+        return getTransactionBucket(tx, bucketCandidate);
+    }
+
+    private TransactionBucket getTransactionBucket(Transaction tx, Optional<Short> bucketCandidate) {
+        if (bucketCandidate.isPresent()) {
+            return this.buckets.get(bucketCandidate.get());
+        }
+
+        Optional<Short> availableBucketWithLessUsedGas = getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit()));
+        if (!availableBucketWithLessUsedGas.isPresent()) {
+            return getSequentialBucket();
+        }
+
+        return this.buckets.get(availableBucketWithLessUsedGas.get());
     }
 
     private Optional<Short> addInSequentialBucket(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
