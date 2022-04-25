@@ -395,6 +395,8 @@ public class MinerServerImpl implements MinerServer {
     public MinerWork getWork() {
         MinerWork work = currentWork;
 
+        buildBlockToMine(false);
+        
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
