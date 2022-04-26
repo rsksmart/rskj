@@ -445,7 +445,7 @@ public class ParallelizeTransactionHandlerTest {
     @Test
     public void aRemascTxAddedShouldBeInTheSequentialBucket() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
-        Optional<TransactionBucket> transactionBucket = handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<TransactionBucket> transactionBucket = handler.addRemascTransaction(tx, GasCost.toGas(bigTx.getGasLimit()));
         assertTrue(transactionBucket.isPresent());
         assertEquals(sequentialBucketNumber, transactionBucket.get().getId());
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
@@ -453,7 +453,7 @@ public class ParallelizeTransactionHandlerTest {
 
     @Test
     public void ifItsSequentialTheEdgesListShouldHaveSizeZero() {
-        handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        handler.addRemascTransaction(tx, GasCost.toGas(bigTx.getGasLimit()));
         assertEquals(0, handler.getTransactionsPerBucketInOrder().length);
     }
 

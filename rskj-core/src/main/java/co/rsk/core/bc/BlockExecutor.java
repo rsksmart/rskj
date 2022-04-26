@@ -659,16 +659,21 @@ public class BlockExecutor {
 
             Optional<TransactionBucket> bucket;
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
-                bucket = parallelizeTransactionHandler.addRemascTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucket = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
                 bucket = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
 
-            if (!bucket.isPresent()) {
-                logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                        block.getNumber(), tx.getHash());
-                profiler.stop(metric);
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            if (!acceptInvalidTransactions && !bucket.isPresent()) {
+                if (discardInvalidTxs) {
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                    continue;
+                } else {
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                            block.getNumber(), tx.getHash());
+                    profiler.stop(metric);
+                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                }
             }
 
             readWrittenKeysTracker.clear();
