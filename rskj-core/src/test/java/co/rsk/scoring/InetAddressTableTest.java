@@ -41,7 +41,7 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV4();
 
         InetAddressTable table = new InetAddressTable();
-        InetAddressBlock addressBlock = new InetAddressBlock(address, 32);
+        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 32);
 
         table.addAddressBlock(addressBlock);
         Assert.assertTrue(table.contains(address));
@@ -50,7 +50,7 @@ public class InetAddressTableTest {
     @Test
     public void doesNotContainRandomAddressForMask32() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddressBlock addressBlock = new InetAddressBlock(generateIPAddressV4(), 32);
+        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(generateIPAddressV4(), 32);
 
         table.addAddressBlock(addressBlock);
         Assert.assertFalse(table.contains(generateIPAddressV4()));
@@ -113,7 +113,7 @@ public class InetAddressTableTest {
         InetAddress address2 = InetAddress.getByName("192.122.122.122");
         InetAddress address3 = InetAddress.getByName("193.0.0.1");
 
-        table.addAddressBlock(new InetAddressBlock(address, 8));
+        table.addAddressBlock(new InetAddressCidrBlock(address, 8));
 
         Assert.assertTrue(table.contains(address));
         Assert.assertTrue(table.contains(address2));
@@ -131,13 +131,13 @@ public class InetAddressTableTest {
         InetAddress address2 = InetAddress.getByName("192.122.122.122");
         InetAddress address3 = InetAddress.getByName("193.0.0.1");
 
-        table.addAddressBlock(new InetAddressBlock(address, 8));
+        table.addAddressBlock(new InetAddressCidrBlock(address, 8));
 
         Assert.assertTrue(table.contains(address));
         Assert.assertTrue(table.contains(address2));
         Assert.assertFalse(table.contains(address3));
 
-        table.removeAddressBlock(new InetAddressBlock(address, 8));
+        table.removeAddressBlock(new InetAddressCidrBlock(address, 8));
 
         Assert.assertFalse(table.contains(address));
         Assert.assertFalse(table.contains(address2));

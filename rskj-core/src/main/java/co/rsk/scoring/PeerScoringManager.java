@@ -206,7 +206,7 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be banned
      */
-    public void banAddressBlock(InetAddressBlock addressBlock) {
+    public void banAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.addAddressBlock(addressBlock);
     }
 
@@ -215,7 +215,7 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be removed
      */
-    public void unbanAddressBlock(InetAddressBlock addressBlock) {
+    public void unbanAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.removeAddressBlock(addressBlock);
     }
 
@@ -245,8 +245,8 @@ public class PeerScoringManager {
     public List<String> getBannedAddresses() {
         List<String> list = new ArrayList<>();
 
-        list.addAll(this.addressTable.getAddressList().stream().map(entry -> entry.getHostAddress()).collect(Collectors.toList()));
-        list.addAll(this.addressTable.getAddressBlockList().stream().map(entry -> entry.getDescription()).collect(Collectors.toList()));
+        list.addAll(this.addressTable.getAddressList().stream().map(InetAddress::getHostAddress).collect(Collectors.toList()));
+        list.addAll(this.addressTable.getAddressBlockList().stream().map(InetAddressCidrBlock::getDescription).collect(Collectors.toList()));
 
         return list;
     }
