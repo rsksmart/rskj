@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InetAddressTable {
     private final Set<InetAddress> addresses = ConcurrentHashMap.newKeySet();
-    private final Set<InetAddressBlock> blocks = ConcurrentHashMap.newKeySet();
+    private final Set<InetAddressCidrBlock> blocks = ConcurrentHashMap.newKeySet();
 
     /**
      * Adds an address into the address set
@@ -38,7 +38,7 @@ public class InetAddressTable {
      *
      * @param addressBlock   the address block to add
      */
-    public void addAddressBlock(InetAddressBlock addressBlock) {
+    public void addAddressBlock(InetAddressCidrBlock addressBlock) {
         this.blocks.add(addressBlock);
     }
 
@@ -47,7 +47,7 @@ public class InetAddressTable {
      *
      * @param addressBlock   the address block to remove
      */
-    public void removeAddressBlock(InetAddressBlock addressBlock) {
+    public void removeAddressBlock(InetAddressCidrBlock addressBlock) {
         this.blocks.remove(addressBlock);
     }
 
@@ -69,9 +69,9 @@ public class InetAddressTable {
         }
 
         //TODO(mmarquez): we need to check if this is thread safe
-        InetAddressBlock[] bs = this.blocks.toArray(new InetAddressBlock[0]);
-        for (InetAddressBlock mask : bs) {
-            if (mask.subnetContains(address)) {
+        InetAddressCidrBlock[] bs = this.blocks.toArray(new InetAddressCidrBlock[0]);
+        for (InetAddressCidrBlock mask : bs) {
+            if (mask.contains(address)) {
                 return true;
             }
         }
@@ -105,16 +105,16 @@ public class InetAddressTable {
      *
      * @return  the list of known address blocks
      */
-    public List<InetAddressBlock> getAddressBlockList() {
+    public List<InetAddressCidrBlock> getAddressBlockList() {
         if (this.blocks.isEmpty()) {
             return new ArrayList<>();
         }
 
         //TODO(mmarquez): we need to check if this is thread safe
-        InetAddressBlock[] bs = this.blocks.toArray(new InetAddressBlock[0]);
-        List<InetAddressBlock> list = new ArrayList<>(bs.length);
+        InetAddressCidrBlock[] bs = this.blocks.toArray(new InetAddressCidrBlock[0]);
+        List<InetAddressCidrBlock> list = new ArrayList<>(bs.length);
 
-        for (InetAddressBlock inetAddressBlock : bs) {
+        for (InetAddressCidrBlock inetAddressBlock : bs) {
             list.add(inetAddressBlock);
         }
 
