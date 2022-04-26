@@ -80,7 +80,7 @@ public class PeerScoringManagerTest {
     @Test
     public void addBannedAddressBlock() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
-        InetAddressBlock addressBlock = new InetAddressBlock(address, 8);
+        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 8);
 
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -102,7 +102,7 @@ public class PeerScoringManagerTest {
     @Test
     public void addAndRemoveBannedAddressBlock() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
-        InetAddressBlock addressBlock = new InetAddressBlock(address, 8);
+        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 8);
 
         PeerScoringManager manager = createPeerScoringManager();
 
