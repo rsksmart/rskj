@@ -657,14 +657,14 @@ public class BlockExecutor {
                 }
             }
 
-            Optional<TransactionBucket> bucket;
+            Optional<Long> bucketGasAccumulated;
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
-                bucket = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
+                bucketGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
-                bucket = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucketGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
 
-            if (!acceptInvalidTransactions && !bucket.isPresent()) {
+            if (!acceptInvalidTransactions && !bucketGasAccumulated.isPresent()) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
@@ -693,16 +693,6 @@ public class BlockExecutor {
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            long totalGasUsedInBucket;
-
-            try {
-                totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucket.get().getId());
-            } catch (RuntimeException e) {
-                logger.warn("block: [{}] execution was interrupted", block.getNumber());
-                logger.trace("", e);
-                profiler.stop(metric);
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-            }
 
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
@@ -713,8 +703,7 @@ public class BlockExecutor {
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsedInBucket);
-
+            bucketGasAccumulated.ifPresent(receipt::setCumulativeGas);
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
