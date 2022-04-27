@@ -47,7 +47,7 @@ public class Constants {
     private static final BigInteger RSKIP156_DIF_BOUND_DIVISOR = BigInteger.valueOf(400);
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
-    private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 30L * 60; // 30 mins
+    private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
 
     private final byte chainId;
     private final boolean seedCowAccounts;
