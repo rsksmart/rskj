@@ -73,6 +73,6 @@ public class ConstantsTest {
         assertEquals(300, Constants.mainnet().getMaxTimestampsDiffInSecs(postRskip297Config));
 
         assertEquals(300, Constants.testnet(activationConfig).getMaxTimestampsDiffInSecs(preRskip297Config));
-        assertEquals(1800, Constants.testnet(activationConfig).getMaxTimestampsDiffInSecs(postRskip297Config));
+        assertEquals(7200, Constants.testnet(activationConfig).getMaxTimestampsDiffInSecs(postRskip297Config));
     }
 }
