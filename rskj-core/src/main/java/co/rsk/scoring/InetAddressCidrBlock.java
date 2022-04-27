@@ -20,15 +20,14 @@ package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * InetAddressBlock represents a range of InetAddress
- * it has a number of bits to ignore
- * <p>
- * Created by ajlopez on 11/07/2017.
+ * InetAddressBlock represents a range of InetAddress as in CIDR subnet
  */
 public class InetAddressCidrBlock {
     private final String description;
@@ -39,16 +38,24 @@ public class InetAddressCidrBlock {
     private final int maskBytesCount;
 
     /**
-     * Creates an InetAddressBlock given an address and the number of bits to ignore
+     * Creates an InetAddressBlock given an address and a cidr
      *
      * @param address the address
-     * @param bits    the numbers of bits to ignore
+     * @param cidr    the cidr
      */
-    public InetAddressCidrBlock(InetAddress address, int bits) {
-        this.description = address.getHostAddress() + "/" + bits;
+    InetAddressCidrBlock(InetAddress address, int cidr) {
+        if (address instanceof Inet4Address && (cidr < 0 || cidr > 32)) {
+            throw new IllegalArgumentException("invalid cidr for ipV4: " + cidr);
+        }
+
+        if (address instanceof Inet6Address && (cidr < 0 || cidr > 128)) {
+            throw new IllegalArgumentException("invalid cidr for ipV6: " + cidr);
+        }
+
+        this.description = address.getHostAddress() + "/" + cidr;
         this.bytes = address.getAddress();
-        this.mask = (byte) (0xFF00 >> (bits & 0x07));
-        this.maskBytesCount = bits / 8;
+        this.mask = (byte) (0xFF00 >> (cidr & 0x07));
+        this.maskBytesCount = cidr / 8;
     }
 
     /**
