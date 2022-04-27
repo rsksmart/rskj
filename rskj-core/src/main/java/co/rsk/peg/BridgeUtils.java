@@ -265,11 +265,6 @@ public class BridgeUtils {
 
         if (activations.isActive(RSKIP293)){
             Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
-            if (totalAmount.isLessThan(minimumPegInTxValue)) {
-                logger.debug("[validateFastBridgePeginValue] Amount sent can't be below the minimum {}",
-                    minimumPegInTxValue.value);
-                return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
-            }
 
             if (isAnyUTXOAmountBelowMinimum(activations, bridgeConstants, context, btcTx, addresses)){
                 logger.debug("[validateFastBridgePeginValue] UTXOs amount sent to federation can't be below the minimum {}.",

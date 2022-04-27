@@ -1299,7 +1299,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
             , result.longValue());
     }
 
@@ -1521,7 +1521,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
                 BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
                 tx.addOutput(Coin.FIFTY_COINS, activeFederationAddress);
-                tx.addOutput(Coin.COIN, retiringFederationAddress);
+                tx.addOutput(Coin.FIFTY_COINS, retiringFederationAddress);
                 return tx;
             },
             true
