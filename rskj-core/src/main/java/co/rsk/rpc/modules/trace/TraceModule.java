@@ -24,4 +24,6 @@ public interface TraceModule {
     JsonNode traceTransaction(String transactionHash) throws Exception;
 
     JsonNode traceBlock(String blockHash) throws Exception;
+
+    JsonNode traceFilter(TraceFilterRequest request) throws Exception;
 }
