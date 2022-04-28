@@ -2353,7 +2353,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
         utxoList.add(utxo);
 
-        Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList, fastBridgeFederationInformation);
+        Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList, Collections.singletonList(fastBridgeFederationInformation));
 
         Assert.assertEquals(Coin.COIN, obtainedWallet.getBalance());
     }

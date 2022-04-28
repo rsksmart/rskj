@@ -2735,7 +2735,9 @@ public class BridgeSupport {
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
             InternalTransaction internalTx = (InternalTransaction) rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
-            WalletProvider walletProvider = createFastBridgeWalletProvider(fbActiveFederationInformation);
+            List<FastBridgeFederationInformation> fbFederations = fbRetiringFederationInformation.isPresent()? Arrays.asList(fbActiveFederationInformation,
+                fbRetiringFederationInformation.get()) : Collections.singletonList(fbActiveFederationInformation);
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fbFederations);
 
             provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, fastBridgeDerivationHash);
 
@@ -2820,7 +2822,7 @@ public class BridgeSupport {
     }
 
     private WalletProvider createFastBridgeWalletProvider(
-        FastBridgeFederationInformation fastBridgeFederationInformation) {
+        List<FastBridgeFederationInformation> fbFederations) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
             List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
@@ -2829,12 +2831,12 @@ public class BridgeSupport {
                 btcTx,
                 addresses
             );
-            return getFastBridgeWallet(btcContext, utxosList, fastBridgeFederationInformation);
+            return getFastBridgeWallet(btcContext, utxosList, fbFederations);
         };
     }
 
-    protected Wallet getFastBridgeWallet(Context btcContext, List<UTXO> utxos, FastBridgeFederationInformation fb) {
-        Wallet wallet = new FastBridgeCompatibleBtcWalletWithSingleScript(btcContext, getLiveFederations(), fb);
+    protected Wallet getFastBridgeWallet(Context btcContext, List<UTXO> utxos, List<FastBridgeFederationInformation> fbFederations) {
+        Wallet wallet = new FastBridgeCompatibleBtcWalletWithMultipleScripts(btcContext, getLiveFederations(), fbFederations);
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
