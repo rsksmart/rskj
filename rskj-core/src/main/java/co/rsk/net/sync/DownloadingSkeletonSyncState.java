@@ -47,7 +47,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         this.skeletons = new HashMap<>();
         this.selectedPeerAnswered = false;
         this.peersInformation = peersInformation;
-        this.candidates = peersInformation.getPeerCandidates();
+        this.candidates = peersInformation.getBestPeerCandidates();
         this.expectedSkeletons = 0;
     }
 
@@ -116,6 +116,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     @Override
     public void onEnter() {
-        peersInformation.getPeerCandidates().forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
+        peersInformation.getBestPeerCandidates().forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
     }
 }

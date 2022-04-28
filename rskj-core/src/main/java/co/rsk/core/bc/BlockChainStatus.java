@@ -50,4 +50,16 @@ public class BlockChainStatus {
     public boolean hasLowerTotalDifficultyThan(Status status) {
         return this.totalDifficulty.compareTo(status.getTotalDifficulty()) < 0;
     }
+
+    public boolean hasLowerOrSameTotalDifficultyThan(Status status) {
+        return this.totalDifficulty.compareTo(status.getTotalDifficulty()) <= 0;
+    }
+
+    public boolean hasLowerBestBlockNumberThan(Status peerStatus) {
+        return getBestBlockNumber() < peerStatus.getBestBlockNumber();
+    }
+
+    public boolean hasLowerOrSameBestBlockNumberThan(Status peerStatus) {
+        return getBestBlockNumber() <= peerStatus.getBestBlockNumber();
+    }
 }

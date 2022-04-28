@@ -19,8 +19,8 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
@@ -58,7 +58,7 @@ public class PeersInformation {
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
-                            PeerScoringManager peerScoringManager){
+                            PeerScoringManager peerScoringManager) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -115,36 +115,49 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
-        return getCandidatesStream()
+        return getBestCandidatesStream()
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
     }
 
-    private Stream<Map.Entry<Peer, SyncPeerStatus>> getCandidatesStream(){
+    public Optional<Peer> getPeerWithSameOrGreaterTip() {
+        return getTrustedPeers()
+                .filter(e -> isMyDifficultyLowerThan(e.getKey(), false))
+                .max(this.peerComparator)
+                .map(Map.Entry::getKey);
+    }
+
+    private Stream<Map.Entry<Peer, SyncPeerStatus>> getBestCandidatesStream() {
+        return getTrustedPeers().filter(e -> isMyDifficultyLowerThan(e.getKey(), true));
+    }
+
+    private Stream<Map.Entry<Peer, SyncPeerStatus>> getTrustedPeers() {
         Collection<Peer> activeNodes = channelManager.getActivePeers();
 
         return peerStatuses.entrySet().stream()
                 .filter(e -> peerNotExpired(e.getValue()))
                 .filter(e -> activeNodes.contains(e.getKey()))
-                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey().getPeerNodeID()))
-                .filter(e -> hasLowerDifficulty(e.getKey()));
+                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey().getPeerNodeID()));
     }
 
-    private boolean hasLowerDifficulty(Peer peer) {
-        Status status = getPeer(peer).getStatus();
-        if (status == null) {
+    private boolean isMyDifficultyLowerThan(Peer peer, boolean strictLower) {
+        Status peerStatus = getPeer(peer).getStatus();
+        if (peerStatus == null) {
             return false;
         }
 
-        boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-        BlockChainStatus nodeStatus = blockchain.getStatus();
-        // this works only for testing purposes, real status without difficulty don't reach this far
-        return  (hasTotalDifficulty && nodeStatus.hasLowerTotalDifficultyThan(status)) ||
-                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestBlockNumber());
+        boolean hasTotalDifficulty = peerStatus.getTotalDifficulty() != null;
+        BlockChainStatus myStatus = blockchain.getStatus();
+        // this works only for testing purposes, real peerStatus without difficulty don't reach this far
+        if (strictLower) {
+            return hasTotalDifficulty ? myStatus.hasLowerTotalDifficultyThan(peerStatus) : myStatus.hasLowerBestBlockNumberThan(peerStatus);
+        } else {
+            return hasTotalDifficulty ? myStatus.hasLowerOrSameTotalDifficultyThan(peerStatus) : myStatus.hasLowerOrSameBestBlockNumberThan(peerStatus);
+        }
     }
 
-    public List<Peer> getPeerCandidates() {
-        return getCandidatesStream()
+    public List<Peer> getBestPeerCandidates() {
+        return getBestCandidatesStream()
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -217,7 +230,7 @@ public class PeersInformation {
 
     private Instant getFailInstant(Peer peer) {
         Instant instant = failedPeers.get(peer.getPeerNodeID());
-        if (instant != null){
+        if (instant != null) {
             return instant;
         }
         return Instant.EPOCH;

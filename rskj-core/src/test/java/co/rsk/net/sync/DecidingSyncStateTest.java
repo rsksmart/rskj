@@ -12,6 +12,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import java.time.Duration;
 import java.util.*;
@@ -152,7 +153,7 @@ public class DecidingSyncStateTest {
     }
 
     @Test
-    public void backwardsSynchronization() {
+    public void backwardsSynchronization_genesisNotConnected_noMinBlock() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -166,21 +167,93 @@ public class DecidingSyncStateTest {
         Peer peer = mock(Peer.class);
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
-        SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
-        Status status = mock(Status.class);
-        when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
+        when(blockStore.getMinNumber()).thenReturn(1L);
+        Block block = mock(Block.class);
+        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(block);
+        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
+
+        Whitebox.setInternalState(DecidingSyncState.class, "genesisConnected", false);
+        when(block.isGenesis()).thenReturn(false);
+        syncState.newPeerStatus();
+        verify(syncEventsHandler, times(1)).backwardSyncing(peer);
+    }
+
+    @Test
+    public void backwardsSynchronization_genesisNotConnected_withMinBlock() {
+        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+        PeersInformation peersInformation = mock(PeersInformation.class);
+        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        SyncState syncState = new DecidingSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockStore);
+
+        when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         when(blockStore.getMinNumber()).thenReturn(1L);
         Block block = mock(Block.class);
-        long myBestBlockNumber = 90L;
-        when(block.getNumber()).thenReturn(myBestBlockNumber);
-        when(blockStore.getBestBlock()).thenReturn(block);
-        when(status.getBestBlockNumber()).thenReturn(myBestBlockNumber + syncConfiguration.getLongSyncLimit());
+        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(block);
+        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
 
+        Whitebox.setInternalState(DecidingSyncState.class, "genesisConnected", false); // ensure static variable is reset
+        when(block.isGenesis()).thenReturn(false);
         syncState.newPeerStatus();
+        verify(syncEventsHandler, times(1)).backwardSyncing(peer);
+    }
 
-        verify(syncEventsHandler).backwardSyncing(peer);
+    @Test
+    public void backwardsSynchronization_genesisAlreadyConnected() {
+        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+        PeersInformation peersInformation = mock(PeersInformation.class);
+        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        SyncState syncState = new DecidingSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockStore);
+
+        when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
+
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        Block block = mock(Block.class);
+        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(block);
+        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
+
+        Whitebox.setInternalState(DecidingSyncState.class, "genesisConnected", true);
+        syncState.newPeerStatus();
+        verify(block, never()).isGenesis();
+        verify(syncEventsHandler, never()).backwardSyncing(peer);
+    }
+
+    @Test
+    public void backwardsSynchronization_genesisConnected_afterSync() {
+        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+        PeersInformation peersInformation = mock(PeersInformation.class);
+        SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        SyncState syncState = new DecidingSyncState(syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                blockStore);
+
+        when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
+
+        when(blockStore.getMinNumber()).thenReturn(0L);
+        Block block = mock(Block.class);
+        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(block);
+        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
+
+        Whitebox.setInternalState(DecidingSyncState.class, "genesisConnected", false); // ensure static variable is reset
+        when(block.isGenesis()).thenReturn(true);
+        syncState.newPeerStatus();
+        verify(syncEventsHandler, never()).backwardSyncing(peer);
     }
 
     @Test
