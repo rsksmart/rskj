@@ -116,7 +116,7 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
 
         Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
         Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx);
@@ -132,8 +132,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithDifferentReadKeysShouldBeAddedInDifferentBuckets() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys2 = createAMapAndAddAKey(aDifferentWrapperKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys2 = createASetAndAddAKey(aDifferentWrapperKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -152,7 +152,7 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithSameWrittenKeysShouldBeAddedInTheSameBucket() {
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -171,8 +171,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithDifferentWrittenKeysShouldBeAddedInDifferentBuckets() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> writtenKeys2 = createAMapAndAddAKey(aDifferentWrapperKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys2 = createASetAndAddAKey(aDifferentWrapperKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -191,8 +191,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithTheSameWrittenReadKeyShouldBeAddedInTheSameBucket() {
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -211,8 +211,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithTheSameReadWrittenKeyShouldBeAddedInTheSameBucket() {
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -231,8 +231,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionsWithDifferentReadWrittenKeysShouldBeAddedInDifferentBuckets() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aDifferentWrapperKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aDifferentWrapperKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -251,9 +251,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoTransactionWithDifferentWrittenReadKeyShouldBeAddedInDifferentBuckets() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aDifferentWrapperKey);
-
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aDifferentWrapperKey);
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
@@ -271,8 +270,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoIndependentTxsAndAThirdOneCollidingWithBothAndShouldBeAddedInTheSequential() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> differentWrittenKeys = createAMapAndAddAKey(aDifferentWrapperKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> differentWrittenKeys = createASetAndAddAKey(aDifferentWrapperKey);
 
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -299,7 +298,7 @@ public class ParallelizeTransactionHandlerTest {
     public void addTwoDependentTxsWithTheSecondInSequentialAndAThirdOneCollidingWithBothAndShouldBeAddedInTheSequential() {
         short[] expectedTransactionEdgeList = new short[]{1};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
 
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
@@ -328,8 +327,7 @@ public class ParallelizeTransactionHandlerTest {
     public void addABigTransactionAndAnotherWithTheSameWrittenKeyAndTheLastOneShouldGoToSequential() {
         short[] expectedTransactionEdgeList = new short[]{1};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
@@ -349,9 +347,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addABigTxAndAnotherWithTheSameReadWrittenKeyAndShouldGoToSequential() {
         short[] expectedTransactionEdgeList = new short[]{1};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
-
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
@@ -371,9 +368,8 @@ public class ParallelizeTransactionHandlerTest {
     public void addABigTxAndAnotherWithTheSameWrittenReadKeyAndShouldGoToSequential() {
         short[] expectedTransactionEdgeList = new short[]{1};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
-        HashSet<ByteArrayWrapper> readKeys = createAMapAndAddAKey(aWrappedKey);
-
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> readKeys = createASetAndAddAKey(aWrappedKey);
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
@@ -387,6 +383,30 @@ public class ParallelizeTransactionHandlerTest {
         assertEquals(gasUsedByTx, (long) bucketGasUsed2.get());
         assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
         assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
+    }
+
+    @Test
+    public void addTwoTransactionsWithTheSameSenderToTheSequentialBucketAndTheSecondShouldBeAddedCorrectly() {
+        short[] expectedTransactionEdgeList = new short[]{1,2};
+        List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx, tx, tx);
+        long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
+
+        handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
+        assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+
+        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        assertTrue(bucketGasUsed3.isPresent());
+        assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
+        assertEquals(gasUsedByTx, (long) bucketGasUsed3.get());
+
+        Optional<Long> bucketGasUsed4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        assertTrue(bucketGasUsed4.isPresent());
+        assertEquals(2*gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
+        assertEquals(2*gasUsedByTx, (long) bucketGasUsed4.get());
+
+        assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+        assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
     }
 
     @Test
@@ -409,7 +429,7 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
 
         Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
         Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
@@ -427,7 +447,7 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1,2};
 
-        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
+        Set<ByteArrayWrapper> writtenKeys = createASetAndAddAKey(aWrappedKey);
 
         Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
         Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
@@ -573,8 +593,8 @@ public class ParallelizeTransactionHandlerTest {
         }
     }
 
-    private HashSet<ByteArrayWrapper> createAMapAndAddAKey(ByteArrayWrapper aKey) {
-        HashSet<ByteArrayWrapper> aMap = new HashSet<>();
+    private Set<ByteArrayWrapper> createASetAndAddAKey(ByteArrayWrapper aKey) {
+        Set<ByteArrayWrapper> aMap = new HashSet<>();
         aMap.add(aKey);
         return aMap;
     }
