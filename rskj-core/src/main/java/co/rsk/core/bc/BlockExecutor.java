@@ -567,8 +567,8 @@ public class BlockExecutor {
         logger.trace("Building execution results.");
         BlockResult result = new BlockResult(
                 block,
-                new LinkedList(executedTransactions.values()),
-                new LinkedList(receipts.values()),
+                new LinkedList<>(executedTransactions.values()),
+                new LinkedList<>(receipts.values()),
                 new short[0],
                 totalGasUsed.longValue(),
                 Coin.valueOf(totalPaidFees.longValue()),
@@ -693,6 +693,7 @@ public class BlockExecutor {
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
+            totalGasUsed = parallelizeTransactionHandler.getGasUsedInSequential();
 
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
@@ -744,7 +745,7 @@ public class BlockExecutor {
                 executedTransactions,
                 receipts,
                 bucketOrder,
-                totalGasUsed,
+                totalGasUsed, // totalBlock = parallel1 + parallel2 + sequential?
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
