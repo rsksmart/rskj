@@ -21,6 +21,9 @@ public class PeerScoringManagerTest {
 
     private final Random random = new Random(111);
 
+    private static final int PUNISHMENT_DURATION = 100;
+    private static final int PUNISHMENT_INCREMENT_RATE = 10;
+
     @Test
     public void isAddressBanned_NoBannedPeers_ShouldNotBeBanned() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
@@ -249,7 +252,7 @@ public class PeerScoringManagerTest {
 
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(1, manager.getPeerScoring(address).getPunishmentCounter());
-        Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertEquals(PUNISHMENT_DURATION, manager.getPeerScoring(address).getPunishmentTime());
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
 
@@ -275,8 +278,8 @@ public class PeerScoringManagerTest {
 
         manager.recordEvent(null, address, EventType.SUCCESSFUL_HANDSHAKE);
         Assert.assertTrue("Reputation should be good after enough time has passed", manager.hasGoodReputation(address));
-        Assert.assertEquals("TimeLostGoodReputation value should be 0 after good reputation is recovered", scoring.getTimeLostGoodReputation(), 0);
-        Assert.assertEquals("PunishmentTime value should remain the same after good reputation is recovered, it is not reset", scoring.getPunishmentTime(), initialPunishmentTime);
+        Assert.assertEquals("TimeLostGoodReputation value should be 0 after good reputation is recovered", 0, scoring.getTimeLostGoodReputation());
+        Assert.assertEquals("PunishmentTime value should be 0 after good reputation is recovered", 0, scoring.getPunishmentTime());
     }
 
     @Test
@@ -288,7 +291,7 @@ public class PeerScoringManagerTest {
 
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
-        Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertEquals(PUNISHMENT_DURATION, manager.getPeerScoring(address).getPunishmentTime());
         Assert.assertFalse(manager.hasGoodReputation(address));
 
         TimeUnit.MILLISECONDS.sleep(100);
@@ -301,7 +304,7 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
         Assert.assertEquals(2, manager.getPeerScoring(address).getPunishmentCounter());
         Assert.assertEquals(-1, manager.getPeerScoring(address).getScore());
-        Assert.assertEquals(11, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertEquals(PUNISHMENT_DURATION + (PUNISHMENT_DURATION / PUNISHMENT_INCREMENT_RATE), manager.getPeerScoring(address).getPunishmentTime());
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
 
@@ -552,8 +555,8 @@ public class PeerScoringManagerTest {
         return new PeerScoringManager(
                 PeerScoring::new,
                 nnodes,
-                new PunishmentParameters(10, 10, 1000),
-                new PunishmentParameters(10, 10, 1000),
+                new PunishmentParameters(PUNISHMENT_DURATION, PUNISHMENT_INCREMENT_RATE, 1000),
+                new PunishmentParameters(PUNISHMENT_DURATION, PUNISHMENT_INCREMENT_RATE, 1000),
                 bannedPeerIPs,
                 bannedPeerIDs
         );
