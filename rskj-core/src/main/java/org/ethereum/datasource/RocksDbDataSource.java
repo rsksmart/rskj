@@ -254,6 +254,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         Set<ByteArrayWrapper> result = new HashSet<>();
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        resetDbLock.readLock().lock();
 
         try (RocksIterator iterator = db.newIterator()) {
 

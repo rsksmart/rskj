@@ -77,6 +77,7 @@ public class RskSystemPropertiesTest {
         doReturn(ConfigFactory.empty().root()).when(config).root();
         doReturn(true).when(config).hasPath(configKeyCaptorForHasPath.capture());
         doReturn(true).when(config).getBoolean(configKeyCaptorForGetBoolean.capture());
+        doReturn("leveldb").when(config).getString("keyvalue.datasource");
 
         ConfigLoader loader = mock(ConfigLoader.class);
         doReturn(config).when(loader).getConfig();

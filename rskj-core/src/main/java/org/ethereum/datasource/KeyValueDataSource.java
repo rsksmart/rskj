@@ -21,9 +21,10 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Path;
+import java.util.*;
 
 public interface KeyValueDataSource extends DataSource {
     @Nullable
@@ -53,4 +54,40 @@ public interface KeyValueDataSource extends DataSource {
      * This makes things go to disk. To enable caching.
      */
     void flush();
+
+    @Nonnull
+    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        String name = datasourcePath.getFileName().toString();
+        String databaseDir = datasourcePath.getParent().toString();
+
+        KeyValueDataSource ds;
+        switch (kind) {
+            case LEVEL_DB:
+                ds = new LevelDbDataSource(name, databaseDir);
+                break;
+            case ROCKS_DB:
+                ds = new RocksDbDataSource(name, databaseDir);
+                break;
+            default:
+                throw new IllegalArgumentException("kind");
+        }
+
+        ds.init();
+
+        return ds;
+    }
+
+    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
+        Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
+        for (Path originPath : originPaths) {
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
+                mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
+            }
+            singleOriginDataSource.close();
+        }
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
+        destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
+        destinationDataSource.close();
+    }
 }

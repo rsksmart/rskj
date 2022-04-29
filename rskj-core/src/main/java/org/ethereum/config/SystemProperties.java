@@ -30,6 +30,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -129,6 +130,9 @@ public abstract class SystemProperties {
             this.projectVersion = getProjectVersion(props);
             this.projectVersionModifier = getProjectVersionModifier(props);
 
+            if (!configFromFiles.getString("keyvalue.datasource").equals(DbKind.LEVEL_DB.name())) {
+                logger.warn("Use the flag --reset when running the application if you are using a different datasource rather than default 'leveldb'");
+            }
         } catch (Exception e) {
             logger.error("Can't read config.", e);
             throw new RuntimeException(e);
@@ -704,5 +708,9 @@ public abstract class SystemProperties {
 
     public long getGasEstimationCap() {
         return configFromFiles.getLong(PROPERTY_RPC_GAS_ESTIMATION_CAP);
+    }
+
+    public DbKind databaseKind() {
+        return DbKind.ofName(configFromFiles.getString("keyvalue.datasource"));
     }
 }

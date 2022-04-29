@@ -115,7 +115,7 @@ public class KeyValueDataSourceTest {
         keyValueDataSource.put(randomKey, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RuntimeException.class)
     public void updateBatchWithNulls() {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
         ByteArrayWrapper keyToNull = updatedValues.keySet().iterator().next();
