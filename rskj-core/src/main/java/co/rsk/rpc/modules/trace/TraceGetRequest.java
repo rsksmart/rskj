@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.trace;
 
 
 import co.rsk.util.HexUtils;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -31,6 +32,18 @@ public class TraceGetRequest {
     private String transactionHash;
 
     public TraceGetRequest(String transactionHash, List<String> tracePositions) {
+        if (transactionHash == null || transactionHash.isEmpty()) {
+            throw RskJsonRpcRequestException.invalidParamError("'transactionHash' cannot be null or empty");
+        }
+
+        if (tracePositions == null || tracePositions.isEmpty()) {
+            throw RskJsonRpcRequestException.invalidParamError("'positions' cannot be null or empty");
+        }
+
+        if (tracePositions.size() > 1) {
+            throw RskJsonRpcRequestException.invalidParamError("'positions' accepts only one index");
+        }
+
         this.tracePositions = tracePositions;
         this.transactionHash = transactionHash;
     }
