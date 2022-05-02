@@ -77,11 +77,11 @@ public class TxQuotaCheckerIntegrationTest {
         when(state.getNonce(contractB.getAddress())).thenReturn(BigInteger.ZERO);
 
         Repository repository = mock(Repository.class);
-        when(repository.getAccountState(accountA.getAddress())).thenReturn(mock(AccountState.class));
-        when(repository.getAccountState(accountB.getAddress())).thenReturn(mock(AccountState.class));
-        when(repository.getAccountState(accountC.getAddress())).thenReturn(mock(AccountState.class));
-        // intentionally omitted contractA "repository.getAccountState()" mocking
-        when(repository.getAccountState(contractB.getAddress())).thenReturn(mock(AccountState.class));
+        when(repository.isExist(accountA.getAddress())).thenReturn(true);
+        when(repository.isExist(accountB.getAddress())).thenReturn(true);
+        when(repository.isExist(accountC.getAddress())).thenReturn(true);
+        when(repository.isExist(contractA.getAddress())).thenReturn(false);
+        when(repository.isExist(contractB.getAddress())).thenReturn(true);
 
         when(repository.isContract(accountA.getAddress())).thenReturn(false);
         when(repository.isContract(accountB.getAddress())).thenReturn(false);
