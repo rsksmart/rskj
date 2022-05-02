@@ -101,7 +101,7 @@ public class TransactionPoolImpl implements TransactionPool {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
 
-        if (this.quotaChecker != null && this.config.accountTxRateLimitCleanerPeriod() > 0) {
+        if (this.quotaChecker != null && this.config.isAccountTxRateLimitEnabled() && this.config.accountTxRateLimitCleanerPeriod() > 0) {
             this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
         }
     }
