@@ -56,10 +56,9 @@ public class ParallelizeTransactionHandler {
             }
         }
 
-        Optional<TransactionBucket> addedBucket = bucketCandidate.addTransaction(tx, gasUsedByTx);
-        TransactionBucket transactionBucket = addedBucket.get();
-        addNewKeysToMaps(tx.getSender(), transactionBucket, newReadKeys, newWrittenKeys);
-        return Optional.of(transactionBucket.getGasUsed());
+        bucketCandidate.addTransaction(tx, gasUsedByTx);
+        addNewKeysToMaps(tx.getSender(), bucketCandidate, newReadKeys, newWrittenKeys);
+        return Optional.of(bucketCandidate.getGasUsed());
     }
 
     private boolean bucketDoesNotHasAvailableGas(Transaction tx, TransactionBucket bucketCandidate) {
@@ -67,8 +66,9 @@ public class ParallelizeTransactionHandler {
     }
 
     public Optional<Long> addRemascTransaction(Transaction tx, long gasUsedByTx) {
-        Optional<TransactionBucket> transactionBucket = getSequentialBucket().addTransaction(tx, gasUsedByTx);
-        return transactionBucket.map(TransactionBucket::getGasUsed);
+        TransactionBucket sequentialBucket = getSequentialBucket();
+        sequentialBucket.addTransaction(tx, gasUsedByTx);
+        return Optional.of(sequentialBucket.getGasUsed());
     }
 
     public long getGasUsedIn(Short bucketId) {
@@ -117,8 +117,10 @@ public class ParallelizeTransactionHandler {
             bucketByReadKey.put(key, bucketsAlreadyRead);
         }
 
-        if (bucket.isSequential() || !bucketBySender.containsKey(sender)) {
+        if (bucket.isSequential()) {
             bucketBySender.put(sender, bucket);
+        } else {
+            bucketBySender.putIfAbsent(sender, bucket);
         }
 
         if (bucket.equals(getSequentialBucket())) {
@@ -161,10 +163,8 @@ public class ParallelizeTransactionHandler {
             if (bucketByWrittenKey.containsKey(newReadKey)) {
                 TransactionBucket bucket = bucketByWrittenKey.get(newReadKey);
 
-                if (bucketCandidate.isPresent()) {
-                    if(!bucketCandidate.get().equals(bucket)) {
-                       return getSequentialBucket();
-                    }
+                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                   return getSequentialBucket();
                 } else {
                     bucketCandidate = Optional.of(bucket);
                 }
@@ -176,49 +176,36 @@ public class ParallelizeTransactionHandler {
             if (bucketByWrittenKey.containsKey(newWrittenKey)) {
                 TransactionBucket bucket = bucketByWrittenKey.get(newWrittenKey);
 
-                if (bucketCandidate.isPresent()) {
-                    if(!bucketCandidate.get().equals(bucket)) {
-                        return getSequentialBucket();
-                    }
+                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                    return getSequentialBucket();
                 } else {
                     bucketCandidate = Optional.of(bucket);
                 }
             }
             // read - written
             if (bucketByReadKey.containsKey(newWrittenKey)) {
-                Set<TransactionBucket> bucketsWritten = bucketByReadKey.get(newWrittenKey);
+                Set<TransactionBucket> readBuckets = bucketByReadKey.get(newWrittenKey);
 
-                if (bucketsWritten.size() > 1) {
+                if (readBuckets.size() > 1) {
                     return getSequentialBucket();
                 }
 
-                if (bucketCandidate.isPresent()) {
-                    if(!bucketsWritten.contains(bucketCandidate.get())) {
-                        return getSequentialBucket();
-                    }
+                if (bucketCandidate.isPresent() && !readBuckets.contains(bucketCandidate.get())) {
+                    return getSequentialBucket();
                 } else {
-                    bucketCandidate = Optional.of(bucketsWritten.iterator().next());
+                    bucketCandidate = Optional.of(readBuckets.iterator().next());
                 }
             }
         }
 
-        return getTransactionBucket(tx, bucketCandidate);
-    }
-
-    private TransactionBucket getTransactionBucket(Transaction tx, Optional<TransactionBucket> bucketCandidate) {
-        if (bucketCandidate.isPresent()) {
-            return bucketCandidate.get();
-        }
-
-        Optional<TransactionBucket> availableBucketWithLessUsedGas = getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit()));
-        return availableBucketWithLessUsedGas.orElseGet(this::getSequentialBucket);
+        return bucketCandidate.orElseGet(() -> getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit())).orElseGet(this::getSequentialBucket));
     }
 
     private TransactionBucket getSequentialBucket() {
         return this.buckets.get(this.buckets.size()-1);
     }
 
-    public static class TransactionBucket {
+    private static class TransactionBucket {
 
         final Short id;
         final long gasLimit;
@@ -234,14 +221,9 @@ public class ParallelizeTransactionHandler {
             this.gasUsedInBucket = 0;
         }
 
-        public short getId() {
-            return id;
-        }
-
-        private Optional<TransactionBucket> addTransaction(Transaction tx, long gasUsedByTx) {
+        private void addTransaction(Transaction tx, long gasUsedByTx) {
             transactions.add(tx);
             gasUsedInBucket = gasUsedInBucket + gasUsedByTx;
-            return Optional.of(this);
         }
 
         private boolean hasGasAvailable(long txGasLimit) {
