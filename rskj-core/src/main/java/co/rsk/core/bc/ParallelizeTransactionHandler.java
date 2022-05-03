@@ -45,22 +45,25 @@ public class ParallelizeTransactionHandler {
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
         TransactionBucket bucketCandidate = getBucketCandidates(tx, newReadKeys, newWrittenKeys);
 
-        if (!bucketCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()))) {
+        if (bucketDoesNotHasAvailableGas(tx, bucketCandidate)) {
             if (bucketCandidate.isSequential()) {
                 return Optional.empty();
             }
             bucketCandidate = getSequentialBucket();
+
+            if (bucketDoesNotHasAvailableGas(tx, bucketCandidate)) {
+                return Optional.empty();
+            }
         }
 
         Optional<TransactionBucket> addedBucket = bucketCandidate.addTransaction(tx, gasUsedByTx);
-
-        if (!addedBucket.isPresent()) {
-            return Optional.empty();
-        }
-
         TransactionBucket transactionBucket = addedBucket.get();
         addNewKeysToMaps(tx.getSender(), transactionBucket, newReadKeys, newWrittenKeys);
         return Optional.of(transactionBucket.getGasUsed());
+    }
+
+    private boolean bucketDoesNotHasAvailableGas(Transaction tx, TransactionBucket bucketCandidate) {
+        return !bucketCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
     }
 
     public Optional<Long> addRemascTransaction(Transaction tx, long gasUsedByTx) {
@@ -209,7 +212,6 @@ public class ParallelizeTransactionHandler {
 
         Optional<TransactionBucket> availableBucketWithLessUsedGas = getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit()));
         return availableBucketWithLessUsedGas.orElseGet(this::getSequentialBucket);
-
     }
 
     private TransactionBucket getSequentialBucket() {

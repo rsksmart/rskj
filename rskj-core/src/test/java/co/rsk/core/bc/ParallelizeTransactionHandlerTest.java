@@ -505,7 +505,7 @@ public class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    public void ifAllTheBucketsAreFullTheNewTxShouldntBeIncluded() {
+    public void ifAllTheBucketsAreFullTheNewIndependentTxShouldNotBeIncluded() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, bigTx);
 
@@ -522,6 +522,34 @@ public class ParallelizeTransactionHandlerTest {
         assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
 
         Optional<Long> emptyBucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
+        assertFalse(emptyBucket.isPresent());
+        assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
+        assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
+        assertEquals(gasUsedByBigTx2, (long) bucketGasUsed2.get());
+        assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+        assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+    }
+
+    @Test
+    public void ifAllTheBucketsAreFullTheNewDependentTxShouldNotBeIncluded() {
+        short[] expectedTransactionEdgeList = new short[]{1,2};
+        List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, bigTx);
+
+        long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
+        long gasUsedByBigTx2 = GasCost.toGas(bigTx2.getGasLimit());
+        HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
+
+        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
+        Optional<Long> bucketGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
+        assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+
+        Optional<Long> bucketGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        assertTrue(bucketGasUsed3.isPresent());
+        assertEquals(gasUsedByBigTx, (long) bucketGasUsed3.get());
+        assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
+
+        Optional<Long> emptyBucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
         assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
         assertFalse(emptyBucket.isPresent());
         assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
