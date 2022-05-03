@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.bc.ParallelizeTransactionHandler.TransactionBucket;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -656,18 +657,23 @@ public class BlockExecutor {
                 }
             }
 
-            Optional<Short> bucketId;
+            Optional<Long> bucketGasAccumulated;
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
-                bucketId = parallelizeTransactionHandler.addRemascTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucketGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
-                bucketId = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                bucketGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
 
-            if (!bucketId.isPresent()) {
-                logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                        block.getNumber(), tx.getHash());
-                profiler.stop(metric);
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            if (!acceptInvalidTransactions && !bucketGasAccumulated.isPresent()) {
+                if (discardInvalidTxs) {
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                    continue;
+                } else {
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                            block.getNumber(), tx.getHash());
+                    profiler.stop(metric);
+                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                }
             }
 
             readWrittenKeysTracker.clear();
@@ -687,16 +693,6 @@ public class BlockExecutor {
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            long totalGasUsedInBucket;
-
-            try {
-                totalGasUsedInBucket = parallelizeTransactionHandler.getGasUsedIn(bucketId.get());
-            } catch (RuntimeException e) {
-                logger.warn("block: [{}] execution was interrupted", block.getNumber());
-                logger.trace("", e);
-                profiler.stop(metric);
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-            }
 
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
@@ -707,8 +703,7 @@ public class BlockExecutor {
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsedInBucket);
-
+            bucketGasAccumulated.ifPresent(receipt::setCumulativeGas);
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
