@@ -41,13 +41,15 @@ import java.util.Map;
  */
 public class TxQuotaChecker {
 
+    public static final int UNKNOWN_LAST_BLOCK_GAS_LIMIT = -1;
+
     private static final int MAX_QUOTAS_SIZE = 400_000;
     private static final int MAX_QUOTA_GAS_MULTIPLIER = 2000;
     private static final double MAX_GAS_PER_SECOND_PERCENT = 0.9;
 
     private static final Logger logger = LoggerFactory.getLogger(TxQuotaChecker.class);
 
-    private static long lastBlockGasLimit = -1;
+    private long lastBlockGasLimit;
 
     private final MaxSizeHashMap<RskAddress, TxQuota> accountQuotas;
 
@@ -56,6 +58,7 @@ public class TxQuotaChecker {
     public TxQuotaChecker(TimeProvider timeProvider) {
         this.accountQuotas = new MaxSizeHashMap<>(MAX_QUOTAS_SIZE, true);
         this.timeProvider = timeProvider;
+        this.lastBlockGasLimit = UNKNOWN_LAST_BLOCK_GAS_LIMIT;
     }
 
     /**
@@ -67,7 +70,8 @@ public class TxQuotaChecker {
      * @return true if the <code>newTx</code> was accepted, false otherwise
      */
     public synchronized boolean acceptTx(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
-        updateLastBlockGasLimit(currentContext.bestBlock.getGasLimitAsInteger());
+        // keep track of lastBlockGasLimit on each processed transaction, so we can use it from cleanMaxQuotas were we lack this context
+        this.lastBlockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
 
         TxQuota senderQuota = updateQuota(newTx, true, currentContext);
 
@@ -99,7 +103,7 @@ public class TxQuotaChecker {
      * This method is intended to be called periodically with a rate similar to the time needed for an account to get <code>maxQuota</code>
      */
     public synchronized void cleanMaxQuotas() {
-        if (lastBlockGasLimit == -1) {
+        if (lastBlockGasLimit == UNKNOWN_LAST_BLOCK_GAS_LIMIT) {
             // no transactions yet processed
             return;
         }
@@ -147,14 +151,6 @@ public class TxQuotaChecker {
         }
 
         return quotaForAddress;
-    }
-
-    /**
-     * We need this static since, when {@link #cleanMaxQuotas() cleanMaxQuotas} is called, we have no context
-     * to get <code>blockGasLimit</code> value from, so we should keep track of it during tx processing
-     */
-    private static void updateLastBlockGasLimit(BigInteger blockGasLimit) {
-        lastBlockGasLimit = blockGasLimit.longValue();
     }
 
     private long calculateNewItemQuota(long accountNonce, boolean isTxSource, long maxGasPerSecond, long maxQuota) {
