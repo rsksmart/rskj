@@ -46,7 +46,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PrepareForTest({MessageSerializer.class, NetworkParameters.class})
 public class BlockTimeStampValidationRuleTest {
 
-    private static final long MAX_TIMESTAMPS_DIFF_IN_SECS = Constants.getMaxTimestampsDiffInSecs();
+    private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5 * 60;
 
     private final ActivationConfig preRskip179Config = mock(ActivationConfig.class);
     private final ActivationConfig postRskip179Config = mock(ActivationConfig.class);
@@ -64,7 +64,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void timestampsAreCloseEnough() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, timeProvider, bitcoinNetworkParameters);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, Constants.regtest(), timeProvider, bitcoinNetworkParameters);
 
         byte[] bitcoinMergedMiningHeader = new byte[0];
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
@@ -81,23 +81,23 @@ public class BlockTimeStampValidationRuleTest {
         when(header.getTimestamp()).thenReturn(1_000L);
         assertTrue(validationRule.isValid(header));
 
-        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS);
         when(header.getTimestamp()).thenReturn(1_000L);
         assertFalse(validationRule.isValid(header));
 
-        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS);
         when(header.getTimestamp()).thenReturn(1_001L);
         assertTrue(validationRule.isValid(header));
 
         when(btcBlock.getTimeSeconds()).thenReturn(1_001L);
-        when(header.getTimestamp()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        when(header.getTimestamp()).thenReturn(1_000L + DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS);
         assertTrue(validationRule.isValid(header));
     }
 
     @Test
     public void blockInThePast() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
@@ -111,7 +111,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void blockInTheFutureLimit() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
@@ -125,7 +125,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void blockInTheFuture() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
@@ -139,7 +139,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void blockTimeLowerThanParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
@@ -157,7 +157,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void blockTimeGreaterThanParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
@@ -175,7 +175,7 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void blockTimeEqualsParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
