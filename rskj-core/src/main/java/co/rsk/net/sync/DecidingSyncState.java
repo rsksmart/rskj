@@ -31,9 +31,6 @@ public class DecidingSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger(DecidingSyncState.class);
 
-    // Once connected, it will never change, therefore we make it static to avoid reading store for minBlock
-    private static boolean genesisConnected = false;
-
     private final PeersInformation peersInformation;
     private final BlockStore blockStore;
 
@@ -131,13 +128,11 @@ public class DecidingSyncState extends BaseSyncState {
                 .flatMap(pi -> Optional.ofNullable(pi.getStatus()).map(Status::getBestBlockNumber));
     }
 
-    private static boolean checkGenesisConnected(BlockStore blockStore) {
-        if (genesisConnected) {
-            return true; // no more store read needed
-        }
-
+    private boolean checkGenesisConnected(BlockStore blockStore) {
         Block minBlock = blockStore.getChainBlockByNumber(blockStore.getMinNumber());
-        genesisConnected = minBlock != null && minBlock.isGenesis();
-        return genesisConnected;
+        if (minBlock == null) {
+            throw new IllegalStateException("Could not get minBlock from store");
+        }
+        return minBlock.isGenesis();
     }
 }
