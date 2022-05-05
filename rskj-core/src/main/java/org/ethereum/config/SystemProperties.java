@@ -129,10 +129,6 @@ public abstract class SystemProperties {
             }
             this.projectVersion = getProjectVersion(props);
             this.projectVersionModifier = getProjectVersionModifier(props);
-
-            if (!configFromFiles.getString("keyvalue.datasource").equals(DbKind.LEVEL_DB.name())) {
-                logger.warn("Use the flag --reset when running the application if you are using a different datasource rather than default 'leveldb'");
-            }
         } catch (Exception e) {
             logger.error("Can't read config.", e);
             throw new RuntimeException(e);
@@ -712,5 +708,47 @@ public abstract class SystemProperties {
 
     public DbKind databaseKind() {
         return DbKind.ofName(configFromFiles.getString("keyvalue.datasource"));
+    }
+
+    public DbKind getDbKindValueFromDbKindLogFile() {
+        try {
+            File file = new File(databaseDir(), "dbKind.properties");
+            Properties props = new Properties();
+            if (file.exists() && file.canRead()) {
+                try (FileReader reader = new FileReader(file)) {
+                    props.load(reader);
+                }
+
+                return DbKind.ofName(props.getProperty("keyvalue.datasource"));
+            }
+
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public void generatedDbKindLogFile() {
+        DbKind dbKind = this.databaseKind();
+
+        try {
+            File file = new File(databaseDir(), "dbKind.properties");
+            Properties props = new Properties();
+            if (file.canRead()) {
+                try (FileReader reader = new FileReader(file)) {
+                    props.load(reader);
+                }
+            } else {
+                props.setProperty("keyvalue.datasource", dbKind.name());
+                file.getParentFile().mkdirs();
+                try (FileWriter writer = new FileWriter(file)) {
+                    props.store(writer, "Generated dbKind. In order to follow selected db.");
+                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                    logger.info("Generated dbKind.properties file.", file);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

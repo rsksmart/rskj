@@ -957,7 +957,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             ));
         }
 
-        if(getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
+        if (getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
             internalServices.add(getPeerScoringReporterService());
         }
 
@@ -1081,7 +1081,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         DB indexDB = DBMaker.fileDB(dbFile)
                 .make();
 
-        KeyValueDataSource blocksDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "blocks"), getRskSystemProperties().databaseKind());
+        DbKind currentDbKind = getRskSystemProperties().databaseKind();
+        KeyValueDataSource blocksDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
+        DbKind prevDbKind = getRskSystemProperties().getDbKindValueFromDbKindLogFile();
+
+        if (prevDbKind == null || prevDbKind != currentDbKind) {
+            logger.warn("Use the flag --reset when running the application if you are using a different datasource.");
+            getRskSystemProperties().generatedDbKindLogFile();
+        }
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
@@ -1089,7 +1096,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
         checkIfNotClosed();
 
-        if(peerScoringReporterService == null) {
+        if (peerScoringReporterService == null) {
             this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
         }
 
@@ -1102,10 +1109,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /**
      * This method closes this RSK context.
-     *
+     * <p>
      * Internally it stops a node runner, if started,
      * and closes / disposes data storages (db instances), if some has already been instantiated.
-     *
+     * <p>
      * Note that this method is idempotent, which means that calling this method more than once does not have any
      * visible side effect.
      */
