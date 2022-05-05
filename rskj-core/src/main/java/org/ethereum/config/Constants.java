@@ -46,6 +46,9 @@ public class Constants {
     private static final BigInteger TRANSACTION_GAS_CAP = BigDecimal.valueOf(Math.pow(2, 60)).toBigInteger();
     private static final BigInteger RSKIP156_DIF_BOUND_DIVISOR = BigInteger.valueOf(400);
 
+    private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
+    private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
+
     private final byte chainId;
     private final boolean seedCowAccounts;
     private final int durationLimit;
@@ -143,6 +146,13 @@ public class Constants {
         return newBlockMaxSecondsInTheFuture;
     }
 
+    public long getMaxTimestampsDiffInSecs(ActivationConfig.ForBlock activationConfig) {
+        if (chainId == TESTNET_CHAIN_ID && activationConfig.isActive(ConsensusRule.RSKIP297)) {
+            return TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS;
+        }
+        return DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS;
+    }
+
     public BridgeConstants getBridgeConstants() {
         return bridgeConstants;
     }
@@ -209,10 +219,6 @@ public class Constants {
 
     public static int getMaxAddressByteLength() {
         return 20;
-    }
-
-    public static long getMaxTimestampsDiffInSecs() {
-        return 300;
     }
 
     public static int getMaxBitcoinMergedMiningMerkleProofLength() {

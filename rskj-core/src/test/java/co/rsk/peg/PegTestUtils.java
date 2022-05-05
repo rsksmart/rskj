@@ -20,21 +20,33 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -158,9 +170,9 @@ public class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Address createRandomP2PKHBtcAddress() {
+    public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {
         BtcECKey key = new BtcECKey();
-        return key.toAddress(RegTestParams.get());
+        return key.toAddress(networkParameters);
     }
 
     public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
@@ -179,8 +191,13 @@ public class PegTestUtils {
         return keys;
     }
 
+    public static RskAddress createRandomRskAddress() {
+        ECKey key = new ECKey();
+        return new RskAddress(key.getAddress());
+    }
+
     public static UTXO createUTXO(int nHash, long index, Coin value) {
-        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress());
+        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress(RegTestParams.get()));
     }
 
     public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
@@ -206,12 +223,99 @@ public class PegTestUtils {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
             ReleaseRequestQueue.Entry entry = new ReleaseRequestQueue.Entry(
-                createRandomP2PKHBtcAddress(),
+                createRandomP2PKHBtcAddress(RegTestParams.get()),
                 Coin.COIN.add(Coin.valueOf(i))
             );
             entries.add(entry);
         }
 
         return entries;
+    }
+
+    public static UTXO createUTXO(Sha256Hash btcHash, long index, Coin value) {
+        return new UTXO(
+            btcHash,
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(new BtcECKey())
+        );
+    }
+
+    public static Address getFastBridgeAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
+        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            redeemScript,
+            derivationArgumentHash
+        );
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+    }
+
+    public static Federation createSimpleActiveFederation(BridgeConstants bridgeConstants) {
+        return createFederation(bridgeConstants, "fa01", "fa02");
+    }
+
+    public static Federation createSimpleRetiringFederation(BridgeConstants bridgeConstants) {
+        return createFederation(bridgeConstants, "fa03", "fa04");
+    }
+
+    public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
+        List<BtcECKey> federationKeys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s))).collect(Collectors.toList());
+        return createFederation(bridgeConstants, federationKeys);
+    }
+
+    public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        return new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams()
+        );
+    }
+
+    public static BtcTransaction createBtcTransactionWithOutputToAddress(NetworkParameters networkParameters, Coin amount, Address btcAddress) {
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(amount, btcAddress);
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+            0, ScriptBuilder.createInputScript(null, srcKey));
+        return tx;
+    }
+
+    public static Transaction getMockedRskTxWithHash(String s) {
+        byte[] hash = Keccak256Helper.keccak256(s);
+        return new SimpleRskTransaction(hash);
+    }
+
+    public static TransactionOutput createBech32Output(NetworkParameters networkParameters, Coin valuesToSend) {
+        byte[] scriptBytes = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
+                                 Hex.decode("001437c383ea78269585c73289daa36d7b7014b65294") :
+                                 Hex.decode("0014ef57424d0d625cf82fabe4fd7657d24a5f13dfb2");
+        return new TransactionOutput(networkParameters, null,
+            valuesToSend,
+            scriptBytes
+        );
+    }
+
+    public static TransactionOutput createP2pkhOutput(NetworkParameters networkParameters, Coin valuesToSend) {
+        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
+                              Address.fromBase58(networkParameters, "1JMaBRALrJQArLrqe5zRSn3bVk1z9RGzML") :
+                              Address.fromBase58(networkParameters, "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+        return new TransactionOutput(networkParameters, null,
+            valuesToSend,
+            address
+        );
+    }
+
+    public static TransactionOutput createP2shOutput(NetworkParameters networkParameters, Coin valuesToSend) {
+        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
+                              Address.fromBase58(networkParameters, "3FiMaJinRy86WgJZDfAfRUt2ZLEBGZSfLL") :
+                              Address.fromBase58(networkParameters, "2N7TdMZSYfwFMUwyr8YADSKUhLUyH6eqohz");
+        return new TransactionOutput(networkParameters, null,
+            valuesToSend,
+            address
+        );
     }
 }

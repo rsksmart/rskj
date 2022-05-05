@@ -18,9 +18,19 @@
 
 package co.rsk.peg;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
-
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.ScriptException;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.Utils;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
@@ -33,8 +43,8 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
-import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -44,9 +54,19 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 
 /**
  * @author Oscar Guindzberg
@@ -138,6 +158,196 @@ public class BridgeUtils {
         return wallet;
     }
 
+    public static Coin getAmountSentToAddresses(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        Context context,
+        BtcTransaction btcTx,
+        List<Address> addresses
+    ) {
+        if (addresses == null || addresses.isEmpty()){
+            return Coin.ZERO;
+        }
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            return getAmountSentToAddresses(
+                context,
+                btcTx,
+                addresses
+            );
+        } else {
+            return BridgeUtilsLegacy.getAmountSentToAddress(activations, networkParameters, btcTx, addresses.get(0));
+        }
+    }
+
+    /**
+     * @param activations     the network HF activations configuration
+     * @param bridgeConstants the Bridge constants
+     * @return the minimum amount value defined for a pegin transaction
+     */
+    public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
+        return activations.isActive(ConsensusRule.RSKIP219) ?
+            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+    }
+
+    /**
+     * @param activations
+     * @param bridgeConstants
+     * @param btcTx
+     * @param addresses
+     * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
+     */
+    public static boolean isAnyUTXOAmountBelowMinimum(
+            ActivationConfig.ForBlock activations,
+            BridgeConstants bridgeConstants,
+            Context context,
+            BtcTransaction btcTx,
+            List<Address> addresses
+    ){
+        return isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstants,
+                btcTx,
+                createWatchedBtcWalletFromAddresses(
+                    context,
+                    addresses
+                )
+        );
+    }
+
+    /**
+     * @param activations
+     * @param bridgeConstants
+     * @param btcTx
+     * @param wallet
+     * @return true if any UTXO in the given btcTX is below the minimum pegin tx value
+     */
+    private static boolean isAnyUTXOAmountBelowMinimum(
+            ActivationConfig.ForBlock activations,
+            BridgeConstants bridgeConstants,
+            BtcTransaction btcTx,
+            Wallet wallet
+    ){
+        Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
+        return btcTx.getWalletOutputs(wallet).stream().anyMatch(transactionOutput ->
+                transactionOutput.getValue().isLessThan(minimumPegInTxValue)
+        );
+    }
+
+    /**
+     * @param activations
+     * @param bridgeConstants
+     * @param btcTx
+     * @param addresses
+     * @return {@link FastBridgeTxResponseCodes#VALID_TX} if each UTXOs sent to federation isn't less than the minimum,
+     * in case any of UTXO is less than the minimum then it returns
+     * {@link FastBridgeTxResponseCodes#UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR}.
+     */
+    public static FastBridgeTxResponseCodes validateFastBridgePeginValue(
+        ActivationConfig.ForBlock activations,
+        BridgeConstants bridgeConstants,
+        Context context,
+        BtcTransaction btcTx,
+        List<Address> addresses
+    ) {
+        Coin totalAmount = getAmountSentToAddresses(
+            activations,
+            bridgeConstants.getBtcParams(),
+            context,
+            btcTx,
+            addresses
+        );
+
+        if (totalAmount.equals(Coin.ZERO)) {
+            logger.debug("[validateFastBridgePeginValue] Amount sent can't be 0");
+            return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
+        }
+
+        if (activations.isActive(RSKIP293)){
+            Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
+
+            if (isAnyUTXOAmountBelowMinimum(activations, bridgeConstants, context, btcTx, addresses)){
+                logger.debug("[validateFastBridgePeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
+                    minimumPegInTxValue.value);
+                return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
+            }
+        }
+        return FastBridgeTxResponseCodes.VALID_TX;
+    }
+
+    /**
+     * @param context
+     * @param addresses
+     * @return a simple wallet instance with the give list of address added as watched addresses
+     */
+    private static WatchedBtcWallet createWatchedBtcWalletFromAddresses(Context context, List<Address> addresses) {
+        WatchedBtcWallet wallet = new WatchedBtcWallet(context);
+        long now = Utils.currentTimeMillis() / 1000L;
+        wallet.addWatchedAddresses(addresses, now);
+        return wallet;
+    }
+
+    /**
+     *
+     * @param context
+     * @param btcTx
+     * @param addresses
+     * @return total amount sent to the given list of addresses.
+     */
+    private static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+        return getAmountSentToWallet(btcTx, createWatchedBtcWalletFromAddresses(context, addresses));
+    }
+
+    /**
+     *
+     * @param btcTx
+     * @param wallet
+     * @return total amount sent to a given wallet.
+     */
+    private static Coin getAmountSentToWallet(BtcTransaction btcTx, Wallet wallet) {
+        return btcTx.getValueSentToMe(wallet);
+    }
+
+    public static List<UTXO> getUTXOsSentToAddresses(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        Context context,
+        BtcTransaction btcTx,
+        List<Address> addresses
+
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            return getUTXOsSentToAddresses(context, btcTx, addresses);
+        } else {
+            return BridgeUtilsLegacy.getUTXOsSentToAddress(
+                activations,
+                networkParameters,
+                btcTx,
+                addresses.get(0)
+            );
+        }
+    }
+
+    /**
+     * @param context
+     * @param btcTx
+     * @param addresses
+     * @return the list of UTXOs in the given btcTx sent to the given list of address
+     */
+    private static List<UTXO> getUTXOsSentToAddresses(Context context, BtcTransaction btcTx, List<Address> addresses) {
+        Wallet wallet = BridgeUtils.createWatchedBtcWalletFromAddresses(context, addresses);
+        return btcTx.getWalletOutputs(wallet).stream().map(
+            txOutput -> new UTXO(
+                btcTx.getHash(),
+                txOutput.getIndex(),
+                txOutput.getValue(),
+                0,
+                btcTx.isCoinBase(),
+                txOutput.getScriptPubKey()
+            )
+        ).collect(Collectors.toList());
+    }
+
     public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
@@ -217,15 +427,28 @@ public class BridgeUtils {
             null
         );
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-        Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
-            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
-        if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
-            logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
+        boolean isUTXOsOrTxAmountBelowMinimum =
+            activations.isActive(RSKIP293)? isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstants,
+                tx,
+                federationsWallet
+            ) : valueSentToMe.isLessThan(minimumPegInTxValue); // Legacy minimum validation against the total amount
+
+        if (!isUTXOsOrTxAmountBelowMinimum) {
+            return true;
         }
 
-        return valueSentToMe.isPositive() && !valueSentToMe.isLessThan(minimumPegInTxValue);
+        logger.warn(
+            activations.isActive(RSKIP293)?
+                "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis":
+                "[btctx:{}] Someone sent to the federation less than {} satoshis",
+            tx.getHash(),
+            minimumPegInTxValue
+        );
+        return false;
     }
 
     /**

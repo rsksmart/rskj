@@ -19,12 +19,14 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -198,6 +200,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT.getFunction();
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER = BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER.getFunction();
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
+
+    public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -1057,6 +1061,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return lockingCap.getValue();
     }
 
+    public byte[] getActivePowpegRedeemScript(Object[] args) {
+        logger.debug("[getActivePowpegRedeemScript] started");
+        try {
+            Optional<Script> redeemScript = bridgeSupport.getActivePowpegRedeemScript();
+            logger.debug("[getActivePowpegRedeemScript] finished");
+            return redeemScript.orElse(new Script(new byte[]{})).getProgram();
+        } catch (Exception ex) {
+            logger.warn("[getActivePowpegRedeemScript] something failed", ex);
+            throw ex;
+        }
+    }
+
     public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
 
@@ -1131,7 +1147,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            return BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
+            return BigInteger.valueOf(FastBridgeTxResponseCodes.GENERIC_ERROR.value());
         }
     }
 
