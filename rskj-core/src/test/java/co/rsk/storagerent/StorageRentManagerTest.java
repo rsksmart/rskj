@@ -2,6 +2,7 @@ package co.rsk.storagerent;
 
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.program.Program;
@@ -40,8 +41,8 @@ public class StorageRentManagerTest {
         );
         long gasRemaining = 28750;
         long executionBlockTimestamp = new GregorianCalendar(2022, 1, 1).getTime().getTime();
-        Repository spyTransactionTrack = spy(Repository.class); // useful to spy rent updates
-        Repository spyBlockTrack = spy(Repository.class);
+        MutableRepositoryTracked spyTransactionTrack = spy(MutableRepositoryTracked.class); // useful to spy rent updates
+        MutableRepositoryTracked spyBlockTrack = spy(MutableRepositoryTracked.class);
 
         // mocks
         when(spyBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
@@ -79,8 +80,8 @@ public class StorageRentManagerTest {
         List<TrackedNode> rollbackNodes = new ArrayList<>();
         long gasRemaining = 28750;
         long executionBlockTimestamp = new GregorianCalendar(2022, 1, 1).getTime().getTime();
-        Repository spyTransactionTrack = spy(Repository.class); // useful to spy rent updates
-        Repository spyBlockTrack = spy(Repository.class);
+        MutableRepositoryTracked spyTransactionTrack = spy(MutableRepositoryTracked.class); // useful to spy rent updates
+        MutableRepositoryTracked spyBlockTrack = spy(MutableRepositoryTracked.class);
 
         // mocks
         when(spyBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
@@ -109,8 +110,8 @@ public class StorageRentManagerTest {
         // params
         Set<TrackedNode> rentedNodes = new HashSet<>(); // empty
         List<TrackedNode> rollbackNodes = new ArrayList<>(); // empty
-        Repository spyTransactionTrack = spy(Repository.class); // useful to spy rent updates
-        Repository spyBlockTrack = spy(Repository.class); // useful to spy fetched data
+        MutableRepositoryTracked spyTransactionTrack = spy(MutableRepositoryTracked.class); // useful to spy rent updates
+        MutableRepositoryTracked spyBlockTrack = spy(MutableRepositoryTracked.class); // useful to spy fetched data
 
         when(spyBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
         when(spyBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
@@ -146,8 +147,8 @@ public class StorageRentManagerTest {
 
         long gasRemaining = 28750;
         long executionBlockTimestamp = new GregorianCalendar(2022, 1, 1).getTime().getTime();
-        Repository spyTransactionTrack = spy(Repository.class); // useful to spy rent updates
-        Repository spyBlockTrack = spy(Repository.class);
+        MutableRepositoryTracked spyTransactionTrack = spy(MutableRepositoryTracked.class); // useful to spy rent updates
+        MutableRepositoryTracked spyBlockTrack = spy(MutableRepositoryTracked.class);
 
         when(spyBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
         when(spyBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
@@ -168,8 +169,8 @@ public class StorageRentManagerTest {
 
         // now try to pay rent without enough gas
 
-        Repository unusedTrack = spy(Repository.class);
-        Repository newBlockTrack = spy(Repository.class);
+        MutableRepositoryTracked unusedTrack = spy(MutableRepositoryTracked.class);
+        MutableRepositoryTracked newBlockTrack = spy(MutableRepositoryTracked.class);
 
         when(newBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
         when(newBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
@@ -187,7 +188,7 @@ public class StorageRentManagerTest {
         }
     }
 
-    private void mockGetRentedNode(Repository spyBlockTrack, Set<TrackedNode> rentedNodes,
+    private void mockGetRentedNode(MutableRepositoryTracked spyBlockTrack, Set<TrackedNode> rentedNodes,
                                    List<TrackedNode> rollbackNodes, long nodeSize, long rentTimestamp) {
         rentedNodes.forEach(r -> when(spyBlockTrack.getRentedNode(r)).thenReturn(new RentedNode(r, nodeSize, rentTimestamp)));
         rollbackNodes.forEach(r -> when(spyBlockTrack.getRentedNode(r)).thenReturn(new RentedNode(r, nodeSize, rentTimestamp)));
@@ -197,7 +198,7 @@ public class StorageRentManagerTest {
      * Checks rent payment, given rented nodes and rollback nodes.
      */
     private void checkStorageRentPayment(long gasRemaining, long executionBlockTimestamp,
-                                         Repository spyBlockTrack, Repository spyTransactionTrack, long expectedRemainingGas,
+                                         MutableRepositoryTracked spyBlockTrack, MutableRepositoryTracked spyTransactionTrack, long expectedRemainingGas,
                                          long expectedPaidRent, long expectedPayableRent, long expectedRollbacksRent,
                                          long expectedRentedNodesCount, long expectedRollbackNodesCount) {
         StorageRentManager storageRentManager = new StorageRentManager();

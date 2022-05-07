@@ -2,13 +2,14 @@ package co.rsk.db;
 
 import co.rsk.trie.MutableTrie;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 
 import static org.ethereum.db.OperationType.*;
 
-public class MutableRepositoryTestable extends MutableRepository {
+public class MutableRepositoryTestable extends MutableRepositoryTracked {
     public MutableRepositoryTestable(MutableTrie mutableTrie,
-                                     MutableRepository parentRepository, boolean enableTracking) {
+                                     MutableRepositoryTracked parentRepository, boolean enableTracking) {
         super(mutableTrie, parentRepository, enableTracking);
     }
 
