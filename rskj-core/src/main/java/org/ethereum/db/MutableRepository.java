@@ -57,8 +57,8 @@ public class MutableRepository implements Repository {
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
-    protected final TrieKeyMapper trieKeyMapper;
-    protected final MutableTrie mutableTrie;
+    protected TrieKeyMapper trieKeyMapper;
+    protected MutableTrie mutableTrie;
 
     // default constructor
     public MutableRepository(MutableTrie mutableTrie) {
@@ -80,6 +80,10 @@ public class MutableRepository implements Repository {
     // by using this way we avoid instantiating Trie instances from undesired class
     public MutableRepository(TrieStore trieStore) {
         this(trieStore, new Trie(trieStore));
+    }
+
+    // this is only used in mocks
+    protected MutableRepository() {
     }
 
     @Override
