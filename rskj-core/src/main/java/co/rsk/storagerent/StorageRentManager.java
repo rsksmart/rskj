@@ -3,6 +3,7 @@ package co.rsk.storagerent;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.Program;
@@ -46,7 +47,7 @@ public class StorageRentManager {
      * @return new remaining gas
      * */
     public long pay(long gasRemaining, long executionBlockTimestamp,
-                    Repository blockTrack, Repository transactionTrack,
+                    MutableRepositoryTracked blockTrack, MutableRepositoryTracked transactionTrack,
                     String transactionHash) {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution

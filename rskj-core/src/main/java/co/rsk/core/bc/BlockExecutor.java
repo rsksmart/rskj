@@ -31,6 +31,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -267,7 +268,7 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        MutableRepository blockTrack = repositoryLocator.trackedRepositoryAt(parent);
+        MutableRepositoryTracked blockTrack = repositoryLocator.trackedRepositoryAt(parent);
 
         maintainPrecompiledContractStorageRoots(blockTrack, activationConfig.forBlock(block.getNumber()));
 
