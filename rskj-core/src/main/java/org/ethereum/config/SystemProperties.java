@@ -97,6 +97,8 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
+    public static final String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
+    public static final String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -707,24 +709,24 @@ public abstract class SystemProperties {
     }
 
     public DbKind databaseKind() {
-        return DbKind.ofName(configFromFiles.getString("keyvalue.datasource"));
+        return DbKind.ofName(configFromFiles.getString(KEYVALUE_DATASOURCE_PROP_NAME));
     }
 
     public DbKind getDbKindValueFromDbKindLogFile() {
         try {
-            File file = new File(databaseDir(), "dbKind.properties");
+            File file = new File(databaseDir(), DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
             if (file.exists() && file.canRead()) {
                 try (FileReader reader = new FileReader(file)) {
                     props.load(reader);
                 }
 
-                return DbKind.ofName(props.getProperty("keyvalue.datasource"));
+                return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return null;
+            return DbKind.LEVEL_DB;
         } catch (IOException e) {
-            return null;
+            return DbKind.LEVEL_DB;
         }
     }
 
@@ -732,20 +734,13 @@ public abstract class SystemProperties {
         DbKind dbKind = this.databaseKind();
 
         try {
-            File file = new File(databaseDir(), "dbKind.properties");
+            File file = new File(databaseDir(), DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
-            if (file.canRead()) {
-                try (FileReader reader = new FileReader(file)) {
-                    props.load(reader);
-                }
-            } else {
-                props.setProperty("keyvalue.datasource", dbKind.name());
-                file.getParentFile().mkdirs();
-                try (FileWriter writer = new FileWriter(file)) {
-                    props.store(writer, "Generated dbKind. In order to follow selected db.");
-                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
-                    logger.info("Generated dbKind.properties file.", file);
-                }
+            props.setProperty(KEYVALUE_DATASOURCE_PROP_NAME, dbKind.name());
+            file.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(file)) {
+                props.store(writer, "Generated dbKind. In order to follow selected db.");
+                logger.info("Generated dbKind.properties file.", file);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
