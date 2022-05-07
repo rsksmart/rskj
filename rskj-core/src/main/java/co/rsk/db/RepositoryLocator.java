@@ -26,6 +26,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.util.RLP;
 
 import java.util.Optional;
@@ -101,10 +102,10 @@ public class RepositoryLocator {
      * @return a modifiable {@link Repository}
      * @throws IllegalArgumentException if the state is not found.
      * */
-    public MutableRepository trackedRepositoryAt(BlockHeader header) {
+    public MutableRepositoryTracked trackedRepositoryAt(BlockHeader header) {
         return mutableTrieSnapshotAt(header)
                 .map(MutableTrieCache::new)
-                .map(MutableRepository::trackedRepository)
+                .map(MutableRepositoryTracked::trackedRepository)
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 }

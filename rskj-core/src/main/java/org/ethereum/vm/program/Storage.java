@@ -224,23 +224,4 @@ public class Storage implements Repository, ProgramListenerAware {
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }
-
-    @Override
-    public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
-        return repository.getStorageRentNodes(transactionHash);
-    }
-
-    public List<TrackedNode> getRollBackNodes(String transactionHash) {
-        return repository.getRollBackNodes(transactionHash);
-    }
-
-    @Override
-    public RentedNode getRentedNode(TrackedNode trackedNode) {
-        return repository.getRentedNode(trackedNode);
-    }
-
-    @Override
-    public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
-        repository.updateRents(rentedNodes, executionBlockTimestamp);
-    }
 }

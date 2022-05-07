@@ -32,6 +32,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
@@ -513,7 +514,9 @@ public class TransactionExecutor {
 
         if(isStorageRentEnabled()) {
             // pay storage rent
-            gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(), blockTrack, transactionTrack, tx.getHash().toHexString());
+            gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
+                    tx.getHash().toHexString());
             // todo(fedejinich) blockTrack should stop tracking here
         }
 
