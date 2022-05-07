@@ -19,17 +19,20 @@ import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
 
 public class MutableRepositoryTracked extends MutableRepository {
 
-    // todo(fedejinich) ALL THIS MEMBERS MIGHT BE MOVED TO MutableRepositoryTracked
     // enables node tracking feature
-    private final boolean enableTracking;
+    private boolean enableTracking;
     // a set to track all the used trie-value-containing nodes in this repository (and its children repositories)
-    protected final Set<TrackedNode> trackedNodes;
+    protected Set<TrackedNode> trackedNodes;
     // a list of nodes tracked nodes that were rolled back (due to revert or OOG)
-    protected final List<TrackedNode> rollbackNodes;
+    protected List<TrackedNode> rollbackNodes;
     // parent repository to commit tracked nodes
-    protected final MutableRepositoryTracked parentRepository;
+    protected MutableRepositoryTracked parentRepository;
     // this contains the hash of the ongoing tracked transaction
     protected String trackedTransactionHash = "NO_TRANSACTION_HASH";
+
+    public MutableRepositoryTracked() {
+        super();
+    }
 
     private MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
                                        Set<TrackedNode> trackedNodes, List<TrackedNode> rollbackNodes,
