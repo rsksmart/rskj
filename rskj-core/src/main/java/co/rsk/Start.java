@@ -18,6 +18,8 @@
 package co.rsk;
 
 import co.rsk.util.PreflightChecksUtils;
+import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +38,9 @@ public class Start {
         RskContext ctx = null;
         try {
             ctx = new RskContext(args);
+
+            validateDbKind(ctx);
+
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
@@ -45,6 +50,21 @@ public class Start {
             }
 
             System.exit(1);
+        }
+    }
+
+    static void validateDbKind(RskContext ctx) {
+        DbKind currentDbKind = ctx.getRskSystemProperties().databaseKind();
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindLogFile(ctx.getRskSystemProperties().databaseDir());
+
+        if (prevDbKind != currentDbKind) {
+            if (ctx.getRskSystemProperties().databaseReset()) {
+                KeyValueDataSource.generatedDbKindLogFile(currentDbKind, ctx.getRskSystemProperties().databaseDir());
+            } else {
+                logger.warn("Use the flag --reset when running the application if you are using a different datasource.");
+                KeyValueDataSource.generatedDbKindLogFile(currentDbKind, ctx.getRskSystemProperties().databaseDir());
+                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
+            }
         }
     }
 

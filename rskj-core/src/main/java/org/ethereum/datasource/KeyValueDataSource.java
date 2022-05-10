@@ -20,18 +20,27 @@
 package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
 public interface KeyValueDataSource extends DataSource {
+    String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
+    String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
+
     @Nullable
     byte[] get(byte[] key);
 
     /**
      * null puts() are NOT allowed.
+     *
      * @return the same value it received
      */
     byte[] put(byte[] key, byte[] value);
@@ -45,6 +54,7 @@ public interface KeyValueDataSource extends DataSource {
      * if somethings breaks, it's possible that some keys get written and some
      * others don't.
      * IMPORTANT: keysToRemove override entriesToUpdate
+     *
      * @param entriesToUpdate
      * @param keysToRemove
      */
@@ -89,5 +99,40 @@ public interface KeyValueDataSource extends DataSource {
         KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
+    }
+
+    static DbKind getDbKindValueFromDbKindLogFile(String databaseDir) {
+        try {
+            File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
+            Properties props = new Properties();
+            if (file.exists() && file.canRead()) {
+                try (FileReader reader = new FileReader(file)) {
+                    props.load(reader);
+                }
+
+                return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
+            }
+
+            return DbKind.LEVEL_DB;
+        } catch (IOException e) {
+            LoggerFactory.getLogger("KeyValueDataSource").warn(String.format("Exception found while working with %s. {}", DB_KIND_PROPERTIES_FILE), e);
+            return DbKind.LEVEL_DB;
+        }
+    }
+
+    static void generatedDbKindLogFile(DbKind dbKind, String databaseDir) {
+        try {
+            File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
+            Properties props = new Properties();
+            props.setProperty(KEYVALUE_DATASOURCE_PROP_NAME, dbKind.name());
+            file.getParentFile().mkdirs();
+            try (FileWriter writer = new FileWriter(file)) {
+                props.store(writer, "Generated dbKind. In order to follow selected db.");
+
+                LoggerFactory.getLogger("KeyValueDataSource").info("Generated dbKind.properties file.");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -74,7 +74,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
 
@@ -313,7 +313,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void close() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
             if (!isAlive()) {

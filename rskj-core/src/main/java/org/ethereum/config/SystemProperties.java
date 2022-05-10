@@ -31,6 +31,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -97,8 +98,6 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
     public static final String PROPERTY_PERSIST_BLOOMS_CACHE_SNAPSHOT = "cache.blooms.persist-snapshot";
-    public static final String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
-    public static final String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -709,41 +708,6 @@ public abstract class SystemProperties {
     }
 
     public DbKind databaseKind() {
-        return DbKind.ofName(configFromFiles.getString(KEYVALUE_DATASOURCE_PROP_NAME));
-    }
-
-    public DbKind getDbKindValueFromDbKindLogFile() {
-        try {
-            File file = new File(databaseDir(), DB_KIND_PROPERTIES_FILE);
-            Properties props = new Properties();
-            if (file.exists() && file.canRead()) {
-                try (FileReader reader = new FileReader(file)) {
-                    props.load(reader);
-                }
-
-                return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
-            }
-
-            return DbKind.LEVEL_DB;
-        } catch (IOException e) {
-            return DbKind.LEVEL_DB;
-        }
-    }
-
-    public void generatedDbKindLogFile() {
-        DbKind dbKind = this.databaseKind();
-
-        try {
-            File file = new File(databaseDir(), DB_KIND_PROPERTIES_FILE);
-            Properties props = new Properties();
-            props.setProperty(KEYVALUE_DATASOURCE_PROP_NAME, dbKind.name());
-            file.getParentFile().mkdirs();
-            try (FileWriter writer = new FileWriter(file)) {
-                props.store(writer, "Generated dbKind. In order to follow selected db.");
-                logger.info("Generated dbKind.properties file.", file);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
     }
 }

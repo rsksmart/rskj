@@ -1083,12 +1083,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         DbKind currentDbKind = getRskSystemProperties().databaseKind();
         KeyValueDataSource blocksDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
-        DbKind prevDbKind = getRskSystemProperties().getDbKindValueFromDbKindLogFile();
-
-        if (prevDbKind == null || prevDbKind != currentDbKind) {
-            logger.warn("Use the flag --reset when running the application if you are using a different datasource.");
-            getRskSystemProperties().generatedDbKindLogFile();
-        }
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
