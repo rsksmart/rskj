@@ -603,8 +603,7 @@ public class TransactionPoolImplTest {
     public void checkTxWithHighNonceIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
-        Transaction tx = createSampleTransaction(1, 2, 1000, 5);
-
+        Transaction tx = createSampleTransaction(1, 2, 1000, 16);
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
         Assert.assertFalse(result.transactionsWereAdded());
