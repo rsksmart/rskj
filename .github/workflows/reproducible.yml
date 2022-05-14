@@ -21,7 +21,7 @@ jobs:
 
       - name: Verify files integrity
         run: |
-          gpg --keyserver https://secchannel.rsk.co/release.asc --recv-keys 1A92D8942171AFA951A857365DECF4415E3B8FA4
+          gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991323D23FD37BAA7A6DBEAC640C5A14B
           gpg --verify --output SHA256SUMS SHA256SUMS.asc && sha256sum --check SHA256SUMS
       - name: Build rskj
         run: |
