@@ -202,7 +202,6 @@ public class SyncProcessorTest {
         Genesis genesisBlock = mock(Genesis.class);
         BlockStore blockStore = mock(BlockStore.class);
         when(blockStore.getMinNumber()).thenReturn(0L);
-        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(genesisBlock);
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
@@ -327,7 +326,6 @@ public class SyncProcessorTest {
         BlockStore blockStore = mock(BlockStore.class);
         Genesis genesisBlock = mock(Genesis.class);
         when(blockStore.getMinNumber()).thenReturn(0L);
-        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(genesisBlock);
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,

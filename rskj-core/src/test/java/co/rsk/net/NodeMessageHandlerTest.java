@@ -380,7 +380,6 @@ public class NodeMessageHandlerTest {
 
         Genesis genesisBlock = blockGenerator.getGenesisBlock();
         when(blockStore.getMinNumber()).thenReturn(genesisBlock.getNumber());
-        when(blockStore.getChainBlockByNumber(blockStore.getMinNumber())).thenReturn(genesisBlock);
 
         final Block block = blockGenerator.createChildBlock(genesisBlock);
         final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), blockchain.getTotalDifficulty());

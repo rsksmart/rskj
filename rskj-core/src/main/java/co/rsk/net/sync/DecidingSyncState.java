@@ -19,7 +19,6 @@ package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
 import co.rsk.net.Status;
-import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,10 +128,6 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private boolean checkGenesisConnected(BlockStore blockStore) {
-        Block minBlock = blockStore.getChainBlockByNumber(blockStore.getMinNumber());
-        if (minBlock == null) {
-            throw new IllegalStateException("Could not get minBlock from store");
-        }
-        return minBlock.isGenesis();
+        return blockStore.getMinNumber() == 0;
     }
 }
