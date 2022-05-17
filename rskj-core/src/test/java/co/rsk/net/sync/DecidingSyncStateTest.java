@@ -174,7 +174,7 @@ public class DecidingSyncStateTest {
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         when(blockStore.getMinNumber()).thenReturn(1L);
-        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
+        when(peersInformation.getBestOrEqualPeer()).thenReturn(Optional.of(peer));
 
         syncState.newPeerStatus();
         verify(syncEventsHandler, times(1)).backwardSyncing(peer);
@@ -197,7 +197,7 @@ public class DecidingSyncStateTest {
 
         when(blockStore.getMinNumber()).thenReturn(0L);
         Block block = mock(Block.class);
-        when(peersInformation.getPeerWithSameOrGreaterTip()).thenReturn(Optional.of(peer));
+        when(peersInformation.getBestOrEqualPeer()).thenReturn(Optional.of(peer));
 
         when(block.isGenesis()).thenReturn(true);
         syncState.newPeerStatus();

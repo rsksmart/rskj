@@ -100,12 +100,12 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private boolean tryStartShortBackwardSync() {
-        if (checkGenesisConnected(blockStore)) {
+        if (checkGenesisConnected()) {
             logger.trace("Backward syncing not required");
             return false; // nothing else to do
         }
 
-        Optional<Peer> peerForBackwardSync = peersInformation.getPeerWithSameOrGreaterTip();
+        Optional<Peer> peerForBackwardSync = peersInformation.getBestOrEqualPeer();
         if (!peerForBackwardSync.isPresent()) {
             logger.trace("Backward syncing not possible, no valid peer");
             return false;
@@ -119,7 +119,7 @@ public class DecidingSyncState extends BaseSyncState {
 
     private boolean shouldLongSync(long peerBestBlockNumber) {
         long distanceToTip = peerBestBlockNumber - blockStore.getBestBlock().getNumber();
-        return distanceToTip > syncConfiguration.getLongSyncLimit() || blockStore.getMinNumber() == 0;
+        return distanceToTip > syncConfiguration.getLongSyncLimit() || checkGenesisConnected();
     }
 
     private Optional<Long> getPeerBestBlockNumber(Peer peer) {
@@ -127,7 +127,7 @@ public class DecidingSyncState extends BaseSyncState {
                 .flatMap(pi -> Optional.ofNullable(pi.getStatus()).map(Status::getBestBlockNumber));
     }
 
-    private boolean checkGenesisConnected(BlockStore blockStore) {
+    private boolean checkGenesisConnected() {
         return blockStore.getMinNumber() == 0;
     }
 }

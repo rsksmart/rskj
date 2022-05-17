@@ -120,7 +120,7 @@ public class PeersInformation {
                 .map(Map.Entry::getKey);
     }
 
-    public Optional<Peer> getPeerWithSameOrGreaterTip() {
+    public Optional<Peer> getBestOrEqualPeer() {
         return getTrustedPeers()
                 .filter(e -> isMyDifficultyLowerThan(e.getKey(), false))
                 .max(this.peerComparator)
@@ -146,14 +146,8 @@ public class PeersInformation {
             return false;
         }
 
-        boolean hasTotalDifficulty = peerStatus.getTotalDifficulty() != null;
         BlockChainStatus myStatus = blockchain.getStatus();
-        // this works only for testing purposes, real peerStatus without difficulty don't reach this far
-        if (strictLower) {
-            return hasTotalDifficulty ? myStatus.hasLowerTotalDifficultyThan(peerStatus) : myStatus.hasLowerBestBlockNumberThan(peerStatus);
-        } else {
-            return hasTotalDifficulty ? myStatus.hasLowerOrSameTotalDifficultyThan(peerStatus) : myStatus.hasLowerOrSameBestBlockNumberThan(peerStatus);
-        }
+        return strictLower ? myStatus.hasLowerTotalDifficultyThan(peerStatus) : myStatus.hasLowerOrSameTotalDifficultyThan(peerStatus);
     }
 
     public List<Peer> getBestPeerCandidates() {
