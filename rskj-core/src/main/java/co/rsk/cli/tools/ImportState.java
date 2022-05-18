@@ -24,6 +24,8 @@ import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -35,11 +37,13 @@ import java.nio.file.Paths;
 /**
  * The entry point for import state CLI tool
  * This is an experimental/unsupported tool
- *
+ * <p>
  * Required cli args:
  * - args[0] - file path
  */
 public class ImportState extends CliToolRskContextAware {
+
+    private static final Logger logger = LoggerFactory.getLogger("ImportState");
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -50,6 +54,15 @@ public class ImportState extends CliToolRskContextAware {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
         KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+
+        try {
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset());
+        } catch (Exception e) {
+            logger.error("The RSK node main thread failed, closing program", e);
+
+            System.exit(1);
+            return;
+        }
 
         String filename = args[0];
 

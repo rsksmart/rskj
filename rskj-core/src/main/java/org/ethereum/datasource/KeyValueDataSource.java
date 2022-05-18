@@ -101,10 +101,11 @@ public interface KeyValueDataSource extends DataSource {
         destinationDataSource.close();
     }
 
-    static DbKind getDbKindValueFromDbKindLogFile(String databaseDir) {
+    static DbKind getDbKindValueFromDbKindFile(String databaseDir) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
+
             if (file.exists() && file.canRead()) {
                 try (FileReader reader = new FileReader(file)) {
                     props.load(reader);
@@ -115,12 +116,11 @@ public interface KeyValueDataSource extends DataSource {
 
             return DbKind.LEVEL_DB;
         } catch (IOException e) {
-            LoggerFactory.getLogger("KeyValueDataSource").warn(String.format("Exception found while working with %s. {}", DB_KIND_PROPERTIES_FILE), e);
-            return DbKind.LEVEL_DB;
+            throw new RuntimeException(e);
         }
     }
 
-    static void generatedDbKindLogFile(DbKind dbKind, String databaseDir) {
+    static void generatedDbKindFile(DbKind dbKind, String databaseDir) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
@@ -133,6 +133,27 @@ public interface KeyValueDataSource extends DataSource {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        File dir = new File(databaseDir);
+        boolean databaseDirExists = dir.exists() && dir.isDirectory();
+
+        if (!databaseDirExists) {
+            KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
+            return;
+        }
+
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir);
+
+        if (prevDbKind != currentDbKind) {
+            if (databaseReset) {
+                KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
+            } else {
+                LoggerFactory.getLogger("KeyValueDataSource").warn("Use the flag --reset when running the application if you are using a different datasource.");
+                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
+            }
         }
     }
 }

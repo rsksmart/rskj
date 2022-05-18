@@ -339,16 +339,4 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
-
-    public static void mergeDataSources(Path destinationPath, List<Path> originPaths) {
-        Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
-        for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
-            singleOriginDataSource.keys().forEach(kw -> mergedStores.put(kw, singleOriginDataSource.get(kw.getData())));
-            singleOriginDataSource.close();
-        }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
-        destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
-        destinationDataSource.close();
-    }
 }
