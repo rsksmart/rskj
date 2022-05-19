@@ -35,6 +35,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -168,6 +169,10 @@ public class PegTestUtils {
         System.arraycopy(customPayload, 0, payloadBytes, index, customPayload.length);
 
         return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
+    public static Address createP2PKHBtcAddress(NetworkParameters networkParameters, int pk) {
+        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(networkParameters);
     }
 
     public static Address createRandomP2PKHBtcAddress(NetworkParameters networkParameters) {

@@ -1086,15 +1086,6 @@ public class BridgeSupport {
         ReleaseTransactionSet releaseTransactionSet,
         Wallet wallet
     ) {
-        Coin walletBalance = wallet.getBalance();
-        boolean canProcessAtLeastOnePegout = releaseRequestQueue.getEntries()
-            .stream()
-            .anyMatch(entry -> walletBalance.isGreaterThan(entry.getAmount()) || walletBalance.equals(entry.getAmount()));
-        if (!canProcessAtLeastOnePegout) {
-            logger.warn("[processPegoutsIndividually] wallet balance {} cannot process at least one pegout", walletBalance);
-            return;
-        }
-
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildAmountTo(
                 releaseRequest.getDestination(),
