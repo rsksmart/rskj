@@ -45,13 +45,13 @@ public class ParallelizeTransactionHandler {
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
         TransactionBucket bucketCandidate = getBucketCandidates(tx, newReadKeys, newWrittenKeys);
 
-        if (bucketDoesNotHasAvailableGas(tx, bucketCandidate)) {
+        if (!bucketHasAvailableGas(tx, bucketCandidate)) {
             if (bucketCandidate.isSequential()) {
                 return Optional.empty();
             }
             bucketCandidate = getSequentialBucket();
 
-            if (bucketDoesNotHasAvailableGas(tx, bucketCandidate)) {
+            if (!bucketHasAvailableGas(tx, bucketCandidate)) {
                 return Optional.empty();
             }
         }
@@ -61,8 +61,8 @@ public class ParallelizeTransactionHandler {
         return Optional.of(bucketCandidate.getGasUsed());
     }
 
-    private boolean bucketDoesNotHasAvailableGas(Transaction tx, TransactionBucket bucketCandidate) {
-        return !bucketCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
+    private boolean bucketHasAvailableGas(Transaction tx, TransactionBucket bucketCandidate) {
+        return bucketCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
     }
 
     public Optional<Long> addRemascTransaction(Transaction tx, long gasUsedByTx) {
@@ -119,12 +119,9 @@ public class ParallelizeTransactionHandler {
 
         if (bucket.isSequential()) {
             bucketBySender.put(sender, bucket);
+            return;
         } else {
             bucketBySender.putIfAbsent(sender, bucket);
-        }
-
-        if (bucket.equals(getSequentialBucket())) {
-            return;
         }
 
         for (ByteArrayWrapper key: newWrittenKeys) {
@@ -165,7 +162,7 @@ public class ParallelizeTransactionHandler {
 
                 if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
                    return getSequentialBucket();
-                } else {
+                } else if (!bucketCandidate.isPresent()) {
                     bucketCandidate = Optional.of(bucket);
                 }
             }

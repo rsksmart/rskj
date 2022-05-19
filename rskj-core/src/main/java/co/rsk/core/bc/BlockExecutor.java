@@ -702,7 +702,14 @@ public class BlockExecutor {
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
-            bucketGasAccumulated.ifPresent(receipt::setCumulativeGas);
+
+            if (bucketGasAccumulated.isPresent()) {
+                receipt.setCumulativeGas(bucketGasAccumulated.get());
+            } else {
+                //This line is used for testing only when acceptInvalidTransactions is set.
+                receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn(buckets));
+            }
+
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
