@@ -213,6 +213,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             }
         } catch (RocksDBException e) {
             logger.error("Exception. Not retrying.", e);
+            throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
             profiler.stop(metric);
@@ -288,10 +289,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
                 batch.delete(deleteKey.getData());
             }
             db.write(new WriteOptions(), batch);
-            profiler.stop(metric);
         } catch (RocksDBException e) {
             logger.error("Exception. Not retrying.", e);
             throw new RuntimeException(e);
+        } finally {
+            profiler.stop(metric);
         }
 
     }
@@ -336,7 +338,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         if (exCaught != null && retries > 1) {
             logger.error("Exception. Not retrying.", exCaught);
             panicProcessor.panic("rocksdb", String.format("Error %s", exCaught.getMessage()));
-            throw new RuntimeException(exCaught);
+            throw new IllegalArgumentException(exCaught);
         }
     }
 

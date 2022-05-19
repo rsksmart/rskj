@@ -32,15 +32,17 @@ public class KeyValueDataSourceTest {
     @Parameterized.Parameters(name = "{1}, flush = {2}")
     public static Collection<Object[]> data() throws IOException {
         Path tmpDir = Files.createTempDirectory("rskj");
-        return Arrays.asList(new Object[][] {
-            { new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-            { new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true },
-            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true },
-            { new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true },
-            { new HashMapDB(), HashMapDB.class.getSimpleName(), false },
-            { new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false },
-            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false },
-            { new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false }
+        return Arrays.asList(new Object[][]{
+                {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
+                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
+                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
+                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
+                {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
+                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
+                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
+                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
         });
     }
 
@@ -115,7 +117,7 @@ public class KeyValueDataSourceTest {
         keyValueDataSource.put(randomKey, null);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void updateBatchWithNulls() {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
         ByteArrayWrapper keyToNull = updatedValues.keySet().iterator().next();

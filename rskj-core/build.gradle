@@ -62,7 +62,7 @@ ext {
             spongyCastleVer        : '1.52.0.0',
             bouncyCastleVer        : '1.59',
             ethereumLeveldbJniVer  : '1.18.3',
-            rocksdbJniVer  : '6.27.3',
+            rocksdbJniVer          : '6.27.3',
             slf4jVer               : '1.7.25',
             logbackVer             : '1.2.2',
             jacksonVer             : '2.8.7',
