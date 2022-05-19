@@ -140,4 +140,19 @@ public class ReleaseRequestQueue {
 
         entries.addAll(toRetry);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ReleaseRequestQueue)) return false;
+
+        ReleaseRequestQueue that = (ReleaseRequestQueue) o;
+
+        return entries != null ? entries.equals(that.entries) : that.entries == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return entries != null ? entries.hashCode() : 0;
+    }
 }

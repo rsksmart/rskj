@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 
 public class ReleaseRequestQueueTest {
@@ -185,10 +186,6 @@ public class ReleaseRequestQueueTest {
         ), queue.getEntries());
     }
 
-    private Address mockAddress(int pk) {
-        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-    }
-
     @Test
     public void test_removeEntries_all() {
         queue.removeEntries(queueEntries);
@@ -208,4 +205,54 @@ public class ReleaseRequestQueueTest {
         Assert.assertEquals(queueEntries.get(4), queue.getEntries().get(1));
     }
 
+    @Test
+    public void test_ReleaseRequestQueue_equals() {
+        ReleaseRequestQueue emptyReleaseRequestQueue = new ReleaseRequestQueue(
+            Collections.emptyList()
+        );
+
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5), PegTestUtils.createHash3(0)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4)),
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3))
+        ));
+
+        ReleaseRequestQueue releaseRequestQueueCopy = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5), PegTestUtils.createHash3(0)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4)),
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3))
+        ));
+
+        ReleaseRequestQueue differentOrderReleaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3)),
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4))
+        ));
+
+        ReleaseRequestQueue differentReleaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(10), Coin.COIN.multiply(10)),
+            new ReleaseRequestQueue.Entry(mockAddress(9), Coin.COIN.multiply(9)),
+            new ReleaseRequestQueue.Entry(mockAddress(8), Coin.COIN.multiply(8)),
+            new ReleaseRequestQueue.Entry(mockAddress(7), Coin.COIN.multiply(7)),
+            new ReleaseRequestQueue.Entry(mockAddress(6), Coin.COIN.multiply(6)),
+            new ReleaseRequestQueue.Entry(mockAddress(6), Coin.COIN.multiply(6))
+        ));
+
+        assertNotEquals(releaseRequestQueue, emptyReleaseRequestQueue);
+        assertNotEquals(releaseRequestQueueCopy, emptyReleaseRequestQueue);
+        assertEquals(emptyReleaseRequestQueue, emptyReleaseRequestQueue);
+
+        assertEquals(releaseRequestQueueCopy, releaseRequestQueue);
+        assertEquals(releaseRequestQueue, releaseRequestQueueCopy);
+        assertEquals(releaseRequestQueue, releaseRequestQueue);
+
+        assertNotEquals(differentOrderReleaseRequestQueue, releaseRequestQueue);
+
+        assertNotEquals(differentReleaseRequestQueue, releaseRequestQueue);
+        assertNotEquals(differentReleaseRequestQueue, differentOrderReleaseRequestQueue);
+    }
+
+    private Address mockAddress(int pk) {
+        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+    }
 }
