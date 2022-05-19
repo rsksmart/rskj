@@ -40,7 +40,7 @@ public class Start {
             ctx = new RskContext(args);
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
-            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset());
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {

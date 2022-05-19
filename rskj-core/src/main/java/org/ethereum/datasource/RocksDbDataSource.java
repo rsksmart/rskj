@@ -311,7 +311,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
 
         int retries = 0;
-        Exception exCaught = null;
+        RuntimeException exCaught = null;
 
         try {
             while (retries < MAX_RETRIES) {
@@ -323,7 +323,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
                     }
 
                     break;
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     logger.error("Exception. Retrying again...", e);
                     exCaught = e;
                 }
@@ -338,7 +338,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         if (exCaught != null && retries > 1) {
             logger.error("Exception. Not retrying.", exCaught);
             panicProcessor.panic("rocksdb", String.format("Error %s", exCaught.getMessage()));
-            throw new IllegalArgumentException(exCaught);
+            throw exCaught;
         }
     }
 

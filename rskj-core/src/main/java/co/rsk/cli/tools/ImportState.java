@@ -56,7 +56,7 @@ public class ImportState extends CliToolRskContextAware {
         KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
 
         try {
-            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset());
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
 

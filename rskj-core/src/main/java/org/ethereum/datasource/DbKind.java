@@ -38,8 +38,8 @@ public enum DbKind {
 
     public static DbKind ofName(@Nonnull String name) {
         Objects.requireNonNull(name, "name cannot be null");
-        return Arrays.stream(DbKind.values()).filter(dk -> dk.name.equals(name))
+        return Arrays.stream(DbKind.values()).filter(dk -> dk.name.equals(name) || dk.name().equals(name))
                 .findAny()
-                .orElseThrow(() -> new IllegalArgumentException(String.format("%s: not found as DbKind, using leveldb as default", name)));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("%s: not found as DbKind", name)));
     }
 }
