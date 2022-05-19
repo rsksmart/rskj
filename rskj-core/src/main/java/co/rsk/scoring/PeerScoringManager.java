@@ -114,12 +114,12 @@ public class PeerScoringManager {
         synchronized (accessLock) {
             if (id != null) {
                 PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance(id.toString()));
-                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
+                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, nodeIdForLog(id));
             }
 
             if (address != null) {
                 PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance(address.getHostAddress()));
-                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
+                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, addressForLog(address));
             }
 
             logRecordedEvent(id, address, event, message, messageArgs);
@@ -345,9 +345,9 @@ public class PeerScoringManager {
      * @param peerScoring the peer scoring
      * @param event an event type
      * @param punishmentCalculator calculator to use
-     * @param nodeID a node id
+     * @param nodeIdOrAddress a node identifier (nodeID or address) formatted for logging
      */
-    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
+    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, String nodeIdOrAddress) {
         peerScoring.updateScoring(event);
 
         boolean hasBadReputationAlready = !peerScoring.refreshReputationAndPunishment();
@@ -360,9 +360,8 @@ public class PeerScoringManager {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
 
-            String nodeIDFormatted = nodeIdForLog(nodeID);
-            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormatted, punishmentTime, event);
-            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormatted, ""));
+            logger.debug("Node {} has been punished for {} milliseconds after event {}. {}",
+                    nodeIdOrAddress, punishmentTime, event, PeerScoringInformation.buildByScoring(peerScoring, nodeIdOrAddress, ""));
         }
     }
 
