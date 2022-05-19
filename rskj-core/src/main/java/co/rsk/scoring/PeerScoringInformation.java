@@ -175,6 +175,30 @@ public class PeerScoringInformation {
     public long getPunishedUntil() {
         return punishedUntil;
     }
+
+    @Override
+    public String toString() {
+        return "PeerScoringInformation{" +
+                "successfulHandshakes=" + successfulHandshakes +
+                ", failedHandshakes=" + failedHandshakes +
+                ", invalidNetworks=" + invalidNetworks +
+                ", repeatedMessages=" + repeatedMessages +
+                ", validBlocks=" + validBlocks +
+                ", validTransactions=" + validTransactions +
+                ", invalidBlocks=" + invalidBlocks +
+                ", invalidTransactions=" + invalidTransactions +
+                ", invalidMessages=" + invalidMessages +
+                ", timeoutMessages=" + timeoutMessages +
+                ", unexpectedMessages=" + unexpectedMessages +
+                ", invalidHeader=" + invalidHeader +
+                ", score=" + score +
+                ", punishments=" + punishments +
+                ", goodReputation=" + goodReputation +
+                ", punishedUntil=" + punishedUntil +
+                ", id='" + id + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }
 
 
