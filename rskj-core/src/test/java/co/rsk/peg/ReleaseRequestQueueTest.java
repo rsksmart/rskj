@@ -211,6 +211,9 @@ public class ReleaseRequestQueueTest {
             Collections.emptyList()
         );
 
+        Object nonReleaseRequestQueueAsObject = new ArrayList<>();
+        Object emptyReleaseRequestQueueAsObject = emptyReleaseRequestQueue;
+
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
             new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5), PegTestUtils.createHash3(0)),
             new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4)),
@@ -238,6 +241,11 @@ public class ReleaseRequestQueueTest {
             new ReleaseRequestQueue.Entry(mockAddress(6), Coin.COIN.multiply(6))
         ));
 
+        assertNotEquals(emptyReleaseRequestQueue, null);
+        assertNotEquals(null, emptyReleaseRequestQueue);
+        assertNotEquals(emptyReleaseRequestQueue, nonReleaseRequestQueueAsObject);
+        assertEquals(emptyReleaseRequestQueue, emptyReleaseRequestQueueAsObject);
+
         assertNotEquals(releaseRequestQueue, emptyReleaseRequestQueue);
         assertNotEquals(releaseRequestQueueCopy, emptyReleaseRequestQueue);
         assertEquals(emptyReleaseRequestQueue, emptyReleaseRequestQueue);
@@ -250,6 +258,57 @@ public class ReleaseRequestQueueTest {
 
         assertNotEquals(differentReleaseRequestQueue, releaseRequestQueue);
         assertNotEquals(differentReleaseRequestQueue, differentOrderReleaseRequestQueue);
+    }
+
+    @Test
+    public void test_ReleaseRequestQueue_hashcode() {
+        ReleaseRequestQueue emptyReleaseRequestQueue = new ReleaseRequestQueue(
+            Collections.emptyList()
+        );
+
+        Object emptyReleaseRequestQueueAsObject = emptyReleaseRequestQueue;
+
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5), PegTestUtils.createHash3(0)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4)),
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3))
+        ));
+
+        ReleaseRequestQueue releaseRequestQueueCopy = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5), PegTestUtils.createHash3(0)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4)),
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3))
+        ));
+
+        ReleaseRequestQueue differentOrderReleaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.COIN.multiply(3)),
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.COIN.multiply(5)),
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.COIN.multiply(4))
+        ));
+
+        ReleaseRequestQueue differentReleaseRequestQueue = new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(10), Coin.COIN.multiply(10)),
+            new ReleaseRequestQueue.Entry(mockAddress(9), Coin.COIN.multiply(9)),
+            new ReleaseRequestQueue.Entry(mockAddress(8), Coin.COIN.multiply(8)),
+            new ReleaseRequestQueue.Entry(mockAddress(7), Coin.COIN.multiply(7)),
+            new ReleaseRequestQueue.Entry(mockAddress(6), Coin.COIN.multiply(6)),
+            new ReleaseRequestQueue.Entry(mockAddress(6), Coin.COIN.multiply(6))
+        ));
+
+        assertEquals(emptyReleaseRequestQueue.hashCode(), emptyReleaseRequestQueueAsObject.hashCode());
+
+        assertNotEquals(releaseRequestQueue.hashCode(), emptyReleaseRequestQueue.hashCode());
+        assertNotEquals(releaseRequestQueueCopy.hashCode(), emptyReleaseRequestQueue.hashCode());
+        assertEquals(emptyReleaseRequestQueue.hashCode(), emptyReleaseRequestQueue.hashCode());
+
+        assertEquals(releaseRequestQueueCopy.hashCode(), releaseRequestQueue.hashCode());
+        assertEquals(releaseRequestQueue.hashCode(), releaseRequestQueueCopy.hashCode());
+        assertEquals(releaseRequestQueue.hashCode(), releaseRequestQueue.hashCode());
+
+        assertNotEquals(differentOrderReleaseRequestQueue.hashCode(), releaseRequestQueue.hashCode());
+
+        assertNotEquals(differentReleaseRequestQueue.hashCode(), releaseRequestQueue.hashCode());
+        assertNotEquals(differentReleaseRequestQueue.hashCode(), differentOrderReleaseRequestQueue.hashCode());
     }
 
     private Address mockAddress(int pk) {

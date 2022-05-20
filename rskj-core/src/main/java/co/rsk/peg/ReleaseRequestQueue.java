@@ -87,18 +87,18 @@ public class ReleaseRequestQueue {
         boolean process(Entry entry);
     }
 
-    private List<Entry> entries;
+    private final List<Entry> entries;
 
     public ReleaseRequestQueue(List<Entry> entries) {
         this.entries = new ArrayList<>(entries);
     }
 
     public List<Entry> getEntriesWithoutHash() {
-        return entries.stream().filter((entry) -> entry.getRskTxHash() == null).collect(Collectors.toList());
+        return entries.stream().filter(entry -> entry.getRskTxHash() == null).collect(Collectors.toList());
     }
 
     public List<Entry> getEntriesWithHash() {
-        return entries.stream().filter((entry) -> entry.getRskTxHash() != null).collect(Collectors.toList());
+        return entries.stream().filter(entry -> entry.getRskTxHash() != null).collect(Collectors.toList());
     }
 
     public List<Entry> getEntries() {
@@ -143,16 +143,20 @@ public class ReleaseRequestQueue {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ReleaseRequestQueue)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ReleaseRequestQueue)) {
+            return false;
+        }
 
         ReleaseRequestQueue that = (ReleaseRequestQueue) o;
 
-        return entries != null ? entries.equals(that.entries) : that.entries == null;
+        return Objects.equals(entries, that.entries);
     }
 
     @Override
     public int hashCode() {
-        return entries != null ? entries.hashCode() : 0;
+        return entries.hashCode();
     }
 }
