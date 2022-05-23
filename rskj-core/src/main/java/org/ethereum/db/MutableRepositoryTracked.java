@@ -22,19 +22,21 @@ public class MutableRepositoryTracked extends MutableRepository {
     // enables node tracking feature
     private boolean enableTracking;
     // a set to track all the used trie-value-containing nodes in this repository (and its children repositories)
-    protected Set<TrackedNode> trackedNodes;
+    protected Set<TrackedNode> trackedNodes = new HashSet<>();
     // a list of nodes tracked nodes that were rolled back (due to revert or OOG)
-    protected List<TrackedNode> rollbackNodes;
+    protected List<TrackedNode> rollbackNodes = new ArrayList<>();
     // parent repository to commit tracked nodes
     protected MutableRepositoryTracked parentRepository;
     // this contains the hash of the ongoing tracked transaction
     protected String trackedTransactionHash = "NO_TRANSACTION_HASH";
 
+    @VisibleForTesting
     public MutableRepositoryTracked() {
         super();
     }
 
-    private MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
+    // default constructor
+    protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
                                        Set<TrackedNode> trackedNodes, List<TrackedNode> rollbackNodes,
                                        boolean enableTracking) {
         super(mutableTrie);
@@ -44,21 +46,23 @@ public class MutableRepositoryTracked extends MutableRepository {
         this.enableTracking = enableTracking;
     }
 
-    // useful for key tracking, it connects between repositories. the root Repository will contain a null parentRepository
-    protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository, boolean enableTracking) {
-        this(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>(), enableTracking);
-    }
-
     // creates a tracked repository, all the child repositories (created with startTracking()) will also be tracked.
     // this should be only called from RepositoryLocator.trackedRepository
     public static MutableRepositoryTracked trackedRepository(MutableTrie mutableTrieCache) {
-        return new MutableRepositoryTracked(mutableTrieCache, null, true);
+        return new MutableRepositoryTracked(mutableTrieCache, null, new HashSet<>(), new ArrayList<>(), true);
     }
 
     @Override
     public synchronized Repository startTracking() {
-        MutableRepositoryTracked mutableRepositoryTracked = new MutableRepositoryTracked(new MutableTrieCache(this.mutableTrie), this, this.enableTracking);
-        mutableRepositoryTracked.setTrackedTransactionHash(trackedTransactionHash); // todo(fedejinich) this will be moved to MutableRepositoryTracked
+        MutableRepositoryTracked mutableRepositoryTracked = new MutableRepositoryTracked(
+            new MutableTrieCache(this.mutableTrie),
+            this,
+            new HashSet<>(),
+            new ArrayList<>(),
+            this.enableTracking
+        );
+
+        mutableRepositoryTracked.setTrackedTransactionHash(trackedTransactionHash);
 
         return mutableRepositoryTracked;
     }
@@ -121,6 +125,31 @@ public class MutableRepositoryTracked extends MutableRepository {
         this.trackedTransactionHash = trackedTransactionHash;
     }
 
+    public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
+        Map<ByteArrayWrapper, TrackedNode> storageRentNodes = new HashMap<>();
+        this.trackedNodes.stream()
+                .filter(trackedNode -> trackedNode.useForStorageRent(transactionHash))
+                .forEach(trackedNode -> {
+                    ByteArrayWrapper key = new ByteArrayWrapper(trackedNode.getKey().getData());
+                    TrackedNode containedNode = storageRentNodes.get(key);
+
+                    boolean isContainedNode = containedNode != null;
+                    if(isContainedNode) {
+                        long notRelevant = -1;
+                        RentedNode nodeToBeReplaced = new RentedNode(containedNode, notRelevant, notRelevant);
+                        RentedNode newNode = new RentedNode(trackedNode, notRelevant, notRelevant);
+                        if(nodeToBeReplaced.shouldBeReplaced(newNode)) {
+                            // we pass the TrackedNode instance because we don't need a populated RentedNode yet
+                            storageRentNodes.put(key, trackedNode);
+                        }
+                    } else {
+                        storageRentNodes.put(key, trackedNode);
+                    }
+                });
+
+        return new HashSet<>(storageRentNodes.values());
+    }
+
     // Internal methods contains node tracking
 
     protected void internalPut(byte[] key, byte[] value) {
@@ -180,6 +209,8 @@ public class MutableRepositoryTracked extends MutableRepository {
         return storageKeys;
     }
 
+    // todo(fedejinich) remove all this unecesary "trackNode..." methods, there should only be one method
+
     protected void trackNodeWriteOperation(byte[] key) {
         trackNode(key, WRITE_OPERATION, true);
     }
@@ -216,28 +247,5 @@ public class MutableRepositoryTracked extends MutableRepository {
         this.rollbackNodes.addAll(trackedNodes);
     }
 
-    public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
-        Map<ByteArrayWrapper, TrackedNode> storageRentNodes = new HashMap<>();
-        this.trackedNodes.stream()
-                .filter(trackedNode -> trackedNode.useForStorageRent(transactionHash))
-                .forEach(trackedNode -> {
-                    ByteArrayWrapper key = new ByteArrayWrapper(trackedNode.getKey().getData());
-                    TrackedNode containedNode = storageRentNodes.get(key);
 
-                    boolean isContainedNode = containedNode != null;
-                    if(isContainedNode) {
-                        long notRelevant = -1;
-                        RentedNode nodeToBeReplaced = new RentedNode(containedNode, notRelevant, notRelevant);
-                        RentedNode newNode = new RentedNode(trackedNode, notRelevant, notRelevant);
-                        if(nodeToBeReplaced.shouldBeReplaced(newNode)) {
-                            // we pass the TrackedNode instance because we don't need a populated RentedNode yet
-                            storageRentNodes.put(key, trackedNode);
-                        }
-                    } else {
-                        storageRentNodes.put(key, trackedNode);
-                    }
-                });
-
-        return new HashSet<>(storageRentNodes.values());
-    }
 }
