@@ -202,6 +202,10 @@ public class ParallelizeTransactionHandler {
         return this.buckets.get(this.buckets.size()-1);
     }
 
+    public long getGasUsedInSequential() {
+        return getSequentialBucket().getGasUsed();
+    }
+
     private static class TransactionBucket {
 
         final Short id;
@@ -224,6 +228,7 @@ public class ParallelizeTransactionHandler {
         }
 
         private boolean hasGasAvailable(long txGasLimit) {
+            //TODO(JULI): Re-check a thousand of times this line.
             long cumulativeGas = GasCost.add(gasUsedInBucket, txGasLimit);
             return cumulativeGas <= gasLimit;
         }
