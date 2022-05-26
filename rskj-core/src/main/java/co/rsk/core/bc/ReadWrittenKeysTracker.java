@@ -19,46 +19,64 @@
 package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
-
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 //TODO(JULI):
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private Set<ByteArrayWrapper> temporalReadKeys;
-    private Set<ByteArrayWrapper> temporalWrittenKeys;
+    private Map<ByteArrayWrapper, Long> threadByReadKey;
+    private Map<ByteArrayWrapper, Long> threadByWrittenKey;
+    private boolean collision;
 
     public ReadWrittenKeysTracker() {
-        this.temporalReadKeys = new HashSet<>();
-        this.temporalWrittenKeys = new HashSet<>();
+        this.threadByReadKey = new HashMap<>();
+        this.threadByWrittenKey = new HashMap<>();
+        this.collision = false;
     }
 
     @Override
     public Set<ByteArrayWrapper> getTemporalReadKeys(){
-        return this.temporalReadKeys;
+        return this.threadByReadKey.keySet();
     }
 
     @Override
     public Set<ByteArrayWrapper> getTemporalWrittenKeys(){
-        return this.temporalWrittenKeys;
+        return this.threadByWrittenKey.keySet();
     }
+
+    public boolean hasCollided() { return this.collision;}
 
     @Override
     public void addNewReadKey(ByteArrayWrapper key) {
-        temporalReadKeys.add(key);
+        long threadId = Thread.currentThread().getId();
+
+        if (threadByWrittenKey.containsKey(key)) {
+            collision |= threadId != threadByWrittenKey.get(key);
+        }
+
+        threadByReadKey.put(key, threadId);
     }
 
     @Override
     public void addNewWrittenKey(ByteArrayWrapper key) {
-        temporalWrittenKeys.add(key);
+        long threadId = Thread.currentThread().getId();
+        if (threadByWrittenKey.containsKey(key)) {
+            collision |= threadId != threadByWrittenKey.get(key);
+        }
+
+        if (threadByReadKey.containsKey(key)) {
+            collision |= threadId != threadByReadKey.get(key);
+        }
+
+        threadByWrittenKey.put(key, threadId);
     }
 
     @Override
     public void clear() {
-        this.temporalReadKeys = new HashSet<>();
-        this.temporalWrittenKeys = new HashSet<>();
-
+        this.threadByReadKey = new HashMap<>();
+        this.threadByWrittenKey = new HashMap<>();
     }
 }
