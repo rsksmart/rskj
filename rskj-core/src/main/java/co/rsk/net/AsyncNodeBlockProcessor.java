@@ -101,27 +101,28 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
         // Check if block is ready for processing - if the block is not too advanced, its ancestor blocks are in place etc.
         List<Block> blocksToConnect = blockSyncService.preprocessBlock(block, sender, false);
-        if (!blocksToConnect.isEmpty()) {
-            // if there's only one block to connect without any ancestors, then schedule its processing ( if the block is valid ofc )
-            if (blocksToConnect.size() == 1 && blocksToConnect.get(0).getHash().equals(block.getHash())) {
-                // Validate block if it can be added to the queue for processing
-                if (isBlockValid(block)) {
-                    scheduleForProcessing(new BlockInfo(sender, block), blockNumber, blockHash, peer);
-
-                    return scheduledForProcessingResult(block, start);
-                }
-
-                logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
-                return invalidBlockResult(block, start);
-            }
-
-            // if besides the block there are some ancestors, connect them all synchronously
-            Map<Keccak256, ImportResult> connectResult = blockSyncService.connectBlocksAndDescendants(sender, blocksToConnect, false);
-            return BlockProcessResult.connectResult(block, start, connectResult);
+        if (blocksToConnect.isEmpty()) {
+            logger.trace("Ignored block with number {} and hash {} from {} as it's not ready for processing yet", blockNumber, blockHash, peer);
+            return ignoreBlockResult(block, start);
         }
 
-        logger.trace("Ignored block with number {} and hash {} from {} as it's not ready for processing yet", blockNumber, blockHash, peer);
-        return ignoreBlockResult(block, start);
+        boolean onlyOneBlock = blocksToConnect.size() == 1 && blocksToConnect.get(0).getHash().equals(block.getHash());
+        // if there's only one block to connect without any ancestors, then schedule its processing ( if the block is valid ofc )
+        if (onlyOneBlock) {
+            // Validate block if it can be added to the queue for processing
+            if (isBlockValid(block)) {
+                scheduleForProcessing(new BlockInfo(sender, block), blockNumber, blockHash, peer);
+
+                return scheduledForProcessingResult(block, start);
+            }
+
+            logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
+            return invalidBlockResult(block, start);
+        }
+
+        // if besides the block there are some ancestors, connect them all synchronously
+        Map<Keccak256, ImportResult> connectResult = blockSyncService.connectBlocksAndDescendants(sender, blocksToConnect, false);
+        return BlockProcessResult.connectResult(block, start, connectResult);
     }
 
     @Override

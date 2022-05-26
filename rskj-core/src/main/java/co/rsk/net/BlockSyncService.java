@@ -76,8 +76,8 @@ public class BlockSyncService {
     /**
      * Does initial preprocessing of the {@code block}.
      * 
-     * @return block and its ancestors, if any. Returns an empty list, if the block is too advanced, already in a local chain
-     * or some of its ancestors (which are not part of the chain yet) are still being awaited from a network.
+     * @return block and its ancestors (if any), which are not connected yet. Returns an empty list,
+     * if the block is too advanced, already connected or some of its ancestors are still being awaited from a network.
      */
     protected List<Block> preprocessBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final long bestBlockNumber = this.getBestBlockNumber();
