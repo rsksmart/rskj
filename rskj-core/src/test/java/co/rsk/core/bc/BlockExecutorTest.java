@@ -440,7 +440,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeSequentiallyATransactionAndGasShouldBeSustractedCorrectly() {
+    public void executeSequentiallyATransactionAndGasShouldBeSubtractedCorrectly() {
         if (!activeRskip144) {
             return;
         }
@@ -620,6 +620,17 @@ public class BlockExecutorTest {
 
         Assert.assertEquals(pBlock.getTransactionsList().size(), parallelResult.getExecutedTransactions().size());
         Assert.assertArrayEquals(seqResult.getFinalState().getHash().getBytes(), parallelResult.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    public void executeInvalidParallelBlock() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1, 2});
+        BlockResult result = executor.execute(pBlock, parent.getHeader(), true);
+        Assert.assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
 
     @Test
@@ -899,6 +910,48 @@ public class BlockExecutorTest {
         return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
+    private Block getBlockWithTwoDependentTransactions(short[] edges) {
+        int nTxs = 2;
+
+        Repository track = repository.startTracking();
+        List<Account> accounts = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            accounts.add(createAccount("accounttest" + i, track, Coin.valueOf(60000)));
+        }
+        track.commit();
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        List<Transaction> txs = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            Transaction tx = Transaction.builder()
+                    .nonce(BigInteger.ZERO)
+                    .gasPrice(BigInteger.ONE)
+                    .gasLimit(BigInteger.valueOf(21000))
+                    .destination(accounts.get((i + 1) % 2).getAddress())
+                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .value(BigInteger.TEN)
+                    .build();
+            tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
+            txs.add(tx);
+        }
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        return new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlock(
+                        bestBlock,
+                        txs,
+                        uncles,
+                        1,
+                        null,
+                        bestBlock.getGasLimit(),
+                        bestBlock.getCoinbase(),
+                        edges
+                );
+    }
+
     private Block getBlockWithTenTransactions(short[] edges) {
         int nTxs = 10;
         int nAccounts = nTxs * 2;
@@ -941,9 +994,8 @@ public class BlockExecutorTest {
                 );
     }
 
-    private Block getBlockWithNIndependentTransactions(int number, BigInteger txGasLimit, boolean withRemasc) {
-        int nTxs = number;
-        int nAccounts = nTxs * 2;
+    private Block getBlockWithNIndependentTransactions(int txNumber, BigInteger txGasLimit, boolean withRemasc) {
+        int nAccounts = txNumber * 2;
         Repository track = repository.startTracking();
         List<Account> accounts = new LinkedList<>();
 
@@ -956,12 +1008,12 @@ public class BlockExecutorTest {
 
         List<Transaction> txs = new LinkedList<>();
 
-        for (int i = 0; i < nTxs; i++) {
+        for (int i = 0; i < txNumber; i++) {
             Transaction tx = Transaction.builder()
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
-                    .destination(accounts.get(i + nTxs).getAddress())
+                    .destination(accounts.get(i + txNumber).getAddress())
                     .chainId(CONFIG.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
