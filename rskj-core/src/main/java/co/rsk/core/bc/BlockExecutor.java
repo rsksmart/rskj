@@ -458,8 +458,8 @@ public class BlockExecutor {
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-
-        Repository track = repositoryLocator.startTrackingAt(parent);
+        IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
+        Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
@@ -480,6 +480,7 @@ public class BlockExecutor {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
             TransactionListExecutor txListExecutor = new TransactionListExecutor(
                     sublist,
+                    readWrittenKeysTracker,
                     block,
                     transactionExecutorFactory,
                     track,
@@ -529,6 +530,7 @@ public class BlockExecutor {
         List<Transaction> sublist = block.getTransactionsList().subList(start, block.getTransactionsList().size());
         TransactionListExecutor txListExecutor = new TransactionListExecutor(
                 sublist,
+                readWrittenKeysTracker,
                 block,
                 transactionExecutorFactory,
                 track,
