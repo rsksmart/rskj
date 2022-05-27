@@ -248,13 +248,6 @@ public class TransactionPoolImpl implements TransactionPool {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
 
-        if (this.config.isAccountTxRateLimitEnabled()) {
-            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.gasPriceTracker);
-            if (!this.quotaChecker.acceptTx(tx, replacedTx.orElse(null), currentContext)) {
-                return TransactionPoolAddResult.withError("account exceeds quota");
-            }
-        }
-
         transactionBlocks.put(hash, getCurrentBestBlockNumber());
 
         final long timestampSeconds = this.getCurrentTimeInSeconds();
@@ -266,6 +259,13 @@ public class TransactionPoolImpl implements TransactionPool {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
             return TransactionPoolAddResult.okQueuedTransaction(tx);
+        }
+
+        if (this.config.isAccountTxRateLimitEnabled()) {
+            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.gasPriceTracker);
+            if (!this.quotaChecker.acceptTx(tx, replacedTx.orElse(null), currentContext)) {
+                return TransactionPoolAddResult.withError("account exceeds quota");
+            }
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
