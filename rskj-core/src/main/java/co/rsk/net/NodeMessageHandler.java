@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -227,11 +228,14 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void addMessage(Peer sender, Message message, double score) {
-        boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+        // optimistic increment() to ensure it is called before decrement() on processMessage()
+        // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
+        // also, while queue implementation stays unbounded, offer() will never return false
+        messageCounter.increment(sender);
 
-        if (messageAdded) {
-            messageCounter.increment(sender);
-        } else {
+        boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+        if (!messageAdded) {
+            messageCounter.decrement(sender);
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
@@ -274,7 +278,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return this.queue.size();
     }
 
-    public int getMessageQueueSize(Peer peer) {
+    @VisibleForTesting
+    int getMessageQueueSize(Peer peer) {
         return messageCounter.getValue(peer);
     }
 

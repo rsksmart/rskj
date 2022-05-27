@@ -36,14 +36,14 @@ public class MessageCounter {
 
     private static final String COUNTER_ERROR = "Counter for {} is null or negative: {}.";
 
-    private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
+    private final Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
 
 
-    public int getValue(Peer sender) {
+    int getValue(Peer sender) {
         return Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).orElse(ZERO).intValue();
     }
 
-    public void increment(Peer sender) {
+    void increment(Peer sender) {
         messagesPerNode
             .computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
             .incrementAndGet();
@@ -53,7 +53,7 @@ public class MessageCounter {
         return new AtomicInteger();
     }
 
-    public void decrement(Peer sender) {
+    void decrement(Peer sender) {
 
         NodeID peerNodeID = sender.getPeerNodeID();
         AtomicInteger cnt = messagesPerNode.get(peerNodeID);
@@ -72,7 +72,7 @@ public class MessageCounter {
 
     }
 
-    public boolean hasCounter(Peer sender) {
+    boolean hasCounter(Peer sender) {
         return messagesPerNode.containsKey(sender.getPeerNodeID());
     }
 
