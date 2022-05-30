@@ -75,16 +75,15 @@ public class TxQuotaChecker {
 
         TxQuota senderQuota = updateQuota(newTx, true, currentContext);
 
-        /*
-        creating/updating quota for receiver address (non-contract) for it to exist in the map as soon as we now its
-        existence, this way we can grant it max quota the first time it originates a tx (if enough inactivity time
-        passed for that), otherwise it would be created with minQuota while being non-suspicious ("old" and "good")
-         */
-        if (newAccountInRepository(newTx.getReceiveAddress(), currentContext.repository)
-                || isEOA(newTx.getReceiveAddress(), currentContext.repository)) {
+        // if already in the map, we know it is an EOA
+        boolean receiverIsEOA = accountQuotas.get(newTx.getReceiveAddress()) != null || isEOA(newTx.getReceiveAddress(), currentContext.repository);
+
+        // creating/updating quota for receiver address (non-contract) for it to exist in the map as soon as we now its
+        // existence, this way we can grant it max quota the first time it originates a tx (if enough inactivity time
+        // passed for that), otherwise it would be created with minQuota while being non-suspicious ("old" and "good")
+        if (receiverIsEOA || newAccountInRepository(newTx.getReceiveAddress(), currentContext.repository)) {
             updateQuota(newTx, false, currentContext);
         }
-
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
         return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx);
