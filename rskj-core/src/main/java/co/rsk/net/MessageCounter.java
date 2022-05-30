@@ -44,9 +44,11 @@ public class MessageCounter {
     }
 
     void increment(Peer sender) {
-        messagesPerNode
-            .computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
-            .incrementAndGet();
+        synchronized (messagesPerNode) {
+            messagesPerNode
+                    .computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
+                    .incrementAndGet();
+        }
     }
 
     private AtomicInteger createAtomicInteger(NodeID nodeId) {
@@ -54,22 +56,20 @@ public class MessageCounter {
     }
 
     void decrement(Peer sender) {
-
         NodeID peerNodeID = sender.getPeerNodeID();
         AtomicInteger cnt = messagesPerNode.get(peerNodeID);
 
-        if(cnt == null || cnt.get() < 0) {
+        if (cnt == null || cnt.get() < 0) {
             logger.error(COUNTER_ERROR, peerNodeID, cnt);
             return;
         }
 
-        int newValue = cnt.decrementAndGet();
-
-        // if this counter is zero or negative: remove key from map
-        if(newValue < 1) {
-            messagesPerNode.remove(peerNodeID);
+        synchronized (messagesPerNode) {
+            // if this counter is zero or negative: remove key from map
+            if (cnt.decrementAndGet() < 1) {
+                messagesPerNode.remove(peerNodeID);
+            }
         }
-
     }
 
     boolean hasCounter(Peer sender) {
