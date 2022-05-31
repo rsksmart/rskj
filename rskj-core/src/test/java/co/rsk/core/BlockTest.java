@@ -97,6 +97,7 @@ public class BlockTest {
         );
 
         Block parsedBlock = blockFactory.decodeBlock(block.getEncoded());
+        Assert.assertEquals(parsedBlock.getNumber(), blockFactory.decodeNumber(block.getEncoded()));
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());

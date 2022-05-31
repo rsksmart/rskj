@@ -175,7 +175,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.toPrintableHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
-        if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
+        if (syncState instanceof DecidingSyncState && !blockSyncService.hasBlockInStoreOrBlockchain(hash)) {
             peersInformation.getOrRegisterPeer(peer);
             sendMessage(peer, new BlockRequestMessage(++lastRequestId, hash));
         }

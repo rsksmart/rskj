@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -367,6 +368,15 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
+    public boolean hasBlockByHash(byte[] hash) {
+        return blockStore.hasBlockByHash(hash);
+    }
+
+    private long getBlockNumber(byte[] hash) {
+        return blockStore.getBlockNumber(hash);
+    }
+
+    @Override
     public List<Block> getBlocksByNumber(long number) {
         return blockStore.getChainBlocksByNumber(number);
     }
@@ -380,21 +390,28 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public boolean hasBlockInSomeBlockchain(@Nonnull final byte[] hash) {
-        final Block block = this.getBlockByHash(hash);
-        return block != null && this.blockIsInIndex(block);
+        final long number = this.getBlockNumber(hash);
+        return number >= 0 && this.blockIsInIndex(hash, number);
     }
 
     /**
      * blockIsInIndex returns true if a given block is indexed in the blockchain (it might not be the in the
      * canonical branch).
      *
-     * @param block the block to check for.
+     * @param hash the block hash to check for.
+     * @param number the block number.
      * @return true if there is a block in the blockchain with that hash.
      */
-    private boolean blockIsInIndex(@Nonnull final Block block) {
-        final List<Block> blocks = this.getBlocksByNumber(block.getNumber());
+    private boolean blockIsInIndex(@Nonnull final byte[] hash, long number) {
+        final List<BlockInformation> blockInfos = this.getBlocksInformationByNumber(number);
 
-        return blocks.stream().anyMatch(block::fastEquals);
+        for (BlockInformation blockInfo : blockInfos) {
+            if (Arrays.equals(hash, blockInfo.getHash())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

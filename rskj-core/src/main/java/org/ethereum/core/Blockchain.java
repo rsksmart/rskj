@@ -44,6 +44,13 @@ public interface Blockchain {
     Block getBlockByHash(byte[] hash);
 
     /**
+     * Has block by hash
+     * @param hash - hash of the block
+     * @return - true if the block is in the store
+     */
+    boolean hasBlockByHash(byte[] hash);
+
+    /**
      * Get total difficulty from the start
      * and until the head of the chain
      *

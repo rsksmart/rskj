@@ -65,6 +65,12 @@ public class BlockFactoryTest {
     }
 
     @Test
+    public void decodeGenesisBlockNumber() {
+        enableRulesAt(0L, RSKIP92);
+        assertThat(factory.decodeNumber(genesisRaw()), is(0L));
+    }
+
+    @Test
     public void newHeaderWithNoForkDetectionDataAndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);

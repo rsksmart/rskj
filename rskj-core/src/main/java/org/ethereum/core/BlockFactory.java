@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -90,6 +91,27 @@ public class BlockFactory {
     public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, boolean sealed) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, header.getNumber());
         return new Block(header, transactionList, uncleList, isRskip126Enabled, sealed);
+    }
+
+    public long decodeNumber(byte[] encoded) {
+        RLPList block = RLP.decodeList(encoded);
+
+        if (block.size() != 3) {
+            throw new IllegalArgumentException("A block must have 3 exactly items");
+        }
+
+        RLPList rlpHeader = (RLPList) block.get(0);
+
+        if (rlpHeader.size() != RLP_HEADER_SIZE && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING) {
+            throw new IllegalArgumentException(String.format(
+                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
+                    rlpHeader.size()
+            ));
+        }
+
+        byte[] nrBytes = rlpHeader.get(8).getRLPData();
+
+        return parseBigInteger(nrBytes).longValueExact();
     }
 
     public BlockHeader decodeHeader(byte[] encoded) {
