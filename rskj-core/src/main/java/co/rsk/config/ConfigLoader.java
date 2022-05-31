@@ -45,8 +45,11 @@ public class ConfigLoader {
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
-    public ConfigLoader(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+    private final ConfigFactoryWrapper configFactory;
+
+    public ConfigLoader(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs, ConfigFactoryWrapper configFactory) {
         this.cliArgs = Objects.requireNonNull(cliArgs);
+        this.configFactory = configFactory;
     }
 
     /**
@@ -78,12 +81,12 @@ public class ConfigLoader {
      */
     public Config getConfig() {
         Config cliConfig = getConfigFromCliArgs();
-        Config systemPropsConfig = ConfigFactory.systemProperties();
-        Config systemEnvConfig = ConfigFactory.systemEnvironment();
+        Config systemPropsConfig = configFactory.systemProperties();
+        Config systemEnvConfig = configFactory.systemEnvironment();
         Config userCustomConfig = getUserCustomConfig();
         Config installerConfig = getInstallerConfig();
 
-        Config userConfig = ConfigFactory.empty()
+        Config userConfig = configFactory.empty()
                 .withFallback(cliConfig)
                 .withFallback(systemPropsConfig)
                 .withFallback(systemEnvConfig)
@@ -102,14 +105,14 @@ public class ConfigLoader {
         return unifiedConfig;
     }
 
-    protected static Config getExpectedConfig(Config systemPropsConfig, Config systemEnvConfig) {
-        return ConfigFactory.parseResourcesAnySyntax(EXPECTED_RESOURCE_PATH)
+    protected Config getExpectedConfig(Config systemPropsConfig, Config systemEnvConfig) {
+        return configFactory.parseResourcesAnySyntax(EXPECTED_RESOURCE_PATH)
                 .withFallback(systemPropsConfig)
                 .withFallback(systemEnvConfig);
     }
 
     private Config getConfigFromCliArgs() {
-        Config config = ConfigFactory.empty();
+        Config config = configFactory.empty();
 
         for (NodeCliFlags flag : cliArgs.getFlags()) {
             config = flag.withConfig(config);
@@ -131,7 +134,7 @@ public class ConfigLoader {
 
     private Config getUserCustomConfig() {
         String file = System.getProperty("rsk.conf.file");
-        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
+        Config cmdLineConfigFile = file != null ? configFactory.parseFile(new File(file)) : configFactory.empty();
         logger.info(
                 "Config ( {} ): user properties from -Drsk.conf.file file '{}'",
                 cmdLineConfigFile.entrySet().isEmpty() ? NO : YES,
@@ -142,7 +145,7 @@ public class ConfigLoader {
 
     private Config getInstallerConfig() {
         File installerFile = new File("/etc/rsk/node.conf");
-        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
+        Config installerConfig = installerFile.exists() ? configFactory.parseFile(installerFile) : configFactory.empty();
         logger.info(
                 "Config ( {} ): default properties from installer '/etc/rsk/node.conf'",
                 installerConfig.entrySet().isEmpty() ? NO : YES
@@ -157,13 +160,13 @@ public class ConfigLoader {
         if (userConfig.hasPath(SystemProperties.PROPERTY_BC_CONFIG_NAME)) {
             String network = userConfig.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME);
             if (NodeCliFlags.NETWORK_TESTNET.getName().equals(network)) {
-                return ConfigFactory.load(TESTNET_RESOURCE_PATH);
+                return configFactory.load(TESTNET_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_REGTEST.getName().equals(network)) {
-                return ConfigFactory.load(REGTEST_RESOURCE_PATH);
+                return configFactory.load(REGTEST_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_DEVNET.getName().equals(network)) {
-                return ConfigFactory.load(DEVNET_RESOURCE_PATH);
+                return configFactory.load(DEVNET_RESOURCE_PATH);
             } else if (NodeCliFlags.NETWORK_MAINNET.getName().equals(network)) {
-                return ConfigFactory.load(MAINNET_RESOURCE_PATH);
+                return configFactory.load(MAINNET_RESOURCE_PATH);
             } else {
                 String exceptionMessage = String.format(
                         "%s is not a valid network name (%s property)",
@@ -176,7 +179,7 @@ public class ConfigLoader {
         }
 
         logger.info("Network not set, using mainnet by default");
-        return ConfigFactory.load(MAINNET_RESOURCE_PATH);
+        return configFactory.load(MAINNET_RESOURCE_PATH);
     }
 
     private static boolean isActualObjectValid(@Nonnull String keyPath, @Nonnull ConfigObject expectedObject, @Nonnull ConfigObject actualObject) {

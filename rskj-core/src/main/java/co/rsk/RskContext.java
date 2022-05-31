@@ -1342,7 +1342,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized RskSystemProperties buildRskSystemProperties() {
         checkIfNotClosed();
 
-        return new RskSystemProperties(new ConfigLoader(cliArgs));
+        return new RskSystemProperties(new ConfigLoader(cliArgs, ConfigFactoryWrapper.getInstance()));
     }
 
     protected synchronized SyncConfiguration buildSyncConfiguration() {

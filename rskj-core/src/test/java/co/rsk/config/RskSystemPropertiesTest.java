@@ -83,7 +83,12 @@ public class RskSystemPropertiesTest {
 
         RskSystemProperties sysProperties = new RskSystemProperties(loader);
 
-        Config expectedConfig = ConfigLoader.getExpectedConfig(ConfigFactory.empty(), ConfigFactory.empty());
+        ConfigLoader supportConfigLoader = new ConfigLoader(new CliArgs.Parser<>(
+                NodeCliOptions.class,
+                NodeCliFlags.class
+        ).parse(new String[]{}), ConfigFactoryWrapper.getInstance());
+
+        Config expectedConfig = supportConfigLoader.getExpectedConfig(ConfigFactory.empty(), ConfigFactory.empty());
 
         boolean bloomServiceEnabled = sysProperties.bloomServiceEnabled();
         assertTrue(bloomServiceEnabled);
@@ -112,7 +117,8 @@ public class RskSystemPropertiesTest {
                         new CliArgs.Parser<>(
                                 NodeCliOptions.class,
                                 NodeCliFlags.class
-                        ).parse(new String[]{})
+                        ).parse(new String[]{}),
+                        ConfigFactoryWrapper.getInstance()
                 )
         );
 

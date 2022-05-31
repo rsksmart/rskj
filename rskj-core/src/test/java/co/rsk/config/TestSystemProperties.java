@@ -39,7 +39,7 @@ public class TestSystemProperties extends RskSystemProperties {
     private static ConfigLoader makeTestLoader(Function<Config, Config> decorator) {
         Config config = decorator.apply(BASE_TEST_CONFIG);
 
-        return new ConfigLoader(CliArgs.empty()) {
+        return new ConfigLoader(CliArgs.empty(), ConfigFactoryWrapper.getInstance()) {
             @Override
             public Config getConfig() {
                 return config;

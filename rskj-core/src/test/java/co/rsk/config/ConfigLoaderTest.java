@@ -27,8 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.function.BiConsumer;
@@ -40,10 +39,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ConfigFactory.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigLoaderTest {
 
     private static final ConfigValue NULL_VALUE = ConfigValueFactory.fromAnyRef(null);
@@ -57,16 +54,22 @@ public class ConfigLoaderTest {
     @Mock
     private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
-    private ConfigLoader loader;
+    @Mock
+    private ConfigFactoryWrapper configFactory;
+
+    private ConfigLoader loaderReal;
+
+    private ConfigLoader loaderMocked;
 
     @Before
     public void setUp() {
-        loader = new ConfigLoader(cliArgs);
+        loaderReal = new ConfigLoader(cliArgs, ConfigFactoryWrapper.getInstance());
+        loaderMocked = new ConfigLoader(cliArgs, configFactory);
     }
 
     @Test
     public void loadBaseMainnetConfigWithEmptyCliArgs() {
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("main"));
         assertThat(config.getBoolean(SystemProperties.PROPERTY_DB_RESET), is(false));
@@ -78,7 +81,7 @@ public class ConfigLoaderTest {
     public void regtestCliFlagOverridesNetworkBaseConfig() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_REGTEST));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("regtest"));
         assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_HTTP_ENABLED), is(true));
@@ -88,7 +91,7 @@ public class ConfigLoaderTest {
     public void testnetCliFlagOverridesNetworkBaseConfig() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_TESTNET));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("testnet"));
     }
@@ -97,7 +100,7 @@ public class ConfigLoaderTest {
     public void dbResetCliFlagEnablesReset() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.DB_RESET));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("main"));
         assertThat(config.getBoolean(SystemProperties.PROPERTY_DB_RESET), is(true));
@@ -107,7 +110,7 @@ public class ConfigLoaderTest {
     public void rpcCorsCliOptionEnablesCorsAndChangesHostname() {
         when(cliArgs.getOptions())
                 .thenReturn(Collections.singletonMap(NodeCliOptions.RPC_CORS, "myhostname"));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_RPC_CORS), is("myhostname"));
         assertThat(config.getBoolean(SystemProperties.PROPERTY_RPC_HTTP_ENABLED), is(true));
@@ -115,7 +118,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void verifyConfigSettingIsOffByDefault() {
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_BC_VERIFY), is(false));
     }
@@ -123,14 +126,14 @@ public class ConfigLoaderTest {
     @Test
     public void setVerifyConfigSetting() {
         when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.VERIFY_CONFIG));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_BC_VERIFY), is(true));
     }
 
     @Test
     public void printSystemInfoSettingIsOffByDefault() {
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(false));
     }
@@ -138,7 +141,7 @@ public class ConfigLoaderTest {
     @Test
     public void setPrintSystemInfoSetting() {
         when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.PRINT_SYSTEM_INFO));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(true));
     }
@@ -154,7 +157,7 @@ public class ConfigLoaderTest {
 
         mockConfigFactory(defaultConfig, expectedConfig);
 
-        loader.getConfig();
+        loaderMocked.getConfig();
     }
 
     @Test(expected = RskConfigurationException.class)
@@ -168,7 +171,7 @@ public class ConfigLoaderTest {
 
         mockConfigFactory(defaultConfig, expectedConfig);
 
-        loader.getConfig();
+        loaderMocked.getConfig();
     }
 
     @Parameterized.Parameters
@@ -183,7 +186,7 @@ public class ConfigLoaderTest {
 
         mockConfigFactory(defaultConfig, expectedConfig);
 
-        loader.getConfig();
+        loaderMocked.getConfig();
     }
 
     @Test
@@ -202,7 +205,7 @@ public class ConfigLoaderTest {
             mockConfigFactory(defaultConfig, expectedConfig);
 
             try {
-                loader.getConfig();
+                loaderMocked.getConfig();
 
                 fail("Type mismatch problem is not detected");
             } catch (RskConfigurationException e) { /* ignore */ }
@@ -221,17 +224,16 @@ public class ConfigLoaderTest {
     public void cliParamValueMapOverrideBaseConfig() {
         when(cliArgs.getParamValueMap())
                 .thenReturn(Collections.singletonMap("database.dir", "/home/rsk/data"));
-        Config config = loader.getConfig();
+        Config config = loaderReal.getConfig();
 
         assertThat(config.getString("database.dir"), is("/home/rsk/data"));
     }
 
-    private static void mockConfigFactory(Config defaultConfig, Config expectedConfig) {
-        mockStatic(ConfigFactory.class);
-        when(ConfigFactory.empty()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.systemProperties()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.systemEnvironment()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.load(anyString())).thenReturn(defaultConfig);
-        when(ConfigFactory.parseResourcesAnySyntax(anyString())).thenReturn(expectedConfig);
+    private void mockConfigFactory(Config defaultConfig, Config expectedConfig) {
+        when(configFactory.empty()).thenReturn(EMPTY_CONFIG);
+        when(configFactory.systemProperties()).thenReturn(EMPTY_CONFIG);
+        when(configFactory.systemEnvironment()).thenReturn(EMPTY_CONFIG);
+        when(configFactory.load(anyString())).thenReturn(defaultConfig);
+        when(configFactory.parseResourcesAnySyntax(anyString())).thenReturn(expectedConfig);
     }
 }
