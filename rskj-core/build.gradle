@@ -154,6 +154,8 @@ dependencies {
     testImplementation "${testLibs.okhttpWsLib}"
 
     testImplementation "${testLibs.rskLllLib}"
+
+    testImplementation "${libs.logbackClassicLib}"
 }
 
 javadoc {
