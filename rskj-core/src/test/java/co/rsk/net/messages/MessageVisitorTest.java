@@ -164,7 +164,7 @@ public class MessageVisitorTest {
         verify(blockProcessor, times(1)).processBlock(eq(sender), eq(block));
         verify(peerScoringManager, times(1))
                 .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_BLOCK));
-        verify(channelManager, never()).broadcastBlockHash(any(), any());
+        verify(channelManager, never()).broadcastBlock(any(), any());
     }
 
     @Test
@@ -199,7 +199,7 @@ public class MessageVisitorTest {
         verify(blockProcessor, times(1)).processBlock(eq(sender), eq(block));
         verify(peerScoringManager, times(1))
                 .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_BLOCK));
-        verify(channelManager, times(1)).broadcastBlockHash(any(), any());
+        verify(channelManager, times(1)).broadcastBlock(any(), any());
     }
 
     @Test

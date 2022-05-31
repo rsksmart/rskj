@@ -25,7 +25,6 @@ import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 
 import javax.annotation.Nonnull;
@@ -58,7 +57,7 @@ public interface ChannelManager extends InternalService {
     Set<NodeID> broadcastBlock(@Nonnull final Block block);
 
     @Nonnull
-    Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);
+    Set<NodeID> broadcastBlock(@Nonnull final Block block, @Nullable final Set<NodeID> targets);
 
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of

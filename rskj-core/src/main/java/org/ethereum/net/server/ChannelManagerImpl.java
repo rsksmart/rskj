@@ -186,48 +186,49 @@ public class ChannelManagerImpl implements ChannelManager {
      */
     @Nonnull
     public Set<NodeID> broadcastBlock(@Nonnull final Block block) {
+        synchronized (activePeersLock) {
+            Set<NodeID> peerIds = activePeers.values().stream().map(Peer::getPeerNodeID).collect(Collectors.toSet());
+            return this.broadcastBlock(block, peerIds);
+        }
+    }
 
+    /**
+     * broadcastBlock Propagates a block message across active peers
+     *
+     * @param block new Block to be sent
+     * @param targets  the set of peers to receive block or block hash.
+     * @return a set containing the ids of the peers that received the block.
+     */
+    @Nonnull
+    public Set<NodeID> broadcastBlock(@Nonnull final Block block, final Set<NodeID> targets) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
+
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
         final Message newBlock = new BlockMessage(block);
         final Message newBlockHashes = new NewBlockHashesMessage(Arrays.asList(bi));
+
         synchronized (activePeersLock) {
-            // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
-            List<Channel> peers = new ArrayList<>(activePeers.values());
+
+            List<Channel> peers = activePeers.values().stream()
+                    .filter(p -> targets.contains(p.getNodeId())).collect(Collectors.toList());
+
             Collections.shuffle(peers);
 
             int sqrt = (int) Math.floor(Math.sqrt(peers.size()));
+
             for (int i = 0; i < sqrt; i++) {
                 Channel peer = peers.get(i);
                 nodesIdsBroadcastedTo.add(peer.getNodeId());
                 logger.trace("RSK propagate: {}", peer);
                 peer.sendMessage(newBlock);
             }
+
             for (int i = sqrt; i < peers.size(); i++) {
                 Channel peer = peers.get(i);
                 logger.trace("RSK announce: {}", peer);
                 peer.sendMessage(newBlockHashes);
             }
-        }
-
-        return nodesIdsBroadcastedTo;
-    }
-
-    @Nonnull
-    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
-        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final Message newBlockHash = new NewBlockHashesMessage(identifiers);
-
-        synchronized (activePeersLock) {
-            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
-
-            activePeers.values().stream()
-                    .filter(p -> targets.contains(p.getNodeId()))
-                    .forEach(peer -> {
-                        logger.trace("RSK announce hash: {}", peer);
-                        peer.sendMessage(newBlockHash);
-                    });
         }
 
         return nodesIdsBroadcastedTo;
