@@ -210,7 +210,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String web3_clientVersion() {
         String clientVersion = CLIENT_VERSION_PREFIX + "/" + config.projectVersion() + "/" +
-                System.getProperty("os.name") + "/Java1.8/" +
+                System.getProperty("os.name") + "/Java1.8/" + // TODO:I
                 config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
