@@ -129,8 +129,10 @@ public class CacheSnapshotHandlerTest {
         doThrow(new IOException()).when(outSnapshot).write(anyMap());
         doReturn(outSnapshot).when(mapSnapshotFactory).makeOutputSnapshot(any());
 
-        File tempFile = spy(tempFileCreator.createTempFile("cache", ".tmp"));
-        doReturn(tempFile).when(tempFileCreator).createTempFile(anyString(), anyString());
+        File tempFile = tempFileCreator.createTempFile("cache", ".tmp");
+        SpiedFile spiedFile = new SpiedFile(tempFile.getAbsolutePath());
+        assertTrue(spiedFile.exists());
+        doReturn(spiedFile).when(tempFileCreator).createTempFile(anyString(), anyString());
 
         Map<ByteArrayWrapper, byte[]> cache = new HashMap<>();
         cache.put(ByteUtil.wrap(new byte[] {1, 2, 3}), new byte[] {4, 5, 6});
@@ -139,6 +141,22 @@ public class CacheSnapshotHandlerTest {
 
         assertTrue(cacheSnapshotPath.toFile().exists());
         assertEquals(0, cacheSnapshotPath.toFile().length());
-        verify(tempFile, atLeastOnce()).deleteOnExit();
+        assertTrue(spiedFile.deleteOnExit);
+    }
+
+    private static final class SpiedFile extends File {
+
+        boolean deleteOnExit = false;
+
+        public SpiedFile(String pathname) {
+            super(pathname);
+        }
+
+        @Override
+        public void deleteOnExit() {
+            deleteOnExit = true;
+            super.deleteOnExit();
+        }
+
     }
 }
