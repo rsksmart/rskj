@@ -618,7 +618,7 @@ public class BlockExecutor {
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
         int i = 1;
-        long totalGasUsed = 0;
+        long gasUsedInBlock = 0;
         Coin totalPaidFees = Coin.ZERO;
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
@@ -639,7 +639,7 @@ public class BlockExecutor {
                     block.getCoinbase(),
                     track,
                     block,
-                    totalGasUsed,
+                    parallelizeTransactionHandler.getGasUsedInSequential(),
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts,
@@ -694,7 +694,7 @@ public class BlockExecutor {
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed = parallelizeTransactionHandler.getGasUsedInSequential();
+            gasUsedInBlock += gasUsed;
 
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
@@ -753,7 +753,7 @@ public class BlockExecutor {
                 executedTransactions,
                 receipts,
                 bucketOrder,
-                totalGasUsed, // totalBlock = parallel1 + parallel2 + sequential?
+                gasUsedInBlock,
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );

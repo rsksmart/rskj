@@ -447,20 +447,19 @@ public class BlockExecutorTest {
 
         short[] expectedEdges = new short[]{1};
         Block parent = blockchain.getBestBlock();
-        long expectedGasUsed = 0L;
-        long expectedAcumulatedGas = 21000L;
+        long expectedAccumulatedGas = 21000L;
 
-        Block block = getBlockWithNIndependentTransactions(1, BigInteger.valueOf(expectedAcumulatedGas), false);
+        Block block = getBlockWithNIndependentTransactions(1, BigInteger.valueOf(expectedAccumulatedGas), false);
         List<Transaction> txs = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
         Assert.assertEquals(txs, blockResult.getExecutedTransactions());
-        Assert.assertEquals(expectedGasUsed, blockResult.getGasUsed());
+        Assert.assertEquals(expectedAccumulatedGas, blockResult.getGasUsed());
         Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
         for (TransactionReceipt receipt: transactionReceipts) {
-            Assert.assertEquals(expectedAcumulatedGas, GasCost.toGas(receipt.getCumulativeGas()));
+            Assert.assertEquals(expectedAccumulatedGas, GasCost.toGas(receipt.getCumulativeGas()));
         }
     }
 
@@ -471,17 +470,17 @@ public class BlockExecutorTest {
         }
 
         long expectedGasUsed = 0L;
-        long expectedAcumulatedGas = 21000L;
+        long expectedAccumulatedGas = 21000L;
         short[] expectedEdges = new short[]{5, 10};
         Block parent = blockchain.getBestBlock();
-        Block block = getBlockWithNIndependentTransactions(10, BigInteger.valueOf(expectedAcumulatedGas), false);
+        Block block = getBlockWithNIndependentTransactions(10, BigInteger.valueOf(expectedAccumulatedGas), false);
         List<Transaction> txs = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
         Assert.assertEquals(txs.size(), blockResult.getExecutedTransactions().size());
         Assert.assertTrue(txs.containsAll(blockResult.getExecutedTransactions()));
         Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
-        Assert.assertEquals(expectedGasUsed, blockResult.getGasUsed());
+        Assert.assertEquals(expectedAccumulatedGas*10, blockResult.getGasUsed());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
         long accumulatedGasUsed = 0L;
@@ -492,8 +491,8 @@ public class BlockExecutorTest {
                 edgeIndex++;
                 accumulatedGasUsed = expectedGasUsed;
             }
-
-            accumulatedGasUsed += expectedAcumulatedGas;
+          
+            accumulatedGasUsed += expectedAccumulatedGas;
             Assert.assertEquals(accumulatedGasUsed, GasCost.toGas(receipt.getCumulativeGas()));
             i++;
         }
@@ -541,7 +540,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeATxInSequentialAndBlockResultShouldTrackTheGasUsedInTheSequentialBucket() {
+    public void executeATxInSequentialAndBlockResultShouldTrackTheGasUsedInTheBlock() {
         if (!activeRskip144) {
             return;
         }
@@ -551,10 +550,11 @@ public class BlockExecutorTest {
         int gasLimit = 21000;
         int transactionNumberToFillParallelBucket = (int) (bucketGasLimit/ gasLimit);
         int transactionsInSequential = 1;
-        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillParallelBucket*2+ transactionsInSequential, BigInteger.valueOf(gasLimit), false);
+        int totalTxsNumber = transactionNumberToFillParallelBucket * 2 + transactionsInSequential;
+        Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
-        Assert.assertEquals(gasLimit, blockResult.getGasUsed());
+        Assert.assertEquals(gasLimit*totalTxsNumber, blockResult.getGasUsed());
     }
 
     @Test
