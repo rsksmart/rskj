@@ -26,83 +26,65 @@ import org.ethereum.vm.GasCost;
 import java.util.*;
 
 public class ParallelizeTransactionHandler {
-    private final TransactionBucket sequentialBucket;
-    private final HashMap<ByteArrayWrapper, Short> bucketByWrittenKey;
-    private final HashMap<ByteArrayWrapper, Set<Short>> bucketByReadKey;
-    private final Map<RskAddress, Set<Short>> bucketBySender;
-    private final List<TransactionBucket> parallelBuckets;
+    private final HashMap<ByteArrayWrapper, TransactionBucket> bucketByWrittenKey;
+    private final HashMap<ByteArrayWrapper, Set<TransactionBucket>> bucketByReadKey;
+    private final Map<RskAddress, TransactionBucket> bucketBySender;
+    private final ArrayList<TransactionBucket> buckets;
 
     public ParallelizeTransactionHandler(short buckets, long bucketGasLimit) {
         this.bucketBySender = new HashMap<>();
         this.bucketByWrittenKey = new HashMap<>();
         this.bucketByReadKey = new HashMap<>();
-        this.parallelBuckets = new ArrayList<>();
+        this.buckets = new ArrayList<>();
         for (short i = 0; i < buckets; i++){
-            this.parallelBuckets.add(new TransactionBucket(i, bucketGasLimit));
+            this.buckets.add(new TransactionBucket(i, bucketGasLimit, false));
         }
-        this.sequentialBucket = new TransactionBucket(buckets, bucketGasLimit);
+        this.buckets.add(new TransactionBucket(buckets, bucketGasLimit, true));
     }
 
-    public boolean sequentialBucketHasGasAvailable(Transaction tx) {
-        long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        return this.sequentialBucket.hasGasAvailable(txGasLimit);
-    }
+    public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
+        TransactionBucket bucketCandidate = getBucketCandidates(tx, newReadKeys, newWrittenKeys);
 
-    public Optional<Short> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
-        Set<Short> bucketCandidates = getBucketCandidates(tx, newReadKeys, newWrittenKeys);
-        long txGasLimit = GasCost.toGas(tx.getGasLimit());
-
-        if (bucketCandidates.size() > 1) {
-            return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx, txGasLimit);
-        }
-
-        if (bucketCandidates.size() == 1) {
-            Short bucketIdNumber = bucketCandidates.iterator().next();
-            TransactionBucket transactionBucket = this.parallelBuckets.get(bucketIdNumber);
-
-            if (!transactionBucket.hasGasAvailable(txGasLimit)) {
-                return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx, txGasLimit);
+        if (!bucketHasAvailableGas(tx, bucketCandidate)) {
+            if (bucketCandidate.isSequential()) {
+                return Optional.empty();
             }
+            bucketCandidate = getSequentialBucket();
 
-            addTransactionInternal(tx, transactionBucket, gasUsedByTx, bucketIdNumber, newReadKeys, newWrittenKeys);
-            return Optional.of(bucketIdNumber);
+            if (!bucketHasAvailableGas(tx, bucketCandidate)) {
+                return Optional.empty();
+            }
         }
 
-        Optional<Short> bucketId = getAvailableBucketWithLessUsedGas(txGasLimit);
-
-        if (!bucketId.isPresent()) {
-            return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx, txGasLimit);
-        }
-
-        Short bucketIdNumber = bucketId.get();
-        addTransactionInternal(tx, this.parallelBuckets.get(bucketIdNumber), gasUsedByTx, bucketIdNumber, newReadKeys, newWrittenKeys);
-        return bucketId;
+        bucketCandidate.addTransaction(tx, gasUsedByTx);
+        addNewKeysToMaps(tx.getSender(), bucketCandidate, newReadKeys, newWrittenKeys);
+        return Optional.of(bucketCandidate.getGasUsed());
     }
 
-    public Optional<Short> addRemascTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
-        return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx, GasCost.toGas(tx.getGasLimit()));
+    private boolean bucketHasAvailableGas(Transaction tx, TransactionBucket bucketCandidate) {
+        return bucketCandidate.hasGasAvailable(GasCost.toGas(tx.getGasLimit()));
+    }
+
+    public Optional<Long> addRemascTransaction(Transaction tx, long gasUsedByTx) {
+        TransactionBucket sequentialBucket = getSequentialBucket();
+        sequentialBucket.addTransaction(tx, gasUsedByTx);
+        return Optional.of(sequentialBucket.getGasUsed());
     }
 
     public long getGasUsedIn(Short bucketId) {
 
-        if (bucketId < 0 || bucketId > sequentialBucket.getId()) {
+        if (bucketId < 0 || bucketId >= buckets.size()) {
             throw new NoSuchElementException();
         }
 
-        if (bucketId == this.sequentialBucket.getId()) {
-            return this.sequentialBucket.getGasUsed();
-        }
-
-        return this.parallelBuckets.get(bucketId).getGasUsed();
+        return this.buckets.get(bucketId).getGasUsed();
     }
 
     public List<Transaction> getTransactionsInOrder() {
         List<Transaction> txs = new ArrayList<>();
-        for (TransactionBucket bucket: this.parallelBuckets) {
+        for (TransactionBucket bucket: this.buckets) {
             txs.addAll(bucket.getTransactions());
         }
-
-        txs.addAll(this.sequentialBucket.getTransactions());
         return txs;
     }
 
@@ -110,8 +92,8 @@ public class ParallelizeTransactionHandler {
         List<Short> bucketSizes = new ArrayList<>();
         short bucketEdges = 0;
 
-        for (TransactionBucket bucket: this.parallelBuckets) {
-            if (bucket.getTransactions().isEmpty()) {
+        for (TransactionBucket bucket: this.buckets) {
+            if (bucket.getTransactions().isEmpty() || bucket.isSequential()) {
                 continue;
             }
             bucketEdges += bucket.getTransactions().size();
@@ -128,112 +110,125 @@ public class ParallelizeTransactionHandler {
         return bucketOrder;
     }
 
-    private void addTransactionInternal(Transaction tx, TransactionBucket transactionBucket, long gasUsedByTx, Short bucketId, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
-        addNewKeysToMaps(tx.getSender(), bucketId, newReadKeys, newWrittenKeys);
-        transactionBucket.addTransactionAndGas(tx, gasUsedByTx);
-    }
-
-    private Optional<Short> addTransactionInSequentialBucketAndGetId(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx, long txGasLimit) {
-        if (!this.sequentialBucket.hasGasAvailable(txGasLimit)) {
-            return Optional.empty();
-        }
-        short sequentialBucketId = this.sequentialBucket.getId();
-        addTransactionInternal(tx, this.sequentialBucket, gasUsedByTx, sequentialBucketId, newReadKeys, newWrittenKeys);
-        return Optional.of(sequentialBucketId);
-    }
-
-    private void addNewKeysToMaps(RskAddress sender, Short bucketId, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
+    private void addNewKeysToMaps(RskAddress sender, TransactionBucket bucket, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         for (ByteArrayWrapper key : newReadKeys) {
-            Set<Short> bucketIds = bucketByReadKey.getOrDefault(key, new HashSet<>());
-            bucketIds.add(bucketId);
-            bucketByReadKey.put(key, bucketIds);
+            Set<TransactionBucket> bucketsAlreadyRead = bucketByReadKey.getOrDefault(key, new HashSet<>());
+            bucketsAlreadyRead.add(bucket);
+            bucketByReadKey.put(key, bucketsAlreadyRead);
         }
 
-        Set<Short> bucketIdsBySender = bucketBySender.getOrDefault(sender, new HashSet<>());
-        bucketIdsBySender.add(bucketId);
-        bucketBySender.put(sender, bucketIdsBySender);
-
-        if (bucketId.equals(this.sequentialBucket.getId())) {
+        if (bucket.isSequential()) {
+            bucketBySender.put(sender, bucket);
             return;
+        } else {
+            bucketBySender.putIfAbsent(sender, bucket);
         }
 
         for (ByteArrayWrapper key: newWrittenKeys) {
-            bucketByWrittenKey.putIfAbsent(key, bucketId);
+            bucketByWrittenKey.putIfAbsent(key, bucket);
         }
     }
 
-    private Optional<Set<Short>> getBucketBySender(Transaction tx) {
+    private Optional<TransactionBucket> getBucketBySender(Transaction tx) {
         return Optional.ofNullable(bucketBySender.get(tx.getSender()));
     }
 
-    private Optional<Short> getAvailableBucketWithLessUsedGas(long txGasLimit) {
+    private Optional<TransactionBucket> getAvailableBucketWithLessUsedGas(long txGasLimit) {
         long gasUsed = Long.MAX_VALUE;
-        Optional<Short> bucketId =  Optional.empty();
+        Optional<TransactionBucket> bucketCandidate =  Optional.empty();
 
-        for (TransactionBucket bucket : parallelBuckets) {
-            if (bucket.hasGasAvailable(txGasLimit)) {
-                if (bucket.getGasUsed() < gasUsed) {
-                    bucketId = Optional.of(bucket.getId());
+        for (TransactionBucket bucket : buckets) {
+            if (!bucket.isSequential() && bucket.hasGasAvailable(txGasLimit) && bucket.getGasUsed() < gasUsed) {
+                    bucketCandidate = Optional.of(bucket);
                     gasUsed = bucket.getGasUsed();
-                }
             }
         }
-        return bucketId;
+
+        return bucketCandidate;
     }
 
 
-    private Set<Short> getBucketCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
-        Set<Short> bucketCandidates = new HashSet<>();
+    private TransactionBucket getBucketCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
+        Optional<TransactionBucket> bucketCandidate = getBucketBySender(tx);
 
-        getBucketBySender(tx).ifPresent(bucketCandidates::addAll);
+        if (bucketCandidate.isPresent() && bucketCandidate.get().isSequential()) {
+            return getSequentialBucket();
+        }
 
         // read - written
         for (ByteArrayWrapper newReadKey : newReadKeys) {
             if (bucketByWrittenKey.containsKey(newReadKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newReadKey));
+                TransactionBucket bucket = bucketByWrittenKey.get(newReadKey);
+
+                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                   return getSequentialBucket();
+                } else if (!bucketCandidate.isPresent()) {
+                    bucketCandidate = Optional.of(bucket);
+                }
             }
         }
 
-        // written - read
-        // written - written
         for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
+            // written - written,
             if (bucketByWrittenKey.containsKey(newWrittenKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newWrittenKey));
-            }
+                TransactionBucket bucket = bucketByWrittenKey.get(newWrittenKey);
 
+                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                    return getSequentialBucket();
+                } else {
+                    bucketCandidate = Optional.of(bucket);
+                }
+            }
+            // read - written
             if (bucketByReadKey.containsKey(newWrittenKey)) {
-                bucketCandidates.addAll(bucketByReadKey.get(newWrittenKey));
+                Set<TransactionBucket> readBuckets = bucketByReadKey.get(newWrittenKey);
+
+                if (readBuckets.size() > 1) {
+                    return getSequentialBucket();
+                }
+
+                if (bucketCandidate.isPresent() && !readBuckets.contains(bucketCandidate.get())) {
+                    return getSequentialBucket();
+                } else {
+                    bucketCandidate = Optional.of(readBuckets.iterator().next());
+                }
             }
         }
 
+        return bucketCandidate.orElseGet(() -> getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit())).orElseGet(this::getSequentialBucket));
+    }
 
-        return bucketCandidates;
+    private TransactionBucket getSequentialBucket() {
+        return this.buckets.get(this.buckets.size()-1);
+    }
+
+    public long getGasUsedInSequential() {
+        return getSequentialBucket().getGasUsed();
     }
 
     private static class TransactionBucket {
 
         final Short id;
         final long gasLimit;
+        final boolean isSequential;
         final List<Transaction> transactions;
         long gasUsedInBucket;
 
-        public TransactionBucket(Short id, long bucketGasLimit) {
+        public TransactionBucket(Short id, long bucketGasLimit, boolean isSequential) {
             this.id = id;
             this.gasLimit = bucketGasLimit;
+            this.isSequential = isSequential;
             this.transactions = new ArrayList<>();
             this.gasUsedInBucket = 0;
         }
 
-        private short getId() {
-            return id;
-        }
-
-        private void addTransactionAndGas(Transaction tx, long gasUsedByTx) {
+        private void addTransaction(Transaction tx, long gasUsedByTx) {
             transactions.add(tx);
             gasUsedInBucket = gasUsedInBucket + gasUsedByTx;
         }
 
         private boolean hasGasAvailable(long txGasLimit) {
+            //TODO(JULI): Re-check a thousand of times this line.
             long cumulativeGas = GasCost.add(gasUsedInBucket, txGasLimit);
             return cumulativeGas <= gasLimit;
         }
@@ -244,6 +239,10 @@ public class ParallelizeTransactionHandler {
 
         public List<Transaction> getTransactions() {
             return this.transactions;
+        }
+
+        public boolean isSequential() {
+            return isSequential;
         }
     }
 }
