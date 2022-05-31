@@ -1176,6 +1176,8 @@ public class BridgeSupport {
                     return;
                 }
 
+                logger.info("[processPegoutsInBatch] pegouts processed with btcTx hash {} and response code {}", result.getBtcTx().getHash(), result.getResponseCode());
+
                 BtcTransaction generatedTransaction = result.getBtcTx();
                 addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, rskTx.getHash(), totalPegoutValue);
 
