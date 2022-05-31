@@ -83,3 +83,6 @@ classes/
 
 #Infer
 infer-out/
+
+# jenv
+.java-version
