@@ -60,7 +60,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -81,10 +80,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -98,8 +93,6 @@ import static org.mockito.Mockito.*;
 /**
  * Created by Ruben Altman on 09/06/2016.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ECDSASignature.class)
 public class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
@@ -151,13 +144,13 @@ public class Web3ImplTest {
 
     @Test
     public void web3_sha3() throws Exception {
-                
+
     	String toHashInHex = "0x696e7465726e6574"; // 'internet' in hexa
 
         Web3 web3 = createWeb3();
 
-        String resultFromHex = web3.web3_sha3(toHashInHex);        
-        
+        String resultFromHex = web3.web3_sha3(toHashInHex);
+
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
         assertEquals("hash does not match", "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex);
@@ -166,11 +159,11 @@ public class Web3ImplTest {
 
     @Test(expected = RskJsonRpcRequestException.class)
     public void web3_sha3_expect_exception() throws Exception {
-    	
+
     	Web3 web3 = createWeb3();
-    	
-    	web3.web3_sha3("internet");        
-    	
+
+    	web3.web3_sha3("internet");
+
     }
 
     @Test
@@ -1921,34 +1914,6 @@ public class Web3ImplTest {
         Assert.assertThat(
                 signature,
                 is("0xc8be87722c6452172a02a62fdea70c8b25cfc9613d28647bf2aeb3c7d1faa1a91b861fccc05bb61e25ff4300502812750706ca8df189a0b8163540b9bccabc9f1b")
-        );
-    }
-
-    @Test
-    public void eth_sign_testSignatureGenerationToBeAlways32BytesLength()
-    {
-        PowerMockito.mockStatic(ECDSASignature.class);
-
-        when(ECDSASignature.fromSignature(any()))
-                .thenReturn(new ECDSASignature(
-                        new BigInteger("90799205472826917840242505107457993089603477280876640922171931138596850540969"),
-                        new BigInteger("12449423892652054473462673837036123325448979032544381124854758290795038162079")
-                )).thenReturn(new ECDSASignature(
-                        new BigInteger("1"),
-                        new BigInteger("1")
-                ));
-
-        Web3Impl web3 = createWeb3();
-
-        String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
-
-        byte[] hash = Keccak256Helper.keccak256("this is the data to hash".getBytes());
-
-        String signature = web3.eth_sign(addr1, "0x" + ByteUtil.toHexString(hash));
-
-        Assert.assertThat(
-                signature,
-                is("0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100")
         );
     }
 

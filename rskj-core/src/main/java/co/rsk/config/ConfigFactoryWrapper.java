@@ -2,7 +2,6 @@ package co.rsk.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigIncluder;
 
 import java.io.File;
 
