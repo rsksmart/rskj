@@ -332,6 +332,7 @@ public class BlockExecutor {
         Map<Integer, TransactionReceipt> receipts = new ConcurrentSkipListMap<>();
         Map<Integer, Transaction> executedTransactions = new ConcurrentSkipListMap<>();
         Set<DataWord> deletedAccounts = ConcurrentHashMap.newKeySet();
+        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
         CompletionService completionService = new ExecutorCompletionService(executorService);
@@ -356,6 +357,7 @@ public class BlockExecutor {
                     transactionResults,
                     registerProgramResults,
                     programTraceProcessor,
+                    remascFees,
                     totalPaidFees,
                     totalGasUsed,
                     start
@@ -404,6 +406,7 @@ public class BlockExecutor {
                 transactionResults,
                 registerProgramResults,
                 programTraceProcessor,
+                remascFees,
                 totalPaidFees,
                 totalGasUsed,
                 start
@@ -413,6 +416,7 @@ public class BlockExecutor {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
+        addFeesToRemasc(remascFees, track);
         saveOrCommitTrackState(saveState, track);
         BlockResult result = new BlockResult(
                 block,
@@ -425,6 +429,13 @@ public class BlockExecutor {
         profiler.stop(metric);
         logger.trace("End executeInternal.");
         return result;
+    }
+
+    private void addFeesToRemasc(LongAccumulator remascFees, Repository track) {
+        long fee = remascFees.get();
+        if (fee > 0) {
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(fee));
+        }
     }
 
     private BlockResult executeSequential(
@@ -462,6 +473,7 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
+        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         int txindex = 0;
 
@@ -477,7 +489,8 @@ public class BlockExecutor {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts);
+                    deletedAccounts,
+                    remascFees);
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -537,6 +550,7 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
+        addFeesToRemasc(remascFees, track);
         saveOrCommitTrackState(saveState, track);
         BlockResult result = new BlockResult(
                 block,
