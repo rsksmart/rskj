@@ -225,6 +225,8 @@ public class Constants {
         return 960;
     }
 
+    public static int getMaxTransactionExecutionThreads() { return 4; }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,

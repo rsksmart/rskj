@@ -76,7 +76,8 @@ public enum ConsensusRule {
     RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
-    RSKIP297("rskip297"); // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP144("rskip144"); // Parallel tx execution
 
     private String configKey;
 

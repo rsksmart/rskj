@@ -221,6 +221,7 @@ public class BlockToMineBuilder {
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
+                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));

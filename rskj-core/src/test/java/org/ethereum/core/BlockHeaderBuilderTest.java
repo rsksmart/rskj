@@ -264,7 +264,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(18, rlpList.size());
+        assertEquals(19, rlpList.size());
     }
 
     @Test
@@ -282,7 +282,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(20, rlpList.size());
+        assertEquals(21, rlpList.size());
     }
 
     @Test
@@ -301,7 +301,7 @@ public class BlockHeaderBuilderTest {
 
         // the useRskip92Field should be true, hence the merkle proof and coinbase are not included
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(18, rlpList.size());
+        assertEquals(19, rlpList.size());
     }
 
     @Test
@@ -428,5 +428,100 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         assertArrayEquals(null, header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setTxExecutionListsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionListsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithNullEdgesButParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionListsEdges(null)
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithoutParallelCompliantButWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .setTxExecutionListsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithEdgesButWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setTxExecutionListsEdges(edges)
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionListsEdges());
+    }
+
+    @Test
+    public void createsHeaderWithParallelCompliantButWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .setTxExecutionListsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionListsEdges());
     }
 }
