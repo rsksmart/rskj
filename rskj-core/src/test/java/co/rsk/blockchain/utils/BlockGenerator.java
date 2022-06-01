@@ -32,8 +32,8 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -45,7 +45,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.core.Genesis.getZeroHash;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -244,9 +243,15 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
     }
 
+    public Block createChildBlock(
+            Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+            long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
+        short[] edges = activationConfig.isActive(ConsensusRule.RSKIP144, parent.getNumber() + 1) ? new short[0] : null;
+        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, coinbase, edges);
+    }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase, short[] edges) {
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -280,7 +285,7 @@ public class BlockGenerator {
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
-                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
+                .setTxExecutionListsEdges(edges)
                 .build();
 
         if (difficulty == 0) {

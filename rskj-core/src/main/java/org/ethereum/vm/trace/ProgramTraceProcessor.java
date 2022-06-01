@@ -27,15 +27,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * Provides tracing and exporting to JSON
  */
 public class ProgramTraceProcessor {
-
-    private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
+    private final Map<Keccak256, ProgramTrace> traces = new ConcurrentHashMap<>();
 
     private final TraceOptions traceOptions;
 
