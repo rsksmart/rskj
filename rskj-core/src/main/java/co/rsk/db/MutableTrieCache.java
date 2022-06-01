@@ -31,6 +31,7 @@ import org.ethereum.vm.DataWord;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class MutableTrieCache implements MutableTrie {
@@ -40,14 +41,14 @@ public class MutableTrieCache implements MutableTrie {
     private MutableTrie trie;
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
-    private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
+    private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, Optional<byte[]>>> cache;
 
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
 
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
-        cache = new HashMap<>();
+        cache = new ConcurrentHashMap<>();
         deleteRecursiveLog = new HashSet<>();
     }
 
@@ -75,7 +76,7 @@ public class MutableTrieCache implements MutableTrie {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
 
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
+        Map<ByteArrayWrapper, Optional<byte[]>> accountItems = cache.get(accountWrapper);
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
         if (accountItems == null || !accountItems.containsKey(wrapper)) {
             if (isDeletedAccount) {
@@ -85,14 +86,14 @@ public class MutableTrieCache implements MutableTrie {
             return Optional.ofNullable(trieRetriever.apply(key));
         }
 
-        byte[] cacheItem = accountItems.get(wrapper);
-        if (cacheItem == null) {
+        Optional<byte[]> cacheItem = accountItems.get(wrapper);
+        if (!cacheItem.isPresent()) {
             // deleted account key
             return Optional.empty();
         }
 
         // cached account key
-        return Optional.ofNullable(cacheTransformer.apply(cacheItem));
+        return Optional.ofNullable(cacheTransformer.apply(cacheItem.get()));
     }
 
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
@@ -100,7 +101,7 @@ public class MutableTrieCache implements MutableTrie {
         ByteArrayWrapper accountWrapper = getAccountWrapper(new ByteArrayWrapper(accountStoragePrefixKey));
 
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
+        Map<ByteArrayWrapper, Optional<byte[]>> accountItems = cache.get(accountWrapper);
         if (accountItems == null && isDeletedAccount) {
             return Collections.emptyIterator();
         }
@@ -139,8 +140,8 @@ public class MutableTrieCache implements MutableTrie {
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-        Map<ByteArrayWrapper, byte[]> accountMap = cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-        accountMap.put(wrapper, value);
+        Map<ByteArrayWrapper, Optional<byte[]>> accountMap = cache.computeIfAbsent(accountWrapper, k -> new ConcurrentHashMap<>());
+        accountMap.put(wrapper, Optional.ofNullable(value));
     }
 
     @Override
@@ -179,7 +180,7 @@ public class MutableTrieCache implements MutableTrie {
         cache.forEach((accountKey, accountData) -> {
             if (accountData != null) {
                 // cached account
-                accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
+                accountData.forEach((realKey, value) -> this.trie.put(realKey, value.orElse(null)));
             }
         });
 
@@ -242,7 +243,7 @@ public class MutableTrieCache implements MutableTrie {
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
-        private final Map<ByteArrayWrapper, byte[]> accountItems;
+        private final Map<ByteArrayWrapper, Optional<byte[]>> accountItems;
         private final RskAddress address;
         private final int storageKeyOffset = (
                 TrieKeyMapper.domainPrefix().length +
@@ -252,11 +253,11 @@ public class MutableTrieCache implements MutableTrie {
                 * Byte.SIZE;
         private final TrieKeyMapper trieKeyMapper;
         private DataWord currentStorageKey;
-        private Iterator<Map.Entry<ByteArrayWrapper, byte[]>> accountIterator;
+        private Iterator<Map.Entry<ByteArrayWrapper, Optional<byte[]>>> accountIterator;
 
         StorageKeysIterator(
                 Iterator<DataWord> keysIterator,
-                Map<ByteArrayWrapper, byte[]> accountItems,
+                Map<ByteArrayWrapper, Optional<byte[]>> accountItems,
                 RskAddress addr,
                 TrieKeyMapper trieKeyMapper) {
             this.keysIterator = keysIterator;
@@ -275,8 +276,8 @@ public class MutableTrieCache implements MutableTrie {
                 DataWord item = keysIterator.next();
                 ByteArrayWrapper fullKey = getCompleteKey(item);
                 if (accountItems.containsKey(fullKey)) {
-                    byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
+                    Optional<byte[]> value = accountItems.remove(fullKey);
+                    if (!value.isPresent()){
                         continue;
                     }
                 }
@@ -289,9 +290,9 @@ public class MutableTrieCache implements MutableTrie {
             }
 
             while (accountIterator.hasNext()) {
-                Map.Entry<ByteArrayWrapper, byte[]> entry = accountIterator.next();
+                Map.Entry<ByteArrayWrapper, Optional<byte[]>> entry = accountIterator.next();
                 byte[] key = entry.getKey().getData();
-                if (entry.getValue() != null && key.length * Byte.SIZE > storageKeyOffset) {
+                if (entry.getValue().isPresent() && key.length * Byte.SIZE > storageKeyOffset) {
                     // cached account key
                     currentStorageKey = getPartialKey(key);
                     return true;
