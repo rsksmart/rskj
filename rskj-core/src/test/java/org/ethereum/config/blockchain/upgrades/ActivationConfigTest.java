@@ -96,6 +96,7 @@ public class ActivationConfigTest {
             "    rskip284: hop400",
             "    rskip290: hop400",
             "    rskip294: hop400",
+            "    rskip144: hop400",
             "    rskip297: hop400",
             "}"
     ));
