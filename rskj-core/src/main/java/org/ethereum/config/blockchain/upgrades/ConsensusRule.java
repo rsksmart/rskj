@@ -78,7 +78,8 @@ public enum ConsensusRule {
     RSKIP294("rskip294"),
     RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
     RSKIP353("rskip353"),
-    RSKIP357("rskip357");
+    RSKIP357("rskip357"),
+    RSKIP144("rskip144"); // Parallel tx execution
 
     private String configKey;
 
