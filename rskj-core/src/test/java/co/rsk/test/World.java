@@ -282,11 +282,6 @@ public class World {
         return this.blockExecutor.getTransactionExecutors().get(txHash);
     }
 
-    public StorageRentManager getStorageRentManager(String txName) {
-        return getTransactionExecutor(txName).getStorageRentManager();
-    }
-
-    // todo(fedejinich) still need to add unit tests
     /**
      * Set a custom time between each block
      * @param timeBetweenBlocks a custom time (expressed in milliseconds)
