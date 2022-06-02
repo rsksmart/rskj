@@ -53,9 +53,9 @@ public class TxQuotaTest {
 
         TxQuota txQuota = TxQuota.createNew(address, txHash, 10, System::currentTimeMillis);
 
-        assertTrue(txQuota.acceptVirtualGasConsumption(9, tx));
-        assertFalse(txQuota.acceptVirtualGasConsumption(2, tx));
-        assertTrue(txQuota.acceptVirtualGasConsumption(1, tx));
+        assertTrue(txQuota.acceptVirtualGasConsumption(9, tx, 10));
+        assertFalse(txQuota.acceptVirtualGasConsumption(2, tx, 10));
+        assertTrue(txQuota.acceptVirtualGasConsumption(1, tx, 10));
     }
 
     @Test
@@ -70,19 +70,19 @@ public class TxQuotaTest {
         RskAddress address = TestUtils.randomAddress();
 
         TxQuota txQuota = TxQuota.createNew(address, tx.getHash(), MAX_QUOTA, timeProvider);
-        assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, tx));
-        assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1, tx));
+        assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, tx, 10));
+        assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1, tx, 10));
 
         long timeElapsed = 1;
         double accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(address, MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertFalse("should reject tx over refreshed limit (not enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000, tx));
+        assertFalse("should reject tx over refreshed limit (not enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000, tx, 10));
 
         timeElapsed = 30;
         accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(address, MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertTrue("should accept tx when enough gas accumulated (enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox, tx));
+        assertTrue("should accept tx when enough gas accumulated (enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox, tx, 10));
     }
 }
