@@ -53,11 +53,22 @@ class TxVirtualGasCalculator {
 
     private final long avgGasPrice;
 
-    TxVirtualGasCalculator(long accountNonce, long blockGasLimit, long blockMinGasPrice, long avgGasPrice) {
+    private final boolean skipGasPriceFactor;
+
+    static TxVirtualGasCalculator createWithAllFactors(long accountNonce, long blockGasLimit, long blockMinGasPrice, long avgGasPrice) {
+        return new TxVirtualGasCalculator(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice, false);
+    }
+
+    static TxVirtualGasCalculator createSkippingGasPriceFactor(long accountNonce, long blockGasLimit, long blockMinGasPrice) {
+        return new TxVirtualGasCalculator(accountNonce, blockGasLimit, blockMinGasPrice, -1, true);
+    }
+
+    private TxVirtualGasCalculator(long accountNonce, long blockGasLimit, long blockMinGasPrice, long avgGasPrice, boolean skipGasPriceFactor) {
         this.accountNonce = accountNonce;
         this.blockGasLimit = blockGasLimit;
         this.blockMinGasPrice = blockMinGasPrice;
         this.avgGasPrice = avgGasPrice;
+        this.skipGasPriceFactor = skipGasPriceFactor;
     }
 
     /**
@@ -73,7 +84,7 @@ class TxVirtualGasCalculator {
         long newTxNonce = newTx.getNonceAsInteger().longValue();
         long futureNonceFactor = newTxNonce == accountNonce ? 1 : 2;
 
-        double lowGasPriceFactor = calculateLowGasPriceFactor(newTx);
+        double lowGasPriceFactor = skipGasPriceFactor ? 1 : calculateLowGasPriceFactor(newTx);
 
         double nonceFactor = 1 + NONCE_WEIGHT / (accountNonce + 1);
 
@@ -87,7 +98,7 @@ class TxVirtualGasCalculator {
 
         double result = capeResult(txGasLimit, compositeFactor);
 
-        logger.trace("virtualGasConsumed calculation for tx [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
+        logger.trace("virtualGasConsumed calculation for tx [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, skipGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, skipGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
 
         return result;
     }

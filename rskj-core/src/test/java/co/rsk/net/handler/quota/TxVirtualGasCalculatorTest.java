@@ -105,7 +105,7 @@ public class TxVirtualGasCalculatorTest {
 
     @Test
     public void calculate() {
-        TxVirtualGasCalculator txVirtualGasCalculator = new TxVirtualGasCalculator(accountNonce, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, BLOCK_AVG_GAS_PRICE);
+        TxVirtualGasCalculator txVirtualGasCalculator = TxVirtualGasCalculator.createWithAllFactors(accountNonce, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, BLOCK_AVG_GAS_PRICE);
         double expected = newTransaction.getGasLimitAsInteger().longValue() * futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         double actual = txVirtualGasCalculator.calculate(newTransaction, replacedTransaction);
         assertEquals(expected, actual, expected * 0.0000005 * 6);

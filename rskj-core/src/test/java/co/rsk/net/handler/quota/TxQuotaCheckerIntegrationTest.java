@@ -46,12 +46,15 @@ public class TxQuotaCheckerIntegrationTest {
 
     private TxQuotaChecker quotaChecker;
     private TxQuotaChecker.CurrentContext currentContext;
+    private GasPriceTracker gasPriceTracker;
 
     private PendingState state;
 
     private Account accountA;
     private Account accountB;
     private Account accountC;
+    private Account accountD;
+    private Account accountE;
     private Account contractA;
     private Account contractB;
 
@@ -62,6 +65,8 @@ public class TxQuotaCheckerIntegrationTest {
         accountA = new AccountBuilder().name("accountA").build();
         accountB = new AccountBuilder().name("accountB").build();
         accountC = new AccountBuilder().name("accountC").build();
+        accountD = new AccountBuilder().name("accountD").build();
+        accountE = new AccountBuilder().name("accountE").build();
         contractA = new AccountBuilder().name("contractA").build();
         contractB = new AccountBuilder().name("contractB").build();
 
@@ -73,6 +78,8 @@ public class TxQuotaCheckerIntegrationTest {
         when(state.getNonce(accountA.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(accountB.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(accountC.getAddress())).thenReturn(BigInteger.ZERO);
+        when(state.getNonce(accountD.getAddress())).thenReturn(BigInteger.ZERO);
+        when(state.getNonce(accountE.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(contractA.getAddress())).thenReturn(BigInteger.ZERO);
         when(state.getNonce(contractB.getAddress())).thenReturn(BigInteger.ZERO);
 
@@ -80,16 +87,20 @@ public class TxQuotaCheckerIntegrationTest {
         when(repository.isExist(accountA.getAddress())).thenReturn(true);
         when(repository.isExist(accountB.getAddress())).thenReturn(true);
         when(repository.isExist(accountC.getAddress())).thenReturn(true);
+        when(repository.isExist(accountD.getAddress())).thenReturn(true);
+        when(repository.isExist(accountE.getAddress())).thenReturn(true);
         when(repository.isExist(contractA.getAddress())).thenReturn(false);
         when(repository.isExist(contractB.getAddress())).thenReturn(true);
 
         when(repository.isContract(accountA.getAddress())).thenReturn(false);
         when(repository.isContract(accountB.getAddress())).thenReturn(false);
         when(repository.isContract(accountC.getAddress())).thenReturn(false);
+        when(repository.isContract(accountD.getAddress())).thenReturn(false);
+        when(repository.isContract(accountE.getAddress())).thenReturn(false);
         when(repository.isContract(contractA.getAddress())).thenReturn(true);
         when(repository.isContract(contractB.getAddress())).thenReturn(true);
 
-        GasPriceTracker gasPriceTracker = mock(GasPriceTracker.class);
+        gasPriceTracker = mock(GasPriceTracker.class);
         when(gasPriceTracker.getGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
 
         currentContext = new TxQuotaChecker.CurrentContext(mockedBlock, state, repository, gasPriceTracker);
@@ -103,15 +114,27 @@ public class TxQuotaCheckerIntegrationTest {
     }
 
     @Test
-    public void acceptTx_realisticScenario() {
+    public void acceptTx_realisticScenario_feeMarketEnabled() {
+        when(gasPriceTracker.isFeeMarketWorking()).thenReturn(false);
+
+        // new account (nonce==0)
+        // initial quota granted will be MAX_GAS_PER_SECOND (6_120_000) at this point
+        // this tx, without lowGasPriceFactor (fee market off), consumes ~6110000, slightly less than MAX_GAS_PER_SECOND => is not enough
+        Transaction feeMarketOffTx = txFromAccountDToAccountE(0, 650_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        assertTrue("feeMarketOffTx consuming slightly less than MAX_GAS_PER_SECOND (fee market off) should've been accepted", quotaChecker.acceptTx(feeMarketOffTx, null, currentContext));
+
+        when(gasPriceTracker.isFeeMarketWorking()).thenReturn(true);
+
         long accountANonce = 0;
+        long accountBNonce = 0;
+        long accountCNonce = 0;
 
         long elapsedTime = 0;
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime);
 
-        // new account (nonce==0) not enough quota
+        // same tx as before, different new account, but with fee market working
         // initial quota granted will be MAX_GAS_PER_SECOND (6_120_000) at this point
-        // this tx consumes ~6_138_154vg, slightly more than MAX_GAS_PER_SECOND => is not enough
+        // this tx, with lowGasPriceFactor (fee market on), consumes ~6_138_154vg, slightly more than MAX_GAS_PER_SECOND => is not enough
         Transaction firstTx = txFromAccountAToAccountB(accountANonce, 650_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertFalse("firstTx consuming more than MAX_GAS_PER_SECOND should've been rejected", quotaChecker.acceptTx(firstTx, null, currentContext));
 
@@ -123,7 +146,7 @@ public class TxQuotaCheckerIntegrationTest {
         // receiver's quota was modified as well: ~12_246_120vg (MAX_GAS_PER_SECOND initial + MAX_GAS_PER_SECOND * 1s - consumed on received tx)
         // this tx consumes 12_205_986vg (almost 2*MAX_GAS_PER_SECOND) => is enough
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1s after last tx
-        Transaction txFromAccountB = txFromAccountBToAccountC(0, 1_000_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
+        Transaction txFromAccountB = txFromAccountBToAccountC(accountBNonce, 1_000_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
         assertTrue("txFromAccountB consuming almost ~MAX_GAS_PER_SECOND*2 should've been accepted", quotaChecker.acceptTx(txFromAccountB, null, currentContext));
 
         long smallTxReplacementGasPrice = (long) (smallTx.getGasPrice().asBigInteger().longValue() * 1.1d);
@@ -166,7 +189,7 @@ public class TxQuotaCheckerIntegrationTest {
 
         // contractA does not exist on state, therefore a quota will be added for it in the map (even being it a contract)
         // therefore accountA will be removed from the map, that is full, as the least recently accessed one
-        Transaction txToContractA = txFromAccountCToContractA(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        Transaction txToContractA = txFromAccountCToContractA(accountCNonce++, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertTrue("txToContractA should've been accepted", quotaChecker.acceptTx(txToContractA, null, currentContext));
         assertNotNull("contractA should create a quota when receiving a transaction", quotaChecker.getTxQuota(contractA.getAddress()));
 
@@ -178,7 +201,7 @@ public class TxQuotaCheckerIntegrationTest {
         assertTrue("txAfterReinsertOnMap should've been accepted 1 minute after last tx", quotaChecker.acceptTx(txAfterReinsertOnMap, null, currentContext));
 
         // contractB exists on state, therefore NO quota be added for it in the map
-        Transaction txToContractB = txFromAccountCToContractB(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        Transaction txToContractB = txFromAccountCToContractB(accountCNonce, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertTrue("txToContractB should've been accepted", quotaChecker.acceptTx(txToContractB, null, currentContext));
         assertNull("contractB should not create a quota when receiving a transaction", quotaChecker.getTxQuota(contractB.getAddress()));
     }
@@ -229,6 +252,10 @@ public class TxQuotaCheckerIntegrationTest {
 
     private Transaction txFromAccountBToAccountC(long nonce, long gasLimit, long gasPrice, long size) {
         return txFrom(accountB, accountC, nonce, gasLimit, gasPrice, size);
+    }
+
+    private Transaction txFromAccountDToAccountE(long nonce, long gasLimit, long gasPrice, long size) {
+        return txFrom(accountD, accountE, nonce, gasLimit, gasPrice, size);
     }
 
     private Transaction txFromAccountCToContractA(long nonce, long gasLimit, long gasPrice, long size) {

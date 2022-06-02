@@ -10,13 +10,14 @@ import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -148,11 +149,57 @@ public class GasPriceTrackerTest {
         assertEquals(Coin.valueOf(55_000_000_000L), actualResult);
     }
 
+    @Test
+    public void isFeeMarketWorking_falseWhenNotEnoughBlocks() {
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
+
+        // to ensure only bestBlock is included on window on initial fill
+        when(blockStore.getBlockByHash(any())).thenReturn(null);
+        for (int i = 0; i < 48; i++) { // bestBlock already included => 48 instead of 49
+            Block block = makeBlock(Coin.valueOf(30_000_000_000L), 1, j -> makeTx(Coin.valueOf(40_000_000_000L)));
+            when(block.getGasUsed()).thenReturn(700_000L);
+            gasPriceTracker.onBestBlock(block, Collections.emptyList());
+            gasPriceTracker.onBlock(block, Collections.emptyList());
+        }
+
+        assertFalse(gasPriceTracker.isFeeMarketWorking());
+    }
+
+    @Test
+    public void isFeeMarketWorking_falseWhenBelowAverage() {
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
+
+        for (int i = 0; i < 50; i++) {
+            Block block = makeBlock(Coin.valueOf(30_000_000_000L), 1, j -> makeTx(Coin.valueOf(40_000_000_000L)));
+            when(block.getGasUsed()).thenReturn(6_119_000L); // 6_800_000 * 0.9 + margin// 6_800_000 * 0.9 - margin
+            gasPriceTracker.onBestBlock(block, Collections.emptyList());
+            gasPriceTracker.onBlock(block, Collections.emptyList());
+        }
+
+        assertFalse(gasPriceTracker.isFeeMarketWorking());
+    }
+
+    @Test
+    public void isFeeMarketWorking_trueWhenAboveAverage() {
+        GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
+
+        for (int i = 0; i < 50; i++) {
+            Block block = makeBlock(Coin.valueOf(30_000_000_000L), 1, j -> makeTx(Coin.valueOf(40_000_000_000L)));
+            when(block.getGasUsed()).thenReturn(6_121_000L); // 6_800_000 * 0.9 + margin
+            gasPriceTracker.onBestBlock(block, Collections.emptyList());
+            gasPriceTracker.onBlock(block, Collections.emptyList());
+        }
+
+        assertTrue(gasPriceTracker.isFeeMarketWorking());
+    }
+
     private static Block makeBlock(Coin mgp, int txCount, Function<Integer, Transaction> txMaker) {
         Block block = mock(Block.class);
 
         when(block.getMinimumGasPrice()).thenReturn(mgp);
         when(block.getParentHash()).thenReturn(new Keccak256(HashUtil.randomHash()));
+        when(block.getGasUsed()).thenReturn(700_000L);
+        when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6_800_000));
 
         List<Transaction> txs = IntStream.range(0, txCount).mapToObj(txMaker::apply).collect(Collectors.toList());
         when(block.getTransactionsList()).thenReturn(txs);
