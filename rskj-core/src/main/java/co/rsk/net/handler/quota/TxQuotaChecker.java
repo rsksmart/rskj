@@ -86,7 +86,7 @@ public class TxQuotaChecker {
         }
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
-        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx);
+        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx, currentContext.bestBlock.getNumber());
     }
 
     private boolean newAccountInRepository(RskAddress receiverAddress, RepositorySnapshot repository) {
@@ -170,9 +170,15 @@ public class TxQuotaChecker {
         long accountNonce = currentContext.state.getNonce(newTx.getSender()).longValue();
         long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
         long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();
-        long avgGasPrice = currentContext.gasPriceTracker.getGasPrice().asBigInteger().longValue();
 
-        TxVirtualGasCalculator calculator = new TxVirtualGasCalculator(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice);
+        TxVirtualGasCalculator calculator;
+        if (currentContext.gasPriceTracker.isFeeMarketWorking()) {
+            long avgGasPrice = currentContext.gasPriceTracker.getGasPrice().asBigInteger().longValue();
+            calculator = TxVirtualGasCalculator.createWithAllFactors(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice);
+        } else {
+            calculator = TxVirtualGasCalculator.createSkippingGasPriceFactor(accountNonce, blockGasLimit, blockMinGasPrice);
+        }
+
         return calculator.calculate(newTx, replacedTx);
     }
 
