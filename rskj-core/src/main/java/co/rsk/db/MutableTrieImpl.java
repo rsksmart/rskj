@@ -68,9 +68,9 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
-    @Override @VisibleForTesting
+    @Override // todo(techdebt) this is only used for testing, it should be removed from production
     public void put(String key, byte[] value) {
-        trie = trie.put(key, value);
+        trie = trie.put(key, value); // NOSONAR (sonar is refusing for @VisibleForTesting)
     }
 
     @Override

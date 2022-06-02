@@ -5,7 +5,7 @@ import static org.ethereum.db.OperationType.*;
 /**
  * A presentational class, used (by MutableRepository) to track relevant data for trie accesses
  * */
-public class TrackedNode {
+public class TrackedNode { 
     protected final ByteArrayWrapper key; // a trie key
     protected final OperationType operationType; // an operation type
     protected final String transactionHash; // a transaction  hash
@@ -21,9 +21,6 @@ public class TrackedNode {
         if(operationType == WRITE_OPERATION && !isSuccessful) {
             throw new IllegalArgumentException("a WRITE_OPERATION should always have a true result");
         }
-
-        // todo(fedejinich) find a way to validate key param
-        // todo(fedejinich) find a way to validate the txHash
     }
 
     public ByteArrayWrapper getKey() {

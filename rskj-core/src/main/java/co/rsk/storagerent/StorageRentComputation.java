@@ -72,9 +72,8 @@ public class StorageRentComputation {
         validateArgumentsRentDue(nodeSize, duration);
         long nodeSizeWithOverhead = nodeSize + STORAGE_OVERHEAD;
 
-        Double result = Math.floor(Double.valueOf(nodeSizeWithOverhead) * Double.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)) * RENTAL_RATE);
-
-        return result.longValue();
+        return (long) Math.floor(Double.valueOf(nodeSizeWithOverhead) *
+                Double.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)) * RENTAL_RATE);
     }
 
     /**
@@ -108,9 +107,9 @@ public class StorageRentComputation {
         }
 
         // partially advances the timestamp if rent due exceeds cap
-        Double timePaid = Math.floor(rentCap / (nodeSize * RENTAL_RATE));
+        long timePaid = (long) Math.floor(rentCap / (nodeSize * RENTAL_RATE));
 
-        return lastPaidTimestamp + timePaid.longValue();
+        return lastPaidTimestamp + timePaid;
     }
 
     private static void validateArgumentsComputeTimestamp(long nodeSize, long rentDue,
