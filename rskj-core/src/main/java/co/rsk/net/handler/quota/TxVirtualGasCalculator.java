@@ -98,7 +98,7 @@ class TxVirtualGasCalculator {
 
         double result = capeResult(txGasLimit, compositeFactor);
 
-        logger.trace("virtualGasConsumed calculation for tx [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, skipGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, skipGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
+        logger.trace("virtualGasConsumed calculation for tx [{}] and avgGasPrice [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, skipGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), avgGasPrice, result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, skipGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
 
         return result;
     }

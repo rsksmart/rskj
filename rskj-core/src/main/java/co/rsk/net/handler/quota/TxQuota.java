@@ -67,15 +67,20 @@ public class TxQuota {
      *
      * @param virtualGasToConsume Gas to be consumed
      * @param tx                  Tx being executed, used for logging purposes only
+     * @param blockNumber         Block number for logging purposes
      * @return True if there was enough accumulated gas
      */
-    public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, Transaction tx) {
+    public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, Transaction tx, long blockNumber) {
+        // we know getSender() was called previously in the flow, so sender field was already computed and is available
+        // we are not adding extra cost here, and it is useful for debugging purposes of transactions that don't get to a block, but we want to analyse
+        RskAddress sender = tx.getSender();
+
         if (this.availableVirtualGas < virtualGasToConsume) {
-            logger.warn("NOT enough virtualGas for tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", tx, this.availableVirtualGas, virtualGasToConsume);
+            logger.warn("NOT enough virtualGas for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
             return false;
         }
 
-        logger.trace("Enough virtualGas for tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", tx, this.availableVirtualGas, virtualGasToConsume);
+        logger.trace("Enough virtualGas for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
         this.availableVirtualGas -= virtualGasToConsume;
         return true;
     }
