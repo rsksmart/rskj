@@ -919,21 +919,22 @@ public class BridgeSupport {
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
-        logger.trace("[processFundsMigration] Going to process migration...");
+        if (federationIsInMigrationAge(activeFederation)) {
+            long migrationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
+            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", migrationAge);
+            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
+                logger.info(
+                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
+                    retiringFederationWallet.getBalance().toFriendlyString()
+                );
 
-        if (federationIsInMigrationAge(activeFederation) && hasMinimumFundsToMigrate(retiringFederationWallet)) {
-            logger.info(
-                "[processFundsMigration] Active federation (age={}) is in migration age and retiring federation has funds to migrate: {}.",
-                rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber(),
-                retiringFederationWallet.getBalance().toFriendlyString()
-            );
-
-            migrateFunds(
-                rskTx.getHash(),
-                retiringFederationWallet,
-                activeFederation.getAddress(),
-                availableUTXOs
-            );
+                migrateFunds(
+                    rskTx.getHash(),
+                    retiringFederationWallet,
+                    activeFederation.getAddress(),
+                    availableUTXOs
+                );
+            }
         }
 
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
@@ -3056,9 +3057,9 @@ public class BridgeSupport {
             } else {
                 provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
             }
-            logger.info("Rejecting peg-in due to {}: return tx build successful to {}. Tx {}. Value {}.", buildReturnResult.getResponseCode(), btcRefundAddress, rskTxHash, totalAmount);
+            logger.info("Rejecting peg-in tx built Successfully: Refund to address: {}. RskTxHash: {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
         } else {
-            logger.warn("Rejecting peg-in due to {}: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", buildReturnResult.getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
+            logger.warn("Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}", buildReturnResult.getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
             panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
         }
     }
