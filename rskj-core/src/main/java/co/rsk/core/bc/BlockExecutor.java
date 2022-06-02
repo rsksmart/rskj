@@ -30,7 +30,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;

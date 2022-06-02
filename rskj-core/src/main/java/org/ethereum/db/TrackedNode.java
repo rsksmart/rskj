@@ -5,7 +5,7 @@ import static org.ethereum.db.OperationType.*;
 /**
  * A presentational class, used (by MutableRepository) to track relevant data for trie accesses
  * */
-public class TrackedNode {
+public class TrackedNode { 
     protected final ByteArrayWrapper key; // a trie key
     protected final OperationType operationType; // an operation type
     protected final String transactionHash; // a transaction  hash

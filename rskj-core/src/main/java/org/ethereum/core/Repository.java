@@ -22,14 +22,10 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.Trie;
-import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
-import java.util.List;
-import java.util.Set;
 
 public interface Repository extends RepositorySnapshot {
     Trie getTrie();

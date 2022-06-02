@@ -1,8 +1,6 @@
 package co.rsk.storagerent;
 
-import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
