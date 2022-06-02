@@ -1,8 +1,6 @@
 package co.rsk.storagerent;
 
-import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
@@ -61,9 +59,7 @@ public class StorageRentManager {
         blockTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
         transactionTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
 
-        // todo(fedejinich) is it worth to do a more detailed check?
         if(storageRentNodes.isEmpty() && rollbackNodes.isEmpty()) {
-            // todo(fedejinich) is this the right way to throw this exception
             throw new RuntimeException("there should be rented nodes or rollback nodes");
         }
 

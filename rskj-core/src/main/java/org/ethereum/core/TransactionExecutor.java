@@ -502,8 +502,6 @@ public class TransactionExecutor {
         return receipt;
     }
 
-    // todo(fedejinich) According to the rskip240, the payment it's done at the end of the tx execution
-    //  rent payment should be included right before cacheTrack.commit, that's the last place to consume gas from the execution
     private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
@@ -519,10 +517,8 @@ public class TransactionExecutor {
             gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                     (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
                     tx.getHash().toHexString());
-            // todo(fedejinich) blockTrack should stop tracking here
         }
 
-        // todo(fedejinich) if it's a precompiled execution, it commits cache twice, here and at 422, is that ok?
         transactionTrack.commit();
 
         //Transaction sender is stored in cache
@@ -613,7 +609,6 @@ public class TransactionExecutor {
 
     @VisibleForTesting
     public boolean isStorageRentEnabled() {
-        // todo(fedejinich) should i add a check for remasc transaction?
         return activations.isActive(RSKIP240) &&
                 (!isEmpty(tx.getData()) || GasCost.toGas(tx.getGasLimit()) != GasCost.TRANSACTION) &&
                 storageRentEnabled; // todo(fedejinich) this is a workaround to enable storageRent just in DSL test

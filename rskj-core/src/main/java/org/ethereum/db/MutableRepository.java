@@ -37,20 +37,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
-import static org.ethereum.db.OperationType.*;
-
-// todo(fedejinich) Currently MutableRepository has the capability of tracking trie involved nodes,
-//  this is useful for storage rent and parallel txs processing.
-//  NOTE: tracking capability might be extracted into a MutableRepositoryTracked
-import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
-
-// todo(fedejinich) Currently MutableRepository has the capability of tracking trie involved keys,
-//  this is useful for storage rent and parallel txs processing.
-//  Storage rent uses a subset of all the tracked nodes, while parallel txs processing will use the entire set.
-//  NOTE: tracking capability might be extracted into a MutableRepositoryTracked
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -66,24 +57,15 @@ public class MutableRepository implements Repository {
         this.mutableTrie = mutableTrie;
     }
 
-//    // creates a new repository (tracking disabled)
-//    public MutableRepository(MutableTrie mutableTrie) {
-//        this(mutableTrie,  null, Collections.emptySet(), Collections.emptyList(), false);
-//    }
-
     // another way to create a repository (tracking disabled)
     public MutableRepository(TrieStore trieStore, Trie trie) {
-        this(new MutableTrieImpl(trieStore, trie));//, null, new HashSet<>(), new ArrayList<>(), false);
+        this(new MutableTrieImpl(trieStore, trie));
     }
 
     // another way to create a repository (tracking disabled),
     // by using this way we avoid instantiating Trie instances from undesired class
     public MutableRepository(TrieStore trieStore) {
         this(trieStore, new Trie(trieStore));
-    }
-
-    // this is only used in mocks
-    protected MutableRepository() {
     }
 
     @Override
@@ -405,7 +387,6 @@ public class MutableRepository implements Repository {
     }
 
     protected void internalDeleteRecursive(byte[] key) {
-        // todo(fedejinich) what happens for non existing keys? should track with false result?
         mutableTrie.deleteRecursive(key);
     }
 

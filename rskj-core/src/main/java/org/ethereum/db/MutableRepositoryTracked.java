@@ -30,11 +30,6 @@ public class MutableRepositoryTracked extends MutableRepository {
     // this contains the hash of the ongoing tracked transaction
     protected String trackedTransactionHash = "NO_TRANSACTION_HASH";
 
-    @VisibleForTesting
-    public MutableRepositoryTracked() {
-        super();
-    }
-
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
                                        Set<TrackedNode> trackedNodes, List<TrackedNode> rollbackNodes,
@@ -152,6 +147,7 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     // Internal methods contains node tracking
 
+    @Override
     protected void internalPut(byte[] key, byte[] value) {
         super.internalPut(key, value);
         if(value == null) {
@@ -161,12 +157,13 @@ public class MutableRepositoryTracked extends MutableRepository {
         }
     }
 
+    @Override
     protected void internalDeleteRecursive(byte[] key) {
-        // todo(fedejinich) what happens for non existing keys? should track with false result?
         super.internalDeleteRecursive(key);
         trackNodeDeleteOperation(key);
     }
 
+    @Override
     protected byte[] internalGet(byte[] key, boolean readsContractCode) {
         byte[] value = super.internalGet(key, readsContractCode);
         boolean isSuccessful = value != null;
@@ -181,6 +178,7 @@ public class MutableRepositoryTracked extends MutableRepository {
         return value;
     }
 
+    @Override
     protected Optional<Keccak256> internalGetValueHash(byte[] key) {
         Optional<Keccak256> valueHash = super.internalGetValueHash(key);
 
@@ -189,6 +187,7 @@ public class MutableRepositoryTracked extends MutableRepository {
         return valueHash;
     }
 
+    @Override
     protected Uint24 internalGetValueLength(byte[] key) {
         Uint24 valueLength = super.internalGetValueLength(key);
 
@@ -197,6 +196,7 @@ public class MutableRepositoryTracked extends MutableRepository {
         return valueLength;
     }
 
+    @Override
     protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
         Iterator<DataWord> storageKeys = super.internalGetStorageKeys(addr);
 

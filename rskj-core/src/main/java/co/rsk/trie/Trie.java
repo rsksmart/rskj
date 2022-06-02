@@ -926,7 +926,7 @@ public class Trie {
         byte pos = key.get(sharedPath.length());
 
         Trie node = retrieveNode(pos);
-        if (node == null) { // todo(fedejinich) creates a new node. if cannot retrieve from db, it creates a new root...
+        if (node == null) { // creates a new node. if cannot retrieve from db, it creates a new root... 1/2
             node = new Trie(this.store);
         }
 
@@ -934,9 +934,9 @@ public class Trie {
         Trie newNode = node.put(subKey, value, isRecursiveDelete);
 
         // reference equality
-        // todo(fedejinich) ...but then it's replaced with the new created leaf node (Trie:1045).
-        //  Is it just used to create the trie root?.
         if (newNode == node) {
+            // ...but then it's replaced with the new created leaf node. 2/2
+            //  todo(fedejinich) Is it just used to create the trie root?
             return this;
         }
 
@@ -1214,6 +1214,7 @@ public class Trie {
      * @param key a trie key
      * @param newRentPaidTimestamp a new rent timestamp
      */
+    // todo(fedejinich) this should be refactored by reusing internalPut method
     public Trie updateLastRentPaidTimestamp(TrieKeySlice key, long newRentPaidTimestamp) {
         // key found
         if (sharedPath.length() >= key.length()) {
@@ -1238,17 +1239,17 @@ public class Trie {
         Trie node = retrieveNode(pos);
 
         // this should never happen, it retrieves an existing node
-        if (node == null) {
+        if (node == null) { // NOSONAR this should be refactored by reusing the internalPut method
             nodeStopper.stop(1);
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        // sonarcloud refuses because 'node' is nullable, but it's handled in Trie:1334,
+        // sonarcloud/lgtm refuses because 'node' is nullable, but it's handled in Trie:1244,
         // therefore we have to disable it for this line
-        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp); // NOSONAR
+        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp); // NOSONAR lgtm [java/dereferenced-value-may-be-null]
 
         // reference equality
-        if (newNode == node) {
+        if (newNode == node) { // NOSONAR this should be refactored by reusing the internalPut method
             return this;
         }
 

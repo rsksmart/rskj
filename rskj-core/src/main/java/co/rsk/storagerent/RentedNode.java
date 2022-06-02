@@ -4,10 +4,8 @@ import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.TrackedNode;
 
-import java.util.Objects;
-
 import static co.rsk.storagerent.StorageRentComputation.*;
-import static org.ethereum.db.OperationType.*;
+import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
 
 /**
  * A RentedNode contains the relevant data of an involved node during transaction execution.
@@ -18,8 +16,6 @@ public class RentedNode extends TrackedNode {
     private final Long rentTimestamp;
 
     private boolean loadsContractCode = false;
-
-    // todo(fedejinich) WRITE OPERATION & LOADS CONTRACT CODE, IS THAT AN ILLEGAL STATE? SHOULD I ADD A CHECK ?
 
     public RentedNode(TrackedNode trackedNode, Long nodeSize, Long rentTimestamp) {
         super(trackedNode.getKey(), trackedNode.getOperationType(),
@@ -110,28 +106,6 @@ public class RentedNode extends TrackedNode {
                 rentCap(),
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
         return (long) (computedRent * 0.25); // todo(fedejinich) avoid casting?
-    }
-
-    // todo(fedejinich) should I override equals & hashcode?
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof RentedNode)) return false;
-        if (!super.equals(o)) return false;
-
-        RentedNode that = (RentedNode) o;
-
-        if (!Objects.equals(nodeSize, that.nodeSize)) return false;
-        return Objects.equals(rentTimestamp, that.rentTimestamp);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
-        result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
-        return result;
     }
 
     @Override
