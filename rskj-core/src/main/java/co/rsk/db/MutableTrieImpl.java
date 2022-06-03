@@ -25,7 +25,6 @@ import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStore;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -71,8 +70,7 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
-    @Override
-    // todo(techdebt) this is only used for testing, it should be removed from production
+    @Override // todo(techdebt) this is only used for testing, it should be removed from production
     public void put(String key, byte[] value) {
         trie = trie.put(key, value);
     }

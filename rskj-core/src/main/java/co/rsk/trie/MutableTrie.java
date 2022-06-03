@@ -21,7 +21,6 @@ package co.rsk.trie;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
