@@ -41,7 +41,7 @@ public interface MutableTrie {
 
     void put(byte[] key, byte[] value);
 
-    @VisibleForTesting
+    // todo(techdebt) this is only used in tests, it should be removed from production
     void put(String key, byte[] value);
 
     // This method optimizes cache-to-cache transfers
@@ -65,7 +65,7 @@ public interface MutableTrie {
      * */
     void putRentTimestamp(byte[] key, long rentTimestamp);
 
-    @VisibleForTesting
+    // todo(techdebt) this is only used for tests, it should be removed from production
     Set<ByteArrayWrapper> collectKeys(int size);
 
     Trie getTrie();
@@ -102,6 +102,6 @@ public interface MutableTrie {
      * */
     Optional<Long> getRentTimestamp(byte[] key);
 
-    @VisibleForTesting
+    // todo(techdebt) this is only used in tests, it should be removed from production
     MutableTrie find(byte[] key);
 }
