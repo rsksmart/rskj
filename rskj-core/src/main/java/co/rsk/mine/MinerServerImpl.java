@@ -393,9 +393,8 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public MinerWork getWork() {
-        MinerWork work = currentWork;
 
-        buildBlockToMine(false);
+        MinerWork work = currentWork;
         
         if (work.getNotify()) {
             /**
@@ -410,7 +409,7 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
+                       currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -552,6 +551,8 @@ public class MinerServerImpl implements MinerServer {
                 return;
             }
 
+            logger.info("****> on Best Block !!!");
+            
             logger.trace("Start onBestBlock");
 
             logger.debug(
@@ -562,6 +563,19 @@ public class MinerServerImpl implements MinerServer {
             buildBlockToMine(false);
 
             logger.trace("End onBestBlock");
+        }
+        
+        @Override
+        public void onPendingTransactionsReceived(List<Transaction> transactions) {
+            
+            if (isSyncing()) {
+                return;
+            }
+            
+            logger.info("****> Pending Transactions Received !!!");
+            
+            buildBlockToMine(false);
+            
         }
 
         private boolean isSyncing() {
