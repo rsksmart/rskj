@@ -30,11 +30,6 @@ public class MutableRepositoryTracked extends MutableRepository {
     // this contains the hash of the ongoing tracked transaction
     protected String trackedTransactionHash = "NO_TRANSACTION_HASH";
 
-    @VisibleForTesting
-    public MutableRepositoryTracked() {
-        super();
-    }
-
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
                                        Set<TrackedNode> trackedNodes, List<TrackedNode> rollbackNodes,

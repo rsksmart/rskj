@@ -70,10 +70,6 @@ public class MutableRepository implements Repository {
         this(trieStore, new Trie(trieStore));
     }
 
-    // this is only used in mocks
-    protected MutableRepository() {
-    }
-
     @Override
     public Trie getTrie() {
         return mutableTrie.getTrie();
