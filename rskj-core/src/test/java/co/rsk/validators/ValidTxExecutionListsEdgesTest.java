@@ -15,6 +15,7 @@ public class ValidTxExecutionListsEdgesTest {
     private BlockHeader blockHeader;
     private Block block;
     private List txList;
+    private ValidTxExecutionListsEdgesRule rule;
 
     @Before
     public void setUp() {
@@ -24,13 +25,14 @@ public class ValidTxExecutionListsEdgesTest {
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getTransactionsList()).thenReturn(txList);
         Mockito.when(txList.size()).thenReturn(10);
+
+        rule = new ValidTxExecutionListsEdgesRule();
     }
 
     @Test
     public void blockWithValidEdges() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[]{2, 5, 6});
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
@@ -38,7 +40,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithNullEdges() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(null);
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
@@ -46,7 +47,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithEmptyEdges() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[0]);
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
@@ -54,7 +54,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithTooManyEdges() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[]{2, 5, 6, 8, 10, 12, 14});
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
@@ -62,7 +61,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithOutOfBoundsEdges() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[]{12});
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
@@ -70,7 +68,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithNegativeEdge() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[]{-2});
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
@@ -78,7 +75,6 @@ public class ValidTxExecutionListsEdgesTest {
     public void blockWithEmptyListDefined() {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(new short[]{2, 2});
 
-        ValidTxExecutionListsEdgesRule rule = new ValidTxExecutionListsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
