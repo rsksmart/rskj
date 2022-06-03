@@ -78,6 +78,13 @@ public class ValidTxExecutionListsEdgesTest {
     }
 
     @Test
+    public void blockWithEdgeZero() {
+        mockGetTxExecutionListsEdges(new short[]{0, 2});
+
+        Assert.assertFalse(rule.isValid(block));
+    }
+
+    @Test
     public void blockWithRepeatedEdge() {
         mockGetTxExecutionListsEdges(new short[]{2, 2});
 
