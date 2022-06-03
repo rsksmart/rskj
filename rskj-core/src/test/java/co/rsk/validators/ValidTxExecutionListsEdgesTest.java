@@ -33,6 +33,7 @@ public class ValidTxExecutionListsEdgesTest {
         Mockito.when(blockHeader.getTxExecutionListsEdges()).thenReturn(edges);
     }
 
+    // valid cases
     @Test
     public void blockWithValidEdges() {
         mockGetTxExecutionListsEdges(new short[]{2, 5, 6});
@@ -54,9 +55,10 @@ public class ValidTxExecutionListsEdgesTest {
         Assert.assertTrue(rule.isValid(block));
     }
 
+    // invalid cases
     @Test
     public void blockWithTooManyEdges() {
-        mockGetTxExecutionListsEdges(new short[]{2, 5, 6, 8, 10, 12, 14});
+        mockGetTxExecutionListsEdges(new short[]{1, 2, 3, 4, 5});
 
         Assert.assertFalse(rule.isValid(block));
     }
