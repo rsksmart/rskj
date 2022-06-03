@@ -27,7 +27,7 @@ jobs:
       - run:
           name: Verify files
           command: |
-            curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
+            curl -sSL https://secchannel.rsk.co/SUPPORT.asc | gpg2 --import -
             gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run:
           name: Build
