@@ -84,17 +84,21 @@ public class Web3HttpServerTest {
     }
 
     private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
+        smokeTest(contentType, host, rpcAddress, rpcHost, null);
+    }
+
+    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost, String corsDomain) throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = "output";
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
         CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
-        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn(Optional.ofNullable(corsDomain).orElse("*"));
 
         int randomPort = 9999;//new ServerSocket(0).getLocalPort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(Optional.ofNullable(corsDomain).orElse("*"), rpcAddress, rpcHost);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();

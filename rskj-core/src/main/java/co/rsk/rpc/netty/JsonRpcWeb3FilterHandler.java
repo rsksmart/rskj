@@ -12,7 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by ajlopez on 18/10/2017.
@@ -21,6 +25,7 @@ import java.util.List;
 @ChannelHandler.Sharable
 public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
+    private final String corsDomains;
     private final List<String> rpcHost;
     private final InetAddress rpcAddress;
     private final List<String> acceptedHosts;
@@ -28,6 +33,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
     private OriginValidator originValidator;
 
     public JsonRpcWeb3FilterHandler(String corsDomains, InetAddress rpcAddress, List<String> rpcHost) {
+        this.corsDomains=corsDomains;
         this.originValidator = new OriginValidator(corsDomains);
         this.rpcHost = rpcHost;
         this.rpcAddress = rpcAddress;
@@ -69,7 +75,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         String hostHeader = headers.get(HttpHeaders.Names.HOST);
         String parsedHeader = parseHostHeader(hostHeader);
 
-        if (!acceptedHosts.contains(parsedHeader)) {
+        if (!this.corsDomains.trim().equals("*") && !acceptedHosts.contains(parsedHeader)) {
             logger.debug("Invalid header HOST {}", hostHeader);
             response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
