@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.InvalidBlockFields;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
@@ -29,7 +30,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -38,11 +42,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -104,10 +109,9 @@ public class BlockChainImplInvalidTest {
     @Test
     public void addInvalidBlockBadUnclesHash() {
         Block genesis = blockChain.getBestBlock();
-        Block block1 = new BlockGenerator().createChildBlock(genesis);
-
-        Whitebox.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
-
+        Set<InvalidBlockFields> invalidBlockFields = new HashSet<>();
+        invalidBlockFields.add(InvalidBlockFields.UNCLES_HASH);
+        Block block1 = new BlockGenerator(invalidBlockFields).createChildBlock(genesis);
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 

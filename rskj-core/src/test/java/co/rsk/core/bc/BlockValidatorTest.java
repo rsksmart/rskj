@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.MessageSerializer;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.InvalidBlockFields;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
@@ -44,7 +45,6 @@ import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -76,10 +76,12 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUnclesHash() {
-        BlockGenerator blockGenerator = new BlockGenerator();
+        Set<InvalidBlockFields> invalidBlockFields = new HashSet<>();
+        invalidBlockFields.add(InvalidBlockFields.UNCLES_HASH);
+
+        BlockGenerator blockGenerator = new BlockGenerator(invalidBlockFields);
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        Whitebox.setInternalState(block1.getHeader(), "unclesHash", new byte[]{0x01});
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -290,7 +292,7 @@ public class BlockValidatorTest {
 
         BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
         when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
-      
+
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)
                 .blockStore(store)
