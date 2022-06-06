@@ -19,6 +19,8 @@
 
 package org.ethereum.vm;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
@@ -44,11 +46,6 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
@@ -61,19 +58,14 @@ import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(Parameterized.class)
-@PrepareForTest(LoggerFactory.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(Parameterized.class)
 public class VMTest {
-
-    private static Logger logger;
 
     @Parameterized.Parameters
     public static Collection<Object> params() {
@@ -94,16 +86,11 @@ public class VMTest {
         this.isLogEnabled = isLogEnabled;
     }
 
-    @BeforeClass
-    public static void setupClass() {
-        spy(LoggerFactory.class);
-        logger = PowerMockito.mock(Logger.class);
-        PowerMockito.when(LoggerFactory.getLogger("VM")).thenReturn(logger);
-    }
-
     @Before
     public void setup() {
-        PowerMockito.when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        final ch.qos.logback.classic.Logger logger = loggerContext.getLogger("VM");
+        logger.setLevel(isLogEnabled ? Level.INFO : Level.WARN);
 
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();
