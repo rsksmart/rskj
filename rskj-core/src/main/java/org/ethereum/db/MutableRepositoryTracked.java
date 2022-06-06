@@ -159,7 +159,6 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     @Override
     protected void internalDeleteRecursive(byte[] key) {
-        // todo(fedejinich) what happens for non existing keys? should track with false result?
         super.internalDeleteRecursive(key);
         trackNodeDeleteOperation(key);
     }

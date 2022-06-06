@@ -141,14 +141,4 @@ public interface Repository extends RepositorySnapshot {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);
     }
-
-//    RentedNode getRentedNode(TrackedNode trackedNode);
-
-//    void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp);
-
-    // todo(fedejinich) this methods will only be included in MutableRepositoryTracked
-
-//    Set<TrackedNode> getStorageRentNodes(String transactionHash);
-
-//    List<TrackedNode> getRollBackNodes(String transactionHash);
 }

@@ -928,7 +928,7 @@ public class Trie {
         byte pos = key.get(sharedPath.length());
 
         Trie node = retrieveNode(pos);
-        if (node == null) { // todo(fedejinich) creates a new node. if cannot retrieve from db, it creates a new root...
+        if (node == null) { // creates a new node. if cannot retrieve from db, it creates a new root... 1/2
             node = new Trie(this.store);
         }
 
@@ -936,9 +936,9 @@ public class Trie {
         Trie newNode = node.put(subKey, value, isRecursiveDelete);
 
         // reference equality
-        // todo(fedejinich) ...but then it's replaced with the new created leaf node (Trie:1045).
-        //  Is it just used to create the trie root?.
         if (newNode == node) {
+            // ...but then it's replaced with the new created leaf node. 2/2
+            //  todo(fedejinich) Is it just used to create the trie root?
             return this;
         }
 
@@ -1246,7 +1246,7 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        // sonarcloud refuses because 'node' is nullable, but it's handled in Trie:1334,
+        // sonarcloud refuses because 'node' is nullable, but it's handled in Trie:1244,
         // therefore we have to disable it for this line
         Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp); // NOSONAR
 

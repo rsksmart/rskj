@@ -19,8 +19,6 @@ public class RentedNode extends TrackedNode {
 
     private boolean loadsContractCode = false;
 
-    // todo(fedejinich) WRITE OPERATION & LOADS CONTRACT CODE, IS THAT AN ILLEGAL STATE? SHOULD I ADD A CHECK ?
-
     public RentedNode(TrackedNode trackedNode, Long nodeSize, Long rentTimestamp) {
         super(trackedNode.getKey(), trackedNode.getOperationType(),
                 trackedNode.getTransactionHash(), trackedNode.getSuccessful());
@@ -112,27 +110,25 @@ public class RentedNode extends TrackedNode {
         return (long) (computedRent * 0.25); // todo(fedejinich) avoid casting?
     }
 
-    // todo(fedejinich) should I override equals & hashcode?
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof RentedNode)) return false;
-        if (!super.equals(o)) return false;
-
-        RentedNode that = (RentedNode) o;
-
-        if (!Objects.equals(nodeSize, that.nodeSize)) return false;
-        return Objects.equals(rentTimestamp, that.rentTimestamp);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
-        result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
-        return result;
-    }
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (!(o instanceof RentedNode)) return false;
+//        if (!super.equals(o)) return false;
+//
+//        RentedNode that = (RentedNode) o;
+//
+//        if (!Objects.equals(nodeSize, that.nodeSize)) return false;
+//        return Objects.equals(rentTimestamp, that.rentTimestamp);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        int result = super.hashCode();
+//        result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
+//        result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
+//        return result;
+//    }
 
     @Override
     public String toString() {
