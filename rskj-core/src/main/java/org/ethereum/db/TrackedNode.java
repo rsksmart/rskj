@@ -21,9 +21,6 @@ public class TrackedNode {
         if(operationType == WRITE_OPERATION && !isSuccessful) {
             throw new IllegalArgumentException("a WRITE_OPERATION should always have a true result");
         }
-
-        // todo(fedejinich) find a way to validate key param
-        // todo(fedejinich) find a way to validate the txHash
     }
 
     public ByteArrayWrapper getKey() {
