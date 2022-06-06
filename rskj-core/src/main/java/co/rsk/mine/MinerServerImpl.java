@@ -544,39 +544,41 @@ public class MinerServerImpl implements MinerServer {
 
     class NewBlockListener extends EthereumListenerAdapter {
 
-        @Override
         // This event executes in the thread context of the caller.
         // In case of private miner, it's the "Private Mining timer" task
+        @Override
         public void onBestBlock(Block newBestBlock, List<TransactionReceipt> receipts) {
             if (isSyncing()) {
                 return;
             }
 
-            logger.info("****> on Best Block !!!");
-            
             logger.trace("Start onBestBlock");
 
-            logger.debug(
-                    "There is a new best block: {}, number: {}",
-                    newBestBlock.getPrintableHashForMergedMining(),
-                    newBestBlock.getNumber());
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "There is a new best block: {}, number: {}",
+                        newBestBlock.getPrintableHashForMergedMining(),
+                        newBestBlock.getNumber());
+            }
+
             mainchainView.addBest(newBestBlock.getHeader());
+
             buildBlockToMine(false);
 
             logger.trace("End onBestBlock");
         }
-        
+
         @Override
         public void onPendingTransactionsReceived(List<Transaction> transactions) {
-            
+
             if (isSyncing()) {
                 return;
             }
-            
-            logger.info("****> Pending Transactions Received !!!");
-            
+
+            logger.trace("Pending Transactions Received");
+
             buildBlockToMine(false);
-            
+
         }
 
         private boolean isSyncing() {
