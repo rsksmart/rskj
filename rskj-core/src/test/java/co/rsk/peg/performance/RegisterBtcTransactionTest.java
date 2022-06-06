@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -42,6 +43,9 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private int blockWithTxHeight;
     private BtcTransaction txToLock;
     private PartialMerkleTree pmtOfLockTx;
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void registerBtcTransaction() throws VMException {
@@ -139,7 +143,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, executionResult) -> {
                     try {
-                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0), bridgeSerializationUtils);
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assert.assertTrue(height.isPresent());
 
@@ -171,7 +175,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, executionResult) -> {
                     try {
-                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                        BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0), bridgeSerializationUtils);
 
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
                         Assert.assertTrue(height.isPresent());

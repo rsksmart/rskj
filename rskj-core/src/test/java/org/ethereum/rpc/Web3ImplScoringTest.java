@@ -24,7 +24,10 @@ import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -54,6 +57,10 @@ import java.util.Random;
  */
 public class Web3ImplScoringTest {
     private static Random random = new Random();
+
+    private final static BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final static ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final static BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void addBannedAddressUsingIPV4() throws UnknownHostException {
@@ -366,8 +373,8 @@ public class Web3ImplScoringTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                new BridgeSupportFactory(null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());

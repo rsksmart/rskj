@@ -22,6 +22,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
@@ -50,7 +53,10 @@ import static org.mockito.Mockito.when;
  */
 public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private VmConfig vmConfig = config.getVmConfig();
     private ProgramInvokeMockImpl invoke;

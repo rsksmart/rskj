@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.crypto.ECKey;
 
 import java.math.BigInteger;
@@ -36,7 +37,8 @@ public class FederationTestUtils {
                 getFederationMembersFromPks(federationMemberPks),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                ScriptBuilderWrapper.getInstance()
         );
     }
 

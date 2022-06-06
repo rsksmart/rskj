@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import co.rsk.crypto.Keccak256;
 
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -34,6 +35,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.Assert.*;
@@ -49,8 +51,14 @@ public class BridgeTest {
     private Constants constants;
     private ActivationConfig activationConfig;
 
+    private BridgeUtils bridgeUtils;
+
+    private ScriptBuilderWrapper scriptBuilderWrapper;
+
     @Before
     public void resetConfigToRegTest() {
+        bridgeUtils = BridgeUtils.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
         when(config.getNetworkConstants()).thenReturn(constants);
@@ -218,7 +226,8 @@ public class BridgeTest {
             FederationTestUtils.getFederationMembers(3),
             Instant.ofEpochMilli(1000),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            scriptBuilderWrapper
         );
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -264,7 +273,8 @@ public class BridgeTest {
             FederationTestUtils.getFederationMembersWithKeys(federationKeys),
             Instant.ofEpochMilli(1000),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            scriptBuilderWrapper
         );
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -393,14 +403,14 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
-        byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
+        byte[] refundBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
-        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
+        byte[] lpBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             lpBtcAddress
         );
@@ -461,14 +471,14 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
-        byte[] refundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
+        byte[] refundBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
-        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(
+        byte[] lpBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             lpBtcAddress
         );

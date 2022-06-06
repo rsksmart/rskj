@@ -17,6 +17,10 @@ public class ConfigFactoryWrapper {
         return instance;
     }
 
+    private ConfigFactoryWrapper() {
+    }
+
+
     public Config systemProperties() {
         return ConfigFactory.systemProperties();
     }

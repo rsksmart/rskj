@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -208,7 +209,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
-    
+
     private static final Integer RECEIVE_HEADER_ERROR_SIZE_MISTMATCH = -20;
 
     private final Constants constants;
@@ -219,25 +220,36 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private org.ethereum.core.Transaction rskTx;
 
     private BridgeSupport bridgeSupport;
-    private BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
+
+    private final BridgeUtils bridgeUtils;
+
+    private final BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory;
 
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-                  BridgeSupportFactory bridgeSupportFactory) {
+                  BridgeSupportFactory bridgeSupportFactory, BridgeUtils bridgeUtils, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory) {
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.bridgeUtils = bridgeUtils;
+        this.merkleBranchFactory = merkleBranchFactory;
+    }
+
+    @VisibleForTesting
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BridgeSupportFactory bridgeSupportFactory) {
+        this(contractAddress, constants, activationConfig, bridgeSupportFactory, BridgeUtils.getInstance(), null); // TODO:I improve this VisibleForTesting
     }
 
     @Override
     public long getGasForData(byte[] data) {
-        if (!activations.isActive(ConsensusRule.RSKIP88) && BridgeUtils.isContractTx(rskTx)) {
+        if (!activations.isActive(ConsensusRule.RSKIP88) && bridgeUtils.isContractTx(rskTx)) {
             logger.warn("Call from contract before Orchid");
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
+        if (bridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
             return 0;
         }
 
@@ -643,7 +655,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
                     .map(hash -> Sha256Hash.wrap((byte[]) hash)).collect(Collectors.toList());
 
-            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchPath);
+            MerkleBranch merkleBranch = merkleBranchFactory.apply(merkleBranchHashes, merkleBranchPath);
 
             return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {
@@ -1060,7 +1072,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
 
-        Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
+        Coin newLockingCap = bridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
         if (newLockingCap.getValue() <= 0) {
             throw new BridgeIllegalArgumentException("Locking cap must be bigger than zero");
         }
@@ -1102,7 +1114,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
             // Parse data to create BTC user refund address with version and hash
             byte[] refundAddressInfo = (byte[]) args[4];
-            Address userRefundAddress = BridgeUtils.deserializeBtcAddressWithVersion(
+            Address userRefundAddress = bridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
                 activations,
                 refundAddressInfo
@@ -1111,7 +1123,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
             // Parse data to create BTC liquidity provider address with version and hash
             byte[] lpAddressInfo = (byte[]) args[6];
-            Address lpBtcAddress = BridgeUtils.deserializeBtcAddressWithVersion(
+            Address lpBtcAddress = bridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
                 activations,
                 lpAddressInfo
@@ -1209,8 +1221,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
-                    && (retiringFederation == null || !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation))) {
+            BridgeUtils bridgeUtils = BridgeUtils.getInstance(); // TODO:I think how to inject this
+            if (!bridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
+                    && (retiringFederation == null || !bridgeUtils.isFromFederateMember(self.rskTx, retiringFederation))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);

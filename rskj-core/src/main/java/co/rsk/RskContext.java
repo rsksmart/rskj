@@ -51,9 +51,8 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -466,7 +465,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory());
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory(), getBridgeUtils(), getBridgeSerializationUtils());
         }
 
         return precompiledContracts;
@@ -478,7 +477,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig());
+                    getRskSystemProperties().getActivationConfig(), getBridgeUtils(), getBridgeSerializationUtils(), getScriptBuilderWrapper());
         }
 
         return bridgeSupportFactory;
@@ -655,6 +654,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
+                    getBridgeSerializationUtils(),
                     getRskSystemProperties().getGasEstimationCap()
             );
         }
@@ -1169,6 +1169,18 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             wallet.close();
             logger.trace("wallet closed.");
         }
+    }
+
+    public synchronized BridgeUtils getBridgeUtils() {
+        return BridgeUtils.getInstance();
+    }
+
+    public synchronized ScriptBuilderWrapper getScriptBuilderWrapper() {
+        return ScriptBuilderWrapper.getInstance();
+    }
+
+    public synchronized BridgeSerializationUtils getBridgeSerializationUtils() {
+        return BridgeSerializationUtils.getInstance(getScriptBuilderWrapper());
     }
 
     /***** Protected Methods ******************************************************************************************/

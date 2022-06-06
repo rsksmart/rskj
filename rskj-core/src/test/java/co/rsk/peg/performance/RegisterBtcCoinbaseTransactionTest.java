@@ -23,7 +23,9 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.BridgeMethods;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -41,6 +43,10 @@ import java.util.List;
 
 @Ignore
 public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
+
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     private BtcTransaction coinbaseTx;
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
     private PartialMerkleTree pmtWithoutWitness;
@@ -74,7 +80,7 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                    BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0), bridgeSerializationUtils);
                     Assert.assertEquals(witnessRoot, bsp.getCoinbaseInformation(registerHeader.getHash()).getWitnessMerkleRoot());
                 });
     }

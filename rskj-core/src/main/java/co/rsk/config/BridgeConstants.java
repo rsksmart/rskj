@@ -23,9 +23,13 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
+
 import java.util.List;
 
 public class BridgeConstants {
+    protected final ScriptBuilderWrapper scriptBuilderWrapper;
+
     protected String btcParamsString;
 
     protected Federation genesisFederation;
@@ -81,6 +85,10 @@ public class BridgeConstants {
     protected int maxInputsPerPegoutTransaction;
 
     protected int numberOfBlocksBetweenPegouts;
+
+    protected BridgeConstants() {
+        this.scriptBuilderWrapper = ScriptBuilderWrapper.getInstance(); // TODO:I rethink how this is initiated
+    }
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);

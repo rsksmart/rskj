@@ -29,6 +29,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
@@ -138,17 +139,21 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
+    private final BridgeSerializationUtils bridgeSerializationUtils;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
         BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations) {
+        ActivationConfig.ForBlock activations,
+        BridgeSerializationUtils bridgeSerializationUtils) {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.activations = activations;
         this.storageVersion = new HashMap<>();
         this.bridgeConstants = bridgeConstants;
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
@@ -160,7 +165,7 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
             key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
         }
-        newFederationBtcUTXOs = getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
+        newFederationBtcUTXOs = getFromRepository(key, bridgeSerializationUtils::deserializeUTXOList);
         return newFederationBtcUTXOs;
     }
 
@@ -173,7 +178,7 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
             key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
         }
-        saveToRepository(key, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        saveToRepository(key, newFederationBtcUTXOs, bridgeSerializationUtils::serializeUTXOList);
     }
 
     public List<UTXO> getOldFederationBtcUTXOs() throws IOException {
@@ -181,7 +186,7 @@ public class BridgeStorageProvider {
             return oldFederationBtcUTXOs;
         }
 
-        oldFederationBtcUTXOs = getFromRepository(OLD_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
+        oldFederationBtcUTXOs = getFromRepository(OLD_FEDERATION_BTC_UTXOS_KEY, bridgeSerializationUtils::deserializeUTXOList);
         return oldFederationBtcUTXOs;
     }
 
@@ -190,7 +195,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY, oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY, oldFederationBtcUTXOs, bridgeSerializationUtils::serializeUTXOList);
     }
 
     public Optional<Long> getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
@@ -211,7 +216,7 @@ public class BridgeStorageProvider {
             return Optional.of(btcTxHashesToSave.get(btcTxHash));
         }
 
-        Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), BridgeSerializationUtils::deserializeOptionalLong);
+        Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), bridgeSerializationUtils::deserializeOptionalLong);
         if (!height.isPresent()) {
             return height;
         }
@@ -237,7 +242,7 @@ public class BridgeStorageProvider {
         }
 
         btcTxHashesToSave.forEach((btcTxHash, height) ->
-            safeSaveToRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), height, BridgeSerializationUtils::serializeLong)
+            safeSaveToRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), height, bridgeSerializationUtils::serializeLong)
         );
     }
 
@@ -246,7 +251,7 @@ public class BridgeStorageProvider {
             return btcTxHashesAlreadyProcessed;
         }
 
-        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, BridgeSerializationUtils::deserializeMapOfHashesToLong);
+        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, bridgeSerializationUtils::deserializeMapOfHashesToLong);
         return btcTxHashesAlreadyProcessed;
     }
 
@@ -255,7 +260,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
+        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, bridgeSerializationUtils::serializeMapOfHashesToLong);
     }
 
     public ReleaseRequestQueue getReleaseRequestQueue() throws IOException {
@@ -267,7 +272,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE,
-                data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
+                data -> bridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
                 )
         );
 
@@ -278,7 +283,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE_WITH_TXHASH,
-                data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
+                data -> bridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
                 )
         );
 
@@ -292,10 +297,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
+        safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, bridgeSerializationUtils::serializeReleaseRequestQueue);
 
         if(activations.isActive(RSKIP146)) {
-            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, bridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
         }
     }
 
@@ -305,7 +310,7 @@ public class BridgeStorageProvider {
         }
 
         Set<ReleaseTransactionSet.Entry> entries = new HashSet<>(getFromRepository(RELEASE_TX_SET,
-                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters).getEntries()));
+                data -> bridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters).getEntries()));
 
         if (!activations.isActive(RSKIP146)) {
             releaseTransactionSet = new ReleaseTransactionSet(entries);
@@ -314,7 +319,7 @@ public class BridgeStorageProvider {
 
         entries.addAll(getFromRepository(
                 RELEASE_TX_SET_WITH_TXHASH,
-                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters, true).getEntries()));
+                data -> bridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters, true).getEntries()));
 
         releaseTransactionSet = new ReleaseTransactionSet(entries);
 
@@ -326,10 +331,10 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
+        safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, bridgeSerializationUtils::serializeReleaseTransactionSet);
 
         if (activations.isActive(RSKIP146)) {
-            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
+            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, releaseTransactionSet, bridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
         }
     }
 
@@ -340,7 +345,7 @@ public class BridgeStorageProvider {
 
         rskTxsWaitingForSignatures = getFromRepository(
                 RSK_TXS_WAITING_FOR_SIGNATURES_KEY,
-                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
+                data -> bridgeSerializationUtils.deserializeMap(data, networkParameters, false)
         );
         return rskTxsWaitingForSignatures;
     }
@@ -350,7 +355,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
+        safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, bridgeSerializationUtils::serializeMap);
     }
 
     public Federation getNewFederation() {
@@ -370,7 +375,7 @@ public class BridgeStorageProvider {
                     return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants);
                 }
 
-                return BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
+                return bridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
             }
         );
 
@@ -390,7 +395,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
+        RepositorySerializer<Federation> serializer = bridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
             if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
@@ -404,7 +409,7 @@ public class BridgeStorageProvider {
                     FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
-            serializer = BridgeSerializationUtils::serializeFederation;
+            serializer = bridgeSerializationUtils::serializeFederation;
         }
 
         safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, serializer);
@@ -427,7 +432,7 @@ public class BridgeStorageProvider {
                     return deserializeFederationAccordingToVersion(data, storageVersion.get(), bridgeConstants);
                 }
 
-                return BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
+                return bridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, networkParameters);
             }
         );
 
@@ -445,7 +450,7 @@ public class BridgeStorageProvider {
     public void saveOldFederation() {
         if (shouldSaveOldFederation) {
             RepositorySerializer<Federation> serializer =
-                BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
+                bridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
                 if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
@@ -460,7 +465,7 @@ public class BridgeStorageProvider {
                     );
                 }
 
-                serializer = BridgeSerializationUtils::serializeFederation;
+                serializer = bridgeSerializationUtils::serializeFederation;
             }
 
             safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, serializer);
@@ -481,10 +486,10 @@ public class BridgeStorageProvider {
                     return null;
                 }
                 if (storageVersion.isPresent()) {
-                    return BridgeSerializationUtils.deserializePendingFederation(data); // Assume this is the multi-key version
+                    return bridgeSerializationUtils.deserializePendingFederation(data); // Assume this is the multi-key version
                 }
 
-                return BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
+                return bridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
             }
         );
 
@@ -501,11 +506,11 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
+            RepositorySerializer<PendingFederation> serializer = bridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
                 saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
-                serializer = BridgeSerializationUtils::serializePendingFederation;
+                serializer = bridgeSerializationUtils::serializePendingFederation;
             }
 
             safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, serializer);
@@ -520,7 +525,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
+        safeSaveToRepository(FEDERATION_ELECTION_KEY, federationElection, bridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
@@ -528,7 +533,7 @@ public class BridgeStorageProvider {
             return federationElection;
         }
 
-        federationElection = safeGetFromRepository(FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
+        federationElection = safeGetFromRepository(FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : bridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
     }
 
@@ -541,11 +546,11 @@ public class BridgeStorageProvider {
         }
 
         List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
-        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
+        safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), bridgeSerializationUtils::serializeOneOffLockWhitelist);
 
         if (activations.isActive(RSKIP87)) {
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
-            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
+            safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, bridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
     }
 
@@ -556,7 +561,7 @@ public class BridgeStorageProvider {
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> oneOffWhitelistAndDisableBlockHeightData =
                 safeGetFromRepository(LOCK_ONE_OFF_WHITELIST_KEY,
-                        data -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
+                        data -> bridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(data, networkParameters));
         if (oneOffWhitelistAndDisableBlockHeightData == null) {
             lockWhitelist = new LockWhitelist(new HashMap<>());
             return lockWhitelist;
@@ -568,7 +573,7 @@ public class BridgeStorageProvider {
 
         if (activations.isActive(RSKIP87)) {
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
-                    data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
+                    data -> bridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
         }
 
         lockWhitelist = new LockWhitelist(whitelistedAddresses, oneOffWhitelistAndDisableBlockHeightData.getRight());
@@ -581,7 +586,7 @@ public class BridgeStorageProvider {
             return feePerKb;
         }
 
-        feePerKb = safeGetFromRepository(FEE_PER_KB_KEY, BridgeSerializationUtils::deserializeCoin);
+        feePerKb = safeGetFromRepository(FEE_PER_KB_KEY, bridgeSerializationUtils::deserializeCoin);
         return feePerKb;
     }
 
@@ -594,7 +599,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(FEE_PER_KB_KEY, feePerKb, BridgeSerializationUtils::serializeCoin);
+        safeSaveToRepository(FEE_PER_KB_KEY, feePerKb, bridgeSerializationUtils::serializeCoin);
     }
 
     /**
@@ -605,7 +610,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, BridgeSerializationUtils::serializeElection);
+        safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, bridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
@@ -613,13 +618,13 @@ public class BridgeStorageProvider {
             return feePerKbElection;
         }
 
-        feePerKbElection = safeGetFromRepository(FEE_PER_KB_ELECTION_KEY, data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
+        feePerKbElection = safeGetFromRepository(FEE_PER_KB_ELECTION_KEY, data -> bridgeSerializationUtils.deserializeElection(data, authorizer));
         return feePerKbElection;
     }
 
     public void saveLockingCap() {
         if (activations.isActive(RSKIP134)) {
-            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
+            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), bridgeSerializationUtils::serializeCoin);
         }
     }
 
@@ -630,7 +635,7 @@ public class BridgeStorageProvider {
     public Coin getLockingCap() {
         if (activations.isActive(RSKIP134)) {
             if (this.lockingCap == null) {
-                this.lockingCap = safeGetFromRepository(LOCKING_CAP_KEY, BridgeSerializationUtils::deserializeCoin);
+                this.lockingCap = safeGetFromRepository(LOCKING_CAP_KEY, bridgeSerializationUtils::deserializeCoin);
             }
             return this.lockingCap;
         }
@@ -651,7 +656,7 @@ public class BridgeStorageProvider {
         }
 
         CoinbaseInformation coinbaseInformation =
-                safeGetFromRepository(getStorageKeyForCoinbaseInformation(blockHash), BridgeSerializationUtils::deserializeCoinbaseInformation);
+                safeGetFromRepository(getStorageKeyForCoinbaseInformation(blockHash), bridgeSerializationUtils::deserializeCoinbaseInformation);
         coinbaseInformationMap.put(blockHash, coinbaseInformation);
 
         return coinbaseInformation;
@@ -675,7 +680,7 @@ public class BridgeStorageProvider {
         }
 
         DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
-        Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
+        Sha256Hash blockHash = safeGetFromRepository(storageKey, bridgeSerializationUtils::deserializeSha256Hash);
         if (blockHash != null) {
             return Optional.of(blockHash);
         }
@@ -699,7 +704,7 @@ public class BridgeStorageProvider {
         if (btcBlocksIndex != null) {
             btcBlocksIndex.forEach((Integer height, Sha256Hash blockHash) -> {
                 DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
-                safeSaveToRepository(storageKey, blockHash, BridgeSerializationUtils::serializeSha256Hash);
+                safeSaveToRepository(storageKey, blockHash, bridgeSerializationUtils::serializeSha256Hash);
             });
         }
     }
@@ -713,7 +718,7 @@ public class BridgeStorageProvider {
             return;
         }
         coinbaseInformationMap.forEach((Sha256Hash blockHash, CoinbaseInformation data) ->
-            safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
+            safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, bridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
     public Optional<Long> getActiveFederationCreationBlockHeight() {
@@ -725,7 +730,7 @@ public class BridgeStorageProvider {
             return Optional.of(activeFederationCreationBlockHeight);
         }
 
-        activeFederationCreationBlockHeight = safeGetFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
+        activeFederationCreationBlockHeight = safeGetFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, bridgeSerializationUtils::deserializeOptionalLong).orElse(null);
         return Optional.ofNullable(activeFederationCreationBlockHeight);
     }
 
@@ -738,7 +743,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, activeFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
+        safeSaveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, activeFederationCreationBlockHeight, bridgeSerializationUtils::serializeLong);
     }
 
     public Optional<Long> getNextFederationCreationBlockHeight() {
@@ -750,7 +755,7 @@ public class BridgeStorageProvider {
             return Optional.of(nextFederationCreationBlockHeight);
         }
 
-        nextFederationCreationBlockHeight = safeGetFromRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
+        nextFederationCreationBlockHeight = safeGetFromRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, bridgeSerializationUtils::deserializeOptionalLong).orElse(null);
         return Optional.ofNullable(nextFederationCreationBlockHeight);
     }
 
@@ -768,9 +773,9 @@ public class BridgeStorageProvider {
         }
 
         if (nextFederationCreationBlockHeight == -1L) {
-            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, null, BridgeSerializationUtils::serializeLong);
+            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, null, bridgeSerializationUtils::serializeLong);
         } else {
-            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, nextFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
+            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, nextFederationCreationBlockHeight, bridgeSerializationUtils::serializeLong);
         }
     }
 
@@ -783,7 +788,7 @@ public class BridgeStorageProvider {
             return Optional.of(lastRetiredFederationP2SHScript);
         }
 
-        lastRetiredFederationP2SHScript = safeGetFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, BridgeSerializationUtils::deserializeScript);
+        lastRetiredFederationP2SHScript = safeGetFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, bridgeSerializationUtils::deserializeScript);
         return Optional.ofNullable(lastRetiredFederationP2SHScript);
     }
 
@@ -796,7 +801,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
+        safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, bridgeSerializationUtils::serializeScript);
     }
 
     public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
@@ -847,7 +852,7 @@ public class BridgeStorageProvider {
 
         FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
             getStorageKeyForfastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash),
-            data -> BridgeSerializationUtils.deserializeFastBridgeFederationInformation(data, fastBridgeFederationRedeemScriptHash)
+            data -> bridgeSerializationUtils.deserializeFastBridgeFederationInformation(data, fastBridgeFederationRedeemScriptHash)
         );
         if (fastBridgeFederationInformation == null) {
             return Optional.empty();
@@ -872,7 +877,7 @@ public class BridgeStorageProvider {
                 fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash()
             ),
             fastBridgeFederationInformation,
-            BridgeSerializationUtils::serializeFastBridgeFederationInformation
+            bridgeSerializationUtils::serializeFastBridgeFederationInformation
         );
     }
 
@@ -880,7 +885,7 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP200)) {
             return safeGetFromRepository(
                 RECEIVE_HEADERS_TIMESTAMP,
-                BridgeSerializationUtils::deserializeOptionalLong
+                bridgeSerializationUtils::deserializeOptionalLong
             );
         }
 
@@ -895,7 +900,7 @@ public class BridgeStorageProvider {
 
     public void saveReceiveHeadersLastTimestamp() {
         if (activations.isActive(RSKIP200) && this.receiveHeadersLastTimestamp > 0) {
-            safeSaveToRepository(RECEIVE_HEADERS_TIMESTAMP, this.receiveHeadersLastTimestamp, BridgeSerializationUtils::serializeLong);
+            safeSaveToRepository(RECEIVE_HEADERS_TIMESTAMP, this.receiveHeadersLastTimestamp, bridgeSerializationUtils::serializeLong);
         }
     }
 
@@ -905,7 +910,7 @@ public class BridgeStorageProvider {
         }
 
         if (nextPegoutHeight == null) {
-            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT_KEY, bridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
         }
 
         return Optional.of(nextPegoutHeight);
@@ -914,13 +919,13 @@ public class BridgeStorageProvider {
     public void setNextPegoutHeight(long nextPegoutHeight) {
         this.nextPegoutHeight = nextPegoutHeight;
     }
-    
+
     protected void saveNextPegoutHeight() {
         if (nextPegoutHeight == null || !activations.isActive(RSKIP271)) {
             return;
         }
-        
-        safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
+
+        safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, bridgeSerializationUtils::serializeLong);
     }
 
     protected int getReleaseRequestQueueSize() throws IOException {
@@ -996,7 +1001,7 @@ public class BridgeStorageProvider {
                     return Optional.empty();
                 }
 
-                return Optional.of(BridgeSerializationUtils.deserializeInteger(data));
+                return Optional.of(bridgeSerializationUtils.deserializeInteger(data));
             });
 
             storageVersion.put(versionKey, version);
@@ -1007,7 +1012,7 @@ public class BridgeStorageProvider {
     }
 
     private void saveStorageVersion(DataWord versionKey, Integer version) {
-        safeSaveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
+        safeSaveToRepository(versionKey, version, bridgeSerializationUtils::serializeInteger);
         storageVersion.put(versionKey, Optional.of(version));
     }
 
@@ -1017,7 +1022,7 @@ public class BridgeStorageProvider {
         BridgeConstants bridgeConstants
     ) {
         if (version.equals(ERP_FEDERATION_FORMAT_VERSION)) {
-            return BridgeSerializationUtils.deserializeErpFederation(
+            return bridgeSerializationUtils.deserializeErpFederation(
                 data,
                 bridgeConstants,
                 activations
@@ -1025,7 +1030,7 @@ public class BridgeStorageProvider {
         }
 
         // Assume this is the multi-key version
-        return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
+        return bridgeSerializationUtils.deserializeFederation(data, networkParameters);
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
@@ -1063,5 +1068,15 @@ public class BridgeStorageProvider {
 
     private interface RepositorySerializer<T> {
         byte[] serialize(T object) throws IOException;
+    }
+
+    @VisibleForTesting
+    void setLockWhitelist(LockWhitelist lockWhitelist) { // TODO try to refactor to avoid this
+        this.lockWhitelist = lockWhitelist;
+    }
+
+    @VisibleForTesting
+    void setFederationElection(ABICallElection federationElection) { // TODO try to refactor to avoid this
+        this.federationElection = federationElection;
     }
 }

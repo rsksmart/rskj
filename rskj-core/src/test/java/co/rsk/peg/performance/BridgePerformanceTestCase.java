@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -52,9 +53,15 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
     protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
     protected static BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private static BridgeUtils bridgeUtils;
+    private static ScriptBuilderWrapper scriptBuilderWrapper;
+    private static BridgeSerializationUtils bridgeSerializationUtils;
 
     @BeforeClass
     public static void setupB() {
+        bridgeUtils = BridgeUtils.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
         btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
@@ -226,7 +233,8 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         repository,
                         PrecompiledContracts.BRIDGE_ADDR,
                         bridgeConstants,
-                        activationConfig.forBlock((long) executionIndex)
+                        activationConfig.forBlock((long) executionIndex),
+                        bridgeSerializationUtils
                 );
                 BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(
                         repository,
@@ -256,7 +264,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 //                        constants.getBridgeConstants().getBtcParams());
 
                 BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
+                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                         bridgeSupportFactory);

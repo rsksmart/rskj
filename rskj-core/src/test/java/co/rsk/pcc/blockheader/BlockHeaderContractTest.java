@@ -32,6 +32,9 @@ import co.rsk.mine.MinerUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
@@ -92,11 +95,15 @@ public class BlockHeaderContractTest {
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
 
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     @Before
     public void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 

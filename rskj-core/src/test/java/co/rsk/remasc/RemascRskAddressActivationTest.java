@@ -22,6 +22,9 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -41,6 +44,9 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 public class RemascRskAddressActivationTest {
 
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     @Test
     public void testActivation() {
         final RskAddress rskLabsAddress = new RskAddress("14d3065c8Eb89895f4df12450EC6b130049F8034");
@@ -56,7 +62,7 @@ public class RemascRskAddressActivationTest {
                 .createRemascConfig("regtest"));
 
         final Remasc remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock,
-                blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
+                blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, bridgeSerializationUtils, logs);
 
         when(remascConfig.getRskLabsAddress()).thenReturn(rskLabsAddress);
         when(remascConfig.getRskLabsAddressRskip218()).thenReturn(rskLabsAddressRskip218);

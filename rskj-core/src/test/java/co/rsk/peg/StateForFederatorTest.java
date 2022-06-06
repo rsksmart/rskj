@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,6 +42,9 @@ public class StateForFederatorTest {
     private static final String SHA3_4 = "4444444444444444444444444444444444444444444444444444444444444444";
 
     private static final NetworkParameters NETWORK_PARAMETERS = BridgeRegTestConstants.getInstance().getBtcParams();
+
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void serialize() {
@@ -62,13 +66,13 @@ public class StateForFederatorTest {
         rskTxsWaitingForBroadcasting.put(hash3, Pair.of(tx3, 3L));
         rskTxsWaitingForBroadcasting.put(hash4, Pair.of(tx4, 4L));
 
-        StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures);
+        StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures, bridgeSerializationUtils);
 
         byte[] encoded = stateForFederator.getEncoded();
 
         Assert.assertTrue(encoded.length > 0);
 
-        StateForFederator reverseResult = new StateForFederator(encoded, NETWORK_PARAMETERS);
+        StateForFederator reverseResult = new StateForFederator(encoded, NETWORK_PARAMETERS, bridgeSerializationUtils);
 
         Assert.assertNotNull(reverseResult);
         Assert.assertEquals(2, reverseResult.getRskTxsWaitingForSignatures().size());

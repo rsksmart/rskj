@@ -21,16 +21,14 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
@@ -40,23 +38,21 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.*;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
-    private List<ECKey> rskPubKeys;
     private List<byte[]> rskAddresses;
 
+    private ScriptBuilderWrapper scriptBuilderWrapper;
+
     @Before
-    public void createFederation() {
-        federation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
+    public void setUp() {
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+
+        federation = createFederation(scriptBuilderWrapper);
 
         sortedPublicKeys = Arrays.stream(new BtcECKey[]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)),
@@ -67,7 +63,7 @@ public class FederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)),
         }).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        rskPubKeys = Stream.of(101, 201, 301, 401, 501, 601)
+        List<ECKey> rskPubKeys = Stream.of(101, 201, 301, 401, 501, 601)
                 .map(i -> ECKey.fromPrivate(BigInteger.valueOf(i)))
                 .collect(Collectors.toList());
 
@@ -96,12 +92,13 @@ public class FederationTest {
         Assert.assertTrue(exception);
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void redeemScript() {
+        ScriptBuilderWrapper scriptBuilderWrapper = mock(ScriptBuilderWrapper.class);
+        federation = createFederation(scriptBuilderWrapper);
+
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+        when(scriptBuilderWrapper.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(1);
             int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
             List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
@@ -118,12 +115,13 @@ public class FederationTest {
         Assert.assertEquals(1, calls.size());
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void P2SHScript() {
+        ScriptBuilderWrapper scriptBuilderWrapper = mock(ScriptBuilderWrapper.class);
+        federation = createFederation(scriptBuilderWrapper);
+
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+        when(scriptBuilderWrapper.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(0);
             int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
             List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
@@ -140,16 +138,17 @@ public class FederationTest {
         Assert.assertEquals(1, calls.size());
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void Address() {
+        ScriptBuilderWrapper scriptBuilderWrapper = mock(ScriptBuilderWrapper.class);
+        federation = createFederation(scriptBuilderWrapper);
+
         // Since we can't mock both Address and ScriptBuilder at the same time (due to PowerMockito limitations)
         // we use a well known P2SH and its corresponding address
         // and just mock the ScriptBuilder
         // a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87 => 2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+        when(scriptBuilderWrapper.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
             calls.add(0);
             int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
             List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
@@ -182,7 +181,8 @@ public class FederationTest {
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
         Assert.assertNotEquals(federation, otherFederation);
     }
@@ -193,7 +193,8 @@ public class FederationTest {
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
         Assert.assertNotEquals(federation, otherFederation);
     }
@@ -204,7 +205,8 @@ public class FederationTest {
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
                 1L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
         Assert.assertThat(federation, is(not(otherFederation)));
     }
@@ -215,7 +217,8 @@ public class FederationTest {
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
+                NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+                scriptBuilderWrapper
         );
         Assert.assertNotEquals(federation, otherFederation);
     }
@@ -229,7 +232,8 @@ public class FederationTest {
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
 
         members.remove(members.size()-1);
@@ -238,7 +242,8 @@ public class FederationTest {
                 members,
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(otherFederation, yetOtherFederation);
@@ -252,7 +257,8 @@ public class FederationTest {
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
         Assert.assertEquals(federation, otherFederation);
     }
@@ -316,4 +322,15 @@ public class FederationTest {
         FederationMember invalidPubKeys = new FederationMember(invalidBtcKey, invalidRskKey, invalidRskKey);
         Assert.assertFalse(federation.isMember(invalidPubKeys));
     }
+
+    private Federation createFederation(ScriptBuilderWrapper scriptBuilderWrapper) {
+        return new Federation(
+                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
+        );
+    }
+
 }

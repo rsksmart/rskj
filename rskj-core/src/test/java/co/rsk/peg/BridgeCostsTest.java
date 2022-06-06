@@ -6,6 +6,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
@@ -34,6 +35,10 @@ public class BridgeCostsTest {
     private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BridgeSupportFactory bridgeSupportFactory;
 
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     @BeforeClass
     public static void setUpBeforeClass() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
@@ -49,7 +54,7 @@ public class BridgeCostsTest {
         bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
     }
 
     @Test
@@ -127,7 +132,7 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
@@ -214,7 +219,7 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {

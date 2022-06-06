@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,6 +51,9 @@ import java.util.stream.Collectors;
  * Created by mario on 20/04/17.
  */
 public class BridgeSerializationUtils {
+
+    // TODO:I try to join as an "aggregated" class with ScriptBuilderWrapper & BridgeUtils
+
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
     private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
@@ -60,11 +64,23 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
     private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
-    private BridgeSerializationUtils() {
-        throw new IllegalAccessError("Utility class, do not instantiate it");
+    private final ScriptBuilderWrapper scriptBuilderWrapper;
+
+    private static BridgeSerializationUtils instance;
+
+    public static BridgeSerializationUtils getInstance(ScriptBuilderWrapper scriptBuilderWrapper) { // TODO:I delete unnecessary calls (create kinda global)
+        if (instance == null) {
+            instance = new BridgeSerializationUtils(scriptBuilderWrapper);
+        }
+
+        return instance;
     }
 
-    public static byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
+    private BridgeSerializationUtils(ScriptBuilderWrapper scriptBuilderWrapper) {
+        this.scriptBuilderWrapper = scriptBuilderWrapper;
+    }
+
+    public byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
         int ntxs = map.size();
 
         byte[][] bytes = new byte[ntxs * 2][];
@@ -78,7 +94,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static SortedMap<Keccak256, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
+    public SortedMap<Keccak256, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
 
         if (data == null || data.length == 0) {
@@ -105,7 +121,7 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    public static byte[] serializeUTXOList(List<UTXO> list) throws IOException {
+    public byte[] serializeUTXOList(List<UTXO> list) throws IOException {
         int nutxos = list.size();
 
         byte[][] bytes = new byte[nutxos][];
@@ -121,7 +137,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
+    public List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
         List<UTXO> list = new ArrayList<>();
 
         if (data == null || data.length == 0) {
@@ -142,7 +158,7 @@ public class BridgeSerializationUtils {
         return list;
     }
 
-    public static byte[] serializeSet(SortedSet<Sha256Hash> set) {
+    public byte[] serializeSet(SortedSet<Sha256Hash> set) {
         int nhashes = set.size();
 
         byte[][] bytes = new byte[nhashes][];
@@ -155,7 +171,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static SortedSet<Sha256Hash> deserializeSet(byte[] data) {
+    public SortedSet<Sha256Hash> deserializeSet(byte[] data) {
         SortedSet<Sha256Hash> set = new TreeSet<>();
 
         if (data == null || data.length == 0) {
@@ -173,7 +189,7 @@ public class BridgeSerializationUtils {
         return set;
     }
 
-    public static byte[] serializeMapOfHashesToLong(Map<Sha256Hash, Long> map) {
+    public byte[] serializeMapOfHashesToLong(Map<Sha256Hash, Long> map) {
         byte[][] bytes = new byte[map.size() * 2][];
         int n = 0;
 
@@ -189,7 +205,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static Map<Sha256Hash, Long> deserializeMapOfHashesToLong(byte[] data) {
+    public Map<Sha256Hash, Long> deserializeMapOfHashesToLong(byte[] data) {
         Map<Sha256Hash, Long> map = new HashMap<>();
 
         if (data == null || data.length == 0) {
@@ -231,7 +247,7 @@ public class BridgeSerializationUtils {
      * (see FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).
      * Each federation member is in turn serialized using the provided FederationMemberSerializer.
      */
-    private static byte[] serializeFederationWithSerializer(Federation federation, FederationMemberSerializer federationMemberSerializer) {
+    private byte[] serializeFederationWithSerializer(Federation federation, FederationMemberSerializer federationMemberSerializer) {
         List<byte[]> federationMembers = federation.getMembers().stream()
                 .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
                 .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
@@ -244,8 +260,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(rlpElements);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
-    private static Federation deserializeFederationWithDeserializer(
+    // For the serialization format, see this::serializeFederationWithSerializer
+    private Federation deserializeFederationWithDeserializer(
         byte[] data,
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
@@ -272,7 +288,7 @@ public class BridgeSerializationUtils {
             federationMembers.add(member);
         }
 
-        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
+        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters, scriptBuilderWrapper);
     }
 
     /**
@@ -280,13 +296,13 @@ public class BridgeSerializationUtils {
      * For compatibility with blocks before the Wasabi network upgrade,
      * each federation member is serialized only as its compressed BTC public key.
      */
-    public static byte[] serializeFederationOnlyBtcKeys(Federation federation) {
+    public byte[] serializeFederationOnlyBtcKeys(Federation federation) {
         return serializeFederationWithSerializer(federation,
                 federationMember -> federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true));
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
-    public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
+    // For the serialization format, see this::serializeFederationOnlyBtcKeys
+    public Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
         return deserializeFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
@@ -295,24 +311,24 @@ public class BridgeSerializationUtils {
      * For the federation serialization format, see serializeFederationWithSerializer.
      * For the federation member serialization format, see serializeFederationMember.
      */
-    public static byte[] serializeFederation(Federation federation) {
+    public byte[] serializeFederation(Federation federation) {
         return serializeFederationWithSerializer(federation,
-                BridgeSerializationUtils::serializeFederationMember);
+                this::serializeFederationMember);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(
+    // For the serialization format, see this::serializeFederation
+    public Federation deserializeFederation(
         byte[] data,
         NetworkParameters networkParameters
     ) {
         return deserializeFederationWithDeserializer(
             data,
             networkParameters,
-            BridgeSerializationUtils::deserializeFederationMember
+            this::deserializeFederationMember
         );
     }
 
-    public static ErpFederation deserializeErpFederation(
+    public ErpFederation deserializeErpFederation(
         byte[] data,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations
@@ -320,7 +336,7 @@ public class BridgeSerializationUtils {
         Federation federation = deserializeFederationWithDeserializer(
             data,
             bridgeConstants.getBtcParams(),
-            BridgeSerializationUtils::deserializeFederationMember
+            this::deserializeFederationMember
         );
 
         return new ErpFederation(
@@ -330,7 +346,8 @@ public class BridgeSerializationUtils {
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
     }
 
@@ -341,7 +358,7 @@ public class BridgeSerializationUtils {
      * - MST public key
      * All keys are stored in their COMPRESSED versions.
      */
-    public static byte[] serializeFederationMember(FederationMember federationMember) {
+    public byte[] serializeFederationMember(FederationMember federationMember) {
         byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
         rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
                 federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
@@ -351,8 +368,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(rlpElements);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeFederationMember
-    private static FederationMember deserializeFederationMember(byte[] data) {
+    // For the serialization format, see this::serializeFederationMember
+    private FederationMember deserializeFederationMember(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
@@ -371,38 +388,38 @@ public class BridgeSerializationUtils {
      * public keys conforming it.
      * This is a legacy format for blocks before the Wasabi
      * network upgrade.
-     * See BridgeSerializationUtils::serializeBtcPublicKeys
+     * See this::serializeBtcPublicKeys
      */
-    public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
+    public byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
         return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys
+    // For the serialization format, see this::serializePendingFederationOnlyBtcKeys
     // and serializePublicKeys::deserializeBtcPublicKeys
-    public static PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
+    public PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
         // BTC, RSK and MST keys are the same
         List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
             FederationMember.getFederationMemberFromKey(pk)
         ).collect(Collectors.toList());
 
-        return new PendingFederation(members);
+        return new PendingFederation(members, this);
     }
 
     /**
      * A pending federation is serialized as the
      * list of its sorted members serialized.
-     * For the member serialization format, see BridgeSerializationUtils::serializeFederationMember
+     * For the member serialization format, see this::serializeFederationMember
      */
-    public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
+    public byte[] serializePendingFederation(PendingFederation pendingFederation) {
         List<byte[]> encodedMembers = pendingFederation.getMembers().stream()
                 .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(BridgeSerializationUtils::serializeFederationMember)
+                .map(this::serializeFederationMember)
                 .collect(Collectors.toList());
         return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
-    public static PendingFederation deserializePendingFederation(byte[] data) {
+    // For the serialization format, see this::serializePendingFederation
+    public PendingFederation deserializePendingFederation(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         List<FederationMember> members = new ArrayList<>();
@@ -413,13 +430,13 @@ public class BridgeSerializationUtils {
             members.add(member);
         }
 
-        return new PendingFederation(members);
+        return new PendingFederation(members, this);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
     // spec_1, voters_1, ..., spec_n, voters_n
     // Specs are sorted by their signed byte encoding lexicographically.
-    public static byte[] serializeElection(ABICallElection election) {
+    public byte[] serializeElection(ABICallElection election) {
         byte[][] bytes = new byte[election.getVotes().size() * 2][];
         int n = 0;
 
@@ -435,8 +452,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeElection
-    public static ABICallElection deserializeElection(byte[] data, AddressBasedAuthorizer authorizer) {
+    // For the serialization format, see this::serializeElection
+    public ABICallElection deserializeElection(byte[] data, AddressBasedAuthorizer authorizer) {
         if (data == null || data.length == 0) {
             return new ABICallElection(authorizer);
         }
@@ -466,7 +483,7 @@ public class BridgeSerializationUtils {
      * @param data data MUST be composed of a list of {@link co.rsk.peg.whitelist.OneOffWhiteListEntry} and the value of disableBlockHeight obtained from {@link co.rsk.peg.whitelist.LockWhitelist}
      * @return the serialized data
      */
-    public static byte[] serializeOneOffLockWhitelist(Pair<List<OneOffWhiteListEntry>, Integer> data) {
+    public byte[] serializeOneOffLockWhitelist(Pair<List<OneOffWhiteListEntry>, Integer> data) {
         List<OneOffWhiteListEntry> entries = data.getLeft();
         Integer disableBlockHeight = data.getRight();
         int serializationSize = entries.size() * 2 + 1;
@@ -485,7 +502,7 @@ public class BridgeSerializationUtils {
      * @param entries
      * @return the serialized data
      */
-    public static byte[] serializeUnlimitedLockWhitelist(List<UnlimitedWhiteListEntry> entries) {
+    public byte[] serializeUnlimitedLockWhitelist(List<UnlimitedWhiteListEntry> entries) {
         int serializationSize = entries.size();
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < entries.size(); i++) {
@@ -494,7 +511,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(serializedLockWhitelist);
     }
 
-    public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
+    public Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -517,7 +534,7 @@ public class BridgeSerializationUtils {
         return Pair.of(entries, disableBlockHeight);
     }
 
-    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
+    public Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
         if (data == null) {
             return new HashMap<>();
         }
@@ -536,16 +553,16 @@ public class BridgeSerializationUtils {
         return entries;
     }
 
-    private static BigInteger safeToBigInteger(byte[] data) {
+    private BigInteger safeToBigInteger(byte[] data) {
         return data == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(data);
     }
 
-    public static byte[] serializeCoin(Coin coin) {
+    public byte[] serializeCoin(Coin coin) {
         return RLP.encodeBigInteger(BigInteger.valueOf(coin.getValue()));
     }
 
     @Nullable
-    public static Coin deserializeCoin(byte[] data) {
+    public Coin deserializeCoin(byte[] data) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -559,7 +576,7 @@ public class BridgeSerializationUtils {
     // and amount_i the RLP-encoded biginteger corresponding to each amount
     // Order of entries in serialized output is order of the request queue entries
     // so that we enforce a FIFO policy on release requests.
-    public static byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
+    public byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
         List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithoutHash();
 
         byte[][] bytes = new byte[entries.size() * 2][];
@@ -573,7 +590,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
+    public byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
         List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithHash();
 
         byte[][] bytes = new byte[entries.size() * 3][];
@@ -588,11 +605,11 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
+    public List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
         return deserializeReleaseRequestQueue(data, networkParameters, false);
     }
 
-    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+    public List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
         if (data == null || data.length == 0) {
             return new ArrayList<>();
         }
@@ -608,8 +625,8 @@ public class BridgeSerializationUtils {
         return hasTxHash ? deserializeReleaseRequestQueueWithTxHash(rlpList, networkParameters) : deserializeReleaseRequestQueueWithoutTxHash(rlpList, networkParameters);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
-    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    // For the serialization format, see this::serializeReleaseRequestQueue
+    private List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
 
         int n = rlpList.size() / 2;
@@ -624,8 +641,8 @@ public class BridgeSerializationUtils {
         return entries;
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
-    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    // For the serialization format, see this::serializeReleaseRequestQueue
+    private List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
 
         int n = rlpList.size() / 3;
@@ -649,7 +666,7 @@ public class BridgeSerializationUtils {
     // entries are first sorted on the lexicographical order of the
     // serialized btc transaction bytes
     // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
-    public static byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
+    public byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
         List<ReleaseTransactionSet.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
         entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
@@ -664,7 +681,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeReleaseTransactionSetWithTxHash(ReleaseTransactionSet set) {
+    public byte[] serializeReleaseTransactionSetWithTxHash(ReleaseTransactionSet set) {
         List<ReleaseTransactionSet.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
         entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
@@ -680,11 +697,11 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+    public ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
         return deserializeReleaseTransactionSet(data, networkParameters, false);
     }
 
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+    public ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
         if (data == null || data.length == 0) {
             return new ReleaseTransactionSet(new HashSet<>());
         }
@@ -700,8 +717,8 @@ public class BridgeSerializationUtils {
         return hasTxHash ? deserializeReleaseTransactionSetWithTxHash(rlpList, networkParameters) : deserializeReleaseTransactionSetWithoutTxHash(rlpList, networkParameters);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    // For the serialization format, see this::serializeReleaseTransactionSet
+    private ReleaseTransactionSet deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 2;
@@ -717,7 +734,7 @@ public class BridgeSerializationUtils {
         return new ReleaseTransactionSet(entries);
     }
 
-    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+    private ReleaseTransactionSet deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
         Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
 
         int n = rlpList.size() / 3;
@@ -734,24 +751,24 @@ public class BridgeSerializationUtils {
         return new ReleaseTransactionSet(entries);
     }
 
-    public static byte[] serializeInteger(Integer value) {
+    public byte[] serializeInteger(Integer value) {
         return RLP.encodeBigInteger(BigInteger.valueOf(value));
     }
 
-    public static Integer deserializeInteger(byte[] data) {
+    public Integer deserializeInteger(byte[] data) {
         return RLP.decodeBigInteger(data, 0).intValue();
     }
 
-    public static byte[] serializeLong(long value) { return RLP.encodeBigInteger(BigInteger.valueOf(value)); }
+    public byte[] serializeLong(long value) { return RLP.encodeBigInteger(BigInteger.valueOf(value)); }
 
-    public static Optional<Long> deserializeOptionalLong(byte[] data) {
+    public Optional<Long> deserializeOptionalLong(byte[] data) {
         if (data == null) {
             return Optional.empty();
         }
         return Optional.of(RLP.decodeBigInteger(data, 0).longValue());
     }
 
-    public static CoinbaseInformation deserializeCoinbaseInformation(byte[] data) {
+    public CoinbaseInformation deserializeCoinbaseInformation(byte[] data) {
         if (data == null) {
             return null;
         }
@@ -766,7 +783,7 @@ public class BridgeSerializationUtils {
         return new CoinbaseInformation(witnessMerkleRoot);
     }
 
-    public static byte[] serializeCoinbaseInformation(CoinbaseInformation coinbaseInformation) {
+    public byte[] serializeCoinbaseInformation(CoinbaseInformation coinbaseInformation) {
         if (coinbaseInformation == null) {
             return null;
         }
@@ -775,11 +792,11 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(rlpElements);
     }
 
-    public static byte[] serializeSha256Hash(Sha256Hash hash) {
+    public byte[] serializeSha256Hash(Sha256Hash hash) {
         return RLP.encodeElement(hash.getBytes());
     }
 
-    public static Sha256Hash deserializeSha256Hash(byte[] data) {
+    public Sha256Hash deserializeSha256Hash(byte[] data) {
         RLPElement element = RLP.decodeFirstElement(data, 0);
         if (element == null) {
             return null;
@@ -787,12 +804,12 @@ public class BridgeSerializationUtils {
         return Sha256Hash.wrap(element.getRLPData());
     }
 
-    public static byte[] serializeScript(Script script) {
+    public byte[] serializeScript(Script script) {
         return RLP.encodeList(RLP.encodeElement(script.getProgram()));
     }
 
     @Nullable
-    public static Script deserializeScript(byte[] data) {
+    public Script deserializeScript(byte[] data) {
         if (data == null) {
             return null;
         }
@@ -805,7 +822,7 @@ public class BridgeSerializationUtils {
         return new Script(rlpList.get(0).getRLPRawData());
     }
 
-    public static FastBridgeFederationInformation deserializeFastBridgeFederationInformation(byte[] data, byte[] fastBridgeScriptHash) {
+    public FastBridgeFederationInformation deserializeFastBridgeFederationInformation(byte[] data, byte[] fastBridgeScriptHash) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -821,7 +838,7 @@ public class BridgeSerializationUtils {
         return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
     }
 
-    public static byte[] serializeFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
+    public byte[] serializeFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
         if (fastBridgeFederationInformation == null) {
             return new byte[]{};
         }
@@ -835,7 +852,7 @@ public class BridgeSerializationUtils {
     // An ABI call spec is serialized as:
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
-    private static byte[] serializeABICallSpec(ABICallSpec spec) {
+    private byte[] serializeABICallSpec(ABICallSpec spec) {
         byte[][] encodedArguments = Arrays.stream(spec.getArguments())
                 .map(arg -> RLP.encodeElement(arg))
                 .toArray(byte[][]::new);
@@ -845,8 +862,8 @@ public class BridgeSerializationUtils {
         );
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
-    private static ABICallSpec deserializeABICallSpec(byte[] data) {
+    // For the serialization format, see this::serializeABICallSpec
+    private ABICallSpec deserializeABICallSpec(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != 2) {
@@ -868,7 +885,7 @@ public class BridgeSerializationUtils {
     // [pubkey1, pubkey2, ..., pubkeyn], sorted
     // using the lexicographical order of the public keys
     // (see BtcECKey.PUBKEY_COMPARATOR).
-    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
+    private byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
         List<byte[]> encodedKeys = keys.stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getPubKey()))
@@ -876,8 +893,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
-    private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
+    // For the serialization format, see this::serializePublicKeys
+    private List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         List<BtcECKey> keys = new ArrayList<>();
@@ -894,7 +911,7 @@ public class BridgeSerializationUtils {
     // A list of voters is serialized as
     // [voterBytes1, voterBytes2, ..., voterBytesn], sorted
     // using the lexicographical order of the voters' unsigned bytes
-    private static byte[] serializeVoters(List<RskAddress> voters) {
+    private byte[] serializeVoters(List<RskAddress> voters) {
         List<byte[]> encodedKeys = voters.stream()
                 .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getBytes()))
@@ -902,8 +919,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeVoters
-    private static List<RskAddress> deserializeVoters(byte[] data) {
+    // For the serialization format, see this::serializeVoters
+    private List<RskAddress> deserializeVoters(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         List<RskAddress> addresses = new ArrayList<>();

@@ -26,7 +26,10 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -91,6 +94,7 @@ public class Web3ImplLogsTest {
     // Examples:
     // Incremented(bool indexed odd, uint x) -> Keccak-256("Incremented(bool,uint256)")
     //
+
     private static final String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
     private static final String INC_EVENT_SIGNATURE = "6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad";
     private static final String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -98,6 +102,11 @@ public class Web3ImplLogsTest {
     private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private static final String TRACKED_TEST_BLOCK_HASH = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
 	private MiningMainchainView mainchainView;
@@ -1060,8 +1069,8 @@ public class Web3ImplLogsTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                new BridgeSupportFactory(null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);

@@ -58,7 +58,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 federationMembers,
                 genesisFederationAddressCreatedAt,
                 1L,
-                getBtcParams()
+                getBtcParams(),
+                scriptBuilderWrapper
         );
 
         btc2RskMinimumAcceptableConfirmations = 10;

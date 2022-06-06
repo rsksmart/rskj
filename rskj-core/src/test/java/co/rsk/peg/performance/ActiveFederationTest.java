@@ -24,6 +24,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -121,7 +122,8 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
                         members,
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
-                        networkParameters
+                        networkParameters,
+                        ScriptBuilderWrapper.getInstance()
                 );
                 provider.setNewFederation(federation);
             } else {

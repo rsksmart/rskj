@@ -2,8 +2,11 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -36,13 +39,16 @@ public class ExtCodeHashTest {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
             config,
             new BridgeSupportFactory(
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig()));
+                    config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper), bridgeUtils, bridgeSerializationUtils);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
@@ -124,7 +130,7 @@ public class ExtCodeHashTest {
         Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
     }
 
-    
+
     private static Transaction createTransaction() {
         int number = 0;
         AccountBuilder acbuilder = new AccountBuilder();

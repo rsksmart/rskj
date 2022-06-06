@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
@@ -64,6 +65,10 @@ public class RskForksBridgeTest {
     private World world;
     private BlockStore blockStore;
     private BridgeSupportFactory bridgeSupportFactory;
+
+    private static final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private static final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Before
     public void before() {
@@ -474,7 +479,7 @@ public class RskForksBridgeTest {
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory()),
+                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
                 world.getBlockTxSignatureCache()
         );
         Repository track = repository.startTracking();
@@ -489,7 +494,7 @@ public class RskForksBridgeTest {
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
         ActivationConfig.ForBlock activations = beforeBambooProperties.getActivationConfig().forBlock(blockChain.getBestBlock().getNumber());
-        return BridgeState.create(beforeBambooProperties.getNetworkConstants().getBridgeConstants(), (byte[])result[0], activations);
+        return BridgeState.create(beforeBambooProperties.getNetworkConstants().getBridgeConstants(), (byte[])result[0], activations, bridgeSerializationUtils);
     }
 
 

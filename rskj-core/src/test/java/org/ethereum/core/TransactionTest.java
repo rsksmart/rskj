@@ -26,8 +26,11 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -70,6 +73,10 @@ public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {
@@ -484,7 +491,7 @@ public class TransactionTest {
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig());
+                            config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
@@ -492,7 +499,7 @@ public class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
@@ -827,7 +834,7 @@ public class TransactionTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -835,7 +842,7 @@ public class TransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory),
+                new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                 blockTxSignatureCache);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);

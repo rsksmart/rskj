@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
@@ -71,6 +72,7 @@ public class EthModule
     private final EthModuleTransaction ethModuleTransaction;
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSerializationUtils bridgeSerializationUtils;
     private final byte chainId;
     private final long gasEstimationCap;
 
@@ -85,6 +87,7 @@ public class EthModule
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory,
+            BridgeSerializationUtils bridgeSerializationUtils,
             long gasEstimationCap) {
         this.chainId = chainId;
         this.blockchain = blockchain;
@@ -96,6 +99,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
         this.gasEstimationCap = gasEstimationCap;
     }
 
@@ -113,7 +117,7 @@ public class EthModule
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(bridgeConstants, result, null);
+        BridgeState state = BridgeState.create(bridgeConstants, result, null, bridgeSerializationUtils);
 
         return state.stateToMap();
     }

@@ -28,6 +28,9 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -82,7 +85,10 @@ public class TestRunner {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;

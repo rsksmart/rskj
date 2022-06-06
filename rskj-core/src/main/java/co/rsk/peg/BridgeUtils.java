@@ -53,11 +53,24 @@ import java.util.stream.Stream;
  */
 public class BridgeUtils {
 
+    // TODO:I try to join as an "aggregated" class with ScriptBuilderWrapper & BridgeSerializationUtils
+
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    private BridgeUtils() {}
+    private static BridgeUtils instance;
 
-    public static Wallet getFederationNoSpendWallet(
+    public static BridgeUtils getInstance() { // TODO:I delete unnecessary calls (create kinda global)
+        if (instance == null) {
+            instance = new BridgeUtils();
+        }
+
+        return instance;
+    }
+
+    private BridgeUtils() {
+    }
+
+    public Wallet getFederationNoSpendWallet(
         Context btcContext,
         Federation federation,
         boolean isFastBridgeCompatible,
@@ -71,7 +84,7 @@ public class BridgeUtils {
         );
     }
 
-    public static Wallet getFederationsNoSpendWallet(
+    public Wallet getFederationsNoSpendWallet(
         Context btcContext,
         List<Federation> federations,
         boolean isFastBridgeCompatible,
@@ -94,7 +107,7 @@ public class BridgeUtils {
         return wallet;
     }
 
-    public static Wallet getFederationSpendWallet(
+    public Wallet getFederationSpendWallet(
         Context btcContext,
         Federation federation,
         List<UTXO> utxos,
@@ -110,7 +123,7 @@ public class BridgeUtils {
         );
     }
 
-    public static Wallet getFederationsSpendWallet(
+    public Wallet getFederationsSpendWallet(
         Context btcContext,
         List<Federation> federations,
         List<UTXO> utxos,
@@ -138,7 +151,7 @@ public class BridgeUtils {
         return wallet;
     }
 
-    public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+    public boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
 
@@ -170,7 +183,7 @@ public class BridgeUtils {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
-    public static boolean isValidPegInTx(
+    public boolean isValidPegInTx(
         BtcTransaction tx,
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
@@ -210,7 +223,7 @@ public class BridgeUtils {
             }
         }
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(
+        Wallet federationsWallet = getFederationsNoSpendWallet(
             btcContext,
             activeFederations,
             false,
@@ -238,7 +251,7 @@ public class BridgeUtils {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
-    public static boolean isValidPegInTx(
+    public boolean isValidPegInTx(
         BtcTransaction tx,
         Federation federation,
         Context btcContext,
@@ -262,21 +275,21 @@ public class BridgeUtils {
      * @param activations to identify if certain hardfork is active or not.
      * @return true if this tx can be locked
      */
-    public static boolean txIsProcessableInLegacyVersion(TxSenderAddressType txSenderAddressType, ActivationConfig.ForBlock activations) {
+    public boolean txIsProcessableInLegacyVersion(TxSenderAddressType txSenderAddressType, ActivationConfig.ForBlock activations) {
         //After RSKIP 143 activation, check if the tx sender could be obtained to process the tx
         return txSenderAddressType == TxSenderAddressType.P2PKH ||
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
+    private  boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
         return isPegOutTx(tx, Collections.singletonList(federation), activations);
     }
 
-    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
+    public boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
         return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
     }
 
-    public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
+    public boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = tx.getInput(i);
@@ -306,7 +319,7 @@ public class BridgeUtils {
         return false;
     }
 
-    public static boolean isMigrationTx(
+    public boolean isMigrationTx(
         BtcTransaction btcTx,
         Federation activeFederation,
         Federation retiringFederation,
@@ -331,7 +344,7 @@ public class BridgeUtils {
      * @param btcTx The btc tx to check
      * @return 0 if was signed by the required number of federators, amount of missing signatures otherwise
      */
-    public static int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
+    public int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
         // Check missing signatures for only one input as it is not
         // possible for a federator to leave unsigned inputs in a tx
         Context.propagate(btcContext);
@@ -371,7 +384,7 @@ public class BridgeUtils {
      * @param btcTx The btc tx to check
      * @return True if was signed by the required number of federators, false otherwise
      */
-    public static boolean hasEnoughSignatures(Context btcContext, BtcTransaction btcTx) {
+    public boolean hasEnoughSignatures(Context btcContext, BtcTransaction btcTx) {
         // When the tx is constructed OP_0 are placed where signature should go.
         // Check all OP_0 have been replaced with actual signatures in all inputs
         Context.propagate(btcContext);
@@ -407,13 +420,13 @@ public class BridgeUtils {
         return true;
     }
 
-    public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
+    public Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
-    public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations) {
+    public boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations) {
         RskAddress receiveAddress = rskTx.getReceiveAddress();
         if (receiveAddress.equals(RskAddress.nullAddress())) {
             return false;
@@ -440,16 +453,16 @@ public class BridgeUtils {
      * @param rskTx
      * @return
      */
-    public static boolean isContractTx(Transaction rskTx) {
+    public boolean isContractTx(Transaction rskTx) {
         // TODO: this should be refactored to provide a more robust way of checking the transaction origin
         return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
     }
 
-    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
+    public boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
 
-    public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
+    public Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
         if (value == null) {
             throw new BridgeIllegalArgumentException("value cannot be null");
         }
@@ -460,22 +473,22 @@ public class BridgeUtils {
         }
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private  boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
     }
 
-    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private  boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
     }
 
-    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private  boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
     }
 
-    public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
+    public boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
         // Check there are at least N blocks on top of the supplied height
         if (height < 0) {
             throw new Exception("Height can't be lower than 0");
@@ -493,7 +506,7 @@ public class BridgeUtils {
         return true;
     }
 
-    public static Sha256Hash calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
+    public Sha256Hash calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
         List<Sha256Hash> hashesInPmt = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
@@ -504,7 +517,7 @@ public class BridgeUtils {
         return merkleRoot;
     }
 
-    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip) throws VerificationException.EmptyInputsOrOutputs {
+    public void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip) throws VerificationException.EmptyInputsOrOutputs {
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
             if (isActiveRskip) {
                 if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
@@ -527,7 +540,7 @@ public class BridgeUtils {
      * @param input The input
      * @return true if the input was already signed by the specified key, false otherwise.
      */
-    public static boolean isInputSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionInput input) {
+    public boolean isInputSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionInput input) {
         List<ScriptChunk> chunks = input.getScriptSig().getChunks();
         for (int j = 1; j < chunks.size() - 1; j++) {
             ScriptChunk chunk = chunks.get(j);
@@ -545,7 +558,7 @@ public class BridgeUtils {
         return false;
     }
 
-    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
+    public byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
         byte[] hash160 = btcAddress.getHash160();
         byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
         if (activations.isActive(RSKIP284)) {
@@ -564,7 +577,7 @@ public class BridgeUtils {
         return btcAddressBytes;
     }
 
-    public static Address deserializeBtcAddressWithVersion(
+    public Address deserializeBtcAddressWithVersion(
         NetworkParameters networkParameters,
         ActivationConfig.ForBlock activations,
         byte[] addressBytes) throws BridgeIllegalArgumentException {
@@ -586,7 +599,7 @@ public class BridgeUtils {
         return new Address(networkParameters, version, hashBytes);
     }
 
-    public static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {
+    public int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {
         // A regular peg-out transaction has two inputs and two outputs
         // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
         // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
@@ -602,7 +615,7 @@ public class BridgeUtils {
         );
     }
 
-    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
+    public int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
 
         if (inputs < 1 || outputs < 1) {
             throw new IllegalArgumentException("Inputs or outputs should be more than 1");
@@ -626,7 +639,7 @@ public class BridgeUtils {
         return baseSize + signingSize;
     }
 
-    private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+    private  Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
         Script inputScript = txInput.getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
         if (chunks == null || chunks.isEmpty()) {

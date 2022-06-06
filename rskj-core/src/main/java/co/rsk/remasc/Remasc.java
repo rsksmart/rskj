@@ -22,6 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -58,6 +59,8 @@ public class Remasc {
     private final RemascStorageProvider provider;
     private final RemascFeesPayer feesPayer;
 
+    private final BridgeSerializationUtils bridgeSerializationUtils;
+
     public Remasc(
             Constants constants,
             ActivationConfig activationConfig,
@@ -67,6 +70,7 @@ public class Remasc {
             Transaction executionTx,
             RskAddress contractAddress,
             Block executionBlock,
+            BridgeSerializationUtils bridgeSerializationUtils,
             List<LogInfo> logs) {
         this.repository = repository;
         this.blockStore = blockStore;
@@ -79,6 +83,8 @@ public class Remasc {
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
         this.constants = constants;
         this.activationConfig = activationConfig;
+
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
     }
 
     public void save() {
@@ -199,7 +205,7 @@ public class Remasc {
     }
 
     private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock);
+        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock, bridgeSerializationUtils);
         Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);

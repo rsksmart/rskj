@@ -25,9 +25,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -67,6 +66,11 @@ public class BlockChainBuilder {
     private TransactionPoolImpl transactionPool;
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -198,7 +202,7 @@ public class BlockChainBuilder {
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig());
+                    config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -217,7 +221,7 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory),
+                new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                 blockTxSignatureCache
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);

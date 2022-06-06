@@ -198,7 +198,7 @@ public class Transaction {
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
     public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
+        if (BridgeUtils.getInstance().isFreeBridgeTx(this, constants, activations)) { // TODO:I BridgeUtils should be received via parameter
             return 0;
         }
 

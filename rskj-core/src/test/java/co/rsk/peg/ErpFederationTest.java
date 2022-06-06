@@ -14,6 +14,8 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -23,6 +25,8 @@ import org.junit.Test;
 
 public class ErpFederationTest {
     private ErpFederation federation;
+
+    private ScriptBuilderWrapper scriptBuilderWrapper;
 
     // ERP federation keys
     private static final List<BtcECKey> ERP_FED_KEYS = Arrays.stream(new String[]{
@@ -40,6 +44,8 @@ public class ErpFederationTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+
         federation = new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -47,7 +53,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
     }
 
@@ -132,7 +139,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpPubKeysList,
             ACTIVATION_DELAY_VALUE,
-            mock(ActivationConfig.ForBlock.class)
+            mock(ActivationConfig.ForBlock.class),
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(ERP_FED_KEYS, federation.getErpPubKeys());
@@ -150,7 +158,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_FED_KEYS,
             -100L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
     }
 
@@ -166,7 +175,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_FED_KEYS,
             ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
     }
 
@@ -182,7 +192,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
@@ -200,7 +211,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
@@ -218,7 +230,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
@@ -236,7 +249,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
@@ -263,7 +277,8 @@ public class ErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(federation, otherFederation);
@@ -281,7 +296,8 @@ public class ErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(federation, otherFederation);
@@ -299,7 +315,8 @@ public class ErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(federation, otherFederation);
@@ -317,7 +334,8 @@ public class ErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(federation, otherFederation);
@@ -335,7 +353,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(federation, otherFederation);
@@ -353,7 +372,8 @@ public class ErpFederationTest {
             federation.getBtcParams(),
             federation.getErpPubKeys(),
             federation.getActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(federation, otherFederation);
@@ -375,7 +395,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activationsPre
+            activationsPre,
+            scriptBuilderWrapper
         );
 
         Federation otherErpFederation = new ErpFederation(
@@ -385,7 +406,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activationsPre
+            activationsPre,
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(erpFederation, otherErpFederation);
@@ -398,7 +420,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activationsPost
+            activationsPost,
+            scriptBuilderWrapper
         );
 
         Assert.assertNotEquals(erpFederation, otherErpFederation);
@@ -411,7 +434,8 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
-            activationsPost
+            activationsPost,
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(erpFederation, otherErpFederation);

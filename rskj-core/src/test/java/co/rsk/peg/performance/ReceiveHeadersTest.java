@@ -26,8 +26,10 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -44,9 +46,13 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBestBlock;
+    private static ScriptBuilderWrapper scriptBuilderWrapper;
+    private static BridgeSerializationUtils bridgeSerializationUtils;
 
     @BeforeClass
     public static void setupA() {
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -131,7 +137,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                             (Repository) environment.getBenchmarkedRepository(),
                             PrecompiledContracts.BRIDGE_ADDR,
                             constants.getBridgeConstants(),
-                            activationConfig.forBlock(0)
+                            activationConfig.forBlock(0),
+                            bridgeSerializationUtils
                     );
 
                     btcBlockStore = new RepositoryBtcBlockStoreWithCache(

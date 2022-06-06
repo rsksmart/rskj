@@ -25,9 +25,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.*;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -74,6 +77,10 @@ public class BlockExecutorTest {
     private static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties CONFIG = new TestSystemProperties();
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(CONFIG.getActivationConfig());
+
+    private static final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private static final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     private Blockchain blockchain;
     private BlockExecutor executor;
@@ -827,7 +834,7 @@ public class BlockExecutorTest {
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         return new BlockExecutor(
                 config.getActivationConfig(),
@@ -838,7 +845,7 @@ public class BlockExecutorTest {
                         null,
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );

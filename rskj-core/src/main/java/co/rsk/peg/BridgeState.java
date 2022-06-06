@@ -46,6 +46,7 @@ public class BridgeState {
     private final ReleaseRequestQueue releaseRequestQueue;
     private final ReleaseTransactionSet releaseTransactionSet;
     private final ActivationConfig.ForBlock activations;
+    private final BridgeSerializationUtils bridgeSerializationUtils;
 
     private BridgeState(int btcBlockchainBestChainHeight,
                         long nextPegoutCreationBlockNumber,
@@ -54,7 +55,8 @@ public class BridgeState {
                         BtcTransaction> rskTxsWaitingForSignatures,
                         ReleaseRequestQueue releaseRequestQueue,
                         ReleaseTransactionSet releaseTransactionSet,
-                        @Nullable ActivationConfig.ForBlock activations) {
+                        @Nullable ActivationConfig.ForBlock activations,
+                        BridgeSerializationUtils bridgeSerializationUtils) {
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.nextPegoutCreationBlockNumber = nextPegoutCreationBlockNumber;
         this.activeFederationBtcUTXOs = activeFederationBtcUTXOs;
@@ -62,16 +64,18 @@ public class BridgeState {
         this.releaseRequestQueue = releaseRequestQueue;
         this.releaseTransactionSet = releaseTransactionSet;
         this.activations = activations;
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
     }
 
-    public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) throws IOException {
+    public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider, ActivationConfig.ForBlock activations, BridgeSerializationUtils bridgeSerializationUtils) throws IOException {
         this(btcBlockchainBestChainHeight,
                 provider.getNextPegoutHeight().orElse(0L),
                 provider.getNewFederationBtcUTXOs(),
                 provider.getRskTxsWaitingForSignatures(),
                 provider.getReleaseRequestQueue(),
                 provider.getReleaseTransactionSet(),
-                activations);
+                activations,
+                bridgeSerializationUtils);
     }
 
     public int getBtcBlockchainBestChainHeight() {
@@ -119,36 +123,36 @@ public class BridgeState {
 
     public byte[] getEncoded() throws IOException {
         byte[] rlpBtcBlockchainBestChainHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.btcBlockchainBestChainHeight));
-        byte[] rlpActiveFederationBtcUTXOs = RLP.encodeElement(BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs));
-        byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures));
+        byte[] rlpActiveFederationBtcUTXOs = RLP.encodeElement(bridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs));
+        byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(bridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures));
         byte[] serializedReleaseRequestQueue = shouldUsePapyrusEncoding(this.activations) ?
-                BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue):
-                BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue);
+                bridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue):
+                bridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue);
         byte[] rlpReleaseRequestQueue = RLP.encodeElement(serializedReleaseRequestQueue);
         byte[] serializedReleaseTransactionSet = shouldUsePapyrusEncoding(this.activations) ?
-                BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(releaseTransactionSet):
-                BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
+                bridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(releaseTransactionSet):
+                bridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
         byte[] rlpReleaseTransactionSet = RLP.encodeElement(serializedReleaseTransactionSet);
-        byte[] rlpNextPegoutCreationBlockNumber = RLP.encodeElement(BridgeSerializationUtils.serializeLong(nextPegoutCreationBlockNumber));
+        byte[] rlpNextPegoutCreationBlockNumber = RLP.encodeElement(bridgeSerializationUtils.serializeLong(nextPegoutCreationBlockNumber));
 
         return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForSignatures, rlpReleaseRequestQueue, rlpReleaseTransactionSet, rlpNextPegoutCreationBlockNumber);
     }
 
-    public static BridgeState create(BridgeConstants bridgeConstants, byte[] data, @Nullable ActivationConfig.ForBlock activations) throws IOException {
+    public static BridgeState create(BridgeConstants bridgeConstants, byte[] data, @Nullable ActivationConfig.ForBlock activations, BridgeSerializationUtils bridgeSerializationUtils) throws IOException {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         byte[] btcBlockchainBestChainHeightBytes = rlpList.get(0).getRLPData();
         int btcBlockchainBestChainHeight = btcBlockchainBestChainHeightBytes == null ? 0 : (new BigInteger(1, btcBlockchainBestChainHeightBytes)).intValue();
         byte[] btcUTXOsBytes = rlpList.get(1).getRLPData();
-        List<UTXO> btcUTXOs = BridgeSerializationUtils.deserializeUTXOList(btcUTXOsBytes);
+        List<UTXO> btcUTXOs = bridgeSerializationUtils.deserializeUTXOList(btcUTXOsBytes);
         byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(2).getRLPData();
-        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = bridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
-        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(bridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
         byte[] releaseTransactionSetBytes = rlpList.get(4).getRLPData();
-        ReleaseTransactionSet releaseTransactionSet = BridgeSerializationUtils.deserializeReleaseTransactionSet(releaseTransactionSetBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
+        ReleaseTransactionSet releaseTransactionSet = bridgeSerializationUtils.deserializeReleaseTransactionSet(releaseTransactionSetBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
         byte[] nextPegoutCreationBlockNumberBytes = rlpList.get(5).getRLPData();
-        long nextPegoutCreationBlockNumber = BridgeSerializationUtils.deserializeOptionalLong(nextPegoutCreationBlockNumberBytes).orElse(0L);
+        long nextPegoutCreationBlockNumber = bridgeSerializationUtils.deserializeOptionalLong(nextPegoutCreationBlockNumberBytes).orElse(0L);
 
         return new BridgeState(
                 btcBlockchainBestChainHeight,
@@ -157,7 +161,8 @@ public class BridgeState {
                 rskTxsWaitingForSignatures,
                 releaseRequestQueue,
                 releaseTransactionSet,
-                activations
+                activations,
+                bridgeSerializationUtils
         );
     }
 

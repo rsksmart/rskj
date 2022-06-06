@@ -27,6 +27,9 @@ import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
+
+import co.rsk.peg.utils.ScriptBuilderWrapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -40,13 +43,19 @@ public class BridgeSupportFactory {
     private final Factory btcBlockStoreFactory;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final BridgeUtils bridgeUtils;
+    private final BridgeSerializationUtils bridgeSerializationUtils;
+    private final ScriptBuilderWrapper scriptBuilderWrapper;
 
     public BridgeSupportFactory(Factory btcBlockStoreFactory,
-            BridgeConstants bridgeConstants, ActivationConfig activationConfig) {
+            BridgeConstants bridgeConstants, ActivationConfig activationConfig, BridgeUtils bridgeUtils, BridgeSerializationUtils bridgeSerializationUtils, ScriptBuilderWrapper scriptBuilderWrapper) {
 
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
+        this.bridgeUtils = bridgeUtils;
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
+        this.scriptBuilderWrapper = scriptBuilderWrapper;
     }
 
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
@@ -58,7 +67,8 @@ public class BridgeSupportFactory {
             repository,
             contractAddress,
             bridgeConstants,
-            activations
+            activations,
+            bridgeSerializationUtils
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
@@ -84,7 +94,10 @@ public class BridgeSupportFactory {
                 btcContext,
                 federationSupport,
                 btcBlockStoreFactory,
-                activations
+                activations,
+                bridgeUtils,
+                bridgeSerializationUtils,
+                scriptBuilderWrapper
         );
     }
 }

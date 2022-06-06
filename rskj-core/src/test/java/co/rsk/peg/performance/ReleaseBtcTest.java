@@ -23,8 +23,10 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -39,6 +41,8 @@ import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void releaseBtc() throws VMException {
@@ -80,7 +84,8 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
                                 constants.getBridgeConstants(),
-                                activationConfig.forBlock(0)
+                                activationConfig.forBlock(0),
+                                bridgeSerializationUtils
                         );
                         ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                         sizeQueue = queue.getEntries().size();
@@ -122,7 +127,8 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                                     (Repository) environment.getBenchmarkedRepository(),
                                     PrecompiledContracts.BRIDGE_ADDR,
                                     constants.getBridgeConstants(),
-                                    activationConfig.forBlock(0)
+                                    activationConfig.forBlock(0),
+                                    bridgeSerializationUtils
                             );
                             ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                             sizeQueue = queue.getEntries().size();

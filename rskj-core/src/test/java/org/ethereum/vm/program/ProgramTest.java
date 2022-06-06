@@ -21,6 +21,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import com.google.common.collect.Sets;
 import java.math.BigInteger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -59,7 +62,10 @@ public class ProgramTest {
     protected static final int STACK_STATE_ERROR = 0;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
 
     private final ProgramInvoke programInvoke = mock(ProgramInvoke.class);
     private final MessageCall msg = mock(MessageCall.class);

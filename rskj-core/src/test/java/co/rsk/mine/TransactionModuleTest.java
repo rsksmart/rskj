@@ -28,8 +28,11 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -81,6 +84,10 @@ public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void sendTransactionMustNotBeMined() {
@@ -631,7 +638,8 @@ public class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig()),
+                        config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
@@ -680,7 +688,7 @@ public class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
                 blockTxSignatureCache
         );
     }
@@ -692,7 +700,7 @@ public class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
                 blockTxSignatureCache
         );
     }
@@ -701,7 +709,7 @@ public class TransactionModuleTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         return bridgeSupportFactory;
     }
 }

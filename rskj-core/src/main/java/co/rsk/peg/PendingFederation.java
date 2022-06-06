@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,11 +50,14 @@ public final class PendingFederation {
 
     private final List<FederationMember> members;
 
-    public PendingFederation(List<FederationMember> members) {
+    private final BridgeSerializationUtils bridgeSerializationUtils;
+
+    public PendingFederation(List<FederationMember> members, BridgeSerializationUtils bridgeSerializationUtils) {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
         // effectively immutable
         this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
     }
 
     public List<FederationMember> getMembers() {
@@ -77,7 +82,7 @@ public final class PendingFederation {
     public PendingFederation addMember(FederationMember member) {
         List<FederationMember> newMembers = new ArrayList<>(members);
         newMembers.add(member);
-        return new PendingFederation(newMembers);
+        return new PendingFederation(newMembers, bridgeSerializationUtils);
     }
 
     /**
@@ -92,7 +97,8 @@ public final class PendingFederation {
         Instant creationTime,
         long blockNumber,
         BridgeConstants bridgeConstants,
-        ActivationConfig.ForBlock activations
+        ActivationConfig.ForBlock activations,
+        ScriptBuilderWrapper scriptBuilderWrapper
         ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
@@ -107,7 +113,8 @@ public final class PendingFederation {
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
-                activations
+                activations,
+                scriptBuilderWrapper
             );
         }
 
@@ -115,7 +122,8 @@ public final class PendingFederation {
                 members,
                 creationTime,
                 blockNumber,
-                bridgeConstants.getBtcParams()
+                bridgeConstants.getBtcParams(),
+                scriptBuilderWrapper
         );
     }
 
@@ -138,7 +146,7 @@ public final class PendingFederation {
     }
 
     public Keccak256 getHash() {
-        byte[] encoded = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(this);
+        byte[] encoded = bridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(this);
         return new Keccak256(HashUtil.keccak256(encoded));
     }
 

@@ -32,9 +32,8 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -83,6 +82,9 @@ public class RemascProcessMinerFeesTest {
     private BlockChainBuilder blockchainBuilder;
     private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
+    private BridgeUtils bridgeUtils;
+    private ScriptBuilderWrapper scriptBuilderWrapper;
+    private BridgeSerializationUtils bridgeSerializationUtils;
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -106,6 +108,9 @@ public class RemascProcessMinerFeesTest {
                 .setGenesis(genesisBlock)
                 .setConfig(config)
                 .setTesting(true);
+        bridgeUtils = BridgeUtils.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     }
 
     @Test
@@ -966,7 +971,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     private void validateFederatorsBalanceIsCorrect(RepositorySnapshot repository, long federationReward, Block executionBlock) {
-        RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), executionBlock);
+        RemascFederationProvider provider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), executionBlock, bridgeSerializationUtils);
 
         int nfederators = provider.getFederationSize();
 
@@ -1009,7 +1014,7 @@ public class RemascProcessMinerFeesTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         return new BlockExecutor(
                 config.getActivationConfig(),
@@ -1020,7 +1025,7 @@ public class RemascProcessMinerFeesTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );

@@ -7,6 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -37,6 +38,10 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     private StoredBlock storedBlock;
     private BtcBlock btcBlock;
     private BridgeSupport bridgeSupport;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Before
     public void setUpOnEachTest() throws BlockStoreException {
@@ -157,7 +162,10 @@ public class BridgeSupportRSKIP220NewMethodsTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock),
                 blockStoreFactory,
-                activations
+                activations,
+                bridgeUtils,
+                bridgeSerializationUtils,
+                scriptBuilderWrapper
         );
     }
 }

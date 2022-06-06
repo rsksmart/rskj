@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -49,7 +49,9 @@ public class Federation {
     protected Script p2shScript;
     protected Address address;
 
-    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
+    protected ScriptBuilderWrapper scriptBuilderWrapper;
+
+    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber, NetworkParameters btcParams, ScriptBuilderWrapper scriptBuilderWrapper) {
         // Sorting members ensures same order of federation members for same members
         // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -58,6 +60,8 @@ public class Federation {
         this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
+
+        this.scriptBuilderWrapper = scriptBuilderWrapper;
 
         // Calculated once on-demand
         this.redeemScript = null;
@@ -98,7 +102,7 @@ public class Federation {
 
     public Script getRedeemScript() {
         if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            redeemScript = scriptBuilderWrapper.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return redeemScript;
@@ -110,7 +114,7 @@ public class Federation {
 
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            p2shScript = scriptBuilderWrapper.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return p2shScript;

@@ -18,6 +18,8 @@
 
 package co.rsk.peg;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -36,6 +38,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
@@ -46,6 +49,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -66,12 +70,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -84,6 +86,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.BiFunction;
 
 import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -93,8 +96,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 6/8/2016.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Bridge.class, BridgeUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BridgeTestPowerMock {
     private static NetworkParameters networkParameters;
     private static BridgeRegTestConstants bridgeConstants;
@@ -111,8 +113,10 @@ public class BridgeTestPowerMock {
     private Constants constants;
     private ActivationConfig activationConfig;
     private ActivationConfig.ForBlock activationConfigAll;
-    private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BlockFactory blockFactory;
+    private static BridgeUtils bridgeUtils;
+    private static ScriptBuilderWrapper scriptBuilderWrapper;
+    private static BridgeSerializationUtils bridgeSerializationUtils;
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -130,8 +134,11 @@ public class BridgeTestPowerMock {
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
         blockFactory = new BlockFactory(activationConfig);
-        btcBlockFactory = new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams());
         activationConfigAll = ActivationConfigsForTest.all().forBlock(0);
+
+        bridgeUtils = BridgeUtils.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     }
 
     @Test
@@ -141,7 +148,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll, bridgeSerializationUtils);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.save();
@@ -165,7 +172,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         World world = new World();
@@ -187,7 +194,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0), bridgeSerializationUtils);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -213,7 +220,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
@@ -226,7 +233,7 @@ public class BridgeTestPowerMock {
         track.commit();
 
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll, bridgeSerializationUtils);
 
         Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
@@ -241,7 +248,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0), bridgeSerializationUtils);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -273,7 +280,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, blocks.get(9), track, world.getBlockStore(), null, new LinkedList<>());
@@ -283,7 +290,7 @@ public class BridgeTestPowerMock {
         track.commit();
 
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll, bridgeSerializationUtils);
 
         Assert.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
@@ -297,7 +304,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), track, null, null, null);
@@ -328,12 +335,12 @@ public class BridgeTestPowerMock {
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         BridgeSupport bridgeSupport = mock(BridgeSupport.class);
-        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
         when(bridgeSupport.getActiveFederation()).thenReturn(bridgeConstants.getGenesisFederation());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -365,7 +372,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -396,7 +403,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         Transaction mockedTx = mock(Transaction.class);
@@ -412,7 +419,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper
         );
         Bridge bridge = new Bridge(
             PrecompiledContracts.BRIDGE_ADDR,
@@ -436,7 +443,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         Transaction mockedTx = mock(Transaction.class);
@@ -452,7 +459,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         Transaction mockedTx = mock(Transaction.class);
@@ -483,7 +490,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -517,7 +524,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -549,11 +556,25 @@ public class BridgeTestPowerMock {
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+        MessageSerializer serializer = bridgeConstants.getBtcParams().getDefaultSerializer();
+        MessageSerializer spySerializer = Mockito.spy(serializer);
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+        when(btcParamsMock.getDefaultSerializer()).thenReturn(spySerializer);
+        constants = spy(constants);
+        when(constants.getBridgeConstants()).thenReturn(bridgeConstantsMock);
+
+        Bridge bridge = spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactoryMock));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+
+        Federation activeFederationMock = mock(Federation.class);
+        when(activeFederationMock.hasMemberWithRskAddress(any())).thenReturn(true);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederationMock);
 
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -571,19 +592,8 @@ public class BridgeTestPowerMock {
             headersSerialized[i] = headers[i].bitcoinSerialize();
         }
 
-        PowerMockito.mockStatic(BridgeUtils.class);
-        when(BridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
-
-        MessageSerializer serializer = bridgeConstants.getBtcParams().getDefaultSerializer();
-        MessageSerializer spySerializer = Mockito.spy(serializer);
-
-        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
-        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
-
-        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
-        when(btcParamsMock.getDefaultSerializer()).thenReturn(spySerializer);
-
-        Whitebox.setInternalState(bridge, "bridgeConstants", bridgeConstantsMock);
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        when(bridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
 
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -614,16 +624,25 @@ public class BridgeTestPowerMock {
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        when(bridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Federation activeFederationMock = mock(Federation.class);
+        when(activeFederationMock.hasMemberWithRskAddress(any())).thenReturn(true);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederationMock);
 
-        Bridge spiedBridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock));
+        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
+        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
+        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
+        constants = spy(constants);
+        when(constants.getBridgeConstants()).thenReturn(bridgeConstantsMock);
+
+        Bridge spiedBridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock, bridgeUtils, MerkleBranch::new);
         spiedBridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         final int numBlocks = 10;
@@ -667,17 +686,6 @@ public class BridgeTestPowerMock {
             Assert.assertEquals(block, networkParameters.getDefaultSerializer().makeBlock(headersSerialized[i]));
         }
 
-
-        PowerMockito.mockStatic(BridgeUtils.class);
-        when(BridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
-
-        NetworkParameters btcParamsMock = mock(NetworkParameters.class);
-        BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
-
-        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
-
-        Whitebox.setInternalState(spiedBridge, "bridgeConstants", bridgeConstantsMock);
-
         spiedBridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{headersSerialized}));
 
         track.commit();
@@ -705,7 +713,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -741,7 +749,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -800,7 +808,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -859,7 +867,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -894,7 +902,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -929,7 +937,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -976,9 +984,9 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, bridgeUtils, MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.isLocalCallTransaction()).thenReturn(true);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
@@ -996,7 +1004,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         Transaction mockedTx = mock(Transaction.class);
@@ -1028,7 +1036,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -1066,7 +1074,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -1099,7 +1107,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -1132,7 +1140,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
@@ -1165,7 +1173,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
@@ -1266,7 +1274,7 @@ public class BridgeTestPowerMock {
         Sha256Hash hash = Sha256Hash.wrap(hashedString);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+        Bridge bridge = spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactoryMock));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1294,7 +1302,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
 
@@ -1316,7 +1324,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
 
@@ -1401,15 +1409,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void isBtcTxHashAlreadyProcessed_normalFlow() throws IOException, VMException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Set<Sha256Hash> hashes = new HashSet<>();
         when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.<Sha256Hash>getArgument(0)));
 
@@ -1428,15 +1434,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void isBtcTxHashAlreadyProcessed_exception() throws IOException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         try {
             bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
@@ -1448,15 +1451,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getBtcTxHashProcessedHeight_normalFlow() throws IOException, VMException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Map<Sha256Hash, Long> hashes = new HashMap<>();
         when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.<Sha256Hash>getArgument(0)));
 
@@ -1474,15 +1474,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getBtcTxHashProcessedHeight_exception() throws IOException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         try {
             bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
@@ -1494,15 +1491,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getFederationSize() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getFederationSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getFederationSize(new Object[]{}).intValue());
@@ -1510,16 +1504,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getFederationThreshold() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getFederationThreshold()).thenReturn(5678);
 
         Assert.assertEquals(5678, bridge.getFederationThreshold(new Object[]{}).intValue());
@@ -1527,15 +1518,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getFederationCreationTime() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
         Assert.assertEquals(5000, bridge.getFederationCreationTime(new Object[]{}).intValue());
@@ -1543,9 +1531,11 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getFederationCreationBlockNumber() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getFederationCreationBlockNumber()).thenReturn(42L);
 
         Assert.assertThat(bridge.getFederationCreationBlockNumber(new Object[]{}), is(42L));
@@ -1655,15 +1645,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getRetiringFederationSize() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getRetiringFederationSize(new Object[]{}).intValue());
@@ -1671,16 +1658,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getRetiringFederationThreshold() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(5678);
 
         Assert.assertEquals(5678, bridge.getRetiringFederationThreshold(new Object[]{}).intValue());
@@ -1688,15 +1672,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getRetiringFederationCreationTime() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
         Assert.assertEquals(5000, bridge.getRetiringFederationCreationTime(new Object[]{}).intValue());
@@ -1704,9 +1685,11 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getRetiringFederationCreationBlockNumber() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
 
         Assert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(42L));
@@ -1818,16 +1801,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getPendingFederationSize() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getPendingFederationSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getPendingFederationSize(new Object[]{}).intValue());
@@ -1940,16 +1920,13 @@ public class BridgeTestPowerMock {
     @Test
     public void createFederation() throws BridgeIllegalArgumentException {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("create", new byte[][]{}))).thenReturn(123);
 
         Assert.assertEquals(123, bridge.createFederation(new Object[]{}).intValue());
@@ -2060,15 +2037,12 @@ public class BridgeTestPowerMock {
     @Test
     public void commitFederation_ok() throws BridgeIllegalArgumentException {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("commit", new byte[][] { Hex.decode("01020304") }))).thenReturn(123);
 
@@ -2077,15 +2051,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void commitFederation_wrongParameterType() throws BridgeIllegalArgumentException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         Assert.assertEquals(-10, bridge.commitFederation(new Object[]{ "i'm not a byte array" }).intValue());
         verify(bridgeSupportMock, never()).voteFederationChange(any(), any());
@@ -2094,16 +2065,13 @@ public class BridgeTestPowerMock {
     @Test
     public void rollbackFederation() throws BridgeIllegalArgumentException {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("rollback", new byte[][]{}))).thenReturn(456);
 
         Assert.assertEquals(456, bridge.rollbackFederation(new Object[]{}).intValue());
@@ -2111,15 +2079,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getLockWhitelistSize() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getLockWhitelistSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getLockWhitelistSize(new Object[]{}).intValue());
@@ -2127,18 +2092,15 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getLockWhitelistAddress() {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         OneOffWhiteListEntry mockedEntry10 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
         OneOffWhiteListEntry mockedEntry20 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.getLockWhitelistEntryByIndex(10)).then((InvocationOnMock invocation) -> mockedEntry10);
         when(bridgeSupportMock.getLockWhitelistEntryByIndex(20)).then((InvocationOnMock invocation) -> mockedEntry20);
 
@@ -2160,7 +2122,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
@@ -2233,7 +2195,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2260,7 +2222,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2287,7 +2249,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
@@ -2312,7 +2274,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2339,7 +2301,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2363,7 +2325,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2374,9 +2336,6 @@ public class BridgeTestPowerMock {
 
         BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
         bridge.init(mockedTransaction, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.addOneOffLockWhitelistAddress(mockedTransaction, "i-am-an-address", BigInteger.valueOf(Coin.COIN.getValue()))).thenReturn(1234);
 
         Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), decodedResult.intValue());
     }
@@ -2384,15 +2343,12 @@ public class BridgeTestPowerMock {
     @Test
     public void removeLockWhitelistAddress() {
         Transaction mockedTransaction = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(mockedTransaction, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(mockedTransaction, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.removeLockWhitelistAddress(mockedTransaction, "i-am-an-address")).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.removeLockWhitelistAddress(new Object[]{ "i-am-an-address" }).intValue());
@@ -2400,9 +2356,11 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getFeePerKb() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getFeePerKb())
                 .thenReturn(Coin.valueOf(12345678901234L));
 
@@ -2412,16 +2370,13 @@ public class BridgeTestPowerMock {
     @Test
     public void voteFeePerKb_ok() {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
         when(bridgeSupportMock.voteFeePerKbChange(txMock, Coin.valueOf(2)))
                 .thenReturn(123);
 
@@ -2430,16 +2385,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void voteFeePerKb_wrongParameterType() throws BridgeIllegalArgumentException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactoryMock);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
         Assert.assertEquals(-10, bridge.voteFeePerKbChange(new Object[]{ "i'm not a byte array" }).intValue());
         verify(bridgeSupportMock, never()).voteFederationChange(any(), any());
@@ -2480,16 +2432,18 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
-        bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
-        Logger mockedLogger = mock(Logger.class);
-        setFinalStatic(Bridge.class.getDeclaredField("logger"), mockedLogger);
+        Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
+        ActivationConfig.ForBlock spiedActivations = spy(activationConfig.forBlock(genesisBlock.getNumber()));
+        when(activationConfig.forBlock(genesisBlock.getNumber())).thenReturn(spiedActivations);
+
+        bridge.init(rskTx, genesisBlock, track, null, null, null);
 
         bridge.execute(data);
-        verify(mockedLogger, never()).warn(any(String.class), any(), any()); // "Invalid function arguments {} for function {}."
+        verify(spiedActivations, times(1)).isActive(ConsensusRule.RSKIP88);
     }
 
     @Test
@@ -2604,16 +2558,15 @@ public class BridgeTestPowerMock {
     @Test
     public void getBtcTransactionConfirmationsAfterWasabi_ok() throws Exception {
         Transaction txMock = mock(Transaction.class);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, bridgeUtils, merkleBranchFactory);
 
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
         byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
@@ -2625,7 +2578,7 @@ public class BridgeTestPowerMock {
         BigInteger merkleBranchBits = BigInteger.valueOf(123);
 
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        PowerMockito.whenNew(MerkleBranch.class).withArguments(any(List.class), any(Integer.class)).then((Answer<MerkleBranch>) invocation -> {
+        when(merkleBranchFactory.apply(any(), any())).then((Answer<MerkleBranch>) invocation -> {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
@@ -2664,15 +2617,13 @@ public class BridgeTestPowerMock {
     @Test
     public void getBtcTransactionConfirmationsAfterWasabi_errorInBridgeSupport() throws Exception {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory));
-        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
+        Bridge bridge = spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock, bridgeUtils, merkleBranchFactory));
+        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
         byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
@@ -2684,7 +2635,7 @@ public class BridgeTestPowerMock {
         BigInteger merkleBranchBits = BigInteger.valueOf(123);
 
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        PowerMockito.whenNew(MerkleBranch.class).withArguments(any(List.class), any(Integer.class)).then((Answer<MerkleBranch>) invocation -> {
+        when(merkleBranchFactory.apply(any(), any())).then((Answer<MerkleBranch>) invocation -> {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
@@ -2730,15 +2681,13 @@ public class BridgeTestPowerMock {
     @Test
     public void getBtcTransactionConfirmationsAfterWasabi_merkleBranchConstructionError() throws Exception {
         Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory));
-        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory = mock(BiFunction.class);
+        Bridge bridge = spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock, bridgeUtils, merkleBranchFactory));
+        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
         byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
@@ -2749,8 +2698,7 @@ public class BridgeTestPowerMock {
         };
         BigInteger merkleBranchBits = BigInteger.valueOf(123);
 
-        MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        PowerMockito.whenNew(MerkleBranch.class).withArguments(any(List.class), any(Integer.class)).then((Answer<MerkleBranch>) invocation -> {
+        when(merkleBranchFactory.apply(any(), any())).then((Answer<MerkleBranch>) invocation -> {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
@@ -2781,21 +2729,18 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getBtcTransactionConfirmations_gasCost() {
-        PowerMockito.mockStatic(BridgeUtils.class);
         Transaction txMock = mock(Transaction.class);
         doReturn(true).when(activationConfig).isActive(eq(RSKIP122), anyLong());
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
-
-        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory));
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
-        PowerMockito.when(BridgeUtils.isContractTx(any(Transaction.class))).thenReturn(false);
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        when(bridgeUtils.isContractTx(any(Transaction.class))).thenReturn(false);
+
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock, bridgeUtils, MerkleBranch::new);
+        bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         byte[] btcTxHash = Sha256Hash.of(Hex.decode("aabbcc")).getBytes();
         byte[] btcBlockHash = Sha256Hash.of(Hex.decode("ddeeff")).getBytes();
@@ -2823,15 +2768,12 @@ public class BridgeTestPowerMock {
 
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws BlockStoreException, IOException, VMException {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Sha256Hash mockedResult = Sha256Hash.of(Hex.decode("aabbcc"));
         when(bridgeSupportMock.getBtcBlockchainBlockHashAtDepth(555)).thenReturn(mockedResult);
 
@@ -2845,7 +2787,12 @@ public class BridgeTestPowerMock {
 //        config.setBlockchainConfig(mockedConfig);
         blockFactory = new BlockFactory(config.getActivationConfig());
 
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
+                constants.getBridgeConstants(),
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
 
@@ -2890,10 +2837,10 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config,
-                bridgeSupportFactory);
+                bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
 
@@ -3166,17 +3113,18 @@ public class BridgeTestPowerMock {
 
     @Test
     public void bridgeSupportIsCreatedOnInit() {
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactoryMock);
 
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
-        Assert.assertNotNull(Whitebox.getInternalState(bridge, "bridgeSupport"));
+        verify(bridgeSupportFactoryMock).newInstance(any(), any(), any(), any());
     }
 
     private static Repository createRepository() {
@@ -3210,21 +3158,13 @@ public class BridgeTestPowerMock {
         verify(bridgeSupportMock, times(1)).voteFeePerKbChange(tx, Coin.CENT);
     }
 
-    // We need reflection to mock static final fields
-    private void setFinalStatic(Field field, Object newValue) throws Exception {
-        field.setAccessible(true);
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, newValue);
-    }
-
     public void getBtcBlockchainInitialBlockHeight() throws IOException, VMException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-            null);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                bridgeSupportFactoryMock);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getBtcBlockchainInitialBlockHeight()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getBtcBlockchainInitialBlockHeight(new Object[]{}).intValue());
@@ -3244,7 +3184,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
             new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
             bridgeConstants,
-            activationConfig);
+            activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
             bridgeSupportFactory);
         org.ethereum.core.Transaction rskTx;
@@ -3305,7 +3245,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
             new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
             bridgeConstants,
-            activationConfig);
+            activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
             bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);

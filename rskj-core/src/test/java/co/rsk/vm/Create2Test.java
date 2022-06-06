@@ -23,8 +23,11 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.Arrays;
@@ -62,13 +65,15 @@ public class Create2Test {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
             config,
             new BridgeSupportFactory(
-                    new RepositoryBtcBlockStoreWithCache.Factory(
-                            config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                    new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig()));
+                    config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper), bridgeUtils, bridgeSerializationUtils);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 

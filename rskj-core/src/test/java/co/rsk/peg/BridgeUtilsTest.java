@@ -62,6 +62,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -94,6 +95,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class BridgeUtilsTest {
+
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");
@@ -108,9 +110,15 @@ public class BridgeUtilsTest {
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
     private NetworkParameters networkParameters;
+    private BridgeUtils bridgeUtils;
+    private BridgeSerializationUtils bridgeSerializationUtils;
+    private ScriptBuilderWrapper scriptBuilderWrapper;
 
     @Before
     public void setupConfig() {
+        bridgeUtils = BridgeUtils.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
         constants = Constants.regtest();
         activationConfig = spy(ActivationConfigsForTest.all());
         activations = mock(ActivationConfig.ForBlock.class);
@@ -135,7 +143,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertFalse(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
@@ -149,19 +157,19 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(tx2, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertFalse(bridgeUtils.isValidPegInTx(tx2, federation, btcContext, bridgeConstantsRegtest, activations));
 
         // Tx sending 1 btc to the federation, is a peg-in tx
         BtcTransaction tx3 = new BtcTransaction(networkParameters);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(tx3, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertTrue(bridgeUtils.isValidPegInTx(tx3, federation, btcContext, bridgeConstantsRegtest, activations));
 
         // Tx sending 50 btc to the federation, is a peg-in tx
         BtcTransaction tx4 = new BtcTransaction(networkParameters);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(tx4, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertTrue(bridgeUtils.isValidPegInTx(tx4, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -178,7 +186,7 @@ public class BridgeUtilsTest {
         tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertFalse(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -201,7 +209,7 @@ public class BridgeUtilsTest {
         tx.addInput(txIn);
         signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertFalse(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -216,7 +224,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertTrue(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertTrue(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -239,7 +247,7 @@ public class BridgeUtilsTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertFalse(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -262,7 +270,7 @@ public class BridgeUtilsTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertTrue(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
+        assertTrue(bridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstantsRegtest, activations));
     }
 
     @Test
@@ -279,7 +287,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> federation2Keys = Arrays.asList(
@@ -292,7 +301,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
             Instant.ofEpochMilli(2000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Address address1 = federation1.getAddress();
@@ -304,7 +314,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.CENT, address1);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             federations,
             null,
@@ -317,7 +327,7 @@ public class BridgeUtilsTest {
         tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             federations,
             null,
@@ -331,7 +341,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.CENT, address1);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             federations,
             null,
@@ -351,7 +361,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             federations,
             null,
@@ -372,7 +382,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             federations,
             null,
@@ -394,7 +404,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             federations,
             null,
@@ -416,7 +426,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             federations,
             null,
@@ -436,7 +446,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             federations,
             null,
@@ -457,7 +467,7 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx2,
             Collections.singletonList(federation2),
             federation1.getP2SHScript(),
@@ -470,7 +480,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx3 = new BtcTransaction(networkParameters);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx3,
             federations,
             null,
@@ -483,7 +493,7 @@ public class BridgeUtilsTest {
         tx3 = new BtcTransaction(networkParameters);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx3,
             federations,
             null,
@@ -497,7 +507,7 @@ public class BridgeUtilsTest {
         tx3.addOutput(Coin.COIN, address1);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx3,
             federations,
             null,
@@ -510,7 +520,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx4 = new BtcTransaction(networkParameters);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx4,
             federations,
             null,
@@ -523,7 +533,7 @@ public class BridgeUtilsTest {
         tx4 = new BtcTransaction(networkParameters);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx4,
             federations,
             null,
@@ -537,7 +547,7 @@ public class BridgeUtilsTest {
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx4,
             federations,
             null,
@@ -563,7 +573,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeRedeemScript);
 
-        Assert.assertTrue(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertTrue(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -583,7 +593,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeRedeemScript);
 
-        Assert.assertFalse(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertFalse(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -602,7 +612,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
@@ -617,7 +628,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
 
-        Assert.assertTrue(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertTrue(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -636,7 +647,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
@@ -651,7 +663,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
 
-        Assert.assertFalse(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertFalse(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -670,7 +682,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
@@ -684,7 +697,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
 
-        Assert.assertTrue(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertTrue(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -703,7 +716,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(erpFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
@@ -717,7 +731,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, erpRedeemScript);
 
-        Assert.assertFalse(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
+        Assert.assertFalse(bridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
@@ -736,7 +750,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -756,7 +771,7 @@ public class BridgeUtilsTest {
         );
         signWithNecessaryKeys(retiredFederation, fastBridgeRedeemScript, retiredFederationKeys, txInput, tx);
 
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -781,7 +796,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -801,7 +817,7 @@ public class BridgeUtilsTest {
         );
         signWithNecessaryKeys(retiredFederation, fastBridgeRedeemScript, retiredFederationKeys, txInput, tx);
 
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -827,7 +843,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -843,7 +860,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -863,7 +881,7 @@ public class BridgeUtilsTest {
         );
         signWithNecessaryKeys(erpFederation, fastBridgeErpRedeemScript, retiredFederationKeys, txInput, tx);
 
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -889,7 +907,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -905,7 +924,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -925,7 +945,7 @@ public class BridgeUtilsTest {
         );
         signWithNecessaryKeys(erpFederation, fastBridgeErpRedeemScript, retiredFederationKeys, txInput, tx);
 
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -951,7 +971,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -967,7 +988,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -982,7 +1004,7 @@ public class BridgeUtilsTest {
         tx.addInput(txInput);
         signWithErpFederation(erpFederation, retiredFederationKeys, txInput, tx);
 
-        assertTrue(BridgeUtils.isValidPegInTx(
+        assertTrue(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -1008,7 +1030,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1024,7 +1047,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1039,7 +1063,7 @@ public class BridgeUtilsTest {
         tx.addInput(txInput);
         signWithErpFederation(erpFederation, retiredFederationKeys, txInput, tx);
 
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             tx,
             Collections.singletonList(activeFederation),
             retiredFederation.getP2SHScript(),
@@ -1054,20 +1078,20 @@ public class BridgeUtilsTest {
         // Before hard fork
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
-        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, activations));
-        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, activations));
-        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, activations));
-        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, activations));
-        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, activations));
+        assertTrue(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, activations));
+        assertFalse(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, activations));
+        assertFalse(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, activations));
+        assertFalse(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, activations));
+        assertFalse(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, activations));
 
         // After hard fork
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
-        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, activations));
-        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, activations));
-        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, activations));
-        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, activations));
-        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, activations));
+        assertTrue(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, activations));
+        assertTrue(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, activations));
+        assertTrue(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, activations));
+        assertTrue(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, activations));
+        assertFalse(bridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, activations));
     }
 
     @Test
@@ -1082,7 +1106,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
@@ -1094,7 +1119,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> retiredFederationKeys = Stream.of(
@@ -1105,7 +1131,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(retiredFederationKeys),
             Instant.ofEpochMilli(1000L),
             1L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Address activeFederationAddress = activeFederation.getAddress();
@@ -1120,7 +1147,7 @@ public class BridgeUtilsTest {
         );
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx);
-        assertTrue(BridgeUtils.isMigrationTx(
+        assertTrue(bridgeUtils.isMigrationTx(
             migrationTx,
             activeFederation,
             retiringFederation,
@@ -1133,7 +1160,7 @@ public class BridgeUtilsTest {
         BtcTransaction toActiveFederationTx = new BtcTransaction(networkParameters);
         toActiveFederationTx.addOutput(Coin.COIN, activeFederationAddress);
         toActiveFederationTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isMigrationTx(
+        assertFalse(bridgeUtils.isMigrationTx(
             toActiveFederationTx,
             activeFederation,
             retiringFederation,
@@ -1154,7 +1181,7 @@ public class BridgeUtilsTest {
         );
         fromRetiringFederationTx.addInput(fromRetiringFederationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, fromRetiringFederationTxInput, fromRetiringFederationTx);
-        assertFalse(BridgeUtils.isMigrationTx(
+        assertFalse(bridgeUtils.isMigrationTx(
             fromRetiringFederationTx,
             activeFederation,
             retiringFederation,
@@ -1164,7 +1191,7 @@ public class BridgeUtilsTest {
             activations
         ));
 
-        assertFalse(BridgeUtils.isMigrationTx(
+        assertFalse(bridgeUtils.isMigrationTx(
             migrationTx,
             activeFederation,
             null,
@@ -1185,7 +1212,7 @@ public class BridgeUtilsTest {
         retiredMigrationTx.addInput(retiredMigrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, retiredMigrationTxInput, retiredMigrationTx);
         Script p2SHScript = retiredFederation.getP2SHScript();
-        assertTrue(BridgeUtils.isMigrationTx(
+        assertTrue(bridgeUtils.isMigrationTx(
             retiredMigrationTx,
             activeFederation,
             null,
@@ -1195,7 +1222,7 @@ public class BridgeUtilsTest {
             activations
         ));
 
-        assertTrue(BridgeUtils.isMigrationTx(
+        assertTrue(bridgeUtils.isMigrationTx(
             retiredMigrationTx,
             activeFederation,
             retiringFederation,
@@ -1204,7 +1231,7 @@ public class BridgeUtilsTest {
             bridgeConstantsRegtest,
             activations
         ));
-        assertFalse(BridgeUtils.isMigrationTx(
+        assertFalse(bridgeUtils.isMigrationTx(
             toActiveFederationTx,
             activeFederation,
             null,
@@ -1213,7 +1240,7 @@ public class BridgeUtilsTest {
             bridgeConstantsRegtest,
             activations
         ));
-        assertFalse(BridgeUtils.isMigrationTx(
+        assertFalse(bridgeUtils.isMigrationTx(
             toActiveFederationTx,
             activeFederation,
             retiringFederation,
@@ -1236,7 +1263,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
             Instant.ofEpochMilli(2000L),
             2L,
-            bridgeConstantsRegtest.getBtcParams()
+            bridgeConstantsRegtest.getBtcParams(),
+            scriptBuilderWrapper
         );
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
@@ -1252,13 +1280,13 @@ public class BridgeUtilsTest {
         pegOutTx1.addInput(pegOutInput1);
         signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput1, pegOutTx1);
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(federation, federation2), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation2), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(federation, federation2), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation2), activations));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
     }
 
     @Test
@@ -1273,7 +1301,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(fastBridgeFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -1299,24 +1328,24 @@ public class BridgeUtilsTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
     }
 
     @Test
@@ -1333,7 +1362,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1350,7 +1380,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -1371,30 +1402,30 @@ public class BridgeUtilsTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
     }
 
     @Test
@@ -1411,7 +1442,8 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
@@ -1428,7 +1460,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -1454,24 +1487,24 @@ public class BridgeUtilsTest {
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(defaultFederation), activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(defaultFederation, standardFederation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
     }
 
     @Test
@@ -1489,7 +1522,7 @@ public class BridgeUtilsTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
     }
 
     @Test
@@ -1508,7 +1541,7 @@ public class BridgeUtilsTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+        assertFalse(bridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
     }
 
     @Test
@@ -1523,7 +1556,8 @@ public class BridgeUtilsTest {
             .collect(Collectors.toList());
         Federation federation1 = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-            Instant.ofEpochMilli(1000L), 0L, networkParameters
+            Instant.ofEpochMilli(1000L), 0L, networkParameters,
+            scriptBuilderWrapper
         );
 
         List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
@@ -1533,7 +1567,8 @@ public class BridgeUtilsTest {
             .collect(Collectors.toList());
         Federation federation2 = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
-            Instant.ofEpochMilli(2000L), 0L, networkParameters
+            Instant.ofEpochMilli(2000L), 0L, networkParameters,
+            scriptBuilderWrapper
         );
 
         Address federation2Address = federation2.getAddress();
@@ -1551,7 +1586,7 @@ public class BridgeUtilsTest {
         );
         pegOutWithChange.addInput(pegOutFromFederation2);
         signWithNecessaryKeys(federation2, federation2Keys, pegOutFromFederation2, pegOutWithChange);
-        assertFalse(BridgeUtils.isValidPegInTx(
+        assertFalse(bridgeUtils.isValidPegInTx(
             pegOutWithChange,
             federations,
             null,
@@ -1559,7 +1594,7 @@ public class BridgeUtilsTest {
             bridgeConstantsRegtest,
             mock(ActivationConfig.ForBlock.class)
         ));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutWithChange, federations, activations));
+        assertTrue(bridgeUtils.isPegOutTx(pegOutWithChange, federations, activations));
     }
 
     @Test
@@ -1578,7 +1613,7 @@ public class BridgeUtilsTest {
         tx.sign(privKey);
 
         Address expectedAddress = BtcECKey.fromPrivate(privKey).toAddress(RegTestParams.get());
-        Address result = BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
+        Address result = bridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
 
         assertEquals(expectedAddress, result);
     }
@@ -1595,7 +1630,7 @@ public class BridgeUtilsTest {
                 .chainId(constants.getChainId())
                 .value(AMOUNT)
                 .build();
-        BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
+        bridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
     @Test
@@ -1605,7 +1640,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 1);
-        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertTrue(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1614,13 +1649,13 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
-        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertFalse(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     public void hasEnoughSignatures_no_signatures() {
         BtcTransaction btcTx = createPegOutTx(Collections.emptyList(), 1);
-        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertFalse(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1630,7 +1665,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 3);
-        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertTrue(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1647,7 +1682,7 @@ public class BridgeUtilsTest {
             false
         );
 
-        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertTrue(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1662,7 +1697,7 @@ public class BridgeUtilsTest {
             null
         );
 
-        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertTrue(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1678,7 +1713,7 @@ public class BridgeUtilsTest {
             erpFederation
         );
 
-        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertTrue(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1687,7 +1722,7 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
-        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+        Assert.assertFalse(bridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1697,7 +1732,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 1);
-        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(0, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1706,14 +1741,14 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
-        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(1, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     public void countMissingSignatures_no_signatures() {
         // As no signature was added, missing signatures is 2
         BtcTransaction btcTx = createPegOutTx(Collections.emptyList(), 1);
-        Assert.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(2, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1723,7 +1758,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, sign2), 3);
-        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(0, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1740,7 +1775,7 @@ public class BridgeUtilsTest {
             false
         );
 
-        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(0, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1755,7 +1790,7 @@ public class BridgeUtilsTest {
             null
         );
 
-        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(0, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1771,7 +1806,7 @@ public class BridgeUtilsTest {
             erpFederation
         );
 
-        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(0, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1780,7 +1815,7 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
 
         BtcTransaction btcTx = createPegOutTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
-        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        Assert.assertEquals(1, bridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
@@ -1830,12 +1865,12 @@ public class BridgeUtilsTest {
     @Test
     public void testIsContractTx() {
         Assert.assertFalse(
-                BridgeUtils.isContractTx(
+                bridgeUtils.isContractTx(
                         Transaction.builder().build()
                 )
         );
         Assert.assertTrue(
-            BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(
+            bridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(
                 Keccak256.ZERO_HASH.getBytes(),
                 0,
                 0,
@@ -1858,32 +1893,32 @@ public class BridgeUtilsTest {
 
     @Test(expected = BridgeIllegalArgumentException.class)
     public void getCoinFromBigInteger_bigger_than_long_value() throws BridgeIllegalArgumentException {
-        BridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808"));
+        bridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808"));
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
     public void getCoinFromBigInteger_null_value() throws BridgeIllegalArgumentException {
-        BridgeUtils.getCoinFromBigInteger(null);
+        bridgeUtils.getCoinFromBigInteger(null);
     }
 
     @Test
     public void getCoinFromBigInteger() throws BridgeIllegalArgumentException {
-        Assert.assertEquals(Coin.COIN, BridgeUtils.getCoinFromBigInteger(BigInteger.valueOf(Coin.COIN.getValue())));
+        Assert.assertEquals(Coin.COIN, bridgeUtils.getCoinFromBigInteger(BigInteger.valueOf(Coin.COIN.getValue())));
     }
 
     @Test(expected = Exception.class)
     public void validateHeightAndConfirmations_invalid_height() throws Exception {
-        Assert.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null));
+        Assert.assertFalse(bridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null));
     }
 
     @Test
     public void validateHeightAndConfirmation_insufficient_confirmations() throws Exception {
-        Assert.assertFalse(BridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
+        Assert.assertFalse(bridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
     }
 
     @Test
     public void validateHeightAndConfirmation_enough_confirmations() throws Exception {
-        Assert.assertTrue(BridgeUtils.validateHeightAndConfirmations(
+        Assert.assertTrue(bridgeUtils.validateHeightAndConfirmations(
             2,
             5,
             3,
@@ -1893,7 +1928,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void calculateMerkleRoot_invalid_pmt() {
-        BridgeUtils.calculateMerkleRoot(networkParameters, Hex.decode("ab"), null);
+        bridgeUtils.calculateMerkleRoot(networkParameters, Hex.decode("ab"), null);
     }
 
     @Test
@@ -1906,7 +1941,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
 
-        Assert.assertNull(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+        Assert.assertNull(bridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
     }
 
     @Test
@@ -1918,19 +1953,19 @@ public class BridgeUtilsTest {
         hashes.add(Sha256Hash.ZERO_HASH);
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 2);
-        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash());
+        Sha256Hash merkleRoot = bridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash());
         Assert.assertNotNull(merkleRoot);
     }
 
     @Test(expected = VerificationException.class)
     public void validateInputsCount_active_rskip() {
-        BridgeUtils.validateInputsCount(Hex.decode("00000000000100"), true);
+        bridgeUtils.validateInputsCount(Hex.decode("00000000000100"), true);
     }
 
     @Test(expected = VerificationException.class)
     public void validateInputsCount_inactive_rskip() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        BridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false);
+        bridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false);
     }
 
     @Test
@@ -1942,7 +1977,8 @@ public class BridgeUtilsTest {
                 FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
                 Instant.now(),
                 0,
-                networkParameters
+                networkParameters,
+                scriptBuilderWrapper
         );
 
         // Create a tx from the Fed to a random btc address
@@ -1975,7 +2011,7 @@ public class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = bridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
 
         // Assert
         Assert.assertTrue(isSigned);
@@ -1990,7 +2026,8 @@ public class BridgeUtilsTest {
                 FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
                 Instant.now(),
                 0,
-                networkParameters
+                networkParameters,
+                scriptBuilderWrapper
         );
 
         // Create a tx from the Fed to a random btc address
@@ -2023,7 +2060,7 @@ public class BridgeUtilsTest {
         txInput.setScriptSig(inputScript);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator2Key, sighash, txInput);
+        boolean isSigned = bridgeUtils.isInputSignedByThisFederator(federator2Key, sighash, txInput);
 
         // Assert
         Assert.assertFalse(isSigned);
@@ -2038,7 +2075,8 @@ public class BridgeUtilsTest {
                 FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
                 Instant.now(),
                 0,
-                networkParameters
+                networkParameters,
+                scriptBuilderWrapper
         );
 
         // Create a tx from the Fed to a random btc address
@@ -2063,7 +2101,7 @@ public class BridgeUtilsTest {
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
 
         // Act
-        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+        boolean isSigned = bridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
 
         // Assert
         Assert.assertFalse(isSigned);
@@ -2181,7 +2219,7 @@ public class BridgeUtilsTest {
     public void deserializeBtcAddressWithVersion_null_bytes() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        BridgeUtils.deserializeBtcAddressWithVersion(
+        bridgeUtils.deserializeBtcAddressWithVersion(
             bridgeConstantsRegtest.getBtcParams(),
             activations,
             null
@@ -2192,7 +2230,7 @@ public class BridgeUtilsTest {
     public void deserializeBtcAddressWithVersion_empty_bytes() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        BridgeUtils.deserializeBtcAddressWithVersion(
+        bridgeUtils.deserializeBtcAddressWithVersion(
             bridgeConstantsRegtest.getBtcParams(),
             activations,
             new byte[]{}
@@ -2380,10 +2418,11 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
-        BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0);
+        bridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0);
     }
 
     @Test
@@ -2396,12 +2435,13 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+                scriptBuilderWrapper
         );
 
         int inputSize = 2;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
@@ -2421,12 +2461,13 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         int inputSize = 9;
         int outputSize = 2;
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
@@ -2446,7 +2487,8 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         // Create a pegout tx with 10 inputs and 20 outputs
@@ -2454,7 +2496,7 @@ public class BridgeUtilsTest {
         int outputSize = 20;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -2474,7 +2516,8 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -2482,7 +2525,7 @@ public class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -2518,7 +2561,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -2526,7 +2570,7 @@ public class BridgeUtilsTest {
         int outputSize = 200;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -2562,7 +2606,8 @@ public class BridgeUtilsTest {
             networkParameters,
             erpFederationPublicKeys,
             500L,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         // Create a pegout tx with 100 inputs and 50 outputs
@@ -2570,7 +2615,7 @@ public class BridgeUtilsTest {
         int outputSize = 50;
         BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+        int pegoutTxSize = bridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
         int origTxSize = pegoutTx.bitcoinSerialize().length;
@@ -2593,7 +2638,8 @@ public class BridgeUtilsTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            networkParameters,
+            scriptBuilderWrapper
         );
 
         // Create a pegout tx with two inputs and two outputs
@@ -2617,7 +2663,7 @@ public class BridgeUtilsTest {
             }
         }
 
-        int pegoutTxSize = BridgeUtils.getRegularPegoutTxSize(activations, fed);
+        int pegoutTxSize = bridgeUtils.getRegularPegoutTxSize(activations, fed);
 
         // The difference between the calculated size and a real tx size should be smaller than 10% in any direction
         int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;
@@ -2641,7 +2687,7 @@ public class BridgeUtilsTest {
         tx.addInput(txIn);
         signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        assertTrue(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+        assertTrue(bridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
     }
 
     @Test
@@ -2668,7 +2714,7 @@ public class BridgeUtilsTest {
             .build();
         tx.getInput(0).setScriptSig(invalidScript);
 
-        assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+        assertFalse(bridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
     }
 
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
@@ -2677,7 +2723,8 @@ public class BridgeUtilsTest {
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
             Instant.ofEpochMilli(5005L),
             0L,
-            networkParameters);
+            networkParameters,
+            scriptBuilderWrapper);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(networkParameters);
 
@@ -2686,7 +2733,7 @@ public class BridgeUtilsTest {
         mockedUtxos.add(mock(UTXO.class));
         mockedUtxos.add(mock(UTXO.class));
 
-        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFastBridgeCompatible, null);
+        Wallet wallet = bridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFastBridgeCompatible, null);
 
         if (isFastBridgeCompatible) {
             Assert.assertEquals(FastBridgeCompatibleBtcWalletWithStorage.class, wallet.getClass());
@@ -2708,11 +2755,12 @@ public class BridgeUtilsTest {
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
             Instant.ofEpochMilli(5005L),
             0L,
-            networkParameters);
+            networkParameters,
+            scriptBuilderWrapper);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(networkParameters);
 
-        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFastBridgeCompatible, null);
+        Wallet wallet = bridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFastBridgeCompatible, null);
 
         if (isFastBridgeCompatible) {
             Assert.assertEquals(FastBridgeCompatibleBtcWalletWithStorage.class, wallet.getClass());
@@ -2726,7 +2774,7 @@ public class BridgeUtilsTest {
     private void test_serializeBtcAddressWithVersion(boolean isRskip284Active, Address address, byte[] serializedVersion, byte[] serializedAddress) {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
+        byte[] addressWithVersionBytes = bridgeUtils.serializeBtcAddressWithVersion(activations, address);
         int expectedLength = serializedVersion.length + serializedAddress.length;
         Assert.assertEquals(expectedLength, addressWithVersionBytes.length);
 
@@ -2749,7 +2797,7 @@ public class BridgeUtilsTest {
             BridgeMainNetConstants.getInstance() :
             BridgeRegTestConstants.getInstance();
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+        Address address = bridgeUtils.deserializeBtcAddressWithVersion(
             bridgeConstants.getBtcParams(),
             activations,
             serializedAddress
@@ -2772,7 +2820,7 @@ public class BridgeUtilsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
@@ -2788,7 +2836,7 @@ public class BridgeUtilsTest {
         Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+        Assert.assertEquals(expected, bridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 
     private Genesis getGenesisInstance(TrieStore trieStore) {
@@ -2804,7 +2852,8 @@ public class BridgeUtilsTest {
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
             bridgeConstantsRegtest.getErpFedActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
     }
 

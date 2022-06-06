@@ -20,6 +20,9 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.PrecompiledContracts;
@@ -32,6 +35,8 @@ import static org.junit.Assert.fail;
 public class RemascContractExecuteTest {
 
     private static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     private RemascContract remasc;
 
@@ -41,7 +46,8 @@ public class RemascContractExecuteTest {
                 PrecompiledContracts.REMASC_ADDR,
                 remascConfig,
                 Constants.regtest(),
-                ActivationConfigsForTest.all()
+                ActivationConfigsForTest.all(),
+                bridgeSerializationUtils
         );
     }
 

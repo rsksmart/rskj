@@ -5,17 +5,18 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.utils.EcKeyUtils;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class ErpFederation extends Federation {
     private static final Logger logger = LoggerFactory.getLogger(ErpFederation.class);
@@ -34,9 +35,10 @@ public class ErpFederation extends Federation {
         NetworkParameters btcParams,
         List<BtcECKey> erpPubKeys,
         long activationDelay,
-        ActivationConfig.ForBlock activations
+        ActivationConfig.ForBlock activations,
+        ScriptBuilderWrapper scriptBuilderWrapper
     ) {
-        super(members, creationTime, creationBlockNumber, btcParams);
+        super(members, creationTime, creationBlockNumber, btcParams, scriptBuilderWrapper);
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
         this.activations = activations;
@@ -66,8 +68,8 @@ public class ErpFederation extends Federation {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
             redeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
-                ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                scriptBuilderWrapper.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                scriptBuilderWrapper.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                 activationDelay
             );
         }
@@ -88,7 +90,7 @@ public class ErpFederation extends Federation {
     @Override
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
+            p2shScript = scriptBuilderWrapper.createP2SHOutputScript(getRedeemScript());
         }
 
         return p2shScript;
@@ -97,7 +99,7 @@ public class ErpFederation extends Federation {
     @Override
     public Script getStandardP2SHScript() {
         if (standardP2SHScript == null) {
-            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getStandardRedeemScript());
+            standardP2SHScript = scriptBuilderWrapper.createP2SHOutputScript(getStandardRedeemScript());
         }
 
         return standardP2SHScript;

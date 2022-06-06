@@ -19,9 +19,8 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
@@ -40,6 +39,10 @@ public class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+
+    private static final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private static final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void callContractReturningOne() {
@@ -72,7 +75,7 @@ public class CallContractTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 btcBlockStoreFactory,
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
@@ -81,7 +84,7 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory),
+                    new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                     world.getBlockTxSignatureCache()
             );
 

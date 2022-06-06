@@ -34,12 +34,14 @@ import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -66,6 +68,10 @@ public class EthModuleTest {
 
     private TestSystemProperties config = new TestSystemProperties();
     private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void callSmokeTest() {
@@ -96,8 +102,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null),
+                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
@@ -135,8 +141,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null),
+                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
@@ -179,8 +185,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(
-                        null, null, null),
+                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap());
 
         try {
@@ -270,8 +276,10 @@ public class EthModuleTest {
                 new BridgeSupportFactory(
                         null,
                         null,
-                        null
+                        null,
+                        bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper
                 ),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
 
@@ -292,6 +300,7 @@ public class EthModuleTest {
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         assertThat(eth.chainId(), is("0x21"));

@@ -19,6 +19,7 @@ package co.rsk.remasc;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.FederationSupport;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -37,12 +38,14 @@ public class RemascFederationProvider {
             ActivationConfig activationConfig,
             BridgeConstants bridgeConstants,
             Repository repository,
-            Block processingBlock) {
+            Block processingBlock,
+            BridgeSerializationUtils bridgeSerializationUtils) {
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationConfig.forBlock(processingBlock.getNumber())
+                activationConfig.forBlock(processingBlock.getNumber()),
+                bridgeSerializationUtils
         );
         this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock);
     }

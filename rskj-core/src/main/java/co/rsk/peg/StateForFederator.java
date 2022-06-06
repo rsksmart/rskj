@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.crypto.Keccak256;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -32,15 +33,21 @@ import java.util.SortedMap;
 public class StateForFederator {
     private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
-    public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures) {
+    private final BridgeSerializationUtils bridgeSerializationUtils;
+
+    public StateForFederator(SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures, BridgeSerializationUtils bridgeSerializationUtils) {
         this.rskTxsWaitingForSignatures = rskTxsWaitingForSignatures;
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
     }
 
-    public StateForFederator(byte[] rlpData, NetworkParameters parameters) {
+    @VisibleForTesting
+    public StateForFederator(byte[] rlpData, NetworkParameters parameters, BridgeSerializationUtils bridgeSerializationUtils) {
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
+
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
         byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
 
-        this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
+        this.rskTxsWaitingForSignatures = bridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
     }
 
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
@@ -48,7 +55,7 @@ public class StateForFederator {
     }
 
     public byte[] getEncoded() {
-        byte[] encodedWaitingForSign = BridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
+        byte[] encodedWaitingForSign = bridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
         return RLP.encodeList(encodedWaitingForSign);
     }
 }

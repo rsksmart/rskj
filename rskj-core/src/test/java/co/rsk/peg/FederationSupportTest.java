@@ -20,6 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
@@ -122,7 +123,8 @@ public class FederationSupportTest {
                         new FederationMember(btcKey0, rskKey0, mstKey0),
                         new FederationMember(btcKey1, rskKey1, mstKey1)
                 ), Instant.ofEpochMilli(123), 456,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                ScriptBuilderWrapper.getInstance()
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
@@ -189,7 +191,8 @@ public class FederationSupportTest {
     private Federation getNewFakeFederation(long creationBlockNumber) {
         return new Federation(
                 Collections.emptyList(), Instant.ofEpochMilli(123),
-                creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                ScriptBuilderWrapper.getInstance()
         );
     }
 }

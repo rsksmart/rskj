@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
@@ -107,7 +108,8 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
                         ActiveFederationTest.getNRandomFederationMembers(numFederators),
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
-                        networkParameters
+                        networkParameters,
+                        ScriptBuilderWrapper.getInstance()
                 );
                 provider.setNewFederation(bridgeConstants.getGenesisFederation());
                 provider.setOldFederation(retiringFederation);

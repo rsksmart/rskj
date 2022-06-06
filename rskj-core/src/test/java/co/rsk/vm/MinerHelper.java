@@ -25,8 +25,11 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
@@ -57,6 +60,10 @@ public class MinerHelper {
     private long totalGasUsed;
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
@@ -90,7 +97,7 @@ public class MinerHelper {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
 
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -101,7 +108,7 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory), blockTxSignatureCache);
+                    new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

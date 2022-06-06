@@ -4,8 +4,10 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
@@ -23,6 +25,8 @@ import java.math.BigInteger;
 public class ReceiveHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
     private BtcBlock expectedBlock;
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @BeforeClass
     public static void setupA() {
@@ -61,7 +65,8 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
                                 constants.getBridgeConstants(),
-                                activationConfig.forBlock(0)
+                                activationConfig.forBlock(0),
+                                bridgeSerializationUtils
                         );
 
                         // Best Block is the new block added.

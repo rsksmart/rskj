@@ -18,43 +18,37 @@
 
 package co.rsk.peg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.resources.TestConstants;
-import org.bouncycastle.util.encoders.Hex;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class PendingFederationTest {
     private PendingFederation pendingFederation;
     private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Before
     public void createPendingFederation() {
-        pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
+        pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600), bridgeSerializationUtils);
     }
 
     @Test
@@ -75,7 +69,7 @@ public class PendingFederationTest {
         }
         Assert.assertTrue(exception);
     }
-    
+
     @Test
     public void isComplete() {
         Assert.assertTrue(pendingFederation.isComplete());
@@ -83,7 +77,7 @@ public class PendingFederationTest {
 
     @Test
     public void isComplete_not() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200), bridgeSerializationUtils);
         Assert.assertFalse(otherPendingFederation.isComplete());
     }
 
@@ -98,7 +92,7 @@ public class PendingFederationTest {
 
     @Test
     public void testEquals_differentNumberOfMembers() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700), bridgeSerializationUtils);
         Assert.assertNotEquals(pendingFederation, otherPendingFederation);
     }
 
@@ -107,11 +101,11 @@ public class PendingFederationTest {
         List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
-        PendingFederation otherPendingFederation = new PendingFederation(members);
+        PendingFederation otherPendingFederation = new PendingFederation(members, bridgeSerializationUtils);
 
         members.remove(members.size()-1);
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(630))));
-        PendingFederation yetOtherPendingFederation = new PendingFederation(members);
+        PendingFederation yetOtherPendingFederation = new PendingFederation(members, bridgeSerializationUtils);
 
         Assert.assertNotEquals(otherPendingFederation, yetOtherPendingFederation);
         Assert.assertNotEquals(pendingFederation, otherPendingFederation);
@@ -120,14 +114,14 @@ public class PendingFederationTest {
 
     @Test
     public void testEquals_same() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600), bridgeSerializationUtils);
         Assert.assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
     public void testToString() {
         Assert.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
+        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100), bridgeSerializationUtils);
         Assert.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
@@ -140,20 +134,22 @@ public class PendingFederationTest {
         Instant creationTime = Instant.ofEpochMilli(1234L);
 
         PendingFederation otherPendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(privateKeys)
+            FederationTestUtils.getFederationMembersFromPks(privateKeys), bridgeSerializationUtils
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
             creationTime,
             0L,
             bridgeConstants,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Federation expectedFederation = new Federation(
             FederationTestUtils.getFederationMembersFromPks(privateKeys),
             creationTime,
             0L,
-            bridgeConstants.getBtcParams()
+            bridgeConstants.getBtcParams(),
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(expectedFederation, builtFederation);
@@ -168,20 +164,22 @@ public class PendingFederationTest {
         Instant creationTime = Instant.ofEpochMilli(1234L);
 
         PendingFederation otherPendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(privateKeys)
+            FederationTestUtils.getFederationMembersFromPks(privateKeys), bridgeSerializationUtils
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
             creationTime,
             0L,
             bridgeConstants,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Federation expectedFederation = new Federation(
             FederationTestUtils.getFederationMembersFromPks(privateKeys),
             creationTime,
         0L,
-            bridgeConstants.getBtcParams()
+            bridgeConstants.getBtcParams(),
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(expectedFederation, builtFederation);
@@ -223,13 +221,14 @@ public class PendingFederationTest {
         Instant creationTime = Instant.ofEpochMilli(1234L);
 
         PendingFederation otherPendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(privateKeys)
+            FederationTestUtils.getFederationMembersFromPks(privateKeys), bridgeSerializationUtils
         );
         Federation builtFederation = otherPendingFederation.buildFederation(
             creationTime,
             0L,
             bridgeConstants,
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         ErpFederation expectedFederation = new ErpFederation(
@@ -239,7 +238,8 @@ public class PendingFederationTest {
             bridgeConstants.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
             bridgeConstants.getErpFedActivationDelay(),
-            activations
+            activations,
+            scriptBuilderWrapper
         );
 
         Assert.assertEquals(expectedFederation, builtFederation);
@@ -251,7 +251,7 @@ public class PendingFederationTest {
     @Test
     public void buildFederation_incomplete() {
         PendingFederation otherPendingFederation = new PendingFederation(
-            FederationTestUtils.getFederationMembersFromPks(100)
+            FederationTestUtils.getFederationMembersFromPks(100), bridgeSerializationUtils
         );
 
         try {
@@ -259,7 +259,8 @@ public class PendingFederationTest {
                 Instant.ofEpochMilli(12L),
                 0L,
                 null,
-                null
+                null,
+                scriptBuilderWrapper
             );
         } catch (Exception e) {
             Assert.assertEquals("PendingFederation is incomplete", e.getMessage());
@@ -268,14 +269,8 @@ public class PendingFederationTest {
         Assert.fail();
     }
 
-    @PrepareForTest({ BridgeSerializationUtils.class })
     @Test
     public void getHash() {
-        PowerMockito.mockStatic(BridgeSerializationUtils.class);
-        PowerMockito.when(BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
-
-        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
-
-        Assert.assertEquals(expectedHash, pendingFederation.getHash());
+        Assert.assertEquals("277f35b1c3b742f15eeabb243967794d90a3926d4a4a91cbf9d7d9eceac54a56", pendingFederation.getHash().toHexString());
     }
 }

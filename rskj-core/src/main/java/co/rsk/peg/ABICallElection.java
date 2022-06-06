@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.*;
 
@@ -113,5 +114,10 @@ public class ABICallElection {
                 }
             }
         }
+    }
+
+    @VisibleForTesting
+    AddressBasedAuthorizer getAuthorizer() { // TODO try to refactor to avoid this
+        return authorizer;
     }
 }

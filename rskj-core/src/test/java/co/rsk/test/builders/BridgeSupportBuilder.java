@@ -4,13 +4,12 @@ import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.*;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
-import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -25,6 +24,10 @@ public class BridgeSupportBuilder {
     private Block executionBlock;
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
+    private BridgeUtils bridgeUtils;
+    private BridgeSerializationUtils bridgeSerializationUtils;
+
+    private ScriptBuilderWrapper scriptBuilderWrapper;
 
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
@@ -36,6 +39,9 @@ public class BridgeSupportBuilder {
         this.executionBlock = mock(Block.class);
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
+        this.bridgeUtils = mock(BridgeUtils.class);
+        this.bridgeSerializationUtils = mock(BridgeSerializationUtils.class);
+        this.scriptBuilderWrapper = mock(ScriptBuilderWrapper.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -83,6 +89,21 @@ public class BridgeSupportBuilder {
         return this;
     }
 
+    public BridgeSupportBuilder withBridgeUtils(BridgeUtils bridgeUtils) {
+        this.bridgeUtils = bridgeUtils;
+        return this;
+    }
+
+    public BridgeSupportBuilder withBridgeSerializationUtils(BridgeSerializationUtils bridgeSerializationUtils) {
+        this.bridgeSerializationUtils = bridgeSerializationUtils;
+        return this;
+    }
+
+    public BridgeSupportBuilder withScriptBuilderWrapper(ScriptBuilderWrapper scriptBuilderWrapper) {
+        this.scriptBuilderWrapper = scriptBuilderWrapper;
+        return this;
+    }
+
     public BridgeSupport build() {
         return new BridgeSupport(
             bridgeConstants,
@@ -95,7 +116,10 @@ public class BridgeSupportBuilder {
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock),
             btcBlockStoreFactory,
-            activations
+            activations,
+            bridgeUtils,
+            bridgeSerializationUtils,
+            scriptBuilderWrapper
         );
     }
 }

@@ -25,7 +25,10 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
@@ -52,6 +55,10 @@ public class BlockBuilder {
     private byte[] gasLimit;
     private final BridgeSupportFactory bridgeSupportFactory;
     private BlockStore blockStore;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;
@@ -114,7 +121,7 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     )
             );

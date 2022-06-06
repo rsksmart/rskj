@@ -21,6 +21,9 @@ package co.rsk.vm.precompiles;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import co.rsk.pcc.bto.HDWalletUtils;
@@ -36,7 +39,10 @@ import static org.mockito.Mockito.when;
 public class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
 
     @Test
     public void getBridgeContract() {

@@ -58,7 +58,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
                 federationMembers,
                 genesisFederationAddressCreatedAt,
                 1L,
-                getBtcParams()
+                getBtcParams(),
+                scriptBuilderWrapper
         );
 
         btc2RskMinimumAcceptableConfirmations = 100;

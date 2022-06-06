@@ -19,8 +19,10 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -37,6 +39,10 @@ import java.io.IOException;
  * Created by ajlopez on 16/04/2017.
  */
 public class BridgeStateTest {
+
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     @Test
     public void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
@@ -45,12 +51,13 @@ public class BridgeStateTest {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants, config.getActivationConfig().forBlock(0L)
+                bridgeConstants, config.getActivationConfig().forBlock(0L),
+                bridgeSerializationUtils
         );
 
-        BridgeState state = new BridgeState(42, provider, null);
+        BridgeState state = new BridgeState(42, provider, null, bridgeSerializationUtils);
 
-        BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded(), null);
+        BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded(), null, bridgeSerializationUtils);
 
         Assert.assertNotNull(clone);
         Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());

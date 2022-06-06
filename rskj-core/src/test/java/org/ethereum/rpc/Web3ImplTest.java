@@ -33,7 +33,10 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.net.SyncProcessor;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.simples.SimpleBlockProcessor;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -104,6 +107,9 @@ public class Web3ImplTest {
 
     private Wallet wallet;
 
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     @Test
     public void web3_clientVersion() {
         Web3 web3 = createWeb3();
@@ -2322,7 +2328,8 @@ public class Web3ImplTest {
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
@@ -2433,7 +2440,8 @@ public class Web3ImplTest {
                 new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
@@ -2495,7 +2503,8 @@ public class Web3ImplTest {
                 new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
+                bridgeSerializationUtils,
                 config.getGasEstimationCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
@@ -2539,7 +2548,7 @@ public class Web3ImplTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, null),
+                new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils),
                 blockTxSignatureCache);
     }
 

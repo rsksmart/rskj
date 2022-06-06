@@ -20,8 +20,10 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PendingFederation;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
@@ -32,6 +34,8 @@ import org.junit.Test;
 @Ignore
 public class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     @Test
     public void getPendingFederationHash() throws VMException {
@@ -85,7 +89,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                pendingFederation = new PendingFederation(ActiveFederationTest.getNRandomFederationMembers(numFederators));
+                pendingFederation = new PendingFederation(ActiveFederationTest.getNRandomFederationMembers(numFederators), bridgeSerializationUtils);
                 provider.setPendingFederation(pendingFederation);
             } else {
                 pendingFederation = null;

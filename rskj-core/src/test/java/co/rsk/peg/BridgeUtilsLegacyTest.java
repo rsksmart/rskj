@@ -7,6 +7,8 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
+
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -22,12 +24,14 @@ public class BridgeUtilsLegacyTest {
     private ActivationConfig.ForBlock activations;
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
+    private ScriptBuilderWrapper scriptBuilderWrapper;
 
     @Before
     public void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
@@ -247,7 +251,8 @@ public class BridgeUtilsLegacyTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            bridgeConstantsRegtest.getBtcParams()
+            bridgeConstantsRegtest.getBtcParams(),
+            scriptBuilderWrapper
         );
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -269,7 +274,8 @@ public class BridgeUtilsLegacyTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            bridgeConstantsRegtest.getBtcParams()
+            bridgeConstantsRegtest.getBtcParams(),
+            scriptBuilderWrapper
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -284,7 +290,8 @@ public class BridgeUtilsLegacyTest {
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            bridgeConstantsRegtest.getBtcParams()
+            bridgeConstantsRegtest.getBtcParams(),
+            scriptBuilderWrapper
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);

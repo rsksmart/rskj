@@ -72,6 +72,8 @@ public class BridgeEventLoggerImplTest {
     BtcTransaction btcTxMock;
     BtcTransaction btcTx;
 
+    private ScriptBuilderWrapper scriptBuilderWrapper;
+
     @Before
     public void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
@@ -80,6 +82,8 @@ public class BridgeEventLoggerImplTest {
         eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
+
+        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
     }
 
     @Test
@@ -328,7 +332,8 @@ public class BridgeEventLoggerImplTest {
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
         Federation oldFederation = new Federation(oldFederationMembers,
-                Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+                Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            scriptBuilderWrapper);
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
@@ -342,7 +347,8 @@ public class BridgeEventLoggerImplTest {
                 newFederationMembers,
                 Instant.ofEpochMilli(5005L),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            scriptBuilderWrapper
         );
 
         // Act
@@ -417,7 +423,8 @@ public class BridgeEventLoggerImplTest {
                 oldFederationMembers,
                 Instant.ofEpochMilli(15005L),
                 15L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper
         );
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
@@ -429,7 +436,8 @@ public class BridgeEventLoggerImplTest {
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
         Federation newFederation = new Federation(newFederationMembers,
-                Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+                Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                scriptBuilderWrapper);
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);

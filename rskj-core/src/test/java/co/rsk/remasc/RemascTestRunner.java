@@ -27,9 +27,8 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -72,6 +71,10 @@ class RemascTestRunner {
 
     private Block genesis;
     private RskAddress fixedCoinbase;
+
+    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
     public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
@@ -133,8 +136,8 @@ class RemascTestRunner {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
                 builder.getConfig().getNetworkConstants().getBridgeConstants(),
-                builder.getConfig().getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
+                builder.getConfig().getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),

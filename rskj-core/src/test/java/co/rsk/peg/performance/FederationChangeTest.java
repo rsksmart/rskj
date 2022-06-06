@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
+import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -40,6 +41,10 @@ import java.util.stream.Collectors;
 
 @Ignore
 public class FederationChangeTest extends BridgePerformanceTestCase {
+    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+
+    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+
     // regtest constants
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
             "auth-a",
@@ -199,7 +204,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
                 for (int i = 0; i < numKeys; i++) {
                     pendingFederationMembers.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
                 }
-                pendingFederation = new PendingFederation(pendingFederationMembers);
+                pendingFederation = new PendingFederation(pendingFederationMembers, bridgeSerializationUtils);
                 provider.setPendingFederation(pendingFederation);
             }
 
