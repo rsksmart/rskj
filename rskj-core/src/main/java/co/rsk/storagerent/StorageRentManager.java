@@ -20,25 +20,6 @@ import java.util.stream.Collectors;
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute");
 
-    public static final long NO_ROLLBACK_RENT_YET = -1;
-    private static final long NO_PAYABLE_RENT_YET = -1;
-    private static final long NO_TOTAL_RENT_YET = -1;
-
-    private Set<RentedNode> rentedNodes = Collections.emptySet();
-    private List<RentedNode> rollbackNodes = Collections.emptyList();
-
-    // todo(fedejinich) this fields are unnecessary for production, but good for testing
-    //  they will be removed before merging into master
-    private long rollbacksRent;
-    private long payableRent;
-    private long paidRent;
-
-    public StorageRentManager() {
-        this.rollbacksRent = NO_ROLLBACK_RENT_YET;
-        this.payableRent = NO_PAYABLE_RENT_YET;
-        this.paidRent = NO_TOTAL_RENT_YET;
-    }
-
     /**
      * Pay storage rent.
      *
@@ -49,7 +30,7 @@ public class StorageRentManager {
      *
      * @return new remaining gas
      * */
-    public long pay(long gasRemaining, long executionBlockTimestamp,
+    public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
                     MutableRepositoryTracked blockTrack, MutableRepositoryTracked transactionTrack,
                     String transactionHash) {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
@@ -69,22 +50,22 @@ public class StorageRentManager {
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        this.rentedNodes = storageRentNodes.stream()
+        Set<RentedNode> rentedNodes = storageRentNodes.stream()
                 .map(trackedNode -> blockTrack.getRentedNode(trackedNode))
                 .collect(Collectors.toSet());
-        this.rollbackNodes = rollbackNodes.stream()
+        List<RentedNode> rollbackRentedNodes = rollbackNodes.stream()
                 .map(trackedNode -> blockTrack.getRentedNode(trackedNode))
                 .collect(Collectors.toList());
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
-                this.rentedNodes.size(), this.rollbackNodes.size());
+                rentedNodes.size(), rollbackNodes.size());
 
         // calculate rent
 
-        long payableRent = rentBy(this.rentedNodes,
+        long payableRent = rentBy(rentedNodes,
                 rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
 
-        long rollbacksRent = rentBy(this.rollbackNodes,
+        long rollbacksRent = rentBy(rollbackRentedNodes,
                 rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp));
         
         long rentToPay = payableRent + rollbacksRent;
@@ -100,62 +81,31 @@ public class StorageRentManager {
 
         // update rent timestamps
         // should update timestamps ONLY if there's any payable rent or if node is not timestamped yet
-        Set<RentedNode> nodesWithRent = this.rentedNodes.stream()
+        Set<RentedNode> nodesWithRent = rentedNodes.stream()
                 .filter(rentedNode -> shouldUpdateRentTimestamp(rentedNode, executionBlockTimestamp))
                 .collect(Collectors.toSet());
 
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
-        this.paidRent = rentToPay;
-        this.payableRent = payableRent;
-        this.rollbacksRent = rollbacksRent;
+        StorageRentResult result = new StorageRentResult(rentedNodes, rollbackRentedNodes,
+                payableRent, rollbacksRent, gasAfterPayingRent);
 
         LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
-            this.paidRent, this.payableRent, this.rollbacksRent);
+            result.paidRent(), result.getPayableRent(), result.getRollbacksRent());
 
-        return gasAfterPayingRent;
+        return result;
     }
 
-    public boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
+    private static boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
         return rentedNode.payableRent(executionBlockTimestamp) > 0 ||
                 rentedNode.getRentTimestamp() == Trie.NO_RENT_TIMESTAMP;
     }
 
-    private long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
+    private static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
         Optional<Long> rent = rentedNodes.stream()
                 .map(r -> rentFunction.apply(r))
                 .reduce(GasCost::add);
 
         return rentedNodes.isEmpty() || !rent.isPresent() ? 0 : rent.get();
-    }
-
-    @VisibleForTesting
-    public long getPaidRent() {
-        if(this.payableRent == NO_PAYABLE_RENT_YET ||
-                this.rollbacksRent == NO_ROLLBACK_RENT_YET || this.paidRent == NO_TOTAL_RENT_YET) {
-            throw new RuntimeException("should pay rent before querying paid rent");
-        }
-
-        return this.paidRent;
-    }
-
-    @VisibleForTesting
-    public long getPayableRent() {
-        return payableRent;
-    }
-
-    @VisibleForTesting
-    public long getRollbacksRent() {
-        return this.rollbacksRent;
-    }
-
-    @VisibleForTesting
-    public Set<RentedNode> getRentedNodes() {
-        return this.rentedNodes;
-    }
-
-    @VisibleForTesting
-    public List<RentedNode> getRollbackNodes() {
-        return this.rollbackNodes;
     }
 }

@@ -28,6 +28,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.storagerent.StorageRentManager;
+import co.rsk.storagerent.StorageRentResult;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -109,6 +110,7 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
     private boolean storageRentEnabled; // todo(fedejinich) this is a workaround to enable storage rent just in StorageRentDSLTest, it will be removed
+    private StorageRentResult storageRentResult;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -515,9 +517,14 @@ public class TransactionExecutor {
         if(isStorageRentEnabled()) {
             // pay storage rent
             logger.trace("Paying storage rent. gas: {}", gasLeftover);
-            gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+
+            storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                     (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
                     tx.getHash().toHexString());
+
+            gasLeftover = storageRentResult.getGasAfterPayingRent();
+
+            logger.trace("Paid rent. gas: {}", gasLeftover);
         }
 
         transactionTrack.commit();
@@ -696,12 +703,12 @@ public class TransactionExecutor {
 
     public Coin getPaidFees() { return paidFees; }
 
-    @VisibleForTesting
-    public StorageRentManager getStorageRentManager() {
-        return this.storageRentManager;
-    }
-
     public void setStorageRentEnabled(boolean storageRentEnabled) {
         this.storageRentEnabled = storageRentEnabled;
+    }
+
+    @VisibleForTesting
+    public StorageRentResult getStorageRentResult() {
+        return storageRentResult;
     }
 }
