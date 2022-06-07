@@ -199,16 +199,17 @@ public class StorageRentManagerTest {
                                          long expectedRentedNodesCount, long expectedRollbackNodesCount) {
         StorageRentManager storageRentManager = new StorageRentManager();
 
-        long remainingGasAfterPayingRent = storageRentManager.pay(gasRemaining, executionBlockTimestamp,
+        StorageRentResult storageRentResult = storageRentManager.pay(gasRemaining, executionBlockTimestamp,
                 mockBlockTrack, mockTransactionTrack, TRANSACTION_HASH);
+        long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
         assertTrue(remainingGasAfterPayingRent >= 0);
         assertEquals(expectedRemainingGas, remainingGasAfterPayingRent);
-        assertEquals(expectedPaidRent, storageRentManager.getPaidRent());
-        assertEquals(expectedPayableRent, storageRentManager.getPayableRent());
-        assertEquals(expectedRollbacksRent, storageRentManager.getRollbacksRent());
-        assertEquals(expectedRentedNodesCount, storageRentManager.getRentedNodes().size());
-        assertEquals(expectedRollbackNodesCount, storageRentManager.getRollbackNodes().size());
+        assertEquals(expectedPaidRent, storageRentResult.paidRent());
+        assertEquals(expectedPayableRent, storageRentResult.getPayableRent());
+        assertEquals(expectedRollbacksRent, storageRentResult.getRollbacksRent());
+        assertEquals(expectedRentedNodesCount, storageRentResult.getRentedNodes().size());
+        assertEquals(expectedRollbackNodesCount, storageRentResult.getRollbackNodes().size());
     }
 
     public static TrackedNode trackedNodeReadOperation(String key, boolean result) {

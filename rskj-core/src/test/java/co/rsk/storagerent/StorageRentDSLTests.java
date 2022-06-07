@@ -35,13 +35,6 @@ public class StorageRentDSLTests {
         TransactionExecutor transactionExecutor = world.getTransactionExecutor("tx01");
 
         assertFalse(transactionExecutor.isStorageRentEnabled());
-
-        // this is an extra
-        try {
-            transactionExecutor.getStorageRentManager().getPaidRent();
-        } catch (RuntimeException e) {
-            assertEquals("should pay rent before querying paid rent", e.getMessage());
-        }
     }
 
     /**
@@ -205,13 +198,14 @@ public class StorageRentDSLTests {
     private void checkStorageRent(World world, String txName, long paidRent, long rollbackRent, long rentedNodesCount,
                                   long rollbackNodesCount) {
         TransactionExecutor transactionExecutor = world.getTransactionExecutor(txName);
-        StorageRentManager storageRentManager = transactionExecutor.getStorageRentManager();
+
+        StorageRentResult storageRentResult = transactionExecutor.getStorageRentResult();
 
         assertTrue(transactionExecutor.isStorageRentEnabled());
-        assertEquals(rentedNodesCount, storageRentManager.getRentedNodes().size());
-        assertEquals(rollbackNodesCount, storageRentManager.getRollbackNodes().size());
-        assertEquals(rollbackRent, storageRentManager.getRollbacksRent());
-        assertEquals(paidRent, storageRentManager.getPaidRent());
+        assertEquals(rentedNodesCount, storageRentResult.getRentedNodes().size());
+        assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
+        assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
+        assertEquals(paidRent, storageRentResult.paidRent());
     }
 
     private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
