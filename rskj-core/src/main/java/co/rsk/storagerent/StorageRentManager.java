@@ -5,6 +5,8 @@ import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.Program;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Function;
@@ -15,6 +17,8 @@ import java.util.stream.Collectors;
  * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
  * */
 public class StorageRentManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger("execute");
+
     public static final long NO_ROLLBACK_RENT_YET = -1;
     private static final long NO_PAYABLE_RENT_YET = -1;
     private static final long NO_TOTAL_RENT_YET = -1;
@@ -55,7 +59,6 @@ public class StorageRentManager {
         transactionTrack.getStorageRentNodes(transactionHash).forEach(trackedNode -> storageRentNodes.add(trackedNode));
 
         List<TrackedNode> rollbackNodes = new ArrayList<>();
-        // todo(fedejinich) i guess that all the rollbacks are only present in transactionTrack
         blockTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
         transactionTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
 
@@ -71,6 +74,9 @@ public class StorageRentManager {
         this.rollbackNodes = rollbackNodes.stream()
                 .map(trackedNode -> blockTrack.getRentedNode(trackedNode))
                 .collect(Collectors.toList());
+
+        LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
+                this.rentedNodes.size(), this.rollbackNodes.size());
 
         // calculate rent
 
@@ -102,6 +108,9 @@ public class StorageRentManager {
         this.paidRent = rentToPay;
         this.payableRent = payableRent;
         this.rollbacksRent = rollbacksRent;
+
+        LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
+            this.paidRent, this.payableRent, this.rollbacksRent);
 
         return gasAfterPayingRent;
     }
