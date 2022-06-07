@@ -1,5 +1,6 @@
 package co.rsk.storagerent;
 
+import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
@@ -100,7 +101,7 @@ public class StorageRentManager {
         // update rent timestamps
         // should update timestamps ONLY if there's any payable rent or if node is not timestamped yet
         Set<RentedNode> nodesWithRent = this.rentedNodes.stream()
-                .filter(r -> r.shouldUpdateRentTimestamp(executionBlockTimestamp))
+                .filter(rentedNode -> shouldUpdateRentTimestamp(rentedNode, executionBlockTimestamp))
                 .collect(Collectors.toSet());
 
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
@@ -113,6 +114,11 @@ public class StorageRentManager {
             this.paidRent, this.payableRent, this.rollbacksRent);
 
         return gasAfterPayingRent;
+    }
+
+    public boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
+        return rentedNode.payableRent(executionBlockTimestamp) > 0 ||
+                rentedNode.getRentTimestamp() == Trie.NO_RENT_TIMESTAMP;
     }
 
     private long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {

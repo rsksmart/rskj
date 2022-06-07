@@ -133,7 +133,7 @@ public class MutableRepositoryTracked extends MutableRepository {
                         long notRelevant = -1;
                         RentedNode nodeToBeReplaced = new RentedNode(containedNode, notRelevant, notRelevant);
                         RentedNode newNode = new RentedNode(trackedNode, notRelevant, notRelevant);
-                        if(nodeToBeReplaced.shouldBeReplaced(newNode)) {
+                        if(shouldBeReplaced(nodeToBeReplaced, newNode)) {
                             // we pass the TrackedNode instance because we don't need a populated RentedNode yet
                             storageRentNodes.put(key, trackedNode);
                         }
@@ -143,6 +143,14 @@ public class MutableRepositoryTracked extends MutableRepository {
                 });
 
         return new HashSet<>(storageRentNodes.values());
+    }
+
+    /**
+     * Determines if a node should be replaced by another one due to different operation types,
+     * the operation with the lowest threshold it's the one that leads the storage rent payment.
+     * */
+    public boolean shouldBeReplaced(RentedNode nodeToBeReplaced, RentedNode newNode) {
+        return newNode.rentThreshold() < nodeToBeReplaced.rentThreshold();
     }
 
     // Internal methods contains node tracking
