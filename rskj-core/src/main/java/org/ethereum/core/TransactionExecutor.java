@@ -514,6 +514,7 @@ public class TransactionExecutor {
 
         if(isStorageRentEnabled()) {
             // pay storage rent
+            logger.trace("Paying storage rent. gas: {}", gasLeftover);
             gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                     (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
                     tx.getHash().toHexString());
