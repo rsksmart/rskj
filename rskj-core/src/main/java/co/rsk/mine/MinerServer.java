@@ -22,10 +22,13 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.InternalService;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+
 import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -49,6 +52,8 @@ public interface MinerServer extends InternalService {
 
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
 
+    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag);
+    
     RskAddress getCoinbaseAddress();
 
     MinerWork getWork();
@@ -62,4 +67,6 @@ public interface MinerServer extends InternalService {
     byte[] getExtraData();
 
     Optional<Block> getLatestBlock();
+    
+    Map<Keccak256, Block> getBlocksWaitingForPoW();
 }
