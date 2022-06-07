@@ -119,17 +119,4 @@ public class RentedNode extends TrackedNode {
                 ", lastRentPaidTimestamp: " + rentTimestamp
                 +"]";
     }
-
-    /**
-     * Determines if a node should be replaced by another one due to different operation types,
-     * the operation with the lowest threshold it's the one that leads the storage rent payment.
-     * */
-    public boolean shouldBeReplaced(RentedNode newNode) {
-        return newNode.rentThreshold() < this.rentThreshold();
-    }
-
-    public boolean shouldUpdateRentTimestamp(long executionBlockTimestamp) {
-        return this.payableRent(executionBlockTimestamp) > 0 ||
-                this.rentTimestamp == Trie.NO_RENT_TIMESTAMP;
-    }
 }
