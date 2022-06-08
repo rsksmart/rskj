@@ -25,6 +25,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.NodeBlockProcessor;
@@ -64,6 +65,7 @@ public class MinerManagerTest {
     private BlockStore blockStore;
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
+    private FamilyUtils familyUtils;
 
     @Before
     public void setup() {
@@ -75,6 +77,7 @@ public class MinerManagerTest {
         blockStore = factory.getBlockStore();
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
+        familyUtils = FamilyUtils.getInstance();
     }
 
     @Test
@@ -296,7 +299,8 @@ public class MinerManagerTest {
                         blockFactory,
                         blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(),
+                        familyUtils
                 ),
                 clock,
                 blockFactory,

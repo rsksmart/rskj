@@ -1035,7 +1035,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                                     blockTimeStampValidationRule,
                                     new BlockDifficultyRule(getDifficultyCalculator()),
                                     new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-                            )
+                            ), getFamilyUtils()
                     ),
                     new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
                     getProofOfWorkRule(),
@@ -1112,6 +1112,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public synchronized BridgeSerializationUtils getBridgeSerializationUtils() {
         checkIfNotClosed();
         return BridgeSerializationUtils.getInstance(getScriptBuilderWrapper());
+    }
+
+    public synchronized FamilyUtils getFamilyUtils() {
+        checkIfNotClosed();
+        return FamilyUtils.getInstance();
     }
 
     public boolean isClosed() {
@@ -1664,7 +1669,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new BlockParentNumberRule(),
                             new BlockDifficultyRule(getDifficultyCalculator()),
                             new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-                    )
+                    ), getFamilyUtils()
             );
         }
 
@@ -1728,7 +1733,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockFactory(),
                     getBlockExecutor(),
                     new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
-                    new MinerUtils()
+                    new MinerUtils(),
+                    getFamilyUtils()
             );
         }
 

@@ -28,6 +28,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -75,6 +76,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private BlockExecutor blockExecutor;
     private MinimumGasPriceCalculator minimumGasPriceCalculator;
     private MinerUtils minerUtils;
+    private FamilyUtils familyUtils;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -97,6 +99,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         blockExecutor = factory.getBlockExecutor();
         minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
         minerUtils = new MinerUtils();
+        familyUtils = FamilyUtils.getInstance();
     }
 
     @Test
@@ -718,7 +721,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         blockFactory,
                         blockExecutor,
                         minimumGasPriceCalculator,
-                        minerUtils
+                        minerUtils,
+                        familyUtils
                 ),
                 clock,
                 blockFactory,
@@ -750,7 +754,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         blockFactory,
                         blockExecutor,
                         minimumGasPriceCalculator,
-                        minerUtils
+                        minerUtils,
+                        familyUtils
                 ),
                 clock,
                 blockFactory,

@@ -2,6 +2,7 @@ package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.HashMapBlocksIndex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -20,6 +21,8 @@ import java.util.List;
  */
 public class BlockUnclesValidationRuleTest {
 
+    private final FamilyUtils familyUtils = FamilyUtils.getInstance();
+
     @Test
     public void rejectBlockWithSiblingUncle() {
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -35,7 +38,7 @@ public class BlockUnclesValidationRuleTest {
 
         blockStore.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         blockStore.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore,10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore,10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule(), familyUtils);
 
         Assert.assertFalse(rule.isValid(block));
     }
@@ -55,7 +58,7 @@ public class BlockUnclesValidationRuleTest {
         BlockStore blockStore = new IndexedBlockStore(null, new HashMapDB(), new HashMapBlocksIndex());
         blockStore.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         blockStore.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule(), familyUtils);
 
         Assert.assertFalse(rule.isValid(block));
     }

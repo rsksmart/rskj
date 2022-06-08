@@ -89,6 +89,8 @@ public class TransactionModuleTest {
     private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
     private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
 
+    private final FamilyUtils familyUtils = FamilyUtils.getInstance();
+
     @Test
     public void sendTransactionMustNotBeMined() {
         World world = new World();
@@ -606,7 +608,8 @@ public class TransactionModuleTest {
                         blockFactory,
                         blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(),
+                        familyUtils
                 ),
                 minerClock,
                 blockFactory,

@@ -62,6 +62,8 @@ public class BlockValidatorBuilder {
 
     private BlockStore blockStore;
 
+    private FamilyUtils familyUtils = FamilyUtils.getInstance();
+
     public BlockValidatorBuilder(TestSystemProperties customConfig) {
         this.config = customConfig;
     }
@@ -107,7 +109,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockHeaderValidationRule validationRule, BlockHeaderParentDependantValidationRule parentValidationRule) {
         int uncleListLimit = config.getNetworkConstants().getUncleListLimit();
         int uncleGenLimit = config.getNetworkConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule, familyUtils);
         return this;
     }
 

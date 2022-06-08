@@ -33,7 +33,6 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -41,9 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,14 +52,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FamilyUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BlockToMineBuilderTest {
 
     private BlockToMineBuilder blockBuilder;
     private BlockValidationRule validationRules;
     private BlockExecutor blockExecutor;
     private ActivationConfig activationConfig;
+
+    private FamilyUtils familyUtils;
 
     @Before
     public void setUp() {
@@ -75,6 +73,7 @@ public class BlockToMineBuilderTest {
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
         activationConfig = mock(ActivationConfig.class);
+        familyUtils = mock(FamilyUtils.class);
 
         blockExecutor = mock(BlockExecutor.class);
         blockBuilder = new BlockToMineBuilder(
@@ -91,7 +90,8 @@ public class BlockToMineBuilderTest {
                 new BlockFactory(activationConfig),
                 blockExecutor,
                 minimumGasPriceCalculator,
-                minerUtils
+                minerUtils,
+                familyUtils
         );
 
         BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
@@ -199,8 +199,7 @@ public class BlockToMineBuilderTest {
     }
 
     private void mockBlockFamily(long blockNumber, Keccak256 blockHash, BlockHeader relative) {
-        PowerMockito.mockStatic(FamilyUtils.class);
-        PowerMockito.when(FamilyUtils.getUnclesHeaders(any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
+        when(familyUtils.getUnclesHeaders(any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
                 .thenReturn(Collections.singletonList(relative));
     }
 

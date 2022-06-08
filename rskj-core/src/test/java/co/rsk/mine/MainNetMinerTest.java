@@ -7,10 +7,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockChainImplTest;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.*;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.NodeBlockProcessor;
@@ -55,6 +52,7 @@ public class MainNetMinerTest {
     private RepositoryLocator repositoryLocator;
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
+    private FamilyUtils familyUtils;
 
     @Before
     public void setup() {
@@ -81,6 +79,7 @@ public class MainNetMinerTest {
         repositoryLocator = factory.getRepositoryLocator();
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
+        familyUtils = FamilyUtils.getInstance();
     }
 
     /*
@@ -224,7 +223,8 @@ public class MainNetMinerTest {
                 blockFactory,
                 blockExecutor,
                 new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                new MinerUtils()
+                new MinerUtils(),
+                familyUtils
         );
     }
 }

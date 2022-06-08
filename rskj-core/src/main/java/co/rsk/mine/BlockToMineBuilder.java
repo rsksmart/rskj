@@ -70,6 +70,8 @@ public class BlockToMineBuilder {
 
     private final ForkDetectionDataCalculator forkDetectionDataCalculator;
 
+    private final FamilyUtils familyUtils;
+
     public BlockToMineBuilder(
             ActivationConfig activationConfig,
             MiningConfig miningConfig,
@@ -84,7 +86,8 @@ public class BlockToMineBuilder {
             BlockFactory blockFactory,
             BlockExecutor blockExecutor,
             MinimumGasPriceCalculator minimumGasPriceCalculator,
-            MinerUtils minerUtils) {
+            MinerUtils minerUtils,
+            FamilyUtils familyUtils) {
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repositoryLocator = Objects.requireNonNull(repositoryLocator);
@@ -99,6 +102,7 @@ public class BlockToMineBuilder {
         this.executor = blockExecutor;
         this.minimumGasPriceCalculator = minimumGasPriceCalculator;
         this.minerUtils = minerUtils;
+        this.familyUtils = familyUtils;
     }
 
     /**
@@ -109,7 +113,7 @@ public class BlockToMineBuilder {
      */
     public BlockResult build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
         BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
-        List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
+        List<BlockHeader> uncles = familyUtils.getUnclesHeaders(
                 blockStore,
                 newBlockParentHeader.getNumber() + 1,
                 newBlockParentHeader.getHash(),

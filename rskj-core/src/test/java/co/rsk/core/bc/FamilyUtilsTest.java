@@ -44,6 +44,8 @@ public class FamilyUtilsTest {
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
+    private final FamilyUtils familyUtils = FamilyUtils.getInstance();
+
     @Test
     public void getFamilyGetParent() {
         BlockStore store = createBlockStore();
@@ -55,7 +57,7 @@ public class FamilyUtilsTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(block1, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6);
+        Set<Keccak256> family = familyUtils.getFamily(store, block1, 6);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -72,7 +74,7 @@ public class FamilyUtilsTest {
 
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6);
+        Set<Keccak256> family = familyUtils.getFamily(store, genesis, 6);
 
         Assert.assertNotNull(family);
         Assert.assertTrue(family.isEmpty());
@@ -93,7 +95,7 @@ public class FamilyUtilsTest {
         store.saveBlock(block2, TEST_DIFFICULTY, true);
         store.saveBlock(block3, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = familyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -132,7 +134,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = familyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -149,7 +151,7 @@ public class FamilyUtilsTest {
         Assert.assertFalse(family.contains(uncle31.getHash()));
         Assert.assertFalse(family.contains(uncle32.getHash()));
 
-        family = FamilyUtils.getFamily(store, block3, 3);
+        family = familyUtils.getFamily(store, block3, 3);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -198,7 +200,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        List<BlockHeader> list = FamilyUtils.getUnclesHeaders(store, block3, 3);
+        List<BlockHeader> list = familyUtils.getUnclesHeaders(store, block3, 3);
 
         Assert.assertNotNull(list);
         Assert.assertFalse(list.isEmpty());
@@ -237,7 +239,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3);
+        Set<Keccak256> family = familyUtils.getUncles(store, block3, 3);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());

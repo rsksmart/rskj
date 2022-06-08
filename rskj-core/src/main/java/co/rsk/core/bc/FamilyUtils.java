@@ -37,6 +37,19 @@ import static java.lang.Math.max;
  */
 public class FamilyUtils {
 
+    private static FamilyUtils instance;
+
+    public static FamilyUtils getInstance() {
+        if (instance == null) {
+            instance = new FamilyUtils();
+        }
+
+        return instance;
+    }
+
+    private FamilyUtils() {
+    }
+
     /**
      * Calculate the set of hashes of ancestors of a block
      *
@@ -46,11 +59,11 @@ public class FamilyUtils {
      *
      * @return set of ancestors block hashes
      */
-    public static Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
+    public Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+    public Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -77,11 +90,11 @@ public class FamilyUtils {
      *
      * @return set of already used uncles block hashes
      */
-    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
+    public Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
         return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+    public Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -101,11 +114,11 @@ public class FamilyUtils {
         return ret;
     }
 
-    public static List<BlockHeader> getUnclesHeaders(BlockStore store, Block block, int levels) {
+    public List<BlockHeader> getUnclesHeaders(BlockStore store, Block block, int levels) {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
@@ -120,11 +133,11 @@ public class FamilyUtils {
         return uncles;
     }
 
-    public static Set<Keccak256> getUncles(BlockStore store, Block block, int levels) {
+    public Set<Keccak256> getUncles(BlockStore store, Block block, int levels) {
         return getUncles(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Keccak256> getUncles(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public Set<Keccak256> getUncles(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         Set<Keccak256> family = getFamily(store, blockNumber, parentHash, levels);
         Set<Keccak256> ancestors = getAncestors(store, blockNumber, parentHash, levels);
         family.removeAll(ancestors);
@@ -133,11 +146,11 @@ public class FamilyUtils {
         return family;
     }
 
-    public static Set<Keccak256> getFamily(BlockStore store, Block block, int levels) {
+    public Set<Keccak256> getFamily(BlockStore store, Block block, int levels) {
         return getFamily(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Keccak256> getFamily(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public Set<Keccak256> getFamily(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         long minNumber = max(0, blockNumber - levels);
 
         List<Block> ancestors = new ArrayList<>();

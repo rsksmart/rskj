@@ -58,16 +58,19 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     private final BlockHeaderParentDependantValidationRule parentValidations;
     private final BlockUnclesHashValidationRule blockValidationRule;
 
+    private final FamilyUtils familyUtils;
+
     public BlockUnclesValidationRule(
             BlockStore blockStore, int uncleListLimit,
             int uncleGenerationLimit, BlockHeaderValidationRule validations,
-            BlockHeaderParentDependantValidationRule parentValidations) {
+            BlockHeaderParentDependantValidationRule parentValidations, FamilyUtils familyUtils) {
         this.blockStore = blockStore;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
         this.validations = validations;
         this.parentValidations = parentValidations;
         this.blockValidationRule = new BlockUnclesHashValidationRule();
+        this.familyUtils = familyUtils;
     }
 
     @Override
@@ -79,8 +82,8 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         List<BlockHeader> uncles = block.getUncleList();
         if (!uncles.isEmpty() && !validateUncleList(block.getNumber(), uncles,
-                        FamilyUtils.getAncestors(blockStore, block, uncleGenerationLimit),
-                        FamilyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit))) {
+                    familyUtils.getAncestors(blockStore, block, uncleGenerationLimit),
+                    familyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit))) {
             logger.warn("Uncles list validation failed");
             return false;
         }

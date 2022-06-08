@@ -61,6 +61,8 @@ public class BlockValidatorTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
+    private final FamilyUtils familyUtils = FamilyUtils.getInstance();
+
     @Test
     public void validEmptyUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -98,7 +100,7 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Keccak256> ancestors = familyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertTrue(ancestors.contains(genesis.getHash()));
         Assert.assertFalse(ancestors.contains(block.getHash()));
@@ -122,7 +124,7 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Keccak256> ancestors = familyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
         Assert.assertFalse(ancestors.contains(genesis.getHash()));
@@ -165,7 +167,7 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
         store.saveBlock(block2, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = familyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
         Assert.assertFalse(used.contains(block3.getHash()));

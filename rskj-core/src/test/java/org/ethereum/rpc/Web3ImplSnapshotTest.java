@@ -26,6 +26,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.FamilyUtils;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
 import co.rsk.rpc.Web3InformationRetriever;
@@ -65,12 +66,15 @@ public class Web3ImplSnapshotTest {
     private MiningMainchainView mainchainView;
     private BlockFactory blockFactory;
 
+    private FamilyUtils familyUtils;
+
     @Before
     public void setUp() {
         factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         mainchainView = factory.getMiningMainchainView();
         blockFactory = factory.getBlockFactory();
+        familyUtils = FamilyUtils.getInstance();
     }
 
     @Test
@@ -234,7 +238,8 @@ public class Web3ImplSnapshotTest {
                         blockFactory,
                         factory.getBlockExecutor(),
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(),
+                        familyUtils
                 ),
                 clock,
                 blockFactory,
