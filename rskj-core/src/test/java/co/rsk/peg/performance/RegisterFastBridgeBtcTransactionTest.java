@@ -68,7 +68,7 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
     private void registerFastBridgeBtcTransaction_success(int times, ExecutionStats stats) throws VMException {
         AddressesBuilder.build();
 
-        totalAmount = Coin.CENT.multiply(Helper.randomInRange(1, 5));
+        totalAmount = Coin.COIN.multiply(Helper.randomInRange(1, 5));
 
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForTest(
                 1000,
