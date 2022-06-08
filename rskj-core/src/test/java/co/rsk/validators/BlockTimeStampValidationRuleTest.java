@@ -70,8 +70,6 @@ public class BlockTimeStampValidationRuleTest {
         byte[] bitcoinMergedMiningHeader = new byte[0];
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
         BtcBlock btcBlock = mock(BtcBlock.class);
 
@@ -101,8 +99,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L - 1000);
 
         assertTrue(validationRule.isValid(header));
@@ -115,8 +111,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L + validPeriod);
 
         assertTrue(validationRule.isValid(header));
@@ -129,8 +123,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L + 2*validPeriod);
 
         assertFalse(validationRule.isValid(header));
@@ -143,8 +135,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
@@ -161,8 +151,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
@@ -179,8 +167,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);

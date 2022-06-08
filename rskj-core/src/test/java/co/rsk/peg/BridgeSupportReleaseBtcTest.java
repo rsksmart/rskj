@@ -146,7 +146,6 @@ public class BridgeSupportReleaseBtcTest {
         bridgeSupport.releaseBtc(releaseTx);
 
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
@@ -330,7 +329,6 @@ public class BridgeSupportReleaseBtcTest {
     @Test
     public void handmade_release_after_rskip_146_rejected_contractCaller() throws IOException {
 
-        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();

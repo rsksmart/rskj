@@ -3071,7 +3071,6 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3147,8 +3146,6 @@ public class BridgeSupportTestPowerMock {
         int bestChainHeight = 10;
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
-        when(storedBlock.getHeight()).thenReturn(bestChainHeight);
-        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksAndBtcBlockstoreForWhitelistTests(mockedWhitelist, btcBlockStore);
         //Duplicate Int Max Value by 2 because its signed and add 1 to pass the limit
         BigInteger disableBlockDelayBI = BigInteger.valueOf((long) Integer.MAX_VALUE * 2 + 1);
@@ -3370,7 +3367,6 @@ public class BridgeSupportTestPowerMock {
         when(blockHeader.getHash()).thenReturn(blockHash);
 
         BtcBlock blockHeaderInMainChain = mock(BtcBlock.class);
-        when(blockHeaderInMainChain.getHash()).thenReturn(blockHashInMainChain);
 
         int height = 50;
         StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
@@ -3612,7 +3608,6 @@ public class BridgeSupportTestPowerMock {
         Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
 
         BtcBlockStoreWithCache btcBlockStore = mock(RepositoryBtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(null);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track,
@@ -3623,11 +3618,8 @@ public class BridgeSupportTestPowerMock {
         );
 
         BtcBlock header = mock(BtcBlock.class);
-        when(header.getHash()).thenReturn(blockHash);
         StoredBlock chainHead = new StoredBlock(header, new BigInteger("0"), 6000);
-        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
@@ -3649,7 +3641,6 @@ public class BridgeSupportTestPowerMock {
         StoredBlock block = new StoredBlock(null, new BigInteger("0"), 50);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track,
@@ -3660,8 +3651,6 @@ public class BridgeSupportTestPowerMock {
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(track, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
-        when(btcBlockStore.getChainHead()).thenThrow(new BlockStoreException(""));
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
 
@@ -3683,12 +3672,9 @@ public class BridgeSupportTestPowerMock {
         StoredBlock block = new StoredBlock(null, new BigInteger("0"), 50);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
 
         BtcBlock header = mock(BtcBlock.class);
-        when(header.getHash()).thenReturn(blockHash);
         StoredBlock chainHead = new StoredBlock(header, new BigInteger("0"), 6000);
-        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track,
@@ -3699,7 +3685,6 @@ public class BridgeSupportTestPowerMock {
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(track, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 

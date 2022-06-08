@@ -97,10 +97,8 @@ public class BlockValidatorBuilder {
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore) {
         BlockHeaderValidationRule validationRule = Mockito.mock(BlockHeaderValidationRule.class);
-        Mockito.when(validationRule.isValid(Mockito.any())).thenReturn(true);
 
         BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
-        Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
 
         this.addBlockUnclesValidationRule(blockStore, validationRule, parentValidationRule);
         return this;

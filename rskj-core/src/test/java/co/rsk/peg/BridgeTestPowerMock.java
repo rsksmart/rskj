@@ -413,7 +413,6 @@ public class BridgeTestPowerMock {
 
     @Test
     public void executeWithFunctionSignatureLengthTooShortAfterRskip88() {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -453,7 +452,6 @@ public class BridgeTestPowerMock {
 
     @Test
     public void executeWithInexistentFunctionAfterRskip88() {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -593,7 +591,6 @@ public class BridgeTestPowerMock {
         }
 
         BridgeUtils bridgeUtils = mock(BridgeUtils.class);
-        when(bridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
 
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
@@ -625,7 +622,6 @@ public class BridgeTestPowerMock {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeUtils bridgeUtils = mock(BridgeUtils.class);
-        when(bridgeUtils.isFromFederateMember(any(), any())).thenReturn(true);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -637,7 +633,6 @@ public class BridgeTestPowerMock {
 
         NetworkParameters btcParamsMock = mock(NetworkParameters.class);
         BridgeConstants bridgeConstantsMock = mock(BridgeConstants.class);
-        when(bridgeConstantsMock.getBtcParams()).thenReturn(btcParamsMock);
         constants = spy(constants);
         when(constants.getBridgeConstants()).thenReturn(bridgeConstantsMock);
 
@@ -988,7 +983,6 @@ public class BridgeTestPowerMock {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory, bridgeUtils, MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
@@ -1008,7 +1002,6 @@ public class BridgeTestPowerMock {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.isLocalCallTransaction()).thenReturn(true);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
         byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
@@ -1341,7 +1334,6 @@ public class BridgeTestPowerMock {
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(config));
 
         Repository mockRepository = mock(Repository.class);
-        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
         bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
@@ -1583,7 +1575,6 @@ public class BridgeTestPowerMock {
                 bridgeSupportFactoryMock);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
         verify(bridgeSupportMock, never()).getFederatorPublicKey(any(int.class));
@@ -1600,7 +1591,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"})));
         verify(bridgeSupportMock, never()).getFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
@@ -1740,7 +1730,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
         verify(bridgeSupportMock, never()).getRetiringFederatorPublicKey(any(int.class));
@@ -1756,7 +1745,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"})));
         verify(bridgeSupportMock, never()).getRetiringFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
@@ -1858,7 +1846,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)})));
         verify(bridgeSupportMock, never()).getPendingFederatorPublicKey(any(int.class));
@@ -1874,7 +1861,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(bridge.execute(BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction().encode(new Object[]{BigInteger.valueOf(10), "btc"})));
         verify(bridgeSupportMock, never()).getPendingFederatorPublicKeyOfType(any(int.class), any(FederationMember.KeyType.class));
@@ -1971,7 +1957,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(
                 bridge.execute(BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{Hex.decode("aabbccdd")}))
@@ -1994,7 +1979,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(
                 bridge.execute(BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction().encode(new Object[]{
@@ -2152,7 +2136,6 @@ public class BridgeTestPowerMock {
                 .then((InvocationOnMock invocation) -> new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN));
 
         mockedTransaction = mock(Transaction.class);
-        when(mockedTransaction.isLocalCallTransaction()).thenReturn(true);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
@@ -2449,7 +2432,6 @@ public class BridgeTestPowerMock {
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_localCallTx() throws Exception {
         Transaction tx = mock(Transaction.class);
-        when(tx.isLocalCallTransaction()).thenReturn(true);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
@@ -2470,11 +2452,9 @@ public class BridgeTestPowerMock {
 
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx_beforeOrchid() throws Exception {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
         Transaction tx = mock(Transaction.class);
-        when(tx.isLocalCallTransaction()).thenReturn(false);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -2500,7 +2480,6 @@ public class BridgeTestPowerMock {
 
     @Test
     public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2547,7 +2526,6 @@ public class BridgeTestPowerMock {
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         byte[][] arr = new byte[1][];
         arr[0] = new byte[]{};
@@ -2830,7 +2808,6 @@ public class BridgeTestPowerMock {
 
     @Test
     public void testCallFromContract_afterOrchid() {
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
         blockFactory = new BlockFactory(activationConfig);
 
@@ -3018,7 +2995,6 @@ public class BridgeTestPowerMock {
 
         RskAddress sender = new RskAddress("2acc95758f8b5f583470ba265eb685a8f45fc9d5");
         Transaction txMock = mock(Transaction.class);
-        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         when(txMock.getSender()).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3054,7 +3030,6 @@ public class BridgeTestPowerMock {
 
         RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
         Transaction txMock = mock(Transaction.class);
-        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         when(txMock.getSender()).thenReturn(sender);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3085,12 +3060,8 @@ public class BridgeTestPowerMock {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
         Transaction txMock = mock(Transaction.class);
-        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
-        when(txMock.getSender()).thenReturn(new RskAddress(new ECKey().getAddress()));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
-        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -3138,7 +3109,6 @@ public class BridgeTestPowerMock {
 
     private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
         Transaction tx = mock(Transaction.class);
-        when(tx.isLocalCallTransaction()).thenReturn(localCall);
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -3220,7 +3190,6 @@ public class BridgeTestPowerMock {
         }
 
         Repository mockRepository = mock(Repository.class);
-        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
         bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
