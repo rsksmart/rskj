@@ -19,7 +19,6 @@
 package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.MessageSerializer;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.util.TimeProvider;
 import org.ethereum.config.Constants;
@@ -30,8 +29,9 @@ import org.ethereum.core.BlockHeader;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.function.Function;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,8 +42,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 /**
  * Created by mario on 23/01/17.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({MessageSerializer.class, NetworkParameters.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BlockTimeStampValidationRuleTest {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5 * 60;
@@ -64,7 +63,9 @@ public class BlockTimeStampValidationRuleTest {
     @Test
     public void timestampsAreCloseEnough() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, Constants.regtest(), timeProvider, bitcoinNetworkParameters);
+
+        Function<byte[], BtcBlock> blockMakerMock = mock(Function.class);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, Constants.regtest(), timeProvider, blockMakerMock);
 
         byte[] bitcoinMergedMiningHeader = new byte[0];
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
@@ -73,9 +74,8 @@ public class BlockTimeStampValidationRuleTest {
         when(block.getHeader()).thenReturn(header);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
         BtcBlock btcBlock = mock(BtcBlock.class);
-        MessageSerializer messageSerializer = mock(MessageSerializer.class);
-        when(messageSerializer.makeBlock(eq(bitcoinMergedMiningHeader))).thenReturn(btcBlock);
-        when(bitcoinNetworkParameters.getDefaultSerializer()).thenReturn(messageSerializer);
+
+        when(blockMakerMock.apply(eq(bitcoinMergedMiningHeader))).thenReturn(btcBlock);
 
         when(btcBlock.getTimeSeconds()).thenReturn(1_000L);
         when(header.getTimestamp()).thenReturn(1_000L);

@@ -19,7 +19,6 @@
 package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.util.TimeProvider;
 import org.ethereum.config.Constants;
@@ -33,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Created by mario on 23/01/17.
@@ -45,23 +45,23 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
     private final ActivationConfig activationConfig;
     private final Constants constants;
     private final TimeProvider timeProvider;
-    private final NetworkParameters bitcoinNetworkParameters;
+    private final Function<byte[], BtcBlock> btcBlockFactory;
 
     public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants,
-                                        TimeProvider timeProvider, NetworkParameters bitcoinNetworkParameters) {
+                                        TimeProvider timeProvider, Function<byte[], BtcBlock> btcBlockFactory) {
         this.validPeriodLength = validPeriodLength;
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.constants = Objects.requireNonNull(constants);
         this.timeProvider = Objects.requireNonNull(timeProvider);
-        this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters);
+        this.btcBlockFactory = Objects.requireNonNull(btcBlockFactory);
     }
 
     public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants, TimeProvider timeProvider) {
-        this(validPeriodLength, activationConfig, constants, timeProvider, RegTestParams.get());
+        this(validPeriodLength, activationConfig, constants, timeProvider, (b) -> RegTestParams.get().getDefaultSerializer().makeBlock(b));
     }
 
     public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, Constants constants) {
-        this(validPeriodLength, activationConfig, constants, System::currentTimeMillis, RegTestParams.get());
+        this(validPeriodLength, activationConfig, constants, System::currentTimeMillis, (b) -> RegTestParams.get().getDefaultSerializer().makeBlock(b));
     }
 
     @Override
@@ -144,7 +144,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
     @Nullable
     private BtcBlock makeBlock(@Nonnull byte[] bitcoinMergedMiningHeader) {
         try {
-            return bitcoinNetworkParameters.getDefaultSerializer().makeBlock(bitcoinMergedMiningHeader);
+            return btcBlockFactory.apply(bitcoinMergedMiningHeader);
         } catch (RuntimeException e) {
             logger.error("Cannot make a BTC block from `{}`", bitcoinMergedMiningHeader, e);
             return null;

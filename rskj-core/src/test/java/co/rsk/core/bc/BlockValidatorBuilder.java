@@ -153,7 +153,7 @@ public class BlockValidatorBuilder {
                 config.getActivationConfig(),
                 config.getNetworkConstants(),
                 timeProvider,
-                bitcoinNetworkParameters
+                (b) -> bitcoinNetworkParameters.getDefaultSerializer().makeBlock(b)
         );
         this.blockTimeStampValidationRule = blockTimeStampValidationRule;
 
