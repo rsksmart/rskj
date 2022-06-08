@@ -1099,6 +1099,21 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return peerScoringReporterService;
     }
 
+    public synchronized BridgeUtils getBridgeUtils() {
+        checkIfNotClosed();
+        return BridgeUtils.getInstance();
+    }
+
+    public synchronized ScriptBuilderWrapper getScriptBuilderWrapper() {
+        checkIfNotClosed();
+        return ScriptBuilderWrapper.getInstance();
+    }
+
+    public synchronized BridgeSerializationUtils getBridgeSerializationUtils() {
+        checkIfNotClosed();
+        return BridgeSerializationUtils.getInstance(getScriptBuilderWrapper());
+    }
+
     public boolean isClosed() {
         return closed;
     }
@@ -1169,18 +1184,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             wallet.close();
             logger.trace("wallet closed.");
         }
-    }
-
-    public synchronized BridgeUtils getBridgeUtils() {
-        return BridgeUtils.getInstance();
-    }
-
-    public synchronized ScriptBuilderWrapper getScriptBuilderWrapper() {
-        return ScriptBuilderWrapper.getInstance();
-    }
-
-    public synchronized BridgeSerializationUtils getBridgeSerializationUtils() {
-        return BridgeSerializationUtils.getInstance(getScriptBuilderWrapper());
     }
 
     /***** Protected Methods ******************************************************************************************/
