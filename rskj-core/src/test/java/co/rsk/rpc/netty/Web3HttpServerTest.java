@@ -72,6 +72,14 @@ public class Web3HttpServerTest {
         smokeTest(APPLICATION_JSON, domain, InetAddress.getByName(domain), rpcHost);
     }
 
+    @Test
+    public void smokeTestUsingWildcardHostAndHostName() throws Exception {
+        String domain = "www.google.com";
+        List<String> rpcHost = new ArrayList<>();
+        rpcHost.add("*");
+        smokeTest(APPLICATION_JSON, domain, InetAddress.getByName(domain), rpcHost);
+    }
+
     @Test(expected = IOException.class)
     public void smokeTestUsingInvalidHostAndHostName() throws Exception {
         InetAddress google = InetAddress.getByName("www.google.com");

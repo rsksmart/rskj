@@ -36,7 +36,9 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private List<String> getAcceptedHosts() {
         List<String> hosts = new ArrayList<>();
-        if (isAcceptedAddress(rpcAddress)) {
+        if (rpcHost.contains("*")) {
+            hosts.add("*");
+        } else if (isAcceptedAddress(rpcAddress)) {
             hosts.add(rpcAddress.getHostName());
             hosts.add(rpcAddress.getHostAddress());
         } else {
@@ -69,7 +71,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         String hostHeader = headers.get(HttpHeaders.Names.HOST);
         String parsedHeader = parseHostHeader(hostHeader);
 
-        if (!acceptedHosts.contains(parsedHeader)) {
+        if (!acceptedHosts.contains("*") && !acceptedHosts.contains(parsedHeader)) {
             logger.debug("Invalid header HOST {}", hostHeader);
             response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -91,8 +93,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             } else if (referer != null && !this.originValidator.isValidReferer(referer)) {
                 logger.debug("Invalid referer");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
-            }
-            else {
+            } else {
                 ctx.fireChannelRead(request);
                 return;
             }
@@ -115,7 +116,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private boolean isAcceptedAddress(final InetAddress address) {
         // Check if the address is a valid special local or loop back
-        if (address.isLoopbackAddress() ) {
+        if (address.isLoopbackAddress()) {
             return true;
         }
         // Check if the address is defined on any interface
