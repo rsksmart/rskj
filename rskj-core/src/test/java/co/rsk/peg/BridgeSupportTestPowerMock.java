@@ -41,6 +41,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeUtils;
 import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;

@@ -25,7 +25,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.utils.BridgeUtils;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
@@ -239,7 +241,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @VisibleForTesting
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BridgeSupportFactory bridgeSupportFactory) {
-        this(contractAddress, constants, activationConfig, bridgeSupportFactory, BridgeUtils.getInstance(), null); // TODO:I improve this VisibleForTesting
+        this(contractAddress, constants, activationConfig, bridgeSupportFactory, PegUtils.getInstance().getBridgeUtils(), null); // TODO:I improve this VisibleForTesting
     }
 
     @Override
@@ -1221,7 +1223,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            BridgeUtils bridgeUtils = BridgeUtils.getInstance(); // TODO:I think how to inject this
+            BridgeUtils bridgeUtils = PegUtils.getInstance().getBridgeUtils(); // TODO:I think how to inject this
             if (!bridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
                     && (retiringFederation == null || !bridgeUtils.isFromFederateMember(self.rskTx, retiringFederation))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);

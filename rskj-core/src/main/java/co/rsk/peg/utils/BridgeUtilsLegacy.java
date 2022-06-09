@@ -1,7 +1,10 @@
-package co.rsk.peg;
+package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.BridgeIllegalArgumentException;
+import co.rsk.peg.DeprecatedMethodCallException;
+import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 

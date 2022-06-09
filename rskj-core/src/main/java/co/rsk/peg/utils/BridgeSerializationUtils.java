@@ -16,16 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -66,7 +66,7 @@ public class BridgeSerializationUtils { // TODO:I tratar de meter en utils para 
 
     private static BridgeSerializationUtils instance;
 
-    public static BridgeSerializationUtils getInstance(ScriptBuilderWrapper scriptBuilderWrapper) {
+    static BridgeSerializationUtils getInstance(ScriptBuilderWrapper scriptBuilderWrapper) {
         if (instance == null) {
             instance = new BridgeSerializationUtils(scriptBuilderWrapper);
         }
@@ -339,7 +339,7 @@ public class BridgeSerializationUtils { // TODO:I tratar de meter en utils para 
 
         return new ErpFederation(
             federation.getMembers(),
-            federation.creationTime,
+            federation.getCreationTime(),
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),

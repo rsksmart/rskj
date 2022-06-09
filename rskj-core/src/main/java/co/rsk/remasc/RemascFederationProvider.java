@@ -19,7 +19,7 @@ package co.rsk.remasc;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.FederationSupport;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

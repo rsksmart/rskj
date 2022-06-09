@@ -1,8 +1,5 @@
 package co.rsk.peg.utils;
 
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-
 public class PegUtils {
 
     private final BridgeUtils bridgeUtils;

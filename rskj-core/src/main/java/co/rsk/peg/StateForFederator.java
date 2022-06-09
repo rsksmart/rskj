@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.crypto.Keccak256;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

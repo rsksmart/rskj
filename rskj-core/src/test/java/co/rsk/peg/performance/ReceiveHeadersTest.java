@@ -26,7 +26,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.utils.PegUtils;

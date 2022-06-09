@@ -25,7 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;

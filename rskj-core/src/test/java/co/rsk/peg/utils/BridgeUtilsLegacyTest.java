@@ -1,4 +1,4 @@
-package co.rsk.peg;
+package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -8,6 +8,8 @@ import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
 
+import co.rsk.peg.*;
+import co.rsk.peg.utils.BridgeUtilsLegacy;
 import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;

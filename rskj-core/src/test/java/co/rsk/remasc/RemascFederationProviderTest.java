@@ -2,10 +2,8 @@ package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.utils.PegUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Blockchain;

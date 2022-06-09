@@ -20,7 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PendingFederation;
 import co.rsk.peg.utils.PegUtils;

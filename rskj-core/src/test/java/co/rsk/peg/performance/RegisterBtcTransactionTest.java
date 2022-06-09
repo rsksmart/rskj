@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;

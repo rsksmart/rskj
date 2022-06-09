@@ -22,7 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
-import co.rsk.peg.BridgeSerializationUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;

@@ -26,7 +26,8 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.BridgeUtils;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
@@ -198,7 +199,7 @@ public class Transaction {
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
     public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.getInstance().isFreeBridgeTx(this, constants, activations)) { // TODO:I BridgeUtils should be received via parameter
+        if (PegUtils.getInstance().getBridgeUtils().isFreeBridgeTx(this, constants, activations)) { // TODO:I BridgeUtils should be received via parameter
             return 0;
         }
 

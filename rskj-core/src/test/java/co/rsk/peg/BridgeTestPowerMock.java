@@ -36,6 +36,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.utils.BridgeUtils;
 import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;

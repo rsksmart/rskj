@@ -20,10 +20,8 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.BridgeSerializationUtils;
 import co.rsk.peg.utils.PegUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.PrecompiledContracts;

@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.peg.utils;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
 
@@ -31,9 +31,10 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
+
 import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -57,7 +58,7 @@ public class BridgeUtils { // TODO:I tratar de meter en utils para hacer package
 
     private static BridgeUtils instance;
 
-    public static BridgeUtils getInstance() { // TODO:I delete unnecessary calls (create kinda global)
+    static BridgeUtils getInstance() { // TODO:I delete unnecessary calls (create kinda global)
         if (instance == null) {
             instance = new BridgeUtils();
         }
@@ -624,7 +625,7 @@ public class BridgeUtils { // TODO:I tratar de meter en utils para hacer package
         }
 
         final int SIGNATURE_MULTIPLIER = 72;
-        BtcTransaction pegoutTx = new BtcTransaction(federation.btcParams);
+        BtcTransaction pegoutTx = new BtcTransaction(federation.getBtcParams());
         for (int i = 0; i < inputs; i++) {
             pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
         }
