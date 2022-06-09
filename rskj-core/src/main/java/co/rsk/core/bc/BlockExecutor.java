@@ -260,11 +260,6 @@ public class BlockExecutor {
         return Arrays.equals(calculateLogsBloom(result.getTransactionReceipts()), header.getLogsBloom());
     }
 
-//    @VisibleForTesting
-//    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
-//        return execute(block, parent, discardInvalidTxs, false);
-//    }
-
     @VisibleForTesting
     public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs) {
         return executeForMining(block, parent, discardInvalidTxs, false);
@@ -428,6 +423,8 @@ public class BlockExecutor {
 
             logger.trace("tx done");
         }
+
+        addFeesToRemasc(remascFees, track);
 
         logger.trace("End txs executions.");
         if (!vmTrace) {
@@ -636,7 +633,7 @@ public class BlockExecutor {
         short buckets = 2;
 
         //TODO(Juli): Is there a better way to calculate the bucket gas limit?
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit())/buckets);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
 

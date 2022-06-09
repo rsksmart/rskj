@@ -507,9 +507,8 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
-        long bucketGasLimit = blockGasLimit/2;
         int gasLimit = 21000;
-        int transactionNumber = (int) (bucketGasLimit/gasLimit);
+        int transactionNumber = (int) (blockGasLimit /gasLimit);
         short[] expectedEdges = new short[]{(short) transactionNumber, (short) (transactionNumber*2)};
         int transactionsInSequential = 1;
 
@@ -546,9 +545,8 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
-        long bucketGasLimit = blockGasLimit/2;
         int gasLimit = 21000;
-        int transactionNumberToFillParallelBucket = (int) (bucketGasLimit/ gasLimit);
+        int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
         int transactionsInSequential = 1;
         int totalTxsNumber = transactionNumberToFillParallelBucket * 2 + transactionsInSequential;
         Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
@@ -564,9 +562,8 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
-        long bucketGasLimit = blockGasLimit/2;
         int gasLimit = 21000;
-        int transactionNumberToFillParallelBucket = (int) (bucketGasLimit/ gasLimit);
+        int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
         int totalTxs = (transactionNumberToFillParallelBucket) * 3 + 1;
         Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
@@ -580,9 +577,8 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
-        long bucketGasLimit = blockGasLimit/2;
         int gasLimit = 21000;
-        int transactionNumberToFillABucket = (int) (bucketGasLimit/ gasLimit);
+        int transactionNumberToFillABucket = (int) (blockGasLimit / gasLimit);
         int expectedNumberOfTx = transactionNumberToFillABucket*3 + 1;
         Block block = getBlockWithNIndependentTransactions(transactionNumberToFillABucket*3, BigInteger.valueOf(gasLimit), true);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());

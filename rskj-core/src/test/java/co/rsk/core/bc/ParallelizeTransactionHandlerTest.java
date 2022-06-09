@@ -56,12 +56,12 @@ public class ParallelizeTransactionHandlerTest {
         byte[] aDifferentKey = {1, 2, 3, 4};
         int blockGasLimit = 6800000;
         long gasUsedByTx = 16000;
-        long biggestGasLimitPossibleInBucket = blockGasLimit / 2 - 1;
+        long biggestGasLimitPossibleInBucket = blockGasLimit - 1;
 
         aWrappedKey = new ByteArrayWrapper(aKey);
         buckets = 2;
         sequentialBucketNumber = buckets;
-        handler = new ParallelizeTransactionHandler(buckets, blockGasLimit/buckets);
+        handler = new ParallelizeTransactionHandler(buckets, blockGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
