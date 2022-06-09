@@ -20,9 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -45,11 +43,10 @@ import static org.mockito.Mockito.when;
  */
 public class PrecompiledContractTest {
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
 
     @Test
     public void identityTest1() throws VMException {

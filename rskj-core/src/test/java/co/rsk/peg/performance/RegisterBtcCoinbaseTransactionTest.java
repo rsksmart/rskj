@@ -25,7 +25,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.BridgeMethods;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -44,8 +44,7 @@ import java.util.List;
 @Ignore
 public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     private BtcTransaction coinbaseTx;
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;

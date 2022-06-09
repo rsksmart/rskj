@@ -24,10 +24,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleTransaction;
@@ -42,9 +40,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 public class EthModuleTestUtils {
 
-    private final static BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final static ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final static BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper); // TODO:I create kind of a "Test initializer class" doing this kind of stuff
+    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     public static EthModule buildBasicEthModule(World world) {
         TestSystemProperties config = new TestSystemProperties();
@@ -61,7 +57,7 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 world.getBridgeSupportFactory(),
-                bridgeSerializationUtils,
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap());
     }
 
@@ -90,7 +86,7 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), pegUtils),
                 null
         );
     }
@@ -103,7 +99,7 @@ public class EthModuleTestUtils {
                                       BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap) {
             super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
                     executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
-                    bridgeSupportFactory, bridgeSerializationUtils, gasEstimationCap);
+                    bridgeSupportFactory, pegUtils.getBridgeSerializationUtils(), gasEstimationCap);
         }
 
         private ProgramResult estimationResult;

@@ -19,7 +19,6 @@ package org.ethereum.vm;
  */
 
 
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
@@ -31,10 +30,9 @@ import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -44,9 +42,9 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.cryptohash.Blake2b;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
-import org.ethereum.crypto.cryptohash.Blake2b;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
@@ -142,15 +140,12 @@ public class PrecompiledContracts {
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
 
-    private final BridgeUtils bridgeUtils;
+    private final PegUtils pegUtils;
 
-    private final BridgeSerializationUtils bridgeSerializationUtils;
-
-    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory, BridgeUtils bridgeUtils, BridgeSerializationUtils bridgeSerializationUtils) {
+    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory, PegUtils pegUtils) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
-        this.bridgeUtils = bridgeUtils;
-        this.bridgeSerializationUtils = bridgeSerializationUtils;
+        this.pegUtils = pegUtils;
     }
 
     public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
@@ -172,14 +167,14 @@ public class PrecompiledContracts {
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(),
-                    bridgeSupportFactory, bridgeUtils, MerkleBranch::new);
+                    bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
             RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
-            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig(), bridgeSerializationUtils);
+            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig(), pegUtils.getBridgeSerializationUtils());
         }
 
         // TODO(mc) reuse CONSENSUS_ENABLED_ADDRESSES

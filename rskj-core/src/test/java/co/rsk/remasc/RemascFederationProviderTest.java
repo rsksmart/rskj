@@ -4,6 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -17,8 +18,7 @@ import org.junit.Test;
  */
 public class RemascFederationProviderTest {
 
-    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private static final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private static final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     @Test
     public void getDefaultFederationSize() {

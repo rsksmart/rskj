@@ -20,11 +20,9 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -44,8 +42,7 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 public class RemascRskAddressActivationTest {
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     @Test
     public void testActivation() {

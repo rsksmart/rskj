@@ -25,11 +25,9 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
@@ -37,7 +35,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,9 +57,7 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
@@ -96,7 +91,7 @@ public class MinerHelper {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                config.getActivationConfig(), pegUtils);
 
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -107,7 +102,7 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils), blockTxSignatureCache);
+                    new PrecompiledContracts(config, bridgeSupportFactory, pegUtils), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

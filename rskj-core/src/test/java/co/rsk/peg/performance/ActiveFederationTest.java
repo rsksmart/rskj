@@ -24,6 +24,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -41,6 +42,9 @@ import java.util.Random;
 
 @Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {
+
+    private static final ScriptBuilderWrapper scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();;
+
     public static List<FederationMember> getNRandomFederationMembers(int n) {
         List<FederationMember> result = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -123,7 +127,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters,
-                        ScriptBuilderWrapper.getInstance()
+                        scriptBuilderWrapper
                 );
                 provider.setNewFederation(federation);
             } else {

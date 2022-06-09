@@ -25,9 +25,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.net.utils.TransactionUtils;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BitSet;
@@ -83,11 +81,8 @@ public class VMTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
 
     public VMTest(boolean isLogEnabled) {
         this.isLogEnabled = isLogEnabled;

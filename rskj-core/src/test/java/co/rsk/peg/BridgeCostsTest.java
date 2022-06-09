@@ -6,7 +6,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
@@ -35,9 +35,7 @@ public class BridgeCostsTest {
     private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BridgeSupportFactory bridgeSupportFactory;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -54,7 +52,7 @@ public class BridgeCostsTest {
         bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                activationConfig, pegUtils);
     }
 
     @Test
@@ -132,7 +130,7 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
@@ -219,7 +217,7 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {

@@ -51,8 +51,10 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.peg.*;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -465,7 +467,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory(), getBridgeUtils(), getBridgeSerializationUtils());
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory(), getPegUtils());
         }
 
         return precompiledContracts;
@@ -477,7 +479,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig(), getBridgeUtils(), getBridgeSerializationUtils(), getScriptBuilderWrapper());
+                    getRskSystemProperties().getActivationConfig(), getPegUtils());
         }
 
         return bridgeSupportFactory;
@@ -654,7 +656,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
-                    getBridgeSerializationUtils(),
+                    getPegUtils().getBridgeSerializationUtils(),
                     getRskSystemProperties().getGasEstimationCap()
             );
         }
@@ -1099,19 +1101,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return peerScoringReporterService;
     }
 
-    public synchronized BridgeUtils getBridgeUtils() {
+    public synchronized PegUtils getPegUtils() {
         checkIfNotClosed();
-        return BridgeUtils.getInstance();
-    }
-
-    public synchronized ScriptBuilderWrapper getScriptBuilderWrapper() {
-        checkIfNotClosed();
-        return ScriptBuilderWrapper.getInstance();
-    }
-
-    public synchronized BridgeSerializationUtils getBridgeSerializationUtils() {
-        checkIfNotClosed();
-        return BridgeSerializationUtils.getInstance(getScriptBuilderWrapper());
+        return PegUtils.getInstance();
     }
 
     public synchronized FamilyUtils getFamilyUtils() {

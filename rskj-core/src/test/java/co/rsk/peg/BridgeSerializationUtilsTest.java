@@ -26,10 +26,10 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -62,8 +62,7 @@ import static org.mockito.Mockito.when;
 
 public class BridgeSerializationUtilsTest {
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils defaultBridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Test
     public void serializeMapOfHashesToLong() throws Exception {
@@ -73,7 +72,7 @@ public class BridgeSerializationUtilsTest {
         sample.put(Sha256Hash.wrap(charNTimes('a', 64)), 3L);
         sample.put(Sha256Hash.wrap(charNTimes('c', 64)), 4L);
 
-        byte[] result = defaultBridgeSerializationUtils.serializeMapOfHashesToLong(sample);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeMapOfHashesToLong(sample);
 
         String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
@@ -94,8 +93,8 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeMapOfHashesToLong_emptyOrNull() throws Exception {
-        assertEquals(defaultBridgeSerializationUtils.deserializeMapOfHashesToLong(null), new HashMap<>());
-        assertEquals(defaultBridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
+        assertEquals(pegUtils.getBridgeSerializationUtils().deserializeMapOfHashesToLong(null), new HashMap<>());
+        assertEquals(pegUtils.getBridgeSerializationUtils().deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
     }
 
     @Test
@@ -110,7 +109,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpFirstKey, rlpFirstValue, rlpSecondKey, rlpSecondValue, rlpThirdKey, rlpThirdValue);
 
-        Map<Sha256Hash, Long> result = defaultBridgeSerializationUtils.deserializeMapOfHashesToLong(data);
+        Map<Sha256Hash, Long> result = pegUtils.getBridgeSerializationUtils().deserializeMapOfHashesToLong(data);
         assertEquals(3, result.size());
         assertEquals(7L, result.get(Sha256Hash.wrap(charNTimes('b', 64))).longValue());
         assertEquals(76L, result.get(Sha256Hash.wrap(charNTimes('d', 64))).longValue());
@@ -133,7 +132,7 @@ public class BridgeSerializationUtilsTest {
         boolean thrown = false;
 
         try {
-            defaultBridgeSerializationUtils.deserializeMapOfHashesToLong(data);
+            pegUtils.getBridgeSerializationUtils().deserializeMapOfHashesToLong(data);
         } catch (RuntimeException e) {
             thrown = true;
         }
@@ -164,10 +163,10 @@ public class BridgeSerializationUtilsTest {
             Instant.ofEpochMilli(0xabcdef), //
             42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            scriptBuilderWrapper
+            pegUtils.getScriptBuilderWrapper()
         );
 
-        byte[] result = defaultBridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeFederationOnlyBtcKeys(federation);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f8d3"); // Outer list
         expectedBuilder.append("83abcdef"); // Creation time
@@ -204,7 +203,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpFirstElement, rlpSecondElement, rlpKeyList);
 
-        Federation deserializedFederation = defaultBridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation deserializedFederation = pegUtils.getBridgeSerializationUtils().deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
@@ -230,7 +229,7 @@ public class BridgeSerializationUtilsTest {
         boolean thrown = false;
 
         try {
-            defaultBridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            pegUtils.getBridgeSerializationUtils().deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
@@ -272,10 +271,10 @@ public class BridgeSerializationUtilsTest {
 
         Federation testFederation = new Federation(
                 members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
-        byte[] serializedFederation = defaultBridgeSerializationUtils.serializeFederation(testFederation);
+        byte[] serializedFederation = pegUtils.getBridgeSerializationUtils().serializeFederation(testFederation);
 
         RLPList serializedList = (RLPList) RLP.decode2(serializedFederation).get(0);
 
@@ -300,7 +299,7 @@ public class BridgeSerializationUtilsTest {
         byte[] serialized = RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]));
 
         try {
-            defaultBridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            pegUtils.getBridgeSerializationUtils().deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
             Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation"));
@@ -316,7 +315,7 @@ public class BridgeSerializationUtilsTest {
         );
 
         try {
-            defaultBridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            pegUtils.getBridgeSerializationUtils().deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
             Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
@@ -333,11 +332,11 @@ public class BridgeSerializationUtilsTest {
             for (int j = 0; j < numMembers; j++) {
                 members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
             }
-            PendingFederation testPendingFederation = new PendingFederation(members, defaultBridgeSerializationUtils);
+            PendingFederation testPendingFederation = new PendingFederation(members, pegUtils.getBridgeSerializationUtils());
 
-            byte[] serializedTestPendingFederation = defaultBridgeSerializationUtils.serializePendingFederation(testPendingFederation);
+            byte[] serializedTestPendingFederation = pegUtils.getBridgeSerializationUtils().serializePendingFederation(testPendingFederation);
 
-            PendingFederation deserializedTestPendingFederation = defaultBridgeSerializationUtils.deserializePendingFederation(
+            PendingFederation deserializedTestPendingFederation = pegUtils.getBridgeSerializationUtils().deserializePendingFederation(
                     serializedTestPendingFederation);
 
             Assert.assertEquals(testPendingFederation, deserializedTestPendingFederation);
@@ -355,9 +354,9 @@ public class BridgeSerializationUtilsTest {
             members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
         }
 
-        PendingFederation testPendingFederation = new PendingFederation(members, defaultBridgeSerializationUtils);
+        PendingFederation testPendingFederation = new PendingFederation(members, pegUtils.getBridgeSerializationUtils());
 
-        byte[] serializedPendingFederation = defaultBridgeSerializationUtils.serializePendingFederation(testPendingFederation);
+        byte[] serializedPendingFederation = pegUtils.getBridgeSerializationUtils().serializePendingFederation(testPendingFederation);
 
         RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
 
@@ -380,7 +379,7 @@ public class BridgeSerializationUtilsTest {
         );
 
         try {
-            defaultBridgeSerializationUtils.deserializePendingFederation(serialized);
+            pegUtils.getBridgeSerializationUtils().deserializePendingFederation(serialized);
             Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
@@ -407,10 +406,10 @@ public class BridgeSerializationUtilsTest {
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-                })), defaultBridgeSerializationUtils
+                })), pegUtils.getBridgeSerializationUtils()
         );
 
-        byte[] result = defaultBridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializePendingFederationOnlyBtcKeys(pendingFederation);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f8cc");
         pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
@@ -438,7 +437,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpBytes);
 
-        PendingFederation deserializedPendingFederation = defaultBridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
+        PendingFederation deserializedPendingFederation = pegUtils.getBridgeSerializationUtils().deserializePendingFederationOnlyBtcKeys(data);
 
         Assert.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
@@ -466,7 +465,7 @@ public class BridgeSerializationUtilsTest {
 
         ABICallElection sample = new ABICallElection(authorizer, sampleVotes);
 
-        byte[] result = defaultBridgeSerializationUtils.serializeElection(sample);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeElection(sample);
         String hexResult = ByteUtil.toHexString(result);
 
         StringBuilder expectedBuilder = new StringBuilder();
@@ -507,9 +506,9 @@ public class BridgeSerializationUtilsTest {
     public void deserializeElection_emptyOrNull() throws Exception {
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
         ABICallElection election;
-        election = defaultBridgeSerializationUtils.deserializeElection(null, authorizer);
+        election = pegUtils.getBridgeSerializationUtils().deserializeElection(null, authorizer);
         Assert.assertEquals(0, election.getVotes().size());
-        election = defaultBridgeSerializationUtils.deserializeElection(new byte[]{}, authorizer);
+        election = pegUtils.getBridgeSerializationUtils().deserializeElection(new byte[]{}, authorizer);
         Assert.assertEquals(0, election.getVotes().size());
     }
 
@@ -554,9 +553,9 @@ public class BridgeSerializationUtilsTest {
 
         ABICallElection electionToProcess = new ABICallElection(authorizer, specsVotersToProcess);
 
-        byte[] data = defaultBridgeSerializationUtils.serializeElection(electionToProcess);
+        byte[] data = pegUtils.getBridgeSerializationUtils().serializeElection(electionToProcess);
 
-        ABICallElection election = defaultBridgeSerializationUtils.deserializeElection(data, authorizer);
+        ABICallElection election = pegUtils.getBridgeSerializationUtils().deserializeElection(data, authorizer);
 
         Assert.assertEquals(3, election.getVotes().size());
         List<RskAddress> voters;
@@ -613,7 +612,7 @@ public class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(rlpFirstElement);
 
         try {
-            defaultBridgeSerializationUtils.deserializeElection(data, mockedAuthorizer);
+            pegUtils.getBridgeSerializationUtils().deserializeElection(data, mockedAuthorizer);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("expected an even number of entries, but odd given"));
             return;
@@ -632,7 +631,7 @@ public class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(rlpFirstSpec, rlpFirstVoters);
 
         try {
-            defaultBridgeSerializationUtils.deserializeElection(data, authorizer);
+            pegUtils.getBridgeSerializationUtils().deserializeElection(data, authorizer);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized ABICallSpec"));
             return;
@@ -659,7 +658,7 @@ public class BridgeSerializationUtilsTest {
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
-        byte[] result = defaultBridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeOneOffLockWhitelist(Pair.of(
                 lockWhitelist.getAll(OneOffWhiteListEntry.class),
                 lockWhitelist.getDisableBlockHeight()
         ));
@@ -695,7 +694,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpBytes);
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = defaultBridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = pegUtils.getBridgeSerializationUtils().deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 data,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -710,14 +709,14 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeOneOffLockWhitelistAndDisableBlockHeight_null() throws Exception {
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = defaultBridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = pegUtils.getBridgeSerializationUtils().deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 null,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Assert.assertNull(deserializedLockWhitelist);
 
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = defaultBridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = pegUtils.getBridgeSerializationUtils().deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 new byte[]{},
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
@@ -733,11 +732,11 @@ public class BridgeSerializationUtilsTest {
         whitelist.put(address, new OneOffWhiteListEntry(address, Coin.COIN));
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
-        byte[] serializedLockWhitelist = defaultBridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
+        byte[] serializedLockWhitelist = pegUtils.getBridgeSerializationUtils().serializeOneOffLockWhitelist(Pair.of(
                 originalLockWhitelist.getAll(OneOffWhiteListEntry.class),
                 originalLockWhitelist.getDisableBlockHeight()
         ));
-        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = defaultBridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
+        Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = pegUtils.getBridgeSerializationUtils().deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
 
         List<Address> originalAddresses = originalLockWhitelist.getAddresses();
         List<Address> deserializedAddresses = new ArrayList(deserializedLockWhitelist.getLeft().keySet());
@@ -774,11 +773,11 @@ public class BridgeSerializationUtilsTest {
                 Instant.ofEpochMilli(0xabcdef),
                 42L,
                 networkParms,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
-        byte[] result = defaultBridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
-        Federation deserializedFederation = defaultBridgeSerializationUtils.deserializeFederationOnlyBtcKeys(result, networkParms);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeFederationOnlyBtcKeys(federation);
+        Federation deserializedFederation = pegUtils.getBridgeSerializationUtils().deserializeFederationOnlyBtcKeys(result, networkParms);
         Assert.assertThat(federation, is(deserializedFederation));
     }
 
@@ -792,7 +791,7 @@ public class BridgeSerializationUtilsTest {
         );
         ReleaseRequestQueue sample = new ReleaseRequestQueue(sampleEntries);
 
-        byte[] result = defaultBridgeSerializationUtils.serializeReleaseRequestQueue(sample);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeReleaseRequestQueue(sample);
         String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("cd");
@@ -809,8 +808,8 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeRequestQueue_emptyOrNull() throws Exception {
-        assertEquals(0, defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
-        assertEquals(0, defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
+        assertEquals(0, pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
+        assertEquals(0, pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
     }
 
     @Test
@@ -838,7 +837,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpItems);
 
-        ReleaseRequestQueue result = new ReleaseRequestQueue(defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(data, params));
+        ReleaseRequestQueue result = new ReleaseRequestQueue(pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(data, params));
 
         List<ReleaseRequestQueue.Entry> entries = result.getEntries();
         assertEquals(expectedEntries, entries);
@@ -865,7 +864,7 @@ public class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(rlpItems);
 
         try {
-            defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (RuntimeException e) {
             return;
         }
@@ -882,7 +881,7 @@ public class BridgeSerializationUtilsTest {
         ));
         ReleaseTransactionSet sample = new ReleaseTransactionSet(sampleEntries);
 
-        byte[] result = defaultBridgeSerializationUtils.serializeReleaseTransactionSet(sample);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(sample);
         String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("cd");
@@ -899,8 +898,8 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeTransactionSet_emptyOrNull() throws Exception {
-        assertEquals(0, defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
-        assertEquals(0, defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
     }
 
     @Test
@@ -932,9 +931,9 @@ public class BridgeSerializationUtilsTest {
 
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(expectedEntries);
 
-        byte[] data = defaultBridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
+        byte[] data = pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(releaseTransactionSet);
 
-        ReleaseTransactionSet result = defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(data, params);
+        ReleaseTransactionSet result = pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(data, params);
 
         Set<ReleaseTransactionSet.Entry> entries = result.getEntries();
 
@@ -957,9 +956,9 @@ public class BridgeSerializationUtilsTest {
         ));
 
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
-        byte[] serializedEntries = defaultBridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(rtc);
+        byte[] serializedEntries = pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSetWithTxHash(rtc);
 
-        defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params);
+        pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(serializedEntries, params);
 
     }
 
@@ -979,9 +978,9 @@ public class BridgeSerializationUtilsTest {
         ));
 
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
-        byte[] serializedEntries = defaultBridgeSerializationUtils.serializeReleaseTransactionSet(rtc);
+        byte[] serializedEntries = pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(rtc);
 
-        defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params, true);
+        pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(serializedEntries, params, true);
     }
 
     @Test
@@ -990,7 +989,7 @@ public class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(firstItem);
 
         try {
-            defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (RuntimeException e) {
             return;
         }
@@ -999,31 +998,31 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeDeserializeCoin() {
-        byte[] serialized1 = defaultBridgeSerializationUtils.serializeCoin(Coin.COIN);
-        Assert.assertThat(defaultBridgeSerializationUtils.deserializeCoin(serialized1),
+        byte[] serialized1 = pegUtils.getBridgeSerializationUtils().serializeCoin(Coin.COIN);
+        Assert.assertThat(pegUtils.getBridgeSerializationUtils().deserializeCoin(serialized1),
                 is(Coin.COIN));
-        byte[] serialized2 = defaultBridgeSerializationUtils.serializeCoin(Coin.valueOf(Long.MAX_VALUE));
-        Assert.assertThat(defaultBridgeSerializationUtils.deserializeCoin(serialized2),
+        byte[] serialized2 = pegUtils.getBridgeSerializationUtils().serializeCoin(Coin.valueOf(Long.MAX_VALUE));
+        Assert.assertThat(pegUtils.getBridgeSerializationUtils().deserializeCoin(serialized2),
                 is(Coin.valueOf(Long.MAX_VALUE)));
-        byte[] serialized3 = defaultBridgeSerializationUtils.serializeCoin(Coin.ZERO);
-        Assert.assertThat(defaultBridgeSerializationUtils.deserializeCoin(serialized3),
+        byte[] serialized3 = pegUtils.getBridgeSerializationUtils().serializeCoin(Coin.ZERO);
+        Assert.assertThat(pegUtils.getBridgeSerializationUtils().deserializeCoin(serialized3),
                 is(Coin.ZERO));
-        Assert.assertThat(defaultBridgeSerializationUtils.deserializeCoin(null),
+        Assert.assertThat(pegUtils.getBridgeSerializationUtils().deserializeCoin(null),
                 nullValue());
-        Assert.assertThat(defaultBridgeSerializationUtils.deserializeCoin(new byte[0]),
+        Assert.assertThat(pegUtils.getBridgeSerializationUtils().deserializeCoin(new byte[0]),
                 nullValue());
     }
 
     @Test
     public void serializeInteger() {
-        Assert.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(defaultBridgeSerializationUtils.serializeInteger(123), 0));
-        Assert.assertEquals(BigInteger.valueOf(1200), RLP.decodeBigInteger(defaultBridgeSerializationUtils.serializeInteger(1200), 0));
+        Assert.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(pegUtils.getBridgeSerializationUtils().serializeInteger(123), 0));
+        Assert.assertEquals(BigInteger.valueOf(1200), RLP.decodeBigInteger(pegUtils.getBridgeSerializationUtils().serializeInteger(1200), 0));
     }
 
     @Test
     public void deserializeInteger() {
-        Assert.assertEquals(123, defaultBridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
-        Assert.assertEquals(1200, defaultBridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
+        Assert.assertEquals(123, pegUtils.getBridgeSerializationUtils().deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
+        Assert.assertEquals(1200, pegUtils.getBridgeSerializationUtils().deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
     }
 
     @Test
@@ -1031,7 +1030,7 @@ public class BridgeSerializationUtilsTest {
         Sha256Hash originalHash = PegTestUtils.createHash(2);
         byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
 
-        byte[] result = defaultBridgeSerializationUtils.serializeSha256Hash(originalHash);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeSha256Hash(originalHash);
 
         Assert.assertArrayEquals(encodedHash, result);
     }
@@ -1041,13 +1040,13 @@ public class BridgeSerializationUtilsTest {
         Sha256Hash originalHash = PegTestUtils.createHash(2);
         byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
 
-        Sha256Hash result = defaultBridgeSerializationUtils.deserializeSha256Hash(encodedHash);
+        Sha256Hash result = pegUtils.getBridgeSerializationUtils().deserializeSha256Hash(encodedHash);
         Assert.assertEquals(originalHash, result);
     }
 
     @Test
     public void deserializeSha256Hash_nullValue() {
-        Sha256Hash result = defaultBridgeSerializationUtils.deserializeSha256Hash(null);
+        Sha256Hash result = pegUtils.getBridgeSerializationUtils().deserializeSha256Hash(null);
         Assert.assertNull(result);
     }
 
@@ -1056,7 +1055,7 @@ public class BridgeSerializationUtilsTest {
         Sha256Hash originalHash = PegTestUtils.createHash(0);
         byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
 
-        Sha256Hash result = defaultBridgeSerializationUtils.deserializeSha256Hash(encodedHash);
+        Sha256Hash result = pegUtils.getBridgeSerializationUtils().deserializeSha256Hash(encodedHash);
         Assert.assertEquals(originalHash, result);
     }
 
@@ -1064,7 +1063,7 @@ public class BridgeSerializationUtilsTest {
     public void serializeScript() {
         Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
 
-        byte[] actualData = defaultBridgeSerializationUtils.serializeScript(expectedScript);
+        byte[] actualData = pegUtils.getBridgeSerializationUtils().serializeScript(expectedScript);
 
         Assert.assertEquals(expectedScript, new Script(((RLPList) RLP.decode2(actualData).get(0)).get(0).getRLPData()));
     }
@@ -1074,14 +1073,14 @@ public class BridgeSerializationUtilsTest {
         Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
         byte[] data = RLP.encodeList(RLP.encodeElement(expectedScript.getProgram()));
 
-        Script actualScript = defaultBridgeSerializationUtils.deserializeScript(data);
+        Script actualScript = pegUtils.getBridgeSerializationUtils().deserializeScript(data);
 
         Assert.assertEquals(expectedScript, actualScript);
     }
 
     @Test
     public void deserializeFastBridgeFederationInformation_no_data() {
-        FastBridgeFederationInformation result = defaultBridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        FastBridgeFederationInformation result = pegUtils.getBridgeSerializationUtils().deserializeFastBridgeFederationInformation(
             new byte[]{},
             new byte[]{}
         );
@@ -1091,7 +1090,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeFastBridgeFederationInformation_null_data() {
-        FastBridgeFederationInformation result = defaultBridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        FastBridgeFederationInformation result = pegUtils.getBridgeSerializationUtils().deserializeFastBridgeFederationInformation(
             null,
             null
         );
@@ -1104,7 +1103,7 @@ public class BridgeSerializationUtilsTest {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        defaultBridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        pegUtils.getBridgeSerializationUtils().deserializeFastBridgeFederationInformation(
             RLP.encodeList(rlpElements),
             new byte[]{(byte)0x23}
         );
@@ -1116,7 +1115,7 @@ public class BridgeSerializationUtilsTest {
         rlpElements[0] = RLP.encodeElement(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes());
         rlpElements[1] = RLP.encodeElement(new byte[]{(byte)0x22});
 
-        FastBridgeFederationInformation result = defaultBridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        FastBridgeFederationInformation result = pegUtils.getBridgeSerializationUtils().deserializeFastBridgeFederationInformation(
             RLP.encodeList(rlpElements),
             new byte[]{(byte)0x23}
         );
@@ -1132,7 +1131,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeFastBridgeFederationInformation_no_data() {
-        byte[] result = defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(null);
+        byte[] result = pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(null);
 
         Assert.assertEquals(0, result.length);
     }
@@ -1146,8 +1145,8 @@ public class BridgeSerializationUtilsTest {
             fastBridgeFederationRedeemScriptHash
         );
 
-        FastBridgeFederationInformation result = defaultBridgeSerializationUtils.deserializeFastBridgeFederationInformation(
-            defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation),
+        FastBridgeFederationInformation result = pegUtils.getBridgeSerializationUtils().deserializeFastBridgeFederationInformation(
+            pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation),
             fastBridgeFederationRedeemScriptHash
         );
 
@@ -1167,7 +1166,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeCoinbaseInformation_dataIsNull_returnsNull() {
-        Assert.assertNull(defaultBridgeSerializationUtils.deserializeCoinbaseInformation(null));
+        Assert.assertNull(pegUtils.getBridgeSerializationUtils().deserializeCoinbaseInformation(null));
     }
 
     @Test
@@ -1178,7 +1177,7 @@ public class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(firstItem, secondItem, thirdItem);
 
         try {
-            defaultBridgeSerializationUtils.deserializeCoinbaseInformation(data);
+            pegUtils.getBridgeSerializationUtils().deserializeCoinbaseInformation(data);
             Assert.fail("Runtime exception should be thrown!");
         } catch (RuntimeException e) {
             Assert.assertEquals("Invalid serialized coinbase information, expected 1 value but got 3", e.getMessage());
@@ -1191,9 +1190,9 @@ public class BridgeSerializationUtilsTest {
         Sha256Hash witnessRoot = MerkleTreeUtils.combineLeftRight(Sha256Hash.ZERO_HASH, secondHashTx);
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessRoot);
-        byte[] serializedCoinbaseInformation = defaultBridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation);
+        byte[] serializedCoinbaseInformation = pegUtils.getBridgeSerializationUtils().serializeCoinbaseInformation(coinbaseInformation);
 
-        Assert.assertEquals(witnessRoot, defaultBridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
+        Assert.assertEquals(witnessRoot, pegUtils.getBridgeSerializationUtils().deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
     private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
@@ -1222,11 +1221,11 @@ public class BridgeSerializationUtilsTest {
                 Instant.now(),
                 123,
                 bridgeConstants.getBtcParams(),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
             );
-            byte[] serializedTestFederation = defaultBridgeSerializationUtils.serializeFederation(testFederation);
+            byte[] serializedTestFederation = pegUtils.getBridgeSerializationUtils().serializeFederation(testFederation);
 
-            Federation deserializedTestFederation = defaultBridgeSerializationUtils.deserializeFederation(
+            Federation deserializedTestFederation = pegUtils.getBridgeSerializationUtils().deserializeFederation(
                 serializedTestFederation,
                 bridgeConstants.getBtcParams()
             );
@@ -1239,11 +1238,11 @@ public class BridgeSerializationUtilsTest {
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
                 activations,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
             );
-            byte[] serializedTestErpFederation = defaultBridgeSerializationUtils.serializeFederation(testErpFederation);
+            byte[] serializedTestErpFederation = pegUtils.getBridgeSerializationUtils().serializeFederation(testErpFederation);
 
-            Federation deserializedTestErpFederation = defaultBridgeSerializationUtils.deserializeErpFederation(
+            Federation deserializedTestErpFederation = pegUtils.getBridgeSerializationUtils().deserializeErpFederation(
                 serializedTestErpFederation,
                 bridgeConstants,
                 activations

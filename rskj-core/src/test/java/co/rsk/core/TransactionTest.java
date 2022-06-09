@@ -19,11 +19,9 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -53,9 +51,7 @@ public class TransactionTest {
     private final byte chainId = config.getNetworkConstants().getChainId();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
@@ -265,8 +261,8 @@ public class TransactionTest {
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
-                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
+                            config.getActivationConfig(), pegUtils);
+                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, pegUtils);
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),

@@ -22,11 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeMainNetConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.config.TestSystemProperties;
+import co.rsk.config.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
@@ -34,6 +30,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -50,8 +47,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.util.RLP;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -87,9 +84,7 @@ public class BridgeStorageProviderTest {
 
     private int transactionOffset;
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-
-    private final BridgeSerializationUtils defaultBridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void createInstance() throws IOException {
@@ -99,7 +94,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
@@ -133,7 +128,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider0.getReleaseRequestQueue();
         provider0.getReleaseTransactionSet();
@@ -159,7 +154,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
@@ -201,7 +196,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider0.setHeightBtcTxhashAlreadyProcessed(hash1, 1L);
         provider0.setHeightBtcTxhashAlreadyProcessed(hash2, 1L);
@@ -215,7 +210,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1).isPresent());
@@ -239,7 +234,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider0.getRskTxsWaitingForSignatures().put(hash1, tx1);
         provider0.getRskTxsWaitingForSignatures().put(hash2, tx2);
@@ -255,7 +250,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
@@ -288,7 +283,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
@@ -302,7 +297,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
@@ -418,7 +413,7 @@ public class BridgeStorageProviderTest {
                 config.getNetworkConstants().getBridgeConstants().getErpFedPubKeysList(),
                 config.getNetworkConstants().getBridgeConstants().getErpFedActivationDelay(),
                 activationsAllForks,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         testGetNewFederationPostMultiKey(erpFederation, activationsAllForks);
@@ -528,7 +523,7 @@ public class BridgeStorageProviderTest {
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
                 activationsAllForks,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         testSaveNewFederationPostMultiKey(erpFederation, 2000);
@@ -640,7 +635,7 @@ public class BridgeStorageProviderTest {
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
                 activationsAllForks,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         testGetOldFederation(erpFederation, activationsAllForks);
@@ -747,7 +742,7 @@ public class BridgeStorageProviderTest {
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay(),
                 activationsAllForks,
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         testSaveOldFederation(erpFederation, 2000);
@@ -1427,7 +1422,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
                 new ReleaseRequestQueue.Entry(
@@ -1436,7 +1431,7 @@ public class BridgeStorageProviderTest {
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue"))))
                 .then((InvocationOnMock invocation) ->
-                        defaultBridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(oldEntriesList)));
+                        pegUtils.getBridgeSerializationUtils().serializeReleaseRequestQueue(new ReleaseRequestQueue(oldEntriesList)));
 
         ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
 
@@ -1464,10 +1459,10 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
 
         when(repositoryMock.getStorageBytes(any(), eq(DataWord.fromString("releaseRequestQueue")))).
-                thenReturn(defaultBridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+                thenReturn(pegUtils.getBridgeSerializationUtils().serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                activations, defaultBridgeSerializationUtils);
+                activations, pegUtils.getBridgeSerializationUtils());
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
@@ -1477,7 +1472,7 @@ public class BridgeStorageProviderTest {
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash"))))
                 .then((InvocationOnMock invocation) ->
-                        defaultBridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(newEntry)))));
+                        pegUtils.getBridgeSerializationUtils().serializeReleaseRequestQueueWithTxHash(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(newEntry)))));
 
         ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
 
@@ -1489,7 +1484,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void saveReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
                 new ReleaseRequestQueue.Entry(
@@ -1501,7 +1496,7 @@ public class BridgeStorageProviderTest {
                 Coin.COIN);
 
         doAnswer((i) -> {
-            List<ReleaseRequestQueue.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
+            List<ReleaseRequestQueue.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
             Assert.assertEquals(oldEntriesList, entries);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
@@ -1532,9 +1527,9 @@ public class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
         when(repositoryMock.getStorageBytes(any(), eq(DataWord.fromString("releaseRequestQueue")))).
-                thenReturn(defaultBridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+                thenReturn(pegUtils.getBridgeSerializationUtils().serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations, pegUtils.getBridgeSerializationUtils());
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
         releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
@@ -1543,13 +1538,13 @@ public class BridgeStorageProviderTest {
         );
 
         doAnswer((i) -> {
-            List<ReleaseRequestQueue.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
+            List<ReleaseRequestQueue.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
             Assert.assertEquals(entries, new ArrayList<>(Arrays.asList(oldEntry)));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
 
         doAnswer((i) -> {
-            List<ReleaseRequestQueue.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters, true);
+            List<ReleaseRequestQueue.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseRequestQueue(i.getArgument(2), networkParameters, true);
             Assert.assertEquals(entries, new ArrayList<>(Arrays.asList(newEntry)));
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
@@ -1565,7 +1560,7 @@ public class BridgeStorageProviderTest {
     public void getReleaseTransactionSet_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
                 new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
@@ -1573,7 +1568,7 @@ public class BridgeStorageProviderTest {
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
                 .then((InvocationOnMock invocation) ->
-                        defaultBridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+                        pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
         ReleaseTransactionSet result = storageProvider.getReleaseTransactionSet();
 
@@ -1601,10 +1596,10 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
-                .thenReturn(defaultBridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
-                config.getNetworkConstants().getBridgeConstants(), activations, defaultBridgeSerializationUtils);
+                config.getNetworkConstants().getBridgeConstants(), activations, pegUtils.getBridgeSerializationUtils());
 
         ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
 
@@ -1614,7 +1609,7 @@ public class BridgeStorageProviderTest {
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash"))))
                 .then((InvocationOnMock invocation) ->
-                        defaultBridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(new ReleaseTransactionSet(newEntriesSet)));
+                        pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSetWithTxHash(new ReleaseTransactionSet(newEntriesSet)));
 
         ReleaseTransactionSet result = storageProvider.getReleaseTransactionSet();
 
@@ -1624,7 +1619,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void saveReleaseTransactionSet_before_rskip_146_activations() throws IOException {
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
                 new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
@@ -1634,7 +1629,7 @@ public class BridgeStorageProviderTest {
         releaseTransactionSet.add(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L);
 
         doAnswer((i) -> {
-            Set<ReleaseTransactionSet.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
+            Set<ReleaseTransactionSet.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
             Assert.assertEquals(oldEntriesSet, entries);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
@@ -1661,9 +1656,9 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
 
         when(repositoryMock.getStorageBytes(any(), eq(DataWord.fromString("releaseTransactionSet")))).
-                thenReturn(defaultBridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+                thenReturn(pegUtils.getBridgeSerializationUtils().serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations, pegUtils.getBridgeSerializationUtils());
         ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
 
         releaseTransactionSet.add(new SimpleBtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams(), PegTestUtils.createHash(1)),
@@ -1671,13 +1666,13 @@ public class BridgeStorageProviderTest {
                 PegTestUtils.createHash3(0));
 
         doAnswer((i) -> {
-            Set<ReleaseTransactionSet.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
+            Set<ReleaseTransactionSet.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
             Assert.assertEquals(entries, oldEntriesSet);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
 
         doAnswer((i) -> {
-            Set<ReleaseTransactionSet.Entry> entries = defaultBridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters, true).getEntries();
+            Set<ReleaseTransactionSet.Entry> entries = pegUtils.getBridgeSerializationUtils().deserializeReleaseTransactionSet(i.getArgument(2), networkParameters, true).getEntries();
             Assert.assertEquals(entries, newEntriesSet);
             return true;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
@@ -1701,7 +1696,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations, defaultBridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations, pegUtils.getBridgeSerializationUtils());
 
         provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.getReleaseTransactionSet().add(tx2, 2L, PegTestUtils.createHash3(1));
@@ -1712,7 +1707,7 @@ public class BridgeStorageProviderTest {
         track.commit();
 
         //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations, defaultBridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
@@ -1723,7 +1718,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         Coin expectedCoin = Coin.valueOf(5325);
         provider0.setFeePerKb(expectedCoin);
@@ -1732,7 +1727,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         assertThat(provider.getFeePerKb(), is(expectedCoin));
     }
@@ -1741,10 +1736,10 @@ public class BridgeStorageProviderTest {
     public void getFeePerKbElection_emptyVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
-        byte[] serializedElection = defaultBridgeSerializationUtils.serializeElection(
+        byte[] serializedElection = pegUtils.getBridgeSerializationUtils().serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
                 .thenReturn(serializedElection);
@@ -1764,7 +1759,7 @@ public class BridgeStorageProviderTest {
                 .thenReturn(1);
         when(authorizerMock.isAuthorized(any(RskAddress.class)))
                 .thenReturn(true);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils());
 
         byte[] electionFee = new byte[]{0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
@@ -1773,7 +1768,7 @@ public class BridgeStorageProviderTest {
         voters.add(new RskAddress("0000000000000000000000000000000000004049"));
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         electionVotes.put(expectedWinner, voters);
-        byte[] serializedElection = defaultBridgeSerializationUtils.serializeElection(
+        byte[] serializedElection = pegUtils.getBridgeSerializationUtils().serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
                 .thenReturn(serializedElection);
@@ -1789,7 +1784,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setLockingCap(Coin.ZERO);
@@ -1807,7 +1802,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setLockingCap(Coin.ZERO);
@@ -1817,7 +1812,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("lockingCap"),
-                defaultBridgeSerializationUtils.serializeCoin(Coin.ZERO)
+                pegUtils.getBridgeSerializationUtils().serializeCoin(Coin.ZERO)
         );
     }
 
@@ -1831,7 +1826,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsBeforeFork, defaultBridgeSerializationUtils
+                activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertNull(provider0.getLockingCap());
@@ -1850,7 +1845,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Coin.SATOSHI, provider0.getLockingCap());
@@ -1868,7 +1863,7 @@ public class BridgeStorageProviderTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         Coin expectedCoin = Coin.valueOf(666);
@@ -1884,7 +1879,7 @@ public class BridgeStorageProviderTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         // And then we get it back
@@ -1901,11 +1896,11 @@ public class BridgeStorageProviderTest {
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash, 1L);
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-                .thenReturn(defaultBridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeMapOfHashesToLong(hashes));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
@@ -1927,16 +1922,16 @@ public class BridgeStorageProviderTest {
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash1, 1L);
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-                .thenReturn(defaultBridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeMapOfHashesToLong(hashes));
 
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
-                .thenReturn(defaultBridgeSerializationUtils.serializeLong(2L));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeLong(2L));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         // Get hash1 which is stored in old storage
@@ -1978,7 +1973,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsBeforeFork, defaultBridgeSerializationUtils
+                activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
@@ -2002,7 +1997,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
@@ -2025,7 +2020,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
@@ -2050,7 +2045,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsBeforeFork, defaultBridgeSerializationUtils
+                activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         CoinbaseInformation result = provider.getCoinbaseInformation(hash);
@@ -2067,13 +2062,13 @@ public class BridgeStorageProviderTest {
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("coinbaseInformation-" + hash.toString())))
-                .thenReturn(defaultBridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeCoinbaseInformation(coinbaseInformation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         CoinbaseInformation result = provider.getCoinbaseInformation(hash);
@@ -2090,7 +2085,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsBeforeFork, defaultBridgeSerializationUtils
+                activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -2111,7 +2106,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -2132,7 +2127,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsBeforeFork, defaultBridgeSerializationUtils
+                activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -2147,7 +2142,7 @@ public class BridgeStorageProviderTest {
         verify(repository, never()).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("coinbaseInformation" + hash.toString()),
-                defaultBridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation)
+                pegUtils.getBridgeSerializationUtils().serializeCoinbaseInformation(coinbaseInformation)
         );
     }
 
@@ -2161,7 +2156,7 @@ public class BridgeStorageProviderTest {
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
-                activationsAllForks, defaultBridgeSerializationUtils
+                activationsAllForks, pegUtils.getBridgeSerializationUtils()
         );
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -2176,7 +2171,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("coinbaseInformation-" + hash.toString()),
-                defaultBridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation)
+                pegUtils.getBridgeSerializationUtils().serializeCoinbaseInformation(coinbaseInformation)
         );
     }
 
@@ -2190,7 +2185,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<Sha256Hash> hashOptional = provider.getBtcBestBlockHashByHeight(blockHeight);
@@ -2208,7 +2203,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<Sha256Hash> hashOptional = provider.getBtcBestBlockHashByHeight(blockHeight);
@@ -2219,7 +2214,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void getBtcBestBlockHashByHeight_afterRskip199() {
         Sha256Hash blockHash = PegTestUtils.createHash(2);
-        byte[] serializedHash = defaultBridgeSerializationUtils.serializeSha256Hash(blockHash);
+        byte[] serializedHash = pegUtils.getBridgeSerializationUtils().serializeSha256Hash(blockHash);
 
         Repository repository = mock(Repository.class);
         when(repository.getStorageBytes(any(), any())).thenReturn(serializedHash);
@@ -2230,7 +2225,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<Sha256Hash> hashOptional = provider.getBtcBestBlockHashByHeight(blockHeight);
@@ -2243,7 +2238,7 @@ public class BridgeStorageProviderTest {
     public void saveBtcBlocksIndex_beforeRskip199() throws IOException {
         int blockHeight = 100;
         Sha256Hash blockHash = PegTestUtils.createHash(2);
-        byte[] serializedHash = defaultBridgeSerializationUtils.serializeSha256Hash(blockHash);
+        byte[] serializedHash = pegUtils.getBridgeSerializationUtils().serializeSha256Hash(blockHash);
 
         DataWord storageKey = DataWord.fromLongString("btcBlockHeight-" + blockHeight);
 
@@ -2254,7 +2249,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setBtcBestBlockHashByHeight(blockHeight, blockHash);
@@ -2273,7 +2268,7 @@ public class BridgeStorageProviderTest {
         DataWord storageKey = DataWord.fromLongString("btcBlockHeight-" + blockHeight);
 
         Sha256Hash blockHash = PegTestUtils.createHash(2);
-        byte[] serializedHash = defaultBridgeSerializationUtils.serializeSha256Hash(blockHash);
+        byte[] serializedHash = pegUtils.getBridgeSerializationUtils().serializeSha256Hash(blockHash);
 
         Repository repository = mock(Repository.class);
 
@@ -2282,7 +2277,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setBtcBestBlockHashByHeight(blockHeight, blockHash);
@@ -2306,7 +2301,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.empty(), provider0.getActiveFederationCreationBlockHeight());
@@ -2324,7 +2319,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.of(1L), provider0.getActiveFederationCreationBlockHeight());
@@ -2341,7 +2336,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // We store the value
@@ -2354,7 +2349,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // And then we get it back
@@ -2370,7 +2365,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setActiveFederationCreationBlockHeight(10L);
@@ -2380,7 +2375,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("activeFedCreationBlockHeight"),
-                defaultBridgeSerializationUtils.serializeLong(10L)
+                pegUtils.getBridgeSerializationUtils().serializeLong(10L)
         );
     }
 
@@ -2391,7 +2386,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider0.setActiveFederationCreationBlockHeight(10L);
@@ -2413,7 +2408,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.empty(), provider0.getNextFederationCreationBlockHeight());
@@ -2431,7 +2426,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.of(1L), provider0.getNextFederationCreationBlockHeight());
@@ -2448,7 +2443,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // We store the value
@@ -2461,7 +2456,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // And then we get it back
@@ -2475,7 +2470,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider1 = new BridgeStorageProvider(
                 repository1, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider1.setNextFederationCreationBlockHeight(10L);
@@ -2485,7 +2480,7 @@ public class BridgeStorageProviderTest {
         verify(repository1, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("nextFedCreationBlockHeight"),
-                defaultBridgeSerializationUtils.serializeLong(10L)
+                pegUtils.getBridgeSerializationUtils().serializeLong(10L)
         );
 
         Repository repository2 = mock(Repository.class);
@@ -2493,7 +2488,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(
                 repository2, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider2.clearNextFederationCreationBlockHeight();
@@ -2527,7 +2522,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
@@ -2554,7 +2549,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
@@ -2581,7 +2576,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
@@ -2608,7 +2603,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
@@ -2635,7 +2630,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
@@ -2649,7 +2644,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider1 = new BridgeStorageProvider(
                 repository1, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider1.setNextFederationCreationBlockHeight(10L);
@@ -2666,7 +2661,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(
                 repository2, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         provider2.clearNextFederationCreationBlockHeight();
@@ -2686,11 +2681,11 @@ public class BridgeStorageProviderTest {
         Script script = new Script(new byte[]{});
         // If by chance the repository is called I want to force the tests to fail
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript")))
-                .thenReturn(defaultBridgeSerializationUtils.serializeScript(script));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeScript(script));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.empty(), provider0.getLastRetiredFederationP2SHScript());
@@ -2705,12 +2700,12 @@ public class BridgeStorageProviderTest {
         Script script = new Script(new byte[]{});
         // If by chance the repository is called I want to force the tests to fail
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript")))
-                .thenReturn(defaultBridgeSerializationUtils.serializeScript(script));
+                .thenReturn(pegUtils.getBridgeSerializationUtils().serializeScript(script));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.of(script), provider0.getLastRetiredFederationP2SHScript());
@@ -2728,7 +2723,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // We store the value
@@ -2741,7 +2736,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         // And then we get it back
@@ -2757,7 +2752,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Script script = new Script(new byte[]{});
@@ -2769,7 +2764,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("lastRetiredFedP2SHScript"),
-                defaultBridgeSerializationUtils.serializeScript(script)
+                pegUtils.getBridgeSerializationUtils().serializeScript(script)
         );
     }
 
@@ -2782,7 +2777,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Script script = new Script(new byte[]{});
@@ -2813,7 +2808,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
@@ -2841,7 +2836,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.markFastBridgeFederationDerivationHashAsUsed(null, derivationHash);
@@ -2866,7 +2861,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, null);
@@ -2891,7 +2886,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
@@ -2921,7 +2916,7 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash)))
-        ).thenReturn(defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation));
+        ).thenReturn(pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation));
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2931,7 +2926,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash);
@@ -2958,7 +2953,7 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash)))
-        ).thenReturn(defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation));
+        ).thenReturn(pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation));
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
@@ -2968,7 +2963,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash);
@@ -2994,7 +2989,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash);
@@ -3013,7 +3008,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(null);
@@ -3032,7 +3027,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(new byte[]{});
@@ -3060,7 +3055,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setFastBridgeFederationInformation(fastBridgeFederationInformation);
@@ -3069,7 +3064,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash)),
-                defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
+                pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
         );
     }
 
@@ -3094,7 +3089,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setFastBridgeFederationInformation(fastBridgeFederationInformation);
@@ -3103,7 +3098,7 @@ public class BridgeStorageProviderTest {
         verify(repository, never()).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash)),
-                defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
+                pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
         );
     }
 
@@ -3128,7 +3123,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setFastBridgeFederationInformation(fastBridgeFederationInformation);
@@ -3140,7 +3135,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash)),
-                defaultBridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
+                pegUtils.getBridgeSerializationUtils().serializeFastBridgeFederationInformation(fastBridgeFederationInformation)
         );
     }
 
@@ -3150,7 +3145,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertFalse(provider.getReceiveHeadersLastTimestamp().isPresent());
@@ -3168,7 +3163,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Optional<Long> result = provider.getReceiveHeadersLastTimestamp();
@@ -3184,7 +3179,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertFalse(provider.getReceiveHeadersLastTimestamp().isPresent());
@@ -3196,7 +3191,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setReceiveHeadersLastTimestamp(System.currentTimeMillis());
@@ -3216,7 +3211,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Long timeInMillis = System.currentTimeMillis();
@@ -3226,7 +3221,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("receiveHeadersLastTimestamp"),
-                defaultBridgeSerializationUtils.serializeLong(timeInMillis)
+                pegUtils.getBridgeSerializationUtils().serializeLong(timeInMillis)
         );
     }
 
@@ -3237,7 +3232,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.save();
@@ -3256,7 +3251,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, defaultBridgeSerializationUtils
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork, pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.empty(), provider.getNextPegoutHeight());
@@ -3273,7 +3268,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertEquals(Optional.of(1L), provider.getNextPegoutHeight());
@@ -3289,7 +3284,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider1 = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider1.setNextPegoutHeight(1L);
@@ -3301,7 +3296,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(
                 track, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         assertThat(provider2.getNextPegoutHeight(), is(Optional.of(1L)));
@@ -3314,7 +3309,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setNextPegoutHeight(10L);
@@ -3334,7 +3329,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.setNextPegoutHeight(10L);
@@ -3343,7 +3338,7 @@ public class BridgeStorageProviderTest {
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 DataWord.fromString("nextPegoutHeight"),
-                defaultBridgeSerializationUtils.serializeLong(10L)
+                pegUtils.getBridgeSerializationUtils().serializeLong(10L)
         );
     }
 
@@ -3379,7 +3374,7 @@ public class BridgeStorageProviderTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 BridgeTestNetConstants.getInstance(),
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.saveNewFederationBtcUTXOs();
@@ -3418,7 +3413,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         Assert.assertEquals(0, storageProvider.getReleaseRequestQueueSize());
@@ -3431,7 +3426,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsAllForks,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
@@ -3659,7 +3654,7 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 NEW_FEDERATION_BTC_UTXOS_KEY
-        )).thenReturn(defaultBridgeSerializationUtils.serializeUTXOList(federationUtxos));
+        )).thenReturn(pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
                 PegTestUtils.createUTXO(4, 0, Coin.FIFTY_COINS),
@@ -3668,14 +3663,14 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET
-        )).thenReturn(defaultBridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
+        )).thenReturn(pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxosAfterRskipActivation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         List<UTXO> obtainedUtxos = provider.getNewFederationBtcUTXOs();
@@ -3704,7 +3699,7 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 NEW_FEDERATION_BTC_UTXOS_KEY
-        )).thenReturn(defaultBridgeSerializationUtils.serializeUTXOList(federationUtxos));
+        )).thenReturn(pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
                 PegTestUtils.createUTXO(4, 0, Coin.FIFTY_COINS),
@@ -3713,14 +3708,14 @@ public class BridgeStorageProviderTest {
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET
-        )).thenReturn(defaultBridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
+        )).thenReturn(pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxosAfterRskipActivation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activations,
-                defaultBridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         provider.getNewFederationBtcUTXOs(); // Ensure there are elements in the UTXOs list
@@ -3735,13 +3730,13 @@ public class BridgeStorageProviderTest {
             verify(repository, times(1)).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
                     NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET,
-                    defaultBridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation)
+                    pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxosAfterRskipActivation)
             );
         } else {
             verify(repository, times(1)).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
                     NEW_FEDERATION_BTC_UTXOS_KEY,
-                    defaultBridgeSerializationUtils.serializeUTXOList(federationUtxos)
+                    pegUtils.getBridgeSerializationUtils().serializeUTXOList(federationUtxos)
             );
             verify(repository, never()).addStorageBytes(
                     eq(PrecompiledContracts.BRIDGE_ADDR),
@@ -3773,12 +3768,12 @@ public class BridgeStorageProviderTest {
                 FederationTestUtils.getFederationMembersFromPks(pks),
                 Instant.ofEpochMilli(1000),
                 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
     }
 
     private PendingFederation buildMockPendingFederation(Integer... pks) {
-        return new PendingFederation(FederationTestUtils.getFederationMembersFromPks(pks), defaultBridgeSerializationUtils);
+        return new PendingFederation(FederationTestUtils.getFederationMembersFromPks(pks), pegUtils.getBridgeSerializationUtils());
     }
 
     private void useOriginalIntegerSerialization(BridgeSerializationUtils bridgeSerializationUtils) {

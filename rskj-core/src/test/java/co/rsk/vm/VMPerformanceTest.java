@@ -23,6 +23,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -64,10 +65,8 @@ public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
 
     private ProgramInvokeMockImpl invoke;
@@ -128,7 +127,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, pegUtils));
         if (useProfiler)
             waitForProfiler();
 
@@ -470,7 +469,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, pegUtils));
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -556,7 +555,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils));
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config, null, pegUtils));
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds

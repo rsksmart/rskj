@@ -83,7 +83,7 @@ public class BridgeEventLoggerImplTest {
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
 
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
     }
 
     @Test

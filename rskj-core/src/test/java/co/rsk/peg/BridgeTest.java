@@ -1,24 +1,13 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 import co.rsk.crypto.Keccak256;
-
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -33,17 +22,19 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
 
 public class BridgeTest {
 
@@ -51,14 +42,11 @@ public class BridgeTest {
     private Constants constants;
     private ActivationConfig activationConfig;
 
-    private BridgeUtils bridgeUtils;
-
-    private ScriptBuilderWrapper scriptBuilderWrapper;
+    private PegUtils pegUtils;
 
     @Before
     public void resetConfigToRegTest() {
-        bridgeUtils = BridgeUtils.getInstance();
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        pegUtils = PegUtils.getInstance();
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
         when(config.getNetworkConstants()).thenReturn(constants);
@@ -227,7 +215,7 @@ public class BridgeTest {
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            scriptBuilderWrapper
+            pegUtils.getScriptBuilderWrapper()
         );
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -274,7 +262,7 @@ public class BridgeTest {
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            scriptBuilderWrapper
+            pegUtils.getScriptBuilderWrapper()
         );
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -403,14 +391,14 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
-        byte[] refundBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
+        byte[] refundBtcAddressBytes = pegUtils.getBridgeUtils().serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
-        byte[] lpBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
+        byte[] lpBtcAddressBytes = pegUtils.getBridgeUtils().serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             lpBtcAddress
         );
@@ -471,14 +459,14 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
         Address refundBtcAddress = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
-        byte[] refundBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
+        byte[] refundBtcAddressBytes = pegUtils.getBridgeUtils().serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             refundBtcAddress
         );
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
-        byte[] lpBtcAddressBytes = bridgeUtils.serializeBtcAddressWithVersion(
+        byte[] lpBtcAddressBytes = pegUtils.getBridgeUtils().serializeBtcAddressWithVersion(
             activationConfig.forBlock(anyLong()),
             lpBtcAddress
         );

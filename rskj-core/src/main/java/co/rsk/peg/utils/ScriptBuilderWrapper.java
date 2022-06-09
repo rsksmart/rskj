@@ -7,11 +7,11 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.util.List;
 
 // TODO Refactor remaining usages of ScriptBuilder so they use this class
-public class ScriptBuilderWrapper { // TODO:I try to join as an "aggregated" class with BridgeUtils & BridgeSerializationUtils
+public class ScriptBuilderWrapper {
 
     private static ScriptBuilderWrapper instance;
 
-    public static ScriptBuilderWrapper getInstance() { // TODO:I delete unnecessary calls (create kinda global)
+    static ScriptBuilderWrapper getInstance() {
         if (instance == null) {
             instance = new ScriptBuilderWrapper();
         }

@@ -1,18 +1,20 @@
 package co.rsk.test.builders;
 
-import static org.mockito.Mockito.mock;
-
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
-import co.rsk.peg.*;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
+import co.rsk.peg.FederationSupport;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+
+import static org.mockito.Mockito.mock;
 
 public class BridgeSupportBuilder {
     private BridgeConstants bridgeConstants;
@@ -24,10 +26,7 @@ public class BridgeSupportBuilder {
     private Block executionBlock;
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
-    private BridgeUtils bridgeUtils;
-    private BridgeSerializationUtils bridgeSerializationUtils;
-
-    private ScriptBuilderWrapper scriptBuilderWrapper;
+    private PegUtils pegUtils;
 
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
@@ -39,9 +38,7 @@ public class BridgeSupportBuilder {
         this.executionBlock = mock(Block.class);
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
-        this.bridgeUtils = mock(BridgeUtils.class);
-        this.bridgeSerializationUtils = mock(BridgeSerializationUtils.class);
-        this.scriptBuilderWrapper = mock(ScriptBuilderWrapper.class);
+        this.pegUtils = mock(PegUtils.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -89,18 +86,8 @@ public class BridgeSupportBuilder {
         return this;
     }
 
-    public BridgeSupportBuilder withBridgeUtils(BridgeUtils bridgeUtils) {
-        this.bridgeUtils = bridgeUtils;
-        return this;
-    }
-
-    public BridgeSupportBuilder withBridgeSerializationUtils(BridgeSerializationUtils bridgeSerializationUtils) {
-        this.bridgeSerializationUtils = bridgeSerializationUtils;
-        return this;
-    }
-
-    public BridgeSupportBuilder withScriptBuilderWrapper(ScriptBuilderWrapper scriptBuilderWrapper) {
-        this.scriptBuilderWrapper = scriptBuilderWrapper;
+    public BridgeSupportBuilder withPegUtils(PegUtils pegUtils) {
+        this.pegUtils = pegUtils;
         return this;
     }
 
@@ -117,9 +104,7 @@ public class BridgeSupportBuilder {
             new FederationSupport(bridgeConstants, provider, executionBlock),
             btcBlockStoreFactory,
             activations,
-            bridgeUtils,
-            bridgeSerializationUtils,
-            scriptBuilderWrapper
+            pegUtils
         );
     }
 }

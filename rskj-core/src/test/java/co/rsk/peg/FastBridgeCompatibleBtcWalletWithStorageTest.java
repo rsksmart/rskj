@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -47,7 +48,7 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        ScriptBuilderWrapper scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
 
         federation = new Federation(
             FederationTestUtils.getFederationMembers(3),

@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -37,7 +38,10 @@ import org.mockito.invocation.InvocationOnMock;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -58,7 +62,7 @@ public class ReleaseTransactionBuilderTest {
 
     @Before
     public void setup() {
-        bridgeUtils = BridgeUtils.getInstance();
+        bridgeUtils = PegUtils.getInstance().getBridgeUtils();
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
@@ -74,7 +78,7 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
     }
 
     @Test

@@ -50,9 +50,7 @@ import java.util.stream.Collectors;
 /**
  * Created by mario on 20/04/17.
  */
-public class BridgeSerializationUtils {
-
-    // TODO:I try to join as an "aggregated" class with ScriptBuilderWrapper & BridgeUtils
+public class BridgeSerializationUtils { // TODO:I tratar de meter en utils para hacer package-private los getinstance de todos
 
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
@@ -68,7 +66,7 @@ public class BridgeSerializationUtils {
 
     private static BridgeSerializationUtils instance;
 
-    public static BridgeSerializationUtils getInstance(ScriptBuilderWrapper scriptBuilderWrapper) { // TODO:I delete unnecessary calls (create kinda global)
+    public static BridgeSerializationUtils getInstance(ScriptBuilderWrapper scriptBuilderWrapper) {
         if (instance == null) {
             instance = new BridgeSerializationUtils(scriptBuilderWrapper);
         }

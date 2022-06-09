@@ -25,9 +25,7 @@ import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.BN128PrecompiledContract;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -69,14 +67,12 @@ public class AltBN128Test {
     private static final int ADD_GAS_COST = 150;
     private static final int MUL_GAS_COST = 6000;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Before
     public void init() {
         config = new TestSystemProperties();
-        precompiledContracts = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
+        precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
         activations = mock(ActivationConfig.ForBlock.class);
 
         when(activations.isActive(ConsensusRule.RSKIP137)).thenReturn(true);

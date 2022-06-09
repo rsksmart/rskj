@@ -26,7 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -41,8 +41,7 @@ import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     @Test
     public void releaseBtc() throws VMException {
@@ -121,21 +120,21 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                        int sizeQueue = -1;
-                        try {
-                            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                                    (Repository) environment.getBenchmarkedRepository(),
-                                    PrecompiledContracts.BRIDGE_ADDR,
-                                    constants.getBridgeConstants(),
-                                    activationConfig.forBlock(0),
-                                    bridgeSerializationUtils
-                            );
-                            ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
-                            sizeQueue = queue.getEntries().size();
-                        } catch (IOException e) {
-                            Assert.fail();
-                        }
-                       Assert.assertEquals(queueSizeOriginal, sizeQueue);
+                    int sizeQueue = -1;
+                    try {
+                        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                                (Repository) environment.getBenchmarkedRepository(),
+                                PrecompiledContracts.BRIDGE_ADDR,
+                                constants.getBridgeConstants(),
+                                activationConfig.forBlock(0),
+                                bridgeSerializationUtils
+                        );
+                        ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
+                        sizeQueue = queue.getEntries().size();
+                    } catch (IOException e) {
+                        Assert.fail();
+                    }
+                    Assert.assertEquals(queueSizeOriginal, sizeQueue);
                 }
         );
     }

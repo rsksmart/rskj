@@ -25,8 +25,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
-import co.rsk.peg.*;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -69,10 +71,7 @@ public class BlockChainBuilder {
 
     private boolean requireUnclesValidation = true;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -209,7 +208,7 @@ public class BlockChainBuilder {
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                    config.getActivationConfig(), pegUtils);
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -231,7 +230,7 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
+                new PrecompiledContracts(config, bridgeSupportFactory, pegUtils),
                 blockTxSignatureCache
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);

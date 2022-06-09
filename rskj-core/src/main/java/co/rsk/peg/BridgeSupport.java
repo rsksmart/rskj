@@ -18,25 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcBlockChain;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.CheckpointManager;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.InsufficientMoneyException;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.UTXOProviderException;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -64,20 +46,6 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -98,10 +66,15 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -177,7 +150,6 @@ public class BridgeSupport {
     private final ActivationConfig.ForBlock activations;
     private final BridgeUtils bridgeUtils;
     private final ScriptBuilderWrapper scriptBuilderWrapper;
-
     private final BridgeSerializationUtils bridgeSerializationUtils;
 
     protected enum TxType {
@@ -199,10 +171,8 @@ public class BridgeSupport {
             FederationSupport federationSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             ActivationConfig.ForBlock activations,
-            BridgeUtils bridgeUtils,
-            BridgeSerializationUtils bridgeSerializationUtils,
-            ScriptBuilderWrapper scriptBuilderWrapper) {
-        this(bridgeConstants, provider, eventLogger, btcLockSenderProvider, peginInstructionsProvider, repository, executionBlock, btcContext, federationSupport, btcBlockStoreFactory, activations, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper, null);
+            PegUtils pegUtils) {
+        this(bridgeConstants, provider, eventLogger, btcLockSenderProvider, peginInstructionsProvider, repository, executionBlock, btcContext, federationSupport, btcBlockStoreFactory, activations, pegUtils, null);
     }
 
     @VisibleForTesting
@@ -218,9 +188,7 @@ public class BridgeSupport {
             FederationSupport federationSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
             ActivationConfig.ForBlock activations,
-            BridgeUtils bridgeUtils,
-            BridgeSerializationUtils bridgeSerializationUtils,
-            ScriptBuilderWrapper scriptBuilderWrapper,
+            PegUtils pegUtils,
             BtcBlockChain btcBlockChain) {
         this.rskRepository = repository;
         this.provider = provider;
@@ -233,9 +201,9 @@ public class BridgeSupport {
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
-        this.bridgeUtils = bridgeUtils;
-        this.scriptBuilderWrapper = scriptBuilderWrapper;
-        this.bridgeSerializationUtils = bridgeSerializationUtils;
+        this.bridgeUtils = pegUtils.getBridgeUtils();
+        this.scriptBuilderWrapper = pegUtils.getScriptBuilderWrapper();
+        this.bridgeSerializationUtils = pegUtils.getBridgeSerializationUtils();
         this.btcBlockChain = btcBlockChain; // TODO:I improve this tweak
     }
 

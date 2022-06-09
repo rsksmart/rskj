@@ -21,9 +21,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.test.World;
@@ -71,9 +69,7 @@ public class NestedContractsTest {
     private WorldDslProcessor processor;
     private EthModule ethModule;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     /** ------------------------ **
      *  SETUP
@@ -203,7 +199,7 @@ public class NestedContractsTest {
                 null,
                 null,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), pegUtils),
                 null
         );
 
@@ -218,7 +214,7 @@ public class NestedContractsTest {
                 null,
                 null,
                 world.getBridgeSupportFactory(),
-                bridgeSerializationUtils,
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap());
     }
 }

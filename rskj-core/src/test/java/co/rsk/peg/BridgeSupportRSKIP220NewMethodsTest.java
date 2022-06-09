@@ -7,7 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -21,7 +21,8 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BridgeSupportRSKIP220NewMethodsTest {
     private static Random random = new Random();
@@ -39,9 +40,7 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     private BtcBlock btcBlock;
     private BridgeSupport bridgeSupport;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Before
     public void setUpOnEachTest() throws BlockStoreException {
@@ -163,9 +162,7 @@ public class BridgeSupportRSKIP220NewMethodsTest {
                 new FederationSupport(constants, provider, executionBlock),
                 blockStoreFactory,
                 activations,
-                bridgeUtils,
-                bridgeSerializationUtils,
-                scriptBuilderWrapper
+                pegUtils
         );
     }
 }

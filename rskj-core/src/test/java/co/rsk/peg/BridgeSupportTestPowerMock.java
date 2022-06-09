@@ -41,7 +41,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -108,25 +108,21 @@ public class BridgeSupportTestPowerMock {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
 
-    private ScriptBuilderWrapper scriptBuilderWrapper;
-    private BridgeSerializationUtils bridgeSerializationUtils;
+    private PegUtils pegUtils;
 
     private BridgeConstants bridgeConstants;
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
-    private BridgeUtils bridgeUtils;
 
     private BridgeStorageProvider globalProvider;
     private Context globalBtcContext;
 
     @Before
     public void setUpOnEachTest() {
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+        pegUtils = PegUtils.getInstance();
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
-        bridgeUtils = BridgeUtils.getInstance(); // default = original
     }
 
     @Test
@@ -135,7 +131,7 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, btcBlockStoreFactory);
 
         // Force instantiation of blockstore
@@ -154,7 +150,7 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, btcBlockStoreFactory);
 
         // Force instantiation of blockstore
@@ -173,7 +169,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Coin expected = Coin.MILLICOIN;
         provider.setFeePerKb(expected);
@@ -190,7 +186,7 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, btcBlockStoreFactory);
 
         // Force instantiation of blockstore
@@ -222,7 +218,7 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         List<BtcBlock> checkpoints = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants,
@@ -235,9 +231,7 @@ public class BridgeSupportTestPowerMock {
                 new Context(bridgeConstants.getBtcParams()),
                 new FederationSupport(bridgeConstants, provider, null),
                 btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class),
-                bridgeUtils,
-                bridgeSerializationUtils,
-                scriptBuilderWrapper
+                pegUtils
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -333,7 +327,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, eventLogger, rskCurrentBlock, null);
 
@@ -362,7 +356,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30, 0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20, 0));
@@ -405,7 +399,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null);
 
@@ -416,7 +410,7 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         // reusing same bridge storage configuration as the height doesn't affect it for releases
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
@@ -435,7 +429,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
         provider0.setFeePerKb(Coin.MILLICOIN);
@@ -480,7 +474,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -498,7 +492,7 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         // reusing same bridge storage configuration as it doesn't affect the release transactions
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -515,7 +509,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         for (int i = 0; i < 2000; i++) {
@@ -561,7 +555,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -579,7 +573,7 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         // keeping same bridge storage configuration
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -598,7 +592,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.EPOCH,
                 5L,
                 bridgeConstants.getBtcParams(),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -703,7 +697,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = builder.getRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
         provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
@@ -730,7 +724,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -748,7 +742,7 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         // reusing same bridge storage configuration
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
@@ -761,7 +755,9 @@ public class BridgeSupportTestPowerMock {
 
     @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException {
-        bridgeUtils = mock(BridgeUtils.class);
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        pegUtils = spy(pegUtils);
+        when(pegUtils.getBridgeUtils()).thenReturn(bridgeUtils);
 
         // Fake wallet returned every time
         when(bridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class), anyBoolean(), any())).thenReturn(mock(Wallet.class));
@@ -769,7 +765,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         BtcTransaction txs = new BtcTransaction(btcParams);
         txs.addOutput(Coin.FIFTY_COINS, new BtcECKey());
@@ -795,7 +791,7 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         track = repository.startTracking();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
@@ -833,7 +829,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
@@ -851,7 +847,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(track, bridgeConstants, provider, activations);
@@ -893,7 +889,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(track, bridgeConstants, provider, activations);
@@ -941,7 +937,7 @@ public class BridgeSupportTestPowerMock {
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track);
 
         bridgeSupport.releaseBtc(tx);
@@ -949,7 +945,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -974,7 +970,7 @@ public class BridgeSupportTestPowerMock {
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track);
 
         bridgeSupport.releaseBtc(tx);
@@ -982,7 +978,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1009,7 +1005,7 @@ public class BridgeSupportTestPowerMock {
         );
 
         track.saveCode(tx.getSender(), new byte[]{0x1});
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track);
 
         try {
@@ -1026,7 +1022,7 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         provider.setHeightBtcTxhashAlreadyProcessed(tx.getHash(), 1L);
 
@@ -1037,7 +1033,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1053,7 +1049,7 @@ public class BridgeSupportTestPowerMock {
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, btcBlockStoreFactory);
 
@@ -1069,7 +1065,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1085,7 +1081,7 @@ public class BridgeSupportTestPowerMock {
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, btcBlockStoreFactory);
 
@@ -1101,7 +1097,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1117,7 +1113,7 @@ public class BridgeSupportTestPowerMock {
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcTransaction tx = createTransaction();
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, btcBlockStoreFactory);
 
@@ -1133,7 +1129,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
@@ -1197,7 +1193,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(track, bridgeConstants, provider, activations);
@@ -1234,7 +1230,7 @@ public class BridgeSupportTestPowerMock {
 
         track.commit();
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
 
@@ -1290,7 +1286,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -1337,7 +1333,7 @@ public class BridgeSupportTestPowerMock {
 
         Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
@@ -1358,14 +1354,14 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, parameters, scriptBuilderWrapper);
+        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, parameters, pegUtils.getScriptBuilderWrapper());
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
                 BtcECKey.fromPrivate(Hex.decode("fb02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys), Instant.ofEpochMilli(1000L), 1L, parameters, scriptBuilderWrapper);
+        Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys), Instant.ofEpochMilli(1000L), 1L, parameters, pegUtils.getScriptBuilderWrapper());
 
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
@@ -1407,7 +1403,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider.setNewFederation(activeFederation);
         provider.setOldFederation(retiringFederation);
@@ -1474,7 +1470,7 @@ public class BridgeSupportTestPowerMock {
                 .collect(Collectors.toList());
         Federation activeFederation = new Federation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
-                Instant.ofEpochMilli(1000L), 0L, params, scriptBuilderWrapper
+                Instant.ofEpochMilli(1000L), 0L, params, pegUtils.getScriptBuilderWrapper()
         );
 
         List<BtcECKey> retiringFederationKeys = Stream.of("fb01", "fb02", "fb03")
@@ -1484,7 +1480,7 @@ public class BridgeSupportTestPowerMock {
                 .collect(Collectors.toList());
         Federation retiringFederation = new Federation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys),
-                Instant.ofEpochMilli(2000L), 0L, params, scriptBuilderWrapper
+                Instant.ofEpochMilli(2000L), 0L, params, pegUtils.getScriptBuilderWrapper()
         );
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
@@ -1522,7 +1518,9 @@ public class BridgeSupportTestPowerMock {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
-        bridgeUtils = spy(bridgeUtils); // mock only certain methods, call original for the others
+        BridgeUtils bridgeUtils = spy(pegUtils.getBridgeUtils());
+        pegUtils = spy(pegUtils);
+        when(pegUtils.getBridgeUtils()).thenReturn(bridgeUtils);
 
         doReturn(false).when(bridgeUtils).isValidPegInTx(
                 any(BtcTransaction.class),
@@ -1555,13 +1553,10 @@ public class BridgeSupportTestPowerMock {
                 mockFederationSupport,
                 mockFactory,
                 activations,
-                bridgeUtils,
-                bridgeSerializationUtils,
-                scriptBuilderWrapper
+                pegUtils
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
-
         assertThat(retiringFederationUtxos, hasSize(1));
         UTXO changeUtxo = retiringFederationUtxos.get(0);
         assertThat(changeUtxo.getValue(), is(changeValue));
@@ -1580,7 +1575,7 @@ public class BridgeSupportTestPowerMock {
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams, scriptBuilderWrapper);
+        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams, pegUtils.getScriptBuilderWrapper());
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
@@ -1589,7 +1584,7 @@ public class BridgeSupportTestPowerMock {
         });
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys), Instant.ofEpochMilli(2000L), 0L, btcParams, scriptBuilderWrapper);
+        Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys), Instant.ofEpochMilli(2000L), 0L, btcParams, pegUtils.getScriptBuilderWrapper());
 
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
@@ -1625,7 +1620,7 @@ public class BridgeSupportTestPowerMock {
                 contractAddress,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
         provider.setNewFederation(federation1);
         provider.setOldFederation(federation2);
@@ -1702,7 +1697,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, bridgeSerializationUtils);
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks, pegUtils.getBridgeSerializationUtils());
 
         Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
@@ -1746,14 +1741,14 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         Federation genesisFederation = new Federation(
                 FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
 
@@ -1776,14 +1771,14 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         Federation genesisFederation = new Federation(
                 FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -1814,14 +1809,14 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 15L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         Federation oldFederation = new Federation(
                 FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1856,14 +1851,14 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 15L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
         Federation oldFederation = new Federation(
                 FederationTestUtils.getFederationMembers(6),
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1911,7 +1906,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Federation mockedOldFederation = new Federation(
@@ -1919,7 +1914,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -1950,7 +1945,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Federation mockedOldFederation = new Federation(
@@ -1958,7 +1953,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2000,7 +1995,7 @@ public class BridgeSupportTestPowerMock {
 
     @Test
     public void getPendingFederationMethods_present() throws IOException {
-        PendingFederation mockedPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5), bridgeSerializationUtils);
+        PendingFederation mockedPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null, null);
 
         Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
@@ -2125,7 +2120,7 @@ public class BridgeSupportTestPowerMock {
         mocksProvider.setWinner(mocksProvider.getSpec());
         Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
         Assert.assertTrue(Arrays.equals(
-                new PendingFederation(Collections.emptyList(), bridgeSerializationUtils).getHash().getBytes(),
+                new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash())
         );
         verify(mocksProvider.getElection(), times(1)).clearWinners();
@@ -2141,18 +2136,18 @@ public class BridgeSupportTestPowerMock {
                 null,
                 null,
                 null,
-                new PendingFederation(Collections.emptyList(), bridgeSerializationUtils),
+                new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils()),
                 mocksProvider.getElection(),
                 null
         );
 
         Assert.assertTrue(Arrays.equals(
-                new PendingFederation(Collections.emptyList(), bridgeSerializationUtils).getHash().getBytes(),
+                new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash()
         ));
         Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
         Assert.assertTrue(Arrays.equals(
-                new PendingFederation(Collections.emptyList(), bridgeSerializationUtils).getHash().getBytes(),
+                new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash()
         ));
         verify(mocksProvider.getElection(), never()).clearWinners();
@@ -2169,7 +2164,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Federation mockedOldFederation = new Federation(
@@ -2177,7 +2172,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2212,7 +2207,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Federation mockedOldFederation = new Federation(
@@ -2220,7 +2215,7 @@ public class BridgeSupportTestPowerMock {
                 Instant.ofEpochMilli(1000),
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Block mockedBlock = mock(Block.class);
@@ -2252,7 +2247,7 @@ public class BridgeSupportTestPowerMock {
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")
         }, true);
 
-        PendingFederation pendingFederation = new PendingFederation(Collections.emptyList(), bridgeSerializationUtils);
+        PendingFederation pendingFederation = new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2290,7 +2285,7 @@ public class BridgeSupportTestPowerMock {
 
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), bridgeSerializationUtils);
+        })), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2358,7 +2353,7 @@ public class BridgeSupportTestPowerMock {
 
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), bridgeSerializationUtils);
+        })), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2409,7 +2404,7 @@ public class BridgeSupportTestPowerMock {
                 Hex.decode("03e12efa1146037bc9325574b0f15749ba6dc0eec360b1670b05029eead511a6ff")
         }, true);
 
-        PendingFederation pendingFederation = new PendingFederation(Collections.emptyList(), bridgeSerializationUtils);
+        PendingFederation pendingFederation = new PendingFederation(Collections.emptyList(), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2450,7 +2445,7 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("02ebd9e8b2caff48b10e661e69fe107d6986d2df1ce7e377f2ef927f3194a61b99")),
                 ECKey.fromPublicOnly(Hex.decode("02a23343f50363dc9a4c29f0c0a8386780cc8bf469211f4de51d50f8c0f274e9a7")),
                 ECKey.fromPublicOnly(Hex.decode("030dd584c286275ab2ce249096d0d7e6c78853e0902db061b14f2e39df068f95bc"))
-        )), bridgeSerializationUtils);
+        )), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2522,7 +2517,7 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
                 ECKey.fromPublicOnly(Hex.decode("03981d06bd7bc419612aa09f860188f08d3c3010796dcb41cdfc43a6875600efa8")),
                 ECKey.fromPublicOnly(Hex.decode("0365e45f68d6347aaa03c76f3d6f47000df6090801e49eef6d49f547f5c19de5dd"))
-        )), bridgeSerializationUtils);
+        )), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2553,7 +2548,7 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("0290d68bf50a8389e541a19d47c51447b443f41a13049e0783db6a25c419d612db")),
                 ECKey.fromPublicOnly(Hex.decode("02cf0dec68ca34502e4ebd35c40a0e66ff47ba520f0418bcd7388717b12ab4b053")),
                 ECKey.fromPublicOnly(Hex.decode("0365e45f68d6347aaa03c76f3d6f47000df6090801e49eef6d49f547f5c19de5dd"))
-        )), bridgeSerializationUtils);
+        )), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2584,7 +2579,7 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("0290d68bf50a8389e541a19d47c51447b443f41a13049e0783db6a25c419d612db")),
                 ECKey.fromPublicOnly(Hex.decode("033174d2fb7a3d7a0c87d43fa3e9ba43d4962014960b82bcd793706c05f68111c8")),
                 ECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        )), bridgeSerializationUtils);
+        )), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2688,7 +2683,7 @@ public class BridgeSupportTestPowerMock {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), bridgeSerializationUtils);
+        })), pegUtils.getBridgeSerializationUtils());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2743,7 +2738,7 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
                 BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
                 BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49")))
-        ), bridgeSerializationUtils);
+        ), pegUtils.getBridgeSerializationUtils());
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
                 pendingFederation.getHash().getBytes()
@@ -2759,14 +2754,14 @@ public class BridgeSupportTestPowerMock {
                 BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
                 BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49")))),
                 Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper);
+                pegUtils.getScriptBuilderWrapper());
 
         Federation newFederation = new Federation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
                 BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
                 BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338")))),
                 Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper);
+                pegUtils.getScriptBuilderWrapper());
 
         BridgeEventLogger eventLoggerMock = mock(BridgeEventLogger.class);
 
@@ -2853,7 +2848,7 @@ public class BridgeSupportTestPowerMock {
     public void commitFederation_incompleteFederation() throws IOException, BridgeIllegalArgumentException {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), bridgeSerializationUtils);
+        })), pegUtils.getBridgeSerializationUtils());
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
                 new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
@@ -2882,7 +2877,7 @@ public class BridgeSupportTestPowerMock {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
                 BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12"))
-        })), bridgeSerializationUtils);
+        })), pegUtils.getBridgeSerializationUtils());
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
                 new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
@@ -2908,13 +2903,15 @@ public class BridgeSupportTestPowerMock {
 
     @Test
     public void getActiveFederationWallet() throws IOException {
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        pegUtils = spy(pegUtils);
+        when(pegUtils.getBridgeUtils()).thenReturn(bridgeUtils);
+
         Federation expectedFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         })), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-        scriptBuilderWrapper);
-
-        bridgeUtils = mock(BridgeUtils.class); // mock only certain methods, call original for the others
+        pegUtils.getScriptBuilderWrapper());
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -2940,21 +2937,23 @@ public class BridgeSupportTestPowerMock {
 
     @Test
     public void getRetiringFederationWallet_nonEmpty() throws IOException {
-        bridgeUtils = mock(BridgeUtils.class);
+        BridgeUtils bridgeUtils = mock(BridgeUtils.class);
+        pegUtils = spy(pegUtils);
+        when(pegUtils.getBridgeUtils()).thenReturn(bridgeUtils);
 
         Federation mockedNewFederation = new Federation(
                 FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
                 10L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                scriptBuilderWrapper
+                pegUtils.getScriptBuilderWrapper()
         );
 
         Federation expectedFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         })), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-        scriptBuilderWrapper);
+        pegUtils.getScriptBuilderWrapper());
 
         Block mockedBlock = mock(Block.class);
         when(mockedBlock.getNumber()).thenReturn(25L);
@@ -3341,7 +3340,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
@@ -3379,7 +3378,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3419,7 +3418,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3459,7 +3458,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3499,7 +3498,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3541,7 +3540,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                activationsBeforeForks, bridgeSerializationUtils
+                activationsBeforeForks, pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3581,7 +3580,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3611,7 +3610,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlock header = mock(BtcBlock.class);
@@ -3644,7 +3643,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3678,7 +3677,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -3704,7 +3703,7 @@ public class BridgeSupportTestPowerMock {
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 activationsBeforeForks,
-                bridgeSerializationUtils
+                pegUtils.getBridgeSerializationUtils()
         );
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
@@ -4055,9 +4054,7 @@ public class BridgeSupportTestPowerMock {
                 new FederationSupport(constants, provider, executionBlock),
                 blockStoreFactory,
                 activations,
-                bridgeUtils,
-                bridgeSerializationUtils,
-                scriptBuilderWrapper,
+                pegUtils,
                 btcBlockChain
         );
     }

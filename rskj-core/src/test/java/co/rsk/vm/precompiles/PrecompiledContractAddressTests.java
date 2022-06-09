@@ -20,9 +20,7 @@ package co.rsk.vm.precompiles;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.BridgeSerializationUtils;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
@@ -50,13 +48,11 @@ public class PrecompiledContractAddressTests {
 
     private final TestSystemProperties config = new TestSystemProperties();
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Test
     public void testGetPrecompile() {
-        PrecompiledContracts pcList = new PrecompiledContracts(config, null, bridgeUtils, bridgeSerializationUtils);
+        PrecompiledContracts pcList = new PrecompiledContracts(config, null, pegUtils);
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");

@@ -1,23 +1,25 @@
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import org.ethereum.vm.exception.VMException;
 
 import java.math.BigInteger;
 
@@ -25,8 +27,7 @@ import java.math.BigInteger;
 public class ReceiveHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
     private BtcBlock expectedBlock;
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     @BeforeClass
     public static void setupA() {
@@ -49,46 +50,46 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
         BridgeStorageProviderInitializer storageInitializer = generateInitializer(minBlocks, maxBlocks);
 
         executeAndAverage(
-                    "receiveHeader_success",
-                    times,
-                    getABIEncoder(false), // false to use an existed block (create new block)
-                    storageInitializer,
-                    Helper.getZeroValueRandomSenderTxBuilder(),
-                    Helper.getRandomHeightProvider(10),
-                    stats,
-                    (environment, executionResult) -> {
+                "receiveHeader_success",
+                times,
+                getABIEncoder(false), // false to use an existed block (create new block)
+                storageInitializer,
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats,
+                (environment, executionResult) -> {
 
-                        // Working fine.
-                        int result = new BigInteger(executionResult).intValue();
-                        Assert.assertEquals(0, result);
-                        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                                (Repository) environment.getBenchmarkedRepository(),
-                                PrecompiledContracts.BRIDGE_ADDR,
-                                constants.getBridgeConstants(),
-                                activationConfig.forBlock(0),
-                                bridgeSerializationUtils
-                        );
+                    // Working fine.
+                    int result = new BigInteger(executionResult).intValue();
+                    Assert.assertEquals(0, result);
+                    BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                            (Repository) environment.getBenchmarkedRepository(),
+                            PrecompiledContracts.BRIDGE_ADDR,
+                            constants.getBridgeConstants(),
+                            activationConfig.forBlock(0),
+                            bridgeSerializationUtils
+                    );
 
-                        // Best Block is the new block added.
-                        BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.
-                                Factory(networkParameters).
-                                newInstance(
-                                        (Repository) environment.getBenchmarkedRepository(),
-                                        bridgeConstants,
-                                        bridgeStorageProvider,
-                                        null
-                                );
+                    // Best Block is the new block added.
+                    BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.
+                            Factory(networkParameters).
+                            newInstance(
+                                    (Repository) environment.getBenchmarkedRepository(),
+                                    bridgeConstants,
+                                    bridgeStorageProvider,
+                                    null
+                            );
 
-                        Sha256Hash bestBlockHash = null;
-                        try {
-                            bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
-                        } catch (BlockStoreException e) {
-                            Assert.fail(e.getMessage());
-                        }
-                        Assert.assertEquals(expectedBlock.getHash(), bestBlockHash);
+                    Sha256Hash bestBlockHash = null;
+                    try {
+                        bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
+                    } catch (BlockStoreException e) {
+                        Assert.fail(e.getMessage());
                     }
-            );
-        }
+                    Assert.assertEquals(expectedBlock.getHash(), bestBlockHash);
+                }
+        );
+    }
 
     private void receiveHeader_block_already_saved(int times, ExecutionStats stats) throws VMException {
         int minBlocks = 10;

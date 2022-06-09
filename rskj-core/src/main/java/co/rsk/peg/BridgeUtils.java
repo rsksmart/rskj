@@ -51,9 +51,7 @@ import java.util.stream.Stream;
 /**
  * @author Oscar Guindzberg
  */
-public class BridgeUtils {
-
-    // TODO:I try to join as an "aggregated" class with ScriptBuilderWrapper & BridgeSerializationUtils
+public class BridgeUtils { // TODO:I tratar de meter en utils para hacer package-private los getinstance de todos
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 

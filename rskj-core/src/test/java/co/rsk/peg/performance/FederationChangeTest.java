@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -41,9 +42,8 @@ import java.util.stream.Collectors;
 
 @Ignore
 public class FederationChangeTest extends BridgePerformanceTestCase {
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
 
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     // regtest constants
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{

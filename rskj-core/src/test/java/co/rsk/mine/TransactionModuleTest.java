@@ -28,11 +28,9 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -63,9 +61,12 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
-import org.ethereum.rpc.*;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.rpc.Web3Impl;
+import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
@@ -77,7 +78,6 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.time.Clock;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.mock;
 
 public class TransactionModuleTest {
@@ -85,9 +85,7 @@ public class TransactionModuleTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     private final FamilyUtils familyUtils = FamilyUtils.getInstance();
 
@@ -641,8 +639,8 @@ public class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
-                bridgeSerializationUtils,
+                        config.getActivationConfig(), pegUtils),
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
@@ -691,7 +689,7 @@ public class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
+                new PrecompiledContracts(config, bridgeSupportFactory(), pegUtils),
                 blockTxSignatureCache
         );
     }
@@ -703,7 +701,7 @@ public class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory(), bridgeUtils, bridgeSerializationUtils),
+                new PrecompiledContracts(config, bridgeSupportFactory(), pegUtils),
                 blockTxSignatureCache
         );
     }
@@ -712,7 +710,7 @@ public class TransactionModuleTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                config.getActivationConfig(), pegUtils);
         return bridgeSupportFactory;
     }
 }

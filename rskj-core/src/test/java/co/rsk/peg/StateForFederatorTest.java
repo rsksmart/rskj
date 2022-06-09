@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -43,8 +44,7 @@ public class StateForFederatorTest {
 
     private static final NetworkParameters NETWORK_PARAMETERS = BridgeRegTestConstants.getInstance().getBtcParams();
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final BridgeSerializationUtils bridgeSerializationUtils = PegUtils.getInstance().getBridgeSerializationUtils();
 
     @Test
     public void serialize() {

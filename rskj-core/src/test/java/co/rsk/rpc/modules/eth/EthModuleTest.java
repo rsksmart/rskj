@@ -18,13 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyByte;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -34,19 +27,13 @@ import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
@@ -59,8 +46,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -69,9 +55,7 @@ public class EthModuleTest {
     private TestSystemProperties config = new TestSystemProperties();
     private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Test
     public void callSmokeTest() {
@@ -102,8 +86,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
-                bridgeSerializationUtils,
+                new BridgeSupportFactory(null, null, null, pegUtils),
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
@@ -141,8 +125,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
-                bridgeSerializationUtils,
+                new BridgeSupportFactory(null, null, null, pegUtils),
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
@@ -185,8 +169,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                new BridgeSupportFactory(null, null, null, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper),
-                bridgeSerializationUtils,
+                new BridgeSupportFactory(null, null, null, pegUtils),
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap());
 
         try {
@@ -277,9 +261,9 @@ public class EthModuleTest {
                         null,
                         null,
                         null,
-                        bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper
+                        pegUtils
                 ),
-                bridgeSerializationUtils,
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap()
         );
 
@@ -300,7 +284,7 @@ public class EthModuleTest {
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class),
-                bridgeSerializationUtils,
+                pegUtils.getBridgeSerializationUtils(),
                 config.getGasEstimationCap()
         );
         assertThat(eth.chainId(), is("0x21"));

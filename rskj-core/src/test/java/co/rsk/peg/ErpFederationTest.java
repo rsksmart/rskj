@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -44,7 +45,7 @@ public class ErpFederationTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
 
         federation = new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),

@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -50,7 +51,7 @@ public class FederationTest {
 
     @Before
     public void setUp() {
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
 
         federation = createFederation(scriptBuilderWrapper);
 

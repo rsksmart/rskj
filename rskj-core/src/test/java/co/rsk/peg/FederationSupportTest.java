@@ -20,6 +20,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -44,7 +45,7 @@ public class FederationSupportTest {
     private BridgeConstants bridgeConstants;
     private BridgeStorageProvider provider;
     private Block executionBlock;
-
+    private ScriptBuilderWrapper scriptBuilderWrapper;
 
     @Before
     public void setUp() {
@@ -52,6 +53,8 @@ public class FederationSupportTest {
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
         federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
+
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
     }
 
     @Test
@@ -124,7 +127,7 @@ public class FederationSupportTest {
                         new FederationMember(btcKey1, rskKey1, mstKey1)
                 ), Instant.ofEpochMilli(123), 456,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                ScriptBuilderWrapper.getInstance()
+                scriptBuilderWrapper
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
@@ -192,7 +195,7 @@ public class FederationSupportTest {
         return new Federation(
                 Collections.emptyList(), Instant.ofEpochMilli(123),
                 creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                ScriptBuilderWrapper.getInstance()
+                scriptBuilderWrapper
         );
     }
 }

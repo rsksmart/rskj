@@ -11,8 +11,8 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.RejectedPegoutReason;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
@@ -58,7 +58,7 @@ public class BridgeSupportReleaseBtcTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final ECKey SENDER = new ECKey();
-    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     private BridgeConstants bridgeConstants;
     private ActivationConfig.ForBlock activationsBeforeForks;
@@ -71,14 +71,9 @@ public class BridgeSupportReleaseBtcTest {
     private BridgeSupport bridgeSupport;
     private Transaction releaseTx;
     private BridgeSupportBuilder bridgeSupportBuilder;
-    private BridgeUtils bridgeUtils;
-
-    private BridgeSerializationUtils bridgeSerializationUtils;
 
     @Before
     public void setUpOnEachTest() throws IOException {
-        bridgeUtils = BridgeUtils.getInstance();
-        bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
         bridgeConstants = BridgeRegTestConstants.getInstance();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activeFederation = getFederation();
@@ -460,7 +455,7 @@ public class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         Coin feePerKB = Coin.COIN;
 
-        int pegoutSize = bridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        int pegoutSize = pegUtils.getBridgeUtils().getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
 
         testPegoutMinimumWithFeeVerification(feePerKB, value, false);
@@ -471,7 +466,7 @@ public class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         Coin feePerKB = Coin.COIN;
 
-        int pegoutSize = bridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        int pegoutSize = pegUtils.getBridgeUtils().getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin value = feePerKB.div(1000).times(pegoutSize);
 
         testPegoutMinimumWithFeeVerification(feePerKB, value, false);
@@ -934,7 +929,7 @@ public class BridgeSupportReleaseBtcTest {
 
         provider.setFeePerKb(feePerKB);
 
-        int pegoutSize = bridgeUtils.getRegularPegoutTxSize(activationMock, provider.getNewFederation());
+        int pegoutSize = pegUtils.getBridgeUtils().getRegularPegoutTxSize(activationMock, provider.getNewFederation());
         Coin minValueAccordingToFee = provider.getFeePerKb().div(1000).times(pegoutSize);
         Coin minValueWithGapAboveFee = minValueAccordingToFee.add(minValueAccordingToFee.times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee()).div(100));
         // if shouldPegout true then value should be greater or equals than both required fee plus gap and min pegout value
@@ -1032,7 +1027,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeStorageProvider initProvider(Repository repository, ActivationConfig.ForBlock activationMock) throws IOException {
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationMock, bridgeSerializationUtils);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationMock, pegUtils.getBridgeSerializationUtils());
         provider.getNewFederationBtcUTXOs().add(utxo);
         provider.setNewFederation(activeFederation);
         return provider;
@@ -1081,9 +1076,7 @@ public class BridgeSupportReleaseBtcTest {
             new FederationSupport(constants, provider, executionBlock),
             blockStoreFactory,
             activations,
-            bridgeUtils,
-            bridgeSerializationUtils,
-            scriptBuilderWrapper,
+            pegUtils,
             null
         );
     }
@@ -1094,15 +1087,12 @@ public class BridgeSupportReleaseBtcTest {
             Instant.ofEpochMilli(1000),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            scriptBuilderWrapper
+            pegUtils.getScriptBuilderWrapper()
         );
     }
 
     private BridgeSupportBuilder initialiseCommonBridgeSupportBuilder() {
-        return bridgeSupportBuilder
-                .withBridgeUtils(bridgeUtils)
-                .withBridgeSerializationUtils(bridgeSerializationUtils)
-                .withScriptBuilderWrapper(scriptBuilderWrapper);
+        return bridgeSupportBuilder.withPegUtils(pegUtils);
     }
 
 }

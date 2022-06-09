@@ -27,8 +27,10 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.peg.*;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -72,9 +74,7 @@ class RemascTestRunner {
     private Block genesis;
     private RskAddress fixedCoinbase;
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
@@ -136,8 +136,8 @@ class RemascTestRunner {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
                 builder.getConfig().getNetworkConstants().getBridgeConstants(),
-                builder.getConfig().getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
+                builder.getConfig().getActivationConfig(), pegUtils);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, pegUtils);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),

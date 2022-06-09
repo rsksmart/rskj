@@ -33,12 +33,10 @@ import co.rsk.net.BlockSyncService;
 import co.rsk.net.NetBlockStore;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -77,9 +75,7 @@ public class World {
     private BridgeSupportFactory bridgeSupportFactory;
     private BlockTxSignatureCache blockTxSignatureCache;
     private ReceivedTxSignatureCache receivedTxSignatureCache;
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     public World() {
         this(new BlockChainBuilder());
@@ -145,7 +141,7 @@ public class World {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                config.getActivationConfig(), pegUtils);
         this.receivedTxSignatureCache = new ReceivedTxSignatureCache();
         this.blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
     }
@@ -169,7 +165,7 @@ public class World {
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), pegUtils);
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
@@ -181,7 +177,7 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
+                            new PrecompiledContracts(config, bridgeSupportFactory, pegUtils),
                             blockTxSignatureCache
                     )
             );

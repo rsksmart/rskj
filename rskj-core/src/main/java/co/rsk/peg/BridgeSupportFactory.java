@@ -26,14 +26,13 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
-import java.util.List;
-
-import co.rsk.peg.utils.ScriptBuilderWrapper;
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.LogInfo;
+
+import java.util.List;
 
 /**
  * BridgeSupportFactory allows BridgeSupport instantiation.
@@ -43,19 +42,15 @@ public class BridgeSupportFactory {
     private final Factory btcBlockStoreFactory;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
-    private final BridgeUtils bridgeUtils;
-    private final BridgeSerializationUtils bridgeSerializationUtils;
-    private final ScriptBuilderWrapper scriptBuilderWrapper;
+    private final PegUtils pegUtils;
 
     public BridgeSupportFactory(Factory btcBlockStoreFactory,
-            BridgeConstants bridgeConstants, ActivationConfig activationConfig, BridgeUtils bridgeUtils, BridgeSerializationUtils bridgeSerializationUtils, ScriptBuilderWrapper scriptBuilderWrapper) {
+            BridgeConstants bridgeConstants, ActivationConfig activationConfig, PegUtils pegUtils) {
 
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
-        this.bridgeUtils = bridgeUtils;
-        this.bridgeSerializationUtils = bridgeSerializationUtils;
-        this.scriptBuilderWrapper = scriptBuilderWrapper;
+        this.pegUtils = pegUtils;
     }
 
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
@@ -68,7 +63,7 @@ public class BridgeSupportFactory {
             contractAddress,
             bridgeConstants,
             activations,
-            bridgeSerializationUtils
+            pegUtils.getBridgeSerializationUtils()
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
@@ -95,9 +90,7 @@ public class BridgeSupportFactory {
                 federationSupport,
                 btcBlockStoreFactory,
                 activations,
-                bridgeUtils,
-                bridgeSerializationUtils,
-                scriptBuilderWrapper
+                pegUtils
         );
     }
 }

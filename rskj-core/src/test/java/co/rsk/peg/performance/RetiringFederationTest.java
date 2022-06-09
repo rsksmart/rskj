@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -35,6 +36,9 @@ import java.util.Random;
 
 @Ignore
 public class RetiringFederationTest extends BridgePerformanceTestCase {
+
+    private final ScriptBuilderWrapper scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
+
     private Federation retiringFederation;
 
     @Test
@@ -66,18 +70,18 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
     public void getRetiringFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getRetiringFederatorPublicKey");
         ABIEncoder abiEncoder;
-        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size()-1)});
-        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true,50, stats);
+        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size() - 1)});
+        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true, 50, stats);
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
-        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false,500, stats);
+        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false, 500, stats);
 
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
         ExecutionStats stats = new ExecutionStats(fn.name);
-        executeTestCaseSection(fn,true,50, stats);
-        executeTestCaseSection(fn,false,500, stats);
+        executeTestCaseSection(fn, true, 50, stats);
+        executeTestCaseSection(fn, false, 500, stats);
 
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
@@ -109,7 +113,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters,
-                        ScriptBuilderWrapper.getInstance()
+                        scriptBuilderWrapper
                 );
                 provider.setNewFederation(bridgeConstants.getGenesisFederation());
                 provider.setOldFederation(retiringFederation);

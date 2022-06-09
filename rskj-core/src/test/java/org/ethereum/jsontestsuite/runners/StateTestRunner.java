@@ -29,11 +29,9 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.peg.BridgeSerializationUtils;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -73,16 +71,14 @@ public class StateTestRunner {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-    private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
+    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
-    private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
     private final RepositoryBtcBlockStoreWithCache.Factory blockStoreWithCache = new RepositoryBtcBlockStoreWithCache.Factory(
             config.getNetworkConstants().bridgeConstants.getBtcParams()
     );
 
     private final BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-           blockStoreWithCache, BridgeRegTestConstants.getInstance(), config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+           blockStoreWithCache, BridgeRegTestConstants.getInstance(), config.getActivationConfig(), pegUtils);
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -102,7 +98,7 @@ public class StateTestRunner {
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
         setstateTestUSeREMASC(false);
-        precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils);
+        precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, pegUtils);
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {

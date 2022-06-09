@@ -8,6 +8,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.List;
 
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.peg.utils.ScriptBuilderWrapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -31,7 +32,7 @@ public class BridgeUtilsLegacyTest {
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
-        scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
+        scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper();
     }
 
     @Test(expected = DeprecatedMethodCallException.class)

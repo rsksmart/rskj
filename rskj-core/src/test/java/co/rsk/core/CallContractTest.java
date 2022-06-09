@@ -19,8 +19,10 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.peg.*;
-import co.rsk.peg.utils.ScriptBuilderWrapper;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.utils.PegUtils;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
@@ -40,9 +42,7 @@ public class CallContractTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-    private static final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
-    private static final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
-    private static final BridgeSerializationUtils bridgeSerializationUtils = BridgeSerializationUtils.getInstance(scriptBuilderWrapper);
+    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
 
     @Test
     public void callContractReturningOne() {
@@ -75,7 +75,7 @@ public class CallContractTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 btcBlockStoreFactory,
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig(), bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
+                config.getActivationConfig(), pegUtils);
 
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
@@ -84,7 +84,7 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory, bridgeUtils, bridgeSerializationUtils),
+                    new PrecompiledContracts(config, bridgeSupportFactory, pegUtils),
                     world.getBlockTxSignatureCache()
             );
 
