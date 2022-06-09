@@ -4019,7 +4019,7 @@ public class BridgeSupportTestPowerMock {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
 
-        return getBridgeSupport(constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock, blockStoreFactory, activations);
+        return getBridgeSupport(constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock, blockStoreFactory, activations, null);
     }
 
     private BridgeSupport getBridgeSupport(
