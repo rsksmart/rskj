@@ -36,13 +36,16 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private List<String> getAcceptedHosts() {
         List<String> hosts = new ArrayList<>();
-        if (rpcHost.contains("*")) {
-            hosts.add("*");
-        } else if (isAcceptedAddress(rpcAddress)) {
+        if (isAcceptedAddress(rpcAddress)) {
             hosts.add(rpcAddress.getHostName());
             hosts.add(rpcAddress.getHostAddress());
         } else {
             for (String host : rpcHost) {
+                if (host.equals("*")) {
+                    hosts.add("*");
+                    continue;
+                }
+
                 try {
                     InetAddress hostAddress = InetAddress.getByName(host);
                     if (!hostAddress.isAnyLocalAddress()) {
@@ -69,14 +72,40 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         // the request will be inmediately rejected since it won't be parsed as a valid URI
         // and won't work to match an item on rpc.host
         String hostHeader = headers.get(HttpHeaders.Names.HOST);
-        String parsedHeader = parseHostHeader(hostHeader);
 
-        if (!acceptedHosts.contains("*") && !acceptedHosts.contains(parsedHeader)) {
-            logger.debug("Invalid header HOST {}", hostHeader);
-            response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
-            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+        if (hostHeader.isEmpty()) {
+            this.serveRequest(ctx, request);
             return;
         }
+
+        String host = parseHostHeader(hostHeader);
+
+        if (isValidIpAddress(host)) {
+            this.serveRequest(ctx, request);
+            return;
+        }
+
+        if (acceptedHosts.contains("*")) {
+            this.serveRequest(ctx, request);
+            return;
+        }
+
+        if (acceptedHosts.contains(host)) {
+            this.serveRequest(ctx, request);
+            return;
+        }
+
+        logger.debug("Invalid header HOST {}", hostHeader);
+        response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+        ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+        return;
+
+    }
+
+    protected void serveRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        HttpResponse response;
+        HttpMethod httpMethod = request.getMethod();
+        HttpHeaders headers = request.headers();
 
         if (HttpMethod.POST.equals(httpMethod)) {
 
@@ -127,4 +156,37 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         }
     }
 
+    private boolean isValidIpAddress(String ip) {
+        return isIPv4(ip) || isIPv6(ip);
+    }
+
+    private boolean isIPv4(String ipAddress) {
+        boolean isIPv4 = false;
+
+        if (ipAddress != null) {
+            try {
+                InetAddress inetAddress = InetAddress.getByName(ipAddress);
+                isIPv4 = (inetAddress instanceof Inet4Address) && inetAddress.getHostAddress().equals(ipAddress);
+            } catch (UnknownHostException ex) {
+                logger.warn("Unknown host", ex);
+            }
+        }
+
+        return isIPv4;
+    }
+
+    private boolean isIPv6(String ipAddress) {
+        boolean isIPv6 = false;
+
+        if (ipAddress != null) {
+            try {
+                InetAddress inetAddress = InetAddress.getByName(ipAddress);
+                isIPv6 = (inetAddress instanceof Inet6Address);
+            } catch (UnknownHostException ex) {
+                logger.warn("Unknown host", ex);
+            }
+        }
+
+        return isIPv6;
+    }
 }

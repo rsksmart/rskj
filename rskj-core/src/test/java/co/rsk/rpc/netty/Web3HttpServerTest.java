@@ -83,7 +83,7 @@ public class Web3HttpServerTest {
     @Test(expected = IOException.class)
     public void smokeTestUsingInvalidHostAndHostName() throws Exception {
         InetAddress google = InetAddress.getByName("www.google.com");
-        smokeTest(APPLICATION_JSON, google.getHostAddress(), google, new ArrayList<>());
+        smokeTest(APPLICATION_JSON, "this is a wrong host", google, new ArrayList<>());
     }
 
 
