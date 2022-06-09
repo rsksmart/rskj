@@ -71,7 +71,7 @@ public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */

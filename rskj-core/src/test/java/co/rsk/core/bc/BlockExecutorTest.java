@@ -76,7 +76,7 @@ public class BlockExecutorTest {
     private static final TestSystemProperties CONFIG = new TestSystemProperties();
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(CONFIG.getActivationConfig());
 
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     private Blockchain blockchain;
     private BlockExecutor executor;

@@ -40,7 +40,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 public class EthModuleTestUtils {
 
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     public static EthModule buildBasicEthModule(World world) {
         TestSystemProperties config = new TestSystemProperties();

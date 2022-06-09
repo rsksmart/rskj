@@ -67,7 +67,7 @@ public class RemascStorageProviderTest {
     private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
         assertEquals(expectedRewardBalance, provider.getRewardBalance());

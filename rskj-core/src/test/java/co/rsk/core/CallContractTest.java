@@ -42,7 +42,7 @@ public class CallContractTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void callContractReturningOne() {

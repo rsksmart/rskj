@@ -41,7 +41,7 @@ public class ProgramMemoryTest {
     ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
     Program program;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Before
     public void createProgram() {

@@ -55,7 +55,7 @@ public class EthModuleTest {
     private TestSystemProperties config = new TestSystemProperties();
     private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void callSmokeTest() {

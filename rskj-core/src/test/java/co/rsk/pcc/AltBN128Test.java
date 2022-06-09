@@ -67,7 +67,7 @@ public class AltBN128Test {
     private static final int ADD_GAS_COST = 150;
     private static final int MUL_GAS_COST = 6000;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Before
     public void init() {

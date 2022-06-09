@@ -51,7 +51,7 @@ public class TransactionTest {
     private final byte chainId = config.getNetworkConstants().getChainId();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {

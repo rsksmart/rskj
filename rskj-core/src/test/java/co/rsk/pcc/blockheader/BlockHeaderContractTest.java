@@ -95,7 +95,7 @@ public class BlockHeaderContractTest {
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Before
     public void setUp() {

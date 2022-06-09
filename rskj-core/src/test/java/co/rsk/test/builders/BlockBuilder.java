@@ -54,7 +54,7 @@ public class BlockBuilder {
     private final BridgeSupportFactory bridgeSupportFactory;
     private BlockStore blockStore;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;

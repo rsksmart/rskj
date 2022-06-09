@@ -74,7 +74,7 @@ class RemascTestRunner {
     private Block genesis;
     private RskAddress fixedCoinbase;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;

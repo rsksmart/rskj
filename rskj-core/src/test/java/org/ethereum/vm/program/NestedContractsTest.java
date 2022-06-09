@@ -69,7 +69,7 @@ public class NestedContractsTest {
     private WorldDslProcessor processor;
     private EthModule ethModule;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     /** ------------------------ **
      *  SETUP

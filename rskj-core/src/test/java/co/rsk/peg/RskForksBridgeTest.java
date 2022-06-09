@@ -68,7 +68,7 @@ public class RskForksBridgeTest {
     private BlockStore blockStore;
     private BridgeSupportFactory bridgeSupportFactory;
 
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     @Before
     public void before() {

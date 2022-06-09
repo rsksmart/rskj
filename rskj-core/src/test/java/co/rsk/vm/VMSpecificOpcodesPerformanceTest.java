@@ -42,7 +42,7 @@ public class VMSpecificOpcodesPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
 
     public static String padZeroesLeft(String s, int n) {

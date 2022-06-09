@@ -7238,8 +7238,7 @@ public class BridgeSupportTest {
             federationSupportMock,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
-            pegUtils,
-            null
+            pegUtils
         ));
 
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -7343,8 +7342,7 @@ public class BridgeSupportTest {
             federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
-            pegUtils,
-            null
+            pegUtils
         );
 
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
@@ -7448,8 +7446,7 @@ public class BridgeSupportTest {
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations,
-            pegUtils,
-            null
+            pegUtils
         );
 
         Federation fed = bridgeConstants.getGenesisFederation();
@@ -8408,8 +8405,7 @@ public class BridgeSupportTest {
                 new FederationSupport(constants, provider, executionBlock),
                 blockStoreFactory,
                 activations,
-                pegUtils,
-                null
+                pegUtils
         );
     }
 

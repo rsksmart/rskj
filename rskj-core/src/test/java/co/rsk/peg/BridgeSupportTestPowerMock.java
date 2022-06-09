@@ -3949,10 +3949,6 @@ public class BridgeSupportTestPowerMock {
         );
     }
 
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
-        return getBridgeSupport(constants, provider, null, mock(BridgeEventLogger.class), null, null);
-    }
-
     private BridgeSupport getBridgeSupport(
             BridgeConstants constants,
             BridgeStorageProvider provider,
@@ -4023,7 +4019,7 @@ public class BridgeSupportTestPowerMock {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
 
-        return getBridgeSupport(constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock, blockStoreFactory, activations, null);
+        return getBridgeSupport(constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock, blockStoreFactory, activations);
     }
 
     private BridgeSupport getBridgeSupport(
@@ -4056,18 +4052,6 @@ public class BridgeSupportTestPowerMock {
                 pegUtils,
                 btcBlockChain
         );
-    }
-
-    private BtcLockSenderProvider getBtcLockSenderProvider(TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
-        BtcLockSender btcLockSender = mock(BtcLockSender.class);
-        when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
-        when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
-        when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
-
-        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
-
-        return btcLockSenderProvider;
     }
 
     private BtcTransaction createTransaction() {

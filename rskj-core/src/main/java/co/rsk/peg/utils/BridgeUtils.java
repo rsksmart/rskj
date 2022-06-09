@@ -58,7 +58,7 @@ public class BridgeUtils {
 
     private static BridgeUtils instance;
 
-    static BridgeUtils getInstance() { // TODO:I delete unnecessary calls (create kinda global)
+    static BridgeUtils getInstance() {
         if (instance == null) {
             instance = new BridgeUtils();
         }

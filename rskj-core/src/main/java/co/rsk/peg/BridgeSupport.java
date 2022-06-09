@@ -176,7 +176,7 @@ public class BridgeSupport {
     }
 
     @VisibleForTesting
-    public BridgeSupport( // TODO:I improve this VisibleForTesting
+    public BridgeSupport(
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BridgeEventLogger eventLogger,
@@ -204,7 +204,7 @@ public class BridgeSupport {
         this.bridgeUtils = pegUtils.getBridgeUtils();
         this.scriptBuilderWrapper = pegUtils.getScriptBuilderWrapper();
         this.bridgeSerializationUtils = pegUtils.getBridgeSerializationUtils();
-        this.btcBlockChain = btcBlockChain; // TODO:I improve this tweak
+        this.btcBlockChain = btcBlockChain;
     }
 
     public List<ProgramSubtrace> getSubtraces() {
@@ -3149,7 +3149,7 @@ public class BridgeSupport {
 
     @VisibleForTesting
     BtcBlockStoreWithCache getBtcBlockStore() {
-        return btcBlockStore; // TODO:I improve this VisibleForTesting
+        return btcBlockStore;
     }
 
     private Coin computeTotalAmountSent(BtcTransaction btcTx) throws IOException {

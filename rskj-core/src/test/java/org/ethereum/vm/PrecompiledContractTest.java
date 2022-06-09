@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  */
 public class PrecompiledContractTest {
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);

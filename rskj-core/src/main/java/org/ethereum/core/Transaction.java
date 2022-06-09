@@ -199,7 +199,7 @@ public class Transaction {
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
     public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (PegUtils.getInstance().getBridgeUtils().isFreeBridgeTx(this, constants, activations)) { // TODO:I BridgeUtils should be received via parameter
+        if (PegUtils.getInstance().getBridgeUtils().isFreeBridgeTx(this, constants, activations)) { // TODO:I talk to Vlad about using this as a global ApplicationContext that we do not pass via parameters
             return 0;
         }
 

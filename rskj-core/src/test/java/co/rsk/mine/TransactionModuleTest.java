@@ -85,7 +85,7 @@ public class TransactionModuleTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     private final FamilyUtils familyUtils = FamilyUtils.getInstance();
 

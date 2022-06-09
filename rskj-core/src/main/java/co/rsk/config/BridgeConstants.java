@@ -88,7 +88,7 @@ public class BridgeConstants {
     protected int numberOfBlocksBetweenPegouts;
 
     protected BridgeConstants() {
-        this.scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper(); // TODO:I rethink how this is initiated
+        this.scriptBuilderWrapper = PegUtils.getInstance().getScriptBuilderWrapper(); // TODO:I talk to Vlad about using this as a global ApplicationContext that we do not pass via parameters
     }
 
     public NetworkParameters getBtcParams() {

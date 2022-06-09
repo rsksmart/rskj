@@ -50,7 +50,7 @@ public class SyncProcessorTest {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void noPeers() {

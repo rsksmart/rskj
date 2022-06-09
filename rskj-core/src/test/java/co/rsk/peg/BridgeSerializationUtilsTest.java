@@ -62,7 +62,7 @@ import static org.mockito.Mockito.when;
 
 public class BridgeSerializationUtilsTest {
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void serializeMapOfHashesToLong() throws Exception {

@@ -32,7 +32,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(PowerMockRunner.class) // TODO:I try to remove these
+@RunWith(PowerMockRunner.class)
 @PrepareForTest(Secp256k1Context.class)
 public class Secp256k1Test {
 

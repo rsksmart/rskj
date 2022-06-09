@@ -48,7 +48,7 @@ public class PrecompiledContractAddressTests {
 
     private final TestSystemProperties config = new TestSystemProperties();
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void testGetPrecompile() {

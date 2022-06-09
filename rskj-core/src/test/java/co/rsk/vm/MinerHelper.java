@@ -57,7 +57,7 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;

@@ -1218,7 +1218,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            BridgeUtils bridgeUtils = PegUtils.getInstance().getBridgeUtils(); // TODO:I think how to inject this
+            BridgeUtils bridgeUtils = PegUtils.getInstance().getBridgeUtils(); // TODO:I talk to Vlad about using this as a global ApplicationContext that we do not pass via parameters
             if (!bridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
                     && (retiringFederation == null || !bridgeUtils.isFromFederateMember(self.rskTx, retiringFederation))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);

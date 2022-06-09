@@ -58,7 +58,7 @@ public class BridgeSupportReleaseBtcTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static final ECKey SENDER = new ECKey();
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     private BridgeConstants bridgeConstants;
     private ActivationConfig.ForBlock activationsBeforeForks;
@@ -1076,8 +1076,7 @@ public class BridgeSupportReleaseBtcTest {
             new FederationSupport(constants, provider, executionBlock),
             blockStoreFactory,
             activations,
-            pegUtils,
-            null
+            pegUtils
         );
     }
 

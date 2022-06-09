@@ -36,7 +36,7 @@ public class BridgeCostsTest {
     private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BridgeSupportFactory bridgeSupportFactory;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @BeforeClass
     public static void setUpBeforeClass() {

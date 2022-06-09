@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
  */
 public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private VmConfig vmConfig = config.getVmConfig();

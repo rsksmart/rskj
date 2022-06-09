@@ -56,7 +56,7 @@ import java.util.Random;
 public class Web3ImplScoringTest {
     private static Random random = new Random();
 
-    private static final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private static final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void addBannedAddressUsingIPV4() throws UnknownHostException {

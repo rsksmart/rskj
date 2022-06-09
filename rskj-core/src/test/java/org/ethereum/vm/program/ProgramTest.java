@@ -54,7 +54,7 @@ public class ProgramTest {
     protected static final int STACK_STATE_ERROR = 0;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, pegUtils);
 
     private final ProgramInvoke programInvoke = mock(ProgramInvoke.class);

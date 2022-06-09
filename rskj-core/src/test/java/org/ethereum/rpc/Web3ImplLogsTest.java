@@ -101,7 +101,7 @@ public class Web3ImplLogsTest {
     private static final String TRACKED_TEST_BLOCK_HASH = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;

@@ -105,7 +105,7 @@ public class Web3ImplTest {
 
     private Wallet wallet;
 
-    private final PegUtils pegUtils = PegUtils.getInstance(); // TODO:I get from TestContext
+    private final PegUtils pegUtils = PegUtils.getInstance();
 
     @Test
     public void web3_clientVersion() {

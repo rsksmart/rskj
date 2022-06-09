@@ -145,7 +145,7 @@ public class PrecompiledContracts {
     public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory, PegUtils pegUtils) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
-        this.pegUtils = pegUtils;
+        this.pegUtils = pegUtils; // TODO:I talk to Vlad about using this as a global ApplicationContext that we do not pass via parameters
     }
 
     public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
