@@ -30,20 +30,23 @@ public class ValidTxExecutionListsEdgesRule implements BlockValidationRule {
             return false;
         }
 
-        short prev = 0;
-        for (short edge : edges) {
-            if (edge <= prev) {
-                logger.warn("Invalid block: execution lists edges are not in ascending order");
-                return false;
-            }
-            prev = edge;
-        }
-
-        int txListSize = block.getTransactionsList().size();
-        if (edges[edges.length-1] > txListSize) {
+        if (edges[0] <= 0) {
             logger.warn("Invalid block: execution list edge is out of bounds");
             return false;
         }
+
+        for (int i = 0; i < edges.length - 1; i++) {
+            if (edges[i] >= edges[i + 1]) {
+                logger.warn("Invalid block: execution lists edges are not in ascending order");
+                return false;
+            }
+        }
+
+        if (edges[edges.length-1] > block.getTransactionsList().size()) {
+            logger.warn("Invalid block: execution list edge is out of bounds");
+            return false;
+        }
+
         return true;
     }
 }
