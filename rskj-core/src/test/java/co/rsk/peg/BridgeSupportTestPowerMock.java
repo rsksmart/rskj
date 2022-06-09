@@ -457,8 +457,7 @@ public class BridgeSupportTestPowerMock {
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
-
-        builder.setTesting(true).build();
+        builder.setTesting(true).setRequireUnclesValidation(false).build();
 
         for (Block block : blocks)
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
@@ -539,8 +538,7 @@ public class BridgeSupportTestPowerMock {
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
-
-        builder.setTesting(true).build();
+        builder.setTesting(true).setRequireUnclesValidation(false).build();
 
         for (Block block : blocks)
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
@@ -695,8 +693,7 @@ public class BridgeSupportTestPowerMock {
         List<Block> blocks = blockGenerator.getSimpleBlockChain(genesisBlock, 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
-
-        builder.setTesting(true).setGenesis(genesisBlock).build();
+        builder.setTesting(true).setGenesis(genesisBlock).setRequireUnclesValidation(false).build();
 
         for (Block block : blocks)
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
@@ -804,7 +801,7 @@ public class BridgeSupportTestPowerMock {
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
-        builder.setTesting(true).build();
+        builder.setTesting(true).setRequireUnclesValidation(false).build();
 
         for (Block block : blocks)
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);

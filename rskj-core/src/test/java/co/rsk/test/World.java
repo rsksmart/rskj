@@ -93,7 +93,7 @@ public class World {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
-    private World(BlockChainBuilder blockChainBuilder) {
+    public World(BlockChainBuilder blockChainBuilder) {
         this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null,
                 blockChainBuilder.getConfig() != null ? blockChainBuilder.getConfig() : new TestSystemProperties());
     }

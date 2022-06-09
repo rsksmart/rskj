@@ -67,6 +67,8 @@ public class BlockChainBuilder {
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
 
+    private boolean requireUnclesValidation = true;
+
     private final BridgeUtils bridgeUtils = BridgeUtils.getInstance();
 
     private final ScriptBuilderWrapper scriptBuilderWrapper = ScriptBuilderWrapper.getInstance();
@@ -123,6 +125,11 @@ public class BlockChainBuilder {
 
     public BlockChainBuilder setStateRootHandler(StateRootHandler stateRootHandler) {
         this.stateRootHandler = stateRootHandler;
+        return this;
+    }
+
+    public BlockChainBuilder setRequireUnclesValidation(boolean requireUnclesValidation) {
+        this.requireUnclesValidation = requireUnclesValidation;
         return this;
     }
 
@@ -207,8 +214,11 @@ public class BlockChainBuilder {
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 
-        validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(trieStore).blockStore(blockStore);
+        validatorBuilder.addBlockRootValidationRule().addBlockTxsValidationRule(trieStore).blockStore(blockStore);
+
+        if (requireUnclesValidation) { // to avoid UnnecessaryStubbingException when this mocking is not needed
+            validatorBuilder.addBlockUnclesValidationRule(blockStore);
+        }
 
         BlockValidator blockValidator = validatorBuilder.build();
 

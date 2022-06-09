@@ -18,8 +18,6 @@
 
 package co.rsk.peg;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -42,6 +40,7 @@ import co.rsk.peg.utils.ScriptBuilderWrapper;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -72,14 +71,10 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -175,7 +170,8 @@ public class BridgeTestPowerMock {
                 activationConfig, bridgeUtils, bridgeSerializationUtils, scriptBuilderWrapper);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
-        World world = new World();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
+        World world = new World(blockChainBuilder);
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockStore(), null, new LinkedList<>());
         try {
             bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
@@ -225,7 +221,8 @@ public class BridgeTestPowerMock {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
 
-        World world = new World();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
+        World world = new World(blockChainBuilder);
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
@@ -260,7 +257,8 @@ public class BridgeTestPowerMock {
 
         track = repository.startTracking();
 
-        World world = new World();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
+        World world = new World(blockChainBuilder);
         List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
         Transaction rskTx = Transaction
