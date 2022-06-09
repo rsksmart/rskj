@@ -3,6 +3,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.utils.PegUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -29,6 +31,8 @@ public class BridgeRSKIP220NewMethodsTest {
     private Block rskExecutionBlock;
     private Bridge bridge;
 
+    private PegUtils pegUtils = PegUtils.getInstance();
+
     @Before
     public void beforeEach() {
         config = spy(new TestSystemProperties());
@@ -46,7 +50,7 @@ public class BridgeRSKIP220NewMethodsTest {
                 null,
                 constants,
                 activationConfig,
-                bridgeSupportFactory
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new
         );
 
         bridge.init(null, rskExecutionBlock, null, null, null, null);

@@ -239,11 +239,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.merkleBranchFactory = merkleBranchFactory;
     }
 
-    @VisibleForTesting
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BridgeSupportFactory bridgeSupportFactory) {
-        this(contractAddress, constants, activationConfig, bridgeSupportFactory, PegUtils.getInstance().getBridgeUtils(), null); // TODO:I improve this VisibleForTesting
-    }
-
     @Override
     public long getGasForData(byte[] data) {
         if (!activations.isActive(ConsensusRule.RSKIP88) && bridgeUtils.isContractTx(rskTx)) {

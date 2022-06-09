@@ -35,8 +35,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;

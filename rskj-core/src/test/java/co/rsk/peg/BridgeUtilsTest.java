@@ -34,6 +34,7 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.PegUtils;
@@ -2793,7 +2794,7 @@ public class BridgeUtilsTest {
                 constants.getBridgeConstants(),
                 activationConfig, pegUtils);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
                 1,

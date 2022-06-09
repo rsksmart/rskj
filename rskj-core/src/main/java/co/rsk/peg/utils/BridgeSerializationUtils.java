@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 /**
  * Created by mario on 20/04/17.
  */
-public class BridgeSerializationUtils { // TODO:I tratar de meter en utils para hacer package-private los getinstance de todos
+public class BridgeSerializationUtils {
 
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;

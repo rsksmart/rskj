@@ -166,7 +166,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
         World world = new World(blockChainBuilder);
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockStore(), null, new LinkedList<>());
@@ -216,7 +216,7 @@ public class BridgeTestPowerMock {
                 activationConfig, pegUtils);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder().setRequireUnclesValidation(false);
         World world = new World(blockChainBuilder);
@@ -277,7 +277,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, blocks.get(9), track, world.getBlockStore(), null, new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
@@ -301,7 +301,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), track, null, null, null);
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -335,7 +335,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
         when(bridgeSupport.getActiveFederation()).thenReturn(bridgeConstants.getGenesisFederation());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -369,7 +369,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         Integer previousHeight = bridge.getBtcBlockchainBestChainHeight(new Object[] {});
@@ -400,7 +400,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Assert.assertNull(bridge.execute(new byte[3]));
@@ -419,7 +419,7 @@ public class BridgeTestPowerMock {
             PrecompiledContracts.BRIDGE_ADDR,
             constants,
             activationConfig,
-            bridgeSupportFactory
+            bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new
         );
         Transaction mockedTx = mock(Transaction.class);
 
@@ -439,7 +439,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Assert.assertNull(bridge.execute(new byte[4]));
@@ -454,7 +454,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
 
         try {
@@ -485,7 +485,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -519,7 +519,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         Object[] objectArray = new Object[1];
@@ -700,7 +700,7 @@ public class BridgeTestPowerMock {
                 constants.getBridgeConstants(),
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
@@ -736,7 +736,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -795,7 +795,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
 
@@ -854,7 +854,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -889,7 +889,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -924,7 +924,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         NetworkParameters btcParams = RegTestParams.get();
@@ -990,7 +990,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         Transaction mockedTx = mock(Transaction.class);
         bridge.init(mockedTx, getGenesisBlock(), track, null, null, null);
 
@@ -1021,7 +1021,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new byte[3];
@@ -1059,7 +1059,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new byte[3];
@@ -1092,7 +1092,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -1125,7 +1125,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -1158,7 +1158,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
@@ -1171,7 +1171,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInUpdateCollection() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge.updateCollections(null);
@@ -1184,7 +1184,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInReleaseBtc() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge.releaseBtc(null);
@@ -1197,7 +1197,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInGetStateForBtcReleaseClient() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge. getStateForBtcReleaseClient(null);
@@ -1210,7 +1210,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInGetStateForDebugging() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge.getStateForDebugging(null);
@@ -1223,7 +1223,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInGetBtcBlockchainBestChainHeight() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge.getBtcBlockchainBestChainHeight(null);
@@ -1236,7 +1236,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void exceptionInGetBtcBlockchainBlockLocator() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         try {
             bridge.getBtcBlockchainBlockLocator(null);
@@ -1258,7 +1258,7 @@ public class BridgeTestPowerMock {
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         Bridge bridge = spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock));
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new));
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         when(bridgeSupportMock.getBtcBlockchainBlockLocator())
@@ -1287,7 +1287,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), track, null, null, null);
 
@@ -1309,7 +1309,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -1396,7 +1396,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Set<Sha256Hash> hashes = new HashSet<>();
         when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.<Sha256Hash>getArgument(0)));
@@ -1420,7 +1420,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         try {
@@ -1437,7 +1437,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Map<Sha256Hash, Long> hashes = new HashMap<>();
         when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.<Sha256Hash>getArgument(0)));
@@ -1460,7 +1460,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         try {
@@ -1477,7 +1477,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getFederationSize()).thenReturn(1234);
 
@@ -1491,7 +1491,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getFederationThreshold()).thenReturn(5678);
 
@@ -1504,7 +1504,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
@@ -1516,7 +1516,7 @@ public class BridgeTestPowerMock {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getFederationCreationBlockNumber()).thenReturn(42L);
 
@@ -1528,7 +1528,7 @@ public class BridgeTestPowerMock {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1562,7 +1562,7 @@ public class BridgeTestPowerMock {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP123), anyLong());
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
 
@@ -1577,7 +1577,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1593,7 +1593,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1629,7 +1629,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getRetiringFederationSize()).thenReturn(1234);
 
@@ -1643,7 +1643,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getRetiringFederationThreshold()).thenReturn(5678);
 
@@ -1656,7 +1656,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
@@ -1668,7 +1668,7 @@ public class BridgeTestPowerMock {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
 
@@ -1681,7 +1681,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1716,7 +1716,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1731,7 +1731,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1746,7 +1746,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1784,7 +1784,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getPendingFederationSize()).thenReturn(1234);
 
@@ -1797,7 +1797,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1832,7 +1832,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1847,7 +1847,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -1862,7 +1862,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(mock(Transaction.class), getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1901,7 +1901,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("create", new byte[][]{}))).thenReturn(123);
 
@@ -1917,7 +1917,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -1942,7 +1942,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1963,7 +1963,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
 
 
@@ -1988,7 +1988,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
@@ -2015,7 +2015,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("commit", new byte[][] { Hex.decode("01020304") }))).thenReturn(123);
@@ -2029,7 +2029,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         Assert.assertEquals(-10, bridge.commitFederation(new Object[]{ "i'm not a byte array" }).intValue());
@@ -2044,7 +2044,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("rollback", new byte[][]{}))).thenReturn(456);
 
@@ -2057,7 +2057,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.getLockWhitelistSize()).thenReturn(1234);
 
@@ -2071,7 +2071,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         OneOffWhiteListEntry mockedEntry10 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
         OneOffWhiteListEntry mockedEntry20 = new OneOffWhiteListEntry(new BtcECKey().toAddress(networkParameters), Coin.COIN);
@@ -2099,7 +2099,7 @@ public class BridgeTestPowerMock {
                 activationConfig, pegUtils);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
@@ -2130,7 +2130,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         // Get the unlimited whitelist address
@@ -2170,7 +2170,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -2197,7 +2197,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         try {
@@ -2225,7 +2225,7 @@ public class BridgeTestPowerMock {
                 activationConfig, pegUtils);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address", BigInteger.valueOf(25L) })));
@@ -2249,7 +2249,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -2276,7 +2276,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         Assert.assertNull(bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{ "i-am-an-address" })));
@@ -2300,7 +2300,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
@@ -2320,7 +2320,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mockedTransaction, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.removeLockWhitelistAddress(mockedTransaction, "i-am-an-address")).thenReturn(1234);
 
@@ -2332,7 +2332,7 @@ public class BridgeTestPowerMock {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(any(), getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getFeePerKb())
                 .thenReturn(Coin.valueOf(12345678901234L));
@@ -2348,7 +2348,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         when(bridgeSupportMock.voteFeePerKbChange(txMock, Coin.valueOf(2)))
                 .thenReturn(123);
@@ -2363,7 +2363,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
 
         Assert.assertEquals(-10, bridge.voteFeePerKbChange(new Object[]{ "i'm not a byte array" }).intValue());
@@ -2407,7 +2407,7 @@ public class BridgeTestPowerMock {
                 bridgeConstants,
                 activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
         ActivationConfig.ForBlock spiedActivations = spy(activationConfig.forBlock(genesisBlock.getNumber()));
@@ -2425,7 +2425,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Address address = new BtcECKey().toAddress(networkParameters);
@@ -2449,7 +2449,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         Address expectedResult = new BtcECKey().toAddress(networkParameters);
 
@@ -2480,7 +2480,7 @@ public class BridgeTestPowerMock {
             BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
             Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                    bridgeSupportFactoryMock);
+                    bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
             when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
             bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
@@ -2511,7 +2511,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
 
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2740,7 +2740,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
         Sha256Hash mockedResult = Sha256Hash.of(Hex.decode("aabbcc"));
         when(bridgeSupportMock.getBtcBlockchainBlockHashAtDepth(555)).thenReturn(mockedResult);
@@ -2845,7 +2845,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void localCallOnlyMethodsDefinition() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
@@ -2886,7 +2886,7 @@ public class BridgeTestPowerMock {
 
     @Test
     public void mineableMethodsDefinition() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
@@ -2941,7 +2941,7 @@ public class BridgeTestPowerMock {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                mock(BridgeSupportFactory.class));
+                mock(BridgeSupportFactory.class), pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -2961,7 +2961,7 @@ public class BridgeTestPowerMock {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                mock(BridgeSupportFactory.class));
+                mock(BridgeSupportFactory.class), pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 66_000L;
@@ -2994,7 +2994,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
@@ -3029,7 +3029,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
@@ -3056,7 +3056,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
@@ -3079,7 +3079,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
@@ -3103,7 +3103,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-            bridgeSupportFactoryMock);
+            bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -3123,7 +3123,7 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
+                bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(null, getGenesisBlock(), null, null, null, null);
         when(bridgeSupportMock.getBtcBlockchainInitialBlockHeight()).thenReturn(1234);
 
@@ -3146,7 +3146,7 @@ public class BridgeTestPowerMock {
             bridgeConstants,
             activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-            bridgeSupportFactory);
+            bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {
             rskTx = CallTransaction.createRawTransaction(
@@ -3206,7 +3206,7 @@ public class BridgeTestPowerMock {
             bridgeConstants,
             activationConfig, pegUtils);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-            bridgeSupportFactory);
+            bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
         byte[] serializedTx = tx.bitcoinSerialize();
@@ -3221,7 +3221,7 @@ public class BridgeTestPowerMock {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(mock(BridgeSupport.class));
 
         when(activationConfig.forBlock(anyLong())).thenReturn(activations);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
 
         return bridge;

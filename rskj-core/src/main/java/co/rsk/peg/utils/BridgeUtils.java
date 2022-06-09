@@ -52,7 +52,7 @@ import java.util.stream.Stream;
 /**
  * @author Oscar Guindzberg
  */
-public class BridgeUtils { // TODO:I tratar de meter en utils para hacer package-private los getinstance de todos
+public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 

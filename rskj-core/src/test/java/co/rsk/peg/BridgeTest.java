@@ -7,6 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.PegUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -957,7 +958,7 @@ public class BridgeTest {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportInstance);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         return bridge;
     }

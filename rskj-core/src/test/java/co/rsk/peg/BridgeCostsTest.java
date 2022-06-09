@@ -6,6 +6,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.PegUtils;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -61,7 +62,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -80,7 +81,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 66_000L;
@@ -105,7 +106,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 25_000L;
@@ -131,7 +132,7 @@ public class BridgeCostsTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
                 activationConfig, pegUtils);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -218,7 +219,7 @@ public class BridgeCostsTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
                 activationConfig, pegUtils);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
         org.ethereum.core.Transaction rskTx;
         if (function==null) {
             rskTx = CallTransaction.createRawTransaction(

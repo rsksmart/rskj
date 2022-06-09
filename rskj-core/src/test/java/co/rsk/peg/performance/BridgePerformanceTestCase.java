@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.PegUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
@@ -262,7 +263,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig, pegUtils);
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                        bridgeSupportFactory);
+                        bridgeSupportFactory, pegUtils.getBridgeUtils(), MerkleBranch::new);
                 BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
                 Blockchain blockchain = blockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);

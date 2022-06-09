@@ -1,6 +1,6 @@
 package co.rsk.peg.utils;
 
-public class PegUtils {
+public class PegUtils { // TODO:I talk to Vlad about using this as a global ApplicationContext that we do not pass via parameters
 
     private final BridgeUtils bridgeUtils;
     private final BridgeSerializationUtils bridgeSerializationUtils;
