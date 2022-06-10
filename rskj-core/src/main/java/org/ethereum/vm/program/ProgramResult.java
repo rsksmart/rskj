@@ -63,7 +63,8 @@ public class ProgramResult {
 
     // estimateGas fields
     private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
-    private boolean movedRemainingGasToChild = false; // this will happen when there's no more gas left than expected from the child call
+    private boolean movedRemainingGasToChild; // this will happen when there's no more gas left than expected from the child call
+    private boolean callWithValuePerformed; // this will happen for VT CALLs
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void movedRemainingGasToChild(boolean moved) {
@@ -72,6 +73,14 @@ public class ProgramResult {
 
     public boolean getMovedRemainingGasToChild() {
         return movedRemainingGasToChild;
+    }
+
+    public void setCallWithValuePerformed(boolean callWithValuePerformed) {
+        this.callWithValuePerformed = callWithValuePerformed;
+    }
+
+    public boolean isCallWithValuePerformed() {
+        return callWithValuePerformed;
     }
 
     public void clearUsedGas() {
