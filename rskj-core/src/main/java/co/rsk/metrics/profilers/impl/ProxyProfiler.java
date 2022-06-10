@@ -16,28 +16,34 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.metrics.profilers;
+package co.rsk.metrics.profilers.impl;
 
-import co.rsk.metrics.profilers.impl.ProxyProfiler;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
- * ProfilerFactory is used to get the configured Profiler instance.
- * Only one profiler can be defined, once a profiler is set, it cannot be changed.
- * If a profiler isn't configured, the DummyProfiler will be set upon the first request for the instance.
+ * A DummyProfiler has no logic, it does not perform any profiling. It can be used as the default Profiler implementation
  */
-public final class ProfilerFactory {
+public class ProxyProfiler implements Profiler {
     
-    private static final ProxyProfiler sProxyProfiler = new ProxyProfiler();
+    private static final Metric EMPTY = () -> { /* do nothing */ };
 
-    private ProfilerFactory() { /* hidden */ }
-
-    public static void configure(@Nullable Profiler profiler) {
-        sProxyProfiler.setProfiler(profiler);
+    @Nullable
+    private volatile Profiler profiler;
+    
+    public void setProfiler(@Nullable Profiler profiler) {
+        this.profiler = profiler;
     }
 
-    public static Profiler getInstance() {
-        return sProxyProfiler;
+    @Override
+    @Nonnull
+    public Metric start(@Nonnull MetricType type) {
+        Profiler profiler = this.profiler;
+        
+        return profiler == null ? EMPTY : profiler.start(Objects.requireNonNull(type));
     }
 }

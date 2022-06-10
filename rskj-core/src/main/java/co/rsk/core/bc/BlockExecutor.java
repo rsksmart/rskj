@@ -98,7 +98,7 @@ public class BlockExecutor {
     }
 
     private void fill(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
+        Metric metric = profiler.start(Profiler.MetricType.FILLING_EXECUTED_BLOCK);
         BlockHeader header = block.getHeader();
         block.setTransactionsList(result.getExecutedTransactions());
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
@@ -110,7 +110,7 @@ public class BlockExecutor {
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
 
         block.flushRLP();
-        profiler.stop(metric);
+        metric.close();
     }
 
     /**
@@ -135,37 +135,37 @@ public class BlockExecutor {
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
+        Metric metric = profiler.start(Profiler.MetricType.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getPrintableHash());
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
         boolean isValidStateRoot = validateStateRoot(block.getHeader(), result);
         if (!isValidStateRoot) {
             logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getPrintableHash());
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
         boolean isValidReceiptsRoot = validateReceiptsRoot(block.getHeader(), result);
         if (!isValidReceiptsRoot) {
             logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getPrintableHash());
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
         boolean isValidLogsBloom = validateLogsBloom(block.getHeader(), result);
         if (!isValidLogsBloom) {
             logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getPrintableHash());
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), block.getGasUsed(), result.getGasUsed());
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
@@ -174,7 +174,7 @@ public class BlockExecutor {
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), feesPaidToMiner, paidFees);
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
@@ -183,11 +183,11 @@ public class BlockExecutor {
 
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), transactionsList, executedTransactions);
-            profiler.stop(metric);
+            metric.close();
             return false;
         }
 
-        profiler.stop(metric);
+        metric.close();
         return true;
     }
 
@@ -264,7 +264,7 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+        Metric metric = profiler.start(Profiler.MetricType.BLOCK_EXECUTE);
 
         Repository track = repositoryLocator.startTrackingAt(parent);
 
@@ -301,7 +301,7 @@ public class BlockExecutor {
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                                 block.getNumber(), tx.getHash());
-                    profiler.stop(metric);
+                    metric.close();
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
@@ -371,7 +371,7 @@ public class BlockExecutor {
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
-        profiler.stop(metric);
+        metric.close();
         logger.trace("End executeInternal.");
         return result;
     }

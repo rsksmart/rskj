@@ -185,14 +185,14 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
+        Metric metric = profiler.start(Profiler.MetricType.BEFORE_BLOCK_EXEC);
 
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getPrintableHash(),
                          block.getNumber());
-            profiler.stop(metric);
+            metric.close();
             return ImportResult.EXIST;
         }
 
@@ -221,14 +221,14 @@ public class BlockChainImpl implements Blockchain {
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             if (parent == null) {
-                profiler.stop(metric);
+                metric.close();
                 return ImportResult.NO_PARENT;
             }
 
             parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
-                profiler.stop(metric);
+                metric.close();
                 return ImportResult.NO_PARENT;
             }
         }
@@ -238,11 +238,11 @@ public class BlockChainImpl implements Blockchain {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
             panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
-            profiler.stop(metric);
+            metric.close();
             return ImportResult.INVALID_BLOCK;
         }
 
-        profiler.stop(metric);
+        metric.close();
         BlockResult result = null;
 
         if (parent != null) {
@@ -253,13 +253,13 @@ public class BlockChainImpl implements Blockchain {
 
             logger.trace("execute done");
 
-            metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+            metric = profiler.start(Profiler.MetricType.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
             logger.trace("validate done");
 
             if (!isValid) {
-                profiler.stop(metric);
+                metric.close();
                 return ImportResult.INVALID_BLOCK;
             }
             // Now that we know it's valid, we can commit the changes made by the block
@@ -277,10 +277,10 @@ public class BlockChainImpl implements Blockchain {
 
             // the block is valid at this point
             stateRootHandler.register(block.getHeader(), result.getFinalState());
-            profiler.stop(metric);
+            metric.close();
         }
 
-        metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+        metric = profiler.start(Profiler.MetricType.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
@@ -313,7 +313,7 @@ public class BlockChainImpl implements Blockchain {
                 logger.info("*** Last block added [ #{} ]", block.getNumber());
             }
 
-            profiler.stop(metric);
+            metric.close();
             return ImportResult.IMPORTED_BEST;
         }
         // It is not the new best block
@@ -337,7 +337,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Block not imported {} {}", block.getNumber(), block.getPrintableHash());
-            profiler.stop(metric);
+            metric.close();
             return ImportResult.IMPORTED_NOT_BEST;
         }
     }
@@ -503,9 +503,9 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
+        Metric metric = profiler.start(Profiler.MetricType.BLOCK_VALIDATION);
         boolean validation =  blockValidator.isValid(block);
-        profiler.stop(metric);
+        metric.close();
         return validation;
     }
 }

@@ -94,7 +94,7 @@ public class BlockChainFlusher implements InternalService {
     }
 
     private void flushAll() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKCHAIN_FLUSH);
+        Metric metric = profiler.start(Profiler.MetricType.BLOCKCHAIN_FLUSH);
 
         long saveTime = System.nanoTime();
         trieStore.flush();
@@ -136,7 +136,7 @@ public class BlockChainFlusher implements InternalService {
             logger.trace("bloomBlocksStore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
 
-        profiler.stop(metric);
+        metric.close();
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {

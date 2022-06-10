@@ -76,7 +76,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
+        Metric metric = profiler.start(Profiler.MetricType.DB_INIT);
         try (Options options = new Options()) {
             logger.debug("~> RocksDbDataSource.init(): {}", name);
 
@@ -111,7 +111,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             panicProcessor.panic("rocksdb", ioe.getMessage());
             throw new RuntimeException("Can't initialize database");
         } finally {
-            profiler.stop(metric);
+            metric.close();
             resetDbLock.writeLock().unlock();
         }
     }
@@ -151,7 +151,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
         byte[] result = null;
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        Metric metric = profiler.start(Profiler.MetricType.DB_READ);
         resetDbLock.readLock().lock();
 
         int retries = 0;
@@ -181,7 +181,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
-            profiler.stop(metric);
+            metric.close();
         }
 
         if (exCaught != null && retries > 1) {
@@ -198,7 +198,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricType.DB_WRITE);
         resetDbLock.readLock().lock();
 
         try {
@@ -216,7 +216,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
-            profiler.stop(metric);
+            metric.close();
         }
 
         return value;
@@ -224,7 +224,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricType.DB_WRITE);
         resetDbLock.readLock().lock();
 
         try {
@@ -242,7 +242,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             throw new RuntimeException(e);
         } finally {
             resetDbLock.readLock().unlock();
-            profiler.stop(metric);
+            metric.close();
         }
     }
 
@@ -259,7 +259,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
         Set<ByteArrayWrapper> result = new HashSet<>();
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        Metric metric = profiler.start(Profiler.MetricType.DB_READ);
         resetDbLock.readLock().lock();
 
         try (RocksIterator iterator = db.newIterator()) {
@@ -273,16 +273,16 @@ public class RocksDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
-            profiler.stop(metric);
+            metric.close();
         }
 
         return result;
     }
 
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricType.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
-            profiler.stop(metric);
+            metric.close();
             throw new IllegalArgumentException("Cannot update null values");
         }
         // Note that this is not atomic.
@@ -298,7 +298,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             logger.error("Exception. Not retrying.", e);
             throw new RuntimeException(e);
         } finally {
-            profiler.stop(metric);
+            metric.close();
         }
 
     }
@@ -349,7 +349,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void close() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
+        Metric metric = profiler.start(Profiler.MetricType.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
             if (!isAlive()) {
@@ -362,7 +362,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             alive = false;
         } finally {
             resetDbLock.writeLock().unlock();
-            profiler.stop(metric);
+            metric.close();
         }
     }
 
