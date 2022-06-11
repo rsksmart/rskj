@@ -73,24 +73,24 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         // and won't work to match an item on rpc.host
         String hostHeader = headers.get(HttpHeaders.Names.HOST);
 
-        if (hostHeader.isEmpty()) {
+        if (hostHeader == null || hostHeader.isEmpty()) {
             this.serveRequest(ctx, request);
             return;
         }
 
         String host = parseHostHeader(hostHeader);
 
-        if (isValidIpAddress(host)) {
-            this.serveRequest(ctx, request);
-            return;
-        }
-
         if (acceptedHosts.contains("*")) {
             this.serveRequest(ctx, request);
             return;
         }
 
-        if (acceptedHosts.contains(host)) {
+        if (host != null && acceptedHosts.contains(host)) {
+            this.serveRequest(ctx, request);
+            return;
+        }
+
+        if (isIpAddress(host)) {
             this.serveRequest(ctx, request);
             return;
         }
@@ -98,8 +98,6 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         logger.debug("Invalid header HOST {}", hostHeader);
         response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-        return;
-
     }
 
     protected void serveRequest(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
@@ -156,37 +154,20 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         }
     }
 
-    private boolean isValidIpAddress(String ip) {
-        return isIPv4(ip) || isIPv6(ip);
-    }
-
-    private boolean isIPv4(String ipAddress) {
+    private boolean isIpAddress(String address) {
         boolean isIPv4 = false;
-
-        if (ipAddress != null) {
-            try {
-                InetAddress inetAddress = InetAddress.getByName(ipAddress);
-                isIPv4 = (inetAddress instanceof Inet4Address) && inetAddress.getHostAddress().equals(ipAddress);
-            } catch (UnknownHostException ex) {
-                logger.warn("Unknown host", ex);
-            }
-        }
-
-        return isIPv4;
-    }
-
-    private boolean isIPv6(String ipAddress) {
         boolean isIPv6 = false;
 
-        if (ipAddress != null) {
+        if (address != null) {
             try {
-                InetAddress inetAddress = InetAddress.getByName(ipAddress);
+                InetAddress inetAddress = InetAddress.getByName(address);
+                isIPv4 = (inetAddress instanceof Inet4Address) && inetAddress.getHostAddress().equals(address);
                 isIPv6 = (inetAddress instanceof Inet6Address);
             } catch (UnknownHostException ex) {
                 logger.warn("Unknown host", ex);
             }
         }
 
-        return isIPv6;
+        return isIPv4 || isIPv6;
     }
 }

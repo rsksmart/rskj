@@ -86,6 +86,12 @@ public class Web3HttpServerTest {
         smokeTest(APPLICATION_JSON, "this is a wrong host", google, new ArrayList<>());
     }
 
+    @Test
+    public void smokeTestUsingValidHostIpAndHostName() throws Exception {
+        InetAddress google = InetAddress.getByName("www.google.com");
+        smokeTest(APPLICATION_JSON, "127.0.0.0", google, new ArrayList<>());
+    }
+
 
     private void smokeTest(String contentType, String host) throws Exception {
         smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
