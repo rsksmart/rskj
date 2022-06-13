@@ -118,7 +118,7 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -139,7 +139,7 @@ public class BlockExecutorTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -189,7 +189,7 @@ public class BlockExecutorTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -240,7 +240,7 @@ public class BlockExecutorTest {
         Transaction tx2 = block.getTransactionsList().get(1);
         RskAddress account = tx1.getSender();
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -299,7 +299,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
         executor.executeAndFill(block, parent.getHeader());
 
         byte[] calculatedReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
@@ -431,7 +431,7 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
-        BlockResult result = executor.executeForMining(block, genesis.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, genesis.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -592,11 +592,11 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result1 = executor.execute(block1, parent.getHeader(), true);
+        BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false);
 
 
         Block block2 = getBlockWithTenTransactions(new short[]{5});
-        BlockResult result2 = executor.execute(block2, parent.getHeader(), true);
+        BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false);
 
         Assert.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
     }
@@ -608,11 +608,11 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         Block pBlock = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult parallelResult = executor.execute(pBlock, parent.getHeader(), true);
+        BlockResult parallelResult = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
 
 
         Block sBlock = getBlockWithTenTransactions(null);
-        BlockResult seqResult = executor.executeForMining(sBlock, parent.getHeader(), true);
+        BlockResult seqResult = executor.executeForMining(sBlock, parent.getHeader(), true, false);
 
         Assert.assertEquals(pBlock.getTransactionsList().size(), parallelResult.getExecutedTransactions().size());
         Assert.assertArrayEquals(seqResult.getFinalState().getHash().getBytes(), parallelResult.getFinalState().getHash().getBytes());
@@ -1044,7 +1044,7 @@ public class BlockExecutorTest {
             return;
         }
 
-        BlockResult result = executor.executeForMining(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         Assert.assertNotNull(result);
         if (mustFailExecution) {

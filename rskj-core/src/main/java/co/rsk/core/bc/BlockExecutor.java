@@ -165,7 +165,7 @@ public class BlockExecutor {
      */
     @VisibleForTesting
     public boolean executeAndValidate(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, false);
+        BlockResult result = execute(null, 0, block, parent, false, false);
 
         return this.validate(block, result);
     }
@@ -260,26 +260,12 @@ public class BlockExecutor {
         return Arrays.equals(calculateLogsBloom(result.getTransactionReceipts()), header.getLogsBloom());
     }
 
-    @VisibleForTesting
-    public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs) {
-        return executeForMining(block, parent, discardInvalidTxs, false);
-    }
-
     public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         if (block.getHeader().getTxExecutionListsEdges() != null) {
-            return executeForMiningInternal(block, parent, discardInvalidTxs, ignoreReadyToExecute);
+            return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute);
         } else {
-            return executeOldSequential(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
         }
-    }
-
-    @VisibleForTesting
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
-        return execute(block, parent, discardInvalidTxs, false);
-    }
-
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeParallelInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
     /**
@@ -292,12 +278,12 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
-        executeParallelInternal(
+        execute(
                 Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
         );
     }
 
-    private BlockResult executeParallelInternal(
+    public BlockResult execute(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
             Block block,
@@ -309,11 +295,11 @@ public class BlockExecutor {
             if (rskip144Active && block.getHeader().getTxExecutionListsEdges() != null) {
                 return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
             } else {
-                return executeOldSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
             }
     }
 
-    private BlockResult executeOldSequential(
+    private BlockResult executePreviousRSKIP144(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
             Block block,
@@ -597,7 +583,7 @@ public class BlockExecutor {
         }
     }
 
-    private BlockResult executeForMiningInternal(
+    private BlockResult executeForMiningAfterRSKIP144(
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
