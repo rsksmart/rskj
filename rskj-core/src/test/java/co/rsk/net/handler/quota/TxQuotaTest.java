@@ -26,8 +26,7 @@ import org.ethereum.core.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +55,21 @@ public class TxQuotaTest {
         assertTrue(txQuota.acceptVirtualGasConsumption(9, tx, 10));
         assertFalse(txQuota.acceptVirtualGasConsumption(2, tx, 10));
         assertTrue(txQuota.acceptVirtualGasConsumption(1, tx, 10));
+    }
+
+    @Test
+    public void forceVirtualGasSubtraction() {
+        Transaction tx = mock(Transaction.class);
+        Keccak256 txHash = TestUtils.randomHash();
+        when(tx.getHash()).thenReturn(txHash);
+
+        RskAddress address = TestUtils.randomAddress();
+
+        TxQuota txQuota = TxQuota.createNew(address, txHash, 10, System::currentTimeMillis);
+        assertTrue(txQuota.forceVirtualGasSubtraction(5, tx, 10));
+        assertTrue(txQuota.forceVirtualGasSubtraction(4, tx, 10));
+        assertFalse(txQuota.forceVirtualGasSubtraction(2, tx, 10));
+        assertFalse(txQuota.forceVirtualGasSubtraction(1, tx, 10));
     }
 
     @Test

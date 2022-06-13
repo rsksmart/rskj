@@ -86,6 +86,32 @@ public class TxQuota {
     }
 
     /**
+     * Checks whether the accumulated virtual gas is greater than the received gas to consume.
+     * If enough, received gas is discounted from accumulated. If not enough, all available gas is discounted.
+     * This method is for special cases when we want to force the gas subtraction regardless available one is enough
+     *
+     * @param virtualGasToConsume Gas to be consumed
+     * @param tx                  Tx being executed, used for logging purposes only
+     * @param blockNumber         Block number for logging purposes
+     *
+     * @return True if there was enough accumulated gas, false otherwise
+     */
+    public synchronized boolean forceVirtualGasSubtraction(double virtualGasToConsume, Transaction tx, long blockNumber) {
+        // we know getSender() was called previously in the flow, so sender field was already computed and is available
+        // we are not adding extra cost here, and it is useful for debugging purposes of transactions that don't get to a block, but we want to analyse
+        RskAddress sender = tx.getSender();
+
+        boolean wasAccepted = acceptVirtualGasConsumption(virtualGasToConsume, tx, blockNumber);
+        if (wasAccepted) {
+            return true;
+        }
+
+        logger.debug("Forcing acceptance of tx [{}] with sender [{}] at block [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", tx, sender, blockNumber, this.availableVirtualGas, virtualGasToConsume);
+        this.availableVirtualGas = 0;
+        return false;
+    }
+
+    /**
      * Refreshes availableVirtualGas according to inactivity time
      *
      * @param address         Address sourcing the tx, for logging purposes
