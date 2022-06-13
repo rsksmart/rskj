@@ -22,6 +22,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //TODO(JULI):
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
@@ -29,12 +30,12 @@ import java.util.concurrent.ConcurrentMap;
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     private ConcurrentMap<ByteArrayWrapper, Long> threadByReadKey;
     private ConcurrentMap<ByteArrayWrapper, Long> threadByWrittenKey;
-    private boolean collision;
+    private AtomicBoolean collision;
 
     public ReadWrittenKeysTracker() {
         this.threadByReadKey = new ConcurrentHashMap<>();
         this.threadByWrittenKey = new ConcurrentHashMap<>();
-        this.collision = false;
+        this.collision = new AtomicBoolean(false);
     }
 
     @Override
@@ -47,28 +48,32 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
         return this.threadByWrittenKey.keySet();
     }
 
-    public boolean hasCollided() { return this.collision;}
+    public boolean hasCollided() { return this.collision.get();}
 
     @Override
-    public void addNewReadKey(ByteArrayWrapper key) {
+    public synchronized void addNewReadKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-
         if (threadByWrittenKey.containsKey(key)) {
-            collision |= threadId != threadByWrittenKey.get(key);
+            boolean result = collision.get() || (threadId != threadByWrittenKey.get(key));
+            collision = new AtomicBoolean(result);
         }
 
         threadByReadKey.put(key, threadId);
     }
 
     @Override
-    public void addNewWrittenKey(ByteArrayWrapper key) {
+    public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
+
         if (threadByWrittenKey.containsKey(key)) {
-            collision |= threadId != threadByWrittenKey.get(key);
+            boolean result = collision.get() || (threadId != threadByWrittenKey.get(key));
+            collision = new AtomicBoolean(result);
+
         }
 
         if (threadByReadKey.containsKey(key)) {
-            collision |= threadId != threadByReadKey.get(key);
+            boolean result = collision.get() || (threadId != threadByReadKey.get(key));
+            collision = new AtomicBoolean(result);
         }
 
         threadByWrittenKey.put(key, threadId);

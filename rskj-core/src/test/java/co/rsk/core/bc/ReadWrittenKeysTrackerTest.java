@@ -24,9 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Set;
+import java.util.concurrent.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ReadWrittenKeysTrackerTest {
 
@@ -132,8 +132,71 @@ public class ReadWrittenKeysTrackerTest {
         assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
     }
 
+    @Test
+    public void ifTwoThreadsWriteTheSameKeyCollideShouldBeTrue() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+
+        for (int i = 0; i < nThreads; i++) {
+            ReadWrittenKeysTest rwKeys = new ReadWrittenKeysTest(key1);
+            completionService.submit(rwKeys);
+        }
+        boolean hasCollided = false;
+
+        for (int i = 0; i < nThreads; i++) {
+            try {
+                Future<Boolean> hasCollidedFuture = completionService.take();
+                hasCollided |= hasCollidedFuture.get();
+                System.out.println(hasCollided);
+            } catch (Exception e) {
+                fail();
+            }
+        }
+        service.shutdown();
+        assertTrue(hasCollided);
+    }
+
+    @Test
+    public void ifTwoThreadsWriteDifferentKeyCollideShouldBeFalse() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+
+        for (int i = 0; i < nThreads; i++) {
+            ReadWrittenKeysTest rwKeys = new ReadWrittenKeysTest(i == 0? key1 : key2);
+            completionService.submit(rwKeys);
+        }
+        boolean hasCollided = false;
+
+        for (int i = 0; i < nThreads; i++) {
+            try {
+                Future<Boolean> hasCollidedFuture = completionService.take();
+                hasCollided |= hasCollidedFuture.get();
+                System.out.println(hasCollided);
+            } catch (Exception e) {
+                fail();
+            }
+        }
+        service.shutdown();
+        assertFalse(hasCollided);
+    }
+
     private void assertKeyWasAddedInMap(Set<ByteArrayWrapper> map, ByteArrayWrapper key) {
         assertEquals(1, map.size());
         assertTrue(map.contains(key));
     }
+    private class ReadWrittenKeysTest implements Callable<Boolean> {
+
+        private final ByteArrayWrapper key;
+
+        public ReadWrittenKeysTest(ByteArrayWrapper key) {
+            this.key = key;
+        }
+        public Boolean call() {
+            tracker.addNewWrittenKey(key);
+            return tracker.hasCollided();
+        }
+    }
+
 }
