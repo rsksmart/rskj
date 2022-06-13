@@ -90,9 +90,9 @@ public class TxQuotaChecker {
         //      ...
         //      tn: nn ...
         // by accepting the very first transaction regardless gas consumption we avoid this problem that won't occur with greater nonce
-        // this won't be a problem since this first tx has a cost and min gas will be granted for next tx from same account
+        // this won't be a problem since this first tx has a cost, all available gas will be subtracted and account starts accumulating again for next tx
         if (isFirstTxFromSender) {
-            logger.debug("Allowing account first tx [{}] regardless virtual gas consumption that was [{}]", newTx, consumedVirtualGas);
+            senderQuota.forceVirtualGasSubtraction(consumedVirtualGas, newTx, currentContext.bestBlock.getNumber());
             return true;
         }
 
