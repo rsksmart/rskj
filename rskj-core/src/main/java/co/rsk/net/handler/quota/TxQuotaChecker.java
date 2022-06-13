@@ -73,20 +73,59 @@ public class TxQuotaChecker {
         // keep track of lastBlockGasLimit on each processed transaction, so we can use it from cleanMaxQuotas were we lack this context
         this.lastBlockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
 
-        TxQuota senderQuota = updateQuota(newTx, true, currentContext);
+        // doing this before creating quota
+        boolean isFirstTxFromSender = isFirstTxFromSender(newTx, currentContext);
 
-        // if already in the map, we know it is an EOA
-        boolean receiverIsEOA = accountQuotas.get(newTx.getReceiveAddress()) != null || isEOA(newTx.getReceiveAddress(), currentContext.repository);
+        TxQuota senderQuota = updateSenderQuota(newTx, currentContext);
 
-        // creating/updating quota for receiver address (non-contract) for it to exist in the map as soon as we now its
-        // existence, this way we can grant it max quota the first time it originates a tx (if enough inactivity time
-        // passed for that), otherwise it would be created with minQuota while being non-suspicious ("old" and "good")
-        if (receiverIsEOA || newAccountInRepository(newTx.getReceiveAddress(), currentContext.repository)) {
-            updateQuota(newTx, false, currentContext);
-        }
+        updateReceiverQuotaIfRequired(newTx, currentContext);
+
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
+        // "isFirstTxFromSender" check is used to prevent the account first tx from taking hours to be propagated due to the minimum gas that is granted the first time account is added to node's quota map
+        // let's imagine a scenario with a tx [tx1] from sender [s1], nodes [n1, n2] and different time moments [t1, t2, t3]:
+        //      t1: n1 receives tx1 => s1 is a new account for n1 (not in the map) and gets granted min virtual gas that is not enough for tx1 => n1 rejects tx1, and it is not propagated
+        //      t2: n1 receives again tx1 => as for n1, s1 accumulated enough gas for tx1 (already in the map since t1) => n1 accepts and propagates tx1
+        //      t3: n2 receives tx1 => n2 behaves in the exact same way as n1 did in t1 => n2 rejects tx1, and it is not propagated
+        //      ...
+        //      tn: nn ...
+        // by accepting the very first transaction regardless gas consumption we avoid this problem that won't occur with greater nonce
+        // this won't be a problem since this first tx has a cost and min gas will be granted for next tx from same account
+        if (isFirstTxFromSender) {
+            logger.debug("Allowing account first tx [{}] regardless virtual gas consumption that was [{}]", newTx, consumedVirtualGas);
+            return true;
+        }
+
         return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx, currentContext.bestBlock.getNumber());
+    }
+
+    private TxQuota updateSenderQuota(Transaction newTx, CurrentContext currentContext) {
+        return updateQuota(newTx, true, currentContext);
+    }
+
+    private void updateReceiverQuotaIfRequired(Transaction newTx, CurrentContext currentContext) {
+        // updating receiver quota for it to start accumulating virtual gas as soon as we now of its existence
+        // with the following check we can face two scenarios if account is already in the map; we know that it is either:
+        // 1) an EOA => we want to now its existence the sooner, the better, so it starts accumulating virtual gas
+        // 2) a counterfactual contract (CF), not yet created (code not yet assigned) which received RBTCs =>
+        //      in this case we don't care about quotas, a contract will never be a sender, but still we will be storing some contracts in the map
+        //      we have decided to accept this caveat in our own benefit, since the map works as a cache that helps to avoid repository calls
+        //      furthermore, quota map is cleaned up periodically and, later, when the CF exists on-chain, it won't be added ever again
+        boolean receiverIsEOAorCF = accountQuotas.get(newTx.getReceiveAddress()) != null || isEOA(newTx.getReceiveAddress(), currentContext.repository);
+        if (receiverIsEOAorCF || newAccountInRepository(newTx.getReceiveAddress(), currentContext.repository)) {
+            updateQuota(newTx, false, currentContext);
+        }
+    }
+
+    private boolean isFirstTxFromSender(Transaction newTx, CurrentContext currentContext) {
+        RskAddress senderAddress = newTx.getSender();
+
+        TxQuota quotaForSender = this.accountQuotas.get(senderAddress);
+        long accountNonce = currentContext.state.getNonce(senderAddress).longValue();
+        long txNonce = newTx.getNonceAsInteger().longValue();
+
+        // need to check that account it's not in the map to ensure it is not a resend or a gasPrice bump
+        return quotaForSender == null && accountNonce == 0 && txNonce == 0;
     }
 
     private boolean newAccountInRepository(RskAddress receiverAddress, RepositorySnapshot repository) {
