@@ -19,21 +19,21 @@
 package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 //TODO(JULI):
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private Map<ByteArrayWrapper, Long> threadByReadKey;
-    private Map<ByteArrayWrapper, Long> threadByWrittenKey;
+    private ConcurrentMap<ByteArrayWrapper, Long> threadByReadKey;
+    private ConcurrentMap<ByteArrayWrapper, Long> threadByWrittenKey;
     private boolean collision;
 
     public ReadWrittenKeysTracker() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
+        this.threadByReadKey = new ConcurrentHashMap<>();
+        this.threadByWrittenKey = new ConcurrentHashMap<>();
         this.collision = false;
     }
 
@@ -76,7 +76,7 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
     @Override
     public void clear() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
+        this.threadByReadKey = new ConcurrentHashMap<>();
+        this.threadByWrittenKey = new ConcurrentHashMap<>();
     }
 }
