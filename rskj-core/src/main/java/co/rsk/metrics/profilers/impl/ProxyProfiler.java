@@ -33,7 +33,7 @@ public class ProxyProfiler implements Profiler {
     private static final Metric EMPTY = () -> { /* do nothing */ };
 
     @Nullable
-    private volatile Profiler profiler;
+    private Profiler profiler;
     
     public void setProfiler(@Nullable Profiler profiler) {
         this.profiler = profiler;

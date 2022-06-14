@@ -18,7 +18,7 @@ public class LoggingProfiler implements Profiler {
     private static class MetricImpl implements Metric {
 
         private static final Logger logger = LoggerFactory.getLogger(MetricImpl.class);
-        private static final Logger metricsLogger = LoggerFactory.getLogger("metrics");
+        private static final Logger loggerMetrics = LoggerFactory.getLogger("metrics");
         
         @Nonnull
         private final MetricType type;
@@ -47,7 +47,7 @@ public class LoggingProfiler implements Profiler {
             closed = true;
 
             long duration = endTime - startTime;
-            metricsLogger.info("{}: {}", type, duration);
+            loggerMetrics.info("{}: {}", type, duration);
         }
     }
 }
