@@ -919,21 +919,22 @@ public class BridgeSupport {
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
 
-        logger.trace("[processFundsMigration] Going to process migration...");
+        if (federationIsInMigrationAge(activeFederation)) {
+            long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
+            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
+            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
+                logger.info(
+                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
+                    retiringFederationWallet.getBalance().toFriendlyString()
+                );
 
-        if (federationIsInMigrationAge(activeFederation) && hasMinimumFundsToMigrate(retiringFederationWallet)) {
-            logger.info(
-                "[processFundsMigration] Active federation (age={}) is in migration age and retiring federation has funds to migrate: {}.",
-                rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber(),
-                retiringFederationWallet.getBalance().toFriendlyString()
-            );
-
-            migrateFunds(
-                rskTx.getHash(),
-                retiringFederationWallet,
-                activeFederation.getAddress(),
-                availableUTXOs
-            );
+                migrateFunds(
+                    rskTx.getHash(),
+                    retiringFederationWallet,
+                    activeFederation.getAddress(),
+                    availableUTXOs
+                );
+            }
         }
 
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
@@ -3056,9 +3057,9 @@ public class BridgeSupport {
             } else {
                 provider.getReleaseTransactionSet().add(buildReturnResult.getBtcTx(), rskExecutionBlock.getNumber());
             }
-            logger.info("Rejecting peg-in due to {}: return tx build successful to {}. Tx {}. Value {}.", buildReturnResult.getResponseCode(), btcRefundAddress, rskTxHash, totalAmount);
+            logger.info("Rejecting peg-in tx built Successfully: Refund to address: {}. RskTxHash: {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
         } else {
-            logger.warn("Rejecting peg-in due to {}: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", buildReturnResult.getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
+            logger.warn("Rejecting peg-in tx could not be built due to {}: Btc peg-in txHash {}. Refund to address: {}. RskTxHash: {}. Value: {}", buildReturnResult.getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
             panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.getResponseCode()));
         }
     }
@@ -3171,7 +3172,7 @@ public class BridgeSupport {
                 return false;
             }
         } catch (Exception e) {
-            String panicMessage = String.format("Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
+            String panicMessage = String.format("[validationsForRegisterBtcTransaction] Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
             return false;
@@ -3195,20 +3196,20 @@ public class BridgeSupport {
         }
 
         // Validates inputs count
-        logger.info("Going to validate inputs for btc tx {}", btcTxHash);
+        logger.info("[validationsForRegisterBtcTransaction] Going to validate inputs for btc tx {}", btcTxHash);
         BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
-        logger.trace("Getting btc block at height: {}", height);
+        logger.trace("[validationsForRegisterBtcTransaction] Getting btc block at height: {}", height);
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        logger.trace("Validating block merkle root at height: {}", height);
+        logger.trace("[validationsForRegisterBtcTransaction] Validating block merkle root at height: {}", height);
         if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
-                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
-                    btcTxHash.toString(),
-                    merkleRoot,
-                    blockHeader.getMerkleRoot()
+                "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                btcTxHash.toString(),
+                merkleRoot,
+                blockHeader.getMerkleRoot()
             );
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
