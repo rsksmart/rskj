@@ -33,7 +33,6 @@ import co.rsk.validators.BlockValidationRule;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -41,22 +40,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.function.Consumer;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FamilyUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BlockToMineBuilderTest {
 
     private BlockToMineBuilder blockBuilder;
@@ -102,7 +101,6 @@ public class BlockToMineBuilderTest {
         when(minerUtils.filterTransactions(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
-        when(stateRootHandler.translate(any())).thenReturn(TestUtils.randomHash());
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);
         when(miningConfig.getUncleListLimit()).thenReturn(10);
         when(miningConfig.getCoinbaseAddress()).thenReturn(TestUtils.randomAddress());
@@ -111,31 +109,35 @@ public class BlockToMineBuilderTest {
 
     @Test
     public void BuildBlockHasEmptyUnclesWhenCreateAnInvalidBlock() {
-        BlockHeader parent = buildBlockHeaderWithSibling();
+        Consumer<BlockHeader> test = (parent) -> {
+            BlockResult expectedResult = mock(BlockResult.class);
+            ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
 
-        BlockResult expectedResult = mock(BlockResult.class);
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+            when(validationRules.isValid(any())).thenReturn(false);
+            when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
-        when(validationRules.isValid(any())).thenReturn(false);
-        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
+            blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
-        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+            assertThat(blockCaptor.getValue().getUncleList(), empty());
+        };
 
-        assertThat(blockCaptor.getValue().getUncleList(), empty());
+        runMocked(test);
     }
 
     @Test
     public void BuildBlockHasUnclesWhenCreateAnInvalidBlock() {
-        BlockHeader parent = buildBlockHeaderWithSibling();
+        Consumer<BlockHeader> test = (parent) -> {
+            BlockResult expectedResult = mock(BlockResult.class);
+            ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+            when(validationRules.isValid(any())).thenReturn(true);
+            when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
-        BlockResult expectedResult = mock(BlockResult.class);
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-        when(validationRules.isValid(any())).thenReturn(true);
-        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
+            blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
-        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+            assertThat(blockCaptor.getValue().getUncleList(), hasSize(1));
+        };
 
-        assertThat(blockCaptor.getValue().getUncleList(), hasSize(1));
+        runMocked(test);
     }
 
     @Test
@@ -184,7 +186,7 @@ public class BlockToMineBuilderTest {
         assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
     }
 
-    private BlockHeader buildBlockHeaderWithSibling() {
+    private void runMocked(Consumer<BlockHeader> task) {
         BlockHeader blockHeader = mock(BlockHeader.class);
         long blockNumber = 42L;
         when(blockHeader.getNumber()).thenReturn(blockNumber);
@@ -192,16 +194,14 @@ public class BlockToMineBuilderTest {
         when(blockHeader.getHash()).thenReturn(blockHash);
         when(blockHeader.getMinimumGasPrice()).thenReturn(mock(Coin.class));
         when(blockHeader.getGasLimit()).thenReturn(new byte[0]);
+        BlockHeader relative = createBlockHeader();
 
-        mockBlockFamily(blockNumber, blockHash, createBlockHeader());
+        try (MockedStatic<FamilyUtils> familyUtilsMocked = mockStatic(FamilyUtils.class)) {
+            familyUtilsMocked.when(() -> FamilyUtils.getUnclesHeaders(any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
+                    .thenReturn(Collections.singletonList(relative));
 
-        return blockHeader;
-    }
-
-    private void mockBlockFamily(long blockNumber, Keccak256 blockHash, BlockHeader relative) {
-        PowerMockito.mockStatic(FamilyUtils.class);
-        PowerMockito.when(FamilyUtils.getUnclesHeaders(any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
-                .thenReturn(Collections.singletonList(relative));
+            task.accept(blockHeader);
+        }
     }
 
     private BlockHeader createBlockHeader() {

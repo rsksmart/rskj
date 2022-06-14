@@ -604,7 +604,7 @@ public class BridgeTest {
 
         assertNull(bridge.execute(data));
         verify(bridge, never()).receiveHeader(any(Object[].class));
-        verifyZeroInteractions(bridgeSupportMock);
+        verifyNoInteractions(bridgeSupportMock);
     }
 
     @Test

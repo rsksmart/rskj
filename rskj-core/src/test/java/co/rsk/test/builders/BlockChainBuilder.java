@@ -71,9 +71,19 @@ public class BlockChainBuilder {
     private TransactionPoolImpl transactionPool;
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
+    private boolean requireUnclesValidation;
+
+    public BlockChainBuilder() {
+        this.requireUnclesValidation = true; // default
+    }
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
+        return this;
+    }
+
+    public BlockChainBuilder setRequireUnclesValidation(boolean requireUnclesValidation) {
+        this.requireUnclesValidation = requireUnclesValidation;
         return this;
     }
 
@@ -207,8 +217,12 @@ public class BlockChainBuilder {
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 
-        validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(trieStore).blockStore(blockStore);
+
+        validatorBuilder.addBlockRootValidationRule().addBlockTxsValidationRule(trieStore).blockStore(blockStore);
+
+        if (requireUnclesValidation) { // to avoid UnnecessaryStubbingException when this mocking is not needed
+            validatorBuilder.addBlockUnclesValidationRule(blockStore);
+        }
 
         BlockValidator blockValidator = validatorBuilder.build();
 

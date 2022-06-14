@@ -18,19 +18,14 @@
 
 package co.rsk.peg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.resources.TestConstants;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
@@ -39,15 +34,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 
-@RunWith(PowerMockRunner.class)
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
 public class PendingFederationTest {
     private PendingFederation pendingFederation;
     private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
@@ -75,7 +71,7 @@ public class PendingFederationTest {
         }
         Assert.assertTrue(exception);
     }
-    
+
     @Test
     public void isComplete() {
         Assert.assertTrue(pendingFederation.isComplete());
@@ -268,14 +264,14 @@ public class PendingFederationTest {
         Assert.fail();
     }
 
-    @PrepareForTest({ BridgeSerializationUtils.class })
     @Test
     public void getHash() {
-        PowerMockito.mockStatic(BridgeSerializationUtils.class);
-        PowerMockito.when(BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
+        try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
+            bridgeSerializationUtilsMocked.when(() -> BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation)).thenReturn(new byte[]{(byte) 0xaa});
 
-        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
+            Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[]{(byte) 0xaa}));
 
-        Assert.assertEquals(expectedHash, pendingFederation.getHash());
+            Assert.assertEquals(expectedHash, pendingFederation.getHash());
+        }
     }
 }

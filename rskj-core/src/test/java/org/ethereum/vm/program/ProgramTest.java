@@ -22,17 +22,12 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import com.google.common.collect.Sets;
-import java.math.BigInteger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
@@ -41,15 +36,13 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.math.BigInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProgramTest {

@@ -27,11 +27,11 @@ import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,7 +146,7 @@ public class MinerHelper {
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 
-        Whitebox.setInternalState(newBlock.getHeader(), "gasLimit", gasLimit.toByteArray());
+        TestUtils.setInternalState(newBlock.getHeader(), "gasLimit", gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);
     }
 }

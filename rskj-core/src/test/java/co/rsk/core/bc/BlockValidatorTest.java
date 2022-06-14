@@ -44,7 +44,6 @@ import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -79,7 +78,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        Whitebox.setInternalState(block1.getHeader(), "unclesHash", new byte[]{0x01});
+        TestUtils.setInternalState(block1.getHeader(), "unclesHash", new byte[]{0x01});
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -290,7 +289,7 @@ public class BlockValidatorTest {
 
         BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
         when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
-      
+
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)
                 .blockStore(store)

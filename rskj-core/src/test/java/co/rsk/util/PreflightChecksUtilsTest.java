@@ -54,7 +54,7 @@ public class PreflightChecksUtilsTest {
     @Test
     public void runChecks_invalidJavaVersion_exceptionIsThrown() throws Exception {
         expectedException.expect(PreflightCheckException.class);
-        expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 8 11");
+        expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 11 17");
 
         RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
@@ -67,16 +67,16 @@ public class PreflightChecksUtilsTest {
     }
 
     @Test
-    public void runChecks_currentJavaVersionIs1dot8_OK() throws Exception {
+    public void runChecks_currentJavaVersionIs17_OK() throws Exception {
         RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("1.8");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17");
 
         preflightChecksUtilsSpy.runChecks();
 
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8");
+        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("17");
 
         rskContext.close();
     }
@@ -101,12 +101,12 @@ public class PreflightChecksUtilsTest {
         RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("1.8.0_275");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("17.0.3");
 
         preflightChecksUtilsSpy.runChecks();
 
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
-        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8.0_275");
+        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("17.0.3");
         verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
 
         rskContext.close();

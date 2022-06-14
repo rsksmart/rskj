@@ -44,10 +44,8 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,25 +57,19 @@ import java.util.*;
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(Parameterized.class)
-@PrepareForTest(LoggerFactory.class)
+@RunWith(Parameterized.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class VMTest {
 
-    private static Logger logger;
-
     @Parameterized.Parameters
     public static Collection<Object> params() {
-        return Arrays.asList(new Object[] { true, false });
+        return Arrays.asList(new Object[]{true, false});
     }
 
     private ProgramInvokeMockImpl invoke;
@@ -90,23 +82,27 @@ public class VMTest {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
+    private static MockedStatic<LoggerFactory> loggerFactoryMocked;
+
     public VMTest(boolean isLogEnabled) {
         this.isLogEnabled = isLogEnabled;
     }
 
-    @BeforeClass
-    public static void setupClass() {
-        spy(LoggerFactory.class);
-        logger = PowerMockito.mock(Logger.class);
-        PowerMockito.when(LoggerFactory.getLogger("VM")).thenReturn(logger);
-    }
-
     @Before
     public void setup() {
-        PowerMockito.when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
+        Logger logger = mock(Logger.class);
+        when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
+
+        loggerFactoryMocked = mockStatic(LoggerFactory.class, Mockito.CALLS_REAL_METHODS);
+        loggerFactoryMocked.when(() -> LoggerFactory.getLogger("VM")).thenReturn(logger);
 
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();
+    }
+
+    @After
+    public void tearDown() {
+        loggerFactoryMocked.close();
     }
 
     @Test
@@ -188,9 +184,9 @@ public class VMTest {
         String sizeInHex = String.format("%016X", sizeRequired);
 
         // check it is over the previous max size but below our current max gas
-        assert(sizeRequired * GasCost.LOG_DATA_GAS > previousGasMaxSize);
+        assert (sizeRequired * GasCost.LOG_DATA_GAS > previousGasMaxSize);
         // check it did not overflow
-        assert(sizeRequired > 0);
+        assert (sizeRequired > 0);
 
         program = getProgram(compile("" +
                 " PUSH8 0x" + sizeInHex +
@@ -209,12 +205,12 @@ public class VMTest {
     public void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x00" +
-                        " PUSH1 0x00" +
-                        " PUSH1 0x00" +
-                        " PUSH1 0x00" +
-                        " PUSH20 0x" + invoke.getContractAddress() +
-                        " PUSH4 0x005B8D80" +
-                        " STATICCALL"
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH4 0x005B8D80" +
+                " STATICCALL"
         ));
 
         program.fullTrace();
@@ -244,36 +240,36 @@ public class VMTest {
     private void doCallToNonExistentContractAndReturnValue(byte[] expected, boolean active) {
         invoke = new ProgramInvokeMockImpl(compile(
                 "PUSH1 0x10" +
-                " PUSH1 0x05 " +
-                " ADD" +
-                " PUSH1 0x40" +
-                " MSTORE " +
-                " PUSH1 0x20 " +
-                " PUSH1 0x40" +
-                " RETURN"
+                        " PUSH1 0x05 " +
+                        " ADD" +
+                        " PUSH1 0x40" +
+                        " MSTORE " +
+                        " PUSH1 0x20 " +
+                        " PUSH1 0x40" +
+                        " RETURN"
         ), null);
         program = getProgram(compile(
                 " PUSH1 0x20" +  // return size is 32 bytes
-                " PUSH1 0x40" +       // on free memory pointer
-                " PUSH1 0x00" +       // no argument
-                " PUSH1 0x00" +       // no argument size
-                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
-                " PUSH4 0x005B8D80" + // with some gas
-                " STATICCALL" +       // call it! result should be 0x15
-                " PUSH1 0x20" +       // now do the same...
-                " PUSH1 0x40" +
-                " PUSH1 0x00" +
-                " PUSH1 0x00" +
-                " PUSH1 0x00" +     // but call a non-existent contract
-                " PUSH4 0x005B8D80" +
-                " STATICCALL" +
-                " PUSH1 0x20 " +    // now put the 32 bytes
-                " PUSH1 0x00 " +    // from the beginning of the return databuffer
-                " PUSH1 0x40" +     //  to the 0x40 position on memory
-                " RETURNDATACOPY" + // do it!
-                " PUSH1 0x20" +     // and return 32 bytes
-                " PUSH1 0x40" +     // from the 0x40 position on memory
-                " RETURN"           // the return value of the contract should be zero (as last call failed)
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " STATICCALL" +       // call it! result should be 0x15
+                        " PUSH1 0x20" +       // now do the same...
+                        " PUSH1 0x40" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +     // but call a non-existent contract
+                        " PUSH4 0x005B8D80" +
+                        " STATICCALL" +
+                        " PUSH1 0x20 " +    // now put the 32 bytes
+                        " PUSH1 0x00 " +    // from the beginning of the return databuffer
+                        " PUSH1 0x40" +     //  to the 0x40 position on memory
+                        " RETURNDATACOPY" + // do it!
+                        " PUSH1 0x20" +     // and return 32 bytes
+                        " PUSH1 0x40" +     // from the 0x40 position on memory
+                        " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
         when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
         vm.steps(program, Long.MAX_VALUE);
@@ -293,31 +289,31 @@ public class VMTest {
 
     private void doCallToNonExistentContractAndReturnDataSize(boolean active, int expectedReturnDataSize) {
         invoke = new ProgramInvokeMockImpl(compile(
-                 "PUSH1 0x10" +
-                 " PUSH1 0x05 " +
-                 " ADD" +
-                 " PUSH1 0x40" +
-                 " MSTORE " +
-                 " PUSH1 0x20 " +
-                 " PUSH1 0x40" +
-                 " RETURN"
+                "PUSH1 0x10" +
+                        " PUSH1 0x05 " +
+                        " ADD" +
+                        " PUSH1 0x40" +
+                        " MSTORE " +
+                        " PUSH1 0x20 " +
+                        " PUSH1 0x40" +
+                        " RETURN"
         ), null);
         program = getProgram(compile(
                 " PUSH1 0x20" +  // return size is 32 bytes
-                " PUSH1 0x40" +  // on free memory pointer
-                " PUSH1 0x00" +  // no argument
-                " PUSH1 0x00" +  // no argument size
-                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
-                " PUSH4 0x005B8D80" + // with some gas
-                " STATICCALL" +  // call it! result should be 0x15
-                " PUSH1 0x20" +  // now do the same...
-                " PUSH1 0x40" +
-                " PUSH1 0x00" +
-                " PUSH1 0x00" +
-                " PUSH1 0x00" + // but call a non-existent contract
-                " PUSH4 0x005B8D80" +
-                " STATICCALL" +
-                " RETURNDATASIZE" // push the return data size to the stack
+                        " PUSH1 0x40" +  // on free memory pointer
+                        " PUSH1 0x00" +  // no argument
+                        " PUSH1 0x00" +  // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " STATICCALL" +  // call it! result should be 0x15
+                        " PUSH1 0x20" +  // now do the same...
+                        " PUSH1 0x40" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" + // but call a non-existent contract
+                        " PUSH4 0x005B8D80" +
+                        " STATICCALL" +
+                        " RETURNDATASIZE" // push the return data size to the stack
         ));
         when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
         vm.steps(program, Long.MAX_VALUE);
@@ -453,21 +449,21 @@ public class VMTest {
         ));
 
         Program badProgram = getProgram(compile("" +
-                        " PUSH1 0x20 " + // return data len
-                        " PUSH1 0x00 " + // return data position
-                        " PUSH1 0x00" + // input size
-                        " PUSH1 0x00" + // input position
-                        " PUSH20 0x" + invoke.getContractAddress() +
-                        " PUSH1 0xFF" + // with some gas
-                        " STATICCALL" +
-                        " PUSH1 0x00" + // return data size, dishonest bad lying bytecode
-                        " PUSH1 0x00 " + // return data offset
-                        " PUSH1 0x20" + // memory offset
-                        " RETURNDATACOPY" +
-                        " PUSH1 0x20" +
-                        " PUSH1 0x20" +
-                        " RETURN"
-                ));
+                " PUSH1 0x20 " + // return data len
+                " PUSH1 0x00 " + // return data position
+                " PUSH1 0x00" + // input size
+                " PUSH1 0x00" + // input position
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH1 0xFF" + // with some gas
+                " STATICCALL" +
+                " PUSH1 0x00" + // return data size, dishonest bad lying bytecode
+                " PUSH1 0x00 " + // return data offset
+                " PUSH1 0x20" + // memory offset
+                " RETURNDATACOPY" +
+                " PUSH1 0x20" +
+                " PUSH1 0x20" +
+                " RETURN"
+        ));
         vm.steps(goodProgram, Long.MAX_VALUE);
         vm.steps(badProgram, Long.MAX_VALUE);
 
@@ -531,33 +527,33 @@ public class VMTest {
     public void testCallDataCopyDoesNotExpandMemoryForFree() {
         invoke = new ProgramInvokeMockImpl(compile(
                 " PUSH1 0x00 PUSH1 0x00 MSTORE " +
-                " PUSH1 0x20 PUSH1 0x00 RETURN"
+                        " PUSH1 0x20 PUSH1 0x00 RETURN"
         ), null);
         Program badProgram = getProgram(compile(
                 " PUSH1 0x20" + // return size
-                " PUSH1 0x00" + // return place
-                " PUSH1 0x00" + // no argument
-                " PUSH1 0x00" + // no argument size
-                " PUSH20 0x" + invoke.getContractAddress() +
-                " PUSH2 0xFFFF" +
-                " STATICCALL" +
-                " PUSH1 0x00" + // CALLDATA length
-                " PUSH1 0x00" + // CALLDATA offset
-                " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
-                " CALLDATACOPY"
+                        " PUSH1 0x00" + // return place
+                        " PUSH1 0x00" + // no argument
+                        " PUSH1 0x00" + // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() +
+                        " PUSH2 0xFFFF" +
+                        " STATICCALL" +
+                        " PUSH1 0x00" + // CALLDATA length
+                        " PUSH1 0x00" + // CALLDATA offset
+                        " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
+                        " CALLDATACOPY"
         ));
         Program goodProgram = getProgram(compile(
                 " PUSH1 0x20" + // return size
-                " PUSH1 0x00" + // return place
-                " PUSH1 0x00" + // no argument
-                " PUSH1 0x00" + // no argument size
-                " PUSH20 0x" + invoke.getContractAddress() +
-                " PUSH2 0xFFFF" +
-                " STATICCALL" +
-                " PUSH1 0x20" + // CALLDATA length
-                " PUSH1 0x00" + // CALLDATA offset
-                " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
-                " CALLDATACOPY"
+                        " PUSH1 0x00" + // return place
+                        " PUSH1 0x00" + // no argument
+                        " PUSH1 0x00" + // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() +
+                        " PUSH2 0xFFFF" +
+                        " STATICCALL" +
+                        " PUSH1 0x20" + // CALLDATA length
+                        " PUSH1 0x00" + // CALLDATA offset
+                        " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
+                        " CALLDATACOPY"
         ));
         vm.steps(goodProgram, Long.MAX_VALUE);
         vm.steps(badProgram, Long.MAX_VALUE);
@@ -575,13 +571,13 @@ public class VMTest {
         // and then compare the bad and good programs
         Program initContract = getProgram(compile(
                 " PUSH1 0x00" +
-                " PUSH1 0x00" +
-                " PUSH1 0x01" +
-                " PUSH1 0x00" +
-                " PUSH1 0x00" +
-                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
-                " PUSH1 0xFF" +
-                " CALL"
+                        " PUSH1 0x00" +
+                        " PUSH1 0x01" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                        " PUSH1 0xFF" +
+                        " CALL"
         ));
         Program bad = getProgram(compile("" +
                 " PUSH1 0x00" +
@@ -1080,7 +1076,7 @@ public class VMTest {
 
         assertTrue(program.isStopped());
         String result = ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase();
-        assertEquals(expected,result);
+        assertEquals(expected, result);
     }
 
     @Test  // AND OP
@@ -1413,8 +1409,8 @@ public class VMTest {
     public void testSGT_2() {
 
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
-                        "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "13");
+                "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
+                "13");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
 
         vm.step(program);
@@ -1428,8 +1424,8 @@ public class VMTest {
     public void testSGT_3() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
-                        "13");
+                "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
+                "13");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
 
         vm.step(program);
@@ -1443,7 +1439,7 @@ public class VMTest {
     public void testSGT_4() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "13");
+                "13");
         try {
             vm.step(program);
             vm.step(program);
@@ -1522,8 +1518,8 @@ public class VMTest {
     public void testSLT_2() {
 
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
-                        "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "12");
+                "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
+                "12");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
 
         vm.step(program);
@@ -1537,8 +1533,8 @@ public class VMTest {
     public void testSLT_3() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
-                        "12");
+                "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
+                "12");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
 
         vm.step(program);
@@ -1552,7 +1548,7 @@ public class VMTest {
     public void testSLT_4() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
-                        "12");
+                "12");
         try {
             vm.step(program);
             vm.step(program);
@@ -1727,7 +1723,7 @@ public class VMTest {
 
         }
 
-        programCode += ByteUtil.toHexString(new byte[]{   (byte)(OpCode.SWAP1.val() + n - 1)   });
+        programCode += ByteUtil.toHexString(new byte[]{(byte) (OpCode.SWAP1.val() + n - 1)});
 
         program = getProgram(ByteUtil.appendByte(Hex.decode(programCode), operation));
 
@@ -2037,7 +2033,7 @@ public class VMTest {
     public void testVersioning_1() {
 
         program = getProgram("FC010100" // this is the header
-        + "611234602052601F51");
+                + "611234602052601F51");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
                 "0000000000000000000000000000000000000000000000000000000000001234";
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000012";
@@ -2053,6 +2049,7 @@ public class VMTest {
         assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()));
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
+
     // Test for currectness of extra header length when over 128 (negative byte)
     @Test
     public void testVersioning_2() {
@@ -2063,17 +2060,17 @@ public class VMTest {
 
         byte[] tail = Hex.decode("611234602052601F51");
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            outputStream.write( header );
-            outputStream.write( skip );
-            outputStream.write( tail );
+            outputStream.write(header);
+            outputStream.write(skip);
+            outputStream.write(tail);
         } catch (IOException e) {
             e.printStackTrace();
             Assert.assertTrue(false);
         }
 
-        byte code[] = outputStream.toByteArray( );
+        byte code[] = outputStream.toByteArray();
 
         program = getProgram(code);
         // no negative values allowed. Currently values over 127 are limited
@@ -3055,12 +3052,12 @@ public class VMTest {
     @Test // CODECOPY OP
     public void testCODECOPY_2() {
         program = getProgram("605E60076000396000605f556014600054601e60205463abcddcba6040545b51602001" +
-                                 "600a5254516040016014525451606001601e5254516080016028525460a05254601660" +
-                                 "4860003960166000f26000603f556103e75660005460005360200235602054");
+                "600a5254516040016014525451606001601e5254516080016028525460a05254601660" +
+                "4860003960166000f26000603f556103e75660005460005360200235602054");
 
         String m_expected_1 = "6000605F556014600054601E60205463ABCDDCBA6040545B51602001600A5254516040016" +
-                              "014525451606001601E5254516080016028525460A0525460166048600039" +
-                              "60166000F26000603F556103E756600054600053602002356020540000";
+                "014525451606001601E5254516080016028525460A0525460166048600039" +
+                "60166000F26000603F556103E756600054600053602002356020540000";
 
         vm.step(program);
         vm.step(program);
@@ -3160,8 +3157,8 @@ public class VMTest {
 
     @Test // EXTCODECOPY OP
     public void testEXTCODECOPY_2() {
-        program = getProgram("603E6007600073471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C6000605f556014"+
-                "600054601e60205463abcddcba6040545b51602001600a5254516040016014525451606001601e52545160"+
+        program = getProgram("603E6007600073471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C6000605f556014" +
+                "600054601e60205463abcddcba6040545b51602001600a5254516040016014525451606001601e52545160" +
                 "80016028525460a052546016604860003960166000f26000603f556103e75660005460005360200235602054");
 
         String m_expected_1 = "6000605F556014600054601E60205463ABCDDCBA6040545B5160200" +
@@ -3406,6 +3403,7 @@ public class VMTest {
         String result = stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("TXINDEX"));
     }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
@@ -3419,13 +3417,14 @@ public class VMTest {
             assertTrue(program.isStopped());
         }
     }
+
     // Testing FC code with scriptVersion ==0.
     // The header is valid
     // Should produce invalidop exception
     @Test(expected = Program.IllegalOperationException.class)
     public void testScriptVersion1() {
         program = getProgram("FC000000" + //header
-        "FC");
+                "FC");
         try {
             // Only one step needs to be exeecuted because header is not.
             vm.step(program);
@@ -3529,7 +3528,7 @@ public class VMTest {
 
     static String formatBinData(byte[] binData, int startPC) {
         StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < binData.length; i+= 16) {
+        for (int i = 0; i < binData.length; i += 16) {
             ret.append(Utils.align("" + Integer.toHexString(startPC + (i)) + ":", ' ', 8, false));
             ret.append(ByteUtil.toHexString(binData, i, min(16, binData.length - i))).append('\n');
         }
@@ -3552,7 +3551,7 @@ public class VMTest {
                     binDataStartPC = index;
                 }
                 binData.write(code[index]);
-                index ++;
+                index++;
                 if (index < code.length) {
                     continue;
                 }
@@ -3571,7 +3570,7 @@ public class VMTest {
 
             if (op == null) {
                 sb.append("<UNKNOWN>: ").append(0xFF & opCode).append("\n");
-                index ++;
+                index++;
                 continue;
             }
 
@@ -3631,7 +3630,7 @@ public class VMTest {
                 }
                 it.setPC(gotos.pollFirst());
             }
-        } while(it.next());
+        } while (it.next());
         return ret;
     }
 
@@ -3680,13 +3679,98 @@ public class VMTest {
 // TODO: considering: G_TXDATA + G_TRANSACTION
 
 /**
- *   TODO:
- *
- *   22) CREATE:
- *   23) CALL:
- *
- *
- **/
+ * TODO:
+ * <p>
+ * 22) CREATE:
+ * 23) CALL:
+ * <p>
+ * <p>
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
+ */
 
 /**
 

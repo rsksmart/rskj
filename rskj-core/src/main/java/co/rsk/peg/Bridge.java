@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -208,7 +209,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
-    
+
     private static final Integer RECEIVE_HEADER_ERROR_SIZE_MISTMATCH = -20;
 
     private final Constants constants;
@@ -219,15 +220,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private org.ethereum.core.Transaction rskTx;
 
     private BridgeSupport bridgeSupport;
-    private BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
+
+    private final BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory;
 
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
                   BridgeSupportFactory bridgeSupportFactory) {
+        this(contractAddress, constants, activationConfig, bridgeSupportFactory, MerkleBranch::new);
+    }
+
+    @VisibleForTesting
+    Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
+           BridgeSupportFactory bridgeSupportFactory, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory) {
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.merkleBranchFactory = merkleBranchFactory;
     }
 
     @Override
@@ -643,7 +653,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
                     .map(hash -> Sha256Hash.wrap((byte[]) hash)).collect(Collectors.toList());
 
-            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchPath);
+            MerkleBranch merkleBranch = merkleBranchFactory.apply(merkleBranchHashes, merkleBranchPath);
 
             return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {

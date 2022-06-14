@@ -36,12 +36,15 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -50,7 +53,6 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -131,7 +133,7 @@ public class BlockHeaderContractTest {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         executionEnvironment = mock(ExecutionEnvironment.class);
-        Whitebox.setInternalState(contract, "executionEnvironment", executionEnvironment);
+        TestUtils.setInternalState(contract, "executionEnvironment", executionEnvironment);
     }
 
     @Test
@@ -600,7 +602,7 @@ public class BlockHeaderContractTest {
         Assert.assertTrue(method.isPresent());
         Assert.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
         if (withAccessor) {
-            Object accessor = Whitebox.getInternalState(method.get(), "blockAccessor");
+            Object accessor = TestUtils.getInternalState(method.get(), "blockAccessor");
             Assert.assertNotNull(accessor);
             Assert.assertEquals(BlockAccessor.class, accessor.getClass());
         }

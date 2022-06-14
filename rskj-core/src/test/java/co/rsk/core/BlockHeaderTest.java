@@ -30,8 +30,9 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.ArgumentMatchers;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -41,11 +42,9 @@ import java.util.function.Consumer;
 import static java.lang.System.arraycopy;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.times;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Mockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(HashUtil.class)
+@RunWith(MockitoJUnitRunner.class)
 public class BlockHeaderTest {
 
     @Test
@@ -54,7 +53,7 @@ public class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         byte[] hashForMergedMining = concatenate(hashForMergedMiningPrefix, forkDetectionData);
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, hashForMergedMining);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -77,7 +76,7 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOn() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, true, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -91,7 +90,7 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOff() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, false, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -169,7 +168,7 @@ public class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         byte[] coinbase = concatenate(hashForMergedMining, forkDetectionData);
         coinbase = concatenate(RskMiningConstants.RSK_TAG, coinbase);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -263,7 +262,7 @@ public class BlockHeaderTest {
     public void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
@@ -280,19 +279,18 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashShouldReuseCalculatedValue() {
-        mockStatic(HashUtil.class);
-
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
         byte[] headerEncoded = header.getEncoded();
 
-        when(HashUtil.keccak256(headerEncoded)).thenReturn(Keccak256.ZERO_HASH.getBytes());
+        try (MockedStatic<HashUtil> hashUtilMocked = mockStatic(HashUtil.class)) {
+            hashUtilMocked.when(() -> HashUtil.keccak256(headerEncoded)).thenReturn(Keccak256.ZERO_HASH.getBytes());
 
-        for (int i = 0; i < 5; i++) {
-            header.getHash();
+            for (int i = 0; i < 5; i++) {
+                header.getHash();
+            }
+
+            hashUtilMocked.verify(() -> HashUtil.keccak256(ArgumentMatchers.any()));
         }
-
-        verifyStatic(HashUtil.class, times(1));
-        HashUtil.keccak256(headerEncoded);
     }
 
     @Test
@@ -326,7 +324,7 @@ public class BlockHeaderTest {
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData, byte[] ummRoot){
+            boolean includeForkDetectionData, byte[] ummRoot) {
         return createBlockHeader(new byte[80], new byte[32], new byte[128],
                 forkDetectionData, includeForkDetectionData, ummRoot, false);
     }
@@ -345,7 +343,7 @@ public class BlockHeaderTest {
 
     private BlockHeader createBlockHeaderWithUmmRoot(byte[] ummRoot, byte[] forkDetectionData) {
         return createBlockHeader(null, null, null,
-                                 forkDetectionData, true, ummRoot, true);
+                forkDetectionData, true, ummRoot, true);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,

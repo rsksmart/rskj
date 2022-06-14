@@ -26,9 +26,9 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -57,7 +57,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 public class BridgeSerializationUtilsTest {
 
