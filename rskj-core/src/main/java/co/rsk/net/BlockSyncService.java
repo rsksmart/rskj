@@ -73,7 +73,13 @@ public class BlockSyncService {
         this.blockHeaderValidator = blockHeaderValidator;
     }
 
-    protected boolean preprocessBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
+    /**
+     * Does initial preprocessing of the {@code block}.
+     * 
+     * @return block and its ancestors (if any), which are not connected yet. Returns an empty list,
+     * if the block is too advanced, already connected or some of its ancestors are still being awaited from a network.
+     */
+    protected List<Block> preprocessBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final long bestBlockNumber = this.getBestBlockNumber();
         final long blockNumber = block.getNumber();
         final Keccak256 blockHash = block.getHash();
@@ -85,7 +91,7 @@ public class BlockSyncService {
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getPrintableHash(),
                     sender != null ? sender.getPeerNodeID().toString() : "N/A");
-            return false;
+            return Collections.emptyList();
         }
 
         if (sender != null) {
@@ -95,7 +101,7 @@ public class BlockSyncService {
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
             logger.trace("Block already in a chain {} {}", blockNumber, block.getPrintableHash());
-            return false;
+            return Collections.emptyList();
         }
         trySaveStore(block);
 
@@ -106,32 +112,29 @@ public class BlockSyncService {
                 logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getPrintableHash());
                 requestMissingHashes(sender, unknownHashes);
             }
-            return false;
+            return Collections.emptyList();
         }
 
-        return true;
+        return BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block));
     }
 
     public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final Instant start = Instant.now();
-
-        // Should be refactored later to prevent block header validation in a few places.
+        
         // Validate block header first to see if its PoW is valid at all
         if (!isBlockHeaderValid(block)) {
             logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getHash(), sender);
             return invalidBlockResult(block, start);
         }
 
-        boolean readyForProcessing = preprocessBlock(block, sender, ignoreMissingHashes);
-        if (!readyForProcessing) {
+        List<Block> blocksToConnect = preprocessBlock(block, sender, ignoreMissingHashes);
+        if (blocksToConnect.isEmpty()) {
             return BlockProcessResult.ignoreBlockResult(block, start);
         }
 
         logger.trace("Trying to add to blockchain");
 
-        Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
-                BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
-
+        Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender, blocksToConnect, ignoreMissingHashes);
         return BlockProcessResult.connectResult(block, start, connectResult);
     }
 
@@ -174,7 +177,7 @@ public class BlockSyncService {
         }
     }
 
-    private Map<Keccak256, ImportResult> connectBlocksAndDescendants(Peer sender, List<Block> blocks, boolean ignoreMissingHashes) {
+    protected Map<Keccak256, ImportResult> connectBlocksAndDescendants(Peer sender, List<Block> blocks, boolean ignoreMissingHashes) {
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         List<Block> remainingBlocks = blocks;
         while (!remainingBlocks.isEmpty()) {
@@ -194,7 +197,7 @@ public class BlockSyncService {
             Set<Keccak256> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
             if (!missingHashes.isEmpty()) {
-                if (!ignoreMissingHashes){
+                if (!ignoreMissingHashes) {
                     logger.trace("Missing hashes for block in process {} {}", block.getNumber(), block.getPrintableHash());
                     requestMissingHashes(sender, missingHashes);
                 }
