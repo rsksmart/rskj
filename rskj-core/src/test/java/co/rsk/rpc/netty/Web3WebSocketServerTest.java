@@ -84,12 +84,21 @@ public class Web3WebSocketServerTest {
         smokeTest(getJsonRpcBigMessage());
     }
 
+    @Test
+    public void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
+        smokeTest(getJsonRpcBigMessage(), "/");
+    }
+
     @After
     public void tearDown() {
         wsExecutor.shutdown();
     }
 
-    private void smokeTest(byte [] msg) throws Exception {
+    private void smokeTest(byte[] msg) throws Exception {
+        smokeTest(msg, "/websocket");
+    }
+
+    private void smokeTest(byte[] msg, String serverPath) throws Exception {
         Web3 web3Mock = mock(Web3.class);
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
@@ -121,7 +130,7 @@ public class Web3WebSocketServerTest {
         websocketServer.start();
 
         OkHttpClient wsClient = new OkHttpClient();
-        Request wsRequest = new Request.Builder().url("ws://localhost:"+randomPort+"/websocket").build();
+        Request wsRequest = new Request.Builder().url("ws://localhost:" + randomPort + serverPath).build();
         WebSocketCall wsCall = WebSocketCall.create(wsClient, wsRequest);
 
         CountDownLatch wsAsyncResultLatch = new CountDownLatch(1);
