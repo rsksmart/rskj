@@ -355,6 +355,7 @@ public class NodeMessageHandlerTest {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
+        final BlockStore blockStore = mock(BlockStore.class);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -363,7 +364,7 @@ public class NodeMessageHandlerTest {
         final SimplePeer sender = new SimplePeer();
         final SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain,
-                mock(BlockStore.class), mock(ConsensusValidationMainchainView.class),
+                blockStore, mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
                 syncConfiguration,
                 blockFactory,
@@ -376,7 +377,11 @@ public class NodeMessageHandlerTest {
                 null, mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+
+        Genesis genesisBlock = blockGenerator.getGenesisBlock();
+        when(blockStore.getMinNumber()).thenReturn(genesisBlock.getNumber());
+
+        final Block block = blockGenerator.createChildBlock(genesisBlock);
         final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), blockchain.getTotalDifficulty());
         final Message message = new StatusMessage(status);
 
@@ -679,7 +684,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
-        
+
         handler.processMessage(sender, message);
 
         verify(blockProcessor, never()).processNewBlockHashesMessage(any(), any());
@@ -857,10 +862,10 @@ public class NodeMessageHandlerTest {
                 Collections.emptyList()
         );
     }
-    
+
     @Test
     public void fillMessageQueue_thenBlockNewMessages() throws UnknownHostException {
-     
+
     	TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
@@ -869,20 +874,20 @@ public class NodeMessageHandlerTest {
                 mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
-    
+
         // Add more than the queue supports
         int numMsgToAdd = config.getMessageQueueMaxSize() + 50;
         for(int i = 0; i < numMsgToAdd; i++) {
-        	
+
         	final TransactionsMessage message = new TransactionsMessage(TransactionUtils.getTransactions(1));
-        
+
         	handler.postMessage(sender, message);
-        	
+
         }
-        
+
         // assert that the surplus was not added
         Assert.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
-        
+
     }
 }
 

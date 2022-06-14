@@ -360,11 +360,13 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber) {
         boolean wasSyncing = this.isSyncing.getAndSet(isSyncing);
-        if (!wasSyncing && isSyncing) {
+        boolean startedSyncing = !wasSyncing && isSyncing;
+        boolean finishedSyncing = wasSyncing && !isSyncing;
+        if (startedSyncing) {
             initialBlockNumber = blockchain.getBestBlock().getNumber();
             highestBlockNumber = Optional.ofNullable(peerBestBlockNumber).orElse(initialBlockNumber);
             ethereumListener.onLongSyncStarted();
-        } else if (wasSyncing && !isSyncing) {
+        } else if (finishedSyncing) {
             ethereumListener.onLongSyncDone();
         }
     }
