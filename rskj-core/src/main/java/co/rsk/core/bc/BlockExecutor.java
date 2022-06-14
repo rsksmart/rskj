@@ -120,20 +120,20 @@ public class BlockExecutor {
      * @param parent The parent of the block.
      */
     public BlockResult executeAndFill(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, true, false);
+        BlockResult result = executeForMining(block, parent, true, false);
         fill(block, result);
         return result;
     }
 
     @VisibleForTesting
     public void executeAndFillAll(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, true);
+        BlockResult result = executeForMining(block, parent, false, true);
         fill(block, result);
     }
 
     @VisibleForTesting
     public void executeAndFillReal(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, false);
+        BlockResult result = executeForMining(block, parent, false, false);
         if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             fill(block, result);
         }
@@ -165,7 +165,7 @@ public class BlockExecutor {
      */
     @VisibleForTesting
     public boolean executeAndValidate(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, false);
+        BlockResult result = execute(null, 0, block, parent, false, false);
 
         return this.validate(block, result);
     }
@@ -260,13 +260,12 @@ public class BlockExecutor {
         return Arrays.equals(calculateLogsBloom(result.getTransactionReceipts()), header.getLogsBloom());
     }
 
-    @VisibleForTesting
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
-        return execute(block, parent, discardInvalidTxs, false);
-    }
-
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+    public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+        if (block.getHeader().getTxExecutionListsEdges() != null) {
+            return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute);
+        } else {
+            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+        }
     }
 
     /**
@@ -279,31 +278,28 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
-        executeInternal(
+        execute(
                 Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
         );
     }
 
-    private BlockResult executeInternal(
+    public BlockResult execute(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions) {
-
-        if (block.getHeader().getTxExecutionListsEdges() != null) {
-            return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
-        } else {
             boolean rskip144Active = activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber());
-            if (rskip144Active) {
-                return executeSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+
+            if (rskip144Active && block.getHeader().getTxExecutionListsEdges() != null) {
+                return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+            } else {
+                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
             }
-            return executeOldSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
-        }
     }
 
-    private BlockResult executeOldSequential(
+    private BlockResult executePreviousRSKIP144(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             int vmTraceOptions,
             Block block,
@@ -413,6 +409,8 @@ public class BlockExecutor {
 
             logger.trace("tx done");
         }
+
+        addFeesToRemasc(remascFees, track);
 
         logger.trace("End txs executions.");
         if (!vmTrace) {
@@ -585,14 +583,11 @@ public class BlockExecutor {
         }
     }
 
-    private BlockResult executeSequential(
-            @Nullable ProgramTraceProcessor programTraceProcessor,
-            int vmTraceOptions,
+    private BlockResult executeForMiningAfterRSKIP144(
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions) {
-        boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeInternal.");
         List<Transaction> transactionsList = block.getTransactionsList();
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), transactionsList.size());
@@ -624,7 +619,7 @@ public class BlockExecutor {
         short buckets = 2;
 
         //TODO(Juli): Is there a better way to calculate the bucket gas limit?
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit())/buckets);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
 
@@ -638,8 +633,8 @@ public class BlockExecutor {
                     track,
                     block,
                     parallelizeTransactionHandler.getGasUsedInSequential(),
-                    vmTrace,
-                    vmTraceOptions,
+                    false,
+                    0,
                     deletedAccounts,
                     remascFees); //TODO(Juli): Check how to differ this behavior between RSKIPs
             boolean transactionExecuted = txExecutor.executeTransaction();
@@ -679,10 +674,6 @@ public class BlockExecutor {
 
             if (this.registerProgramResults) {
                 this.transactionResults.put(tx.getHash(), txExecutor.getResult());
-            }
-
-            if (vmTrace) {
-                txExecutor.extractTrace(programTraceProcessor);
             }
 
             logger.trace("tx executed");
@@ -730,11 +721,10 @@ public class BlockExecutor {
         addFeesToRemasc(remascFees, track);
 
         logger.trace("End txs executions.");
-        if (!vmTrace) {
-            logger.trace("Saving track.");
-            track.save();
-            logger.trace("End saving track.");
-        }
+
+        logger.trace("Saving track.");
+        track.save();
+        logger.trace("End saving track.");
 
         logger.trace("Building execution results.");
 
@@ -753,7 +743,7 @@ public class BlockExecutor {
                 bucketOrder,
                 gasUsedInBlock,
                 totalPaidFees,
-                vmTrace ? null : track.getTrie()
+                track.getTrie()
         );
         profiler.stop(metric);
         logger.trace("End executeInternal.");
