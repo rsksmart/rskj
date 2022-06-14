@@ -1,7 +1,7 @@
 package co.rsk.util;
 
+import org.ethereum.TestUtils;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.util.Map;
 
@@ -15,22 +15,22 @@ public class MaxSizeHashMapTest {
         int maxSize = 50_000;
         Map<Integer, Integer> maxSizeMap = new MaxSizeHashMap<>(maxSize, true);
 
-        Object[] table = Whitebox.getInternalState(maxSizeMap, "table");
+        Object[] table = TestUtils.getInternalState(maxSizeMap, "table");
         assertNull(table);
         for(int i=0; i < maxSize/2 ; i++) {
             maxSizeMap.put(i, i);
         }
-        table = Whitebox.getInternalState(maxSizeMap, "table");
+        table = TestUtils.getInternalState(maxSizeMap, "table");
         assertEquals(65_536, table.length);
         for(int i=maxSize/2; i < maxSize ; i++) {
             maxSizeMap.put(i, i);
         }
-        table = Whitebox.getInternalState(maxSizeMap, "table");
+        table = TestUtils.getInternalState(maxSizeMap, "table");
         assertEquals(131_072, table.length);
         for(int i=maxSize; i < maxSize + maxSize ; i++) {
             maxSizeMap.put(i, i);
         }
-        table = Whitebox.getInternalState(maxSizeMap, "table");
+        table = TestUtils.getInternalState(maxSizeMap, "table");
         assertEquals(131_072, table.length);
     }
 }

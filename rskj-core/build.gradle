@@ -100,8 +100,8 @@ ext {
     testLibVersions = [
             jsonSimpleVer  : '1.1.1',
             junitVer       : '4.12',
-            mockitoVer     : '2.23.4',
-            powermockVer   : '2.0.2',
+            mockitoVer     : '4.1.0',
+            powermockVer   : '2.0.2', // TODO:I remove powermock
             awaitilityVer  : '3.0.0',
             commonsIoVer   : '2.5',
             commonsCodecVer: '1.10',
@@ -113,9 +113,9 @@ ext {
     testLibs = [
             jsonSimpleLib           : "com.googlecode.json-simple:json-simple:${testLibVersions.jsonSimpleVer}",
             junitLib                : "junit:junit:${testLibVersions.junitVer}",
-            mockitoLib              : "org.mockito:mockito-core:${testLibVersions.mockitoVer}",
-            powermockModuleJunit4Lib: "org.powermock:powermock-module-junit4:${testLibVersions.powermockVer}",
-            powermockApiMockito2Lib : "org.powermock:powermock-api-mockito2:${testLibVersions.powermockVer}",
+            mockitoLib              : "org.mockito:mockito-inline:${testLibVersions.mockitoVer}",
+            powermockModuleJunit4Lib: "org.powermock:powermock-module-junit4:${testLibVersions.powermockVer}", // TODO:I remove powermock
+            powermockApiMockito2Lib : "org.powermock:powermock-api-mockito2:${testLibVersions.powermockVer}", // TODO:I remove powermock
             awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
             commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
@@ -149,8 +149,8 @@ dependencies {
     testImplementation "${testLibs.jsonSimpleLib}"
     testImplementation "${testLibs.junitLib}"
     testImplementation "${testLibs.mockitoLib}"
-    testImplementation "${testLibs.powermockModuleJunit4Lib}"
-    testImplementation "${testLibs.powermockApiMockito2Lib}"
+    testImplementation "${testLibs.powermockModuleJunit4Lib}" // TODO:I remove powermock
+    testImplementation "${testLibs.powermockApiMockito2Lib}" // TODO:I remove powermock
     testImplementation "${testLibs.awaitilityLib}"
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"

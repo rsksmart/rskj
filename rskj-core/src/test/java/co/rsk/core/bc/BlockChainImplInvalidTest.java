@@ -26,10 +26,14 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -38,7 +42,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -106,7 +109,7 @@ public class BlockChainImplInvalidTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        Whitebox.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
+        TestUtils.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }

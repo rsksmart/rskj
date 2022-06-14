@@ -24,6 +24,7 @@ import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.SyncBlockValidatorRule;
+import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
@@ -83,7 +84,7 @@ public class DownloadingBodiesSyncStateTest {
         Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
         long messageId = 2L;
         pendingBodyResponses.put(messageId, pendingBodyResponse);
-        Whitebox.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
+        TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
         BodyResponseMessage message = new BodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
@@ -109,7 +110,7 @@ public class DownloadingBodiesSyncStateTest {
         Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
         long messageId = 2L;
         pendingBodyResponses.put(messageId, pendingBodyResponse);
-        Whitebox.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
+        TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
         BodyResponseMessage message = new BodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
@@ -141,31 +142,31 @@ public class DownloadingBodiesSyncStateTest {
         Map<Long, DownloadingBodiesSyncState.PendingBodyResponse> pendingBodyResponses = new HashMap<>();
         long messageId = 2L;
         pendingBodyResponses.put(messageId, pendingBodyResponse);
-        Whitebox.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
+        TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
         Map<Peer, Integer> chunksBeingDownloaded = new HashMap<>();
         int peerChunk = 0;
         chunksBeingDownloaded.put(peer, peerChunk);
-        Whitebox.setInternalState(state, "chunksBeingDownloaded", chunksBeingDownloaded);
+        TestUtils.setInternalState(state, "chunksBeingDownloaded", chunksBeingDownloaded);
 
         Map<Peer, Integer> segmentsBeingDownloaded = new HashMap<>();
         int peerSegment = 0;
         segmentsBeingDownloaded.put(peer, peerSegment);
-        Whitebox.setInternalState(state, "segmentsBeingDownloaded", segmentsBeingDownloaded);
+        TestUtils.setInternalState(state, "segmentsBeingDownloaded", segmentsBeingDownloaded);
 
         List<Deque<Integer>> chunksBySegment = new ArrayList<>();
         Deque<Integer> segmentedChunks = new ArrayDeque<>();
         segmentedChunks.add(peerChunk);
         chunksBySegment.add(segmentedChunks);
-        Whitebox.setInternalState(state, "chunksBySegment", chunksBySegment);
+        TestUtils.setInternalState(state, "chunksBySegment", chunksBySegment);
 
         Map<Peer, Duration> timeElapsedByPeer = new HashMap<>();
         timeElapsedByPeer.put(peer, Duration.ofSeconds(2));
-        Whitebox.setInternalState(state, "timeElapsedByPeer", timeElapsedByPeer);
+        TestUtils.setInternalState(state, "timeElapsedByPeer", timeElapsedByPeer);
 
         Map<Peer, Long> messagesByPeers = new HashMap<>();
         messagesByPeers.put(peer, messageId);
-        Whitebox.setInternalState(state, "messagesByPeers", messagesByPeers);
+        TestUtils.setInternalState(state, "messagesByPeers", messagesByPeers);
 
         state.tick(Duration.ofSeconds(1));
         verify(peersInformation, times(1))

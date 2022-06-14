@@ -28,9 +28,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
@@ -41,8 +40,9 @@ import java.util.stream.Stream;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
@@ -96,51 +96,50 @@ public class FederationTest {
         Assert.assertTrue(exception);
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void redeemScript() {
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
-            calls.add(1);
-            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-            Assert.assertEquals(4, numberOfSignaturesRequired);
-            Assert.assertEquals(6, publicKeys.size());
-            for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
-                    publicKeys.get(i).getPubKey());
-            }
-            return new Script(new byte[]{(byte)0xaa});
-        });
-        Assert.assertArrayEquals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa});
-        // Make sure the script creation happens only once
-        Assert.assertEquals(1, calls.size());
+        try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
+            scriptBuilderMocked.when(() -> ScriptBuilder.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+                calls.add(1);
+                int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+                List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
+                Assert.assertEquals(4, numberOfSignaturesRequired);
+                Assert.assertEquals(6, publicKeys.size());
+                for (int i = 0; i < sortedPublicKeys.size(); i++) {
+                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                            publicKeys.get(i).getPubKey());
+                }
+                return new Script(new byte[]{(byte) 0xaa});
+            });
+            Assert.assertArrayEquals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa});
+            // Make sure the script creation happens only once
+            Assert.assertEquals(1, calls.size());
+        }
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void P2SHScript() {
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
-            calls.add(0);
-            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-            Assert.assertEquals(4, numberOfSignaturesRequired);
-            Assert.assertEquals(6, publicKeys.size());
-            for (int i = 0; i < sortedPublicKeys.size();i ++) {
-                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
-                    publicKeys.get(i).getPubKey());
-            }
-            return new Script(new byte[]{(byte)0xaa});
-        });
-        Assert.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
-        // Make sure the script creation happens only once
-        Assert.assertEquals(1, calls.size());
+        try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
+            scriptBuilderMocked.when(() -> ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+                calls.add(0);
+                int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+                List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
+                Assert.assertEquals(4, numberOfSignaturesRequired);
+                Assert.assertEquals(6, publicKeys.size());
+                for (int i = 0; i < sortedPublicKeys.size(); i++) {
+                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                            publicKeys.get(i).getPubKey());
+                }
+                return new Script(new byte[]{(byte) 0xaa});
+            });
+            Assert.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
+            // Make sure the script creation happens only once
+            Assert.assertEquals(1, calls.size());
+        }
     }
 
-    @PrepareForTest({ ScriptBuilder.class })
     @Test
     public void Address() {
         // Since we can't mock both Address and ScriptBuilder at the same time (due to PowerMockito limitations)
@@ -148,23 +147,24 @@ public class FederationTest {
         // and just mock the ScriptBuilder
         // a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87 => 2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p
         final List<Integer> calls = new ArrayList<>();
-        PowerMockito.mockStatic(ScriptBuilder.class);
-        PowerMockito.when(ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
-            calls.add(0);
-            int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
-            List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-            Assert.assertEquals(4, numberOfSignaturesRequired);
-            Assert.assertEquals(6, publicKeys.size());
-            for (int i = 0; i < sortedPublicKeys.size();i ++) {
-                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
-                    publicKeys.get(i).getPubKey());
-            }
-            return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
-        });
+        try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
+            scriptBuilderMocked.when(() -> ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
+                calls.add(0);
+                int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
+                List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
+                Assert.assertEquals(4, numberOfSignaturesRequired);
+                Assert.assertEquals(6, publicKeys.size());
+                for (int i = 0; i < sortedPublicKeys.size(); i++) {
+                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                            publicKeys.get(i).getPubKey());
+                }
+                return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
+            });
 
-        Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
-        // Make sure the address creation happens only once
-        Assert.assertEquals(1, calls.size());
+            Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
+            // Make sure the address creation happens only once
+            Assert.assertEquals(1, calls.size());
+        }
     }
 
     @Test

@@ -21,13 +21,10 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 public class TransactionExecutorTest {
 
@@ -44,7 +41,6 @@ public class TransactionExecutorTest {
     private VmConfig vmConfig;
     private PrecompiledContracts precompiledContracts;
     private Set<DataWord> deletedAccounts;
-    private ExecutorService vmExecution;
     private int txIndex;
     private long gasUsedInTheBlock;
 
@@ -66,7 +62,6 @@ public class TransactionExecutorTest {
         vmConfig = mock(VmConfig.class);
         precompiledContracts = mock(PrecompiledContracts.class);
         deletedAccounts = new HashSet<>();
-        vmExecution = mock(ExecutorService.class);
         when(executionBlock.getNumber()).thenReturn(10L);
     }
 

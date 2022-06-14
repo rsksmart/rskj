@@ -19,10 +19,10 @@
 package co.rsk.peg;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ public class ABICallSpecTest {
         });
 
         byte[][] arguments = spec.getArguments();
-        Assert.assertNotSame(arguments, Whitebox.getInternalState(spec, "arguments"));
+        Assert.assertNotSame(arguments, TestUtils.getInternalState(spec, "arguments"));
         Assert.assertTrue(Arrays.equals(Hex.decode("aabb"), arguments[0]));
         Assert.assertTrue(Arrays.equals(Hex.decode("ccddee"), arguments[1]));
     }

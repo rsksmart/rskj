@@ -21,26 +21,33 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import org.bitcoin.Secp256k1Context;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Secp256k1Context.class)
+@RunWith(MockitoJUnitRunner.class)
 public class Secp256k1Test {
+
+    private MockedStatic<Secp256k1Context> secp256k1ContextMocked;
 
     @Before
     public void init() {
         // Lets assume we have the ability to run Native Library.
-        PowerMockito.mockStatic(Secp256k1Context.class);
-        PowerMockito.when(Secp256k1Context.isEnabled()).thenReturn(Boolean.TRUE);
+        secp256k1ContextMocked = mockStatic(Secp256k1Context.class);
+        secp256k1ContextMocked.when(Secp256k1Context::isEnabled).thenReturn(Boolean.TRUE);
+    }
+
+    @After
+    public void tearDown() {
+        secp256k1ContextMocked.close();
     }
 
     @Test
@@ -64,8 +71,8 @@ public class Secp256k1Test {
     @Test
     public void testInitialization_fallbackOnBC() {
         // Test BC init
-        PowerMockito.when(Secp256k1Context.isEnabled()).thenReturn(Boolean.FALSE);
-        PowerMockito.when(Secp256k1Context.getLoadError()).thenReturn(new RuntimeException("Secp256k1Context test"));
+        secp256k1ContextMocked.when(Secp256k1Context::isEnabled).thenReturn(Boolean.FALSE);
+        secp256k1ContextMocked.when(Secp256k1Context::getLoadError).thenReturn(new RuntimeException("Secp256k1Context test"));
         Secp256k1.reset();
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
         Mockito.when(properties.cryptoLibrary()).thenReturn("native");

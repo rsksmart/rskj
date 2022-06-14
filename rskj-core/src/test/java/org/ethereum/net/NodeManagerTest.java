@@ -21,13 +21,13 @@ package org.ethereum.net;
 
 import co.rsk.net.discovery.PeerExplorer;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.util.*;
 
@@ -134,7 +134,7 @@ public class NodeManagerTest {
             keys.add(node.getHexId());
             nodeManager.getNodeStatistics(node);
         }
-        Map<String, NodeHandler> nodeHandlerMap = Whitebox.getInternalState(nodeManager, "nodeHandlerMap");
+        Map<String, NodeHandler> nodeHandlerMap = TestUtils.getInternalState(nodeManager, "nodeHandlerMap");
         Assert.assertTrue(nodeHandlerMap.size() <= NodeManager.NODES_TRIM_THRESHOLD);
     }
 

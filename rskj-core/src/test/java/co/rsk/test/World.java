@@ -42,6 +42,7 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -87,7 +88,8 @@ public class World {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
-    private World(BlockChainBuilder blockChainBuilder) {
+    @VisibleForTesting
+    public World(BlockChainBuilder blockChainBuilder) {
         this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null,
                 blockChainBuilder.getConfig() != null ? blockChainBuilder.getConfig() : new TestSystemProperties());
     }

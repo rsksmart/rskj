@@ -24,12 +24,12 @@ import co.rsk.util.ExecState;
 import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +70,7 @@ public class UDPServerTest {
     @Test
     public void port0DoesntCreateANewChannel() throws InterruptedException {
         UDPServer udpServer = new UDPServer(HOST, 0, mock(PeerExplorer.class));
-        Channel channel = Whitebox.getInternalState(udpServer, "channel");
+        Channel channel = TestUtils.getInternalState(udpServer, "channel");
         udpServer.start();
         TimeUnit.SECONDS.sleep(2);
         Assert.assertNull(channel);
