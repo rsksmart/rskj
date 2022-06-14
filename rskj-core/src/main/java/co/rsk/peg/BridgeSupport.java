@@ -920,8 +920,8 @@ public class BridgeSupport {
         Federation activeFederation = getActiveFederation();
 
         if (federationIsInMigrationAge(activeFederation)) {
-            long migrationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
-            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", migrationAge);
+            long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
+            logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
             if (hasMinimumFundsToMigrate(retiringFederationWallet)){
                 logger.info(
                     "[processFundsMigration] Retiring federation has funds to migrate: {}.",
@@ -3172,7 +3172,7 @@ public class BridgeSupport {
                 return false;
             }
         } catch (Exception e) {
-            String panicMessage = String.format("Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
+            String panicMessage = String.format("[validationsForRegisterBtcTransaction] Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
             return false;
@@ -3196,20 +3196,20 @@ public class BridgeSupport {
         }
 
         // Validates inputs count
-        logger.info("Going to validate inputs for btc tx {}", btcTxHash);
+        logger.info("[validationsForRegisterBtcTransaction] Going to validate inputs for btc tx {}", btcTxHash);
         BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
-        logger.trace("Getting btc block at height: {}", height);
+        logger.trace("[validationsForRegisterBtcTransaction] Getting btc block at height: {}", height);
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        logger.trace("Validating block merkle root at height: {}", height);
+        logger.trace("[validationsForRegisterBtcTransaction] Validating block merkle root at height: {}", height);
         if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
-                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
-                    btcTxHash.toString(),
-                    merkleRoot,
-                    blockHeader.getMerkleRoot()
+                "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                btcTxHash.toString(),
+                merkleRoot,
+                blockHeader.getMerkleRoot()
             );
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
