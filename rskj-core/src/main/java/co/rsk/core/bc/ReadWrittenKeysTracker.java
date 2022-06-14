@@ -19,6 +19,8 @@
 package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
+
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private ConcurrentMap<ByteArrayWrapper, Long> threadByReadKey;
+    private ConcurrentMap<ByteArrayWrapper, Set<Long>> threadByReadKey;
     private ConcurrentMap<ByteArrayWrapper, Long> threadByWrittenKey;
     private AtomicBoolean collision;
 
@@ -57,22 +59,26 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
             boolean result = collision.get() || (threadId != threadByWrittenKey.get(key));
             collision = new AtomicBoolean(result);
         }
-
-        threadByReadKey.put(key, threadId);
+        Set<Long> threadSet;
+        if (threadByReadKey.containsKey(key)) {
+            threadSet = threadByReadKey.get(key);
+        } else {
+            threadSet = new HashSet<>();
+        }
+        threadSet.add(threadId);
+        threadByReadKey.put(key, threadSet);
     }
 
     @Override
     public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-
         if (threadByWrittenKey.containsKey(key)) {
             boolean result = collision.get() || (threadId != threadByWrittenKey.get(key));
             collision = new AtomicBoolean(result);
-
         }
 
         if (threadByReadKey.containsKey(key)) {
-            boolean result = collision.get() || (threadId != threadByReadKey.get(key));
+            boolean result = collision.get() || !(threadByReadKey.get(key).contains(threadId));
             collision = new AtomicBoolean(result);
         }
 
