@@ -456,7 +456,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"bytes"}
             ),
-            fixedCost(3_000L), // TODO: DEFINE THE CORRECT FIXED COST FOR THS METHOD
+            fixedCost(30_000L),
             (BridgeMethodExecutorTyped) Bridge::getActivePowpegRedeemScript,
             activations -> activations.isActive(RSKIP293),
             fixedPermission(false)
@@ -675,7 +675,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
@@ -686,7 +686,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
@@ -697,7 +697,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(10_000L),
             (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
