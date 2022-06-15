@@ -158,6 +158,21 @@ public class TraceModuleImplTest {
         retrieveTraceFilterByAddress(world, receiptStore);
     }
 
+    @Test
+    public void getASingleTrace() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), null);
+
+        String transactionHash = "0x64cbd00a73bad9df13ee188931c84555a5662057e6381b3476bdc20ab3c09ef3";
+        JsonNode result = traceModule.traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(result.get("transactionHash").asText(), transactionHash);
+        Assert.assertEquals(result.get("action").get("from").asText(),"0xa0663f719962ec10bb57865532bef522059dfd96");
+    }
+
     private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
         Block block = world.getBlockByName(blkname);
 

@@ -157,6 +157,24 @@ public class TraceModuleImpl implements TraceModule {
         return OBJECT_MAPPER.valueToTree(traces);
     }
 
+    @Override
+    public JsonNode traceGet(String transactionHash, List<String> positions) throws Exception {
+        TraceGetRequest request = new TraceGetRequest(transactionHash, positions);
+
+        TransactionInfo txInfo = this.receiptStore.getInMainChain(request.getTransactionHashAsByteArray(), this.blockStore).orElse(null);
+
+        if (txInfo == null) {
+            logger.trace("No transaction info for {}", transactionHash);
+            return null;
+        }
+
+        Block block = this.blockchain.getBlockByHash(txInfo.getBlockHash());
+
+        List<TransactionTrace> traces = buildBlockTraces(block);
+
+        return OBJECT_MAPPER.valueToTree(traces.get(request.getTracePositionsAsListOfIntegers().get(0)));
+    }
+
     private Block getByJsonArgument(String arg) {
         if (arg.length() < 20) {
             return this.getByJsonBlockId(arg);
