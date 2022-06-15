@@ -64,7 +64,7 @@ public class ExecuteBlocks extends CliToolRskContextAware {
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-            BlockResult blockResult = blockExecutor.execute(block, parent.getHeader(), false, false, true);
+            BlockResult blockResult = blockExecutor.execute(null, 0, block, parent.getHeader(), false, false, true);
 
             Keccak256 stateRootHash = stateRootHandler.translate(block.getHeader());
             if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), stateRootHash.getBytes())) {
