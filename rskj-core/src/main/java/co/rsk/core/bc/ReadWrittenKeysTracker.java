@@ -75,7 +75,8 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
         }
 
         if (threadByReadKey.containsKey(key)) {
-            collision = collision || !(threadByReadKey.get(key).contains(threadId));
+            Set<Long> threadSet = threadByReadKey.get(key);
+            collision = collision || !(threadSet.contains(threadId)) || (threadSet.size() > 1);
         }
 
         threadByWrittenKey.put(key, threadId);
