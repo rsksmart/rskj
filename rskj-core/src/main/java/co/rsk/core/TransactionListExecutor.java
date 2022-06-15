@@ -1,5 +1,6 @@
 package co.rsk.core;
 
+import co.rsk.core.bc.IReadWrittenKeysTracker;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
@@ -21,6 +22,7 @@ public class TransactionListExecutor implements Callable {
 
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final List<Transaction> transactions;
+    private IReadWrittenKeysTracker readWrittenKeysTracker;
     private final Block block;
     private final Repository track;
     private final boolean vmTrace;
@@ -41,6 +43,7 @@ public class TransactionListExecutor implements Callable {
 
     public TransactionListExecutor(
             List<Transaction> transactions,
+            IReadWrittenKeysTracker readWrittenKeysTracker,
             Block block,
             TransactionExecutorFactory transactionExecutorFactory,
             Repository track,
@@ -58,6 +61,7 @@ public class TransactionListExecutor implements Callable {
             LongAccumulator accumulatedFees,
             LongAccumulator accumulatedGas,
             int firstTxIndex) {
+        this.readWrittenKeysTracker = readWrittenKeysTracker;
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.track = track;
@@ -97,6 +101,10 @@ public class TransactionListExecutor implements Callable {
                     remascFees
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
+
+            if (readWrittenKeysTracker.hasCollided()) {
+                return false;
+            }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
