@@ -106,7 +106,7 @@ class Web3ImplLogsTest {
     private static final String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
     private static final String INCREMENT_METHOD_SIGNATURE = "371303c0";
     private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
-    private static final String TRACKED_TEST_BLOCK_HASH = "0x5fcfdf1c5c83850e4e4094124a1d7a314b8684055ed4577a02abf5bc438096f7";
+    private static final String TRACKED_TEST_BLOCK_HASH = "0x1d3137d39f8467053020d1521019d23d33e3a03e92f296f4a0e8ed12b2891ae7";
     private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;

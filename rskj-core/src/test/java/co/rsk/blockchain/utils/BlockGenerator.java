@@ -286,6 +286,7 @@ public class BlockGenerator {
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
                 .setTxExecutionListsEdges(edges)
+                .setCreateParallelCompliantHeader(activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber))
                 .build();
 
         if (difficulty == 0) {

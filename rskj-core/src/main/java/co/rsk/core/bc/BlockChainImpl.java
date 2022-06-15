@@ -249,7 +249,7 @@ public class BlockChainImpl implements Blockchain {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
 
-            result = blockExecutor.execute(block, parent.getHeader(), false, noValidation, true);
+            result = blockExecutor.execute(null, 0, block, parent.getHeader(), false, noValidation, true);
 
             logger.trace("execute done");
 
