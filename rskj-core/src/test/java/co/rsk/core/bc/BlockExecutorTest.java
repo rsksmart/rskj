@@ -619,17 +619,40 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void executeInvalidParallelBlock() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1, 2});
+        BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
+        Assert.assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    public void ifThereIsACollisionBetweenParallelAndSequentialBucketItShouldNotBeConsidered() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1});
+        BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
+        Assert.assertTrue(pBlock.getTransactionsList().containsAll(result.getExecutedTransactions()));
+        Assert.assertEquals(pBlock.getTransactionsList().size(), result.getExecutedTransactions().size());
+    }
+
+    @Test
     public void executeParallelBlockTwice() {
         if (!activeRskip144) {
             return;
         }
         Block parent = blockchain.getBestBlock();
         Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result1 = executor.executeAndFill(block1, parent.getHeader());
+        BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false);
 
 
         Block block2 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result2 = executor.executeAndFill(block2, parent.getHeader());
+        BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false);
 
         Assert.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
         Assert.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
@@ -895,6 +918,48 @@ public class BlockExecutorTest {
         return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
+    private Block getBlockWithTwoDependentTransactions(short[] edges) {
+        int nTxs = 2;
+
+        Repository track = repository.startTracking();
+        List<Account> accounts = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            accounts.add(createAccount("accounttest" + i, track, Coin.valueOf(60000)));
+        }
+        track.commit();
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        List<Transaction> txs = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            Transaction tx = Transaction.builder()
+                    .nonce(BigInteger.ZERO)
+                    .gasPrice(BigInteger.ONE)
+                    .gasLimit(BigInteger.valueOf(21000))
+                    .destination(accounts.get((i + 1) % 2).getAddress())
+                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .value(BigInteger.TEN)
+                    .build();
+            tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
+            txs.add(tx);
+        }
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        return new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlock(
+                        bestBlock,
+                        txs,
+                        uncles,
+                        1,
+                        null,
+                        bestBlock.getGasLimit(),
+                        bestBlock.getCoinbase(),
+                        edges
+                );
+    }
+
     private Block getBlockWithTenTransactions(short[] edges) {
         int nTxs = 10;
         int nAccounts = nTxs * 2;
@@ -937,9 +1002,8 @@ public class BlockExecutorTest {
                 );
     }
 
-    private Block getBlockWithNIndependentTransactions(int number, BigInteger txGasLimit, boolean withRemasc) {
-        int nTxs = number;
-        int nAccounts = nTxs * 2;
+    private Block getBlockWithNIndependentTransactions(int txNumber, BigInteger txGasLimit, boolean withRemasc) {
+        int nAccounts = txNumber * 2;
         Repository track = repository.startTracking();
         List<Account> accounts = new LinkedList<>();
 
@@ -952,12 +1016,12 @@ public class BlockExecutorTest {
 
         List<Transaction> txs = new LinkedList<>();
 
-        for (int i = 0; i < nTxs; i++) {
+        for (int i = 0; i < txNumber; i++) {
             Transaction tx = Transaction.builder()
                     .nonce(BigInteger.ZERO)
                     .gasPrice(BigInteger.ONE)
                     .gasLimit(txGasLimit)
-                    .destination(accounts.get(i + nTxs).getAddress())
+                    .destination(accounts.get(i + txNumber).getAddress())
                     .chainId(CONFIG.getNetworkConstants().getChainId())
                     .value(BigInteger.TEN)
                     .build();
