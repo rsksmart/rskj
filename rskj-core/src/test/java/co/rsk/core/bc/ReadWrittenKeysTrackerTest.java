@@ -24,8 +24,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.*;
 
 public class ReadWrittenKeysTrackerTest {
 
@@ -131,8 +134,141 @@ public class ReadWrittenKeysTrackerTest {
         Assertions.assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
     }
 
+    @Test
+    public void ifTwoThreadsWriteTheSameKeyCollideShouldBeTrue() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+
+        for (int i = 0; i < nThreads; i++) {
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(key1), Collections.emptyList());
+            completionService.submit(rwKeys);
+        }
+
+        assertThereWasACollision(nThreads, service, completionService);
+    }
+
+    @Test
+    public void ifTwoThreadsReadAndWriteTheSameKeyShouldCollide() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+        List<ByteArrayWrapper> writtenKeys;
+        List<ByteArrayWrapper> readKeys;
+        for (int i = 0; i < nThreads; i++) {
+            if (i == 0) {
+                writtenKeys = Collections.singletonList(key1);
+                readKeys = Collections.emptyList();
+            } else {
+                writtenKeys = Collections.emptyList();
+                readKeys = Collections.singletonList(key1);
+            }
+
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, writtenKeys, readKeys);
+            completionService.submit(rwKeys);
+        }
+
+        assertThereWasACollision(nThreads, service, completionService);
+    }
+
+    @Test
+    public void ifTwoThreadsWriteDifferentKeyCollideShouldBeFalse() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+
+        for (int i = 0; i < nThreads; i++) {
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(i == 0? key1 : key2), Collections.emptyList());
+            completionService.submit(rwKeys);
+        }
+        assertThereWasNotACollision(nThreads, service, completionService);
+    }
+
+    @Test
+    public void allThreadIdsShouldBeStoredInTheReadKeysMap() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+        boolean hasCollided = false;
+
+        ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.emptyList(), Collections.singletonList(key1));
+        completionService.submit(rwKeys);
+
+        try {
+            Future<Boolean> hasCollidedFuture = completionService.take();
+            hasCollided = hasCollidedFuture.get();
+        } catch (Exception e) {
+            Assertions.fail();
+        }
+
+        Assertions.assertFalse(hasCollided);
+        ReadWrittenKeysHelper rwKeys2 = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(key1), Collections.singletonList(key1));
+        completionService.submit(rwKeys2);
+
+        try {
+            Future<Boolean> hasCollidedFuture = completionService.take();
+            hasCollided = hasCollidedFuture.get();
+        } catch (Exception e) {
+            Assertions.fail();
+        }
+
+        service.shutdown();
+        Assertions.assertTrue(hasCollided);
+    }
+
+    private void assertThereWasNotACollision(int nThreads, ExecutorService service, CompletionService<Boolean> completionService) {
+        boolean hasCollided = hasCollided(nThreads, completionService);
+        Assertions.assertFalse(hasCollided);
+        service.shutdown();
+    }
+
+    private void assertThereWasACollision(int nThreads, ExecutorService service, CompletionService<Boolean> completionService) {
+        boolean hasCollided = hasCollided(nThreads, completionService);
+        System.out.println(hasCollided);
+        Assertions.assertTrue(hasCollided);
+        service.shutdown();
+    }
+
+    private boolean hasCollided(int nThreads, CompletionService<Boolean> completionService) {
+        boolean hasCollided = false;
+        for (int i = 0; i < nThreads; i++) {
+            try {
+                Future<Boolean> hasCollidedFuture = completionService.take();
+                hasCollided |= hasCollidedFuture.get();
+            } catch (Exception e) {
+                Assertions.fail();
+            }
+        }
+        return hasCollided;
+    }
+
     private void assertKeyWasAddedInMap(Set<ByteArrayWrapper> map, ByteArrayWrapper key) {
         Assertions.assertEquals(1, map.size());
         Assertions.assertTrue(map.contains(key));
     }
+    private static class ReadWrittenKeysHelper implements Callable<Boolean> {
+
+        private final List<ByteArrayWrapper> readKeys;
+        private final List<ByteArrayWrapper> writtenKeys;
+        private final IReadWrittenKeysTracker tracker;
+
+        public ReadWrittenKeysHelper(IReadWrittenKeysTracker tracker, List<ByteArrayWrapper> writtenKeys, List<ByteArrayWrapper> readKeys) {
+            this.tracker = tracker;
+            this.readKeys = readKeys;
+            this.writtenKeys = writtenKeys;
+        }
+        //At first, it reads and then it writes.
+        public Boolean call() {
+            for (ByteArrayWrapper rk : readKeys) {
+                tracker.addNewReadKey(rk);
+            }
+
+            for (ByteArrayWrapper wk : writtenKeys) {
+                tracker.addNewWrittenKey(wk);
+            }
+
+            return tracker.hasCollided();
+        }
+    }
+
 }

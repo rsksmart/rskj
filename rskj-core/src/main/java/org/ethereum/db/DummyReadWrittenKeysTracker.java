@@ -26,6 +26,11 @@ public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     }
 
     @Override
+    public boolean hasCollided() {
+        return false;
+    }
+
+    @Override
     public void addNewReadKey(ByteArrayWrapper key) {
         //Dummy tracker does not store added keys
     }

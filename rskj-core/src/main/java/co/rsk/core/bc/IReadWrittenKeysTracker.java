@@ -26,6 +26,8 @@ public interface IReadWrittenKeysTracker {
 
     Set<ByteArrayWrapper> getTemporalWrittenKeys();
 
+    boolean hasCollided();
+
     void addNewReadKey(ByteArrayWrapper key);
 
     void addNewWrittenKey(ByteArrayWrapper key);
