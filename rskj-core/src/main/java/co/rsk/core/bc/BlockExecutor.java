@@ -526,6 +526,7 @@ public class BlockExecutor {
             }
         }
 
+        readWrittenKeysTracker.clear();
         // execute remaining transactions after the parallel subsets
         List<Transaction> sublist = block.getTransactionsList().subList(start, block.getTransactionsList().size());
         TransactionListExecutor txListExecutor = new TransactionListExecutor(

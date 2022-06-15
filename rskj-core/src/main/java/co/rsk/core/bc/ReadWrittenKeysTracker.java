@@ -19,7 +19,9 @@
 package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
+
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,7 +29,7 @@ import java.util.Set;
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private Map<ByteArrayWrapper, Long> threadByReadKey;
+    private Map<ByteArrayWrapper, Set<Long>> threadByReadKey;
     private Map<ByteArrayWrapper, Long> threadByWrittenKey;
     private boolean collision;
 
@@ -39,43 +41,49 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
     @Override
     public Set<ByteArrayWrapper> getTemporalReadKeys(){
-        return this.threadByReadKey.keySet();
+        return new HashSet<>(this.threadByReadKey.keySet());
     }
 
     @Override
     public Set<ByteArrayWrapper> getTemporalWrittenKeys(){
-        return this.threadByWrittenKey.keySet();
+        return new HashSet<>(this.threadByWrittenKey.keySet());
     }
 
     public boolean hasCollided() { return this.collision;}
 
     @Override
-    public void addNewReadKey(ByteArrayWrapper key) {
+    public synchronized void addNewReadKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-
         if (threadByWrittenKey.containsKey(key)) {
-            collision |= threadId != threadByWrittenKey.get(key);
+            collision = collision || (threadId != threadByWrittenKey.get(key));
         }
-
-        threadByReadKey.put(key, threadId);
+        Set<Long> threadSet;
+        if (threadByReadKey.containsKey(key)) {
+            threadSet = threadByReadKey.get(key);
+        } else {
+            threadSet = new HashSet<>();
+        }
+        threadSet.add(threadId);
+        threadByReadKey.put(key, threadSet);
     }
 
     @Override
-    public void addNewWrittenKey(ByteArrayWrapper key) {
+    public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
         if (threadByWrittenKey.containsKey(key)) {
-            collision |= threadId != threadByWrittenKey.get(key);
+            collision = collision || (threadId != threadByWrittenKey.get(key));
         }
 
         if (threadByReadKey.containsKey(key)) {
-            collision |= threadId != threadByReadKey.get(key);
+            Set<Long> threadSet = threadByReadKey.get(key);
+            collision = collision || !(threadSet.contains(threadId)) || (threadSet.size() > 1);
         }
 
         threadByWrittenKey.put(key, threadId);
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         this.threadByReadKey = new HashMap<>();
         this.threadByWrittenKey = new HashMap<>();
     }

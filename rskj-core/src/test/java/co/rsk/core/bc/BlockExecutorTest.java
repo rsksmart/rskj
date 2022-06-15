@@ -630,17 +630,29 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void ifThereIsACollisionBetweenParallelAndSequentialBucketItShouldNotBeConsidered() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1});
+        BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
+        Assert.assertTrue(pBlock.getTransactionsList().containsAll(result.getExecutedTransactions()));
+        Assert.assertEquals(pBlock.getTransactionsList().size(), result.getExecutedTransactions().size());
+    }
+
+    @Test
     public void executeParallelBlockTwice() {
         if (!activeRskip144) {
             return;
         }
         Block parent = blockchain.getBestBlock();
         Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result1 = executor.executeAndFill(block1, parent.getHeader());
+        BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false);
 
 
         Block block2 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result2 = executor.executeAndFill(block2, parent.getHeader());
+        BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false);
 
         Assert.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
         Assert.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
