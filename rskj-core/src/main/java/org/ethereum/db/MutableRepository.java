@@ -24,10 +24,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
-import co.rsk.trie.TrieStore;
+import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -299,7 +296,7 @@ public class MutableRepository implements Repository {
         //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
         mutableTrie.commit();
         Trie trie = mutableTrie.getTrie();
-        Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator(true);
+        Iterator<IterationElement> preOrderIterator = trie.getPreOrderIterator(true);
         while (preOrderIterator.hasNext()) {
             TrieKeySlice nodeKey = preOrderIterator.next().getNodeKey();
             int nodeKeyLength = nodeKey.length();
