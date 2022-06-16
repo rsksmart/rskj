@@ -34,7 +34,7 @@ public class RepositoryTrackingTest {
         repository = new MutableRepository(mutableTrie, tracker);
     }
 
-    void assertRepositoryHaveSize(int readRepoSize, int writtenRepoSize) {
+    void assertRepositoryHasSize(int readRepoSize, int writtenRepoSize) {
         assertEquals(readRepoSize, tracker.getTemporalReadKeys().size());
         assertEquals(writtenRepoSize, tracker.getTemporalWrittenKeys().size());
     }
@@ -43,7 +43,7 @@ public class RepositoryTrackingTest {
     public void tracksWriteInCreatedAccount () {
         repository.createAccount(COW);
 
-        assertRepositoryHaveSize(0, 1);
+        assertRepositoryHasSize(0, 1);
     }
 
     @Test
@@ -53,21 +53,21 @@ public class RepositoryTrackingTest {
 
         repository.setupContract(COW);
 
-        assertRepositoryHaveSize(0, 1);
+        assertRepositoryHasSize(0, 1);
     }
 
     @Test
     public void tracksReadInIsExists () {
         repository.isExist(COW);
 
-        assertRepositoryHaveSize(1, 0);
+        assertRepositoryHasSize(1, 0);
     }
 
     @Test
     public void tracksReadInGetAccountState () {
         repository.getAccountState(COW);
 
-        assertRepositoryHaveSize(1, 0);
+        assertRepositoryHasSize(1, 0);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class RepositoryTrackingTest {
 
         repository.delete(COW);
 
-        assertRepositoryHaveSize(0, 1);
+        assertRepositoryHasSize(0, 1);
     }
 
     @Test
@@ -87,17 +87,17 @@ public class RepositoryTrackingTest {
 
         repository.addBalance(COW, new Coin(BigInteger.ONE));
 
-        assertRepositoryHaveSize(1, 1);
+        assertRepositoryHasSize(1, 1);
     }
 
     @Test
-    public void doesntTracksWriteInAddBalanceZero () {
+    public void doesntTrackWriteInAddBalanceZero () {
         repository.createAccount(COW);
         tracker.clear();
 
         repository.addBalance(COW, new Coin(BigInteger.ZERO));
 
-        assertRepositoryHaveSize(1, 0);
+        assertRepositoryHasSize(1, 0);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class RepositoryTrackingTest {
 
         repository.getStorageBytes(COW, DataWord.valueOf(cowKey));
 
-        assertRepositoryHaveSize(1, 0);
+        assertRepositoryHasSize(1, 0);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class RepositoryTrackingTest {
 
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
 
-        assertRepositoryHaveSize(1, 1);
+        assertRepositoryHasSize(1, 1);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class RepositoryTrackingTest {
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey2), cowValue2);
 
-        assertRepositoryHaveSize(1, 2);
+        assertRepositoryHasSize(1, 2);
     }
 
     @Test
@@ -154,6 +154,6 @@ public class RepositoryTrackingTest {
 
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
 
-        assertRepositoryHaveSize(1, 0);
+        assertRepositoryHasSize(1, 0);
     }
 }
