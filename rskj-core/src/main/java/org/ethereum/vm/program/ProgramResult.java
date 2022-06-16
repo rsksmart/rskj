@@ -293,6 +293,7 @@ public class ProgramResult {
             addDeductedRefund(another.getDeductedRefund());
             this.maxGasUsed = Math.max(this.maxGasUsed, another.getMaxGasUsed());
             this.movedRemainingGasToChild = this.movedRemainingGasToChild || another.movedRemainingGasToChild;
+            this.callWithValuePerformed = this.callWithValuePerformed || another.callWithValuePerformed;
         }
     }
     
