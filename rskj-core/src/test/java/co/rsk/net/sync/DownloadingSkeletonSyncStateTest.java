@@ -28,63 +28,43 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
-
-public class FindingConnectionPointSyncStateTest {
+public class DownloadingSkeletonSyncStateTest {
 
     // TODO Test other logic
 
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
-    private BlockStore blockStore;
-    private Peer peer;
+    private PeersInformation peersInformation;
+    private Peer selectedPeer;
 
     @Before
-    public void setUp() throws UnknownHostException {
+    public void setUp () throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
-        blockStore = mock(BlockStore.class);
-        peer = mock(Peer.class);
+        peersInformation = mock(PeersInformation.class);
+        selectedPeer = mock(Peer.class);
         NodeID nodeID = mock(NodeID.class);
-        when(peer.getPeerNodeID()).thenReturn(nodeID);
-        when(peer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
-    }
-
-    @Test
-    public void noConnectionPoint() {
-        when(blockStore.getMinNumber()).thenReturn(0L);
-        FindingConnectionPointSyncState target =
-                new FindingConnectionPointSyncState(
-                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
-                        syncEventsHandler,
-                        blockStore,
-                        peer, 10L);
-
-        when(blockStore.isBlockExist(any())).thenReturn(false);
-
-        target.onEnter();
-        for(int i = 0; i < 4; i++) {
-            target.newConnectionPointData(new byte[32]);
-        }
-
-        verify(syncEventsHandler, times(1))
-                .onSyncIssue(peer, "Connection point not found on {}", FindingConnectionPointSyncState.class);
+        when(selectedPeer.getPeerNodeID()).thenReturn(nodeID);
+        when(selectedPeer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
     }
 
     @Test
     public void onMessageTimeOut() {
-        FindingConnectionPointSyncState target = new FindingConnectionPointSyncState(
+        DownloadingSkeletonSyncState target = new DownloadingSkeletonSyncState(
                 syncConfiguration,
                 syncEventsHandler,
-                blockStore,
-                peer,
-                10L);
+                peersInformation,
+                selectedPeer,
+                0);
 
         target.onMessageTimeOut();
-        verify(syncEventsHandler, times(1)).onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting requests on {}", FindingConnectionPointSyncState.class);
+        verify(syncEventsHandler, times(1))
+                .onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting requests on {}", DownloadingSkeletonSyncState.class);
     }
 
 }
+

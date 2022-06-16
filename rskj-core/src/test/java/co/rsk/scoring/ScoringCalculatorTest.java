@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.scoring;
 
 import org.junit.Assert;
@@ -10,44 +28,44 @@ public class ScoringCalculatorTest {
     @Test
     public void emptyScoringHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
     public void scoringWithOneValidBlockHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.VALID_BLOCK);
+        PeerScoring scoring = new PeerScoring("id1");
+        scoring.updateScoring(EventType.VALID_BLOCK);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
     public void scoringWithOneValidTransactionHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        PeerScoring scoring = new PeerScoring("id1");
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
     public void scoringWithOneInvalidBlockHasBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        PeerScoring scoring = new PeerScoring("id1");
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
-        Assert.assertFalse(calculator.hasGoodReputation(scoring));
+        Assert.assertFalse(calculator.hasGoodScore(scoring));
     }
 
     @Test
     public void scoringWithOneInvalidTransactionHasNoBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        PeerScoring scoring = new PeerScoring("id1");
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 }

@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
@@ -19,7 +37,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class DecidingSyncStateTest {
+public class PeerAndModeDecidingSyncStateTest {
 
     @Test
     public void startsSyncingWith5Peers() {
@@ -34,7 +52,7 @@ public class DecidingSyncStateTest {
         when(blockStore.getBestBlock()).thenReturn(bestBlock);
         when(bestBlock.getNumber()).thenReturn(100L);
 
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, peersInformation, blockStore);
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, peersInformation, blockStore);
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(Peer.class)));
 
         Status status = mock(Status.class);
@@ -59,7 +77,7 @@ public class DecidingSyncStateTest {
         when(knownPeers.count()).thenReturn(0);
         when(knownPeers.getBestPeer()).thenReturn(Optional.empty());
 
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
 
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -84,7 +102,7 @@ public class DecidingSyncStateTest {
         Block bestBlock = mock(Block.class);
         when(blockStore.getBestBlock()).thenReturn(bestBlock);
         when(bestBlock.getNumber()).thenReturn(100L);
-        SyncState syncState = new DecidingSyncState(
+        SyncState syncState = new PeerAndModeDecidingSyncState(
                 syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
@@ -106,7 +124,7 @@ public class DecidingSyncStateTest {
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
                 syncConfiguration, blockchain, peerScoringManager);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
@@ -125,7 +143,7 @@ public class DecidingSyncStateTest {
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
                 syncConfiguration, blockchain, peerScoringManager);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
@@ -147,7 +165,7 @@ public class DecidingSyncStateTest {
                 syncConfiguration, blockchain, peerScoringManager);
 
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
@@ -164,7 +182,7 @@ public class DecidingSyncStateTest {
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration,
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
                 blockStore);
@@ -186,7 +204,7 @@ public class DecidingSyncStateTest {
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration,
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
                 blockStore);
@@ -210,7 +228,7 @@ public class DecidingSyncStateTest {
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration,
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
                 blockStore);
@@ -242,7 +260,7 @@ public class DecidingSyncStateTest {
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         BlockStore blockStore = mock(BlockStore.class);
-        SyncState syncState = new DecidingSyncState(syncConfiguration,
+        SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
                 blockStore);

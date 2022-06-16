@@ -27,8 +27,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
@@ -45,7 +43,6 @@ public class PeersInformation {
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
-    private static final Logger logger = LoggerFactory.getLogger(PeersInformation.class);
 
     private final ChannelManager channelManager;
     private final SyncConfiguration syncConfiguration;
@@ -70,19 +67,13 @@ public class PeersInformation {
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
-    public void reportEventWithLog(String message, NodeID peerId, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        peerScoringManager.recordEvent(peerId, null, eventType);
+    public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
+        this.peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType, message, arguments);
     }
 
-    public void reportEvent(NodeID peerId, EventType eventType) {
-        peerScoringManager.recordEvent(peerId, null, eventType);
-    }
-
-    public void reportErrorEvent(NodeID peerId, String message, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        failedPeers.put(peerId, Instant.now());
-        peerScoringManager.recordEvent(peerId, null, eventType);
+    public void processSyncingError(Peer peer, EventType eventType, String message, Object... arguments) {
+        failedPeers.put(peer.getPeerNodeID(), Instant.now());
+        reportEventToPeerScoring(peer, eventType, message, arguments);
     }
 
     private int getScore(NodeID peerId) {

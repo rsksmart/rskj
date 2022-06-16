@@ -16,25 +16,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.util;
+package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
-import co.rsk.scoring.PeerScoring;
-import co.rsk.scoring.PeerScoringManager;
-import org.ethereum.net.server.ChannelManager;
+import co.rsk.net.Peer;
+import co.rsk.scoring.EventType;
 
-import static org.mockito.Mockito.*;
+/**
+ * Base class for those SyncState concrete classes that need a connected peer for their logic
+ */
+public abstract class BaseSelectedPeerSyncState extends BaseSyncState {
 
-public class RskMockFactory {
+    protected final Peer selectedPeer;
 
-    public static PeerScoringManager getPeerScoringManager() {
-        PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
-        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring("id1"));
-        return peerScoringManager;
+    protected BaseSelectedPeerSyncState(SyncEventsHandler syncEventsHandler, SyncConfiguration syncConfiguration, Peer peer) {
+        super(syncEventsHandler, syncConfiguration);
+        this.selectedPeer = peer;
     }
 
-    public static ChannelManager getChannelManager() {
-        return mock(ChannelManager.class);
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
+                "Timeout waiting requests on {}", this.getClass());
     }
+
 }

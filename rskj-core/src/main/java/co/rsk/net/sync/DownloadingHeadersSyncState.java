@@ -25,21 +25,20 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.rpc.TypeConverter;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DownloadingHeadersSyncState extends BaseSyncState {
+public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
     private final Map<Peer, List<BlockIdentifier>> skeletons;
     private final List<Deque<BlockHeader>> pendingHeaders;
     private final ChunksDownloadHelper chunksDownloadHelper;
     private final DependentBlockHeaderRule blockParentValidationRule;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
-    private final Peer selectedPeer;
     private Map<Keccak256, BlockHeader> pendingHeadersByHash;
 
     public DownloadingHeadersSyncState(
@@ -51,10 +50,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             Peer peer,
             Map<Peer, List<BlockIdentifier>> skeletons,
             long connectionPoint) {
-        super(syncEventsHandler, syncConfiguration);
+        super(syncEventsHandler, syncConfiguration, peer);
         this.blockParentValidationRule = blockParentValidationRule;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
-        this.selectedPeer = peer;
         this.pendingHeaders = new ArrayList<>();
         this.skeletons = skeletons;
         this.chunksDownloadHelper = new ChunksDownloadHelper(
@@ -69,19 +67,24 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     public void newBlockHeaders(List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunkOpt = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunkOpt.isPresent()) {
-            syncEventsHandler.onSyncIssue(
-                    "Current chunk not present. Node {}",
-                    selectedPeer.getPeerNodeID());
+            syncEventsHandler.onSyncIssue(selectedPeer, "Current chunk not present on {}", this.getClass());
             return;
         }
         ChunkDescriptor currentChunk = currentChunkOpt.get();
-        if (chunk.size() != currentChunk.getCount()
-                || !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash())) {
-            syncEventsHandler.onErrorSyncing(
-                    selectedPeer.getPeerNodeID(),
-                    "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
-                    selectedPeer.getPeerNodeID(),
-                    TypeConverter.toUnformattedJsonHex(currentChunk.getHash()));
+
+        boolean unexpectedChunkSize = chunk.size() != currentChunk.getCount();
+        if (unexpectedChunkSize) {
+            syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
+                    "Unexpected chunk size received on {}: hash: {}",
+                    this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
+            return;
+        }
+
+        boolean unexpectedHeader = !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash());
+        if (unexpectedHeader) {
+            syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
+                    "Unexpected chunk header hash received on {}: hash: {}",
+                    this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
             return;
         }
 
@@ -97,10 +100,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             BlockHeader header = chunk.get(chunk.size() - k - 1);
 
             if (!blockHeaderIsValid(header, parentHeader)) {
-                syncEventsHandler.onErrorSyncing(
-                        selectedPeer.getPeerNodeID(),
-                        "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
-                        header.getNumber(), header.getPrintableHash());
+                syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
+                        "Invalid header received on {}, no: {}, hash: {}",
+                        this.getClass(), header.getNumber(), header.getPrintableHash());
                 return;
             }
 
@@ -132,16 +134,6 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
     private void trySendRequest() {
         syncEventsHandler.sendBlockHeadersRequest(selectedPeer, chunksDownloadHelper.getNextChunk());
-    }
-
-    @Override
-    protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(
-                selectedPeer.getPeerNodeID(),
-                "Timeout waiting requests {}",
-                EventType.TIMEOUT_MESSAGE,
-                this.getClass(),
-                selectedPeer.getPeerNodeID());
     }
 
     private boolean blockHeaderIsValid(BlockHeader header, BlockHeader parentHeader) {

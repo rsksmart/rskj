@@ -25,9 +25,8 @@ import org.ethereum.util.ByteUtil;
 
 import java.util.List;
 
-public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncState {
+public class CheckingBestHeaderSyncState extends BaseSelectedPeerSyncState {
     private final BlockHeaderValidationRule blockHeaderValidationRule;
-    private final Peer selectedPeer;
     private final ChunkDescriptor miniChunk;
 
     public CheckingBestHeaderSyncState(
@@ -36,9 +35,8 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
             BlockHeaderValidationRule blockHeaderValidationRule,
             Peer peer,
             byte[] bestBlockHash) {
-        super(syncEventsHandler, syncConfiguration);
+        super(syncEventsHandler, syncConfiguration, peer);
         this.blockHeaderValidationRule = blockHeaderValidationRule;
-        this.selectedPeer = peer;
         this.miniChunk = new ChunkDescriptor(bestBlockHash, 1);
     }
 
@@ -50,12 +48,17 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
     @Override
     public void newBlockHeaders(List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
-        if (!ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash()) ||
-                !blockHeaderValidationRule.isValid(header)) {
-            syncEventsHandler.onErrorSyncing(
-                    selectedPeer.getPeerNodeID(),
-                    "Invalid chunk received from node {}", EventType.INVALID_HEADER,
-                    this.getClass());
+        boolean unexpectedHeader = !ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash());
+        if (unexpectedHeader) {
+            syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
+                    "Unexpected header received on {}", this.getClass());
+            return;
+        }
+
+        boolean invalidHeader = !blockHeaderValidationRule.isValid(header);
+        if (invalidHeader) {
+            syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
+                    "Invalid header received on {}", this.getClass());
             return;
         }
 
@@ -64,14 +67,5 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
 
     private void trySendRequest() {
         syncEventsHandler.sendBlockHeadersRequest(selectedPeer, miniChunk);
-    }
-
-    @Override
-    protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(selectedPeer.getPeerNodeID(),
-                "Timeout waiting requests {}",
-                EventType.TIMEOUT_MESSAGE,
-                this.getClass(),
-                selectedPeer.getPeerNodeID());
     }
 }

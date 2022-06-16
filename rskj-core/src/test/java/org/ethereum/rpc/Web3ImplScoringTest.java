@@ -263,6 +263,7 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
         Assert.assertTrue(info.getScore() > 0);
+        Assert.assertEquals(0, info.getPunishedUntil());
 
         info = result[1];
         Assert.assertEquals(address.getHostAddress(), info.getId());
@@ -271,6 +272,16 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
         Assert.assertTrue(info.getScore() > 0);
+        Assert.assertEquals(0, info.getPunishedUntil());
+
+        // punishment started
+        peerScoringManager.recordEvent(node, address, EventType.INVALID_BLOCK);
+        result = web3.sco_peerList();
+        info = result[0];
+        Assert.assertEquals(1, info.getInvalidBlocks());
+        Assert.assertTrue(info.getScore() < 0);
+        Assert.assertTrue(info.getPunishedUntil() > 0);
+        Assert.assertFalse(info.getGoodReputation());
     }
 
     @Test
@@ -324,6 +335,36 @@ public class Web3ImplScoringTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
         Assert.assertEquals("192.168.56.1/16", result[0]);
+    }
+
+    @Test
+    public void clearPeerScoring() throws UnknownHostException {
+        NodeID node = generateNodeID();
+        InetAddress address = generateNonLocalIPAddressV4();
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        peerScoringManager.recordEvent(node, address, EventType.VALID_BLOCK);
+        peerScoringManager.recordEvent(node, address, EventType.VALID_TRANSACTION);
+        peerScoringManager.recordEvent(node, address, EventType.VALID_BLOCK);
+
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        PeerScoringInformation[] result = web3.sco_peerList();
+
+        Assert.assertEquals(2, result.length);
+        Assert.assertTrue(ByteUtil.toHexString(node.getID()).startsWith(result[0].getId()));
+        Assert.assertEquals(address.getHostAddress(), result[1].getId());
+
+        // clear by nodeId
+        web3.sco_clearPeerScoring(ByteUtil.toHexString(node.getID()));
+
+        result = web3.sco_peerList();
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals(address.getHostAddress(), result[0].getId());
+
+        // clear by address
+        web3.sco_clearPeerScoring(address.getHostAddress());
+
+        result = web3.sco_peerList();
+        Assert.assertEquals(0, result.length);
     }
 
     private static InetAddress generateNonLocalIPAddressV4() throws UnknownHostException {

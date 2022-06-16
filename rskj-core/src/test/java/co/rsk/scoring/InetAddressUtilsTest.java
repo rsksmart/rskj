@@ -117,11 +117,11 @@ public class InetAddressUtilsTest {
 
     @Test
     public void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
-        InetAddressBlock result = InetAddressUtils.parse("192.162.12.0/8");
+        InetAddressCidrBlock result = InetAddressUtils.parse("192.162.12.0/24");
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(InetAddress.getByName("192.162.12.0").getAddress(), result.getBytes());
-        Assert.assertEquals((byte)0xff, result.getMask());
+        Assert.assertEquals((byte)0x00, result.getMask());
     }
 
     @Test

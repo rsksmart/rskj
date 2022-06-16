@@ -119,7 +119,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
             this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
         }
 
-        if (!hasGoodReputation(ctx)) {
+        if (!checkGoodReputation(ctx)) {
             ctx.disconnect();
             return;
         }
@@ -170,7 +170,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                         versionCode,
                         protocolVersion);
                 ethState = EthState.STATUS_FAILED;
-                recordEvent(EventType.INCOMPATIBLE_PROTOCOL);
+                reportEventToPeerScoring(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(this); // Peer is not compatible for the 'eth' sub-protocol
                 return;
@@ -183,7 +183,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 loggerNet.info("Different network received: config network ID {} - message network ID {}",
                         networkId, msgNetworkId);
                 ethState = EthState.STATUS_FAILED;
-                recordEvent(EventType.INVALID_NETWORK);
+                reportEventToPeerScoring(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
                 ctx.pipeline().remove(this);
                 return;
@@ -196,7 +196,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 loggerNet.info("Config genesis hash {} - message genesis hash {}",
                         genesisHash, msgGenesisHash);
                 ethState = EthState.STATUS_FAILED;
-                recordEvent(EventType.UNEXPECTED_GENESIS);
+                reportEventToPeerScoring(EventType.UNEXPECTED_GENESIS);
                 disconnect(ReasonCode.UNEXPECTED_GENESIS);
                 ctx.pipeline().remove(this);
                 return;
@@ -210,7 +210,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         }
     }
 
-    private boolean hasGoodReputation(ChannelHandlerContext ctx) {
+    private boolean checkGoodReputation(ChannelHandlerContext ctx) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
         //TODO(mmarquez): and if not ???
@@ -233,7 +233,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         return true; //TODO(mmarquez): ugly
     }
 
-    private void recordEvent(EventType event) {
+    private void reportEventToPeerScoring(EventType event) {
         peerScoringManager.recordEvent(
                         channel.getPeerNodeID(),
                         channel.getAddress(),

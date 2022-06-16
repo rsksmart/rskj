@@ -603,7 +603,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             List<String> bannedPeerIDs = rskSystemProperties.bannedPeerIDList();
 
             peerScoringManager = new PeerScoringManager(
-                    () -> new PeerScoring(rskSystemProperties.scoringPunishmentEnabled()),
+                    (String id) -> new PeerScoring(id, rskSystemProperties.scoringPunishmentEnabled()),
                     rskSystemProperties.scoringNumberOfNodes(),
                     new PunishmentParameters(
                             rskSystemProperties.scoringNodesPunishmentDuration(),

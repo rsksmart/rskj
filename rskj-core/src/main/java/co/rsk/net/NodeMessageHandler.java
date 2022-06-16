@@ -19,10 +19,7 @@
 package co.rsk.net;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -223,8 +220,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             }
 
         } else {
-            recordEvent(sender, EventType.REPEATED_MESSAGE);
-            logger.trace("Received message already known, not added to the queue");
+            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
         }
 
         return !contains;
@@ -335,12 +331,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void recordEvent(Peer sender, @SuppressWarnings("SameParameterValue") EventType event) {
+    @SuppressWarnings("SameParameterValue")
+    private void reportEventToPeerScoring(Peer sender, EventType event, String message) {
         if (sender == null) {
             return;
         }
 
-        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event, message, this.getClass());
     }
 
     private static class MessageTask {
