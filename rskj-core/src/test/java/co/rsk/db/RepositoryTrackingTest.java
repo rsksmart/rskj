@@ -6,8 +6,10 @@ import co.rsk.core.bc.ReadWrittenKeysTracker;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.DataWord;
 
 import static org.junit.Assert.assertEquals;
 
@@ -94,6 +96,63 @@ public class RepositoryTrackingTest {
         tracker.clear();
 
         repository.addBalance(COW, new Coin(BigInteger.ZERO));
+
+        assertRepositoryHaveSize(1, 0);
+    }
+
+    @Test
+    public void tracksReadOnGetStorageBytes () {
+        repository.createAccount(COW);
+        tracker.clear();
+
+        byte[] cowKey = Hex.decode("A1A2A3");
+
+        repository.getStorageBytes(COW, DataWord.valueOf(cowKey));
+
+        assertRepositoryHaveSize(1, 0);
+    }
+
+    @Test
+    public void tracksWriteOnAddStorageBytes () {
+        repository.createAccount(COW);
+        tracker.clear();
+
+        byte[] cowValue = Hex.decode("A4A5A6");
+        byte[] cowKey = Hex.decode("A1A2A3");
+
+        repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
+
+        assertRepositoryHaveSize(1, 1);
+    }
+
+    @Test
+    public void tracksWriteOnAddStorageDifferentBytes () {
+        repository.createAccount(COW);
+        tracker.clear();
+
+        byte[] cowValue = Hex.decode("A4A5A6");
+        byte[] cowKey = Hex.decode("A1A2A3");
+        byte[] cowKey2 = "key-c-2".getBytes();
+        byte[] cowValue2 = "val-c-2".getBytes();
+
+        repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
+        repository.addStorageBytes(COW, DataWord.valueOf(cowKey2), cowValue2);
+
+        assertRepositoryHaveSize(1, 2);
+    }
+
+    @Test
+    public void doesntTrackWriteOnAddStorageSameBytes () {
+        repository.createAccount(COW);
+
+        byte[] cowValue = Hex.decode("A4A5A6");
+        byte[] cowKey = Hex.decode("A1A2A3");
+
+        repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
+
+        tracker.clear();
+
+        repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
 
         assertRepositoryHaveSize(1, 0);
     }
