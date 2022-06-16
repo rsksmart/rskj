@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 18/10/2017.
@@ -78,12 +79,12 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             return;
         }
 
-        String host = parseHostHeader(hostHeader);
-
         if (acceptedHosts.contains("*")) {
             this.serveRequest(ctx, request);
             return;
         }
+
+        String host = parseHostHeader(hostHeader);
 
         if (host != null && acceptedHosts.contains(host)) {
             this.serveRequest(ctx, request);
@@ -158,14 +159,19 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         boolean isIPv4 = false;
         boolean isIPv6 = false;
 
-        if (address != null) {
-            try {
-                InetAddress inetAddress = InetAddress.getByName(address);
-                isIPv4 = (inetAddress instanceof Inet4Address) && inetAddress.getHostAddress().equals(address);
-                isIPv6 = (inetAddress instanceof Inet6Address);
-            } catch (UnknownHostException ex) {
-                logger.warn("Unknown host", ex);
-            }
+        if (address == null) {
+            return false;
+        }
+
+        try {
+            InetAddress inetAddress = InetAddress.getByName(address);
+            boolean validHostAddress = Optional.ofNullable(inetAddress)
+                    .map(ia -> ia.getHostAddress().equals(address))
+                    .orElse(false);
+            isIPv4 = (inetAddress instanceof Inet4Address) && validHostAddress;
+            isIPv6 = (inetAddress instanceof Inet6Address) && validHostAddress;
+        } catch (UnknownHostException ex) {
+            logger.warn("Unknown host", ex);
         }
 
         return isIPv4 || isIPv6;
