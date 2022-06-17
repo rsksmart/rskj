@@ -340,7 +340,7 @@ public class EthModuleGasEstimationDSLTest {
     }
 
     /**
-     * Sending one rBTC across three contracts, they will perfomrm 3 CALLs with value.
+     * Sending one rBTC across three contracts, they will perform 3 CALLs with value.
      * NOTE: each nested call retains 10000 gas to emit events
      */
     @Test
@@ -405,6 +405,76 @@ public class EthModuleGasEstimationDSLTest {
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * One contract makes a CALL to the second one without value, which then makes a CALL with value to third one
+     * NOTE: subsequent CALL with value should increase gas estimation by stipend of 2300 gas units
+     */
+    @Test
+    public void estimateGas_subsequentCallWithValueAndGasStipend() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/subsequentCallWithValue.txt");
+
+        TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
+        byte[] status = contractDeployA.getStatus();
+
+        assertNotNull(status);
+        assertEquals(1, status.length);
+        assertEquals(0x01, status[0]);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+
+        TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
+        byte[] status2 = contractDeployB.getStatus();
+
+        assertNotNull(status2);
+        assertEquals(1, status2.length);
+        assertEquals(0x01, status2[0]);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+
+        TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
+        byte[] status3 = contractDeployC.getStatus();
+
+        assertNotNull(status3);
+        assertEquals(1, status3.length);
+        assertEquals(0x01, status3[0]);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        // call callNextAddress, it should start the nested calls
+        final CallArguments args = new CallArguments();
+        args.setTo(contractAddressA);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(7));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("0x18d3af63"); // callNextAddress()
+
+        ProgramResult callConstant = eth.callConstant(args, block);
+        List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
+
+        assertEquals(internalTransactions.get(internalTransactions.size() - 1).getValue(), Coin.valueOf(1000));
+        assertEquals(2, internalTransactions.size());
+        assertEquals(2, callConstant.getLogInfoList().size());
+        assertEvents(callConstant, "NestedCallWithoutValue", 1);
+        assertEvents(callConstant, "NestedCallWithValue", 1);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
+        assertTrue(callConstant.isCallWithValuePerformed());
+
+        long estimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
+
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
