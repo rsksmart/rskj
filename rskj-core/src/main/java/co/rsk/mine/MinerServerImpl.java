@@ -121,6 +121,8 @@ public class MinerServerImpl implements MinerServer {
     private final BlockProcessor nodeBlockProcessor;
     private final SubmissionRateLimitHandler submissionRateLimitHandler;
 
+    private final boolean updateWorkOnNewTransaction;
+    
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,
@@ -171,6 +173,8 @@ public class MinerServerImpl implements MinerServer {
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getGasUnitInDollars());
 
+        updateWorkOnNewTransaction = config.updateWorkOnNewTransaction();
+        
         extraData = buildExtraData(config, buildInfo);
     }
 
@@ -225,7 +229,7 @@ public class MinerServerImpl implements MinerServer {
 
         synchronized (lock) {
             started = true;
-            blockListener = new NewBlockTxListener(this.mainchainView, this, this.nodeBlockProcessor);
+            blockListener = new NewBlockTxListener(mainchainView, this, nodeBlockProcessor, updateWorkOnNewTransaction);
             ethereum.addListener(blockListener);
             buildBlockToMine(false);
 
@@ -549,15 +553,16 @@ public class MinerServerImpl implements MinerServer {
     static class NewBlockTxListener extends EthereumListenerAdapter {
 
         private final MiningMainchainView mainchainView;
-        
         private final MinerServer minerServer;
-
-        private BlockProcessor nodeBlockProcessor;
+        private final BlockProcessor nodeBlockProcessor;
         
-        public NewBlockTxListener(MiningMainchainView mainchainView, MinerServer minerServer, BlockProcessor nodeBlockProcessor) {
+        private final boolean updateWorkOnNewTransaction;
+        
+        public NewBlockTxListener(MiningMainchainView mainchainView, MinerServer minerServer, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
             this.mainchainView = mainchainView;
             this.minerServer = minerServer;
             this.nodeBlockProcessor = nodeBlockProcessor;
+            this.updateWorkOnNewTransaction = updateWorkOnNewTransaction;
         }
         
         
@@ -588,7 +593,7 @@ public class MinerServerImpl implements MinerServer {
         @Override
         public void onPendingTransactionsReceived(List<Transaction> transactions) {
 
-            if (isSyncing()) {
+            if (!updateWorkOnNewTransaction || isSyncing()) {
                 return;
             }
 

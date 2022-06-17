@@ -728,7 +728,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         minerServer.start();
    
         // create listener
-        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer, blockProcessor);
+        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer, blockProcessor, true);
         
         Block block = mock(Block.class);
         when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
@@ -757,11 +757,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockProcessor blockProcessor = mock(NodeBlockProcessor.class);
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-        
-        // create miner server
-        MinerServer minerServer = spy(makeMinerServer(ethereum, blockProcessor, unclesValidationRule, clock, transactionPool));
-        minerServer.start();
-        
+                
         // create the transaction
         World world = new World((BlockChainImpl) standardBlockchain, blockStore, rskTestContext.getReceiptStore(), rskTestContext.getTrieStore(), repository, transactionPool, (Genesis)null);
         
@@ -776,15 +772,28 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 .build();
         
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx));
+                
+                
+        // create miner server
+        MinerServer minerServer = spy(makeMinerServer(ethereum, blockProcessor, unclesValidationRule, clock, transactionPool));
+        minerServer.start();
+   
+        // create listener
+        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer, blockProcessor, true);
         
-        // fire the event on ethereum that should send it to the listener inside the miner server
-        compositeEthereumListener.onPendingTransactionsReceived(txs);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
         
+        // call best block
+        listener.onPendingTransactionsReceived(txs);
+     
         // assert the event was received and build block was called 
         // it need to be 2 because the minerServer.start() calls it once
         verify(minerServer, times(2)).buildBlockToMine(false);
         
         minerServer.stop();
+        
+        
         
     }
     
