@@ -504,25 +504,23 @@ public class BridgeUtils {
         for (int i = 0; i < inputsSize; i++) {
             TransactionInput txInput = tx.getInput(i);
             Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
-            if (!redeemScriptOptional.isPresent()) {
-                continue;
-            }
-
-            Script redeemScript = redeemScriptOptional.get();
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
-                try {
-                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
-                } catch (ScriptException e) {
-                    // There is no redeem script
-                    continue;
+            if (redeemScriptOptional.isPresent()) {
+                Script redeemScript = redeemScriptOptional.get();
+                if (activations.isActive(ConsensusRule.RSKIP201)) {
+                    // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
+                    RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
+                    try {
+                        redeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    } catch (ScriptException e) {
+                        // There is no redeem script
+                        continue;
+                    }
                 }
-            }
 
-            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
-                return true;
+                Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+                if (Stream.of(p2shScript).collect(Collectors.toList()).contains(outputScript)) {
+                    return true;
+                }
             }
         }
 
