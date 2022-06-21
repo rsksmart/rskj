@@ -21,10 +21,10 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
 
 FROM openjdk:11-jre-slim-buster
 
-RUN useradd -ms /bin/bash rsk
+RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
 USER rsk
 
-WORKDIR /home/rsk
-COPY --from=build /home/rsk/rsk.jar ./
+WORKDIR /var/lib/rsk
+COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
 
 ENTRYPOINT ["java", "-cp", "rsk.jar", "co.rsk.Start"]
