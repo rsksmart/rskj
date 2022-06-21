@@ -13,11 +13,10 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     gpg --verify --output SHA256SUMS SHA256SUMS.asc && \
     sha256sum --check SHA256SUMS && \
     ./configure.sh && \
-    ./gradlew --no-daemon clean build -x test
-
-RUN f=rskj-core/src/main/resources/version.properties && \
-    version_number=$(sed -n 's/^versionNumber=//p' "$f" | tr -d "\"'") && \
-    modifier=$(sed -n 's/^modifier=//p' "$f" | tr -d "\"'") && \
+    ./gradlew --no-daemon clean build -x test && \
+    file=rskj-core/src/main/resources/version.properties && \
+    version_number=$(sed -n 's/^versionNumber=//p' "$file" | tr -d "\"'") && \
+    modifier=$(sed -n 's/^modifier=//p' "$file" | tr -d "\"'") && \
     cp "rskj-core/build/libs/rskj-core-$version_number-$modifier-all.jar" rsk.jar
 
 FROM openjdk:11-jre-slim-buster
