@@ -20,6 +20,7 @@ RUN gpg --keyserver https://secchannel.rsk.co/SUPPORT.asc --recv-keys 1DC9157991
     cp "rskj-core/build/libs/rskj-core-$version_number-$modifier-all.jar" rsk.jar
 
 FROM openjdk:11-jre-slim-buster
+LABEL org.opencontainers.image.authors="ops@iovlabs.org"
 
 RUN useradd -ms /sbin/nologin -d /var/lib/rsk rsk
 USER rsk
