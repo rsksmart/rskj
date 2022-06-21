@@ -333,10 +333,8 @@ public class BlockHeaderBuilder {
             }
         }
 
-        if (createParallelCompliantHeader) {
-            if (txExecutionListsEdges == null) {
-                txExecutionListsEdges = new short[0];
-            }
+        if (createParallelCompliantHeader && txExecutionListsEdges == null) {
+            txExecutionListsEdges = new short[0];
         }
 
         return new BlockHeader(
