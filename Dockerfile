@@ -27,4 +27,9 @@ USER rsk
 WORKDIR /var/lib/rsk
 COPY --from=build --chown=rsk:rsk /home/rsk/rsk.jar ./
 
-ENTRYPOINT ["java", "-cp", "rsk.jar", "co.rsk.Start"]
+ENTRYPOINT ["java", \
+    "-Drpc.providers.web.http.bind_address=0.0.0.0", \
+    "-Drpc.providers.web.http.hosts.0=localhost", \
+    "-Drpc.providers.web.http.hosts.1=127.0.0.1", \
+    "-Drpc.providers.web.http.hosts.2=::1", \
+    "-cp", "rsk.jar", "co.rsk.Start"]
