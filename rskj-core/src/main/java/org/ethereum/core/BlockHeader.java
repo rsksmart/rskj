@@ -161,7 +161,7 @@ public class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
-        this.txExecutionListsEdges = Arrays.copyOf(txExecutionListsEdges, txExecutionListsEdges.length);
+        this.txExecutionListsEdges = txExecutionListsEdges != null ? Arrays.copyOf(txExecutionListsEdges, txExecutionListsEdges.length) : null;
     }
 
     @VisibleForTesting
@@ -626,7 +626,7 @@ public class BlockHeader {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
 
-    public short[] getTxExecutionListsEdges() { return Arrays.copyOf(this.txExecutionListsEdges, this.txExecutionListsEdges.length); }
+    public short[] getTxExecutionListsEdges() { return this.txExecutionListsEdges != null ? Arrays.copyOf(this.txExecutionListsEdges, this.txExecutionListsEdges.length) : null; }
 
     public void setTxExecutionListsEdges(short[] txEdges) {
         this.txExecutionListsEdges =  txEdges != null? Arrays.copyOf(txEdges, txEdges.length) : null;
