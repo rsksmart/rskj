@@ -23,7 +23,9 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
-            type=raw,value=edge,enable={{ is_default_branch }}
+            type=edge
+            # This is used for generating IRIS-3 out of IRIS-3.x.y.
+            type=match,pattern=(\w+-\d+)\.\d+\.\d+.*,group=1
 
       - name: DockerHub login
         uses: docker/login-action@v2
