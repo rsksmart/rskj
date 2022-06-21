@@ -542,14 +542,15 @@ public class BridgeEventLoggerImplTest {
     @Test
     public void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "1234".getBytes();
+        Address btcDestinationAddress = mock(Address.class);
+        when(btcDestinationAddress.toString()).thenReturn("mixzLp4xx5bUsHuYUEyPpL42BzEDp8kSTv");
         Coin amount = Coin.COIN;
 
         eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress.toString(), amount.value});
     }
 
 

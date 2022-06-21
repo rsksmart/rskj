@@ -70,7 +70,7 @@ public enum BridgeEvents {
     RELEASE_REQUEST_RECEIVED("release_request_received",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.BYTES)),
+                    new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.STRING)),
                     new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
             }
     ),
