@@ -36,43 +36,43 @@ public class MessageCounter {
 
     private static final String COUNTER_ERROR = "Counter for {} is null or negative: {}.";
 
-    private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
+    private final Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
 
 
-    public int getValue(Peer sender) {
+    int getValue(Peer sender) {
         return Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).orElse(ZERO).intValue();
     }
 
-    public void increment(Peer sender) {
-        messagesPerNode
-            .computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
-            .incrementAndGet();
+    void increment(Peer sender) {
+        synchronized (messagesPerNode) {
+            messagesPerNode
+                    .computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
+                    .incrementAndGet();
+        }
     }
 
     private AtomicInteger createAtomicInteger(NodeID nodeId) {
         return new AtomicInteger();
     }
 
-    public void decrement(Peer sender) {
-
+    void decrement(Peer sender) {
         NodeID peerNodeID = sender.getPeerNodeID();
         AtomicInteger cnt = messagesPerNode.get(peerNodeID);
 
-        if(cnt == null || cnt.get() < 0) {
+        if (cnt == null || cnt.get() < 0) {
             logger.error(COUNTER_ERROR, peerNodeID, cnt);
             return;
         }
 
-        int newValue = cnt.decrementAndGet();
-
-        // if this counter is zero or negative: remove key from map
-        if(newValue < 1) {
-            messagesPerNode.remove(peerNodeID);
+        synchronized (messagesPerNode) {
+            // if this counter is zero or negative: remove key from map
+            if (cnt.decrementAndGet() < 1) {
+                messagesPerNode.remove(peerNodeID);
+            }
         }
-
     }
 
-    public boolean hasCounter(Peer sender) {
+    boolean hasCounter(Peer sender) {
         return messagesPerNode.containsKey(sender.getPeerNodeID());
     }
 
