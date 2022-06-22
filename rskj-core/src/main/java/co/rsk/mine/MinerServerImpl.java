@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.annotation.Nonnull;
@@ -68,6 +69,8 @@ import co.rsk.util.DifficultyUtils;
 import co.rsk.util.HexUtils;
 import co.rsk.util.ListArrayUtil;
 import co.rsk.validators.ProofOfWorkRule;
+
+
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -229,7 +232,7 @@ public class MinerServerImpl implements MinerServer {
 
         synchronized (lock) {
             started = true;
-            blockListener = new NewBlockTxListener(mainchainView, this, nodeBlockProcessor, updateWorkOnNewTransaction);
+            blockListener = new NewBlockTxListener(mainchainView, this::buildBlockToMine, nodeBlockProcessor, updateWorkOnNewTransaction);
             ethereum.addListener(blockListener);
             buildBlockToMine(false);
 
@@ -550,17 +553,18 @@ public class MinerServerImpl implements MinerServer {
         return Optional.ofNullable(latestBlock);
     }
 
+    @VisibleForTesting
     static class NewBlockTxListener extends EthereumListenerAdapter {
 
         private final MiningMainchainView mainchainView;
-        private final MinerServer minerServer;
+        private final Consumer<Boolean> buildBlock;
         private final BlockProcessor nodeBlockProcessor;
         
         private final boolean updateWorkOnNewTransaction;
         
-        public NewBlockTxListener(MiningMainchainView mainchainView, MinerServer minerServer, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
+        public NewBlockTxListener(MiningMainchainView mainchainView, Consumer<Boolean> buildBlock, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
             this.mainchainView = mainchainView;
-            this.minerServer = minerServer;
+            this.buildBlock = buildBlock;
             this.nodeBlockProcessor = nodeBlockProcessor;
             this.updateWorkOnNewTransaction = updateWorkOnNewTransaction;
         }
@@ -585,7 +589,7 @@ public class MinerServerImpl implements MinerServer {
 
             mainchainView.addBest(newBestBlock.getHeader());
 
-            minerServer.buildBlockToMine(false);
+            buildBlock.accept(false);
 
             logger.trace("End onBestBlock");
         }
@@ -599,7 +603,7 @@ public class MinerServerImpl implements MinerServer {
 
             logger.trace("Pending Transactions Received");
 
-            minerServer.buildBlockToMine(false);
+            buildBlock.accept(false);
 
         }
 

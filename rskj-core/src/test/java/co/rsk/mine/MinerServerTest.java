@@ -34,6 +34,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Clock;
@@ -728,7 +729,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         minerServer.start();
    
         // create listener
-        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer, blockProcessor, true);
+        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer::buildBlockToMine, blockProcessor, true);
         
         Block block = mock(Block.class);
         when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
@@ -779,7 +780,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         minerServer.start();
    
         // create listener
-        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer, blockProcessor, true);
+        MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer::buildBlockToMine, blockProcessor, true);
         
         Block block = mock(Block.class);
         when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
