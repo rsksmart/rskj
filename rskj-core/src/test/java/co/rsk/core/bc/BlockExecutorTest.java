@@ -471,16 +471,17 @@ public class BlockExecutorTest {
 
         long expectedGasUsed = 0L;
         long expectedAccumulatedGas = 21000L;
-        short[] expectedEdges = new short[]{5, 10};
+        int txNumber = 12;
+        short[] expectedEdges = new short[]{3, 6, 9, 12};
         Block parent = blockchain.getBestBlock();
-        Block block = getBlockWithNIndependentTransactions(10, BigInteger.valueOf(expectedAccumulatedGas), false);
+        Block block = getBlockWithNIndependentTransactions(txNumber, BigInteger.valueOf(expectedAccumulatedGas), false);
         List<Transaction> txs = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
         Assert.assertEquals(txs.size(), blockResult.getExecutedTransactions().size());
         Assert.assertTrue(txs.containsAll(blockResult.getExecutedTransactions()));
         Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
-        Assert.assertEquals(expectedAccumulatedGas*10, blockResult.getGasUsed());
+        Assert.assertEquals(expectedAccumulatedGas*txNumber, blockResult.getGasUsed());
 
         List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
         long accumulatedGasUsed = 0L;
@@ -508,11 +509,10 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumber = (int) (blockGasLimit /gasLimit);
-        short[] expectedEdges = new short[]{(short) transactionNumber, (short) (transactionNumber*2)};
+        int transactionNumber = (int) (blockGasLimit/gasLimit);
+        short[] expectedEdges = new short[]{(short) transactionNumber, (short) (transactionNumber*2), (short) (transactionNumber*3), (short) (transactionNumber*4)};
         int transactionsInSequential = 1;
-
-        Block block = getBlockWithNIndependentTransactions(transactionNumber*2+transactionsInSequential, BigInteger.valueOf(gasLimit), false);
+        Block block = getBlockWithNIndependentTransactions(transactionNumber * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
         List<Transaction> transactionsList = block.getTransactionsList();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
@@ -548,7 +548,7 @@ public class BlockExecutorTest {
         int gasLimit = 21000;
         int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
         int transactionsInSequential = 1;
-        int totalTxsNumber = transactionNumberToFillParallelBucket * 2 + transactionsInSequential;
+        int totalTxsNumber = transactionNumberToFillParallelBucket * Constants.getTransactionExecutionThreads() + transactionsInSequential;
         Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
@@ -564,7 +564,8 @@ public class BlockExecutorTest {
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
         int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
-        int totalTxs = (transactionNumberToFillParallelBucket) * 3 + 1;
+        int totalNumberOfBuckets = Constants.getTransactionExecutionThreads() + 1;
+        int totalTxs = (transactionNumberToFillParallelBucket) * totalNumberOfBuckets + 1;
         Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assert.assertEquals(totalTxs, blockResult.getExecutedTransactions().size() + 1);
@@ -579,8 +580,9 @@ public class BlockExecutorTest {
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
         int transactionNumberToFillABucket = (int) (blockGasLimit / gasLimit);
-        int expectedNumberOfTx = transactionNumberToFillABucket*3 + 1;
-        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillABucket*3, BigInteger.valueOf(gasLimit), true);
+        int totalNumberOfBuckets = Constants.getTransactionExecutionThreads() + 1;
+        int expectedNumberOfTx = transactionNumberToFillABucket* totalNumberOfBuckets + 1;
+        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillABucket * totalNumberOfBuckets, BigInteger.valueOf(gasLimit), true);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assert.assertEquals(expectedNumberOfTx, blockResult.getExecutedTransactions().size());
     }
