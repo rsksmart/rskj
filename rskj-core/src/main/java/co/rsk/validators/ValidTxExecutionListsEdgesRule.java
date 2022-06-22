@@ -24,9 +24,9 @@ public class ValidTxExecutionListsEdgesRule implements BlockValidationRule {
         if (edges == null) {
             return true;
         }
-        if (edges.length > Constants.getMaxTransactionExecutionThreads()) {
+        if (edges.length > Constants.getTransactionExecutionThreads()) {
             logger.warn("Invalid block: number of execution lists edges is greater than number of execution threads ({} vs {})",
-                        edges.length, Constants.getMaxTransactionExecutionThreads());
+                        edges.length, Constants.getTransactionExecutionThreads());
             return false;
         }
         short prev = 0;

@@ -28,6 +28,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -56,8 +57,6 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
  * Note that this class IS NOT guaranteed to be thread safe because its dependencies might hold state.
  */
 public class BlockExecutor {
-    private static final int THREAD_COUNT = 4;
-
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
@@ -467,8 +466,8 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = ConcurrentHashMap.newKeySet();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
-        CompletionService completionService = new ExecutorCompletionService(executorService);
+        ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
+        ExecutorCompletionService completionService = new ExecutorCompletionService(executorService);
         int nTasks = 0;
 
         // execute parallel subsets of transactions
@@ -610,10 +609,9 @@ public class BlockExecutor {
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
-        short buckets = 2;
 
         //TODO(Juli): Is there a better way to calculate the bucket gas limit?
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
 
@@ -693,7 +691,7 @@ public class BlockExecutor {
                 receipt.setCumulativeGas(bucketGasAccumulated.get());
             } else {
                 //This line is used for testing only when acceptInvalidTransactions is set.
-                receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn(buckets));
+                receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn((short) Constants.getTransactionExecutionThreads()));
             }
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
