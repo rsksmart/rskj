@@ -37,9 +37,9 @@ public class ParallelizeTransactionHandler {
         this.bucketByReadKey = new HashMap<>();
         this.buckets = new ArrayList<>();
         for (short i = 0; i < buckets; i++){
-            this.buckets.add(new TransactionBucket(i, bucketGasLimit, false));
+            this.buckets.add(new TransactionBucket(bucketGasLimit, false));
         }
-        this.buckets.add(new TransactionBucket(buckets, bucketGasLimit, true));
+        this.buckets.add(new TransactionBucket(bucketGasLimit, true));
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
@@ -151,7 +151,7 @@ public class ParallelizeTransactionHandler {
     private TransactionBucket getBucketCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         Optional<TransactionBucket> bucketCandidate = getBucketBySender(tx);
 
-        if (bucketCandidate.isPresent() && bucketCandidate.get().isSequential()) {
+        if (checkIsSequentialBucket(bucketCandidate)) {
             return getSequentialBucket();
         }
 
@@ -160,11 +160,11 @@ public class ParallelizeTransactionHandler {
             if (bucketByWrittenKey.containsKey(newReadKey)) {
                 TransactionBucket bucket = bucketByWrittenKey.get(newReadKey);
 
-                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                if (areDifferentBuckets(bucketCandidate, bucket)) {
                    return getSequentialBucket();
-                } else if (!bucketCandidate.isPresent()) {
-                    bucketCandidate = Optional.of(bucket);
                 }
+
+                bucketCandidate = getTransactionBucketIfNoPresent(bucketCandidate, bucket);
             }
         }
 
@@ -173,29 +173,41 @@ public class ParallelizeTransactionHandler {
             if (bucketByWrittenKey.containsKey(newWrittenKey)) {
                 TransactionBucket bucket = bucketByWrittenKey.get(newWrittenKey);
 
-                if (bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket)) {
+                if (areDifferentBuckets(bucketCandidate, bucket)) {
                     return getSequentialBucket();
-                } else {
-                    bucketCandidate = Optional.of(bucket);
                 }
+
+                bucketCandidate = getTransactionBucketIfNoPresent(bucketCandidate, bucket);
+
             }
             // read - written
             if (bucketByReadKey.containsKey(newWrittenKey)) {
-                Set<TransactionBucket> readBuckets = bucketByReadKey.get(newWrittenKey);
+                Set<TransactionBucket> bucket = bucketByReadKey.get(newWrittenKey);
 
-                if (readBuckets.size() > 1) {
+                if (bucket.size() > 1 || (bucketCandidate.isPresent() && !bucket.contains(bucketCandidate.get()))) {
                     return getSequentialBucket();
                 }
 
-                if (bucketCandidate.isPresent() && !readBuckets.contains(bucketCandidate.get())) {
-                    return getSequentialBucket();
-                } else {
-                    bucketCandidate = Optional.of(readBuckets.iterator().next());
-                }
+                bucketCandidate = Optional.of(bucket.iterator().next());
             }
         }
 
         return bucketCandidate.orElseGet(() -> getAvailableBucketWithLessUsedGas(GasCost.toGas(tx.getGasLimit())).orElseGet(this::getSequentialBucket));
+    }
+
+    private Optional<TransactionBucket> getTransactionBucketIfNoPresent(Optional<TransactionBucket> bucketCandidate, TransactionBucket bucket) {
+        if (!bucketCandidate.isPresent()) {
+            bucketCandidate = Optional.of(bucket);
+        }
+        return bucketCandidate;
+    }
+
+    private boolean areDifferentBuckets(Optional<TransactionBucket> bucketCandidate, TransactionBucket bucket) {
+        return bucketCandidate.isPresent() && !bucketCandidate.get().equals(bucket);
+    }
+
+    private boolean checkIsSequentialBucket(Optional<TransactionBucket> bucketCandidate) {
+        return bucketCandidate.isPresent() && bucketCandidate.get().isSequential();
     }
 
     private TransactionBucket getSequentialBucket() {
@@ -208,14 +220,12 @@ public class ParallelizeTransactionHandler {
 
     private static class TransactionBucket {
 
-        final Short id;
-        final long gasLimit;
-        final boolean isSequential;
-        final List<Transaction> transactions;
+        final private long gasLimit;
+        final private boolean isSequential;
+        final private List<Transaction> transactions;
         long gasUsedInBucket;
 
-        public TransactionBucket(Short id, long bucketGasLimit, boolean isSequential) {
-            this.id = id;
+        public TransactionBucket(long bucketGasLimit, boolean isSequential) {
             this.gasLimit = bucketGasLimit;
             this.isSequential = isSequential;
             this.transactions = new ArrayList<>();
