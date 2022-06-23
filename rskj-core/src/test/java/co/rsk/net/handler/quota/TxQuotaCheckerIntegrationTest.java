@@ -25,11 +25,11 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.listener.GasPriceTracker;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 
@@ -115,7 +115,7 @@ public class TxQuotaCheckerIntegrationTest {
         quotaChecker = new TxQuotaChecker(timeProvider);
 
         // 3 items to facilitate testing
-        Whitebox.setInternalState(quotaChecker, "accountQuotas", new MaxSizeHashMap<>(3, true));
+        TestUtils.setInternalState(quotaChecker, "accountQuotas", new MaxSizeHashMap<>(3, true));
     }
 
     @Test
