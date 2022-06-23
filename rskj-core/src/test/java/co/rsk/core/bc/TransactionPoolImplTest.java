@@ -26,6 +26,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.listener.GasPriceTracker;
@@ -36,7 +37,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -98,7 +98,7 @@ public class TransactionPoolImplTest {
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
-        Whitebox.setInternalState(transactionPool, "quotaChecker", quotaChecker);
+        TestUtils.setInternalState(transactionPool, "quotaChecker", quotaChecker);
 
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());

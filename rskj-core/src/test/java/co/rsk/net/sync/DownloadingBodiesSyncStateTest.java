@@ -30,7 +30,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

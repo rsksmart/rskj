@@ -5,7 +5,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

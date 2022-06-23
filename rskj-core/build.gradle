@@ -36,8 +36,8 @@ repositories {
     }
 }
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 8
+targetCompatibility = 8
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
@@ -45,7 +45,7 @@ applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressed
 tasks.withType(JavaCompile) {
     options.warnings = false
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-XDignore.symbol.file'
+    options.compilerArgs << '-XDignore.symbol.file' // << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
 tasks.withType(AbstractArchiveTask) {
@@ -59,18 +59,18 @@ tasks.withType(AbstractArchiveTask) {
 ext {
     libVersions = [
             nettyVer               : '4.0.56.Final',
-            spongyCastleVer        : '1.52.0.0',
+            spongyCastleVer        : '1.58.0.0',
             bouncyCastleVer        : '1.59',
             ethereumLeveldbJniVer  : '1.18.3',
             rocksdbJniVer          : '6.27.3',
-            slf4jVer               : '1.7.25',
-            logbackVer             : '1.2.2',
-            jacksonVer             : '2.8.7',
-            commonsLang3Ver        : '3.5',
-            typesafeConfigVer      : '1.3.3',
+            slf4jVer               : '1.7.36',
+            logbackVer             : '1.2.10',
+            jacksonVer             : '2.8.11',
+            commonsLang3Ver        : '3.12.0',
+            typesafeConfigVer      : '1.4.2',
             mapdbVer               : '2.0-beta13',
-            jsonrpc4jVer           : '1.5.1',
-            jaxwsRtVer             : '2.3.3',
+            jsonrpc4jVer           : '1.5.3',
+            jaxwsRtVer             : '2.3.5',
 
             bitcoinjThinVer: '0.14.4-rsk-11',
             rskjNativeVer: '1.2.1',
@@ -99,13 +99,12 @@ ext {
 
     testLibVersions = [
             jsonSimpleVer  : '1.1.1',
-            junitVer       : '4.12',
-            mockitoVer     : '4.1.0',
-            powermockVer   : '2.0.2', // TODO:I remove powermock
-            awaitilityVer  : '3.0.0',
-            commonsIoVer   : '2.5',
-            commonsCodecVer: '1.10',
-            okhttpWsVer    : '2.7.2',
+            junitVer       : '4.13.2',
+            mockitoVer     : '4.6.1',
+            awaitilityVer  : '4.2.0',
+            commonsIoVer   : '2.11.0',
+            commonsCodecVer: '1.15',
+            okhttpWsVer    : '2.7.5',
 
             rskLllVer      : '0.0.2',
     ]
@@ -114,8 +113,6 @@ ext {
             jsonSimpleLib           : "com.googlecode.json-simple:json-simple:${testLibVersions.jsonSimpleVer}",
             junitLib                : "junit:junit:${testLibVersions.junitVer}",
             mockitoLib              : "org.mockito:mockito-inline:${testLibVersions.mockitoVer}",
-            powermockModuleJunit4Lib: "org.powermock:powermock-module-junit4:${testLibVersions.powermockVer}", // TODO:I remove powermock
-            powermockApiMockito2Lib : "org.powermock:powermock-api-mockito2:${testLibVersions.powermockVer}", // TODO:I remove powermock
             awaitilityLib           : "org.awaitility:awaitility:${testLibVersions.awaitilityVer}",
             commonsIoLib            : "commons-io:commons-io:${testLibVersions.commonsIoVer}",
             commonsCodecLib         : "commons-codec:commons-codec:${testLibVersions.commonsCodecVer}",
@@ -149,8 +146,6 @@ dependencies {
     testImplementation "${testLibs.jsonSimpleLib}"
     testImplementation "${testLibs.junitLib}"
     testImplementation "${testLibs.mockitoLib}"
-    testImplementation "${testLibs.powermockModuleJunit4Lib}" // TODO:I remove powermock
-    testImplementation "${testLibs.powermockApiMockito2Lib}" // TODO:I remove powermock
     testImplementation "${testLibs.awaitilityLib}"
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"

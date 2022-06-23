@@ -30,7 +30,6 @@ import org.ethereum.validator.DependentBlockHeaderRule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.util.*;
 
