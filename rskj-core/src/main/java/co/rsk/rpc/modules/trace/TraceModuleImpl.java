@@ -119,9 +119,9 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        List<TransactionTrace> blockTraces = buildBlockTraces(block);
+        Optional<List<TransactionTrace>> blockTraces = buildBlockTraces(block);
 
-        return blockTraces == null ? null : OBJECT_MAPPER.valueToTree(blockTraces);
+        return blockTraces == null || !blockTraces.isPresent() ? null : OBJECT_MAPPER.valueToTree(blockTraces.get());
     }
 
     @Override
@@ -134,10 +134,10 @@ public class TraceModuleImpl implements TraceModule {
         block = block == null ? blockchain.getBestBlock() : block;
 
         while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
-            List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
+            Optional<List<TransactionTrace>> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-            if (builtTraces != null) {
-                blockTracesGroup.add(builtTraces);
+            if (builtTraces != null && builtTraces.isPresent()) {
+                blockTracesGroup.add(builtTraces.get());
             }
 
             block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
@@ -202,23 +202,38 @@ public class TraceModuleImpl implements TraceModule {
             return this.blockchain.getBlockByNumber(0);
         } else if (LATEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
+        } else if (PENDING_BLOCK.equalsIgnoreCase(id)) {
             throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             try {
                 long blockNumber = HexUtils.stringHexToBigInteger(id).longValue();
                 return this.blockchain.getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                logger.warn("Exception in getBlockByNumber", e);
                 throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber " + id);
             }
         }
     }
 
-    private List<TransactionTrace> buildBlockTraces(Block block) {
+    private Optional<List<TransactionTrace>> buildBlockTraces(Block block) {
         return buildBlockTraces(block, null);
     }
 
-    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
+    private List<co.rsk.rpc.modules.trace.TransactionTrace> prepareTxTraces(Transaction tx, ProgramTraceProcessor programTraceProcessor, long blockNumber) {
+        TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+        Objects.requireNonNull(txInfo);
+        txInfo.setTransaction(tx);
+
+        SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+
+        if (programTrace == null) return null;
+
+        List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, blockNumber);
+
+        return traces;
+    }
+
+    private Optional<List<TransactionTrace>> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block != null && block.getNumber() != 0) {
@@ -245,24 +260,17 @@ public class TraceModuleImpl implements TraceModule {
             }
 
             for (Transaction tx : txList) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                Objects.requireNonNull(txInfo);
-                txInfo.setTransaction(tx);
-
-                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
-
-                if (programTrace == null) {
+                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
+                if (traces == null) {
                     blockTraces.clear();
-                    return null;
+                    return Optional.empty();
                 }
-
-                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
 
                 blockTraces.addAll(traces);
             }
         }
 
-        return blockTraces;
+        return Optional.of(blockTraces);
     }
 
     private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
