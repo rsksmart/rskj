@@ -121,7 +121,7 @@ public class TraceModuleImpl implements TraceModule {
 
         Optional<List<TransactionTrace>> blockTraces = buildBlockTraces(block);
 
-        return blockTraces == null || !blockTraces.isPresent() ? null : OBJECT_MAPPER.valueToTree(blockTraces.get());
+        return !blockTraces.isPresent() ? null : OBJECT_MAPPER.valueToTree(blockTraces.get());
     }
 
     @Override
@@ -136,7 +136,7 @@ public class TraceModuleImpl implements TraceModule {
         while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
             Optional<List<TransactionTrace>> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-            if (builtTraces != null && builtTraces.isPresent()) {
+            if (builtTraces.isPresent()) {
                 blockTracesGroup.add(builtTraces.get());
             }
 
