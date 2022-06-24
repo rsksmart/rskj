@@ -2049,13 +2049,18 @@ public class BridgeSupport {
             provider.setNextFederationCreationBlockHeight(nextFederationCreationBlockHeight);
             Script oldFederationP2SHScript = oldFederation.getP2SHScript();
             provider.setLastRetiredFederationP2SHScript(oldFederationP2SHScript);
+            String oldFederationP2shScriptAsHexString = Hex.toHexString(oldFederationP2SHScript.getProgram());
             logger.trace("[commitFederation] nextFederationCreationBlockHeight: {}. RetiringFederationP2SHScript: {}",
                 nextFederationCreationBlockHeight,
-                oldFederationP2SHScript
+                oldFederationP2shScriptAsHexString
             );
         }
 
-        logger.debug("[commitFederation] New Federation committed: {}", provider.getNewFederation().getAddress());
+        logger.debug(
+            "[commitFederation] New Federation committed: {}. Current retiring Federation: {}",
+            provider.getNewFederation().getAddress(),
+            provider.getOldFederation().getAddress()
+        );
         eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
         return 1;
