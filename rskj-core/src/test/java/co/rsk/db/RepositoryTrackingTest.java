@@ -95,7 +95,7 @@ public class RepositoryTrackingTest {
         repository.createAccount(COW);
         tracker.clear();
 
-        repository.addBalance(COW, new Coin(BigInteger.ZERO));
+        repository.addBalance(COW, Coin.ZERO);
 
         assertRepositoryHasSize(1, 0);
     }
