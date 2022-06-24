@@ -298,8 +298,8 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized Coin addBalance(RskAddress addr, Coin value) {
         AccountState account = getAccountStateOrCreateNew(addr);
-        Coin result = account.addToBalance(value);
 
+        Coin result = account.addToBalance(value);
         updateAccountState(addr, account);
 
         return result;
