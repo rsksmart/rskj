@@ -597,7 +597,7 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
-        //TODO(Juli): Is there a better way to calculate the bucket gas limit?
+        //TODO(Juli): Is there a better way to calculate the sublist gas limit?
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
@@ -627,14 +627,14 @@ public class BlockExecutor {
                 continue;
             }
 
-            Optional<Long> bucketGasAccumulated;
+            Optional<Long> sublistGasAccumulated;
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
-                bucketGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
-                bucketGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             }
 
-            if (!acceptInvalidTransactions && !bucketGasAccumulated.isPresent()) {
+            if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
                 if (!discardInvalidTxs) {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
@@ -659,8 +659,8 @@ public class BlockExecutor {
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             TransactionReceipt receipt = buildTransactionReceipt(tx, txExecutor, gasUsed);
-            if (bucketGasAccumulated.isPresent()) {
-                receipt.setCumulativeGas(bucketGasAccumulated.get());
+            if (sublistGasAccumulated.isPresent()) {
+                receipt.setCumulativeGas(sublistGasAccumulated.get());
             } else {
                 //This line is used for testing only when acceptInvalidTransactions is set.
                 receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn((short) Constants.getTransactionExecutionThreads()));
@@ -684,7 +684,7 @@ public class BlockExecutor {
         loggingBuildingExecutionResults();
 
         List<Transaction> executedTransactions = parallelizeTransactionHandler.getTransactionsInOrder();
-        short[] bucketOrder = parallelizeTransactionHandler.getTransactionsPerBucketInOrder();
+        short[] sublistOrder = parallelizeTransactionHandler.getTransactionsPerSublistInOrder();
         List<TransactionReceipt> receipts = new ArrayList<>();
 
         for (Transaction tx : executedTransactions) {
@@ -696,7 +696,7 @@ public class BlockExecutor {
                 block,
                 executedTransactions,
                 receipts,
-                bucketOrder,
+                sublistOrder,
                 gasUsedInBlock,
                 totalPaidFees,
                 track.getTrie()

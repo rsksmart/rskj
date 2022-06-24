@@ -464,7 +464,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeSequentiallyTenIndependentTxsAndThemShouldGoInBothBuckets() {
+    public void executeSequentiallyTenIndependentTxsAndThemShouldGoInBothSublists() {
         if (!activeRskip144) {
             return;
         }
@@ -546,9 +546,9 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
+        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
         int transactionsInSequential = 1;
-        int totalTxsNumber = transactionNumberToFillParallelBucket * Constants.getTransactionExecutionThreads() + transactionsInSequential;
+        int totalTxsNumber = transactionNumberToFillParallelSublist * Constants.getTransactionExecutionThreads() + transactionsInSequential;
         Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
@@ -556,33 +556,33 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void withTheBucketsFullTheLastTransactionShouldNotFit() {
+    public void withTheSublistsFullTheLastTransactionShouldNotFit() {
         if (!activeRskip144) {
             return;
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillParallelBucket = (int) (blockGasLimit / gasLimit);
-        int totalNumberOfBuckets = Constants.getTransactionExecutionThreads() + 1;
-        int totalTxs = (transactionNumberToFillParallelBucket) * totalNumberOfBuckets + 1;
+        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int totalTxs = (transactionNumberToFillParallelSublist) * totalNumberOfSublists + 1;
         Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assert.assertEquals(totalTxs, blockResult.getExecutedTransactions().size() + 1);
     }
 
     @Test
-    public void withSequentialBucketFullRemascTxShouldFit() {
+    public void withSequentialSublistFullRemascTxShouldFit() {
         if (!activeRskip144) {
             return;
         }
         Block parent = blockchain.getBestBlock();
         long blockGasLimit = GasCost.toGas(parent.getGasLimit());
         int gasLimit = 21000;
-        int transactionNumberToFillABucket = (int) (blockGasLimit / gasLimit);
-        int totalNumberOfBuckets = Constants.getTransactionExecutionThreads() + 1;
-        int expectedNumberOfTx = transactionNumberToFillABucket* totalNumberOfBuckets + 1;
-        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillABucket * totalNumberOfBuckets, BigInteger.valueOf(gasLimit), true);
+        int transactionNumberToFillASublist = (int) (blockGasLimit / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int expectedNumberOfTx = transactionNumberToFillASublist* totalNumberOfSublists + 1;
+        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillASublist * totalNumberOfSublists, BigInteger.valueOf(gasLimit), true);
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
         Assert.assertEquals(expectedNumberOfTx, blockResult.getExecutedTransactions().size());
     }
@@ -632,7 +632,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void ifThereIsACollisionBetweenParallelAndSequentialBucketItShouldNotBeConsidered() {
+    public void ifThereIsACollisionBetweenParallelAndSequentialSublistsItShouldNotBeConsidered() {
         if (!activeRskip144) {
             return;
         }
