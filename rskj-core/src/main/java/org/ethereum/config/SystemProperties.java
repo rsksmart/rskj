@@ -30,6 +30,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -128,7 +130,6 @@ public abstract class SystemProperties {
             }
             this.projectVersion = getProjectVersion(props);
             this.projectVersionModifier = getProjectVersionModifier(props);
-
         } catch (Exception e) {
             logger.error("Can't read config.", e);
             throw new RuntimeException(e);
@@ -704,5 +705,9 @@ public abstract class SystemProperties {
 
     public long getGasEstimationCap() {
         return configFromFiles.getLong(PROPERTY_RPC_GAS_ESTIMATION_CAP);
+    }
+
+    public DbKind databaseKind() {
+        return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
     }
 }

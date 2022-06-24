@@ -95,10 +95,7 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
-import org.ethereum.datasource.CacheSnapshotHandler;
-import org.ethereum.datasource.DataSourceWithCache;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.*;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImplV2;
@@ -960,7 +957,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             ));
         }
 
-        if(getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
+        if (getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
             internalServices.add(getPeerScoringReporterService());
         }
 
@@ -1084,7 +1081,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         DB indexDB = DBMaker.fileDB(dbFile)
                 .make();
 
-        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
+        DbKind currentDbKind = getRskSystemProperties().databaseKind();
+        KeyValueDataSource blocksDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
@@ -1092,7 +1090,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
         checkIfNotClosed();
 
-        if(peerScoringReporterService == null) {
+        if (peerScoringReporterService == null) {
             this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
         }
 
@@ -1105,10 +1103,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /**
      * This method closes this RSK context.
-     *
+     * <p>
      * Internally it stops a node runner, if started,
      * and closes / disposes data storages (db instances), if some has already been instantiated.
-     *
+     * <p>
      * Note that this method is idempotent, which means that calling this method more than once does not have any
      * visible side effect.
      */
@@ -1183,7 +1181,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
         Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(bloomsStorePath);
+        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(bloomsStorePath, getRskSystemProperties().databaseKind());
 
         if (bloomsCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
@@ -1261,8 +1259,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized ReceiptStore buildReceiptStore() {
         checkIfNotClosed();
 
-        int receiptsCacheSize = getRskSystemProperties().getReceiptsCacheSize();
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
+        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"), rskSystemProperties.databaseKind());
 
         if (receiptsCacheSize != 0) {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
@@ -1301,11 +1300,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized TrieStore buildTrieStore(Path trieStorePath) {
         checkIfNotClosed();
 
-        int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
+        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(trieStorePath, rskSystemProperties.databaseKind());
 
         if (statesCacheSize != 0) {
-            CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
+            CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
                     ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
                     : null;
             ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler);
@@ -1329,8 +1329,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected StateRootsStore buildStateRootsStore() {
         checkIfNotClosed();
 
-        int stateRootsCacheSize = getRskSystemProperties().getStateRootsCacheSize();
-        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        int stateRootsCacheSize = rskSystemProperties.getStateRootsCacheSize();
+        KeyValueDataSource stateRootsDB = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "stateRoots"), rskSystemProperties.databaseKind());
 
         if (stateRootsCacheSize > 0) {
             stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
@@ -1381,7 +1382,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
+        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"), rskSystemProperties.databaseKind());
+
         return new Wallet(ds);
     }
 
@@ -1409,7 +1411,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private TrieStore buildAbstractTrieStore(Path databasePath) {
         TrieStore newTrieStore;
-        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        GarbageCollectorConfig gcConfig = rskSystemProperties.garbageCollectorConfig();
         final String multiTrieStoreNamePrefix = "unitrie_";
         if (gcConfig.enabled()) {
             try {
@@ -1426,7 +1429,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
                 boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
                 if (gcWasEnabled) {
-                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    KeyValueDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths, rskSystemProperties.databaseKind());
                     // cleanup MultiTrieStore data sources
                     multiTrieStorePaths.stream()
                             .map(Path::toString)

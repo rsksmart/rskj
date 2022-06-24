@@ -62,6 +62,7 @@ ext {
             spongyCastleVer        : '1.52.0.0',
             bouncyCastleVer        : '1.59',
             ethereumLeveldbJniVer  : '1.18.3',
+            rocksdbJniVer          : '6.27.3',
             slf4jVer               : '1.7.25',
             logbackVer             : '1.2.2',
             jacksonVer             : '2.8.7',
@@ -80,6 +81,7 @@ ext {
             spongyCastleLib        : "com.madgag.spongycastle:core:${libVersions.spongyCastleVer}",
             bouncyCastleLib        : "org.bouncycastle:bclcrypto-jdk15on:${libVersions.bouncyCastleVer}",
             ethereumLeveldbJniLib  : "org.ethereum:leveldbjni-all:${libVersions.ethereumLeveldbJniVer}",
+            rocksdbJniLib        : "org.rocksdb:rocksdbjni:${libVersions.rocksdbJniVer}",
             slf4jApiLib            : "org.slf4j:slf4j-api:${libVersions.slf4jVer}",
             log4jOverSlf4jLib      : "org.slf4j:log4j-over-slf4j:${libVersions.slf4jVer}",
             logbackCoreLib         : "ch.qos.logback:logback-core:${libVersions.logbackVer}",
@@ -128,6 +130,7 @@ dependencies {
     implementation "${libs.spongyCastleLib}"
     implementation "${libs.bouncyCastleLib}"
     implementation "${libs.ethereumLeveldbJniLib}"
+    implementation "${libs.rocksdbJniLib}"
     implementation "${libs.slf4jApiLib}"
     implementation "${libs.jacksonLib}"
     implementation "${libs.commonsLang3Lib}"

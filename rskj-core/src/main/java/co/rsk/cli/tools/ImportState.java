@@ -19,11 +19,11 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -35,20 +35,21 @@ import java.nio.file.Paths;
 /**
  * The entry point for import state CLI tool
  * This is an experimental/unsupported tool
- *
+ * <p>
  * Required cli args:
  * - args[0] - file path
  */
 public class ImportState extends CliToolRskContextAware {
-
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        String databaseDir = ctx.getRskSystemProperties().databaseDir();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+        RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
+        String databaseDir = rskSystemProperties.databaseDir();
+
+        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
 
         String filename = args[0];
 

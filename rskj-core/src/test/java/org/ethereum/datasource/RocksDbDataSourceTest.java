@@ -37,29 +37,29 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class LevelDbDataSourceTest {
+public class RocksDbDataSourceTest {
 
     @Rule
     public TemporaryFolder databaseDir = new TemporaryFolder();
 
     @Test
     public void testBatchUpdating() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = new RocksDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-
+        
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-
+        
         dataSource.close();
     }
 
     @Test
     public void testPutting() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = new RocksDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);
@@ -67,10 +67,9 @@ public class LevelDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
-
+        
         dataSource.close();
     }
-
     private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {
         HashMap<ByteArrayWrapper, byte[]> result = new HashMap<>();
         for (int i = 0; i < batchSize; i++) {
