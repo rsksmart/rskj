@@ -223,7 +223,7 @@ public class ParallelizeTransactionHandler {
         final private long gasLimit;
         final private boolean isSequential;
         final private List<Transaction> transactions;
-        long gasUsedInSublist;
+        private long gasUsedInSublist;
 
         public TransactionSublist(long sublistGasLimit, boolean isSequential) {
             this.gasLimit = sublistGasLimit;

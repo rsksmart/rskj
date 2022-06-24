@@ -149,7 +149,7 @@ public class BlockExecutor {
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
-        header.setTxExecutionListsEdges(result.getTxEdges());
+        header.setTxExecutionSublistsEdges(result.getTxEdges());
 
         block.flushRLP();
         profiler.stop(metric);
@@ -260,7 +260,7 @@ public class BlockExecutor {
     }
 
     public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        if (block.getHeader().getTxExecutionListsEdges() != null) {
+        if (block.getHeader().getTxExecutionSublistsEdges() != null) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute);
         } else {
             return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
@@ -291,7 +291,7 @@ public class BlockExecutor {
             boolean acceptInvalidTransactions) {
             boolean rskip144Active = activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber());
 
-            if (rskip144Active && block.getHeader().getTxExecutionListsEdges() != null) {
+            if (rskip144Active && block.getHeader().getTxExecutionSublistsEdges() != null) {
                 return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
             } else {
                 return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
@@ -456,7 +456,7 @@ public class BlockExecutor {
 
         // execute parallel subsets of transactions
         short start = 0;
-        for (short end : block.getHeader().getTxExecutionListsEdges()) {
+        for (short end : block.getHeader().getTxExecutionSublistsEdges()) {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
             TransactionListExecutor txListExecutor = new TransactionListExecutor(
                     sublist,
