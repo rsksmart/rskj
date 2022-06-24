@@ -110,6 +110,10 @@ public class ParallelizeTransactionHandler {
         return sublistOrder;
     }
 
+    public long getGasUsedInSequential() {
+        return getSequentialSublist().getGasUsed();
+    }
+
     private void addNewKeysToMaps(RskAddress sender, TransactionSublist sublist, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         for (ByteArrayWrapper key : newReadKeys) {
             Set<TransactionSublist> sublistsAlreadyRead = sublistsByReadKey.getOrDefault(key, new HashSet<>());
@@ -151,7 +155,7 @@ public class ParallelizeTransactionHandler {
     private TransactionSublist getSublistCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         Optional<TransactionSublist> sublistCandidate = getSublistBySender(tx);
 
-        if (checkIsSequentialSublist(sublistCandidate)) {
+        if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
             return getSequentialSublist();
         }
 
@@ -159,70 +163,67 @@ public class ParallelizeTransactionHandler {
         for (ByteArrayWrapper newReadKey : newReadKeys) {
             if (sublistByWrittenKey.containsKey(newReadKey)) {
                 TransactionSublist sublist = sublistByWrittenKey.get(newReadKey);
-
-                if (areDifferentSublists(sublistCandidate, sublist)) {
-                   return getSequentialSublist();
-                }
-
-                sublistCandidate = getTransactionSublistIfNoPresent(sublistCandidate, sublist);
+                sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
             }
+        }
+
+        if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
+            return sublistCandidate.get();
         }
 
         for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
             // written - written,
             if (sublistByWrittenKey.containsKey(newWrittenKey)) {
                 TransactionSublist sublist = sublistByWrittenKey.get(newWrittenKey);
+                sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
+            }
 
-                if (areDifferentSublists(sublistCandidate, sublist)) {
-                    return getSequentialSublist();
-                }
-
-                sublistCandidate = getTransactionSublistIfNoPresent(sublistCandidate, sublist);
-
+            if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
+                return sublistCandidate.get();
             }
             // read - written
             if (sublistsByReadKey.containsKey(newWrittenKey)) {
                 Set<TransactionSublist> sublist = sublistsByReadKey.get(newWrittenKey);
 
-                if (sublist.size() > 1 || (sublistCandidate.isPresent() && !sublist.contains(sublistCandidate.get()))) {
+                if (sublist.size() > 1) {
                     return getSequentialSublist();
                 }
 
-                sublistCandidate = Optional.of(sublist.iterator().next());
+                sublistCandidate = Optional.of(sublistCandidate.map(sc -> getTransactionSublistForReadKeys(sublist, sc)).orElse(getNextSublist(sublist)));
             }
         }
 
         return sublistCandidate.orElseGet(() -> getAvailableSublistWithLessUsedGas(GasCost.toGas(tx.getGasLimit())).orElseGet(this::getSequentialSublist));
     }
 
-    private Optional<TransactionSublist> getTransactionSublistIfNoPresent(Optional<TransactionSublist> sublistCandidate, TransactionSublist sublist) {
-        if (!sublistCandidate.isPresent()) {
-            sublistCandidate = Optional.of(sublist);
+    private TransactionSublist getTransactionSublistForReadKeys(Set<TransactionSublist> sublist, TransactionSublist sc) {
+        if (!sublist.contains(sc)) {
+            return getSequentialSublist();
         }
-        return sublistCandidate;
+
+        return getNextSublist(sublist);
     }
 
-    private boolean areDifferentSublists(Optional<TransactionSublist> sublistCandidate, TransactionSublist sublist) {
-        return sublistCandidate.isPresent() && !sublistCandidate.get().equals(sublist);
+    private TransactionSublist returnsSequentialIfBothAreDifferent(TransactionSublist sublist1, TransactionSublist sublist2) {
+        if (!sublist1.equals(sublist2)) {
+            return getSequentialSublist();
+        }
+        return sublist1;
     }
 
-    private boolean checkIsSequentialSublist(Optional<TransactionSublist> sublistCandidate) {
-        return sublistCandidate.isPresent() && sublistCandidate.get().isSequential();
+    private TransactionSublist getNextSublist(Set<TransactionSublist> sublist) {
+        return sublist.iterator().next();
     }
 
     private TransactionSublist getSequentialSublist() {
         return this.sublists.get(this.sublists.size()-1);
     }
 
-    public long getGasUsedInSequential() {
-        return getSequentialSublist().getGasUsed();
-    }
-
     private static class TransactionSublist {
 
-        final private long gasLimit;
-        final private boolean isSequential;
-        final private List<Transaction> transactions;
+        private final long gasLimit;
+        private final boolean isSequential;
+        private final List<Transaction> transactions;
         private long gasUsedInSublist;
 
         public TransactionSublist(long sublistGasLimit, boolean isSequential) {
