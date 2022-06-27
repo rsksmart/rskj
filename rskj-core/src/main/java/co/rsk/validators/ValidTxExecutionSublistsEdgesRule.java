@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
         - The edges do not define any empty subset
         - The edges are in ascending order
  */
-public class ValidTxExecutionListsEdgesRule implements BlockValidationRule {
+public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
     public boolean isValid(Block block) {
-        short[] edges = block.getHeader().getTxExecutionListsEdges();
+        short[] edges = block.getHeader().getTxExecutionSublistsEdges();
         int nTxs = block.getTransactionsList().size();
 
         if (edges == null) {

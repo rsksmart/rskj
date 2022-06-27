@@ -2,27 +2,29 @@ package org.ethereum.db;
 
 import co.rsk.core.bc.IReadWrittenKeysTracker;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
-    private final HashSet<ByteArrayWrapper> temporalReadKeys;
-    private final HashSet<ByteArrayWrapper> temporalWrittenKeys;
+    private final Map<ByteArrayWrapper, Set<Long>> temporalReadKeys;
+    private final Map<ByteArrayWrapper, Long> temporalWrittenKeys;
 
     public DummyReadWrittenKeysTracker() {
-        this.temporalReadKeys = new HashSet<>();
-        this.temporalWrittenKeys = new HashSet<>();
+        this.temporalReadKeys = new HashMap<>();
+        this.temporalWrittenKeys = new HashMap<>();
     }
 
     @Override
     public Set<ByteArrayWrapper> getTemporalReadKeys() {
-        return temporalReadKeys;
+        return new HashSet<>(this.temporalReadKeys.keySet());
     }
 
     @Override
     public Set<ByteArrayWrapper> getTemporalWrittenKeys() {
-        return temporalWrittenKeys;
+        return new HashSet<>(this.temporalWrittenKeys.keySet());
     }
 
     @Override
