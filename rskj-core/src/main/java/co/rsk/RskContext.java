@@ -88,6 +88,7 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -608,7 +609,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (rskSystemProperties == null) {
             rskSystemProperties = buildRskSystemProperties();
 
-            boolean acceptAnyHost = Optional.ofNullable(rskSystemProperties.rpcHttpHost())
+            boolean acceptAnyHost = Optional.ofNullable(rskSystemProperties)
+                    .map(SystemProperties::rpcHttpHost)
                     .orElse(new ArrayList<>())
                     .contains("*");
 
