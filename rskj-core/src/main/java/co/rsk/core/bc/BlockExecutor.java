@@ -496,6 +496,7 @@ public class BlockExecutor {
             } catch (InterruptedException e) {
                 logger.warn("block: [{}] execution was interrupted", block.getNumber());
                 logger.trace("", e);
+                Thread.currentThread().interrupt();
                 profiler.stop(metric);
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
             } catch (ExecutionException e) {
