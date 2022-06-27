@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,14 +66,13 @@ public class BlockResult {
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
         this.finalState = finalState;
-        this.txEdges = txEdges;
+        this.txEdges = txEdges != null? Arrays.copyOf(txEdges, txEdges.length) : null;
     }
-
     public Block getBlock() {
         return block;
     }
 
-    public short[] getTxEdges() { return txEdges; }
+    public short[] getTxEdges() { return this.txEdges != null ? Arrays.copyOf(txEdges, txEdges.length) : null; }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
 

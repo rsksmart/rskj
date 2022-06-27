@@ -155,11 +155,11 @@ public class BlockFactory {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
-        short[] txExecutionListsEdges = null;
+        short[] txExecutionSublistsEdges = null;
         if (activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
             byte[] edgesBytes = rlpHeader.get(r++).getRLPRawData();
-            txExecutionListsEdges = new short[edgesBytes.length / 2];
-            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(txExecutionListsEdges);
+            txExecutionSublistsEdges = new short[edgesBytes.length / 2];
+            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(txExecutionSublistsEdges);
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -202,7 +202,7 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot, txExecutionListsEdges
+                ummRoot, txExecutionSublistsEdges
         );
     }
 

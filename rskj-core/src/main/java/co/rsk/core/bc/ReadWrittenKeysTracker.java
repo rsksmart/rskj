@@ -25,9 +25,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-//TODO(JULI):
-// * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
-
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     private Map<ByteArrayWrapper, Set<Long>> threadByReadKey;
     private Map<ByteArrayWrapper, Long> threadByWrittenKey;
