@@ -55,25 +55,15 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
     private final BridgeConstants bridgeConstants;
-    private final ActivationConfig.ForBlock activations;
 
     private List<LogInfo> logs;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs) {
         this.bridgeConstants = bridgeConstants;
-        this.activations = activations;
         this.logs = logs;
     }
 
     public void logUpdateCollections(Transaction rskTx) {
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            logUpdateCollectionsInSolidityFormat(rskTx);
-        } else {
-            logUpdateCollectionsInRLPFormat(rskTx);
-        }
-    }
-
-    private void logUpdateCollectionsInSolidityFormat(Transaction rskTx) {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
@@ -82,23 +72,10 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    private void logUpdateCollectionsInRLPFormat(Transaction rskTx) {
-        this.logs.add(
-                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-                        Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                        RLP.encodeElement(rskTx.getSender().getBytes())
-                )
-        );
-    }
-
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
-            String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
-            logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorPublicKey);
-        } else {
-            logAddSignatureInRLPFormat(federatorPublicKey, btcTx, rskTxHash);
-        }
+        ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
+        String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
+        logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorPublicKey);
     }
 
     private void logAddSignatureInSolidityFormat(byte[] rskTxHash, String federatorRskAddress, BtcECKey federatorPublicKey) {
@@ -110,24 +87,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    private void logAddSignatureInRLPFormat(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
-        List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
-                RLP.encodeElement(rskTxHash));
-
-        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
-    }
-
     public void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash) {
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            logReleaseBtcInSolidityFormat(btcTx, rskTxHash);
-        } else {
-            logReleaseBtcInRLPFormat(btcTx);
-        }
-    }
-
-    private void logReleaseBtcInSolidityFormat(BtcTransaction btcTx, byte[] rskTxHash) {
         CallTransaction.Function event = BridgeEvents.RELEASE_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
@@ -136,38 +96,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    private void logReleaseBtcInRLPFormat(BtcTransaction btcTx) {
-        List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
-
-        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
-    }
-
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            logCommitFederationInSolidityFormat(executionBlock, oldFederation, newFederation);
-        } else {
-            logCommitFederationInRLPFormat(executionBlock, oldFederation, newFederation);
-        }
-    }
-
-    private void logCommitFederationInRLPFormat(Block executionBlock, Federation oldFederation, Federation newFederation) {
-        List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
-
-        byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getBtcPublicKeys());
-        byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
-
-        byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
-        byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
-
-        long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
-
-        byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
-
-        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
-    }
-
-    private void logCommitFederationInSolidityFormat(Block executionBlock, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
@@ -180,11 +109,11 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] encodedData = event.encodeEventData(
-                oldFederationFlatPubKeys,
-                oldFederationBtcAddress,
-                newFederationFlatPubKeys,
-                newFederationBtcAddress,
-                newFedActivationBlockNumber
+            oldFederationFlatPubKeys,
+            oldFederationBtcAddress,
+            newFederationFlatPubKeys,
+            newFederationBtcAddress,
+            newFedActivationBlockNumber
         );
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
@@ -285,10 +214,6 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         }
 
         return flatPubKeys;
-    }
-
-    private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
-        return flatKeys(keys, (k -> RLP.encodeElement(k.getPubKey())));
     }
 
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
