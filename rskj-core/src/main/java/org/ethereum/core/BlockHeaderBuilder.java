@@ -57,7 +57,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
-    private short[] txExecutionListsEdges;
+    private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
     private int uncleCount;
@@ -92,7 +92,7 @@ public class BlockHeaderBuilder {
         this.createParallelCompliantHeader = createParallelCompliantHeader;
 
         if (!createParallelCompliantHeader) {
-            this.txExecutionListsEdges = null;
+            this.txExecutionSublistsEdges = null;
         }
         return this;
     }
@@ -264,13 +264,13 @@ public class BlockHeaderBuilder {
         return this;
     }
 
-    public BlockHeaderBuilder setTxExecutionListsEdges(short[] edges) {
+    public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
         if (edges != null) {
-            this.txExecutionListsEdges = new short[edges.length];
-            System.arraycopy(edges, 0, this.txExecutionListsEdges, 0, edges.length);
+            this.txExecutionSublistsEdges = new short[edges.length];
+            System.arraycopy(edges, 0, this.txExecutionSublistsEdges, 0, edges.length);
             this.createParallelCompliantHeader = true;
         } else {
-            this.txExecutionListsEdges = null;
+            this.txExecutionSublistsEdges = null;
             this.createParallelCompliantHeader = false;
         }
         return this;
@@ -333,10 +333,8 @@ public class BlockHeaderBuilder {
             }
         }
 
-        if (createParallelCompliantHeader) {
-            if (txExecutionListsEdges == null) {
-                txExecutionListsEdges = new short[0];
-            }
+        if (createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+            txExecutionSublistsEdges = new short[0];
         }
 
         return new BlockHeader(
@@ -350,7 +348,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot, txExecutionListsEdges
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
         );
     }
 }
