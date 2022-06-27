@@ -64,6 +64,16 @@ public class ValidTxExecutionSublistsEdgesTest {
     }
 
     @Test
+    public void blockWithOutOfBoundsEdgesBecauseOfRemascTx() {
+        // include the last tx in a parallelized thread
+        // shouldn't be valid because the last transaction
+        // is the remasc transaction and cannot be parallelized
+        mockGetTxExecutionListsEdges(new short[]{10});
+
+        Assert.assertFalse(rule.isValid(block));
+    }
+
+    @Test
     public void blockWithOutOfBoundsEdges() {
         mockGetTxExecutionListsEdges(new short[]{12});
 

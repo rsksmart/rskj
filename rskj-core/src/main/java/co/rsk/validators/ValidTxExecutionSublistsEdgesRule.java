@@ -42,7 +42,7 @@ public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
             }
         }
 
-        if (edges[edges.length-1] > block.getTransactionsList().size()) {
+        if (edges[edges.length-1] > block.getTransactionsList().size() - 1) {
             logger.warn("Invalid block: execution list edge is out of bounds");
             return false;
         }
