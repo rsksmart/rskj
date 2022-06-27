@@ -28,10 +28,10 @@ import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -50,6 +50,7 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -62,6 +63,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -77,13 +79,15 @@ public class BlockExecutorTest {
     private static final TestSystemProperties CONFIG = new TestSystemProperties();
     private static final ActivationConfig activationConfig = spy(CONFIG.getActivationConfig());
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
+    public static final boolean RSKIP_126_IS_ACTIVE = true;
 
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
 
-    private Boolean activeRskip144;
+    private final Boolean activeRskip144;
+    private RskSystemProperties cfg;
 
     public BlockExecutorTest(Boolean activeRskip144) {
         this.activeRskip144 = activeRskip144;
@@ -99,12 +103,14 @@ public class BlockExecutorTest {
 
     @Before
     public void setUp() {
-        doReturn(activeRskip144).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
+        cfg = spy(CONFIG);
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         RskTestFactory objects = new RskTestFactory(CONFIG);
         blockchain = objects.getBlockchain();
-        executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
     }
 
     @Test
@@ -112,11 +118,11 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
@@ -133,11 +139,11 @@ public class BlockExecutorTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertFalse(result.getTransactionReceipts().isEmpty());
@@ -183,11 +189,11 @@ public class BlockExecutorTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertFalse(result.getTransactionReceipts().isEmpty());
@@ -234,11 +240,11 @@ public class BlockExecutorTest {
         Transaction tx2 = block.getTransactionsList().get(1);
         RskAddress account = tx1.getSender();
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertNotNull(result);
 
         Assert.assertNotNull(result.getTransactionReceipts());
@@ -288,18 +294,18 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithOneTransaction() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
         executor.executeAndFill(block, parent.getHeader());
 
         byte[] calculatedReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertArrayEquals(calculatedReceiptsRoot, block.getReceiptsRoot());
         Assert.assertArrayEquals(result.getFinalState().getHash().getBytes(), block.getStateRoot());
         Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
@@ -324,7 +330,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         Transaction tx3 = Transaction
                 .builder()
@@ -361,9 +367,9 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, genesis.getHeader());
 
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
@@ -390,7 +396,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         Transaction tx3 = Transaction
                 .builder()
@@ -425,12 +431,160 @@ public class BlockExecutorTest {
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
-        BlockResult result = executor.execute(block, genesis.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, genesis.getHeader(), false, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    public void executeSequentiallyATransactionAndGasShouldBeSubtractedCorrectly() {
+        if (!activeRskip144) {
+            return;
+        }
+
+        short[] expectedEdges = new short[]{1};
+        Block parent = blockchain.getBestBlock();
+        long expectedAccumulatedGas = 21000L;
+
+        Block block = getBlockWithNIndependentTransactions(1, BigInteger.valueOf(expectedAccumulatedGas), false);
+        List<Transaction> txs = block.getTransactionsList();
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assert.assertEquals(txs, blockResult.getExecutedTransactions());
+        Assert.assertEquals(expectedAccumulatedGas, blockResult.getGasUsed());
+        Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
+
+        List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
+        for (TransactionReceipt receipt: transactionReceipts) {
+            Assert.assertEquals(expectedAccumulatedGas, GasCost.toGas(receipt.getCumulativeGas()));
+        }
+    }
+
+    @Test
+    public void executeSequentiallyTenIndependentTxsAndThemShouldGoInBothSublists() {
+        if (!activeRskip144) {
+            return;
+        }
+
+        long expectedGasUsed = 0L;
+        long expectedAccumulatedGas = 21000L;
+        int txNumber = 12;
+        short[] expectedEdges = new short[]{3, 6, 9, 12};
+        Block parent = blockchain.getBestBlock();
+        Block block = getBlockWithNIndependentTransactions(txNumber, BigInteger.valueOf(expectedAccumulatedGas), false);
+        List<Transaction> txs = block.getTransactionsList();
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assert.assertEquals(txs.size(), blockResult.getExecutedTransactions().size());
+        Assert.assertTrue(txs.containsAll(blockResult.getExecutedTransactions()));
+        Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
+        Assert.assertEquals(expectedAccumulatedGas*txNumber, blockResult.getGasUsed());
+
+        List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
+        long accumulatedGasUsed = 0L;
+        short i = 0;
+        short edgeIndex = 0;
+        for (TransactionReceipt receipt: transactionReceipts) {
+            if ((edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex])) {
+                edgeIndex++;
+                accumulatedGasUsed = expectedGasUsed;
+            }
+
+            accumulatedGasUsed += expectedAccumulatedGas;
+            Assert.assertEquals(accumulatedGasUsed, GasCost.toGas(receipt.getCumulativeGas()));
+            i++;
+        }
+
+        Assert.assertEquals(i, transactionReceipts.size());
+    }
+
+    @Test
+    public void executeBigIndependentTxsSequentiallyTheLastOneShouldGoToSequential() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
+        int gasLimit = 21000;
+        int transactionNumber = (int) (blockGasLimit/gasLimit);
+        short[] expectedEdges = new short[]{(short) transactionNumber, (short) (transactionNumber*2), (short) (transactionNumber*3), (short) (transactionNumber*4)};
+        int transactionsInSequential = 1;
+        Block block = getBlockWithNIndependentTransactions(transactionNumber * Constants.getTransactionExecutionThreads() + transactionsInSequential, BigInteger.valueOf(gasLimit), false);
+        List<Transaction> transactionsList = block.getTransactionsList();
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assert.assertArrayEquals(expectedEdges, blockResult.getTxEdges());
+        Assert.assertEquals(transactionsList.size(), blockResult.getExecutedTransactions().size());
+        Assert.assertTrue(transactionsList.containsAll(blockResult.getExecutedTransactions()));
+
+        List<TransactionReceipt> transactionReceipts = blockResult.getTransactionReceipts();
+        long accumulatedGasUsed = 0L;
+        short i = 0;
+        short edgeIndex = 0;
+        for (TransactionReceipt receipt: transactionReceipts) {
+            accumulatedGasUsed += gasLimit;
+
+            if ((edgeIndex < expectedEdges.length) && (i == expectedEdges[edgeIndex])) {
+                edgeIndex++;
+                accumulatedGasUsed = gasLimit;
+            }
+            Assert.assertEquals(accumulatedGasUsed, GasCost.toGas(receipt.getCumulativeGas()));
+            i++;
+        }
+
+        Assert.assertEquals(i, transactionReceipts.size());
+    }
+
+    @Test
+    public void executeATxInSequentialAndBlockResultShouldTrackTheGasUsedInTheBlock() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
+        int gasLimit = 21000;
+        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
+        int transactionsInSequential = 1;
+        int totalTxsNumber = transactionNumberToFillParallelSublist * Constants.getTransactionExecutionThreads() + transactionsInSequential;
+        Block block = getBlockWithNIndependentTransactions(totalTxsNumber, BigInteger.valueOf(gasLimit), false);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        Assert.assertEquals(gasLimit*totalTxsNumber, blockResult.getGasUsed());
+    }
+
+    @Test
+    public void withTheSublistsFullTheLastTransactionShouldNotFit() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
+        int gasLimit = 21000;
+        int transactionNumberToFillParallelSublist = (int) (blockGasLimit / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int totalTxs = (transactionNumberToFillParallelSublist) * totalNumberOfSublists + 1;
+        Block block = getBlockWithNIndependentTransactions(totalTxs, BigInteger.valueOf(gasLimit), false);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+        Assert.assertEquals(totalTxs, blockResult.getExecutedTransactions().size() + 1);
+    }
+
+    @Test
+    public void withSequentialSublistFullRemascTxShouldFit() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        long blockGasLimit = GasCost.toGas(parent.getGasLimit());
+        int gasLimit = 21000;
+        int transactionNumberToFillASublist = (int) (blockGasLimit / gasLimit);
+        int totalNumberOfSublists = Constants.getTransactionExecutionThreads() + 1;
+        int expectedNumberOfTx = transactionNumberToFillASublist* totalNumberOfSublists + 1;
+        Block block = getBlockWithNIndependentTransactions(transactionNumberToFillASublist * totalNumberOfSublists, BigInteger.valueOf(gasLimit), true);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+        Assert.assertEquals(expectedNumberOfTx, blockResult.getExecutedTransactions().size());
     }
 
     @Test
@@ -440,11 +594,11 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result1 = executor.execute(block1, parent.getHeader(), true);
+        BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false);
 
 
         Block block2 = getBlockWithTenTransactions(new short[]{5});
-        BlockResult result2 = executor.execute(block2, parent.getHeader(), true);
+        BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false);
 
         Assert.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
     }
@@ -456,14 +610,37 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         Block pBlock = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult parallelResult = executor.execute(pBlock, parent.getHeader(), true);
+        BlockResult parallelResult = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
 
 
         Block sBlock = getBlockWithTenTransactions(null);
-        BlockResult seqResult = executor.execute(sBlock, parent.getHeader(), true);
+        BlockResult seqResult = executor.executeForMining(sBlock, parent.getHeader(), true, false);
 
         Assert.assertEquals(pBlock.getTransactionsList().size(), parallelResult.getExecutedTransactions().size());
         Assert.assertArrayEquals(seqResult.getFinalState().getHash().getBytes(), parallelResult.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    public void executeInvalidParallelBlock() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1, 2});
+        BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
+        Assert.assertEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    public void ifThereIsACollisionBetweenParallelAndSequentialSublistsItShouldNotBeConsidered() {
+        if (!activeRskip144) {
+            return;
+        }
+        Block parent = blockchain.getBestBlock();
+        Block pBlock = getBlockWithTwoDependentTransactions(new short[]{1});
+        BlockResult result = executor.execute(null, 0, pBlock, parent.getHeader(), true, false);
+        Assert.assertTrue(pBlock.getTransactionsList().containsAll(result.getExecutedTransactions()));
+        Assert.assertEquals(pBlock.getTransactionsList().size(), result.getExecutedTransactions().size());
     }
 
     @Test
@@ -473,11 +650,11 @@ public class BlockExecutorTest {
         }
         Block parent = blockchain.getBestBlock();
         Block block1 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result1 = executor.executeAndFill(block1, parent.getHeader());
+        BlockResult result1 = executor.execute(null, 0, block1, parent.getHeader(), true, false);
 
 
         Block block2 = getBlockWithTenTransactions(new short[]{2, 4, 6, 8});
-        BlockResult result2 = executor.executeAndFill(block2, parent.getHeader());
+        BlockResult result2 = executor.execute(null, 0, block2, parent.getHeader(), true, false);
 
         Assert.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
         Assert.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
@@ -491,20 +668,20 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(trie.getHash().getBytes());
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
-        RskSystemProperties cfg = spy(CONFIG);
+//        RskSystemProperties cfg = spy(CONFIG);
 
         ActivationConfig activationConfig = spy(cfg.getActivationConfig());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
         doReturn(activationConfig).when(cfg).getActivationConfig();
 
-        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+        BlockExecutor executor = buildBlockExecutor(trieStore, cfg, activeRskip144, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
     }
 
@@ -516,110 +693,110 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(new byte[] { 1, 2, 3, 4 });
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
-        RskSystemProperties cfg = spy(CONFIG);
+//        RskSystemProperties cfg = spy(CONFIG);
 
-        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
-        doReturn(activationConfig).when(cfg).getActivationConfig();
+//        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
+        boolean rskip126IsActive = false;
+//        doReturn(activationConfig).when(cfg).getActivationConfig();
 
-        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, rskip126IsActive);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
     }
 
     @Test
     public void validateBlock() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
     public void invalidBlockBadStateRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte) ((stateRoot[0] + 1) % 256);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
     public void invalidBlockBadReceiptsRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte) ((receiptsRoot[0] + 1) % 256);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
     public void invalidBlockBadGasUsed() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         block.getHeader().setGasUsed(0);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
     public void invalidBlockBadPaidFees() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         block.getHeader().setPaidFees(Coin.ZERO);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
     public void invalidBlockBadLogsBloom() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
-        short[] expectedEdges = activeRskip144 ? new short[0] : null;
+        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionListsEdges());
+        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    private static TestObjects generateBlockWithOneTransaction() {
+    private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
 
@@ -632,7 +809,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, rskip126IsActive);
 
         Transaction tx1 = Transaction
                 .builder()
@@ -743,6 +920,48 @@ public class BlockExecutorTest {
         return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
+    private Block getBlockWithTwoDependentTransactions(short[] edges) {
+        int nTxs = 2;
+
+        Repository track = repository.startTracking();
+        List<Account> accounts = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            accounts.add(createAccount("accounttest" + i, track, Coin.valueOf(60000)));
+        }
+        track.commit();
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        List<Transaction> txs = new LinkedList<>();
+
+        for (int i = 0; i < nTxs; i++) {
+            Transaction tx = Transaction.builder()
+                    .nonce(BigInteger.ZERO)
+                    .gasPrice(BigInteger.ONE)
+                    .gasLimit(BigInteger.valueOf(21000))
+                    .destination(accounts.get((i + 1) % 2).getAddress())
+                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .value(BigInteger.TEN)
+                    .build();
+            tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
+            txs.add(tx);
+        }
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        return new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlock(
+                        bestBlock,
+                        txs,
+                        uncles,
+                        1,
+                        null,
+                        bestBlock.getGasLimit(),
+                        bestBlock.getCoinbase(),
+                        edges
+                );
+    }
+
     private Block getBlockWithTenTransactions(short[] edges) {
         int nTxs = 10;
         int nAccounts = nTxs * 2;
@@ -782,6 +1001,52 @@ public class BlockExecutorTest {
                         bestBlock.getGasLimit(),
                         bestBlock.getCoinbase(),
                         edges
+                );
+    }
+
+    private Block getBlockWithNIndependentTransactions(int txNumber, BigInteger txGasLimit, boolean withRemasc) {
+        int nAccounts = txNumber * 2;
+        Repository track = repository.startTracking();
+        List<Account> accounts = new LinkedList<>();
+
+        for (int i = 0; i < nAccounts; i++) {
+            accounts.add(createAccount("accounttest" + i, track, Coin.valueOf(600000)));
+        }
+        track.commit();
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        List<Transaction> txs = new LinkedList<>();
+
+        for (int i = 0; i < txNumber; i++) {
+            Transaction tx = Transaction.builder()
+                    .nonce(BigInteger.ZERO)
+                    .gasPrice(BigInteger.ONE)
+                    .gasLimit(txGasLimit)
+                    .destination(accounts.get(i + txNumber).getAddress())
+                    .chainId(CONFIG.getNetworkConstants().getChainId())
+                    .value(BigInteger.TEN)
+                    .build();
+            tx.sign(accounts.get(i).getEcKey().getPrivKeyBytes());
+            txs.add(tx);
+        }
+
+        if (withRemasc) {
+            txs.add(new RemascTransaction(1L));
+        }
+
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        return new BlockGenerator(Constants.regtest(), activationConfig)
+                .createChildBlock(
+                        bestBlock,
+                        txs,
+                        uncles,
+                        1,
+                        null,
+                        bestBlock.getGasLimit(),
+                        bestBlock.getCoinbase(),
+                        null
                 );
     }
 
@@ -827,7 +1092,7 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Repository repository = new MutableRepository(trieStore,
                 trieStore.retrieve(objects.getParent().getStateRoot()).get());
         Transaction tx = objects.getTransaction();
@@ -845,7 +1110,7 @@ public class BlockExecutorTest {
             return;
         }
 
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
+        BlockResult result = executor.executeForMining(block, parent.getHeader(), false, false);
 
         Assert.assertNotNull(result);
         if (mustFailExecution) {
@@ -897,7 +1162,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = createStrangeTransaction(
@@ -966,29 +1231,35 @@ public class BlockExecutorTest {
         return digest.digest();
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store) {
-        return buildBlockExecutor(store, CONFIG);
+    private static BlockExecutor buildBlockExecutor(TrieStore store, Boolean activeRskip144, boolean rskip126IsActive) {
+        return buildBlockExecutor(store, CONFIG, activeRskip144, rskip126IsActive);
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config, Boolean activeRskip144, Boolean activeRskip126) {
+        RskSystemProperties cfg = spy(config);
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        doReturn(activeRskip126).when(activationConfig).isActive(eq(RSKIP126), anyLong());
+
+
+        StateRootHandler stateRootHandler = new StateRootHandler(cfg.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+                cfg.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, cfg.getNetworkConstants().getBridgeConstants(), cfg.getActivationConfig());
 
         return new BlockExecutor(
-                config.getActivationConfig(),
+                cfg.getActivationConfig(),
                 new RepositoryLocator(store, stateRootHandler),
                 new TransactionExecutorFactory(
-                        config,
+                        cfg,
                         null,
                         null,
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(cfg, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );

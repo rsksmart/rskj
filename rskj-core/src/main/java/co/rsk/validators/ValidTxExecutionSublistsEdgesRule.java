@@ -12,21 +12,21 @@ import org.slf4j.LoggerFactory;
         - The edges do not define any empty subset
         - The edges are in ascending order
  */
-public class ValidTxExecutionListsEdgesRule implements BlockValidationRule {
+public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
     public boolean isValid(Block block) {
-        short[] edges = block.getHeader().getTxExecutionListsEdges();
+        short[] edges = block.getHeader().getTxExecutionSublistsEdges();
 
         if (edges == null || edges.length == 0) {
             return true;
         }
 
-        if (edges.length > Constants.getMaxTransactionExecutionThreads()) {
+        if (edges.length > Constants.getTransactionExecutionThreads()) {
             logger.warn("Invalid block: number of execution lists edges is greater than number of execution threads ({} vs {})",
-                        edges.length, Constants.getMaxTransactionExecutionThreads());
+                        edges.length, Constants.getTransactionExecutionThreads());
             return false;
         }
 
