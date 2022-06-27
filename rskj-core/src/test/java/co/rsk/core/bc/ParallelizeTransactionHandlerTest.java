@@ -34,7 +34,7 @@ import java.util.*;
 
 public class ParallelizeTransactionHandlerTest {
 
-    private short buckets;
+    private short sublists;
     private ParallelizeTransactionHandler handler;
     private Transaction tx;
     private Transaction tx2;
@@ -43,7 +43,7 @@ public class ParallelizeTransactionHandlerTest {
     private ByteArrayWrapper aDifferentWrapperKey;
     private Transaction bigTx;
     private Transaction bigTx2;
-    private short sequentialBucketNumber;
+    private short sequentialSublistNumber;
 
     @BeforeEach
     public void setup() {
@@ -56,80 +56,78 @@ public class ParallelizeTransactionHandlerTest {
         byte[] aDifferentKey = {1, 2, 3, 4};
         int blockGasLimit = 6800000;
         long gasUsedByTx = 16000;
-        long biggestGasLimitPossibleInBucket = blockGasLimit - 1;
+        long biggestGasLimitPossibleInSublists = blockGasLimit - 1;
 
         aWrappedKey = new ByteArrayWrapper(aKey);
-        buckets = 2;
-        sequentialBucketNumber = buckets;
-        handler = new ParallelizeTransactionHandler(buckets, blockGasLimit);
+        sublists = 2;
+        sequentialSublistNumber = sublists;
+        handler = new ParallelizeTransactionHandler(sublists, blockGasLimit);
         tx = new TransactionBuilder().nonce(1).sender(sender).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx2 = new TransactionBuilder().nonce(1).sender(sender2).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
         tx3 = new TransactionBuilder().nonce(1).sender(sender3).value(BigInteger.valueOf(1)).gasLimit(BigInteger.valueOf(gasUsedByTx)).build();
-        bigTx = new TransactionBuilder().nonce(1).sender(sender4).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInBucket)).value(BigInteger.valueOf(1)).build();
-        bigTx2 = new TransactionBuilder().nonce(1).sender(sender5).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInBucket)).value(BigInteger.valueOf(1)).build();
+        bigTx = new TransactionBuilder().nonce(1).sender(sender4).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInSublists)).value(BigInteger.valueOf(1)).build();
+        bigTx2 = new TransactionBuilder().nonce(1).sender(sender5).gasLimit(BigInteger.valueOf(biggestGasLimitPossibleInSublists)).value(BigInteger.valueOf(1)).build();
         aDifferentWrapperKey = new ByteArrayWrapper(aDifferentKey);
     }
 
     @Test
     void createAHandlerShouldReturnAnEmptyTransactionList() {
         int expectedNumberOfTxs = 0;
-        int expectedNumberOfTxsInBuckets = 0;
-
+        int expectedNumberOfTxsInSublists = 0;
         Assertions.assertEquals(expectedNumberOfTxs, handler.getTransactionsInOrder().size());
-        Assertions.assertEquals(expectedNumberOfTxsInBuckets, handler.getTransactionsPerBucketInOrder().length);
+        Assertions.assertEquals(expectedNumberOfTxsInSublists, handler.getTransactionsPerSublistInOrder().length);
     }
 
     @Test
     void createAHandlerAndGasUsedInBucketShouldBeZero() {
         int expectedGasUsed = 0;
-        for (short i = 0; i < buckets; i++) {
+        for (short i = 0; i < sublists; i++) {
             Assertions.assertEquals(expectedGasUsed, handler.getGasUsedIn(i));
         }
     }
 
     @Test
-    void addTransactionIntoTheHandlerAndShouldBeAddedInTheFirstParallelBucket() {
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), 0);
+    void addTransactionIntoTheHandlerAndShouldBeAddedInTheFirstParallelSublist() {
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), 0);
         short[] expectedTransactionEdgeList = new short[]{1};
         long expectedGasUsed = 0;
 
-        Assertions.assertTrue(bucketGasUsed.isPresent());
-        Assertions.assertEquals(expectedGasUsed, (long) bucketGasUsed.get());
+        Assertions.assertTrue(sublistGasUsed.isPresent());
+        Assertions.assertEquals(expectedGasUsed, (long) sublistGasUsed.get());
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(tx);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void addTransactionIntoTheHandlerAndShouldBeSubtractedGasUsedInTheBucket() {
+    void addTransactionIntoTheHandlerAndShouldBeSubtractedGasUsedInTheSublist() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-
-        Assertions.assertTrue(bucketGasUsed.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
     }
 
     @Test
-    void addTwoTransactionsWithTheSameReadKeyAndShouldBeAddedInDifferentBuckets() {
+    void addTwoTransactionsWithTheSameReadKeyAndShouldBeAddedInADifferentSublist() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
         Set<ByteArrayWrapper> readKeys = createASetAndAddKeys(aWrappedKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
-    void addTwoTransactionsWithDifferentReadKeysShouldBeAddedInDifferentBuckets() {
+    void addTwoTransactionsWithDifferentReadKeysShouldBeAddedInADifferentSublist() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
         HashSet<ByteArrayWrapper> readKeys = createASetAndAddKeys(aWrappedKey);
@@ -138,14 +136,14 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
@@ -156,14 +154,14 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
@@ -176,18 +174,18 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
-    void addTwoTransactionsWithTheSameWrittenReadKeyShouldBeAddedInTheSameBucket() {
+    void addTwoTransactionsWithTheSameWrittenReadKeyShouldBeAddedInTheSameSublist() {
         short[] expectedTransactionEdgeList = new short[]{2};
 
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
@@ -196,18 +194,18 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
-    void addTwoTransactionsWithTheSameReadWrittenKeyShouldBeAddedInTheSameBucket() {
+    void addTwoTransactionsWithTheSameReadWrittenKeyShouldBeAddedInTheSameSublist() {
         short[] expectedTransactionEdgeList = new short[]{2};
 
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
@@ -216,14 +214,14 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx+gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
@@ -236,18 +234,18 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
-    void addTwoTransactionWithDifferentWrittenReadKeyShouldBeAddedInDifferentBuckets() {
+    void addTwoTransactionWithDifferentWrittenReadKeyShouldBeAddedInDifferentSublists() {
         short[] expectedTransactionEdgeList = new short[]{1, 2};
 
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
@@ -256,14 +254,14 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, writtenKeys,  new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx2);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, writtenKeys,  new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys, new HashSet<>(), gasUsedByTx2);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx2, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx2, expectedTransactionEdgeList);
     }
 
     @Test
@@ -277,21 +275,21 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByTx2 = GasCost.toGas(tx2.getGasLimit());
         long gasUsedByTx3 = GasCost.toGas(tx3.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), differentWrittenKeys, gasUsedByTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), differentWrittenKeys, gasUsedByTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, gasUsedByTx3);
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, differentWrittenKeys, writtenKeys, gasUsedByTx3);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent() && bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx3, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent() && sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx3, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
@@ -305,21 +303,21 @@ public class ParallelizeTransactionHandlerTest {
         long totalGasInSequential = gasUsedByTx2 + gasUsedByTx3;
 
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent() && bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(totalGasInSequential, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(totalGasInSequential, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent() && sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(totalGasInSequential, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(totalGasInSequential, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, tx2, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
@@ -330,16 +328,16 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(bigTx, tx, expectedTransactionEdgeList);
     }
 
     @Test
@@ -352,16 +350,16 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, readKeys, new HashSet<>(), gasUsedByBigTx);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, readKeys, new HashSet<>(), gasUsedByBigTx);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(bigTx, tx, expectedTransactionEdgeList);
     }
 
     @Test
@@ -374,55 +372,55 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(bigTx, tx, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(bigTx, tx, expectedTransactionEdgeList);
     }
 
     @Test
-    void addTwoTransactionsWithTheSameSenderToTheSequentialBucketAndTheSecondShouldBeAddedCorrectly() {
+    void addTwoTransactionsWithTheSameSenderToTheSequentialSublistAndTheSecondShouldBeAddedCorrectly() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, tx, tx);
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
         handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
         handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed3.get());
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed3.get());
 
-        Optional<Long> bucketGasUsed4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed4.isPresent());
-        Assertions.assertEquals(2*gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertEquals(2*gasUsedByTx, (long) bucketGasUsed4.get());
+        Optional<Long> sublistGasUsed4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed4.isPresent());
+        Assertions.assertEquals(2*gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(2*gasUsedByTx, (long) sublistGasUsed4.get());
 
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void twoTransactionWithTheSameSenderShouldBeInTheSameBucket() {
+    void twoTransactionWithTheSameSenderShouldBeInTheSameSublist() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{2};
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(2*gasUsedByTx, (long) bucketGasUsed2.get());
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(2*gasUsedByTx, (long) sublistGasUsed2.get());
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx, expectedTransactionEdgeList);
     }
 
     @Test
@@ -435,19 +433,20 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys2 = createASetAndAddKeys(aDifferentWrapperKey);
         HashSet<ByteArrayWrapper> readKeys = createASetAndAddKeys(aWrappedKey, aDifferentWrapperKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, readKeys, new HashSet<>(), gasUsedByTx3);
-        Optional<Long> bucketGasUsed4 = handler.addTransaction(tx3, new HashSet<>(), new HashSet<>(), gasUsedByTx3);
-        Assertions.assertTrue(bucketGasUsed3.isPresent() && bucketGasUsed4.isPresent());
-        Assertions.assertEquals(gasUsedByTx3*2, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, readKeys, new HashSet<>(), gasUsedByTx3);
+        Optional<Long> sublistGasUsed4 = handler.addTransaction(tx3, new HashSet<>(), new HashSet<>(), gasUsedByTx3);
+        Assertions.assertTrue(sublistGasUsed3.isPresent() && sublistGasUsed4.isPresent());
+        Assertions.assertEquals(gasUsedByTx3*2, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx3, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
@@ -460,22 +459,22 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> writtenKeys2 = createASetAndAddKeys(aDifferentWrapperKey);
         HashSet<ByteArrayWrapper> readKeys = createASetAndAddKeys(aWrappedKey, aDifferentWrapperKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys2, gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, readKeys, new HashSet<>(), gasUsedByTx3);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, readKeys, new HashSet<>(), gasUsedByTx3);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifATxWritesAKeyAlreadyReadByTwoTxsPlacedInDifferentBucketsShouldGoToTheSequential() {
+    void ifATxWritesAKeyAlreadyReadByTwoTxsPlacedInDifferentSublistsShouldGoToTheSequential() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx3 = GasCost.toGas(tx3.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1,2};
@@ -484,22 +483,21 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> readKeys2 = createASetAndAddKeys(aWrappedKey);
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
-
     @Test
-    void ifATxReadTwoKeysThatAreInDifferentBucketsShouldGoToTheSequential() {
+    void ifATxReadTwoKeysThatAreInDifferentSublistsShouldGoToTheSequential() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         long gasUsedByTx3 = GasCost.toGas(tx3.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1,2};
@@ -508,34 +506,34 @@ public class ParallelizeTransactionHandlerTest {
         HashSet<ByteArrayWrapper> readKeys2 = createASetAndAddKeys(aDifferentWrapperKey);
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey, aDifferentWrapperKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx);
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, readKeys, new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, readKeys2, new HashSet<>(), gasUsedByTx);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx3, new HashSet<>(), writtenKeys, gasUsedByTx3);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx3, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx3);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifATxCollidesWithAnotherOneThatAlsoHasTheSameSenderShouldGoIntoTheSameBucket() {
+    void ifATxCollidesWithAnotherOneThatAlsoHasTheSameSenderShouldGoIntoTheSameSublist() {
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{2};
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(2*gasUsedByTx, (long) bucketGasUsed2.get());
-        assertTwoTransactionsWereAddedProperlyIntoTheBuckets(tx, tx, expectedTransactionEdgeList);
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(2*gasUsedByTx, (long) sublistGasUsed2.get());
+        assertTwoTransactionsWereAddedProperlyIntoTheSublist(tx, tx, expectedTransactionEdgeList);
     }
 
     @Test
@@ -545,24 +543,24 @@ public class ParallelizeTransactionHandlerTest {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(tx2, new HashSet<>(), writtenKeys, gasUsedByTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx, new HashSet<>(), writtenKeys, gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent() && bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent() && sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
 
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2, tx);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifANewTxComesAndAllThePossibleBucketsAreFullTheTxShouldNotBeAdded() {
+    void ifANewTxComesAndAllThePossibleSublistAreFullTheTxShouldNotBeAdded() {
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByBigTx2 = GasCost.toGas(bigTx2.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
@@ -573,26 +571,26 @@ public class ParallelizeTransactionHandlerTest {
         expectedListOfTxs.add(bigTx2);
         expectedListOfTxs.add(bigTx);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Long> bucketGasUsed4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<Long> sublistGasUsed4 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
 
-        Assertions.assertFalse(bucketGasUsed4.isPresent());
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent() && bucketGasUsed3.isPresent());
+        Assertions.assertFalse(sublistGasUsed4.isPresent());
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent() && sublistGasUsed3.isPresent());
 
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByBigTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByBigTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifBucketsAreFullAndAnIndependentTxComesShouldBeAddedInTheSequential() {
+    void ifSublistsAreFullAndAnIndependentTxComesShouldBeAddedInTheSequential() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
@@ -604,51 +602,51 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByBigTx2 = GasCost.toGas(bigTx2.getGasLimit());
         long gasUsedByTx = GasCost.toGas(tx.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), gasUsedByTx);
 
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent() && bucketGasUsed3.isPresent());
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent() && sublistGasUsed3.isPresent());
 
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByBigTx2, (long) bucketGasUsed2.get());
-        Assertions.assertEquals(gasUsedByTx, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByBigTx2, (long) sublistGasUsed2.get());
+        Assertions.assertEquals(gasUsedByTx, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifAllTheBucketsAreFullTheNewIndependentTxShouldNotBeIncluded() {
+    void ifAllTheSublistsAreFullTheNewIndependentTxShouldNotBeIncluded() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, bigTx);
 
         long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         long gasUsedByBigTx2 = GasCost.toGas(bigTx2.getGasLimit());
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> emptyBucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
-        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertFalse(emptyBucket.isPresent());
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByBigTx2, (long) bucketGasUsed2.get());
+        Optional<Long> emptySublist = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertFalse(emptySublist.isPresent());
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByBigTx2, (long) sublistGasUsed2.get());
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void ifAllTheBucketsAreFullTheNewDependentTxShouldNotBeIncluded() {
+    void ifAllTheSublistsAreFullTheNewDependentTxShouldNotBeIncluded() {
         short[] expectedTransactionEdgeList = new short[]{1,2};
         List<Transaction> expectedListOfTxs = Arrays.asList(bigTx, bigTx2, bigTx);
 
@@ -656,50 +654,50 @@ public class ParallelizeTransactionHandlerTest {
         long gasUsedByBigTx2 = GasCost.toGas(bigTx2.getGasLimit());
         HashSet<ByteArrayWrapper> writtenKeys = createASetAndAddKeys(aWrappedKey);
 
-        Optional<Long> bucketGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
-        Optional<Long> bucketGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed = handler.addTransaction(bigTx, new HashSet<>(), writtenKeys, gasUsedByBigTx);
+        Optional<Long> sublistGasUsed2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), gasUsedByBigTx2);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> bucketGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
-        Assertions.assertTrue(bucketGasUsed3.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed3.get());
-        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
+        Optional<Long> sublistGasUsed3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), gasUsedByBigTx);
+        Assertions.assertTrue(sublistGasUsed3.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed3.get());
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
 
-        Optional<Long> emptyBucket = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
-        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertFalse(emptyBucket.isPresent());
-        Assertions.assertTrue(bucketGasUsed.isPresent() && bucketGasUsed2.isPresent());
-        Assertions.assertEquals(gasUsedByBigTx, (long) bucketGasUsed.get());
-        Assertions.assertEquals(gasUsedByBigTx2, (long) bucketGasUsed2.get());
+        Optional<Long> emptySublist = handler.addTransaction(tx, new HashSet<>(), writtenKeys, GasCost.toGas(tx.getGasLimit()));
+        Assertions.assertEquals(gasUsedByBigTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertFalse(emptySublist.isPresent());
+        Assertions.assertTrue(sublistGasUsed.isPresent() && sublistGasUsed2.isPresent());
+        Assertions.assertEquals(gasUsedByBigTx, (long) sublistGasUsed.get());
+        Assertions.assertEquals(gasUsedByBigTx2, (long) sublistGasUsed2.get());
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 
     @Test
-    void aRemascTxAddedShouldBeInTheSequentialBucket() {
+    void aRemascTxAddedShouldBeInTheSequentialSublist() {
         List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
         long gasUsedByTx = GasCost.toGas(bigTx.getGasLimit());
 
-        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialBucketNumber));
-        Optional<Long> sequentialBucketGasUsed = handler.addRemascTransaction(tx, gasUsedByTx);
+        Assertions.assertEquals(0, handler.getGasUsedIn(sequentialSublistNumber));
+        Optional<Long> sequentialSublistGasUsed = handler.addRemascTransaction(tx, gasUsedByTx);
 
-        Assertions.assertTrue(sequentialBucketGasUsed.isPresent());
-        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialBucketNumber));
-        Assertions.assertEquals(gasUsedByTx, (long) sequentialBucketGasUsed.get());
+        Assertions.assertTrue(sequentialSublistGasUsed.isPresent());
+        Assertions.assertEquals(gasUsedByTx, handler.getGasUsedIn(sequentialSublistNumber));
+        Assertions.assertEquals(gasUsedByTx, (long) sequentialSublistGasUsed.get());
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
     }
 
     @Test
     void ifItsSequentialTheEdgesListShouldHaveSizeZero() {
         handler.addRemascTransaction(tx, GasCost.toGas(bigTx.getGasLimit()));
-        Assertions.assertEquals(0, handler.getTransactionsPerBucketInOrder().length);
+        Assertions.assertEquals(0, handler.getTransactionsPerSublistInOrder().length);
     }
 
     @Test
-    void callGetGasUsedInWithAnInvalidBucketShouldThrowAnError() {
-        short invalidBucketId = (short) (buckets+1);
+    void callGetGasUsedInWithAnInvalidSublistShouldThrowAnError() {
+        short invalidSublistId = (short) (sublists +1);
         try {
-            handler.getGasUsedIn(invalidBucketId);
+            handler.getGasUsedIn(invalidSublistId);
             Assertions.fail();
         } catch (NoSuchElementException e) {
             Assertions.assertTrue(true);
@@ -707,10 +705,10 @@ public class ParallelizeTransactionHandlerTest {
     }
 
     @Test
-    void callGetGasUsedInWithAnInvalidBucketShouldThrowAnError2() {
-        short invalidBucketId = -1;
+    void callGetGasUsedInWithAnInvalidSublistShouldThrowAnError2() {
+        short invalidSublistId = -1;
         try {
-            handler.getGasUsedIn(invalidBucketId);
+            handler.getGasUsedIn(invalidSublistId);
             Assertions.fail();
         } catch (NoSuchElementException e) {
             Assertions.assertTrue(true);
@@ -720,9 +718,9 @@ public class ParallelizeTransactionHandlerTest {
         return new HashSet<>(Arrays.asList(aKey));
     }
 
-    private void assertTwoTransactionsWereAddedProperlyIntoTheBuckets(Transaction tx, Transaction tx2, short[] expectedTransactionEdgeList) {
+    private void assertTwoTransactionsWereAddedProperlyIntoTheSublist(Transaction tx, Transaction tx2, short[] expectedTransactionEdgeList) {
         List<Transaction> expectedListOfTxs = Arrays.asList(tx, tx2);
         Assertions.assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
-        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+        Assertions.assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerSublistInOrder());
     }
 }

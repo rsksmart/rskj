@@ -10,19 +10,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAccumulator;
 
-public class TransactionListExecutor implements Callable {
+public class TransactionListExecutor implements Callable<Boolean> {
 
     private static final Logger logger = LoggerFactory.getLogger("transactionlistexecutor");
 
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final List<Transaction> transactions;
-    private IReadWrittenKeysTracker readWrittenKeysTracker;
+    private final IReadWrittenKeysTracker readWrittenKeysTracker;
     private final Block block;
     private final Repository track;
     private final boolean vmTrace;
@@ -39,7 +37,7 @@ public class TransactionListExecutor implements Callable {
     private final LongAccumulator accumulatedGas;
 
     private int i;
-    private boolean registerProgramResults;
+    private final boolean registerProgramResults;
 
     public TransactionListExecutor(
             List<Transaction> transactions,
@@ -67,7 +65,7 @@ public class TransactionListExecutor implements Callable {
         this.track = track;
         this.vmTrace = vmTrace;
         this.vmTraceOptions = vmTraceOptions;
-        this.transactions = transactions;
+        this.transactions = new ArrayList<>(transactions);
         this.deletedAccounts = deletedAccounts;
         this.discardInvalidTxs = discardInvalidTxs;
         this.acceptInvalidTransactions = acceptInvalidTransactions;
@@ -107,15 +105,15 @@ public class TransactionListExecutor implements Callable {
             }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
-                    continue;
-                } else {
+                if (!discardInvalidTxs) {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                                block.getNumber(), tx.getHash()
+                            block.getNumber(), tx.getHash()
                     );
                     return false;
                 }
+
+                logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                continue;
             }
 
             executedTransactions.put(i, tx);
@@ -129,9 +127,6 @@ public class TransactionListExecutor implements Callable {
             }
 
             logger.trace("tx[{}] executed", i + 1);
-
-            // No need to commit the changes here. track.commit();
-
             logger.trace("track commit");
 
             long txGasUsed = txExecutor.getGasUsed();

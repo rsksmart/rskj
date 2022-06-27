@@ -1089,7 +1089,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
                     getForkDetectionDataRule(),
-                    new ValidTxExecutionListsEdgesRule()
+                    new ValidTxExecutionSublistsEdgesRule()
             );
         }
 
