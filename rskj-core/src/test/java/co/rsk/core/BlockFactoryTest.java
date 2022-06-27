@@ -303,7 +303,7 @@ class BlockFactoryTest {
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getTxExecutionListsEdges(), is(edges));
+        assertThat(header.getTxExecutionSublistsEdges(), is(edges));
     }
 
     @Test
@@ -321,7 +321,7 @@ class BlockFactoryTest {
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getTxExecutionListsEdges(), is(edges));
+        assertThat(header.getTxExecutionSublistsEdges(), is(edges));
     }
 
     @Test
@@ -339,7 +339,7 @@ class BlockFactoryTest {
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getTxExecutionListsEdges(), is(edges));
+        assertThat(header.getTxExecutionSublistsEdges(), is(edges));
     }
 
     @Test
@@ -357,7 +357,7 @@ class BlockFactoryTest {
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getTxExecutionListsEdges(), is(edges));
+        assertThat(header.getTxExecutionSublistsEdges(), is(edges));
     }
 
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
@@ -397,7 +397,7 @@ class BlockFactoryTest {
                 .setUncleCount(0)
                 .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
-                .setTxExecutionListsEdges(edges)
+                .setTxExecutionSublistsEdges(edges)
                 .build();
     }
 
@@ -429,7 +429,7 @@ class BlockFactoryTest {
                 .setUncleCount(0)
                 .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
-                .setTxExecutionListsEdges(edges)
+                .setTxExecutionSublistsEdges(edges)
                 .build();
     }
 
