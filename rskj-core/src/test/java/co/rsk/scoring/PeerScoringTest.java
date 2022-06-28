@@ -255,14 +255,14 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void startPunishment() throws InterruptedException {
+    public void startPunishmentWhenEnabledPunishmentStarted() throws InterruptedException {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assert.assertEquals(0, scoring.getPunishmentTime());
         Assert.assertEquals(0, scoring.getPunishmentCounter());
 
         int expirationTime = 1000;
-        scoring.startPunishment(expirationTime);
+        Assert.assertTrue(scoring.startPunishment(expirationTime));
 
         Assert.assertEquals(1, scoring.getPunishmentCounter());
         Assert.assertFalse(scoring.refreshReputationAndPunishment());
@@ -274,5 +274,21 @@ public class PeerScoringTest {
         Assert.assertTrue(scoring.refreshReputationAndPunishment());
         Assert.assertEquals(1, scoring.getPunishmentCounter());
         Assert.assertEquals(0, scoring.getPunishedUntil());
+    }
+
+    @Test
+    public void startPunishmentWhenDisabledPunishmentNotStarted() {
+        PeerScoring scoring = new PeerScoring("id1", false);
+        Assert.assertEquals(0, scoring.getPunishmentTime());
+        Assert.assertEquals(0, scoring.getPunishmentCounter());
+
+        int expirationTime = 1000;
+        Assert.assertFalse(scoring.startPunishment(expirationTime));
+
+        Assert.assertEquals(0, scoring.getPunishmentCounter());
+        Assert.assertEquals(0, scoring.getPunishmentTime());
+        Assert.assertEquals(0, scoring.getPunishedUntil());
+
+        Assert.assertTrue(scoring.refreshReputationAndPunishment());
     }
 }

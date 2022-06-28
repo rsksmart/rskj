@@ -358,10 +358,11 @@ public class PeerScoringManager {
         boolean shouldStartPunishment = !scoringCalculator.hasGoodScore(peerScoring);
         if (shouldStartPunishment) {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
-            peerScoring.startPunishment(punishmentTime);
-
-            logger.debug("Node {} has been punished for {} milliseconds after event {}. {}",
-                    nodeIdOrAddress, punishmentTime, event, PeerScoringInformation.buildByScoring(peerScoring, nodeIdOrAddress, ""));
+            boolean isPunished = peerScoring.startPunishment(punishmentTime);
+            if (isPunished) {
+                logger.debug("Node {} has been punished for {} milliseconds after event {}. {}",
+                        nodeIdOrAddress, punishmentTime, event, PeerScoringInformation.buildByScoring(peerScoring, nodeIdOrAddress, ""));
+            }
         }
     }
 

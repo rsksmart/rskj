@@ -200,10 +200,12 @@ public class PeerScoring {
      * Increments the punishment counter
      *
      * @param expirationTime punishment duration in milliseconds
+     *
+     * @return <tt>true</tt> if punishment was set, <tt>false</tt> otherwise (i.e. punishment disabled by conf)
      */
-    public void startPunishment(long expirationTime) {
+    public boolean startPunishment(long expirationTime) {
         if (!punishmentEnabled) {
-            return;
+            return false;
         }
 
         logger.debug("Punishing node {} for {} min", peerId, expirationTime / 1000 / 60);
@@ -214,6 +216,7 @@ public class PeerScoring {
             this.punishmentTime = expirationTime;
             this.punishmentCounter++;
             this.timeLostGoodReputation = System.currentTimeMillis();
+            return true;
         } finally {
             rwlock.writeLock().unlock();
         }
