@@ -54,7 +54,7 @@ public class PreflightChecksUtilsTest {
     @Test
     public void runChecks_invalidJavaVersion_exceptionIsThrown() throws Exception {
         expectedException.expect(PreflightCheckException.class);
-        expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 11 17");
+        expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 8 11 17");
 
         RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
