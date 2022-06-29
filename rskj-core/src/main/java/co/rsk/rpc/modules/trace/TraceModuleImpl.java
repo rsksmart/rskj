@@ -177,7 +177,12 @@ public class TraceModuleImpl implements TraceModule {
 
         List<TransactionTrace> traces = buildBlockTraces(block);
 
-        return OBJECT_MAPPER.valueToTree(traces.get(request.getTracePositionsAsListOfIntegers().get(0)));
+        TransactionTrace transactionTrace = null;
+        if(traces != null) {
+            transactionTrace = traces.get(request.getTracePositionsAsListOfIntegers().get(0));
+        }
+        
+        return OBJECT_MAPPER.valueToTree(transactionTrace);
     }
 
     private Block getByJsonArgument(String arg) {
