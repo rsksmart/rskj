@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.datasources.FlatDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,7 @@ import java.util.*;
 public interface KeyValueDataSource extends DataSource {
     String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
+    String TRIE_DATASOURCE_PROP_NAME = "trie.datasource";
 
     @Nullable
     byte[] get(byte[] key);
@@ -77,6 +79,16 @@ public interface KeyValueDataSource extends DataSource {
                 break;
             case ROCKS_DB:
                 ds = new RocksDbDataSource(name, databaseDir);
+                break;
+            case FLAT_DB:
+                int maxNodeCount = 16_000_000;
+                int maxCapacity  = maxNodeCount*100;
+                try {
+                    ds = new FlatDB(maxNodeCount,maxCapacity,
+                            datasourcePath.toString(), FlatDB.CreationFlag.All,FlatDB.latestDBVersion);
+                } catch (IOException e) {
+                    ds = null;
+                }
                 break;
             default:
                 throw new IllegalArgumentException("kind");

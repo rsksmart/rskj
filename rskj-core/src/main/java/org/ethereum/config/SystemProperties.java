@@ -710,4 +710,7 @@ public abstract class SystemProperties {
     public DbKind databaseKind() {
         return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
     }
+    public DbKind trieDatabaseKind() {
+        return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.TRIE_DATASOURCE_PROP_NAME));
+    }
 }

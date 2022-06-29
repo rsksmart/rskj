@@ -17,6 +17,7 @@
  */
 package co.rsk.core.bc;
 
+import co.rsk.Flusher;
 import co.rsk.config.InternalService;
 import co.rsk.db.StateRootsStore;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -39,7 +40,7 @@ import java.util.List;
 /**
  * Flushes the repository and block store after every flushNumberOfBlocks invocations
  */
-public class BlockChainFlusher implements InternalService {
+public class BlockChainFlusher implements InternalService, Flusher {
     private static final Logger logger = LoggerFactory.getLogger(BlockChainFlusher.class);
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -84,6 +85,10 @@ public class BlockChainFlusher implements InternalService {
         flushAll();
     }
 
+    public synchronized void forceFlush() {
+        flushAll();
+        nFlush =1; // postpone
+    }
     private synchronized void flush() {
         if (nFlush == 0) {
             flushAll();

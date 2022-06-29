@@ -81,6 +81,7 @@ public class EvmModuleImpl implements EvmModule {
         logger.debug("evm_mine()");
     }
 
+
     @Override
     public void evm_startMining() {
         minerServer.start();

@@ -1,5 +1,6 @@
 package co.rsk.rpc.modules.rsk;
 
+import co.rsk.Flusher;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.Web3InformationRetriever;
@@ -30,15 +31,29 @@ public class RskModuleImpl implements RskModule {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final Web3InformationRetriever web3InformationRetriever;
+    private final Flusher flusher;
 
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
-                         Web3InformationRetriever web3InformationRetriever) {
+                         Web3InformationRetriever web3InformationRetriever,
+                         Flusher flusher) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
+        this.flusher = flusher;
+    }
+
+    @Override
+    public void shutdown() {
+         System.exit(1);
+    }
+
+    @Override
+    public void flush() {
+        flusher.forceFlush();
+
     }
 
     @Override

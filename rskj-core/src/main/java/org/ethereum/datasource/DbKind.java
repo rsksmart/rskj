@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public enum DbKind {
-    LEVEL_DB("leveldb"), ROCKS_DB("rocksdb");
+    LEVEL_DB("leveldb"), ROCKS_DB("rocksdb"),FLAT_DB("flatdb");
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 

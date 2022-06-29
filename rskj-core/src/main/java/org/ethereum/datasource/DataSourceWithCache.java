@@ -244,6 +244,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             if (logger.isTraceEnabled()) {
                 logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
             }
+            base.flush(); // Shouldn't this be done here ?
         } finally {
             this.lock.writeLock().unlock();
         }

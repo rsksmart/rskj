@@ -37,6 +37,16 @@ public interface Web3EvmModule {
         getEvmModule().evm_mine();
     }
 
+    default void evm_minemany(String numberOfBlocks) {
+        int nBlocks = 0;
+        if ((numberOfBlocks==null) || (numberOfBlocks.equals(""))) {
+            nBlocks = 1;
+        } else
+            nBlocks = Integer.parseInt(numberOfBlocks);
+
+        for(int i=0;i<nBlocks;i++)
+            getEvmModule().evm_mine();
+    }
     default void evm_startMining() {
         getEvmModule().evm_startMining();
     }

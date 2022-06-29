@@ -244,6 +244,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
+    private BlockChainFlusher blockChainFlusher;
 
     private volatile boolean closed;
 
@@ -805,10 +806,28 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockchain(),
                     getBlockStore(),
                     getReceiptStore(),
-                    getWeb3InformationRetriever());
+                    getWeb3InformationRetriever(),
+                    getFlusher());
         }
 
         return rskModule;
+    }
+
+    public synchronized BlockChainFlusher getBlockChainFlusher() {
+        if (this.blockChainFlusher==null)
+        this.blockChainFlusher = new BlockChainFlusher(
+                getRskSystemProperties().flushNumberOfBlocks(),
+                getCompositeEthereumListener(),
+                getTrieStore(),
+                getBlockStore(),
+                getReceiptStore(),
+                getBlocksBloomStore(),
+                getStateRootsStore());
+        return blockChainFlusher;
+    }
+
+    public Flusher getFlusher() {
+        return getBlockChainFlusher();
     }
 
     public synchronized NetworkStateExporter getNetworkStateExporter() {
@@ -961,17 +980,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             internalServices.add(getPeerScoringReporterService());
         }
 
-        internalServices.add(new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore(),
-                getReceiptStore(),
-                getBlocksBloomStore(),
-                getStateRootsStore()));
+
+        internalServices.add(getBlockChainFlusher());
 
         return Collections.unmodifiableList(internalServices);
     }
+
 
     public synchronized GenesisLoader getGenesisLoader() {
         checkIfNotClosed();
@@ -1302,7 +1316,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(trieStorePath, rskSystemProperties.databaseKind());
+        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(trieStorePath, rskSystemProperties.trieDatabaseKind());
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
