@@ -39,7 +39,7 @@ import java.util.*;
  * <p>
  * Assuming that child is valid, the previous block can be validated by comparing it's hash to the child's parent.
  */
-public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
+public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
@@ -48,7 +48,6 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     private final BlockFactory blockFactory;
     private final BlockStore blockStore;
     private final Queue<BlockHeader> toRequest;
-    private final Peer selectedPeer;
 
     private final PriorityQueue<Block> responses;
     private final Map<Long, BlockHeader> inTransit;
@@ -65,14 +64,13 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
             List<BlockHeader> toRequest,
             Peer peer) {
 
-        super(syncEventsHandler, syncConfiguration);
+        super(syncEventsHandler, syncConfiguration, peer);
         this.peersInformation = peersInformation;
         this.genesis = genesis;
         this.blockFactory = blockFactory;
         this.blockStore = blockStore;
         this.toRequest = new LinkedList<>(toRequest);
         this.child = child;
-        this.selectedPeer = peer;
         this.responses = new PriorityQueue<>(Comparator.comparingLong(Block::getNumber).reversed());
         this.inTransit = new HashMap<>();
     }
@@ -90,15 +88,20 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     public void newBody(BodyResponseMessage body, Peer peer) {
         BlockHeader requestedHeader = inTransit.get(body.getId());
         if (requestedHeader == null) {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
+            peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
+                    "Invalid body response (header not found inTransit) received on {}",
+                    this.getClass());
             return;
         }
 
         Block block = blockFactory.newBlock(requestedHeader, body.getTransactions(), body.getUncles());
         block.seal();
 
-        if (!block.getHash().equals(requestedHeader.getHash())) {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
+        boolean unexpectedBlock = !block.getHash().equals(requestedHeader.getHash());
+        if (unexpectedBlock) {
+            peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
+                    "Invalid body response (block hash != requestHeader hash) received on {}",
+                    this.getClass());
             return;
         }
 
@@ -171,15 +174,5 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
         }
 
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-    }
-
-    @Override
-    protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(
-                selectedPeer.getPeerNodeID(),
-                "Timeout waiting requests {}",
-                EventType.TIMEOUT_MESSAGE,
-                this.getClass(),
-                selectedPeer.getPeerNodeID());
     }
 }

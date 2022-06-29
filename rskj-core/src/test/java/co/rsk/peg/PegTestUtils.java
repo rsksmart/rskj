@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -29,6 +30,9 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -36,13 +40,6 @@ import org.bouncycastle.util.encoders.Hex;
  * Created by oscar on 05/08/2016.
  */
 public class PegTestUtils {
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 257; i++) {
-            createHash3();
-        }
-        Keccak256 hash = createHash3();
-    }
 
     private static int nhash = 0;
 
@@ -71,7 +68,11 @@ public class PegTestUtils {
 
     public static Sha256Hash createHash(int nHash) {
         byte[] bytes = new byte[32];
-        bytes[0] = (byte) nHash;
+        bytes[0] = (byte) (0xFF & nHash);
+        bytes[1] = (byte) (0xFF & nHash >> 8);
+        bytes[2] = (byte) (0xFF & nHash >> 16);
+        bytes[3] = (byte) (0xFF & nHash >> 24);
+
         return Sha256Hash.wrap(bytes);
     }
 
@@ -157,19 +158,60 @@ public class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Address createRandomBtcAddress() {
+    public static Address createRandomP2PKHBtcAddress() {
         BtcECKey key = new BtcECKey();
         return key.toAddress(RegTestParams.get());
     }
 
+    public static Address createRandomP2SHMultisigAddress(NetworkParameters networkParameters, int keysCount) {
+        List<BtcECKey> keys = createRandomBtcECKeys(keysCount);
+        Script redeemScript = ScriptBuilder.createRedeemScript((keys.size() / 2) + 1, keys);
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+
+        return Address.fromP2SHScript(networkParameters, outputScript);
+    }
+
+    public static List<BtcECKey> createRandomBtcECKeys(int keysCount) {
+        List<BtcECKey> keys = new ArrayList<>();
+        for (int i = 0; i < keysCount; i++) {
+            keys.add(new BtcECKey());
+        }
+        return keys;
+    }
+
     public static UTXO createUTXO(int nHash, long index, Coin value) {
+        return createUTXO(nHash, index, value, createRandomP2PKHBtcAddress());
+    }
+
+    public static UTXO createUTXO(int nHash, long index, Coin value, Address address) {
         return new UTXO(
             createHash(nHash),
             index,
             value,
             10,
             false,
-            ScriptBuilder.createOutputScript(new BtcECKey())
-        );
+            ScriptBuilder.createOutputScript(address));
+    }
+
+    public static List<UTXO> createUTXOs(int amount, Address address) {
+        List<UTXO> utxos = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            utxos.add(createUTXO(i + 1, 0, Coin.COIN, address));
+        }
+
+        return utxos;
+    }
+
+    public static List<ReleaseRequestQueue.Entry> createReleaseRequestQueueEntries(int amount) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            ReleaseRequestQueue.Entry entry = new ReleaseRequestQueue.Entry(
+                createRandomP2PKHBtcAddress(),
+                Coin.COIN.add(Coin.valueOf(i))
+            );
+            entries.add(entry);
+        }
+
+        return entries;
     }
 }

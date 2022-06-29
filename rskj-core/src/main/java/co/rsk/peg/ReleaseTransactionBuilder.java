@@ -42,10 +42,12 @@ public class ReleaseTransactionBuilder {
     public class BuildResult {
         private final BtcTransaction btcTx;
         private final List<UTXO> selectedUTXOs;
+        private final Response responseCode;
 
-        public BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs) {
+        public BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs, Response responseCode) {
             this.btcTx = btcTx;
             this.selectedUTXOs = selectedUTXOs;
+            this.responseCode = responseCode;
         }
 
         public BtcTransaction getBtcTx() {
@@ -54,6 +56,10 @@ public class ReleaseTransactionBuilder {
 
         public List<UTXO> getSelectedUTXOs() {
             return selectedUTXOs;
+        }
+
+        public Response getResponseCode() {
+            return responseCode;
         }
     }
 
@@ -95,14 +101,23 @@ public class ReleaseTransactionBuilder {
         return feePerKb;
     }
 
-    public Optional<BuildResult> buildAmountTo(Address to, Coin amount) {
+    public BuildResult buildAmountTo(Address to, Coin amount) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
         }, String.format("sending %s to %s", amount, to));
     }
 
-    public Optional<BuildResult> buildEmptyWalletTo(Address to) {
+    public BuildResult buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
+        return buildWithConfiguration((SendRequest sr) -> {
+            for (ReleaseRequestQueue.Entry entry : entries) {
+                sr.tx.addOutput(entry.getAmount(), entry.getDestination());
+            }
+            sr.changeAddress = changeAddress;
+        }, String.format("batching %d pegouts", entries.size()));
+    }
+
+    public BuildResult buildEmptyWalletTo(Address to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
             sr.changeAddress = to;
@@ -110,7 +125,7 @@ public class ReleaseTransactionBuilder {
         }, String.format("emptying wallet to %s", to));
     }
 
-    private Optional<BuildResult> buildWithConfiguration(
+    private BuildResult buildWithConfiguration(
             SendRequestConfigurator sendRequestConfigurator,
             String operationDescription) {
 
@@ -145,27 +160,27 @@ public class ReleaseTransactionBuilder {
                 )
                 .collect(Collectors.toList());
 
-            return Optional.of(new BuildResult(btcTx, selectedUTXOs));
+            return new BuildResult(btcTx, selectedUTXOs, Response.SUCCESS);
         } catch (InsufficientMoneyException e) {
             logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
-            return Optional.empty();
+            return new BuildResult(null, null, Response.INSUFFICIENT_MONEY);
         } catch (Wallet.CouldNotAdjustDownwards e) {
             logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
-            return Optional.empty();
+            return new BuildResult(null, null, Response.COULD_NOT_ADJUST_DOWNWARDS);
         } catch (Wallet.ExceededMaxTransactionSize e) {
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("exceededmaxtransactionsize", "Tx size too big " + rskTxHash + " " + btcTx);
-            return Optional.empty();
+            return new BuildResult(null, null, Response.EXCEED_MAX_TRANSACTION_SIZE);
         } catch (UTXOProviderException e) {
             logger.warn(String.format("UTXO provider exception sending %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
-            return Optional.empty();
+            return new BuildResult(null, null, Response.UTXO_PROVIDER_EXCEPTION);
         }
     }
 
@@ -175,4 +190,13 @@ public class ReleaseTransactionBuilder {
         sr.shuffleOutputs = false;
         sr.recipientsPayFees = true;
     };
+
+    protected enum Response {
+        SUCCESS,
+        INSUFFICIENT_MONEY,
+        COULD_NOT_ADJUST_DOWNWARDS,
+        EXCEED_MAX_TRANSACTION_SIZE,
+        UTXO_PROVIDER_EXCEPTION
+    }
+
 }

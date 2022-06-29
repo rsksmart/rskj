@@ -199,16 +199,21 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
+        Genesis genesisBlock = mock(Genesis.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        when(blockStore.getMinNumber()).thenReturn(0L);
+
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
+                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.DEFAULT, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class),
+                genesisBlock,
                 mock(EthereumListener.class));
+
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
         processor.processStatus(sender, status);
 
@@ -318,16 +323,21 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
+        BlockStore blockStore = mock(BlockStore.class);
+        Genesis genesisBlock = mock(Genesis.class);
+        when(blockStore.getMinNumber()).thenReturn(0L);
+
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
+                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class),
+                genesisBlock,
                 mock(EthereumListener.class));
+
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());

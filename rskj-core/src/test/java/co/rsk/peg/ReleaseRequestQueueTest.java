@@ -188,4 +188,24 @@ public class ReleaseRequestQueueTest {
     private Address mockAddress(int pk) {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
+
+    @Test
+    public void test_removeEntries_all() {
+        queue.removeEntries(queueEntries);
+        Assert.assertTrue(queue.getEntries().isEmpty());
+    }
+
+    @Test
+    public void test_removeEntries_part() {
+        List<ReleaseRequestQueue.Entry> queueEntriesToRemove = Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150)),
+            new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
+            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.FIFTY_COINS)
+        );
+        queue.removeEntries(queueEntriesToRemove);
+        Assert.assertEquals(2, queue.getEntries().size());
+        Assert.assertEquals(queueEntries.get(3), queue.getEntries().get(0));
+        Assert.assertEquals(queueEntries.get(4), queue.getEntries().get(1));
+    }
+
 }

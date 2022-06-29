@@ -18,9 +18,15 @@
 
 package co.rsk.rpc.modules.trace;
 
+
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -39,11 +45,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.rsk.config.VmConfig;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.util.HexUtils;
 
 public class TraceModuleImpl implements TraceModule {
 
+    private static final String EARLIEST_BLOCK = "earliest";
+    private static final String LATEST_BLOCK = "latest";
+    private static final String PENDING_BLOCK = "pending";
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
@@ -53,16 +64,19 @@ public class TraceModuleImpl implements TraceModule {
     private final ReceiptStore receiptStore;
 
     private final BlockExecutor blockExecutor;
+    private final ExecutionBlockRetriever executionBlockRetriever;
 
     public TraceModuleImpl(
             Blockchain blockchain,
             BlockStore blockStore,
             ReceiptStore receiptStore,
-            BlockExecutor blockExecutor) {
+            BlockExecutor blockExecutor,
+            ExecutionBlockRetriever executionBlockRetriever) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
+        this.executionBlockRetriever = executionBlockRetriever;
     }
 
     @Override
@@ -85,7 +99,7 @@ public class TraceModuleImpl implements TraceModule {
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-        SummarizedProgramTrace programTrace = (SummarizedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
+        SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
         if (programTrace == null) {
             return null;
@@ -107,39 +121,69 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+        List<TransactionTrace> blockTraces = buildBlockTraces(block);
 
-        List<TransactionTrace> blockTraces = new ArrayList<>();
+        return blockTraces == null ? null : OBJECT_MAPPER.valueToTree(blockTraces);
+    }
 
-        if (block.getNumber() != 0) {
-            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+    @Override
+    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
+        List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
 
-            for (Transaction tx : block.getTransactionsList()) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                Objects.requireNonNull(txInfo);
-                txInfo.setTransaction(tx);
+        Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
+        Block block = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
 
-                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+        block = block == null ? blockchain.getBestBlock() : block;
 
-                if (programTrace == null) {
-                    return null;
-                }
+        while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
+            List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
-
-                blockTraces.addAll(traces);
+            if (builtTraces != null) {
+                blockTracesGroup.add(builtTraces);
             }
+
+            block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
 
-        return OBJECT_MAPPER.valueToTree(blockTraces);
+        Collections.reverse(blockTracesGroup);
+
+        Stream<TransactionTrace> txTraceStream = blockTracesGroup.stream().flatMap(Collection::stream);
+
+        if (traceFilterRequest.getAfter() != null) {
+            txTraceStream = txTraceStream.skip(traceFilterRequest.getAfter());
+        }
+
+        if (traceFilterRequest.getCount() != null) {
+            txTraceStream = txTraceStream.limit(traceFilterRequest.getCount());
+        }
+
+        List<TransactionTrace> traces = txTraceStream.collect(Collectors.toList());
+
+        return OBJECT_MAPPER.valueToTree(traces);
+    }
+
+    @Override
+    public JsonNode traceGet(String transactionHash, List<String> positions) throws Exception {
+        TraceGetRequest request = new TraceGetRequest(transactionHash, positions);
+
+        TransactionInfo txInfo = this.receiptStore.getInMainChain(request.getTransactionHashAsByteArray(), this.blockStore).orElse(null);
+
+        if (txInfo == null) {
+            logger.trace("No transaction info for {}", transactionHash);
+            return null;
+        }
+
+        Block block = this.blockchain.getBlockByHash(txInfo.getBlockHash());
+
+        List<TransactionTrace> traces = buildBlockTraces(block);
+
+        return OBJECT_MAPPER.valueToTree(traces.get(request.getTracePositionsAsListOfIntegers().get(0)));
     }
 
     private Block getByJsonArgument(String arg) {
         if (arg.length() < 20) {
             return this.getByJsonBlockId(arg);
-        }
-        else {
+        } else {
             return this.getByJsonBlockHash(arg);
         }
     }
@@ -151,9 +195,9 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
+        if (EARLIEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
+        } else if (LATEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
         } else if ("pending".equalsIgnoreCase(id)) {
             throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
@@ -164,6 +208,70 @@ public class TraceModuleImpl implements TraceModule {
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                 throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber " + id);
             }
+        }
+    }
+
+    private List<TransactionTrace> buildBlockTraces(Block block) {
+        return buildBlockTraces(block, null);
+    }
+
+    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
+        List<TransactionTrace> blockTraces = new ArrayList<>();
+
+        if (block != null && block.getNumber() != 0) {
+            List<Transaction> txList = block.getTransactionsList();
+
+            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+            Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+
+            if (traceFilterRequest != null) {
+                Stream<Transaction> txStream = block.getTransactionsList().stream();
+
+                if (traceFilterRequest.getFromAddress() != null && !traceFilterRequest.getFromAddress().isEmpty()) {
+                    List<RskAddress> addresses = traceFilterRequest.getFromAddressAsRskAddresses();
+                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(tx.getSender()));
+                }
+
+                if (traceFilterRequest.getToAddress() != null && !traceFilterRequest.getToAddress().isEmpty()) {
+                    List<RskAddress> addresses = traceFilterRequest.getToAddressAsRskAddresses();
+                    txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(tx.getReceiveAddress()));
+                }
+
+                txList = txStream.collect(Collectors.toList());
+            }
+
+            for (Transaction tx : txList) {
+                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+                Objects.requireNonNull(txInfo);
+                txInfo.setTransaction(tx);
+
+                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+
+                if (programTrace == null) {
+                    blockTraces.clear();
+                    return null;
+                }
+
+                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+
+                blockTraces.addAll(traces);
+            }
+        }
+
+        return blockTraces;
+    }
+
+    private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
+        if (strBlock.equalsIgnoreCase(LATEST_BLOCK)) {
+            return this.blockchain.getBestBlock();
+        } else if (strBlock.equalsIgnoreCase(EARLIEST_BLOCK)) {
+            return this.blockchain.getBlockByNumber(0);
+        } else if (strBlock.equalsIgnoreCase(PENDING_BLOCK)) {
+            return this.executionBlockRetriever.retrieveExecutionBlock(PENDING_BLOCK).getBlock();
+        } else {
+            long toBlockNumber = biBlock.longValue();
+            return this.blockchain.getBlockByNumber(toBlockNumber);
         }
     }
 }

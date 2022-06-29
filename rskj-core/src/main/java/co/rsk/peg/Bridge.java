@@ -1187,6 +1187,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public long getNextPegoutCreationBlockNumber(Object[] args) {
+        logger.trace("getNextPegoutCreationBlockNumber");
+
+        return bridgeSupport.getNextPegoutCreationBlockNumber();
+    }
+
+    public int getQueuedPegoutsCount(Object[] args) throws IOException {
+        logger.trace("getQueuedPegoutsCount");
+
+        return bridgeSupport.getQueuedPegoutsCount();
+    }
+
+    public long getEstimatedFeesForNextPegOutEvent(Object[] args) throws IOException {
+        logger.trace("getEstimatedFeesForNextPegOutEvent");
+
+        return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();

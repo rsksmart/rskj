@@ -17,7 +17,9 @@
  */
 package co.rsk;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.util.PreflightChecksUtils;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +38,10 @@ public class Start {
         RskContext ctx = null;
         try {
             ctx = new RskContext(args);
+
+            RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);

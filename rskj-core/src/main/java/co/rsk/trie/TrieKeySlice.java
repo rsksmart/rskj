@@ -28,7 +28,7 @@ public class TrieKeySlice {
     private final int offset;
     private final int limit;
 
-    private TrieKeySlice(byte[] expandedKey, int offset, int limit) {
+    public TrieKeySlice(byte[] expandedKey, int offset, int limit) {
         this.expandedKey = expandedKey;
         this.offset = offset;
         this.limit = limit;
@@ -120,5 +120,10 @@ public class TrieKeySlice {
 
     public static TrieKeySlice empty() {
         return new TrieKeySlice(new byte[0], 0, 0);
+    }
+
+    // Returns the key slice in expanded form (byte array of ones and zeros)
+    public byte[] expand() {
+        return Arrays.copyOfRange(expandedKey, offset, limit);
     }
 }

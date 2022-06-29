@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.messages;
 
 import co.rsk.config.RskSystemProperties;
@@ -5,6 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -75,7 +94,8 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(peerScoringManager, times(1))
-                .recordEvent(eq(peer), eq(peerAddress), eq(EventType.INVALID_BLOCK));
+                .recordEvent(peer, peerAddress, EventType.INVALID_BLOCK,
+                        "Invalid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
         verify(blockProcessor, times(1)).processBlock(any(), any());
     }
 
@@ -161,9 +181,10 @@ public class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(blockProcessor, times(1)).processBlock(eq(sender), eq(block));
+        verify(blockProcessor, times(1)).processBlock(sender, block);
         verify(peerScoringManager, times(1))
-                .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_BLOCK));
+                .recordEvent(peer, peerAddress, EventType.VALID_BLOCK,
+                        "Valid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
         verify(channelManager, never()).broadcastBlockHash(any(), any());
     }
 
@@ -198,7 +219,8 @@ public class MessageVisitorTest {
 
         verify(blockProcessor, times(1)).processBlock(eq(sender), eq(block));
         verify(peerScoringManager, times(1))
-                .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_BLOCK));
+                .recordEvent(peer, peerAddress, EventType.VALID_BLOCK,
+                        "Valid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
         verify(channelManager, times(1)).broadcastBlockHash(any(), any());
     }
 
@@ -210,7 +232,7 @@ public class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(syncProcessor, times(1)).processStatus(eq(sender),eq(status));
+        verify(syncProcessor, times(1)).processStatus(eq(sender), eq(status));
     }
 
     @Test
@@ -401,12 +423,14 @@ public class MessageVisitorTest {
 
         IntStream.range(0, 3).forEach(i -> {
             Transaction tx = mock(Transaction.class);
+            when(tx.getHash()).thenReturn(TestUtils.randomHash());
             when(tx.acceptTransactionSignature(anyByte())).thenReturn(true);
             validTransactions.add(tx);
         });
 
         List<Transaction> invalidTransactions = new LinkedList<>();
         Transaction invalidTx = mock(Transaction.class);
+        when(invalidTx.getHash()).thenReturn(TestUtils.randomHash());
         when(invalidTx.acceptTransactionSignature(anyByte())).thenReturn(false);
         invalidTransactions.add(invalidTx);
 
@@ -419,9 +443,17 @@ public class MessageVisitorTest {
 
         verify(transactionGateway, times(1))
                 .receiveTransactionsFrom(eq(validTransactions), any());
-        verify(peerScoringManager, times(3))
-                .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_TRANSACTION));
         verify(peerScoringManager, times(1))
-                .recordEvent(eq(peer), eq(peerAddress), eq(EventType.INVALID_TRANSACTION));
+                .recordEvent(peer, peerAddress, EventType.VALID_TRANSACTION, "Valid transaction {} at {}",
+                        validTransactions.get(0).getHash().toString(), MessageVisitor.class);
+        verify(peerScoringManager, times(1))
+                .recordEvent(peer, peerAddress, EventType.VALID_TRANSACTION, "Valid transaction {} at {}",
+                        validTransactions.get(1).getHash().toString(), MessageVisitor.class);
+        verify(peerScoringManager, times(1))
+                .recordEvent(peer, peerAddress, EventType.VALID_TRANSACTION, "Valid transaction {} at {}",
+                        validTransactions.get(2).getHash().toString(), MessageVisitor.class);
+        verify(peerScoringManager, times(1))
+                .recordEvent(peer, peerAddress, EventType.INVALID_TRANSACTION, "Invalid transaction {} at {}",
+                        invalidTx.getHash().toString(), MessageVisitor.class);
     }
 }

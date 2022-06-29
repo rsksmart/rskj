@@ -26,6 +26,7 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.AsyncNodeBlockProcessorListener;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -34,6 +35,7 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -153,6 +155,8 @@ public class AsyncNodeBlockProcessorTest {
         processor.start();
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
+        Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+        
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
@@ -191,12 +195,58 @@ public class AsyncNodeBlockProcessorTest {
 
         Block blockToWait = null;
         for (Block b : blocks) {
-            BlockProcessResult result = processor.processBlock(null, b);
-            if (result.isScheduledForProcessing()) {
+            blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
+            if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
 
+        if (blockToWait != null) {
+            listener.waitForBlock(blockToWait.getHash());
+        }
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(0, store.size());
+
+        processor.stopAndWait(WAIT_TIME);
+    }
+
+    @Test(timeout = WAIT_TIME)
+    public void processFutureBlocksAddingToBlockchain() throws InterruptedException {
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        final NetBlockStore store = new NetBlockStore();
+        final Block genesis = blockchain.getBestBlock();
+
+        final List<Block> blocks = new ArrayList<>();
+        Block parent = genesis;
+        for (int i = 0; i < 10; i++) {
+            Block block = new BlockGenerator().createChildBlock(parent);
+            blocks.add(block);
+            parent = block;
+        }
+
+        final BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        final TestSystemProperties config = new TestSystemProperties();
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
+        final BlockValidator blockValidator = block -> blockchain.hasBlockInSomeBlockchain(block.getParentHash().getBytes());
+        final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
+                DummyBlockValidator.VALID_RESULT_INSTANCE, blockValidator, listener);
+        processor.start();
+
+        Block blockToWait = null;
+        for (Block b : blocks) {
+            BlockProcessResult blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
+            if (blockProcessResult.isScheduledForProcessing()) {
+                blockToWait = b;
+            }
+        }
+        
         if (blockToWait != null) {
             listener.waitForBlock(blockToWait.getHash());
         }
@@ -235,12 +285,16 @@ public class AsyncNodeBlockProcessorTest {
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -285,12 +339,16 @@ public class AsyncNodeBlockProcessorTest {
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -341,6 +399,8 @@ public class AsyncNodeBlockProcessorTest {
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -381,6 +441,8 @@ public class AsyncNodeBlockProcessorTest {
         for (int k = 0; k < 10; k++) {
             Block b = blocks.get(9 - k);
             blockProcessResult = processor.processBlock(null, b);
+            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+            
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -423,6 +485,8 @@ public class AsyncNodeBlockProcessorTest {
             if (k != 5) {
                 Block b = blocks.get(9 - k);
                 blockProcessResult = processor.processBlock(null, b);
+                Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+                
                 if (blockProcessResult.isScheduledForProcessing()) {
                     blockToWait = b;
                 }
@@ -433,7 +497,11 @@ public class AsyncNodeBlockProcessorTest {
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = genesis;
         }
-        blockProcessResult = processor.processBlock(null, blocks.get(4));
+        
+        Block block4 = blocks.get(4);
+        blockProcessResult = processor.processBlock(null, block4);
+        Assert.assertFalse("Block #" + block4.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+        
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = blocks.get(4);
         }
@@ -474,6 +542,8 @@ public class AsyncNodeBlockProcessorTest {
         processor.start();
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
+        Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+        
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
@@ -482,6 +552,8 @@ public class AsyncNodeBlockProcessorTest {
         Assert.assertNull(blockchain.getBlockByHash(block.getHash().getBytes()));
 
         blockProcessResult = processor.processBlock(null, parent);
+        Assert.assertFalse("Block #" + parent.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
+        
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(parent.getHash());
         }

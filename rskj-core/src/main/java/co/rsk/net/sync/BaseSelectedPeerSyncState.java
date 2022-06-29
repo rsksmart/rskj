@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2022 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,22 +16,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.simples;
+package co.rsk.net.sync;
 
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.wallet.SendRequest;
-import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.net.Peer;
+import co.rsk.scoring.EventType;
 
 /**
- * Created by ajlopez on 6/9/2016.
+ * Base class for those SyncState concrete classes that need a connected peer for their logic
  */
-public class SimpleWallet extends Wallet {
-    public SimpleWallet(Context context) {
-        super(context);
+public abstract class BaseSelectedPeerSyncState extends BaseSyncState {
+
+    protected final Peer selectedPeer;
+
+    protected BaseSelectedPeerSyncState(SyncEventsHandler syncEventsHandler, SyncConfiguration syncConfiguration, Peer peer) {
+        super(syncEventsHandler, syncConfiguration);
+        this.selectedPeer = peer;
     }
 
     @Override
-    public void completeTx(SendRequest req) {
-        return;
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
+                "Timeout waiting requests on {}", this.getClass());
     }
+
 }

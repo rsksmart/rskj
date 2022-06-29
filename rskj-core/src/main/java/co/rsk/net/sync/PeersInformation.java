@@ -19,16 +19,14 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
@@ -45,7 +43,6 @@ public class PeersInformation {
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
-    private static final Logger logger = LoggerFactory.getLogger(PeersInformation.class);
 
     private final ChannelManager channelManager;
     private final SyncConfiguration syncConfiguration;
@@ -58,7 +55,7 @@ public class PeersInformation {
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
-                            PeerScoringManager peerScoringManager){
+                            PeerScoringManager peerScoringManager) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -70,19 +67,13 @@ public class PeersInformation {
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
-    public void reportEventWithLog(String message, NodeID peerId, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        peerScoringManager.recordEvent(peerId, null, eventType);
+    public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
+        this.peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType, message, arguments);
     }
 
-    public void reportEvent(NodeID peerId, EventType eventType) {
-        peerScoringManager.recordEvent(peerId, null, eventType);
-    }
-
-    public void reportErrorEvent(NodeID peerId, String message, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        failedPeers.put(peerId, Instant.now());
-        peerScoringManager.recordEvent(peerId, null, eventType);
+    public void processSyncingError(Peer peer, EventType eventType, String message, Object... arguments) {
+        failedPeers.put(peer.getPeerNodeID(), Instant.now());
+        reportEventToPeerScoring(peer, eventType, message, arguments);
     }
 
     private int getScore(NodeID peerId) {
@@ -115,36 +106,43 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
-        return getCandidatesStream()
+        return getBestCandidatesStream()
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
     }
 
-    private Stream<Map.Entry<Peer, SyncPeerStatus>> getCandidatesStream(){
+    public Optional<Peer> getBestOrEqualPeer() {
+        return getTrustedPeers()
+                .filter(e -> isMyDifficultyLowerThan(e.getKey(), false))
+                .max(this.peerComparator)
+                .map(Map.Entry::getKey);
+    }
+
+    private Stream<Map.Entry<Peer, SyncPeerStatus>> getBestCandidatesStream() {
+        return getTrustedPeers().filter(e -> isMyDifficultyLowerThan(e.getKey(), true));
+    }
+
+    private Stream<Map.Entry<Peer, SyncPeerStatus>> getTrustedPeers() {
         Collection<Peer> activeNodes = channelManager.getActivePeers();
 
         return peerStatuses.entrySet().stream()
                 .filter(e -> peerNotExpired(e.getValue()))
                 .filter(e -> activeNodes.contains(e.getKey()))
-                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey().getPeerNodeID()))
-                .filter(e -> hasLowerDifficulty(e.getKey()));
+                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey().getPeerNodeID()));
     }
 
-    private boolean hasLowerDifficulty(Peer peer) {
-        Status status = getPeer(peer).getStatus();
-        if (status == null) {
+    private boolean isMyDifficultyLowerThan(Peer peer, boolean strictLower) {
+        Status peerStatus = getPeer(peer).getStatus();
+        if (peerStatus == null) {
             return false;
         }
 
-        boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-        BlockChainStatus nodeStatus = blockchain.getStatus();
-        // this works only for testing purposes, real status without difficulty don't reach this far
-        return  (hasTotalDifficulty && nodeStatus.hasLowerTotalDifficultyThan(status)) ||
-                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestBlockNumber());
+        BlockChainStatus myStatus = blockchain.getStatus();
+        return strictLower ? myStatus.hasLowerTotalDifficultyThan(peerStatus) : myStatus.hasLowerOrSameTotalDifficultyThan(peerStatus);
     }
 
-    public List<Peer> getPeerCandidates() {
-        return getCandidatesStream()
+    public List<Peer> getBestPeerCandidates() {
+        return getBestCandidatesStream()
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -217,7 +215,7 @@ public class PeersInformation {
 
     private Instant getFailInstant(Peer peer) {
         Instant instant = failedPeers.get(peer.getPeerNodeID());
-        if (instant != null){
+        if (instant != null) {
             return instant;
         }
         return Instant.EPOCH;

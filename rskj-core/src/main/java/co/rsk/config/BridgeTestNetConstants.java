@@ -151,6 +151,10 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
+
+        maxInputsPerPegoutTransaction = 50;
+
+        numberOfBlocksBetweenPegouts = 360; // 3 hours of RSK blocks (considering 1 block every 30 seconds)
     }
 
     public static BridgeTestNetConstants getInstance() {

@@ -31,8 +31,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -97,9 +99,16 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             return ignoreBlockResult(block, start);
         }
 
-        // Check if block is ready for processing - if the block is not too advanced, its parent block is in place etc.
-        boolean readyForProcessing = blockSyncService.preprocessBlock(block, sender, false);
-        if (readyForProcessing) {
+        // Check if block is ready for processing - if the block is not too advanced, its ancestor blocks are in place etc.
+        List<Block> blocksToConnect = blockSyncService.preprocessBlock(block, sender, false);
+        if (blocksToConnect.isEmpty()) {
+            logger.trace("Ignored block with number {} and hash {} from {} as it's not ready for processing yet", blockNumber, blockHash, peer);
+            return ignoreBlockResult(block, start);
+        }
+
+        boolean onlyOneBlock = blocksToConnect.size() == 1 && blocksToConnect.get(0).getHash().equals(block.getHash());
+        // if there's only one block to connect without any ancestors, then schedule its processing ( if the block is valid ofc )
+        if (onlyOneBlock) {
             // Validate block if it can be added to the queue for processing
             if (isBlockValid(block)) {
                 scheduleForProcessing(new BlockInfo(sender, block), blockNumber, blockHash, peer);
@@ -111,17 +120,20 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             return invalidBlockResult(block, start);
         }
 
-        logger.trace("Ignored block with number {} and hash {} from {} as it's not ready for processing yet", blockNumber, blockHash, peer);
-        return ignoreBlockResult(block, start);
+        // if besides the block there are some ancestors, connect them all synchronously
+        Map<Keccak256, ImportResult> connectResult = blockSyncService.connectBlocksAndDescendants(sender, blocksToConnect, false);
+        return BlockProcessResult.connectResult(block, start, connectResult);
     }
 
     @Override
     public void start() {
+        logger.info("Starting...");
         thread.start();
     }
 
     @Override
     public void stop() {
+        logger.info("Stopping...");
         stopThread();
     }
 
@@ -153,23 +165,26 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
                 BlockInfo blockInfo = blocksToProcess.take();
 
-                logger.debug("Queued Blocks: {}", blocksToProcess.size());
+                int size = blocksToProcess.size();
+                if (size > 0) {
+                    logger.info("Queued blocks to connect: {}", size);
+                } else {
+                    logger.debug("There are no more queued blocks");
+                }
 
                 sender = blockInfo.peer;
                 block = blockInfo.block;
 
-                long start = 0L;
+                final Instant start = Instant.now();
                 if (logger.isTraceEnabled()) {
                     logger.trace("Start block processing with number {} and hash {} from {}", block.getNumber(), block.getPrintableHash(), sender);
-
-                    start = System.nanoTime();
                 }
-
-                BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false);
+                
+                Map<Keccak256, ImportResult> connectResult = blockSyncService.connectBlocksAndDescendants(sender, Collections.singletonList(block), false);
+                BlockProcessResult blockProcessResult = BlockProcessResult.connectResult(block, start, connectResult);
 
                 if (logger.isTraceEnabled()) {
-                    long processTime = System.nanoTime() - start;
-                    logger.trace("Finished block processing after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(processTime));
+                    logger.trace("Finished block processing after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(Duration.between(start, Instant.now()).toNanos()));
                 }
 
                 if (listener != null) {

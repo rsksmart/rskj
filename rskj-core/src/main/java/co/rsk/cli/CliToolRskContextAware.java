@@ -18,8 +18,10 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,10 @@ public abstract class CliToolRskContextAware {
         String cliToolName = getClass().getSimpleName();
         try (RskContext ctx = contextFactory.create()) {
             printInfo("{} started", cliToolName);
+
+            RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
+
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             onExecute(args, ctx);
 

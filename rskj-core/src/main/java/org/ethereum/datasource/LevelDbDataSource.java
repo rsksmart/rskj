@@ -74,7 +74,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
 
@@ -313,7 +313,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void close() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
             if (!isAlive()) {
@@ -338,17 +338,5 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
-    }
-
-    public static void mergeDataSources(Path destinationPath, List<Path> originPaths) {
-        Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
-        for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
-            singleOriginDataSource.keys().forEach(kw -> mergedStores.put(kw, singleOriginDataSource.get(kw.getData())));
-            singleOriginDataSource.close();
-        }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
-        destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
-        destinationDataSource.close();
     }
 }

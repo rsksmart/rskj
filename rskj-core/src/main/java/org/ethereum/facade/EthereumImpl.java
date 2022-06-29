@@ -36,7 +36,7 @@ public class EthereumImpl implements Ethereum {
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
 
-    private GasPriceTracker gasPriceTracker = new GasPriceTracker();
+    private final GasPriceTracker gasPriceTracker;
 
     public EthereumImpl(
             ChannelManager channelManager,
@@ -49,7 +49,8 @@ public class EthereumImpl implements Ethereum {
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
 
-        compositeEthereumListener.addListener(gasPriceTracker);
+        this.gasPriceTracker = GasPriceTracker.create(blockchain);
+        compositeEthereumListener.addListener(this.gasPriceTracker);
     }
 
     @Override

@@ -38,7 +38,7 @@ import java.util.List;
 
 public class AsyncNodeBlockProcessorUnclesTest {
 
-    private static final long WAIT_TIME = Long.MAX_VALUE;
+    private static final long WAIT_TIME = 60_000L;
 
     private BlockChainBuilder blockChainBuilder;
     private BlockChainImpl blockChain;
@@ -65,8 +65,10 @@ public class AsyncNodeBlockProcessorUnclesTest {
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
 
-        processor.processBlock(null, block1);
-        listener.waitForBlock(block1.getHash());
+        BlockProcessResult blockProcessResult = processor.processBlock(null, block1);
+        if (blockProcessResult.isScheduledForProcessing()) {
+            listener.waitForBlock(block1.getHash());
+        }
 
         Assert.assertEquals(1, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
@@ -97,8 +99,10 @@ public class AsyncNodeBlockProcessorUnclesTest {
 
         SimplePeer sender = new SimplePeer();
 
-        processor.processBlock(sender, block2);
-        listener.waitForBlock(block2.getHash());
+        BlockProcessResult blockProcessResult = processor.processBlock(sender, block2);
+        if (blockProcessResult.isScheduledForProcessing()) {
+            listener.waitForBlock(block2.getHash());
+        }
 
         Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
@@ -128,8 +132,10 @@ public class AsyncNodeBlockProcessorUnclesTest {
 
         SimplePeer sender = new SimplePeer();
 
-        processor.processBlock(sender, block2);
-        listener.waitForBlock(block2.getHash());
+        BlockProcessResult blockProcessResult = processor.processBlock(sender, block2);
+        if (blockProcessResult.isScheduledForProcessing()) {
+            listener.waitForBlock(block2.getHash());
+        }
 
         Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());

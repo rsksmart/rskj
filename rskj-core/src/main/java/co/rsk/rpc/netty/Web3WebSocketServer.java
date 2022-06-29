@@ -83,7 +83,7 @@ public class Web3WebSocketServer implements InternalService {
                     p.addLast(new HttpServerCodec());
                     p.addLast(new HttpObjectAggregator(maxAggregatedFrameSize));
                     p.addLast(new WriteTimeoutHandler(serverWriteTimeoutSeconds, TimeUnit.SECONDS));
-                    p.addLast(new RskWebSocketServerProtocolHandler("/websocket", maxFrameSize));
+                    p.addLast(new RskWebSocketServerProtocolHandler("/", maxFrameSize));
                     p.addLast(new WebSocketFrameAggregator(maxAggregatedFrameSize));
                     p.addLast(webSocketJsonRpcHandler);
                     p.addLast(web3ServerHandler);

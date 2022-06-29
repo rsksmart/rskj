@@ -26,6 +26,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -104,7 +106,7 @@ public class SyncProcessor implements SyncEventsHandler {
         };
 
         this.peersInformation = peersInformation;
-        setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
+        setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
     public void processStatus(Peer sender, Status status) {
@@ -123,7 +125,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newSkeleton(message.getBlockIdentifiers(), peer);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            notifyUnexpectedMessageToPeerScoring(peer, "skeleton");
         }
     }
 
@@ -138,7 +140,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newConnectionPointData(message.getHash());
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            notifyUnexpectedMessageToPeerScoring(peer, "block hash");
         }
     }
 
@@ -152,7 +154,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newBlockHeaders(message.getBlockHeaders());
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            notifyUnexpectedMessageToPeerScoring(peer, "block headers");
         }
     }
 
@@ -166,7 +168,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newBody(message, peer);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            notifyUnexpectedMessageToPeerScoring(peer, "body");
         }
     }
 
@@ -175,7 +177,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.toPrintableHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
-        if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
+        if (syncState instanceof PeerAndModeDecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             peersInformation.getOrRegisterPeer(peer);
             sendMessage(peer, new BlockRequestMessage(++lastRequestId, hash));
         }
@@ -192,7 +194,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             blockSyncService.processBlock(message.getBlock(), peer, false);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            notifyUnexpectedMessageToPeerScoring(peer, "block");
         }
     }
 
@@ -339,7 +341,7 @@ public class SyncProcessor implements SyncEventsHandler {
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         peersInformation.clearOldFailedPeers();
 
-        setSyncState(new DecidingSyncState(syncConfiguration,
+        setSyncState(new PeerAndModeDecidingSyncState(syncConfiguration,
                 this,
                 peersInformation,
                 blockStore));
@@ -360,24 +362,26 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber) {
         boolean wasSyncing = this.isSyncing.getAndSet(isSyncing);
-        if (!wasSyncing && isSyncing) {
+        boolean startedSyncing = !wasSyncing && isSyncing;
+        boolean finishedSyncing = wasSyncing && !isSyncing;
+        if (startedSyncing) {
             initialBlockNumber = blockchain.getBestBlock().getNumber();
             highestBlockNumber = Optional.ofNullable(peerBestBlockNumber).orElse(initialBlockNumber);
             ethereumListener.onLongSyncStarted();
-        } else if (wasSyncing && !isSyncing) {
+        } else if (finishedSyncing) {
             ethereumListener.onLongSyncDone();
         }
     }
 
     @Override
-    public void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments) {
-        peersInformation.reportErrorEvent(peerId, message, eventType, arguments);
+    public void onErrorSyncing(Peer peer, EventType eventType, String message, Object... arguments) {
+        peersInformation.processSyncingError(peer, eventType, message, arguments);
         stopSyncing();
     }
 
     @Override
-    public void onSyncIssue(String message, Object... arguments) {
-        logger.trace(message, arguments);
+    public void onSyncIssue(Peer peer, String message, Object... messageArgs) {
+        logSyncIssue(peer, message, messageArgs);
         stopSyncing();
     }
 
@@ -392,6 +396,12 @@ public class SyncProcessor implements SyncEventsHandler {
     private void setSyncState(SyncState syncState) {
         this.syncState = syncState;
         this.syncState.onEnter();
+    }
+
+    private void notifyUnexpectedMessageToPeerScoring(Peer peer, String messageType) {
+        String message = "Unexpected " + messageType + " response received on {}";
+        peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
+                message, this.getClass());
     }
 
     @VisibleForTesting
@@ -432,5 +442,12 @@ public class SyncProcessor implements SyncEventsHandler {
     private void removePendingMessage(long messageId, MessageType messageType) {
         pendingMessages.remove(messageId);
         logger.trace("Pending {}@{} REMOVED", messageType, messageId);
+    }
+
+    private void logSyncIssue(Peer peer, String message, Object[] messageArgs) {
+        String completeMessage = "Node [{}] " + message;
+        String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
+        Object[] completeArguments = ArrayUtils.add(messageArgs, 0, nodeInfo);
+        logger.trace(completeMessage, completeArguments);
     }
 }

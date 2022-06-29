@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -24,14 +42,15 @@ public class PeerScoringInformation {
     private final int score;
     private final int punishments;
     private final boolean goodReputation;
+    private final long punishedUntil;
     private final String id;
     private final String type; //todo(techdebt) use an enum or constants
 
-    public PeerScoringInformation(int successfulHandshakes, int failedHandshakes, int invalidNetworks,
+    PeerScoringInformation(int successfulHandshakes, int failedHandshakes, int invalidNetworks,
                                   int repeatedMessages, int validBlocks, int validTransactions, int invalidBlocks,
                                   int invalidTransactions, int invalidMessages, int timeoutMessages,
                                   int unexpectedMessages, int invalidHeader, int score, int punishments,
-                                  boolean goodReputation, String id, String type) {
+                                  boolean goodReputation, long punishedUntil, String id, String type) {
         this.successfulHandshakes = successfulHandshakes;
         this.failedHandshakes = failedHandshakes;
         this.invalidNetworks = invalidNetworks;
@@ -47,6 +66,7 @@ public class PeerScoringInformation {
         this.score = score;
         this.punishments = punishments;
         this.goodReputation = goodReputation;
+        this.punishedUntil = punishedUntil;
         this.id = id;
         this.type = type;
     }
@@ -66,12 +86,13 @@ public class PeerScoringInformation {
         int invalidHeader = scoring.getEventCounter(EventType.INVALID_HEADER);
         int score = scoring.getScore();
         int punishments = scoring.getPunishmentCounter();
-        boolean goodReputation = scoring.hasGoodReputation();
+        boolean goodReputation = scoring.refreshReputationAndPunishment();
+        long punishedUntil = scoring.getPunishedUntil();
 
         return new PeerScoringInformation(successfulHandshakes, failedHandshakes, invalidNetworks,
                 repeatedMessages, validBlocks, validTransactions, invalidBlocks, invalidTransactions,
                 invalidMessages, timeoutMessages, unexpectedMessages, invalidHeader, score, punishments,
-                goodReputation, id, type);
+                goodReputation, punishedUntil, id, type);
     }
 
     public String getId() {
@@ -79,19 +100,29 @@ public class PeerScoringInformation {
     }
 
     @VisibleForTesting
-    public String getType() { return this.type; }
+    public String getType() {
+        return this.type;
+    }
 
     public boolean getGoodReputation() {
         return this.goodReputation;
     }
 
-    public int getSuccessfulHandshakes() { return this.successfulHandshakes; }
+    public int getSuccessfulHandshakes() {
+        return this.successfulHandshakes;
+    }
 
-    public int getFailedHandshakes() { return this.failedHandshakes; }
+    public int getFailedHandshakes() {
+        return this.failedHandshakes;
+    }
 
-    public int getInvalidNetworks() { return this.invalidNetworks; }
+    public int getInvalidNetworks() {
+        return this.invalidNetworks;
+    }
 
-    public int getRepeatedMessages() { return this.repeatedMessages; }
+    public int getRepeatedMessages() {
+        return this.repeatedMessages;
+    }
 
     public int getValidBlocks() {
         return this.validBlocks;
@@ -129,7 +160,9 @@ public class PeerScoringInformation {
         return this.invalidHeader;
     }
 
-    public int getPunishments() { return this.punishments; }
+    public int getPunishments() {
+        return this.punishments;
+    }
 
     public int goodReputationCount() {
         return getGoodReputation() ? 1 : 0;
@@ -137,6 +170,34 @@ public class PeerScoringInformation {
 
     public int badReputationCount() {
         return !getGoodReputation() ? 1 : 0;
+    }
+
+    public long getPunishedUntil() {
+        return punishedUntil;
+    }
+
+    @Override
+    public String toString() {
+        return "PeerScoringInformation{" +
+                "successfulHandshakes=" + successfulHandshakes +
+                ", failedHandshakes=" + failedHandshakes +
+                ", invalidNetworks=" + invalidNetworks +
+                ", repeatedMessages=" + repeatedMessages +
+                ", validBlocks=" + validBlocks +
+                ", validTransactions=" + validTransactions +
+                ", invalidBlocks=" + invalidBlocks +
+                ", invalidTransactions=" + invalidTransactions +
+                ", invalidMessages=" + invalidMessages +
+                ", timeoutMessages=" + timeoutMessages +
+                ", unexpectedMessages=" + unexpectedMessages +
+                ", invalidHeader=" + invalidHeader +
+                ", score=" + score +
+                ", punishments=" + punishments +
+                ", goodReputation=" + goodReputation +
+                ", punishedUntil=" + punishedUntil +
+                ", id='" + id + '\'' +
+                ", type='" + type + '\'' +
+                '}';
     }
 }
 

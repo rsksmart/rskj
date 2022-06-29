@@ -1,7 +1,26 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,25 +103,42 @@ public class PeerScoringManager {
      * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
      * same node_id, but maybe with different address along the time. Or same address with different node id.
      *
-     * @param id        node id or null
-     * @param address   address or null
-     * @param event     event type (@see EventType)
+     * @param id            node id or null
+     * @param address       address or null
+     * @param event         event type (@see EventType)
+     * @param message       message template for logging
+     * @param messageArgs   message template arguments for logging
      */
-    public void recordEvent(NodeID id, InetAddress address, EventType event) {
+    public void recordEvent(NodeID id, InetAddress address, EventType event, String message, Object... messageArgs) {
         //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
             if (id != null) {
-                PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
-                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
+                PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance(id.toString()));
+                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, nodeIdForLog(id));
             }
 
             if (address != null) {
-                PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
-                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
+                PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance(address.getHostAddress()));
+                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, addressForLog(address));
             }
 
-            logger.debug("Recorded {}. {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
+            logRecordedEvent(id, address, event, message, messageArgs);
         }
+    }
+
+    /**
+     * Record the event, given the node id and/or the network address
+     *
+     * Usually we collected the events TWICE, if possible: by node id and by address.
+     * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
+     * same node_id, but maybe with different address along the time. Or same address with different node id.
+     *
+     * @param id            node id or null
+     * @param address       address or null
+     * @param event         event type (@see EventType)
+     */
+    public void recordEvent(NodeID id, InetAddress address, EventType event) {
+        recordEvent(id, address, event, null);
     }
 
     /**
@@ -113,11 +149,12 @@ public class PeerScoringManager {
      */
     public boolean hasGoodReputation(NodeID id) {
         if (isNodeIDBanned(id)) {
+            logger.debug("Node {} is banned, reputation is bad", id);
             return false;
         }
 
         synchronized (accessLock) {
-            return this.getPeerScoring(id).hasGoodReputation();
+            return this.getPeerScoring(id).refreshReputationAndPunishment();
         }
     }
 
@@ -129,11 +166,12 @@ public class PeerScoringManager {
      */
     public boolean hasGoodReputation(InetAddress address) {
         if (isAddressBanned(address)) {
+            logger.debug("Address {} is banned, reputation is bad", address.getHostAddress());
             return false;
         }
 
         synchronized (accessLock) {
-            return this.getPeerScoring(address).hasGoodReputation();
+            return this.getPeerScoring(address).refreshReputationAndPunishment();
         }
     }
 
@@ -152,6 +190,7 @@ public class PeerScoringManager {
      */
     public void banAddress(InetAddress address) {
         this.addressTable.addAddress(address);
+        logger.debug("Banned address {}", address.getHostAddress());
     }
 
     /**
@@ -180,6 +219,7 @@ public class PeerScoringManager {
      */
     public void unbanAddress(InetAddress address) {
         this.addressTable.removeAddress(address);
+        logger.debug("Unbanned address {}", address.getHostAddress());
     }
 
     /**
@@ -206,8 +246,9 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be banned
      */
-    public void banAddressBlock(InetAddressBlock addressBlock) {
+    public void banAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.addAddressBlock(addressBlock);
+        logger.debug("Banned address block {}", addressBlock.getDescription());
     }
 
     /**
@@ -215,8 +256,9 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be removed
      */
-    public void unbanAddressBlock(InetAddressBlock addressBlock) {
+    public void unbanAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.removeAddressBlock(addressBlock);
+        logger.debug("Unbanned address block {}", addressBlock.getDescription());
     }
 
     /**
@@ -245,10 +287,26 @@ public class PeerScoringManager {
     public List<String> getBannedAddresses() {
         List<String> list = new ArrayList<>();
 
-        list.addAll(this.addressTable.getAddressList().stream().map(entry -> entry.getHostAddress()).collect(Collectors.toList()));
-        list.addAll(this.addressTable.getAddressBlockList().stream().map(entry -> entry.getDescription()).collect(Collectors.toList()));
+        list.addAll(this.addressTable.getAddressList().stream().map(InetAddress::getHostAddress).collect(Collectors.toList()));
+        list.addAll(this.addressTable.getAddressBlockList().stream().map(InetAddressCidrBlock::getDescription).collect(Collectors.toList()));
 
         return list;
+    }
+
+    public void clearPeerScoring(InetAddress address) {
+        if (this.peersByAddress.remove(address) != null) {
+            logger.debug("Address {} scoring correctly cleared", address.getHostName());
+        } else {
+            logger.debug("Could not clear address {} scoring", address.getHostName());
+        }
+    }
+
+    public void clearPeerScoring(NodeID nodeID) {
+        if (this.peersByNodeID.remove(nodeID) != null) {
+            logger.debug("nodeID {} scoring correctly cleared", nodeID);
+        } else {
+            logger.debug("Could not clear nodeID {} scoring", nodeID);
+        }
     }
 
     @VisibleForTesting
@@ -265,7 +323,8 @@ public class PeerScoringManager {
                 return peersByNodeID.get(id);
             }
 
-            return peerScoringFactory.newInstance();
+            logger.trace("Creating new PeerScoring for node with id {}", id);
+            return peerScoringFactory.newInstance(id.toString());
         }
     }
 
@@ -276,7 +335,8 @@ public class PeerScoringManager {
                 return peersByAddress.get(address);
             }
 
-            return peerScoringFactory.newInstance();
+            logger.trace("Creating new PeerScoring for node with address {}", address.getHostAddress());
+            return peerScoringFactory.newInstance(address.getHostAddress());
         }
     }
 
@@ -285,20 +345,42 @@ public class PeerScoringManager {
      * @param peerScoring the peer scoring
      * @param event an event type
      * @param punishmentCalculator calculator to use
-     * @param nodeID a node id
+     * @param nodeIdOrAddress a node identifier (nodeID or address) formatted for logging
      */
-    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
-        peerScoring.recordEvent(event);
+    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, String nodeIdOrAddress) {
+        peerScoring.updateScoring(event);
 
-        boolean shouldStartPunishment = !scoringCalculator.hasGoodReputation(peerScoring) && peerScoring.hasGoodReputation();
+        boolean hasBadReputationAlready = !peerScoring.refreshReputationAndPunishment();
+        if (hasBadReputationAlready) {
+            return;
+        }
+
+        boolean shouldStartPunishment = !scoringCalculator.hasGoodScore(peerScoring);
         if (shouldStartPunishment) {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
 
-            String nodeIDFormated = nodeIdForLog(nodeID);
-            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormated, punishmentTime, event);
-            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormated, ""));
+            logger.debug("Node {} has been punished for {} milliseconds after event {}. {}",
+                    nodeIdOrAddress, punishmentTime, event, PeerScoringInformation.buildByScoring(peerScoring, nodeIdOrAddress, ""));
         }
+    }
+
+    private void logRecordedEvent(NodeID id, InetAddress address, EventType event, String message, Object[] messageArgs) {
+        if (!logger.isDebugEnabled()) {
+            return;
+        }
+
+        String completeMessage = "Recorded {} from node [{}]";
+        if (message != null) {
+            completeMessage += " => " + message;
+        }
+
+        Object[] completeArguments = ArrayUtils.add(messageArgs, 0, event);
+
+        String nodeInfo = nodeIdForLog(id) + " | " + addressForLog(address);
+        completeArguments = ArrayUtils.add(completeArguments, 1, nodeInfo);
+
+        logger.debug(completeMessage, completeArguments);
     }
 
     private String nodeIdForLog(NodeID id) {

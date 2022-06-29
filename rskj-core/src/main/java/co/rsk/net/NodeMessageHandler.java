@@ -19,10 +19,7 @@
 package co.rsk.net;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -30,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -223,19 +221,21 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             }
 
         } else {
-            recordEvent(sender, EventType.REPEATED_MESSAGE);
-            logger.trace("Received message already known, not added to the queue");
+            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
         }
 
         return !contains;
     }
 
     private void addMessage(Peer sender, Message message, double score) {
-        boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+        // optimistic increment() to ensure it is called before decrement() on processMessage()
+        // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
+        // also, while queue implementation stays unbounded, offer() will never return false
+        messageCounter.increment(sender);
 
-        if (messageAdded) {
-            messageCounter.increment(sender);
-        } else {
+        boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+        if (!messageAdded) {
+            messageCounter.decrement(sender);
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
@@ -278,7 +278,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return this.queue.size();
     }
 
-    public int getMessageQueueSize(Peer peer) {
+    @VisibleForTesting
+    int getMessageQueueSize(Peer peer) {
         return messageCounter.getValue(peer);
     }
 
@@ -335,12 +336,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void recordEvent(Peer sender, @SuppressWarnings("SameParameterValue") EventType event) {
+    @SuppressWarnings("SameParameterValue")
+    private void reportEventToPeerScoring(Peer sender, EventType event, String message) {
         if (sender == null) {
             return;
         }
 
-        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event, message, this.getClass());
     }
 
     private static class MessageTask {

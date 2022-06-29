@@ -70,8 +70,11 @@ public enum ConsensusRule {
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
+    RSKIP271("rskip271"), // Peg Out Batching
     RSKIP284("rskip284"),
-    RSKIP290("rskip290"); // Testnet difficulty should drop to a higher difficulty
+    RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
+    RSKIP294("rskip294"),
+    RSKIP297("rskip297"); // Increase max timestamp difference between btc and rsk blocks for Testnet
 
     private String configKey;
 

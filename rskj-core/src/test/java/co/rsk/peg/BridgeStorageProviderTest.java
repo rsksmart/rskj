@@ -84,6 +84,7 @@ public class BridgeStorageProviderTest {
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
     private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
     private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET = DataWord.fromString("newFederationBtcUTXOsForTestnet");
+    private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
@@ -3213,6 +3214,100 @@ public class BridgeStorageProviderTest {
     }
 
     @Test
+    public void getNextPegoutHeight_before_RSKIP271_activation() {
+        Repository repository = mock(Repository.class);
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY)).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertEquals(Optional.empty(), provider.getNextPegoutHeight());
+
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+    }
+
+    @Test
+    public void getNextPegoutHeight_after_RSKIP271_activation() {
+        Repository repository = mock(Repository.class);
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY)).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Optional.of(1L), provider.getNextPegoutHeight());
+
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+    }
+
+    @Test
+    public void setNextPegoutHeightAndGetNextPegoutHeight_after_RSKIP271_activation() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider1.setNextPegoutHeight(1L);
+        provider1.saveNextPegoutHeight();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertThat(provider2.getNextPegoutHeight(), is(Optional.of(1L)));
+    }
+
+    @Test
+    public void saveNextPegoutHeight_before_RSKIP271() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider.setNextPegoutHeight(10L);
+        provider.saveNextPegoutHeight();
+
+        verify(repository, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(DataWord.fromString("nextPegoutHeight")),
+                any()
+        );
+    }
+
+    @Test
+    public void saveNextPegoutHeight_after_RSKIP271() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextPegoutHeight(10L);
+        provider.saveNextPegoutHeight();
+
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("nextPegoutHeight"),
+                BridgeSerializationUtils.serializeLong(10L)
+        );
+    }
+
+    @Test
     public void getNewFederationBtcUTXOs_before_RSKIP284_activation_testnet() throws IOException {
         testGetNewFederationBtcUTXOs(false, NetworkParameters.ID_TESTNET);
     }
@@ -3273,6 +3368,40 @@ public class BridgeStorageProviderTest {
     @Test
     public void saveNewFederationBtcUTXOs_after_RSKIP284_activation_mainnet() throws IOException {
         testSaveNewFederationBtcUTXOs(true, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void getReleaseRequestQueueSize_when_releaseRequestQueue_is_null() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Assert.assertEquals(0, storageProvider.getReleaseRequestQueueSize());
+    }
+
+    @Test
+    public void getReleaseRequestQueueSize_when_releaseRequestQueue_is_not_null() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Coin.COIN,
+                PegTestUtils.createHash3(0));
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                Coin.COIN,
+                PegTestUtils.createHash3(1));
+
+        Assert.assertEquals(2, storageProvider.getReleaseRequestQueueSize());
     }
 
     private void testGetOldFederation(Federation oldFederation, ForBlock activations) {

@@ -78,6 +78,10 @@ public class BridgeConstants {
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
+    protected int maxInputsPerPegoutTransaction;
+
+    protected int numberOfBlocksBetweenPegouts;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -162,5 +166,13 @@ public class BridgeConstants {
 
     public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
         return minimumPegoutValuePercentageToReceiveAfterFee;
+    }
+
+    public int getMaxInputsPerPegoutTransaction() {
+        return maxInputsPerPegoutTransaction;
+    }
+
+    public int getNumberOfBlocksBetweenPegouts() {
+        return numberOfBlocksBetweenPegouts;
     }
 }

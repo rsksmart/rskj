@@ -657,6 +657,39 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainParentBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             fixedPermission(false)
+    ),
+    GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER(
+            CallTransaction.Function.fromSignature(
+                    "getNextPegoutCreationBlockNumber",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L), // TODO: calculate gas cost
+            (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
+            activations -> activations.isActive(RSKIP271),
+            fixedPermission(false)
+    ),
+    GET_QUEUED_PEGOUTS_COUNT(
+            CallTransaction.Function.fromSignature(
+                    "getQueuedPegoutsCount",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L), // TODO: calculate gas cost
+            (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
+            activations -> activations.isActive(RSKIP271),
+            fixedPermission(false)
+    ),
+    GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT(
+            CallTransaction.Function.fromSignature(
+                    "getEstimatedFeesForNextPegOutEvent",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L), // TODO: calculate gas cost
+            (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
+            activations -> activations.isActive(RSKIP271),
+            fixedPermission(false)
     );
 
     private final CallTransaction.Function function;

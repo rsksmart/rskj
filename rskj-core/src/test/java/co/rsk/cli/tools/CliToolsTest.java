@@ -42,9 +42,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -85,10 +83,14 @@ public class CliToolsTest {
         processor.processCommands(parser);
 
         File blocksFile = new File(tempFolder.getRoot(), "blocks.txt");
-        String[] args = new String[] { "0", "2", blocksFile.getAbsolutePath() };
+        String[] args = new String[]{"0", "2", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ExportBlocks exportBlocksCliTool = new ExportBlocks();
@@ -119,11 +121,15 @@ public class CliToolsTest {
         processor.processCommands(parser);
 
         File stateFile = new File(tempFolder.getRoot(), "state.txt");
-        String[] args = new String[] { "2", stateFile.getAbsolutePath() };
+        String[] args = new String[]{"2", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ExportState exportStateCliTool = new ExportState();
@@ -155,11 +161,15 @@ public class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[] { "best" };
+        String[] args = new String[]{"best"};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         StringBuilder output = new StringBuilder();
@@ -188,13 +198,18 @@ public class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[] { "1", "2" };
+        String[] args = new String[]{"1", "2"};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockExecutor()).when(rskContext).getBlockExecutor();
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(world.getStateRootHandler()).when(rskContext).getStateRootHandler();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ExecuteBlocks executeBlocksCliTool = new ExecuteBlocks();
@@ -237,14 +252,19 @@ public class CliToolsTest {
             writer.write(stringBuilder.toString());
         }
 
-        String[] args = new String[] { blocksFile.getAbsolutePath() };
+        String[] args = new String[]{blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(blockchain).when(rskContext).getBlockchain();
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(receiptStore).when(rskContext).getReceiptStore();
         doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ConnectBlocks connectBlocksCliTool = new ConnectBlocks();
@@ -289,11 +309,15 @@ public class CliToolsTest {
             writer.write(stringBuilder.toString());
         }
 
-        String[] args = new String[] { blocksFile.getAbsolutePath() };
+        String[] args = new String[]{blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportBlocks importBlocksCliTool = new ImportBlocks();
@@ -321,19 +345,20 @@ public class CliToolsTest {
         }
 
         String databaseDir = new File(tempFolder.getRoot(), "db").getAbsolutePath();
-        String[] args = new String[] { stateFile.getAbsolutePath() };
+        String[] args = new String[]{stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         ImportState importStateCliTool = new ImportState();
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
         byte[] result = trieDB.get(key);
         trieDB.close();
 
@@ -373,15 +398,19 @@ public class CliToolsTest {
         assertThat(bestBlock.getNumber(), is((long) blocksToGenerate - 1));
 
         RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(indexedBlockStore).when(rskContext).getBlockStore();
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
         doReturn(Optional.of(mock(RepositorySnapshot.class))).when(repositoryLocator).findSnapshotAt(any());
         doReturn(repositoryLocator).when(rskContext).getRepositoryLocator();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         NodeStopper stopper = mock(NodeStopper.class);
 
         StringBuilder output = new StringBuilder();
         RewindBlocks rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"fmi"}, () -> rskContext, stopper);
 
         String data = output.toString();
         Assert.assertTrue(data.contains("No inconsistent block has been found"));
@@ -394,7 +423,7 @@ public class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[] { String.valueOf(blockToRewind) }, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{String.valueOf(blockToRewind)}, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
@@ -408,7 +437,7 @@ public class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[] { String.valueOf(blocksToGenerate + 1) }, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{String.valueOf(blocksToGenerate + 1)}, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
@@ -424,7 +453,7 @@ public class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"fmi"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -435,7 +464,7 @@ public class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[] { "rbc" }, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"rbc"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -447,7 +476,8 @@ public class CliToolsTest {
     @Test
     public void startBootstrap() throws Exception {
         // check thread setup
-        Thread thread = new Thread(() -> {});
+        Thread thread = new Thread(() -> {
+        });
 
         StartBootstrap.setUpThread(thread);
 
@@ -493,24 +523,24 @@ public class CliToolsTest {
         } catch (IllegalArgumentException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "0" }, blockStore);
+            IndexBlooms.makeBlockRange(new String[]{"0"}, blockStore);
             fail();
         } catch (IllegalArgumentException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "0", "abc" }, blockStore);
+            IndexBlooms.makeBlockRange(new String[]{"0", "abc"}, blockStore);
             fail();
         } catch (NumberFormatException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "-1", "1" }, blockStore);
+            IndexBlooms.makeBlockRange(new String[]{"-1", "1"}, blockStore);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
         }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "2", "1" }, blockStore);
+            IndexBlooms.makeBlockRange(new String[]{"2", "1"}, blockStore);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
@@ -519,14 +549,14 @@ public class CliToolsTest {
         doReturn(2L).when(blockStore).getMinNumber();
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "1", "10" }, blockStore); // min block num is 10
+            IndexBlooms.makeBlockRange(new String[]{"1", "10"}, blockStore); // min block num is 10
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("'from' block number is lesser than the min block number stored", e.getMessage());
         }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{ "5", "11" }, blockStore); // best block num is 10
+            IndexBlooms.makeBlockRange(new String[]{"5", "11"}, blockStore); // best block num is 10
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("'to' block number is greater than the best block number", e.getMessage());

@@ -31,10 +31,10 @@ import static org.hamcrest.Matchers.*;
 @RunWith(Parameterized.class)
 public class TrieIteratorTest {
 
-    private final Iterator<Trie.IterationElement> iterator;
+    private final Iterator<IterationElement> iterator;
     private final byte[] expectedValues;
 
-    public TrieIteratorTest(Iterator<Trie.IterationElement> iterator, byte[] expectedValues) {
+    public TrieIteratorTest(Iterator<IterationElement> iterator, byte[] expectedValues) {
         this.iterator = iterator;
         this.expectedValues = expectedValues;
     }
@@ -47,6 +47,16 @@ public class TrieIteratorTest {
             { buildTestTrie().getPostOrderIterator(), new byte[] {0x01, 0x03, 0x05, 0x04, 0x02, 0x09, 0x08, 0x07, 0x06} },
         });
 
+    }
+
+    @Test
+    public void testIterationElement() {
+        byte[] expandedKey = new byte[]{0,1,1,0,1,1,0,0,0,1};
+
+        IterationElement ie = new IterationElement(
+                new TrieKeySlice(expandedKey,1,7),new Trie());
+        String dump = ie.toString();
+        Assert.assertEquals("110110",dump);
     }
 
     @Test
