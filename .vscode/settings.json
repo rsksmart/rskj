@@ -1,0 +1,7 @@
+{
+  "java.project.sourcePaths": ["rskj-core"],
+  "java.project.outputPath": "rskj-core/bin",
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar"
+  ]
+}
