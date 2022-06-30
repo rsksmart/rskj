@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Launch Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    },
+    {
+      "type": "java",
+      "name": "Launch Regtest",
+      "request": "launch",
+      "mainClass": "co.rsk.Start",
+      "projectName": "rskj-core",
+      "args": "--regtest"
+    }
+  ]
+}
