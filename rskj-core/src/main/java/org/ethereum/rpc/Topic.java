@@ -18,9 +18,11 @@
 
 package org.ethereum.rpc;
 
+import java.util.Arrays;
+
 import org.ethereum.util.ByteUtil;
 
-import java.util.Arrays;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 18/01/2018.
@@ -37,7 +39,7 @@ public final class Topic {
      * @param topic the hex-encoded 32 bytes long topic, with or without 0x prefix.
      */
     public Topic(String topic) {
-        this(TypeConverter.stringHexToByteArray(topic));
+        this(HexUtils.stringHexToByteArray(topic));
     }
 
     /**
@@ -81,6 +83,6 @@ public final class Topic {
     }
 
     public String toJsonString() {
-        return TypeConverter.toUnformattedJsonHex(this.getBytes());
+        return HexUtils.toUnformattedJsonHex(this.getBytes());
     }
 }

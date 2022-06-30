@@ -19,7 +19,8 @@
 package co.rsk.mine;
 
 import org.ethereum.core.ImportResult;
-import org.ethereum.rpc.TypeConverter;
+
+import co.rsk.util.HexUtils;
 
 /**
  * Holds information about block mining operation result.
@@ -34,9 +35,9 @@ public class SubmittedBlockInfo {
     private final String blockIncludedHeight;
 
     SubmittedBlockInfo(ImportResult blockImportedResult, byte[] blockHash, long blockIncludedHeight) {
-        this.blockImportedResult = TypeConverter.toJsonHex(TypeConverter.stringToByteArray(blockImportedResult.toString()));
-        this.blockHash = TypeConverter.toJsonHex(blockHash);
-        this.blockIncludedHeight = TypeConverter.toQuantityJsonHex(blockIncludedHeight);
+        this.blockImportedResult = HexUtils.toJsonHex(HexUtils.stringToByteArray(blockImportedResult.toString()));
+        this.blockHash = HexUtils.toJsonHex(blockHash);
+        this.blockIncludedHeight = HexUtils.toQuantityJsonHex(blockIncludedHeight);
     }
 
     public String getBlockImportedResult() {

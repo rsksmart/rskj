@@ -18,21 +18,10 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.genesis.TestGenesisLoader;
-import co.rsk.remasc.RemascTransaction;
-import co.rsk.test.builders.BlockBuilder;
-import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.db.BlockStore;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -40,9 +29,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.db.BlockStore;
+import org.ethereum.util.RskTestFactory;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.HexUtils;
 
 public class BlockResultDTOTest {
     private Block block;
@@ -86,7 +88,7 @@ public class BlockResultDTOTest {
         Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
         BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true);
 
-        Assert.assertEquals(TypeConverter.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
+        Assert.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
 
         Assert.assertNotNull(blockResultDTO);
         Assert.assertTrue(blockResultDTO.getTransactions().isEmpty());

@@ -18,24 +18,6 @@
 
 package co.rsk.mine;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.config.RskMiningConstants;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.PendingState;
-import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.remasc.RemascTransaction;
-import org.bouncycastle.util.Arrays;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.rpc.TypeConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -46,12 +28,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.bouncycastle.util.Arrays;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.config.RskMiningConstants;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.PendingState;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.util.HexUtils;
+
 public class MinerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
-        return getBitcoinMergedMiningCoinbaseTransaction(params, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
+        return getBitcoinMergedMiningCoinbaseTransaction(params, HexUtils.stringHexToByteArray(work.getBlockHashForMergedMining()));
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
@@ -92,8 +93,8 @@ public class MinerUtils {
             MinerWork work2) {
         return getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
                 params,
-                TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()),
-                TypeConverter.stringHexToByteArray(work2.getBlockHashForMergedMining()));
+                HexUtils.stringHexToByteArray(work.getBlockHashForMergedMining()),
+                HexUtils.stringHexToByteArray(work2.getBlockHashForMergedMining()));
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(

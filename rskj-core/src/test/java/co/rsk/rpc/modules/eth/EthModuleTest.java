@@ -19,11 +19,35 @@
 package co.rsk.rpc.modules.eth;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.program.ProgramResult;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
@@ -36,31 +60,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.config.Constants;
-import org.ethereum.core.*;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.TransactionFactoryHelper;
-import org.ethereum.vm.program.ProgramResult;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import co.rsk.util.HexUtils;
 
 public class EthModuleTest {
 
@@ -77,7 +77,7 @@ public class EthModuleTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
-        byte[] hReturn = TypeConverter.stringToByteArray("hello");
+        byte[] hReturn = HexUtils.stringToByteArray("hello");
         ProgramResult executorResult = mock(ProgramResult.class);
         when(executorResult.getHReturn())
                 .thenReturn(hReturn);
@@ -100,7 +100,7 @@ public class EthModuleTest {
                         null, null, null),
                 config.getGasEstimationCap());
 
-        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
 
         assertEquals(expectedResult, actualResult);
@@ -139,7 +139,7 @@ public class EthModuleTest {
                         null, null, null),
                 config.getGasEstimationCap());
 
-        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
 
         assertEquals(expectedResult, actualResult);

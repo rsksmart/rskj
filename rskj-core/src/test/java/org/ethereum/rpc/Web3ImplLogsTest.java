@@ -18,6 +18,34 @@
 
 package org.ethereum.rpc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RskTestFactory;
+import org.junit.Before;
+import org.junit.Test;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
@@ -42,26 +70,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
-import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RskTestFactory;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 30/11/2016.
@@ -839,7 +848,7 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsWithBlockHashFilterForNonexistentBlockThrowsException() throws Exception {
         final String blockHash = UNTRACKED_TEST_BLOCK_HASH;
-        byte[] blockHashBytes = new Keccak256(stringHexToByteArray(blockHash)).getBytes();
+        byte[] blockHashBytes = new Keccak256(HexUtils.stringHexToByteArray(blockHash)).getBytes();
         assertFalse(blockChain.hasBlockInSomeBlockchain(blockHashBytes));
         FilterRequest fr = new FilterRequest();
         fr.setBlockHash(blockHash);

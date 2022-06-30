@@ -18,32 +18,32 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.crypto.Keccak256;
-import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
-import co.rsk.net.BlockProcessor;
-import co.rsk.net.NodeID;
-import co.rsk.net.Peer;
-import co.rsk.net.SyncProcessor;
-import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.Web3InformationRetriever;
-import co.rsk.rpc.modules.debug.DebugModule;
-import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.evm.EvmModule;
-import co.rsk.rpc.modules.mnr.MnrModule;
-import co.rsk.rpc.modules.personal.PersonalModule;
-import co.rsk.rpc.modules.rsk.RskModule;
-import co.rsk.rpc.modules.trace.TraceModule;
-import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.scoring.*;
-import com.google.common.annotations.VisibleForTesting;
-import co.rsk.util.HexUtils;
+
+import static co.rsk.util.HexUtils.jsonHexToInt;
+import static co.rsk.util.HexUtils.jsonHexToLong;
+import static co.rsk.util.HexUtils.stringHexToBigInteger;
+import static co.rsk.util.HexUtils.stringHexToByteArray;
+import static co.rsk.util.HexUtils.toQuantityJsonHex;
+import static co.rsk.util.HexUtils.toUnformattedJsonHex;
+import static java.lang.Math.max;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
+
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -69,18 +69,37 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.*;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import com.google.common.annotations.VisibleForTesting;
 
-import static java.lang.Math.max;
-import static co.rsk.util.HexUtils.*;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
+import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.metrics.HashRateCalculator;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
+import co.rsk.net.BlockProcessor;
+import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
+import co.rsk.net.SyncProcessor;
+import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.evm.EvmModule;
+import co.rsk.rpc.modules.mnr.MnrModule;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.trace.TraceModule;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.scoring.InvalidInetAddressException;
+import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PeerScoringReporterUtil;
+import co.rsk.scoring.PeerScoringReputationSummary;
+import co.rsk.util.HexUtils;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -457,12 +476,12 @@ public class Web3Impl implements Web3 {
                     web3InformationRetriever.getInformationProvider(blockId);
 
             DataWord sv = accountInformationProvider
-                    .getStorageValue(addr, DataWord.valueOf(TypeConverter.strHexOrStrNumberToByteArray(storageIdx)));
+                    .getStorageValue(addr, DataWord.valueOf(HexUtils.strHexOrStrNumberToByteArray(storageIdx)));
 
             if (sv == null) {
                 s = "0x0";
             } else {
-                s = toUnformattedJsonHex(sv.getData());
+                s = HexUtils.toUnformattedJsonHex(sv.getData());
             }
 
             return s;

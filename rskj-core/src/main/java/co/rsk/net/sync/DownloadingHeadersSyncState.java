@@ -17,20 +17,29 @@
  */
 package co.rsk.net.sync;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+
+import org.ethereum.crypto.HashUtil;
+
+import org.ethereum.util.ByteUtil;
+import org.ethereum.validator.DependentBlockHeaderRule;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.validator.DependentBlockHeaderRule;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
@@ -85,6 +94,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk header hash received on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
+
             return;
         }
 

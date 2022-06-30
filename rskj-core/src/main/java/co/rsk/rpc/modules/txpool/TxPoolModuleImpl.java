@@ -18,21 +18,23 @@
 
 package co.rsk.rpc.modules.txpool;
 
-import co.rsk.core.RskAddress;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.rpc.TypeConverter;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 
 public class TxPoolModuleImpl implements TxPoolModule {
 
@@ -89,14 +91,14 @@ public class TxPoolModuleImpl implements TxPoolModule {
         txNode.putNull("blockNumber");
         txNode.putNull("transactionIndex");
 
-        txNode.put("from", TypeConverter.toJsonHex(tx.getSender().getBytes()));
-        txNode.put("gas", TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
-        txNode.put("gasPrice", TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
-        txNode.put("hash", TypeConverter.toJsonHex(tx.getHash().toHexString()));
-        txNode.put("input", TypeConverter.toUnformattedJsonHex(tx.getData()));
-        txNode.put("nonce", TypeConverter.toQuantityJsonHex(tx.getNonceAsInteger()));
-        txNode.put("to", TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
-        txNode.put("value", TypeConverter.toJsonHex(tx.getValue().getBytes()));
+        txNode.put("from", HexUtils.toJsonHex(tx.getSender().getBytes()));
+        txNode.put("gas", HexUtils.toQuantityJsonHex(tx.getGasLimitAsInteger()));
+        txNode.put("gasPrice", HexUtils.toJsonHex(tx.getGasPrice().getBytes()));
+        txNode.put("hash", HexUtils.toJsonHex(tx.getHash().toHexString()));
+        txNode.put("input", HexUtils.toUnformattedJsonHex(tx.getData()));
+        txNode.put("nonce", HexUtils.toQuantityJsonHex(tx.getNonceAsInteger()));
+        txNode.put("to", HexUtils.toJsonHex(tx.getReceiveAddress().getBytes()));
+        txNode.put("value", HexUtils.toJsonHex(tx.getValue().getBytes()));
 
         return txNode;
     }

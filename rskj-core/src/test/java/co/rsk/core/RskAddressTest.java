@@ -21,6 +21,7 @@ package co.rsk.core;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.DecoderException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class RskAddressTest {
     @Test

@@ -19,17 +19,23 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslProcessorException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.FileNotFoundException;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.vm.GasCost;
@@ -38,13 +44,12 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
 
-import java.io.FileNotFoundException;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.junit.Assert.*;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.util.HexUtils;
 
 public class EthModuleGasEstimationDSLTest {
 
@@ -60,9 +65,9 @@ public class EthModuleGasEstimationDSLTest {
 
         final CallArguments args = new CallArguments();
         args.setTo("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // some address;
-        args.setValue(TypeConverter.toQuantityJsonHex(0)); // no value
-        args.setNonce(TypeConverter.toQuantityJsonHex(0));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(0)); // no value
+        args.setNonce(HexUtils.toQuantityJsonHex(0));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData(""); // no data
 
         long estimatedGas = estimateGas(eth, args);
@@ -74,12 +79,12 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(callConstantResult.getGasUsed(), estimatedGas);
 
         // Call same transaction with estimated gas
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas - 1
         try {
-            args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+            args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
             runWithArgumentsAndBlock(eth, args, block);
             fail("shouldn't reach here");
         } catch (GasCost.InvalidGasException e) {
@@ -88,7 +93,7 @@ public class EthModuleGasEstimationDSLTest {
 
         // Try to estimate with not enough gas
         try {
-            args.setGas(TypeConverter.toQuantityJsonHex(1000));
+            args.setGas(HexUtils.toQuantityJsonHex(1000));
             estimateGas(eth, args);
             fail("shouldn't reach here");
         } catch (GasCost.InvalidGasException e) {
@@ -126,9 +131,9 @@ public class EthModuleGasEstimationDSLTest {
         final CallArguments args = new CallArguments();
         args.setTo("0x" + contractAddress.toHexString());
         args.setData("0xc3cefd36"); // callWithValue()
-        args.setValue(TypeConverter.toQuantityJsonHex(10_000)); // some value
-        args.setNonce(TypeConverter.toQuantityJsonHex(3));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(10_000)); // some value
+        args.setNonce(HexUtils.toQuantityJsonHex(3));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
 
         Block block = world.getBlockChain().getBlockByNumber(2); // block 2 contains 0 tx
 
@@ -147,15 +152,15 @@ public class EthModuleGasEstimationDSLTest {
         assertTrue(gasUsed < estimatedGas);
 
         // Call same transaction with estimatedGas - 1, should fail
-        args.setGas(TypeConverter.toQuantityJsonHex(gasUsed));
+        args.setGas(HexUtils.toQuantityJsonHex(gasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
@@ -188,9 +193,9 @@ public class EthModuleGasEstimationDSLTest {
         // from non-zero to zero - setValue(1, 0) - it should have a refund
         final CallArguments args = new CallArguments();
         args.setTo(contractAddress); // "6252703f5ba322ec64d3ac45e56241b7d9e481ad";
-        args.setValue(TypeConverter.toQuantityJsonHex(0));
-        args.setNonce(TypeConverter.toQuantityJsonHex(1));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(1));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000000"); // setValue(1,0)
@@ -209,15 +214,15 @@ public class EthModuleGasEstimationDSLTest {
                 clearStorageGasUsed + callConstantResult.getDeductedRefund());
 
         // Call same transaction with estimated gas
-        args.setGas(TypeConverter.toQuantityJsonHex(clearStoreageEstimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(clearStoreageEstimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas minus 1
-        args.setGas(TypeConverter.toQuantityJsonHex(clearStoreageEstimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(clearStoreageEstimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
         // estimate gas for updating a storage cell from non-zero to non-zero
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
@@ -252,7 +257,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000002" +
                 "0000000000000000000000000000000000000000000000000000000000000000");
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
 
         ProgramResult anotherCallConstantResult = eth.callConstant(args, block);
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
@@ -287,7 +292,7 @@ public class EthModuleGasEstimationDSLTest {
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(sender); // the creator
         callArguments.setTo(contractAddress);  // deployed contract
-        callArguments.setGas(TypeConverter.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
+        callArguments.setGas(HexUtils.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("0x31fe52e8"); // call outOfGas()
 
         String estimatedGas = eth.estimateGas(callArguments);
@@ -316,9 +321,9 @@ public class EthModuleGasEstimationDSLTest {
         // call clearStorageAndSendValue, it should estimate correctly the stipend cost and the gas refund
         final CallArguments args = new CallArguments();
         args.setTo(contractAddress);
-        args.setValue(TypeConverter.toQuantityJsonHex(1));
-        args.setNonce(TypeConverter.toQuantityJsonHex(1));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(1));
+        args.setNonce(HexUtils.toQuantityJsonHex(1));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0x5b3f8140"); // clearStorageAndSendValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
@@ -330,13 +335,13 @@ public class EthModuleGasEstimationDSLTest {
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
-        args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
+        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
@@ -381,9 +386,9 @@ public class EthModuleGasEstimationDSLTest {
         // call callAddressWithValue, it should start the nested calls
         final CallArguments args = new CallArguments();
         args.setTo(contractAddressA);
-        args.setValue(TypeConverter.toQuantityJsonHex(1));
-        args.setNonce(TypeConverter.toQuantityJsonHex(6));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(1));
+        args.setNonce(HexUtils.toQuantityJsonHex(6));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
@@ -404,15 +409,15 @@ public class EthModuleGasEstimationDSLTest {
 
         assertEquals(callConstant.getGasUsed(), estimatedGas);
 
-        args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
+        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         assertEquals(callConstantGasUsed, estimatedGas);
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
@@ -457,9 +462,9 @@ public class EthModuleGasEstimationDSLTest {
         // call callAddressWithValue, it should start the nested calls
         final CallArguments args = new CallArguments();
         args.setTo(contractAddressA);
-        args.setValue(TypeConverter.toQuantityJsonHex(1));
-        args.setNonce(TypeConverter.toQuantityJsonHex(6));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(1));
+        args.setNonce(HexUtils.toQuantityJsonHex(6));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
@@ -483,13 +488,13 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
 
-        args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
+        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
@@ -534,9 +539,9 @@ public class EthModuleGasEstimationDSLTest {
         // call callAddressWithValue, it should start the nested calls
         final CallArguments args = new CallArguments();
         args.setTo(contractAddressA);
-        args.setValue(TypeConverter.toQuantityJsonHex(1));
-        args.setNonce(TypeConverter.toQuantityJsonHex(6));
-        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setValue(HexUtils.toQuantityJsonHex(1));
+        args.setNonce(HexUtils.toQuantityJsonHex(6));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
@@ -559,13 +564,13 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
         assertTrue(callConstant.getMovedRemainingGasToChild());
 
-        args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
+        args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 

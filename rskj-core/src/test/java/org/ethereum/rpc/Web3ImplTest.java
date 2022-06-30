@@ -18,9 +18,83 @@
 
 package org.ethereum.rpc;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.rpc.Simples.SimpleMinerClient;
+import org.ethereum.rpc.Simples.SimplePeerServer;
+import org.ethereum.rpc.dto.BlockResultDTO;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.Wallet;
+import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.core.bc.MiningMainchainViewImpl;
@@ -53,47 +127,8 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.HexUtils;
 import co.rsk.util.TestContract;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.Simples.*;
-import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.math.BigInteger;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -731,9 +766,9 @@ public class Web3ImplTest {
 
         assertNotNull(tr);
         assertEquals("0x" + hashString, tr.getTransactionHash());
-        String trxFrom = TypeConverter.toJsonHex(tx.getSender().getBytes());
+        String trxFrom = HexUtils.toJsonHex(tx.getSender().getBytes());
         assertEquals(trxFrom, tr.getFrom());
-        String trxTo = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
+        String trxTo = HexUtils.toJsonHex(tx.getReceiveAddress().getBytes());
         assertEquals(trxTo, tr.getTo());
 
         String blockHashString = "0x" + block1.getHash();
@@ -813,9 +848,9 @@ public class Web3ImplTest {
         // Check the v value used to encode the transaction
         // NOT the v value used in signature
         // the encoded value includes chain id
-        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, TypeConverter.stringHexToByteArray(tr.getV()));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.getS()), is(tx.getSignature().getS()));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.getR()), is(tx.getSignature().getR()));
+        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, HexUtils.stringHexToByteArray(tr.getV()));
+        Assert.assertThat(HexUtils.stringHexToBigInteger(tr.getS()), is(tx.getSignature().getS()));
+        Assert.assertThat(HexUtils.stringHexToBigInteger(tr.getR()), is(tx.getSignature().getR()));
     }
 
     @Test
@@ -1115,7 +1150,7 @@ public class Web3ImplTest {
         BlockResultDTO blockResult = web3.eth_getBlockByNumber("latest", false);
 
         assertNotNull(blockResult);
-        String blockHash = TypeConverter.toJsonHex(block1.getHash().toString());
+        String blockHash = HexUtils.toJsonHex(block1.getHash().toString());
         assertEquals(blockHash, blockResult.getHash());
     }
 
@@ -1349,7 +1384,7 @@ public class Web3ImplTest {
         assertEquals(block1HashString, result.getParentHash());
         assertTrue(result.getUncles().contains(block1bHashString));
         assertTrue(result.getUncles().contains(block1cHashString));
-        assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+        assertEquals(HexUtils.toQuantityJsonHex(30), result.getCumulativeDifficulty());
     }
 
     @Test
@@ -1406,7 +1441,7 @@ public class Web3ImplTest {
         assertEquals(block1HashString, result.getParentHash());
         assertTrue(result.getUncles().contains(block1bHashString));
         assertTrue(result.getUncles().contains(block1cHashString));
-        assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+        assertEquals(HexUtils.toQuantityJsonHex(30), result.getCumulativeDifficulty());
     }
 
     @Test
@@ -1472,7 +1507,7 @@ public class Web3ImplTest {
         assertEquals(2, result.getUncles().size());
         assertTrue(result.getUncles().contains(blockBhash));
         assertTrue(result.getUncles().contains(blockChash));
-        assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+        assertEquals(HexUtils.toQuantityJsonHex(30), result.getCumulativeDifficulty());
     }
 
     @Test
@@ -1601,7 +1636,7 @@ public class Web3ImplTest {
         assertEquals(2, result.getUncles().size());
         assertTrue(result.getUncles().contains(blockBhash));
         assertTrue(result.getUncles().contains(blockChash));
-        assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+        assertEquals(HexUtils.toQuantityJsonHex(30), result.getCumulativeDifficulty());
     }
 
     @Test
@@ -1728,7 +1763,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3Mocked(world);
 
         CallArguments argsForCall = new CallArguments();
-        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
         String result = web3.eth_call(argsForCall, "latest");
@@ -1774,8 +1809,8 @@ public class Web3ImplTest {
         web3.personal_newAccountWithSeed("notDefault");
 
         CallArguments argsForCall = new CallArguments();
-        argsForCall.setFrom(TypeConverter.toJsonHex(acc1.getAddress().getBytes()));
-        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setFrom(HexUtils.toJsonHex(acc1.getAddress().getBytes()));
+        argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
         String result = web3.eth_call(argsForCall, "latest");
@@ -1808,8 +1843,8 @@ public class Web3ImplTest {
 
         CallTransaction.Function func = contract.functions.get("noreturn");
         CallArguments argsForCall = new CallArguments();
-        argsForCall.setTo(TypeConverter.toUnformattedJsonHex(tx.getContractAddress().getBytes()));
-        argsForCall.setData(TypeConverter.toUnformattedJsonHex(func.encode()));
+        argsForCall.setTo(HexUtils.toUnformattedJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData(HexUtils.toUnformattedJsonHex(func.encode()));
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -2094,8 +2129,8 @@ public class Web3ImplTest {
         args.setFrom(addr1);
         args.setTo(addr2);
         args.setData(data);
-        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(nonce.toString());
 
@@ -2241,12 +2276,12 @@ public class Web3ImplTest {
         args.setFrom(addr1);
         args.setTo(addr2);
         args.setData(data);
-        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(nonce.toString());
         if (chainId != null) {
-            args.setChainId(TypeConverter.toJsonHex(new byte[]{chainId}));
+            args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
         }
 
         String txHash = web3.eth_sendTransaction(args);
@@ -2315,8 +2350,8 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3MockedCallNoReturn(world);
 
         CallArguments argsForCall = new CallArguments();
-        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
-        argsForCall.setData(TypeConverter.toJsonHex(noreturn.functions.get("noreturn").encodeSignature()));
+        argsForCall.setTo(HexUtils.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData(HexUtils.toJsonHex(noreturn.functions.get("noreturn").encodeSignature()));
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -2826,14 +2861,14 @@ public class Web3ImplTest {
                 .gasPrice(BigInteger.ONE)
                 .data("608060405234801561001057600080fd5b506101fa806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631c8499e51461003b578063ead710c414610045575b600080fd5b610043610179565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f8201169050808301925050505050505091929192905050506101bb565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b606081905091905056fea265627a7a723158207cbf5ab8312143442836de7909c83aec5160dae50224ecc7c16d7f35a306901e64736f6c63430005100032")
                 .build();
-        final String contractAddress = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
+        final String contractAddress = HexUtils.toJsonHex(tx.getContractAddress().getBytes());
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
         final Block block = isCanonicalBlock ? createNonCanonicalBlock(world, txs) : createCanonicalBlock(world, txs);
 
         CallArguments argsForCall = new CallArguments();
-        argsForCall.setFrom(TypeConverter.toJsonHex(acc1.getAddress().getBytes()));
+        argsForCall.setFrom(HexUtils.toJsonHex(acc1.getAddress().getBytes()));
         argsForCall.setTo(contractAddress);
         argsForCall.setData("0xead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 

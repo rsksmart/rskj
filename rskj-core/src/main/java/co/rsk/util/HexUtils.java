@@ -47,6 +47,8 @@ public class HexUtils {
     private static final String INPUT_CANT_BE_NULL = "input cant be null";
     private static final String PREFIX_EXPECTED = "Invalid hex number, expected 0x prefix";
 
+    private static final String NUMBER_VALUE_ERROR = "Number values should not contain letters or hex values should start with 0x.";
+
     private HexUtils() {
         throw new IllegalAccessError("Utility class");
     }
@@ -79,18 +81,55 @@ public class HexUtils {
      */
     public static byte[] stringHexToByteArray(final String param) {
 
-        if (param == null) {
-            throw invalidParamError(INPUT_CANT_BE_NULL);
-        }
-
         String result = removeHexPrefix(param);
 
-        if (result.length() % 2 != 0) {
+        if (result.length() % 2 != 0) { //NOSONAR
             result = ZERO_STR + result;
         }
         return Hex.decode(result);
     }
+        
+    /**
+     * Convert hex encoded string or integer in string format to decoded byte array
+     */
+    public static byte[] strHexOrStrNumberToByteArray(String strHexOrStrNumber) {
 
+        if (strHexOrStrNumber == null) {
+            throw invalidParamError(INPUT_CANT_BE_NULL);
+        }
+    	
+        if (hasHexPrefix(strHexOrStrNumber)) {
+            return stringHexToByteArray(strHexOrStrNumber);
+        }
+
+        try {
+            BigInteger number = new BigInteger(strHexOrStrNumber);
+            return ByteUtil.bigIntegerToBytes(number);
+        } catch (Exception e) {
+            throw invalidParamError(NUMBER_VALUE_ERROR);
+        }
+    }
+
+    /**
+     * Convert hex encoded string or integer in BigInteger
+     */
+    public static BigInteger strHexOrStrNumberToBigInteger(String strHexOrStrNumber) {
+
+        if (strHexOrStrNumber == null) {
+            throw invalidParamError(INPUT_CANT_BE_NULL);
+        }
+
+        if (hasHexPrefix(strHexOrStrNumber)) {
+            return stringHexToBigInteger(strHexOrStrNumber);
+        }
+
+        try {
+            return new BigInteger(strHexOrStrNumber);
+        } catch (Exception e) {
+            throw invalidParamError(NUMBER_VALUE_ERROR);
+        }
+    }
+    
     /**
      * String to byte array 
      */
@@ -224,17 +263,16 @@ public class HexUtils {
         return isHex(value, 2);
     }
 
-	/**
-	 * if a string is composed solely of hexa chars
-	 */
+    /**
+     * if a string is composed solely of hexa chars
+     */
     public static boolean isHex(final String data) {
         return isHex(data, 0);
     }
 
-	/**
-	 * if a string is composed solely of hexa chars
-	 * Starting at the given index
-	 */
+    /**
+     * if a string is composed solely of hexa chars Starting at the given index
+     */
     public static boolean isHex(final String data, int startAt) {
 
         if (data == null) {
@@ -252,9 +290,9 @@ public class HexUtils {
         return true;
     }
 
-	/**
-	 * Receives a plain byte array -> converts it to hexa and prepend the 0x  
-	 */
+    /**
+     * Receives a plain byte array -> converts it to hexa and prepend the 0x  
+     */
     public static byte[] encodeToHexByteArray(final byte[] input) {
 
         if (input == null) {
@@ -263,10 +301,7 @@ public class HexUtils {
 
         byte[] encoded = Hex.encode(input);
 
-        byte[] result = new byte[HEX_PREFIX_BYTE_ARRAY.length + encoded.length];
-
-        System.arraycopy(HEX_PREFIX_BYTE_ARRAY, 0, result, 0, HEX_PREFIX_BYTE_ARRAY.length);
-        System.arraycopy(encoded, 0, result, HEX_PREFIX_BYTE_ARRAY.length, encoded.length);
+        byte[] result = ByteUtil.merge(HEX_PREFIX_BYTE_ARRAY, encoded);
 
         return result;
     }
@@ -274,8 +309,8 @@ public class HexUtils {
     /**
      * remove Hex Prefix from string
      */
-	public static String removeHexPrefix(final String data) {
-		String result = data;
+    public static String removeHexPrefix(final String data) {
+    	String result = data;
         if (hasHexPrefix(result)) {
             result = data.substring(2);
         }
@@ -298,20 +333,18 @@ public class HexUtils {
     /**
      * left pad with zero if the byte array has odd elements 
      */
-	public static byte[] leftPad(final byte[] data) {
-		byte[] result = data;
+    public static byte[] leftPad(final byte[] data) {
+        byte[] result = data;
         if (result != null && result.length % 2 != 0) {
-            result = new byte[data.length + ZERO_BYTE_ARRAY.length];
-            System.arraycopy(ZERO_BYTE_ARRAY, 0, result, 0, ZERO_BYTE_ARRAY.length);
-            System.arraycopy(data, 0, result, ZERO_BYTE_ARRAY.length, data.length);
+            result = ByteUtil.merge(ZERO_BYTE_ARRAY, result);
         }
 
         return result;
-	}
+    }
 
-	/**
-	 * decodes a hexadecimal encoded byte array
-	 */
+    /**
+     * decodes a hexadecimal encoded byte array
+     */
     public static byte[] decode(byte[] dataBytes) {
         return Hex.decode(HexUtils.leftPad(HexUtils.removeHexPrefix(dataBytes)));
     }

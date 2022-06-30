@@ -18,12 +18,13 @@
 
 package org.ethereum.rpc.converters;
 
-import co.rsk.config.TestSystemProperties;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
+
+import co.rsk.config.TestSystemProperties;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -58,7 +59,7 @@ public class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] expectedGasLimit = TypeConverter.stringHexToByteArray(maxGasLimit);
+        byte[] expectedGasLimit = HexUtils.stringHexToByteArray(maxGasLimit);
         Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 
@@ -70,7 +71,7 @@ public class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] expectedGasLimit = TypeConverter.stringHexToByteArray(maxGasLimit);
+        byte[] expectedGasLimit = HexUtils.stringHexToByteArray(maxGasLimit);
         Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 
@@ -127,7 +128,7 @@ public class CallArgumentsToByteArrayTest {
         long gasEstimationCap = config.getGasEstimationCap();
 
         CallArguments callArguments = new CallArguments();
-        callArguments.setGas(TypeConverter.toQuantityJsonHex(hugeAmountOfGas));
+        callArguments.setGas(HexUtils.toQuantityJsonHex(hugeAmountOfGas));
 
         Assert.assertEquals(hugeAmountOfGas, Long.decode(callArguments.getGas()).longValue());
 
@@ -141,7 +142,7 @@ public class CallArgumentsToByteArrayTest {
     @Test
     public void gasLimitForGasEstimationBelowGasCap() {
         CallArguments callArguments = new CallArguments();
-        callArguments.setGas(TypeConverter.toQuantityJsonHex(1));
+        callArguments.setGas(HexUtils.toQuantityJsonHex(1));
 
         CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
 

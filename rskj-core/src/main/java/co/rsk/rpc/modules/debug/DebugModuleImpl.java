@@ -18,25 +18,25 @@
 
 package co.rsk.rpc.modules.debug;
 
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Keccak256;
-import co.rsk.net.MessageHandler;
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.net.MessageHandler;
+import co.rsk.util.HexUtils;
 
 public class DebugModuleImpl implements DebugModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -61,7 +61,7 @@ public class DebugModuleImpl implements DebugModule {
     @Override
     public String wireProtocolQueueSize() {
         long n = messageHandler.getMessageQueueSize();
-        return TypeConverter.toQuantityJsonHex(n);
+        return HexUtils.toQuantityJsonHex(n);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class DebugModuleImpl implements DebugModule {
                     options.getUnsupportedOptions());
         }
 
-        byte[] hash = stringHexToByteArray(transactionHash);
+        byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {
@@ -109,7 +109,7 @@ public class DebugModuleImpl implements DebugModule {
                     options.getUnsupportedOptions());
         }
 
-        byte[] bHash = stringHexToByteArray(blockHash);
+        byte[] bHash = HexUtils.stringHexToByteArray(blockHash);
         Block block = blockStore.getBlockByHash(bHash);
         if (block == null) {
             logger.trace("No block is found for {}", bHash);

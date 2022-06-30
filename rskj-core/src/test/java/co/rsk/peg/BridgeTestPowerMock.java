@@ -18,8 +18,96 @@
 
 package co.rsk.peg;
 
+import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP122;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP124;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP220;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP88;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP89;
+import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.VM;
+import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
+import org.slf4j.Logger;
+
 import co.rsk.asm.EVMAssembler;
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.MessageSerializer;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.TransactionWitness;
+import co.rsk.bitcoinj.core.Utils;
+import co.rsk.bitcoinj.core.VarInt;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -42,53 +130,7 @@ import co.rsk.test.World;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
-import org.ethereum.vm.exception.VMException;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
-import org.slf4j.Logger;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.*;
-
-import static co.rsk.bitcoinj.core.Utils.uint32ToByteStreamLE;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.*;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 6/8/2016.
@@ -2452,7 +2494,7 @@ public class BridgeTestPowerMock {
                 Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR));
         Assert.assertArrayEquals(
                 PrecompiledContracts.BRIDGE_ADDR.getBytes(),
-                TypeConverter.stringHexToByteArray(PrecompiledContracts.BRIDGE_ADDR_STR));
+                HexUtils.stringHexToByteArray(PrecompiledContracts.BRIDGE_ADDR_STR));
     }
 
     @Test

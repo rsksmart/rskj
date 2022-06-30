@@ -18,32 +18,34 @@
 
 package co.rsk.rpc.modules.debug;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.WorldDslProcessor;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3Mocks;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-import static org.mockito.Mockito.when;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.rpc.Web3Mocks;
+import org.glassfish.gmbal.impl.TypeConverter;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import co.rsk.net.MessageHandler;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.util.HexUtils;
 
 public class DebugModuleImplTest {
 
@@ -66,7 +68,7 @@ public class DebugModuleImplTest {
     public void debug_wireProtocolQueueSize_basic() {
         String result = debugModule.wireProtocolQueueSize();
         try {
-            TypeConverter.JSonHexToLong(result);
+            HexUtils.jsonHexToLong(result);
         } catch (NumberFormatException e) {
             Assert.fail("This method is not returning a  0x Long");
         }
@@ -77,7 +79,7 @@ public class DebugModuleImplTest {
         when(messageHandler.getMessageQueueSize()).thenReturn(5L);
         String result = debugModule.wireProtocolQueueSize();
         try {
-            long value = TypeConverter.JSonHexToLong(result);
+            long value = HexUtils.jsonHexToLong(result);
             Assert.assertEquals(5L, value);
         } catch (NumberFormatException e) {
             Assert.fail("This method is not returning a  0x Long");
@@ -86,7 +88,8 @@ public class DebugModuleImplTest {
 
     @Test
     public void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
-        byte[] hash = stringHexToByteArray("0x00");
+        byte[] hash = HexUtils.stringHexToByteArray("0x00");
+
         when(receiptStore.getInMainChain(hash, blockStore)).thenReturn(Optional.empty());
 
         JsonNode result = debugModule.traceTransaction("0x00", null);
@@ -223,8 +226,9 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceBlock_retrieveUnknownBlockAsNull() {
-        byte[] hash = stringHexToByteArray("0x00");
+    public void debug_traceBlock_retrieveUnknownBlockAsNull() throws Exception {
+        byte[] hash = HexUtils.stringHexToByteArray("0x00");
+
         when(blockStore.getBlockByHash(hash)).thenReturn(null);
 
         JsonNode result = debugModule.traceBlock("0x00", null);

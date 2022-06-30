@@ -18,6 +18,15 @@
 
 package co.rsk.rpc.modules.mnr;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.Keccak256Helper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Context;
@@ -29,16 +38,8 @@ import co.rsk.mine.MinerWork;
 import co.rsk.mine.SubmitBlockResult;
 import co.rsk.mine.SubmittedBlockInfo;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
+import co.rsk.util.HexUtils;
 import co.rsk.util.ListArrayUtil;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.rpc.TypeConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class MnrModuleImpl implements MnrModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -130,7 +131,7 @@ public class MnrModuleImpl implements MnrModule {
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
         byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
         System.arraycopy(coinbaseAsByteArray, rskTagPosition + RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
-        return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+        return HexUtils.toJsonHex(blockHashForMergedMiningArray);
     }
 
     private List<String> parseHashes(String txnHashesHex) {

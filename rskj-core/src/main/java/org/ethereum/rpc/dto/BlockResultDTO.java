@@ -18,15 +18,7 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-import org.ethereum.rpc.TypeConverter;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +27,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockStore;
+
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
 
 
 public class BlockResultDTO {
@@ -91,35 +92,35 @@ public class BlockResultDTO {
             byte[] bitcoinMergedMiningMerkleProof,
             byte[] hashForMergedMining,
             Coin paidFees) {
-        this.number = number != null ? TypeConverter.toQuantityJsonHex(number) : null;
+        this.number = number != null ? HexUtils.toQuantityJsonHex(number) : null;
         this.hash = hash != null ? hash.toJsonString() : null;
         this.parentHash = parentHash.toJsonString();
-        this.sha3Uncles = TypeConverter.toUnformattedJsonHex(sha3Uncles);
-        this.logsBloom = logsBloom != null ? TypeConverter.toUnformattedJsonHex(logsBloom) : null;
-        this.transactionsRoot = TypeConverter.toUnformattedJsonHex(transactionsRoot);
-        this.stateRoot = TypeConverter.toUnformattedJsonHex(stateRoot);
-        this.receiptsRoot = TypeConverter.toUnformattedJsonHex(receiptsRoot);
-        this.miner = miner != null ? TypeConverter.toUnformattedJsonHex(miner.getBytes()) : null;
+        this.sha3Uncles = HexUtils.toUnformattedJsonHex(sha3Uncles);
+        this.logsBloom = logsBloom != null ? HexUtils.toUnformattedJsonHex(logsBloom) : null;
+        this.transactionsRoot = HexUtils.toUnformattedJsonHex(transactionsRoot);
+        this.stateRoot = HexUtils.toUnformattedJsonHex(stateRoot);
+        this.receiptsRoot = HexUtils.toUnformattedJsonHex(receiptsRoot);
+        this.miner = miner != null ? HexUtils.toUnformattedJsonHex(miner.getBytes()) : null;
 
-        this.difficulty = TypeConverter.toQuantityJsonHex(difficulty.getBytes());
-        this.totalDifficulty = TypeConverter.toQuantityJsonHex(totalDifficulty.getBytes());
-        this.cumulativeDifficulty = TypeConverter.toQuantityJsonHex(cumulativeDifficulty.getBytes());
+        this.difficulty = HexUtils.toQuantityJsonHex(difficulty.getBytes());
+        this.totalDifficulty = HexUtils.toQuantityJsonHex(totalDifficulty.getBytes());
+        this.cumulativeDifficulty = HexUtils.toQuantityJsonHex(cumulativeDifficulty.getBytes());
 
-        this.extraData = TypeConverter.toUnformattedJsonHex(extraData);
-        this.size = TypeConverter.toQuantityJsonHex(size);
-        this.gasLimit = TypeConverter.toQuantityJsonHex(gasLimit);
-        this.gasUsed = TypeConverter.toQuantityJsonHex(gasUsed);
-        this.timestamp = TypeConverter.toQuantityJsonHex(timestamp);
+        this.extraData = HexUtils.toUnformattedJsonHex(extraData);
+        this.size = HexUtils.toQuantityJsonHex(size);
+        this.gasLimit = HexUtils.toQuantityJsonHex(gasLimit);
+        this.gasUsed = HexUtils.toQuantityJsonHex(gasUsed);
+        this.timestamp = HexUtils.toQuantityJsonHex(timestamp);
 
         this.transactions = Collections.unmodifiableList(transactions);
         this.uncles = Collections.unmodifiableList(uncles);
 
-        this.minimumGasPrice = minimumGasPrice != null ? TypeConverter.toQuantityJsonHex(minimumGasPrice.getBytes()) : null;
-        this.bitcoinMergedMiningHeader = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningHeader);
-        this.bitcoinMergedMiningCoinbaseTransaction = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningCoinbaseTransaction);
-        this.bitcoinMergedMiningMerkleProof = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningMerkleProof);
-        this.hashForMergedMining = TypeConverter.toUnformattedJsonHex(hashForMergedMining);
-        this.paidFees = paidFees != null ? TypeConverter.toQuantityJsonHex(paidFees.getBytes()) : null;
+        this.minimumGasPrice = minimumGasPrice != null ? HexUtils.toQuantityJsonHex(minimumGasPrice.getBytes()) : null;
+        this.bitcoinMergedMiningHeader = HexUtils.toUnformattedJsonHex(bitcoinMergedMiningHeader);
+        this.bitcoinMergedMiningCoinbaseTransaction = HexUtils.toUnformattedJsonHex(bitcoinMergedMiningCoinbaseTransaction);
+        this.bitcoinMergedMiningMerkleProof = HexUtils.toUnformattedJsonHex(bitcoinMergedMiningMerkleProof);
+        this.hashForMergedMining = HexUtils.toUnformattedJsonHex(hashForMergedMining);
+        this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc) {

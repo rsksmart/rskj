@@ -18,13 +18,17 @@
 
 package co.rsk.rpc.modules.trace;
 
-import co.rsk.config.VmConfig;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.rpc.ExecutionBlockRetriever;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.core.Block;;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
@@ -37,13 +41,14 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import co.rsk.config.VmConfig;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.util.HexUtils;
 
 public class TraceModuleImpl implements TraceModule {
 
@@ -78,7 +83,7 @@ public class TraceModuleImpl implements TraceModule {
     public JsonNode traceTransaction(String transactionHash) throws Exception {
         logger.trace("trace_transaction({})", transactionHash);
 
-        byte[] hash = stringHexToByteArray(transactionHash);
+        byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore).orElse(null);
 
         if (txInfo == null) {
@@ -172,7 +177,12 @@ public class TraceModuleImpl implements TraceModule {
 
         List<TransactionTrace> traces = buildBlockTraces(block);
 
-        return OBJECT_MAPPER.valueToTree(traces.get(request.getTracePositionsAsListOfIntegers().get(0)));
+        TransactionTrace transactionTrace = null;
+        if(traces != null) {
+            transactionTrace = traces.get(request.getTracePositionsAsListOfIntegers().get(0));
+        }
+        
+        return OBJECT_MAPPER.valueToTree(transactionTrace);
     }
 
     private Block getByJsonArgument(String arg) {
@@ -184,7 +194,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     private Block getByJsonBlockHash(String arg) {
-        byte[] hash = stringHexToByteArray(arg);
+        byte[] hash = HexUtils.stringHexToByteArray(arg);
 
         return this.blockchain.getBlockByHash(hash);
     }
@@ -198,7 +208,7 @@ public class TraceModuleImpl implements TraceModule {
             throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             try {
-                long blockNumber = stringHexToBigInteger(id).longValue();
+                long blockNumber = HexUtils.stringHexToBigInteger(id).longValue();
                 return this.blockchain.getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                 throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber " + id);

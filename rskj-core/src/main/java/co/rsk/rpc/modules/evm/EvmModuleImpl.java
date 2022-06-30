@@ -18,16 +18,17 @@
 
 package co.rsk.rpc.modules.evm;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerClock;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.ethereum.rpc.TypeConverter.*;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
+import co.rsk.util.HexUtils;
 
 public class EvmModuleImpl implements EvmModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -54,13 +55,13 @@ public class EvmModuleImpl implements EvmModule {
     public String evm_snapshot() {
         int snapshotId = snapshotManager.takeSnapshot();
         logger.debug("evm_snapshot(): {}", snapshotId);
-        return toQuantityJsonHex(snapshotId);
+        return HexUtils.toQuantityJsonHex(snapshotId);
     }
 
     @Override
     public boolean evm_revert(String snapshotId) {
         try {
-            int sid = stringHexToBigInteger(snapshotId).intValue();
+            int sid = HexUtils.stringHexToBigInteger(snapshotId).intValue();
             return snapshotManager.revertToSnapshot(sid);
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw invalidParamError("invalid snapshot id " + snapshotId, e);
@@ -96,8 +97,8 @@ public class EvmModuleImpl implements EvmModule {
     @Override
     public String evm_increaseTime(String seconds) {
         try {
-            long nseconds = stringNumberAsBigInt(seconds).longValue();
-            String result = toQuantityJsonHex(minerClock.increaseTime(nseconds));
+            long nseconds = HexUtils.stringNumberAsBigInt(seconds).longValue();
+            String result = HexUtils.toQuantityJsonHex(minerClock.increaseTime(nseconds));
             logger.debug("evm_increaseTime({}): {}", nseconds, result);
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

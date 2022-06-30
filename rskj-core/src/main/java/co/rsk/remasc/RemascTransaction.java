@@ -18,14 +18,14 @@
 
 package co.rsk.remasc;
 
-import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 
-import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 
 /**
  * <p>
@@ -63,7 +63,7 @@ public class RemascTransaction extends Transaction {
     public static final RskAddress REMASC_ADDRESS = new RskAddress(new byte[20]) {
         @Override
         public String toJsonString() {
-            return toUnformattedJsonHex(new byte[20]);
+            return HexUtils.toUnformattedJsonHex(new byte[20]);
         }
 
         @Override

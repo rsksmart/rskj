@@ -1,5 +1,38 @@
 package org.ethereum.rpc;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.ethereum.TestUtils;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.vm.DataWord;
+import org.junit.Before;
+import org.junit.Test;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -18,31 +51,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
-import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.DataWord;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import co.rsk.util.HexUtils;
 
 public class Web3ImplUnitTest {
 
@@ -147,7 +156,7 @@ public class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
-        DataWord expectedIdx = DataWord.valueOf(stringHexToByteArray(storageIdx));
+        DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
@@ -184,7 +193,7 @@ public class Web3ImplUnitTest {
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
         String storageIdx = "0x01";
-        DataWord expectedIdx = DataWord.valueOf(stringHexToByteArray(storageIdx));
+        DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
         when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
@@ -277,7 +286,7 @@ public class Web3ImplUnitTest {
     @Test
     public void eth_getUncleCountByBlockHash_blockNotFound() {
         String hash = "0x4A54";
-        byte[] bytesHash = TypeConverter.stringHexToByteArray(hash);
+        byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
 
         when(blockchain.getBlockByHash(eq(bytesHash))).thenReturn(null);
 
@@ -289,8 +298,10 @@ public class Web3ImplUnitTest {
 
     @Test
     public void eth_getUncleCountByBlockHash() {
+
         String hash = "0x0000000000000000000000000000000000000000000000000000000000004A54";
-        byte[] bytesHash = TypeConverter.stringHexToByteArray(hash);
+        byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
+
         List<BlockHeader> uncles = new LinkedList<>();
         uncles.add(mock(BlockHeader.class));
         uncles.add(mock(BlockHeader.class));
