@@ -36,6 +36,8 @@ contract SubsequentCallWithValue {
 }
 end
 
+# Case: [USER] -call-without-value-> [CONTRUCT #1] -call-without-value-> [CONTRUCT #2] -call-with-value-> [CONTRUCT #3]
+
 account_new acc1 20000000
 
 # Deploy three instances of SubsequentCallWithValue
