@@ -24,10 +24,12 @@ import co.rsk.trie.TrieValueTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static co.rsk.trie.Trie.LONG_VALUE;
 import static org.bouncycastle.util.encoders.Hex.decode;
 
 public class TrieWasabiMessageTest {
+
+    // a long value exceeds 32 bytes
+    public static final int LONG_VALUE = 32 + 1;
 
     @Test
     public void emptyTrieToMessageWasabiToMessageWasabi() {
@@ -55,7 +57,7 @@ public class TrieWasabiMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(10, message.length); // todo(fedejinich) why?
+        Assert.assertEquals(10, message.length);
 
         // check flags (version + lshared + left + leftEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
         Assert.assertEquals(0b01011010, message[0]);
@@ -71,13 +73,13 @@ public class TrieWasabiMessageTest {
                 .put(decode("0a0110"), TrieValueTest.makeValue(LONG_VALUE - 1));
 
         Assert.assertTrue(trie.getLeft().getNode().isPresent());
-        Assert.assertFalse(trie.getLeft().isEmbeddable());
-        Assert.assertFalse(trie.getRight().getNode().isPresent());
+        Assert.assertTrue(!trie.getLeft().isEmbeddable());
+        Assert.assertTrue(!trie.getRight().getNode().isPresent());
 
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(68, message.length); // todo(fedejinich) why?
+        Assert.assertEquals(68, message.length);
 
         // check flags (version + lshared + left) => 0b01000000 | 0b00010000 | 0b00001000
         Assert.assertEquals(0b01011000, message[0]);
@@ -94,13 +96,13 @@ public class TrieWasabiMessageTest {
 
         Assert.assertTrue(trie.getLeft().isEmbeddable());
         Assert.assertTrue(trie.getLeft().getNode().get().isTerminal());
-        Assert.assertFalse(trie.getRight().isEmbeddable());
-        Assert.assertFalse(trie.getRight().getNode().get().isTerminal());
+        Assert.assertTrue(!trie.getRight().isEmbeddable());
+        Assert.assertTrue(!trie.getRight().getNode().get().isTerminal());
 
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(72, message.length); // todo(fedejinich) why?
+        Assert.assertEquals(72, message.length);
 
         // check flags (version + lshared + left + leftEmbedded + right) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010 | 0b00000100
         Assert.assertEquals(0b01011110, message[0]);
@@ -115,15 +117,15 @@ public class TrieWasabiMessageTest {
                 .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
                 .put(decode("0a10"), TrieValueTest.makeValue(LONG_VALUE - 1));
 
-        Assert.assertFalse(trie.getLeft().isEmbeddable());
-        Assert.assertFalse(trie.getLeft().getNode().get().isTerminal());
+        Assert.assertTrue(!trie.getLeft().isEmbeddable());
+        Assert.assertTrue(!trie.getLeft().getNode().get().isTerminal());
         Assert.assertTrue(trie.getRight().isEmbeddable());
         Assert.assertTrue(trie.getRight().getNode().get().isTerminal());
 
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(72, message.length); // todo(fedejinich) why?
+        Assert.assertEquals(72, message.length);
 
         // check flags (version + lshared + left + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000100 | 0b00000001
         Assert.assertEquals(0b01011101, message[0]);
@@ -140,7 +142,7 @@ public class TrieWasabiMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(14, message.length); // todo(fedejinich) why?
+        Assert.assertEquals(14, message.length);
 
         // check flags (version + lshared + left + leftEmbedded + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
         Assert.assertEquals(0b01011111, message[0]);
