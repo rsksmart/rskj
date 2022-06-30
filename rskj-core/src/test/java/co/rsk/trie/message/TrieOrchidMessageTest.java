@@ -18,14 +18,13 @@
 
 package co.rsk.trie.message;
 
-import co.rsk.core.types.ints.Uint24;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieValueTest;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.bouncycastle.util.encoders.Hex.decode;
+import static co.rsk.trie.message.TrieWasabiMessageTest.LONG_VALUE;
 
 /**
  * Created by ajlopez on 11/01/2017.
@@ -180,7 +179,7 @@ public class TrieOrchidMessageTest {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, TrieValueTest.makeValue(33));
+        Trie trie = new Trie().put(key, TrieValueTest.makeValue(LONG_VALUE));
 
         byte[] message = trie.toMessageOrchid(true);
 

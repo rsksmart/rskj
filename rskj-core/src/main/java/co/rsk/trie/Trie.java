@@ -76,20 +76,8 @@ public class Trie {
     // all zeroed, default hash for empty nodes
     private static final Keccak256 EMPTY_HASH = makeEmptyHash();
 
-    // a long value exceeds 32 bytes
-    public static final int LONG_VALUE = 32 + 1;
-
     // size of the storage rent timestamp
     public static final int TIMESTAMP_SIZE = Long.BYTES;
-
-    // size of the serialized flags
-    public static final int FLAGS_SIZE = Byte.BYTES;
-
-    // size of an embedded node
-    public static final int EMBEDDED_CHILD_LENGTH_SIZE = Uint8.BYTES;
-
-    // size of a hashed child
-    public static final int CHILD_HASH_SIZE = 32;
 
     // represents a non-initialized rent timestamp
     public static final long NO_RENT_TIMESTAMP = -1;
@@ -160,11 +148,13 @@ public class Trie {
 
     // leaf node
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, long lastRentPaidTimestamp) {
-        this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, new VarInt(0), lastRentPaidTimestamp);
+        this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value),
+                null, new VarInt(0), lastRentPaidTimestamp);
     }
 
     // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTimestamp) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right,
+                 Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTimestamp) {
         this.value = value;
         this.left = left;
         this.right = right;
