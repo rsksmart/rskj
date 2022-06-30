@@ -1501,7 +1501,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     rskSystemProperties.peerDiscoveryRefreshPeriod(),
                     rskSystemProperties.peerDiscoveryCleanPeriod(),
                     rskSystemProperties.networkId(),
-                    getPeerScoringManager()
+                    getPeerScoringManager(),
+                    rskSystemProperties.allowMultipleConnectionsPerHostPort()
             );
         }
 

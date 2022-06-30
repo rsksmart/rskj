@@ -234,6 +234,10 @@ public class RskSystemProperties extends SystemProperties {
         return (period < PD_DEFAULT_REFRESH_PERIOD)? PD_DEFAULT_REFRESH_PERIOD : period;
     }
 
+    public boolean allowMultipleConnectionsPerHostPort() {
+        return getBoolean("peer.discovery.allowMultipleConnectionsPerHostPort", true);
+    }
+
     public List<ModuleDescription> getRpcModules() {
         if (this.moduleDescriptions != null) {
             return this.moduleDescriptions;

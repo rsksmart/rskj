@@ -99,9 +99,9 @@ public class UDPServerTest {
         NodeDistanceTable distanceTable2 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
         NodeDistanceTable distanceTable3 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node3);
 
-        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
-        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
-        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
+        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class), true);
+        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class), true);
+        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class), true);
 
         assertEquals(0, peerExplorer1.getNodes().size());
         assertEquals(0, peerExplorer2.getNodes().size());
