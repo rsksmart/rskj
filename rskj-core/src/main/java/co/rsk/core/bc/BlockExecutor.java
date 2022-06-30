@@ -608,7 +608,7 @@ public class BlockExecutor {
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    txindex++,
+                    txindex,
                     block.getCoinbase(),
                     track,
                     block,
@@ -629,7 +629,7 @@ public class BlockExecutor {
             }
 
             Optional<Long> sublistGasAccumulated;
-            if (tx.isRemascTransaction(txindex-1, transactionsList.size())) {
+            if (tx.isRemascTransaction(txindex, transactionsList.size())) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
                 sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
@@ -670,6 +670,7 @@ public class BlockExecutor {
             loggingExecuteTxAndReceipt(block, i, tx);
 
             i++;
+            txindex++;
 
             receiptsByTx.put(tx, receipt);
 
