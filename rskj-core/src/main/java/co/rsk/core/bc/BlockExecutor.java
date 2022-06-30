@@ -629,7 +629,7 @@ public class BlockExecutor {
             }
 
             Optional<Long> sublistGasAccumulated;
-            if (tx.isRemascTransaction(txindex, transactionsList.size())) {
+            if (tx.isRemascTransaction(txindex-1, transactionsList.size())) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
                 sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
