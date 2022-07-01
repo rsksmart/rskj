@@ -218,7 +218,10 @@ task javadocJar(type: Jar) {
 }
 
 jar {
+    def prevDuplicateStrategy = duplicatesStrategy
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     dependsOn 'generateResources'
+    duplicatesStrategy = prevDuplicateStrategy
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
