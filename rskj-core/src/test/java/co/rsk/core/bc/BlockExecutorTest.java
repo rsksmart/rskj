@@ -660,6 +660,42 @@ public class BlockExecutorTest {
         Assert.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
     }
 
+    private void testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition (int txAmount, short [] expectedSublistsEdges) {
+        Block parent = blockchain.getBestBlock();
+        Block block = getBlockWithNIndependentTransactions(txAmount, BigInteger.valueOf(21000), true);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        int expectedTxSize = txAmount + 1;
+
+        Assert.assertArrayEquals(expectedSublistsEdges, blockResult.getTxEdges());
+        Assert.assertEquals(expectedTxSize, blockResult.getExecutedTransactions().size());
+        Assert.assertTrue(blockResult.getExecutedTransactions().get(txAmount).isRemascTransaction(txAmount, expectedTxSize));
+    }
+
+    @Test
+    public void blockWithOnlyRemascShouldGoToSequentialSublist () {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(0, new short[]{});
+    }
+
+    @Test
+    public void blockWithOneTxRemascShouldGoToSequentialSublist () {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(1, new short[]{ 1 });
+    }
+
+    @Test
+    public void blockWithManyTxsRemascShouldGoToSequentialSublist () {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{ 1, 2, 3 });
+    }
+
+    @Test
+    public void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist () {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(5, new short[]{ 2, 3, 4, 5 });
+    }
+
     @Test
     public void validateStateRootWithRskip126DisabledAndValidStateRoot() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
