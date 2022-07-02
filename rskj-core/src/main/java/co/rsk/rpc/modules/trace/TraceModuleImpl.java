@@ -18,11 +18,7 @@
 package co.rsk.rpc.modules.trace;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -129,7 +125,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
+    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
         List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
 
         Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
@@ -163,7 +159,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceGet(String transactionHash, List<String> positions) throws Exception {
+    public JsonNode traceGet(String transactionHash, List<String> positions) {
         TraceGetRequest request = new TraceGetRequest(transactionHash, positions);
 
         TransactionInfo txInfo = this.receiptStore.getInMainChain(request.getTransactionHashAsByteArray(), this.blockStore).orElse(null);
@@ -175,11 +171,11 @@ public class TraceModuleImpl implements TraceModule {
 
         Block block = this.blockchain.getBlockByHash(txInfo.getBlockHash());
 
-        List<TransactionTrace> traces = buildBlockTraces(block);
+        Optional<List<TransactionTrace>> traces = buildBlockTraces(block);
 
         TransactionTrace transactionTrace = null;
-        if(traces != null) {
-            transactionTrace = traces.get(request.getTracePositionsAsListOfIntegers().get(0));
+        if (traces.isPresent()) {
+            transactionTrace = traces.get().get(request.getTracePositionsAsListOfIntegers().get(0));
         }
         
         return OBJECT_MAPPER.valueToTree(transactionTrace);
