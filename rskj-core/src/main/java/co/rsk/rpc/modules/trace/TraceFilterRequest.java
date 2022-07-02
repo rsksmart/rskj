@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -98,11 +99,17 @@ public class TraceFilterRequest {
     }
 
     public List<String> getFromAddress() {
-        return this.fromAddress;
+        if (fromAddress == null) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(fromAddress);
     }
 
     public List<String> getToAddress() {
-        return toAddress;
+        if (toAddress == null) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(toAddress);
     }
 
     public List<RskAddress> getToAddressAsRskAddresses() {

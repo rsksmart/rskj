@@ -78,7 +78,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash) throws Exception {
+    public JsonNode traceTransaction(String transactionHash) {
         logger.trace("trace_transaction({})", transactionHash);
 
         byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
@@ -121,7 +121,11 @@ public class TraceModuleImpl implements TraceModule {
 
         Optional<List<TransactionTrace>> blockTraces = buildBlockTraces(block);
 
-        return !blockTraces.isPresent() ? null : OBJECT_MAPPER.valueToTree(blockTraces.get());
+        if (blockTraces.isPresent()) {
+            return OBJECT_MAPPER.valueToTree(blockTraces.get());
+        }
+
+        return null;
     }
 
     @Override
@@ -136,9 +140,7 @@ public class TraceModuleImpl implements TraceModule {
         while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
             Optional<List<TransactionTrace>> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-            if (builtTraces.isPresent()) {
-                blockTracesGroup.add(builtTraces.get());
-            }
+            builtTraces.ifPresent(blockTracesGroup::add);
 
             block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
@@ -226,48 +228,50 @@ public class TraceModuleImpl implements TraceModule {
 
         SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
-        if (programTrace == null) return null;
+        if (programTrace == null) {
+            return Collections.emptyList();
+        }
 
-        List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, blockNumber);
-
-        return traces;
+        return TraceTransformer.toTraces(programTrace, txInfo, blockNumber);
     }
 
     private Optional<List<TransactionTrace>> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
-        if (block != null && block.getNumber() != 0) {
-            List<Transaction> txList = block.getTransactionsList();
+        if (block == null || block.getNumber() == 0) {
+            return Optional.of(blockTraces);
+        }
 
-            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-            Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+        List<Transaction> txList = block.getTransactionsList();
 
-            if (traceFilterRequest != null) {
-                Stream<Transaction> txStream = block.getTransactionsList().stream();
+        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+        Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+        this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-                if (traceFilterRequest.getFromAddress() != null && !traceFilterRequest.getFromAddress().isEmpty()) {
-                    List<RskAddress> addresses = traceFilterRequest.getFromAddressAsRskAddresses();
-                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(tx.getSender()));
-                }
+        if (traceFilterRequest != null) {
+            Stream<Transaction> txStream = block.getTransactionsList().stream();
 
-                if (traceFilterRequest.getToAddress() != null && !traceFilterRequest.getToAddress().isEmpty()) {
-                    List<RskAddress> addresses = traceFilterRequest.getToAddressAsRskAddresses();
-                    txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(tx.getReceiveAddress()));
-                }
-
-                txList = txStream.collect(Collectors.toList());
+            if (!traceFilterRequest.getFromAddress().isEmpty()) {
+                List<RskAddress> addresses = traceFilterRequest.getFromAddressAsRskAddresses();
+                txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(tx.getSender()));
             }
 
-            for (Transaction tx : txList) {
-                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
-                if (traces == null) {
-                    blockTraces.clear();
-                    return Optional.empty();
-                }
-
-                blockTraces.addAll(traces);
+            if (!traceFilterRequest.getToAddress().isEmpty()) {
+                List<RskAddress> addresses = traceFilterRequest.getToAddressAsRskAddresses();
+                txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(tx.getReceiveAddress()));
             }
+
+            txList = txStream.collect(Collectors.toList());
+        }
+
+        for (Transaction tx : txList) {
+            List<co.rsk.rpc.modules.trace.TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
+            if (traces.isEmpty()) {
+                blockTraces.clear();
+                return Optional.empty();
+            }
+
+            blockTraces.addAll(traces);
         }
 
         return Optional.of(blockTraces);
