@@ -179,7 +179,6 @@ public class MutableRepositoryTracked extends MutableRepository {
         if(readsContractCode) {
             trackNodeReadContractOperation(key, isSuccessful);
         } else {
-            // todo(fedejinich) should track get() success with a bool (value != null)
             trackNodeReadOperation(key, isSuccessful);
         }
 
@@ -208,7 +207,6 @@ public class MutableRepositoryTracked extends MutableRepository {
     protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
         Iterator<DataWord> storageKeys = super.internalGetStorageKeys(addr);
 
-        // todo(fedejinich) how should I track the right key/s?
         boolean result = !storageKeys.equals(Collections.emptyIterator());
         byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
@@ -216,8 +214,6 @@ public class MutableRepositoryTracked extends MutableRepository {
 
         return storageKeys;
     }
-
-    // todo(fedejinich) remove all this unecesary "trackNode..." methods, there should only be one method
 
     protected void trackNodeWriteOperation(byte[] key) {
         trackNode(key, WRITE_OPERATION, true);

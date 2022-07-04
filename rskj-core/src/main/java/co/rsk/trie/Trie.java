@@ -926,7 +926,6 @@ public class Trie {
         // reference equality
         if (newNode == node) {
             // ...but then it's replaced with the new created leaf node. 2/2
-            //  todo(fedejinich) Is it just used to create the trie root?
             return this;
         }
 

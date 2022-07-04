@@ -105,7 +105,7 @@ public class RentedNode extends TrackedNode {
                 rentDue(getNodeSize(), duration(executionBlockTimestamp)),
                 rentCap(),
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
-        return (long) (computedRent * 0.25); // todo(fedejinich) avoid casting?
+        return (long) (computedRent * 0.25);
     }
 
     @Override
