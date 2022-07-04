@@ -77,7 +77,7 @@ public class StorageRentDSLTests {
         checkStorageRent(world,"tx02", 0, 0, 4, 0);
         checkStorageRent(world,"tx03", 0, 0, 3, 0);
 
-        // transfer(senderAccountState, contractCode, balance1, balance2, storageRoot, ...) todo(fedejinich) i think i'm missing one node, ask shree
+        // transfer(senderAccountState, contractCode, balance1, balance2, storageRoot, ...)
         checkStorageRent(world,"tx04", 15001, 0, 5, 0);
 
         // balanceOf
@@ -102,7 +102,6 @@ public class StorageRentDSLTests {
 
         // rollbackRent should be >0, we want to "penalize" failed access
         checkStorageRent(world, "tx04", 2781, 280, 8, 10);
-        // todo(fedejinich) check that contract C doesn't commits state changes and doesn't updates its timestamp
     }
 
     /**

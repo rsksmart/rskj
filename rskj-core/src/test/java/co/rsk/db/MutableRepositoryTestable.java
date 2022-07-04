@@ -10,7 +10,6 @@ import java.util.HashSet;
 
 import static org.ethereum.db.OperationType.*;
 
-// todo(fedejinich) this seems unnecessary, should get rid of it
 public class MutableRepositoryTestable extends MutableRepositoryTracked {
     public MutableRepositoryTestable(MutableTrie mutableTrie,
                                      MutableRepositoryTracked parentRepository, boolean enableTracking) {

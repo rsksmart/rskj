@@ -1330,7 +1330,6 @@ public class Program {
             return;
         }
 
-        // todo(fedejinich) should i add the storage rent manager here also?
         Repository track = getStorage().startTracking();
 
         RskAddress senderAddress = getOwnerRskAddress();
