@@ -516,15 +516,20 @@ public class TransactionExecutor {
 
         if(isStorageRentEnabled()) {
             // pay storage rent
-            logger.trace("Paying storage rent. gas: {}", gasLeftover);
+            logger.trace("Paying storage rent. gas leftover: {}", gasLeftover);
+
+            Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
 
             storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                     (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
                     tx.getHash().toHexString());
 
+            profiler.stop(storageRentMetric);
+
             gasLeftover = storageRentResult.getGasAfterPayingRent();
 
-            logger.trace("Paid rent. gas: {}", gasLeftover);
+            logger.trace("Paid rent: {}. gas leftover: {}",
+                    storageRentResult.paidRent(), gasLeftover);
         }
 
         transactionTrack.commit();
