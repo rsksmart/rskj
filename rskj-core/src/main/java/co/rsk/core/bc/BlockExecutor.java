@@ -625,6 +625,7 @@ public class BlockExecutor {
                 }
 
                 loggingDiscardedBlock(block, tx);
+                txindex++;
                 continue;
             }
 

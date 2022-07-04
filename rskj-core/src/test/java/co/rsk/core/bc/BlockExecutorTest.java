@@ -315,8 +315,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
-    @Test
-    public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
+    private Block createBlockWithExcludedTransaction(boolean withRemasc) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
@@ -358,6 +357,16 @@ public class BlockExecutorTest {
         txs.add(tx);
         txs.add(tx2);
 
+
+        List<Transaction> expectedTxList = new ArrayList<Transaction>();
+        expectedTxList.add(tx);
+
+        if (withRemasc) {
+            Transaction remascTx = new RemascTransaction(1L);
+            txs.add(remascTx);
+            expectedTxList.add(remascTx);
+        }
+
         List<BlockHeader> uncles = new ArrayList<>();
 
         BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
@@ -367,16 +376,24 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, genesis.getHeader());
 
+        Assert.assertEquals(tx, block.getTransactionsList().get(0));
+        Assert.assertArrayEquals(
+                calculateTxTrieRoot(expectedTxList, block.getNumber()),
+                block.getTxTrieRoot()
+        );
+
+        return block;
+    }
+
+    @Test
+    public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
+        Block block = createBlockWithExcludedTransaction(false);
+
         short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
         Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
-        Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(
-                calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
-                block.getTxTrieRoot()
-        );
 
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
@@ -661,8 +678,13 @@ public class BlockExecutorTest {
     }
 
     private void testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition (int txAmount, short [] expectedSublistsEdges) {
-        Block parent = blockchain.getBestBlock();
         Block block = getBlockWithNIndependentTransactions(txAmount, BigInteger.valueOf(21000), true);
+
+        assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, txAmount, expectedSublistsEdges);
+    }
+
+    private void assertBlockResultHasTxEdgesAndRemascAtLastPosition (Block block, int txAmount, short [] expectedSublistsEdges) {
+        Block parent = blockchain.getBestBlock();
         BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
 
         int expectedTxSize = txAmount + 1;
@@ -694,6 +716,13 @@ public class BlockExecutorTest {
     public void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist () {
         if (!activeRskip144) return;
         testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(5, new short[]{ 2, 3, 4, 5 });
+    }
+
+    @Test
+    public void blockWithExcludedTransactionHasRemascInSequentialSublist () {
+        if (!activeRskip144) return;
+        Block block = createBlockWithExcludedTransaction(true);
+        assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, 0, new short[]{});
     }
 
     @Test
