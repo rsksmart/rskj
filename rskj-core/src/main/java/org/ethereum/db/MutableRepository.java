@@ -246,7 +246,7 @@ public class MutableRepository implements Repository {
         // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
-            internalPut(triekey, null); // todo(fedejinich) why put(key, null) and not deleteRecursive(key) ?
+            internalPut(triekey, null);
         } else {
             internalPut(triekey, value);
         }

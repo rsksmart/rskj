@@ -155,7 +155,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader()); // todo(fedejinich) this should be MutableRepositoryTracked right?
+        Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         MutableRepositoryTracked track = mock(MutableRepositoryTracked.class);
         BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
