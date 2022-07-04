@@ -617,8 +617,14 @@ public class TransactionExecutor {
 
     @VisibleForTesting
     public boolean isStorageRentEnabled() {
+        // todo(fedejinich) still need to exclude ALL the precompiled contracts
+        boolean isRemascTx = tx.getReceiveAddress().equals(PrecompiledContracts.REMASC_ADDR) &&
+                GasCost.toGas(tx.getGasLimit()) == 0 &&
+                tx.getGasPrice().equals(Coin.ZERO);
+        
         return activations.isActive(RSKIP240) &&
                 (!isEmpty(tx.getData()) || GasCost.toGas(tx.getGasLimit()) != GasCost.TRANSACTION) &&
+                !isRemascTx &&
                 storageRentEnabled; // todo(fedejinich) this is a workaround to enable storageRent just in DSL test
     }
 
