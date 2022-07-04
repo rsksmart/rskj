@@ -36,7 +36,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -523,12 +523,12 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeFederation_beforeRskip201_isPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverFederation_beforeRskip201_isPegin() {
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             activeFederation.getRedeemScript(),
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
@@ -536,19 +536,19 @@ public class BridgeUtilsTest {
         // Create a tx from the fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
 
         Assert.assertTrue(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeFederation_afterRskip201_notPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverFederation_afterRskip201_notPegin() {
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             activeFederation.getRedeemScript(),
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
@@ -556,14 +556,14 @@ public class BridgeUtilsTest {
         // Create a tx from the fast bridge fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverRedeemScript);
 
         Assert.assertFalse(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
             bridgeConstantsRegtest, activations));
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeErpFederation_beforeRskip201_isPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_beforeRskip201_isPegin() {
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
@@ -585,7 +585,7 @@ public class BridgeUtilsTest {
             erpFederation.getRedeemScript(),
             500L
         );
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpRedeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
@@ -593,7 +593,7 @@ public class BridgeUtilsTest {
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverErpRedeemScript);
 
         Assert.assertTrue(BridgeUtils.isValidPegInTx(
             tx,
@@ -605,7 +605,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeErpFederation_afterRskip201_notPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpFederation_afterRskip201_notPegin() {
         Context btcContext = new Context(networkParameters);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -627,7 +627,7 @@ public class BridgeUtilsTest {
             erpFederation.getRedeemScript(),
             500L
         );
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpRedeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
@@ -635,7 +635,7 @@ public class BridgeUtilsTest {
         // Create a tx from the fast bridge erp fed to the active fed
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
-        tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, flyoverErpRedeemScript);
 
         Assert.assertFalse(BridgeUtils.isValidPegInTx(
             tx,
@@ -713,7 +713,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeRetiredFederation_beforeRskip201_isPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_beforeRskip201_isPegin() {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
@@ -741,11 +741,11 @@ public class BridgeUtilsTest {
         );
         tx.addInput(txInput);
 
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             retiredFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(retiredFederation, fastBridgeRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
         assertTrue(BridgeUtils.isValidPegInTx(
             tx,
@@ -758,7 +758,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeRetiredFederation_afterRskip201_notPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverRetiredFederation_afterRskip201_notPegin() {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -786,11 +786,11 @@ public class BridgeUtilsTest {
         );
         tx.addInput(txInput);
 
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             retiredFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(retiredFederation, fastBridgeRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(retiredFederation, flyoverRedeemScript, retiredFederationKeys, txInput, tx);
 
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
@@ -803,7 +803,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeErpRetiredFederation_beforeRskip201_isPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_beforeRskip201_isPegin() {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
@@ -847,11 +847,11 @@ public class BridgeUtilsTest {
         );
         tx.addInput(txInput);
 
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, fastBridgeErpRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
         assertTrue(BridgeUtils.isValidPegInTx(
             tx,
@@ -864,7 +864,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_hasChangeUtxoFromFastBridgeErpRetiredFederation_afterRskip201_notPegin() {
+    public void testIsValidPegInTx_hasChangeUtxoFromFlyoverErpRetiredFederation_afterRskip201_notPegin() {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
@@ -908,11 +908,11 @@ public class BridgeUtilsTest {
         );
         tx.addInput(txInput);
 
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, fastBridgeErpRedeemScript, retiredFederationKeys, txInput, tx);
+        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, retiredFederationKeys, txInput, tx);
 
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
@@ -1349,15 +1349,15 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsPegOutTx_fromFastBridgeFederation() {
-        List<BtcECKey> fastBridgeFederationKeys = Arrays.asList(
+    public void testIsPegOutTx_fromFlyoverFederation() {
+        List<BtcECKey> flyoverFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
             BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
-        fastBridgeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation fastBridgeFederation = new Federation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(fastBridgeFederationKeys),
+        flyoverFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation flyoverFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(flyoverFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
             networkParameters
@@ -1377,32 +1377,32 @@ public class BridgeUtilsTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            fastBridgeFederation.getRedeemScript(),
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            flyoverFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(fastBridgeFederation, fastBridgeRedeemScript, fastBridgeFederationKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(flyoverFederation, flyoverRedeemScript, flyoverFederationKeys, pegOutInput1, pegOutTx1);
 
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(flyoverFederation), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(flyoverFederation, standardFederation), activations));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, flyoverFederation.getP2SHScript()));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, flyoverFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(fastBridgeFederation), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(fastBridgeFederation, standardFederation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(flyoverFederation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Arrays.asList(flyoverFederation, standardFederation), activations));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(standardFederation), activations));
 
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, flyoverFederation.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, flyoverFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
     }
 
@@ -1483,7 +1483,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsPegOutTx_fromFastBridgeErpFederation() {
+    public void testIsPegOutTx_fromFlyoverErpFederation() {
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1528,11 +1528,11 @@ public class BridgeUtilsTest {
         );
         pegOutTx1.addInput(pegOutInput1);
 
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpFederation.getRedeemScript(),
             PegTestUtils.createHash(2)
         );
-        signWithNecessaryKeys(erpFederation, fastBridgeErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
+        signWithNecessaryKeys(erpFederation, flyoverErpRedeemScript, defaultFederationKeys, pegOutInput1, pegOutTx1);
 
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
@@ -1739,7 +1739,7 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTxForFastBridge(
+        BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
             null
@@ -1755,7 +1755,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         Federation erpFederation = createErpFederation();
-        BtcTransaction btcTx = createPegOutTxForFastBridge(
+        BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
             erpFederation
@@ -1832,7 +1832,7 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createPegOutTxForFastBridge(
+        BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
             null
@@ -1848,7 +1848,7 @@ public class BridgeUtilsTest {
         byte[] sign2 = new byte[]{0x78};
 
         Federation erpFederation = createErpFederation();
-        BtcTransaction btcTx = createPegOutTxForFastBridge(
+        BtcTransaction btcTx = createPegOutTxForFlyover(
             Arrays.asList(sign1, sign2),
             3,
             erpFederation
@@ -1896,7 +1896,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void getFederationNoSpendWallet_fastBridgeCompatible() {
+    public void getFederationNoSpendWallet_flyoverCompatible() {
         test_getNoSpendWallet(true);
     }
 
@@ -1906,7 +1906,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void getFederationSpendWallet_fastBridgeCompatible() throws UTXOProviderException {
+    public void getFederationSpendWallet_flyoverCompatible() throws UTXOProviderException {
         test_getSpendWallet(true);
     }
 
@@ -2754,7 +2754,7 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
     }
 
-    private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
+    private void test_getSpendWallet(boolean isFlyoverCompatible) throws UTXOProviderException {
         Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
@@ -2769,10 +2769,10 @@ public class BridgeUtilsTest {
         mockedUtxos.add(mock(UTXO.class));
         mockedUtxos.add(mock(UTXO.class));
 
-        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFastBridgeCompatible, null);
+        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFlyoverCompatible, null);
 
-        if (isFastBridgeCompatible) {
-            Assert.assertEquals(FastBridgeCompatibleBtcWalletWithStorage.class, wallet.getClass());
+        if (isFlyoverCompatible) {
+            Assert.assertEquals(FlyoverCompatibleBtcWalletWithStorage.class, wallet.getClass());
         } else {
             Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
         }
@@ -2785,7 +2785,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
     }
 
-    private void test_getNoSpendWallet(boolean isFastBridgeCompatible) {
+    private void test_getNoSpendWallet(boolean isFlyoverCompatible) {
         Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
             BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
@@ -2795,10 +2795,10 @@ public class BridgeUtilsTest {
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(networkParameters);
 
-        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFastBridgeCompatible, null);
+        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFlyoverCompatible, null);
 
-        if (isFastBridgeCompatible) {
-            Assert.assertEquals(FastBridgeCompatibleBtcWalletWithStorage.class, wallet.getClass());
+        if (isFlyoverCompatible) {
+            Assert.assertEquals(FlyoverCompatibleBtcWalletWithStorage.class, wallet.getClass());
         } else {
             Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
         }
@@ -3028,7 +3028,7 @@ public class BridgeUtilsTest {
         List<byte[]> signatures,
         int inputsToAdd,
         Federation federation,
-        boolean isFastBridge
+        boolean isFlyover
     ) {
         // Setup
         Address address;
@@ -3038,29 +3038,29 @@ public class BridgeUtilsTest {
             federation = BridgeRegTestConstants.getInstance().getGenesisFederation();
         }
 
-        if (isFastBridge) {
+        if (isFlyover) {
             // Create fast bridge redeem script
             Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{1});
-            Script fastBridgeRedeemScript;
+            Script flyoverRedeemScript;
 
             if (federation instanceof ErpFederation) {
-                fastBridgeRedeemScript =
+                flyoverRedeemScript =
                     FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
                         federation.getRedeemScript(),
                         derivationArgumentsHash
                     );
             } else {
-                fastBridgeRedeemScript =
+                flyoverRedeemScript =
                     FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
                         federation.getRedeemScript(),
                         derivationArgumentsHash
                     );
             }
 
-            Script fastBridgeP2SH = ScriptBuilder
-                .createP2SHOutputScript(fastBridgeRedeemScript);
-            address = Address.fromP2SHHash(networkParameters, fastBridgeP2SH.getPubKeyHash());
-            program = fastBridgeRedeemScript.getProgram();
+            Script flyoverP2SH = ScriptBuilder
+                .createP2SHOutputScript(flyoverRedeemScript);
+            address = Address.fromP2SHHash(networkParameters, flyoverP2SH.getPubKeyHash());
+            program = flyoverRedeemScript.getProgram();
 
         } else {
             address = federation.getAddress();
@@ -3143,7 +3143,7 @@ public class BridgeUtilsTest {
         return createPegOutTx(signatures, inputsToAdd, null, false);
     }
 
-    private BtcTransaction createPegOutTxForFastBridge(List<byte[]> signatures, int inputsToAdd, Federation federation) {
+    private BtcTransaction createPegOutTxForFlyover(List<byte[]> signatures, int inputsToAdd, Federation federation) {
         return createPegOutTx(signatures, inputsToAdd, federation, true);
     }
 
@@ -3369,7 +3369,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testValidateFastBridgePeginValue_sent_zero_amount_before_RSKIP293() {
+    public void testValidateFlyoverPeginValue_sent_zero_amount_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -3384,8 +3384,8 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(networkParameters));
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
-            BridgeUtils.validateFastBridgePeginValue(
+            FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
+            BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,
@@ -3396,7 +3396,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testValidateFastBridgePeginValue_sent_one_utxo_with_amount_below_minimum_before_RSKIP293() {
+    public void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -3414,8 +3414,8 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, addressReceivingFundsAboveMinimum);
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.VALID_TX,
-            BridgeUtils.validateFastBridgePeginValue(
+            FlyoverTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,
@@ -3426,7 +3426,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testValidateFastBridgePeginValue_sent_one_utxo_with_amount_below_minimum_after_RSKIP293() {
+    public void testValidateFlyoverPeginValue_sent_one_utxo_with_amount_below_minimum_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -3441,8 +3441,8 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddressReceivingFunds);
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
-            BridgeUtils.validateFastBridgePeginValue(
+            FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,
@@ -3453,7 +3453,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testValidateFastBridgePeginValue_funds_sent_equal_to_minimum_after_RSKIP293() {
+    public void testValidateFlyoverPeginValue_funds_sent_equal_to_minimum_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -3469,8 +3469,8 @@ public class BridgeUtilsTest {
         btcTx.addOutput(minimumPegInTxValue, secondBtcAddressReceivingFundsEqualToMin);
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.VALID_TX,
-            BridgeUtils.validateFastBridgePeginValue(
+            FlyoverTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,
@@ -3481,7 +3481,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testValidateFastBridgePeginValue_funds_sent_above_minimum_after_RSKIP293() {
+    public void testValidateFlyoverPeginValue_funds_sent_above_minimum_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -3498,8 +3498,8 @@ public class BridgeUtilsTest {
         btcTx.addOutput(aboveMinimumPegInTxValue, btcAddressReceivingFundsAboveMin);
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.VALID_TX,
-            BridgeUtils.validateFastBridgePeginValue(
+            FlyoverTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFlyoverPeginValue(
                 activations,
                 bridgeConstantsRegtest,
                 btcContext,

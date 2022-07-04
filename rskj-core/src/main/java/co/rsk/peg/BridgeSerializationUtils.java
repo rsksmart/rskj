@@ -24,7 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -805,7 +805,7 @@ public class BridgeSerializationUtils {
         return new Script(rlpList.get(0).getRLPRawData());
     }
 
-    public static FastBridgeFederationInformation deserializeFastBridgeFederationInformation(byte[] data, byte[] fastBridgeScriptHash) {
+    public static FlyoverFederationInformation deserializeFlyoverFederationInformation(byte[] data, byte[] flyoverScriptHash) {
         if (data == null || data.length == 0) {
             return null;
         }
@@ -818,16 +818,16 @@ public class BridgeSerializationUtils {
         Keccak256 derivationHash = new Keccak256(rlpList.get(0).getRLPData());
         byte[] federationP2SH = rlpList.get(1).getRLPData();
 
-        return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
+        return new FlyoverFederationInformation(derivationHash, federationP2SH, flyoverScriptHash);
     }
 
-    public static byte[] serializeFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
-        if (fastBridgeFederationInformation == null) {
+    public static byte[] serializeFlyoverFederationInformation(FlyoverFederationInformation flyoverFederationInformation) {
+        if (flyoverFederationInformation == null) {
             return new byte[]{};
         }
         byte[][] rlpElements = new byte[2][];
-        rlpElements[0] = RLP.encodeElement(fastBridgeFederationInformation.getDerivationHash().getBytes());
-        rlpElements[1] = RLP.encodeElement(fastBridgeFederationInformation.getFederationRedeemScriptHash());
+        rlpElements[0] = RLP.encodeElement(flyoverFederationInformation.getDerivationHash().getBytes());
+        rlpElements[1] = RLP.encodeElement(flyoverFederationInformation.getFederationRedeemScriptHash());
 
         return RLP.encodeList(rlpElements);
     }

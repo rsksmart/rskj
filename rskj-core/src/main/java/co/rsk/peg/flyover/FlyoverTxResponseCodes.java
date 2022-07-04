@@ -1,6 +1,6 @@
-package co.rsk.peg.fastbridge;
+package co.rsk.peg.flyover;
 
-public enum FastBridgeTxResponseCodes {
+public enum FlyoverTxResponseCodes {
     REFUNDED_USER_ERROR(-100),
     REFUNDED_LP_ERROR(-200),
     UNPROCESSABLE_TX_NOT_CONTRACT_ERROR(-300),
@@ -14,7 +14,7 @@ public enum FastBridgeTxResponseCodes {
 
     private final long value;
 
-    FastBridgeTxResponseCodes(long value) {
+    FlyoverTxResponseCodes(long value) {
         this.value = value;
     }
 

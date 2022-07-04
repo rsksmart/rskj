@@ -43,7 +43,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
-import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -80,13 +80,13 @@ public class BridgeUtils {
     public static Wallet getFederationNoSpendWallet(
         Context btcContext,
         Federation federation,
-        boolean isFastBridgeCompatible,
+        boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
         return getFederationsNoSpendWallet(
             btcContext,
             Collections.singletonList(federation),
-            isFastBridgeCompatible,
+            isFlyoverCompatible,
             storageProvider
         );
     }
@@ -94,12 +94,12 @@ public class BridgeUtils {
     public static Wallet getFederationsNoSpendWallet(
         Context btcContext,
         List<Federation> federations,
-        boolean isFastBridgeCompatible,
+        boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
         Wallet wallet;
-        if (isFastBridgeCompatible) {
-            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        if (isFlyoverCompatible) {
+            wallet = new FlyoverCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
         } else {
             wallet = new BridgeBtcWallet(btcContext, federations);
         }
@@ -118,14 +118,14 @@ public class BridgeUtils {
         Context btcContext,
         Federation federation,
         List<UTXO> utxos,
-        boolean isFastBridgeCompatible,
+        boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
         return getFederationsSpendWallet(
             btcContext,
             Collections.singletonList(federation),
             utxos,
-            isFastBridgeCompatible,
+            isFlyoverCompatible,
             storageProvider
         );
     }
@@ -134,12 +134,12 @@ public class BridgeUtils {
         Context btcContext,
         List<Federation> federations,
         List<UTXO> utxos,
-        boolean isFastBridgeCompatible,
+        boolean isFlyoverCompatible,
         BridgeStorageProvider storageProvider
     ) {
         Wallet wallet;
-        if (isFastBridgeCompatible) {
-            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        if (isFlyoverCompatible) {
+            wallet = new FlyoverCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
         } else {
             wallet = new BridgeBtcWallet(btcContext, federations);
         }
@@ -239,11 +239,11 @@ public class BridgeUtils {
      * @param bridgeConstants
      * @param btcTx
      * @param addresses
-     * @return {@link FastBridgeTxResponseCodes#VALID_TX} if each UTXOs sent to federation isn't less than the minimum,
+     * @return {@link FlyoverTxResponseCodes#VALID_TX} if each UTXOs sent to federation isn't less than the minimum,
      * in case any of UTXO is less than the minimum then it returns
-     * {@link FastBridgeTxResponseCodes#UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR}.
+     * {@link FlyoverTxResponseCodes#UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR}.
      */
-    public static FastBridgeTxResponseCodes validateFastBridgePeginValue(
+    public static FlyoverTxResponseCodes validateFlyoverPeginValue(
         ActivationConfig.ForBlock activations,
         BridgeConstants bridgeConstants,
         Context context,
@@ -259,20 +259,20 @@ public class BridgeUtils {
         );
 
         if (totalAmount.equals(Coin.ZERO)) {
-            logger.debug("[validateFastBridgePeginValue] Amount sent can't be 0");
-            return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
+            logger.debug("[validateFlyoverPeginValue] Amount sent can't be 0");
+            return FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
         if (activations.isActive(RSKIP293)){
             Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
             if (isAnyUTXOAmountBelowMinimum(activations, bridgeConstants, context, btcTx, addresses)){
-                logger.debug("[validateFastBridgePeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
+                logger.debug("[validateFlyoverPeginValue] UTXOs amount sent to federation can't be below the minimum {}.",
                     minimumPegInTxValue.value);
-                return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
+                return FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
             }
         }
-        return FastBridgeTxResponseCodes.VALID_TX;
+        return FlyoverTxResponseCodes.VALID_TX;
     }
 
     /**

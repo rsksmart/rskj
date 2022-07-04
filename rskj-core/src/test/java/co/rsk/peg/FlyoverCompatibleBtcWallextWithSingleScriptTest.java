@@ -11,7 +11,7 @@ import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
+public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
@@ -64,68 +64,68 @@ public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
 
     @Test
     public void findRedeemDataFromScriptHash_null_destination_federation() {
-        FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(null, new byte[0], new byte[0]);
-        FastBridgeCompatibleBtcWalletWithSingleScript fastBridgeCompatibleBtcWalletWithSingleScript =
-            new FastBridgeCompatibleBtcWalletWithSingleScript(
+        FlyoverFederationInformation flyoverFederationInformation =
+            new FlyoverFederationInformation(null, new byte[0], new byte[0]);
+        FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
+            new FlyoverCompatibleBtcWalletWithSingleScript(
                 mock(Context.class),
                 federationList,
-                fastBridgeFederationInformation);
+                flyoverFederationInformation);
 
-        Assert.assertNull(fastBridgeCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
+        Assert.assertNull(flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash()));
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_fastBridgeInformation() {
-        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
-        FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(
+    public void findRedeemDataFromScriptHash_with_flyoverInformation() {
+        byte[] flyoverScriptHash = new byte[]{(byte)0x22};
+        FlyoverFederationInformation flyoverFederationInformation =
+            new FlyoverFederationInformation(
                 PegTestUtils.createHash3(2),
                 federation.getP2SHScript().getPubKeyHash(),
-                fastBridgeScriptHash);
+                flyoverScriptHash);
 
-        FastBridgeCompatibleBtcWalletWithSingleScript fastBridgeCompatibleBtcWalletWithSingleScript =
-            new FastBridgeCompatibleBtcWalletWithSingleScript(
+        FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
+            new FlyoverCompatibleBtcWalletWithSingleScript(
                 mock(Context.class),
                 federationList,
-                fastBridgeFederationInformation);
+                flyoverFederationInformation);
 
-        RedeemData redeemData = fastBridgeCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
+        RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash());
 
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(), Sha256Hash.wrap(fastBridgeFederationInformation.getDerivationHash().getBytes())
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            federation.getRedeemScript(), Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
         Assert.assertNotNull(redeemData);
-        Assert.assertEquals(fastBridgeRedeemScript, redeemData.redeemScript);
+        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_fastBridgeInformation_and_erp_federation() {
-        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
-        FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(
+    public void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
+        byte[] flyoverScriptHash = new byte[]{(byte)0x22};
+        FlyoverFederationInformation flyoverFederationInformation =
+            new FlyoverFederationInformation(
                 PegTestUtils.createHash3(2),
                 erpFederation.getP2SHScript().getPubKeyHash(),
-                fastBridgeScriptHash);
+                flyoverScriptHash);
 
-        FastBridgeCompatibleBtcWalletWithSingleScript fastBridgeCompatibleBtcWalletWithSingleScript =
-            new FastBridgeCompatibleBtcWalletWithSingleScript(
+        FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
+            new FlyoverCompatibleBtcWalletWithSingleScript(
                 mock(Context.class),
                 erpFederationList,
-                fastBridgeFederationInformation);
+                flyoverFederationInformation);
 
-        RedeemData redeemData = fastBridgeCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
+        RedeemData redeemData = flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             erpFederation.getP2SHScript().getPubKeyHash());
 
-        Script fastBridgeRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
             erpFederation.getRedeemScript(),
-            Sha256Hash.wrap(fastBridgeFederationInformation.getDerivationHash().getBytes())
+            Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
         Assert.assertNotNull(redeemData);
-        Assert.assertEquals(fastBridgeRedeemScript, redeemData.redeemScript);
+        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 }

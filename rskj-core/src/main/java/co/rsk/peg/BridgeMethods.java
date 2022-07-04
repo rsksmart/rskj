@@ -621,7 +621,7 @@ public enum BridgeMethods {
                     new String[]{"int256"}
             ),
             fixedCost(25_000L),
-            (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
+            (BridgeMethodExecutorTyped) Bridge::registerFlyoverBtcTransaction,
             activations -> activations.isActive(RSKIP176),
             fixedPermission(false)
     ),

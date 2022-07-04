@@ -24,7 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -81,7 +81,7 @@ public class BridgeStorageProvider {
     private static final Integer ERP_FEDERATION_FORMAT_VERSION = 2000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
-    private static final byte FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE = (byte) 1;
+    private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
 
     private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
 
@@ -132,10 +132,10 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
-    private Keccak256 fastBridgeDerivationArgumentsHash;
-    private Sha256Hash fastBridgeBtcTxHash;
-    private FastBridgeFederationInformation fastBridgeFederationInformation;
-    private FastBridgeFederationInformation fastBridgeRetiringFederationInformation;
+    private Keccak256 flyoverDerivationHash;
+    private Sha256Hash flyoverBtcTxHash;
+    private FlyoverFederationInformation flyoverFederationInformation;
+    private FlyoverFederationInformation flyoverRetiringFederationInformation;
     private long receiveHeadersLastTimestamp = 0;
 
     private Long nextPegoutHeight;
@@ -795,100 +795,100 @@ public class BridgeStorageProvider {
         safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
     }
 
-    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
-        if (!activations.isActive(RSKIP176) || btcTxHash == null || derivationArgsHash == null) {
+    public boolean isFlyoverDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 flyoverDerivationHash) {
+        if (!activations.isActive(RSKIP176) || btcTxHash == null || flyoverDerivationHash == null) {
             return false;
         }
 
         byte[] data = repository.getStorageBytes(
             contractAddress,
-            getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
+            getStorageKeyForFlyoverHash(btcTxHash, flyoverDerivationHash)
         );
 
         return data != null &&
             data.length == 1 &&
-            data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE;
+            data[0] == FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE;
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
+    public void markFlyoverDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 flyoverDerivationHash) {
         if (activations.isActive(RSKIP176)) {
-            fastBridgeBtcTxHash = btcTxHash;
-            fastBridgeDerivationArgumentsHash = derivationArgsHash;
+            flyoverBtcTxHash = btcTxHash;
+            this.flyoverDerivationHash = flyoverDerivationHash;
         }
     }
 
-    private void saveDerivationArgumentsHash() {
-        if (fastBridgeDerivationArgumentsHash == null || fastBridgeBtcTxHash == null) {
+    private void saveFlyoverDerivationHash() {
+        if (flyoverDerivationHash == null || flyoverBtcTxHash == null) {
             return;
         }
 
         repository.addStorageBytes(
             contractAddress,
-            getStorageKeyForDerivationArgumentsHash(
-                fastBridgeBtcTxHash,
-                fastBridgeDerivationArgumentsHash
+            getStorageKeyForFlyoverHash(
+                flyoverBtcTxHash,
+                flyoverDerivationHash
             ),
-            new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
+            new byte[]{FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE}
         );
     }
 
-    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
+    public Optional<FlyoverFederationInformation> getFlyoverFederationInformation(byte[] flyoverFederationRedeemScriptHash) {
         if (!activations.isActive(RSKIP176)) {
             return Optional.empty();
         }
 
-        if (fastBridgeFederationRedeemScriptHash == null || fastBridgeFederationRedeemScriptHash.length == 0) {
+        if (flyoverFederationRedeemScriptHash == null || flyoverFederationRedeemScriptHash.length == 0) {
             return Optional.empty();
         }
 
-        FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
-            getStorageKeyForfastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash),
-            data -> BridgeSerializationUtils.deserializeFastBridgeFederationInformation(data, fastBridgeFederationRedeemScriptHash)
+        FlyoverFederationInformation flyoverFederationInformation = this.safeGetFromRepository(
+            getStorageKeyForFlyoverFederationInformation(flyoverFederationRedeemScriptHash),
+            data -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(data, flyoverFederationRedeemScriptHash)
         );
-        if (fastBridgeFederationInformation == null) {
+        if (flyoverFederationInformation == null) {
             return Optional.empty();
         }
 
-        return Optional.of(fastBridgeFederationInformation);
+        return Optional.of(flyoverFederationInformation);
     }
 
-    public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
+    public void setFlyoverFederationInformation(FlyoverFederationInformation flyoverFederationInformation) {
         if (activations.isActive(RSKIP176)) {
-            this.fastBridgeFederationInformation = fastBridgeFederationInformation;
+            this.flyoverFederationInformation = flyoverFederationInformation;
         }
     }
 
-    private void saveFastBridgeFederationInformation() {
-        if (fastBridgeFederationInformation == null) {
+    private void saveFlyoverFederationInformation() {
+        if (flyoverFederationInformation == null) {
             return;
         }
 
         safeSaveToRepository(
-            getStorageKeyForfastBridgeFederationInformation(
-                fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash()
+            getStorageKeyForFlyoverFederationInformation(
+                flyoverFederationInformation.getFlyoverFederationRedeemScriptHash()
             ),
-            fastBridgeFederationInformation,
-            BridgeSerializationUtils::serializeFastBridgeFederationInformation
+            flyoverFederationInformation,
+            BridgeSerializationUtils::serializeFlyoverFederationInformation
         );
     }
 
-    public void setFastBridgeRetiringFederationInformation(FastBridgeFederationInformation fastBridgeRetiringFederationInformation) {
+    public void setFlyoverRetiringFederationInformation(FlyoverFederationInformation flyoverRetiringFederationInformation) {
         if (activations.isActive(RSKIP293)) {
-            this.fastBridgeRetiringFederationInformation = fastBridgeRetiringFederationInformation;
+            this.flyoverRetiringFederationInformation = flyoverRetiringFederationInformation;
         }
     }
 
-    private void saveFastBridgeRetiringFederationInformation() {
-        if (fastBridgeRetiringFederationInformation == null) {
+    private void saveFlyoverRetiringFederationInformation() {
+        if (flyoverRetiringFederationInformation == null) {
             return;
         }
 
         safeSaveToRepository(
-            getStorageKeyForfastBridgeFederationInformation(
-                fastBridgeRetiringFederationInformation.getFastBridgeFederationRedeemScriptHash()
+            getStorageKeyForFlyoverFederationInformation(
+                flyoverRetiringFederationInformation.getFlyoverFederationRedeemScriptHash()
             ),
-            fastBridgeRetiringFederationInformation,
-            BridgeSerializationUtils::serializeFastBridgeFederationInformation
+            flyoverRetiringFederationInformation,
+            BridgeSerializationUtils::serializeFlyoverFederationInformation
         );
     }
 
@@ -977,9 +977,9 @@ public class BridgeStorageProvider {
 
         saveBtcBlocksIndex();
 
-        saveDerivationArgumentsHash();
-        saveFastBridgeFederationInformation();
-        saveFastBridgeRetiringFederationInformation();
+        saveFlyoverDerivationHash();
+        saveFlyoverFederationInformation();
+        saveFlyoverRetiringFederationInformation();
 
         saveReceiveHeadersLastTimestamp();
 
@@ -998,12 +998,12 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("btcBlockHeight-" + height);
     }
 
-    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
+    private DataWord getStorageKeyForFlyoverHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 
-    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
-        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash));
+    private DataWord getStorageKeyForFlyoverFederationInformation(byte[] flyoverFederationRedeemScriptHash) {
+        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(flyoverFederationRedeemScriptHash));
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {

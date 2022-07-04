@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Ignore
-public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestCase {
+public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction btcTx;
     private int blockWithTxHeight;
     private boolean shouldTransferToContract =  true;
@@ -58,14 +58,14 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction() throws VMException {
-        ExecutionStats stats = new ExecutionStats("registerFastBridgeBtcTransaction");
-        registerFastBridgeBtcTransaction_success(5000, stats);
-        registerFastBridgeBtcTransaction_surpasses_locking_cap(1000, stats);
+    public void registerFlyoverBtcTransaction() throws VMException {
+        ExecutionStats stats = new ExecutionStats("registerFlyoverBtcTransaction");
+        registerFlyoverBtcTransaction_success(5000, stats);
+        registerFlyoverBtcTransaction_surpasses_locking_cap(1000, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void registerFastBridgeBtcTransaction_success(int times, ExecutionStats stats) throws VMException {
+    private void registerFlyoverBtcTransaction_success(int times, ExecutionStats stats) throws VMException {
         AddressesBuilder.build();
 
         totalAmount = Coin.COIN.multiply(Helper.randomInRange(1, 5));
@@ -76,7 +76,7 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
         );
 
         executeAndAverage(
-                "registerFastBridgeBtcTransaction_success",
+                "registerFlyoverBtcTransaction_success",
                 times,
                 getABIEncoder(),
                 storageInitializer,
@@ -90,7 +90,7 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
         );
     }
 
-    private void registerFastBridgeBtcTransaction_surpasses_locking_cap(int times, ExecutionStats stats) throws VMException {
+    private void registerFlyoverBtcTransaction_surpasses_locking_cap(int times, ExecutionStats stats) throws VMException {
         AddressesBuilder.build();
 
         totalAmount = Coin.CENT.multiply(Helper.randomInRange(10000000, 50000000));
@@ -102,7 +102,7 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
         );
 
         executeAndAverage(
-                "registerFastBridgeBtcTransaction_success",
+                "registerFlyoverBtcTransaction_surpasses_locking_cap",
                 times,
                 getABIEncoder(),
                 storageInitializer,
@@ -149,10 +149,10 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
                 int blocksToGenerate = Helper.randomInRange(minBtcBlocks, maxBtcBlocks);
                 BtcBlock lastBlock = Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
 
-                Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
                         bridgeConstants.getGenesisFederation().getRedeemScript(),
                         Sha256Hash.wrap(
-                                getFastBridgeDerivationHash(
+                                getFLyoverDerivationHash(
                                         PegTestUtils.createHash3(1),
                                         AddressesBuilder.userRefundAddress,
                                         AddressesBuilder.lpBtcAddress,
@@ -161,10 +161,10 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
                         )
                 );
 
-                Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-                Address fastBridgeFederationAddress = Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+                Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+                Address flyoverFederationAddress = Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
 
-                btcTx = createBtcTransactionWithOutputToAddress(totalAmount, fastBridgeFederationAddress);
+                btcTx = createBtcTransactionWithOutputToAddress(totalAmount, flyoverFederationAddress);
 
                 pmt = PartialMerkleTree.buildFromLeaves(networkParameters, new byte[]{(byte) 0xff}, Arrays.asList(btcTx.getHash()));
                 List<Sha256Hash> hashes = new ArrayList<>();
@@ -188,30 +188,30 @@ public class RegisterFastBridgeBtcTransactionTest extends BridgePerformanceTestC
         return tx;
     }
 
-    private Keccak256 getFastBridgeDerivationHash(
+    private Keccak256 getFLyoverDerivationHash(
             Keccak256 derivationArgumentsHash,
             Address userRefundAddress,
             Address lpBtcAddress,
             RskAddress lbcAddress
     ) {
-        byte[] fastBridgeDerivationHashData = derivationArgumentsHash.getBytes();
+        byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
         byte[] userRefundAddressBytes = getBytesFromBtcAddress(userRefundAddress);
         byte[] lpBtcAddressBytes = getBytesFromBtcAddress(lpBtcAddress);
         byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] result = new byte[fastBridgeDerivationHashData.length +
+        byte[] result = new byte[flyoverDerivationHashData.length +
                 userRefundAddressBytes.length + lpBtcAddressBytes.length + lbcAddressBytes.length];
 
         int dstPosition = 0;
 
         System.arraycopy(
-                fastBridgeDerivationHashData,
+                flyoverDerivationHashData,
                 0,
                 result,
                 dstPosition,
-                fastBridgeDerivationHashData.length
+                flyoverDerivationHashData.length
         );
 
-        dstPosition += fastBridgeDerivationHashData.length;
+        dstPosition += flyoverDerivationHashData.length;
 
         System.arraycopy(
                 userRefundAddressBytes,

@@ -26,7 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -1108,8 +1108,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getActiveFederationCreationBlockHeight();
     }
 
-    public BigInteger registerFastBridgeBtcTransaction(Object[] args) {
-        logger.trace("registerFastBridgeBtcTransaction");
+    public BigInteger registerFlyoverBtcTransaction(Object[] args) {
+        logger.trace("registerFlyoverBtcTransaction");
 
         try {
             byte[] btcTxSerialized = (byte[]) args[0];
@@ -1134,7 +1134,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
             boolean shouldTransferToContract = (boolean) args[7];
 
-            return bridgeSupport.registerFastBridgeBtcTransaction(
+            return bridgeSupport.registerFlyoverBtcTransaction(
                 rskTx,
                 btcTxSerialized,
                 height,
@@ -1146,8 +1146,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 shouldTransferToContract
             );
         } catch (Exception e) {
-            logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            return BigInteger.valueOf(FastBridgeTxResponseCodes.GENERIC_ERROR.value());
+            logger.warn("Exception in registerFlyoverBtcTransaction", e);
+            return BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value());
         }
     }
 
