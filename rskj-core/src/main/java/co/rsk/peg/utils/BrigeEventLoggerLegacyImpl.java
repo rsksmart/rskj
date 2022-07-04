@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * Responsible for logging events triggered by BridgeContract in RLP format.
  *
  * @author kelvin.isievwore
- * @deprecated Methods included in this class are to be used only prior to the latest HF activation
+ * @deprecated Methods included in this class are to be used only prior to RSKIP146 activation
  */
 @Deprecated
 public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {

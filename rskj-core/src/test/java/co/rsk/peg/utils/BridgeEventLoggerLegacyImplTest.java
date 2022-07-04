@@ -42,13 +42,11 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,13 +58,11 @@ import static org.mockito.Mockito.when;
 
 public class BridgeEventLoggerLegacyImplTest {
 
-    private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
     private ActivationConfig.ForBlock activations;
     private List<LogInfo> eventLogs;
-    private BrigeEventLoggerLegacyImpl eventLogger;
+    private BridgeEventLogger eventLogger;
     private BridgeConstants constantsMock;
     private BtcTransaction btcTxMock;
-    private BtcTransaction btcTx;
     private Keccak256 rskTxHash;
 
     @Before
@@ -76,7 +72,6 @@ public class BridgeEventLoggerLegacyImplTest {
         constantsMock = mock(BridgeConstants.class);
         eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
-        btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
         rskTxHash = PegTestUtils.createHash3(1);
     }
 
@@ -110,15 +105,7 @@ public class BridgeEventLoggerLegacyImplTest {
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-
-        // Setup Rsk transaction
-        Transaction tx = mock(Transaction.class);
-        RskAddress sender = mock(RskAddress.class);
-        when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
-        when(tx.getSender()).thenReturn(sender);
-
-        // Act
-        eventLogger.logUpdateCollections(tx);
+        eventLogger.logUpdateCollections(any());
     }
 
     @Test
@@ -158,13 +145,7 @@ public class BridgeEventLoggerLegacyImplTest {
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogAddSignatureAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-
-        // Setup logAddSignature params
-        BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
-        when(btcTxMock.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
-
-        // Act
-        eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
+        eventLogger.logAddSignature(new BtcECKey(), btcTxMock, rskTxHash.getBytes());
     }
 
     @Test
@@ -172,6 +153,8 @@ public class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Act
+        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+
         eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
 
         commonAssertLogs(eventLogs);
@@ -199,13 +182,12 @@ public class BridgeEventLoggerLegacyImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
+        eventLogger.logReleaseBtc(btcTxMock, rskTxHash.getBytes());
     }
 
     @Test
     public void testLogCommitFederationBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-        when(constantsMock.getFederationActivationAge()).thenReturn(CONSTANTS.getFederationActivationAge());
 
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
@@ -284,49 +266,16 @@ public class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert new federation activation block number
-        Assert.assertEquals(15L + CONSTANTS.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        Assert.assertEquals(15L + constantsMock.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogCommitFederationAfterRskip146() {
         // Setup event logger
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(constantsMock.getFederationActivationAge()).thenReturn(CONSTANTS.getFederationActivationAge());
-
-        // Setup parameters for test method call
-        Block executionBlock = mock(Block.class);
-        when(executionBlock.getTimestamp()).thenReturn(15005L);
-        when(executionBlock.getNumber()).thenReturn(15L);
-
-        List<BtcECKey> oldFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
-        );
-
-        List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
-
-        Federation oldFederation = new Federation(
-            oldFederationMembers,
-            Instant.ofEpochMilli(15005L),
-            15L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        List<BtcECKey> newFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
-            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
-            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
-        );
-
-        List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
-
-        Federation newFederation = new Federation(newFederationMembers,
-            Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         // Act
-        eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
+        eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class));
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
@@ -341,17 +290,17 @@ public class BridgeEventLoggerLegacyImplTest {
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogReleaseBtcRequested() {
-        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, Coin.SATOSHI);
+        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTxMock, Coin.SATOSHI);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogRejectedPegin() {
-        eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+        eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogUnrefundablePegin() {
-        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
@@ -374,8 +323,7 @@ public class BridgeEventLoggerLegacyImplTest {
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void logBatchPegoutCreated() {
-        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
-        eventLogger.logBatchPegoutCreated(btcTx, rskTxHashes);
+        eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>());
     }
 
     /**********************************
