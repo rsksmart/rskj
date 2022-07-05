@@ -21,6 +21,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
 public class Web3HttpServerTest {
@@ -114,9 +115,12 @@ public class Web3HttpServerTest {
         server.start();
         try {
             Response response = sendJsonRpcMessage(randomPort, contentType, host);
-            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(response.body().string());
+            String responseBody = response.body().string();
+            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
 
             assertThat(response.code(), is(HttpResponseStatus.OK.code()));
+            assertThat(response.headers().get("Content-Length"), is(notNullValue()));
+            assertThat(Integer.parseInt(response.header("Content-Length")), is(responseBody.getBytes().length));
             assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
         } finally {
             server.stop();
@@ -139,7 +143,7 @@ public class Web3HttpServerTest {
         URL url = new URL("http", "localhost", port, "/");
         Request request = new Request.Builder().url(url)
                 .addHeader("Host", host)
-//                .addHeader("Accept-Encoding", "identity")
+                .addHeader("Accept-Encoding", "identity")
                 .post(requestBody).build();
         return getUnsafeOkHttpClient().newCall(request).execute();
     }
