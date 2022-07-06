@@ -61,7 +61,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -581,10 +580,13 @@ public class BridgeUtilsTest {
             networkParameters
         );
 
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
             erpFederation.getRedeemScript(),
-            500L,
+            500L
+        );
+        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+            erpRedeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
 
@@ -593,8 +595,13 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
 
-        Assert.assertTrue(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
-            bridgeConstantsRegtest, activations));
+        Assert.assertTrue(BridgeUtils.isValidPegInTx(
+            tx,
+            activeFederation,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
     }
 
     @Test
@@ -615,10 +622,13 @@ public class BridgeUtilsTest {
             networkParameters
         );
 
-        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+        Script erpRedeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
             activeFederation.getRedeemScript(),
             erpFederation.getRedeemScript(),
-            500L,
+            500L
+        );
+        Script fastBridgeErpRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+            erpRedeemScript,
             Sha256Hash.of(PegTestUtils.createHash(1).getBytes())
         );
 
@@ -627,8 +637,13 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.COIN, activeFederation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, fastBridgeErpRedeemScript);
 
-        Assert.assertFalse(BridgeUtils.isValidPegInTx(tx, activeFederation, btcContext,
-            bridgeConstantsRegtest, activations));
+        Assert.assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            activeFederation,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
     }
 
     @Test
