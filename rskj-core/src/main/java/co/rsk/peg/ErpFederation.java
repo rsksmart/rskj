@@ -65,11 +65,17 @@ public class ErpFederation extends Federation {
 
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
-            redeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
-                ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
-                activationDelay
-            );
+            redeemScript = activations.isActive(ConsensusRule.RSKIP293) ?
+                ErpFederationRedeemScriptParser.createErpRedeemScript(
+                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    activationDelay
+                ) :
+                ErpFederationRedeemScriptParser.createErpRedeemScriptDeprecated(
+                    ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
+                    ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
+                    activationDelay
+                );
         }
 
         return redeemScript;
