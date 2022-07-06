@@ -48,7 +48,8 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  */
 public class BridgeStorageProvider {
     private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET = DataWord.fromString("newFederationBtcUTXOsForTestnet");
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP = DataWord.fromString("newFederationBtcUTXOsForTestnet");
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP = DataWord.fromString("newFedBtcUTXOsForTestnetPostHop");
     private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("oldFederationBtcUTXOs");
     private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = DataWord.fromString("btcTxHashesAP");
     private static final DataWord RELEASE_REQUEST_QUEUE = DataWord.fromString("releaseRequestQueue");
@@ -157,10 +158,7 @@ public class BridgeStorageProvider {
             return newFederationBtcUTXOs;
         }
 
-        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
-        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
-            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
-        }
+        DataWord key = getStorageKeyForNewFederationBtcUtxos();
         newFederationBtcUTXOs = getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
         return newFederationBtcUTXOs;
     }
@@ -170,10 +168,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
-        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
-            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
-        }
+        DataWord key = getStorageKeyForNewFederationBtcUtxos();
         saveToRepository(key, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
@@ -1009,6 +1004,20 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
         return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash));
+    }
+
+    private DataWord getStorageKeyForNewFederationBtcUtxos() {
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+            if (activations.isActive(RSKIP284)) {
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP;
+            }
+            if (activations.isActive(RSKIP293)) {
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP;
+            }
+        }
+
+        return key;
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
