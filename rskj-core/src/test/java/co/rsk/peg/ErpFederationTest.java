@@ -30,6 +30,7 @@ import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Test.None;
 
 public class ErpFederationTest {
     private ErpFederation federation;
@@ -441,7 +442,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_before_RSKIP293_testnet_using_standard_multisig() {
         // Should validate since it's not executing the path of the script with the CSV value
         spendFromErpFed(
@@ -463,7 +464,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_before_RSKIP293_mainnet_using_standard_multisig() {
         // Should validate since it's not executing the path of the script with the CSV value
         spendFromErpFed(
@@ -474,7 +475,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_testnet_using_erp_multisig() {
         // Post RSKIP293 activation it should encode the CSV value correctly
         spendFromErpFed(
@@ -485,7 +486,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_testnet_using_standard_multisig() {
         spendFromErpFed(
             NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
@@ -495,7 +496,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_mainnet_using_erp_multisig() {
         // Post RSKIP293 activation it should encode the CSV value correctly
         spendFromErpFed(
@@ -506,7 +507,7 @@ public class ErpFederationTest {
         );
     }
 
-    @Test
+    @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_mainnet_using_standard_multisig() {
         spendFromErpFed(
             NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
