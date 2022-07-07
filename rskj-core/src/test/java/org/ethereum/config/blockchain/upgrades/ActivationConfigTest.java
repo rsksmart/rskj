@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -103,6 +102,7 @@ class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip326: hop500",
             "    rskip353: hop401",
             "    rskip357: hop401",
             "}"
