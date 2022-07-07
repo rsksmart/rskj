@@ -641,6 +641,7 @@ public class BlockExecutor {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
                 loggingDiscardedBlock(block, tx);
+                txindex++;
                 continue;
             }
 
