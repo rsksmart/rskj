@@ -136,14 +136,17 @@ public class BlockToMineBuilder {
         List<Transaction> txs = minerUtils.getAllTransactions(transactionPool);
         logger.debug("{} transaction(s) collected from pending state", txs.size());
 
-        Transaction remascTx = new RemascTransaction(parentHeader.getNumber() + 1);
+        final long blockNumber = parentHeader.getNumber() + 1;
+        Transaction remascTx = new RemascTransaction(blockNumber);
         txs.add(remascTx);
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
         RepositorySnapshot originalRepo = repositoryLocator.snapshotAt(parentHeader);
 
-        return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
+        final boolean isRskip252Active = activationConfig.isActive(ConsensusRule.RSKIP252, blockNumber);
+
+        return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Active);
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {

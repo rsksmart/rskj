@@ -99,7 +99,7 @@ public class BlockToMineBuilderTest {
         GasLimitConfig gasLimitConfig = new GasLimitConfig(0,0,false);
 
         when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(stateRootHandler.translate(any())).thenReturn(TestUtils.randomHash());

@@ -28,7 +28,8 @@ public enum NetworkUpgrade {
     PAPYRUS_200("papyrus200"),
     TWOTOTHREE("twoToThree"),
     IRIS300("iris300"),
-    HOP400("hop400");
+    HOP400("hop400"),
+    FINGERROOT500("fingerroot500");
 
     private String name;
 
