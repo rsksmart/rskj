@@ -76,7 +76,8 @@ public enum ConsensusRule {
     RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
-    RSKIP297("rskip297"); // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP326("rskip326"); // release_request_received event update to use base58 for btcDestinationAddress
 
     private String configKey;
 
