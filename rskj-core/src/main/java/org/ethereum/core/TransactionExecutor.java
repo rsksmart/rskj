@@ -93,7 +93,6 @@ public class TransactionExecutor {
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
-    private StorageRentManager storageRentManager;
     private final Block executionBlock;
 
     private VM vm;
@@ -137,7 +136,6 @@ public class TransactionExecutor {
 
         this.blockTrack = blockTrack;
         this.transactionTrack = this.blockTrack.startTracking();
-        this.storageRentManager = new StorageRentManager();
     }
 
     /**
@@ -518,7 +516,7 @@ public class TransactionExecutor {
             // pay storage rent
             logger.trace("Paying storage rent. gas: {}", gasLeftover);
 
-            storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+            storageRentResult = StorageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                     (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
                     tx.getHash().toHexString());
 

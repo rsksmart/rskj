@@ -1,7 +1,6 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
@@ -19,6 +18,9 @@ import java.util.stream.Collectors;
  * */
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute");
+
+    private StorageRentManager() {
+    }
 
     /**
      * Pay storage rent.

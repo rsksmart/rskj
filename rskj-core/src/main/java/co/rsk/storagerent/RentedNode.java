@@ -59,8 +59,7 @@ public class RentedNode extends TrackedNode {
         return nodeSize;
     }
 
-    @VisibleForTesting
-    public Long getRentTimestamp() {
+    public long getRentTimestamp() {
         return rentTimestamp;
     }
 
