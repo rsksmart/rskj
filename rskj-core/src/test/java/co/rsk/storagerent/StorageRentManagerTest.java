@@ -197,9 +197,7 @@ public class StorageRentManagerTest {
                                          MutableRepositoryTracked mockBlockTrack, MutableRepositoryTracked mockTransactionTrack, long expectedRemainingGas,
                                          long expectedPaidRent, long expectedPayableRent, long expectedRollbacksRent,
                                          long expectedRentedNodesCount, long expectedRollbackNodesCount) {
-        StorageRentManager storageRentManager = new StorageRentManager();
-
-        StorageRentResult storageRentResult = storageRentManager.pay(gasRemaining, executionBlockTimestamp,
+        StorageRentResult storageRentResult = StorageRentManager.pay(gasRemaining, executionBlockTimestamp,
                 mockBlockTrack, mockTransactionTrack, TRANSACTION_HASH);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
@@ -224,7 +222,6 @@ public class StorageRentManagerTest {
         return new TrackedNode(
             new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
             operationType,
-//                        LOADS_CONTRACT,
             TRANSACTION_HASH,
             result
         );
