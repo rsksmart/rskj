@@ -219,7 +219,7 @@ public class TraceModuleImpl implements TraceModule {
         return buildBlockTraces(block, null);
     }
 
-    private List<co.rsk.rpc.modules.trace.TransactionTrace> prepareTxTraces(Transaction tx, ProgramTraceProcessor programTraceProcessor, long blockNumber) {
+    private List<TransactionTrace> prepareTxTraces(Transaction tx, ProgramTraceProcessor programTraceProcessor, long blockNumber) {
         TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
         Objects.requireNonNull(txInfo);
         txInfo.setTransaction(tx);
@@ -263,7 +263,7 @@ public class TraceModuleImpl implements TraceModule {
         }
 
         for (Transaction tx : txList) {
-            List<co.rsk.rpc.modules.trace.TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
+            List<TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
             if (traces.isEmpty()) {
                 blockTraces.clear();
                 return Collections.emptyList();
