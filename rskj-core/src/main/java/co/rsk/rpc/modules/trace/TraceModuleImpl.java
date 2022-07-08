@@ -115,10 +115,10 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        Optional<List<TransactionTrace>> blockTraces = buildBlockTraces(block);
+        List<TransactionTrace> blockTraces = buildBlockTraces(block);
 
-        if (blockTraces.isPresent()) {
-            return OBJECT_MAPPER.valueToTree(blockTraces.get());
+        if (!blockTraces.isEmpty()) {
+            return OBJECT_MAPPER.valueToTree(blockTraces);
         }
 
         return null;
@@ -134,9 +134,11 @@ public class TraceModuleImpl implements TraceModule {
         block = block == null ? blockchain.getBestBlock() : block;
 
         while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
-            Optional<List<TransactionTrace>> builtTraces = buildBlockTraces(block, traceFilterRequest);
+            List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-            builtTraces.ifPresent(blockTracesGroup::add);
+            if (!builtTraces.isEmpty()) {
+                blockTracesGroup.add(builtTraces);
+            }
 
             block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
@@ -171,11 +173,11 @@ public class TraceModuleImpl implements TraceModule {
 
         Block block = this.blockchain.getBlockByHash(txInfo.getBlockHash());
 
-        Optional<List<TransactionTrace>> traces = buildBlockTraces(block);
+        List<TransactionTrace> traces = buildBlockTraces(block);
 
         TransactionTrace transactionTrace = null;
-        if (traces.isPresent()) {
-            transactionTrace = traces.get().get(request.getTracePositionsAsListOfIntegers().get(0));
+        if (!traces.isEmpty()) {
+            transactionTrace = traces.get(request.getTracePositionsAsListOfIntegers().get(0));
         }
         
         return OBJECT_MAPPER.valueToTree(transactionTrace);
@@ -213,7 +215,7 @@ public class TraceModuleImpl implements TraceModule {
         }
     }
 
-    private Optional<List<TransactionTrace>> buildBlockTraces(Block block) {
+    private List<TransactionTrace> buildBlockTraces(Block block) {
         return buildBlockTraces(block, null);
     }
 
@@ -231,11 +233,11 @@ public class TraceModuleImpl implements TraceModule {
         return TraceTransformer.toTraces(programTrace, txInfo, blockNumber);
     }
 
-    private Optional<List<TransactionTrace>> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
+    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block == null || block.getNumber() == 0) {
-            return Optional.of(blockTraces);
+            return blockTraces;
         }
 
         List<Transaction> txList = block.getTransactionsList();
@@ -264,13 +266,13 @@ public class TraceModuleImpl implements TraceModule {
             List<co.rsk.rpc.modules.trace.TransactionTrace> traces = prepareTxTraces(tx, programTraceProcessor, block.getNumber());
             if (traces.isEmpty()) {
                 blockTraces.clear();
-                return Optional.empty();
+                return Collections.emptyList();
             }
 
             blockTraces.addAll(traces);
         }
 
-        return Optional.of(blockTraces);
+        return blockTraces;
     }
 
     private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
