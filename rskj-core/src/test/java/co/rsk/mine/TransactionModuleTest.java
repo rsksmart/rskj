@@ -18,78 +18,24 @@
 
 package co.rsk.mine;
 
-import static org.mockito.Mockito.mock;
-
-import java.math.BigInteger;
-import java.time.Clock;
-
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.facade.EthereumImpl;
-import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.ChannelManagerImpl;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.Web3Impl;
-import org.ethereum.rpc.Web3Mocks;
-import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.sync.SyncPool;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
-
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.MiningMainchainView;
-import co.rsk.core.bc.MiningMainchainViewImpl;
-import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.core.*;
+import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleTransaction;
-import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
-import co.rsk.rpc.modules.eth.EthModuleTransactionInstant;
-import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
+import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
@@ -100,6 +46,43 @@ import co.rsk.trie.TrieStore;
 import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.EthereumImpl;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.ChannelManagerImpl;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.Web3Impl;
+import org.ethereum.rpc.Web3Mocks;
+import org.ethereum.sync.SyncPool;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.math.BigInteger;
+import java.time.Clock;
+import java.util.function.Supplier;
+
+import static org.mockito.Mockito.mock;
 
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
@@ -118,7 +101,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -145,7 +128,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
 
@@ -210,7 +193,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
@@ -239,7 +222,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -275,7 +258,9 @@ public class TransactionModuleTest {
                 transactionExecutorFactory,
                 receivedTxSignatureCache,
                 10,
-                100
+                100,
+                Mockito.mock(TxQuotaChecker.class),
+                Mockito.mock(GasPriceTracker.class)
         );
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
@@ -591,7 +576,8 @@ public class TransactionModuleTest {
                 ),
                 transactionGateway,
                 compositeEthereumListener,
-                blockchain
+                blockchain,
+                GasPriceTracker.create(blockStore)
         );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -659,7 +645,7 @@ public class TransactionModuleTest {
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(

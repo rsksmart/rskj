@@ -49,6 +49,7 @@ import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
@@ -102,6 +103,7 @@ import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -244,6 +246,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
+    private TxQuotaChecker txQuotaChecker;
+    private GasPriceTracker gasPriceTracker;
 
     private volatile boolean closed;
 
@@ -379,10 +383,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTransactionExecutorFactory(),
                     getReceivedTxSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout());
+                    rskSystemProperties.txOutdatedTimeout(),
+                    getTxQuotaChecker(),
+                    getGasPriceTracker());
         }
 
         return transactionPool;
+    }
+
+    private TxQuotaChecker getTxQuotaChecker() {
+        if (this.txQuotaChecker == null) {
+            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis);
+        }
+        return txQuotaChecker;
     }
 
     public synchronized ReceivedTxSignatureCache getReceivedTxSignatureCache() {
@@ -514,11 +527,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getCompositeEthereumListener(),
-                    getBlockchain()
+                    getBlockchain(),
+                    getGasPriceTracker()
             );
         }
 
         return rsk;
+    }
+
+    private GasPriceTracker getGasPriceTracker() {
+        if (this.gasPriceTracker == null) {
+            this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
+        }
+        return this.gasPriceTracker;
     }
 
     public synchronized ReversibleTransactionExecutor getReversibleTransactionExecutor() {
@@ -754,7 +775,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getNodeMessageHandler(),
-                    getBlockExecutor()
+                    getBlockExecutor(),
+                    getTxQuotaChecker()
             );
         }
 

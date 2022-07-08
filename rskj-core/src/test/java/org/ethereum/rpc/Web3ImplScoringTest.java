@@ -412,7 +412,7 @@ public class Web3ImplScoringTest {
                 config.getGasEstimationCap()
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),

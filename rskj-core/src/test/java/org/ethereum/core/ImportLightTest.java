@@ -28,6 +28,7 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
@@ -36,10 +37,13 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.mockito.Mockito;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Created by Anton Nashatyrev on 29.12.2015.
@@ -72,7 +76,7 @@ public class ImportLightTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

@@ -28,6 +28,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -47,6 +48,7 @@ import org.ethereum.jsontestsuite.validators.BlockHeaderValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -58,6 +60,7 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +69,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static org.ethereum.crypto.HashUtil.toPrintableHash;
 import static org.ethereum.json.Utils.parseData;
@@ -152,7 +156,7 @@ public class TestRunner {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

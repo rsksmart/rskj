@@ -23,9 +23,9 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,28 +45,37 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger("gaspricetracker");
 
-    private static final int WINDOW_SIZE = 512;
+    private static final int TX_WINDOW_SIZE = 512;
+
+    private static final int BLOCK_WINDOW_SIZE = 50;
+
+    private static final double BLOCK_COMPLETION_PERCENT_FOR_FEE_MARKET_WORKING = 0.9;
 
     private static final BigInteger BI_10 = BigInteger.valueOf(10);
     private static final BigInteger BI_11 = BigInteger.valueOf(11);
 
-    private final Coin[] window = new Coin[WINDOW_SIZE];
+    private final Coin[] txWindow = new Coin[TX_WINDOW_SIZE];
+
+    private final Double[] blockWindow = new Double[BLOCK_WINDOW_SIZE];
+
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
-    private final Blockchain blockchain;
+    private final BlockStore blockStore;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
-    private int idx = WINDOW_SIZE - 1;
+    private int txIdx = TX_WINDOW_SIZE - 1;
+
+    private int blockIdx = 0;
 
     private Coin lastVal;
 
-    public static GasPriceTracker create(Blockchain blockchain) {
-        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockchain);
-        gasPriceTracker.initializeWindowFromDB();
+    public static GasPriceTracker create(BlockStore blockStore) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockStore);
+        gasPriceTracker.initializeWindowsFromDB();
         return gasPriceTracker;
     }
 
-    private GasPriceTracker(Blockchain blockchain) {
-        this.blockchain = blockchain;
+    private GasPriceTracker(BlockStore blockStore) {
+        this.blockStore = blockStore;
     }
 
     @Override
@@ -80,6 +89,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
         defaultPrice = block.getMinimumGasPrice();
 
+        trackBlockCompleteness(block);
+
         for (Transaction tx : block.getTransactionsList()) {
             onTransaction(tx);
         }
@@ -92,20 +103,15 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             return;
         }
 
-        if (idx == -1) {
-            idx = WINDOW_SIZE - 1;
-            lastVal = null;  // recalculate only 'sometimes'
-        }
-
-        window[idx--] = tx.getGasPrice();
+        trackGasPrice(tx);
     }
 
     public synchronized Coin getGasPrice() {
-        if (window[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
+        if (txWindow[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
             return defaultPrice;
         } else {
             if (lastVal == null) {
-                Coin[] values = Arrays.copyOf(window, WINDOW_SIZE);
+                Coin[] values = Arrays.copyOf(txWindow, TX_WINDOW_SIZE);
                 Arrays.sort(values);
                 lastVal = values[values.length / 4];  // 25% percentile
             }
@@ -119,9 +125,22 @@ public class GasPriceTracker extends EthereumListenerAdapter {
         }
     }
 
-    private void initializeWindowFromDB() {
-        List<Block> blocks = getRequiredBlocksToFillWindowFromDB();
-        if (blocks.size() == 0) {
+    public synchronized boolean isFeeMarketWorking() {
+        if (blockWindow[BLOCK_WINDOW_SIZE - 1] == null) {
+            logger.warn("Not enough blocks on window, default to Fee Market not working");
+            return false;
+        }
+
+        double accumulatedCompleteness = Arrays.stream(blockWindow).reduce(0d, Double::sum);
+        double totalBlocks = blockWindow.length;
+        double avgBlockCompleteness = accumulatedCompleteness / totalBlocks;
+
+        return avgBlockCompleteness >= BLOCK_COMPLETION_PERCENT_FOR_FEE_MARKET_WORKING;
+    }
+
+    private void initializeWindowsFromDB() {
+        List<Block> blocks = getRequiredBlocksToFillWindowsFromDB();
+        if (blocks.isEmpty()) {
             return;
         }
 
@@ -129,26 +148,49 @@ public class GasPriceTracker extends EthereumListenerAdapter {
         blocks.forEach(b -> onBlock(b, Collections.emptyList()));
     }
 
-    private List<Block> getRequiredBlocksToFillWindowFromDB() {
+    private List<Block> getRequiredBlocksToFillWindowsFromDB() {
         List<Block> blocks = new ArrayList<>();
 
-        Optional<Block> block = Optional.ofNullable(blockchain.getBestBlock());
+        Optional<Block> block = Optional.ofNullable(blockStore.getBestBlock());
 
         int txCount = 0;
-        while (txCount < WINDOW_SIZE && block.isPresent()) {
+        while ((txCount < TX_WINDOW_SIZE || blocks.size() < BLOCK_WINDOW_SIZE) && block.isPresent()) {
             blocks.add(block.get());
             txCount += block.get().getTransactionsList().stream().filter(tx -> !(tx instanceof RemascTransaction)).count();
-            block = block.map(Block::getParentHash).map(Keccak256::getBytes).map(blockchain::getBlockByHash);
+            block = block.map(Block::getParentHash).map(Keccak256::getBytes).map(blockStore::getBlockByHash);
         }
 
-        if (txCount < WINDOW_SIZE) {
-            logger.warn("Not enough blocks ({}) found on DB to fill window", blocks.size());
+        if (txCount < TX_WINDOW_SIZE) {
+            logger.warn("Not enough blocks ({}) found on DB to fill tx window", blocks.size());
+        }
+
+        if (blocks.size() < BLOCK_WINDOW_SIZE) {
+            logger.warn("Not enough blocks ({}) found on DB to fill block window", blocks.size());
         }
 
         // to simulate processing order
         Collections.reverse(blocks);
 
         return blocks;
+    }
+
+    private void trackGasPrice(Transaction tx) {
+        if (txIdx == -1) {
+            txIdx = TX_WINDOW_SIZE - 1;
+            lastVal = null;  // recalculate only 'sometimes'
+        }
+        txWindow[txIdx--] = tx.getGasPrice();
+    }
+
+    private void trackBlockCompleteness(Block block) {
+        double gasUsed = block.getGasUsed();
+        double gasLimit = block.getGasLimitAsInteger().doubleValue();
+        double completeness = gasUsed / gasLimit;
+
+        if (blockIdx == BLOCK_WINDOW_SIZE) {
+            blockIdx = 0;
+        }
+        blockWindow[blockIdx++] = completeness;
     }
 
 }

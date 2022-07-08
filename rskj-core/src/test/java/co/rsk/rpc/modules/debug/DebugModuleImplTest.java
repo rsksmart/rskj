@@ -18,13 +18,20 @@
 
 package co.rsk.rpc.modules.debug;
 
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
+import co.rsk.core.RskAddress;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.handler.quota.TxQuota;
+import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.util.HexUtils;
+import co.rsk.util.TimeProvider;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
@@ -32,26 +39,24 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.rpc.Web3Mocks;
-import org.glassfish.gmbal.impl.TypeConverter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.WorldDslProcessor;
-import co.rsk.util.HexUtils;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DebugModuleImplTest {
 
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private MessageHandler messageHandler;
+    private TxQuotaChecker txQuotaChecker;
 
     private DebugModuleImpl debugModule;
 
@@ -60,8 +65,9 @@ public class DebugModuleImplTest {
         blockStore = Web3Mocks.getMockBlockStore();
         receiptStore = Web3Mocks.getMockReceiptStore();
         messageHandler = Web3Mocks.getMockMessageHandler();
+        txQuotaChecker = mock(TxQuotaChecker.class);
 
-        debugModule = new DebugModuleImpl(blockStore, receiptStore, messageHandler, Web3Mocks.getMockBlockExecutor());
+        debugModule = new DebugModuleImpl(blockStore, receiptStore, messageHandler, Web3Mocks.getMockBlockExecutor(), txQuotaChecker);
     }
 
     @Test
@@ -108,7 +114,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -134,7 +140,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -159,7 +165,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -185,7 +191,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode result = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
 
@@ -210,7 +216,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode resultWithNoOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), null);
         JsonNode resultWithEmptyOptions = debugModule.traceTransaction(transaction.getHash().toJsonString(), Collections.emptyMap());
@@ -247,7 +253,7 @@ public class DebugModuleImplTest {
 
         Block block = world.getBlockByName("b01");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         JsonNode result = debugModule.traceBlock(block.getHash().toJsonString(), null);
 
@@ -277,7 +283,7 @@ public class DebugModuleImplTest {
 
         Transaction transaction = world.getTransactionByName("tx02");
 
-        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor());
+        DebugModuleImpl debugModule = new DebugModuleImpl(world.getBlockStore(), receiptStore, messageHandler, world.getBlockExecutor(), null);
 
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStack", "true");
@@ -318,5 +324,42 @@ public class DebugModuleImplTest {
         Assert.assertTrue(structLogs.findValues("stack").isEmpty());
         Assert.assertTrue(structLogs.findValues("memory").isEmpty());
         Assert.assertTrue(structLogs.findValues("storage").isEmpty());
+    }
+
+    @Test
+    public void debug_accountTransactionQuota_whenExistingAddress_returnsItsQuota() {
+        String rawAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
+        RskAddress address = new RskAddress(rawAddress);
+
+        long initialQuota = 200L;
+
+        long creationTimestamp = 222L;
+        TimeProvider timeProvider = mock(TimeProvider.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(creationTimestamp);
+
+        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.randomHash(), initialQuota, timeProvider);
+        when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
+
+        TxQuota txQuotaRetrieved = debugModule.accountTransactionQuota(rawAddress);
+
+        Assert.assertNotNull(txQuotaRetrieved);
+
+        JsonNode node = new ObjectMapper().valueToTree(txQuotaRetrieved);
+
+        Assert.assertEquals(creationTimestamp, node.get("timestamp").asLong());
+        Assert.assertEquals(initialQuota, node.get("availableVirtualGas").asDouble(), 0);
+    }
+
+    @Test
+    public void debug_accountTransactionQuota_whenNonExistingAddress_returnsNull() {
+        RskAddress address = new RskAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
+
+        TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.randomHash(), 200L, System::currentTimeMillis);
+
+        when(txQuotaChecker.getTxQuota(address)).thenReturn(txQuotaCreated);
+
+        TxQuota txQuotaRetrieved = debugModule.accountTransactionQuota("0xbe182646a44fb90dc6501ab50d19e7c91078a35a");
+
+        Assert.assertNull(txQuotaRetrieved);
     }
 }

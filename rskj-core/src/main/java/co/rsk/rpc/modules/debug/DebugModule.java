@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.debug;
 
+import co.rsk.net.handler.quota.TxQuota;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
@@ -30,4 +31,5 @@ public interface DebugModule {
 
     JsonNode traceBlock(String blockHash, Map<String, String> traceOptions) throws Exception;
 
+    TxQuota accountTransactionQuota(String address);
 }

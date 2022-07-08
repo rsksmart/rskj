@@ -26,10 +26,12 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -69,20 +71,18 @@ public class TransactionPoolImpl implements TransactionPool {
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
 
+    private ScheduledExecutorService accountTxRateLimitCleanerTimer;
+
     private Block bestBlock;
 
     private final TxPendingValidator validator;
 
-    public TransactionPoolImpl(
-            RskSystemProperties config,
-            RepositoryLocator repositoryLocator,
-            BlockStore blockStore,
-            BlockFactory blockFactory,
-            EthereumListener listener,
-            TransactionExecutorFactory transactionExecutorFactory,
-            SignatureCache signatureCache,
-            int outdatedThreshold,
-            int outdatedTimeout) {
+    private final TxQuotaChecker quotaChecker;
+
+    private final GasPriceTracker gasPriceTracker;
+
+    @java.lang.SuppressWarnings("squid:S107")
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, GasPriceTracker gasPriceTracker) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -92,11 +92,17 @@ public class TransactionPoolImpl implements TransactionPool {
         this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
+        this.quotaChecker = txQuotaChecker;
+        this.gasPriceTracker = gasPriceTracker;
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
+        }
+
+        if (this.quotaChecker != null && this.config.isAccountTxRateLimitEnabled() && this.config.accountTxRateLimitCleanerPeriod() > 0) {
+            this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
         }
     }
 
@@ -104,17 +110,23 @@ public class TransactionPoolImpl implements TransactionPool {
     public void start() {
         processBest(blockStore.getBestBlock());
 
-        if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
-            return;
+        if (this.outdatedTimeout > 0 && this.cleanerTimer != null) {
+            this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
         }
 
-        this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+        if (this.accountTxRateLimitCleanerTimer != null) {
+            this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.config.accountTxRateLimitCleanerPeriod(), this.config.accountTxRateLimitCleanerPeriod(), TimeUnit.MINUTES);
+        }
     }
 
     @Override
     public void stop() {
         if (cleanerTimer != null) {
             cleanerTimer.shutdown();
+        }
+
+        if (accountTxRateLimitCleanerTimer != null) {
+            accountTxRateLimitCleanerTimer.shutdown();
         }
     }
 
@@ -127,9 +139,13 @@ public class TransactionPoolImpl implements TransactionPool {
         this.removeObsoleteTransactions(timestampSeconds - this.outdatedTimeout);
     }
 
-    public int getOutdatedThreshold() { return outdatedThreshold; }
+    public int getOutdatedThreshold() {
+        return outdatedThreshold;
+    }
 
-    public int getOutdatedTimeout() { return outdatedTimeout; }
+    public int getOutdatedTimeout() {
+        return outdatedTimeout;
+    }
 
     public Block getBestBlock() {
         return bestBlock;
@@ -142,18 +158,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return new PendingState(
-                currentRepository,
-                new TransactionSet(pendingTransactions),
-                (repository, tx) -> transactionExecutorFactory.newInstance(
-                        tx,
-                        0,
-                        bestBlock.getCoinbase(),
-                        repository,
-                        createFakePendingBlock(bestBlock),
-                        0
-                )
-        );
+        return new PendingState(currentRepository, new TransactionSet(pendingTransactions), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0));
     }
 
     private RepositorySnapshot getCurrentRepository() {
@@ -216,10 +221,7 @@ public class TransactionPoolImpl implements TransactionPool {
             return Optional.empty();
         }
 
-        return txsaccount
-                .stream()
-                .filter(t -> t.getNonceAsInteger().equals(next))
-                .findFirst();
+        return txsaccount.stream().filter(t -> t.getNonceAsInteger().equals(next)).findFirst();
     }
 
     private TransactionPoolAddResult internalAddTransaction(final Transaction tx) {
@@ -241,13 +243,13 @@ public class TransactionPoolImpl implements TransactionPool {
         Keccak256 hash = tx.getHash();
         logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
-
-        if (!isBumpingGasPriceForSameNonceTx(tx)) {
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+        if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
 
-        transactionBlocks.put(hash, bnumber);
+        transactionBlocks.put(hash, getCurrentBestBlockNumber());
+
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
@@ -257,6 +259,13 @@ public class TransactionPoolImpl implements TransactionPool {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
             return TransactionPoolAddResult.okQueuedTransaction(tx);
+        }
+
+        if (this.config.isAccountTxRateLimitEnabled()) {
+            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.gasPriceTracker);
+            if (!this.quotaChecker.acceptTx(tx, replacedTx.orElse(null), currentContext)) {
+                return TransactionPoolAddResult.withError("account exceeds quota");
+            }
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
@@ -277,7 +286,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!internalResult.transactionsWereAdded()) {
             return internalResult;
-        } else if(internalResult.pendingTransactionsWereAdded()) {
+        } else if (internalResult.pendingTransactionsWereAdded()) {
             pendingTransactionsAdded.add(tx);
             pendingTransactionsAdded.addAll(this.addSuccessors(tx)); // addSuccessors only retrieves pending successors
         }
@@ -287,23 +296,12 @@ public class TransactionPoolImpl implements TransactionPool {
         return TransactionPoolAddResult.ok(internalResult.getQueuedTransactionsAdded(), pendingTransactionsAdded);
     }
 
-    private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
-        Optional<Transaction> oldTxWithNonce = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream()
-                .filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger()))
-                .findFirst();
+    private boolean isBumpingGasPriceForSameNonceTx(Transaction newTx, Transaction oldTx) {
+        //oldGasPrice * (100 + priceBump) / 100
+        Coin oldGasPrice = oldTx.getGasPrice();
+        Coin gasPriceBumped = oldGasPrice.multiply(BigInteger.valueOf(config.getGasPriceBump() + 100L)).divide(BigInteger.valueOf(100));
 
-        if (oldTxWithNonce.isPresent()){
-            //oldGasPrice * (100 + priceBump) / 100
-            Coin oldGasPrice = oldTxWithNonce.get().getGasPrice();
-            Coin gasPriceBumped = oldGasPrice
-                    .multiply(BigInteger.valueOf(config.getGasPriceBump() + 100L))
-                    .divide(BigInteger.valueOf(100));
-
-            if (oldGasPrice.compareTo(tx.getGasPrice()) >= 0 || gasPriceBumped.compareTo(tx.getGasPrice()) > 0) {
-                return false;
-            }
-        }
-        return true;
+        return oldGasPrice.compareTo(newTx.getGasPrice()) < 0 && gasPriceBumped.compareTo(newTx.getGasPrice()) <= 0;
     }
 
     @Override
@@ -316,7 +314,7 @@ public class TransactionPoolImpl implements TransactionPool {
         //or else the transactions would be validated against outdated account state.
         this.bestBlock = newBlock;
 
-        if(fork != null) {
+        if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);
             }
@@ -337,8 +335,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (oldBestBlock != null) {
             BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
             return branchComparator.calculateFork(oldBestBlock, newBestBlock);
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -373,10 +370,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
             if (block < currentBlock - depth) {
                 toremove.add(entry.getKey());
-                logger.trace(
-                        "Clear outdated transaction, block.number: [{}] hash: [{}]",
-                        block,
-                        entry.getKey());
+                logger.trace("Clear outdated transaction, block.number: [{}] hash: [{}]", block, entry.getKey());
             }
         }
 
@@ -396,9 +390,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
             if (txtime <= timeSeconds) {
                 toremove.add(entry.getKey());
-                logger.trace(
-                        "Clear outdated transaction, hash: [{}]",
-                        entry.getKey());
+                logger.trace("Clear outdated transaction, hash: [{}]", entry.getKey());
             }
         }
 
@@ -458,18 +450,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
-        return blockFactory.newBlock(
-                blockFactory.getBlockHeaderBuilder()
-                    .setParentHash(best.getHash().getBytes())
-                    .setDifficulty(best.getDifficulty())
-                    .setNumber(best.getNumber() + 1)
-                    .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
-                    .setTimestamp(best.getTimestamp() + 1)
-                    .build()
-                ,
-                Collections.emptyList(),
-                Collections.emptyList()
-        );
+        return blockFactory.newBlock(blockFactory.getBlockHeaderBuilder().setParentHash(best.getHash().getBytes()).setDifficulty(best.getDifficulty()).setNumber(best.getNumber() + 1).setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE)).setTimestamp(best.getTimestamp() + 1).build(), Collections.emptyList(), Collections.emptyList());
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
@@ -478,13 +459,11 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     /**
-     * @param newTx a transaction to be added to the pending list (nonce = last pending nonce + 1)
+     * @param newTx             a transaction to be added to the pending list (nonce = last pending nonce + 1)
      * @param currentRepository
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
-    private boolean senderCanPayPendingTransactionsAndNewTx(
-            Transaction newTx,
-            RepositorySnapshot currentRepository) {
+    private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
         List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
 
         Coin accumTxCost = Coin.ZERO;
@@ -507,9 +486,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private long getTransactionCost(Transaction tx, long number) {
-        return tx.transactionCost(
-                config.getNetworkConstants(),
-                config.getActivationConfig().forBlock(number)
-        );
+        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number));
     }
+
 }

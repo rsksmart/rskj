@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -40,14 +41,17 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -224,7 +228,7 @@ public class BlockChainBuilder {
 
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

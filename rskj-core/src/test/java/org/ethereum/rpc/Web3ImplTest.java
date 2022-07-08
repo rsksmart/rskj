@@ -18,83 +18,9 @@
 
 package org.ethereum.rpc;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.Simples.SimpleMinerClient;
-import org.ethereum.rpc.Simples.SimplePeerServer;
-import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
+import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.core.bc.MiningMainchainViewImpl;
@@ -106,6 +32,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.SyncProcessor;
 import co.rsk.net.TransactionGateway;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -129,6 +56,50 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 import co.rsk.util.TestContract;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.listener.GasPriceTracker;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.dto.BlockResultDTO;
+import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.math.BigInteger;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -186,13 +157,13 @@ public class Web3ImplTest {
 
     @Test
     public void web3_sha3() throws Exception {
-                
+
     	String toHashInHex = "0x696e7465726e6574"; // 'internet' in hexa
 
         Web3 web3 = createWeb3();
 
-        String resultFromHex = web3.web3_sha3(toHashInHex);        
-        
+        String resultFromHex = web3.web3_sha3(toHashInHex);
+
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
         assertEquals("hash does not match", "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex);
@@ -201,11 +172,11 @@ public class Web3ImplTest {
 
     @Test(expected = RskJsonRpcRequestException.class)
     public void web3_sha3_expect_exception() throws Exception {
-    	
+
     	Web3 web3 = createWeb3();
-    	
-    	web3.web3_sha3("internet");        
-    	
+
+    	web3.web3_sha3("internet");
+
     }
 
     @Test
@@ -683,7 +654,7 @@ public class Web3ImplTest {
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         Web3 web3 = new Web3Impl(
                 ethMock,
                 blockchain,
@@ -861,7 +832,7 @@ public class Web3ImplTest {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -2256,7 +2227,7 @@ public class Web3ImplTest {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -2396,7 +2367,7 @@ public class Web3ImplTest {
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -2435,7 +2406,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
@@ -2443,7 +2414,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, null);
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                blockFactory, null, transactionExecutorFactory, null, 10, 100);
+                blockFactory, null, transactionExecutorFactory, null, 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         return createWeb3CallNoReturn(eth, world, transactionPool, receiptStore);
     }
 
@@ -2468,7 +2439,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
-                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
         RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
@@ -2507,7 +2478,7 @@ public class Web3ImplTest {
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -2568,7 +2539,7 @@ public class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
                 config.getGasEstimationCap());
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
