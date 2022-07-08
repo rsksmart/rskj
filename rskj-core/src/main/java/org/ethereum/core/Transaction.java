@@ -559,7 +559,9 @@ public class Transaction {
     }
 
     private boolean checkRemascTxZeroValues() {
-        if (null != getData() || null != getSignature()) {
+        byte[] currentData = getData();
+
+        if ((null != currentData && currentData.length != 0) || null != getSignature()) {
             return false;
         }
 

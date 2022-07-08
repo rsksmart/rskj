@@ -608,7 +608,7 @@ public class BlockExecutor {
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    txindex++,
+                    txindex,
                     block.getCoinbase(),
                     track,
                     block,
@@ -625,6 +625,7 @@ public class BlockExecutor {
                 }
 
                 loggingDiscardedBlock(block, tx);
+                txindex++;
                 continue;
             }
 
@@ -640,6 +641,7 @@ public class BlockExecutor {
                     return getBlockResultAndLogExecutionInterrupted(block, metric, tx);
                 }
                 loggingDiscardedBlock(block, tx);
+                txindex++;
                 continue;
             }
 
@@ -670,6 +672,7 @@ public class BlockExecutor {
             loggingExecuteTxAndReceipt(block, i, tx);
 
             i++;
+            txindex++;
 
             receiptsByTx.put(tx, receipt);
 
