@@ -144,9 +144,9 @@ public class BlockToMineBuilder {
 
         RepositorySnapshot originalRepo = repositoryLocator.snapshotAt(parentHeader);
 
-        final boolean isRskip252Active = activationConfig.isActive(ConsensusRule.RSKIP252, blockNumber);
+        final boolean isRskip252Enabled = activationConfig.isActive(ConsensusRule.RSKIP252, blockNumber);
 
-        return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Active);
+        return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice, isRskip252Enabled);
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {

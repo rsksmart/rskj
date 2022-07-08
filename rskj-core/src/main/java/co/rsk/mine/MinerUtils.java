@@ -28,7 +28,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.validators.TxGasPriceCap;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -50,8 +50,6 @@ import java.util.function.Function;
 public class MinerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
-    @VisibleForTesting
-    static final BigInteger GAS_PRICE_CAP_MULTIPLIER = BigInteger.valueOf(100);
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
         return getBitcoinMergedMiningCoinbaseTransaction(params, HexUtils.stringHexToByteArray(work.getBlockHashForMergedMining()));
@@ -196,7 +194,7 @@ public class MinerUtils {
                     continue;
                 }
 
-                if (isRskip252Enabled && isGasPriceCapSurpassed(minGasPrice, tx)) {
+                if (isRskip252Enabled && isHighGasPriced(tx, minGasPrice)) {
                     txsToRemove.add(tx);
                     logger.warn("Rejected tx={} because gas price cap was surpassed {}, removing tx from pending state.", hash, txSender);
                     continue;
@@ -233,17 +231,7 @@ public class MinerUtils {
         return tx.getGasPrice().compareTo(minGasPrice) < 0;
     }
 
-    private boolean isGasPriceCapSurpassed(Coin minGasPrice, Transaction tx) {
-        if (tx instanceof RemascTransaction) {
-            return false;
-        }
-
-        if (minGasPrice.equals(Coin.ZERO)) {
-            return false;
-        }
-
-        Coin gasPriceCap = minGasPrice.multiply(GAS_PRICE_CAP_MULTIPLIER);
-
-        return tx.getGasPrice().compareTo(gasPriceCap) > 0;
+    private boolean isHighGasPriced(Transaction tx, Coin minGasPrice) {
+        return TxGasPriceCap.FOR_BLOCK.isSurpassed(tx, minGasPrice);
     }
 }

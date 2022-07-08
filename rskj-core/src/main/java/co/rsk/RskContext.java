@@ -97,7 +97,10 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
-import org.ethereum.datasource.*;
+import org.ethereum.datasource.CacheSnapshotHandler;
+import org.ethereum.datasource.DataSourceWithCache;
+import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImplV2;
@@ -1051,6 +1054,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             );
             blockValidationRule = new BlockValidatorRule(
                     new TxsMinGasPriceRule(),
+                    new BlockTxsMaxGasPriceRule(rskSystemProperties.getActivationConfig()),
                     new BlockUnclesValidationRule(
                             getBlockStore(),
                             commonConstants.getUncleListLimit(),

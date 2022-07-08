@@ -16,42 +16,47 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.handler.txvalidator;
+package co.rsk.validators;
 
 import co.rsk.core.Coin;
-import co.rsk.net.TransactionValidationResult;
-import co.rsk.validators.TxGasPriceCap;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
+import java.util.List;
 
 /**
- * Validates that transaction's gas price is below the maximum allowed
+ * Validates that all block's transactions have lower gas price than the maximum allowed
  */
-public class TxValidatorMaximumGasPriceValidator implements TxValidatorStep {
+public class BlockTxsMaxGasPriceRule implements BlockValidationRule {
 
+    private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private final ActivationConfig activationConfig;
 
-    public TxValidatorMaximumGasPriceValidator(ActivationConfig activationConfig) {
+    public BlockTxsMaxGasPriceRule(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        boolean isRskip252Enabled = activationConfig.isActive(ConsensusRule.RSKIP252, bestBlockNumber);
+    public boolean isValid(Block block) {
+        boolean isRskip252Enabled = activationConfig.isActive(ConsensusRule.RSKIP252, block.getNumber());
         if (!isRskip252Enabled) {
-            return TransactionValidationResult.ok();
+            return true;
         }
 
-        if (TxGasPriceCap.FOR_TRANSACTION.isSurpassed(tx, minimumGasPrice)) {
-            return TransactionValidationResult.withError("transaction's gas price exceeds cap");
+        Coin minGasPrice = block.getMinimumGasPrice();
+
+        List<Transaction> txs = block.getTransactionsList();
+        for (Transaction tx : txs) {
+            if (TxGasPriceCap.FOR_BLOCK.isSurpassed(tx, minGasPrice)) {
+                logger.warn("Tx gas price={} is above the cap. Block={}, Tx={}", tx.getGasPrice(), block.getHash(), tx.getHash());
+                return false;
+            }
         }
 
-        return TransactionValidationResult.ok();
+        return true;
     }
-
 }

@@ -162,19 +162,19 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void whenRskip252DisabledAndCapSurpassedThenTransactionIncluded() {
+    public void filterTransactions_whenRskip252DisabledThenTxIncludedRegardlessGasPrice() {
         long minGasPriceRef = 2L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
-        long capGasPrice = minGasPriceRef * MinerUtils.GAS_PRICE_CAP_MULTIPLIER.longValue();
+        long capGasPrice = minGasPriceRef * 100;
 
-        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1, 1, 0, 0);
-        Transaction txSameGasPriceAsCap = Tx.create(config, 0, 50000, capGasPrice, 1, 0, 1);
+        Transaction txLessGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
+        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1_000_000_000_000L, 1, 0, 1);
         List<Transaction> txs = new LinkedList<>();
+        txs.add(txLessGasPriceThanCap);
         txs.add(txMoreGasPriceThanCap);
-        txs.add(txSameGasPriceAsCap);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
+        accountNounces.put(txLessGasPriceThanCap.getSender(), BigInteger.ZERO);
         accountNounces.put(txMoreGasPriceThanCap.getSender(), BigInteger.ZERO);
-        accountNounces.put(txSameGasPriceAsCap.getSender(), BigInteger.ZERO);
         Repository repository = Mockito.mock(Repository.class);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
@@ -185,70 +185,26 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void whenRskip252EnabledAndMinGasPriceZeroThenTransactionIncludedRegardlessGasPrice() {
-        long minGasPriceRef = 0L;
-        Coin minGasPrice = Coin.valueOf(minGasPriceRef);
-        long txGasPrice = minGasPriceRef + 100_000L;
-
-        Transaction tx = Tx.create(config, 0, 50000, txGasPrice, 1, 0, 0);
-        List<Transaction> txs = new LinkedList<>();
-        txs.add(tx);
-        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
-        accountNounces.put(tx.getSender(), BigInteger.ZERO);
-        Repository repository = Mockito.mock(Repository.class);
-
-        LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true);
-
-        Assert.assertEquals(1, res.size());
-        Assert.assertEquals(0, txsToRemove.size());
-    }
-
-    @Test
-    public void whenRskip252EnabledAndCapNotSurpassedThenTransactionIncluded() {
+    public void filterTransactions_whenRskip252EnabledThenTxWithMoreGasPriceThanCapExcluded() {
         long minGasPriceRef = 2L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
-        long capGasPrice = minGasPriceRef * MinerUtils.GAS_PRICE_CAP_MULTIPLIER.longValue();
+        long capGasPrice = minGasPriceRef * 100;
 
         Transaction txLessGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice - 1, 1, 0, 0);
-        Transaction txSameGasPriceAsCap = Tx.create(config, 0, 50000, capGasPrice, 1, 0, 1);
+        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1, 1, 0, 1);
         List<Transaction> txs = new LinkedList<>();
         txs.add(txLessGasPriceThanCap);
-        txs.add(txSameGasPriceAsCap);
+        txs.add(txMoreGasPriceThanCap);
         Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
         accountNounces.put(txLessGasPriceThanCap.getSender(), BigInteger.ZERO);
-        accountNounces.put(txSameGasPriceAsCap.getSender(), BigInteger.ZERO);
-        Repository repository = Mockito.mock(Repository.class);
-
-        LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true);
-
-        Assert.assertEquals(2, res.size());
-        Assert.assertEquals(0, txsToRemove.size());
-    }
-
-    @Test
-    public void whenRskip252EnabledAndCapReachedThenTransactionExcluded() {
-        long minGasPriceRef = 2L;
-        Coin minGasPrice = Coin.valueOf(minGasPriceRef);
-        long capGasPrice = minGasPriceRef * MinerUtils.GAS_PRICE_CAP_MULTIPLIER.longValue();
-
-        Transaction txSameGasPriceAsCap = Tx.create(config, 0, 50000, capGasPrice, 1, 0, 1);
-        Transaction txMoreGasPriceThanCap = Tx.create(config, 0, 50000, capGasPrice + 1, 1, 0, 0);
-
-        List<Transaction> txs = new LinkedList<>();
-        txs.add(txMoreGasPriceThanCap);
-        txs.add(txSameGasPriceAsCap);
-        Map<RskAddress, BigInteger> accountNounces = new HashMap<>();
         accountNounces.put(txMoreGasPriceThanCap.getSender(), BigInteger.ZERO);
-        accountNounces.put(txSameGasPriceAsCap.getSender(), BigInteger.ZERO);
         Repository repository = Mockito.mock(Repository.class);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = minerUtils.filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice, true);
 
         Assert.assertEquals(1, res.size());
-        Assert.assertEquals(txSameGasPriceAsCap, res.get(0));
+        Assert.assertEquals(txLessGasPriceThanCap, res.get(0));
         Assert.assertEquals(1, txsToRemove.size());
         Assert.assertEquals(txMoreGasPriceThanCap, txsToRemove.get(0));
     }

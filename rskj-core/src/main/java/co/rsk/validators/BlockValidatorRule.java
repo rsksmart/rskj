@@ -11,6 +11,7 @@ public class BlockValidatorRule implements BlockValidationRule {
     private final BlockCompositeRule blockCompositeRule;
 
     public BlockValidatorRule(TxsMinGasPriceRule txsMinGasPriceRule,
+                              BlockTxsMaxGasPriceRule blockTxsMaxGasPriceRule,
                               BlockUnclesValidationRule blockUnclesValidationRule,
                               BlockRootValidationRule blockRootValidationRule,
                               ProofOfWorkRule proofOfWorkRule,
@@ -18,8 +19,9 @@ public class BlockValidatorRule implements BlockValidationRule {
                               BlockTimeStampValidationRule blockTimeStampValidationRule,
                               GasLimitRule gasLimitRule,
                               ExtraDataRule extraDataRule,
-                              ForkDetectionDataRule forkDetectionDataRule ) {
+                              ForkDetectionDataRule forkDetectionDataRule) {
         blockCompositeRule = new BlockCompositeRule(txsMinGasPriceRule,
+                blockTxsMaxGasPriceRule,
                 blockUnclesValidationRule,
                 blockRootValidationRule,
                 proofOfWorkRule,
