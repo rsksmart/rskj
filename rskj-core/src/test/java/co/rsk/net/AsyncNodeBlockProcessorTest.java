@@ -156,7 +156,7 @@ public class AsyncNodeBlockProcessorTest {
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
         Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
@@ -197,7 +197,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -241,12 +241,12 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks) {
             BlockProcessResult blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
-        
+
         if (blockToWait != null) {
             listener.waitForBlock(blockToWait.getHash());
         }
@@ -286,7 +286,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -294,7 +294,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -340,7 +340,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -348,7 +348,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -376,7 +376,7 @@ public class AsyncNodeBlockProcessorTest {
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        Assert.assertFalse(processor.hasBetterBlockToSync());
+        Assert.assertFalse(processor.isReadyToAcceptBlocks());
     }
 
     @Test(timeout = WAIT_TIME)
@@ -400,7 +400,7 @@ public class AsyncNodeBlockProcessorTest {
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -442,7 +442,7 @@ public class AsyncNodeBlockProcessorTest {
             Block b = blocks.get(9 - k);
             blockProcessResult = processor.processBlock(null, b);
             Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -486,7 +486,7 @@ public class AsyncNodeBlockProcessorTest {
                 Block b = blocks.get(9 - k);
                 blockProcessResult = processor.processBlock(null, b);
                 Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-                
+
                 if (blockProcessResult.isScheduledForProcessing()) {
                     blockToWait = b;
                 }
@@ -497,11 +497,11 @@ public class AsyncNodeBlockProcessorTest {
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = genesis;
         }
-        
+
         Block block4 = blocks.get(4);
         blockProcessResult = processor.processBlock(null, block4);
         Assert.assertFalse("Block #" + block4.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = blocks.get(4);
         }
@@ -543,7 +543,7 @@ public class AsyncNodeBlockProcessorTest {
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
         Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
@@ -553,7 +553,7 @@ public class AsyncNodeBlockProcessorTest {
 
         blockProcessResult = processor.processBlock(null, parent);
         Assert.assertFalse("Block #" + parent.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(parent.getHash());
         }

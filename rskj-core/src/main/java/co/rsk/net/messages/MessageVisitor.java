@@ -177,11 +177,11 @@ public class MessageVisitor {
     }
 
     public void apply(NewBlockHashesMessage message) {
-        if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+        if (blockProcessor.isReadyToAcceptBlocks()) {
+            blockProcessor.processNewBlockHashesMessage(sender, message);
             return;
         }
-        blockProcessor.processNewBlockHashesMessage(sender, message);
+        loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
     }
 
     public void apply(TransactionsMessage message) {

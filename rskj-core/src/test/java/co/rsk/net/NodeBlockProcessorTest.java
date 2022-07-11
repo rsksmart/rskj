@@ -246,7 +246,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        Assert.assertFalse(processor.hasBetterBlockToSync());
+        Assert.assertFalse(processor.isReadyToAcceptBlocks());
     }
 
     @Test @Ignore("Ignored when Process status deleted on block processor")

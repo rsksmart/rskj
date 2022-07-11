@@ -386,6 +386,11 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public boolean isReadyToAcceptBlocks() {
+        return blockSyncService.isReadyToAcceptBlocks();
+    }
+
+    @Override
     public boolean hasBetterBlockToSync() {
         return blockSyncService.hasBetterBlockToSync();
     }

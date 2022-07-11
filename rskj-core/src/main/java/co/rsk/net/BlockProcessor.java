@@ -46,6 +46,8 @@ public interface BlockProcessor {
 
     boolean hasBlockInSomeBlockchain(byte[] hash);
 
+    boolean isReadyToAcceptBlocks();
+
     boolean hasBetterBlockToSync();
 
     boolean isAdvancedBlock(long number);
