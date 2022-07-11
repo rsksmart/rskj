@@ -339,16 +339,31 @@ class BridgeEventLoggerImplTest {
 
 
     @Test
-    void testLogReleaseBtcRequestReceived() {
+    void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "1234".getBytes();
+        byte[] btcDestinationAddress = "6bf06473af5f595cf97702229b007e50d6cfba83".getBytes();
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived_legacy(sender, btcDestinationAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+    }
+
+    @Test
+    public void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
+        String sender = "0x00000000000000000000000000000000000000";
+        String btcDestAddress = "1AqjHHMU34paaNGh23R7kM6SwVfrhNeJoJ";
+        Coin amount = Coin.COIN;
+
+        eventLogger.logReleaseBtcRequestReceived(sender, btcDestAddress, amount);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestAddress, amount.value});
     }
 
 

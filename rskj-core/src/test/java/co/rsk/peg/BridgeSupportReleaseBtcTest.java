@@ -90,7 +90,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -105,7 +105,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -121,7 +121,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, times(0)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -142,7 +142,7 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -162,7 +162,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         verify(eventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, never()).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -217,7 +217,7 @@ class BridgeSupportReleaseBtcTest {
             any(BtcTransaction.class),
             any(Coin.class)
         );
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, times(1)).logUpdateCollections(any());
     }
 
@@ -276,7 +276,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(2, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
         verify(eventLogger, times(1)).logUpdateCollections(any());
     }
@@ -306,7 +306,7 @@ class BridgeSupportReleaseBtcTest {
 
         Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
 
         Assertions.assertEquals(2, logInfo.size());
 
@@ -358,7 +358,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived_legacy(any(), any(), any());
     }
 
     @Test
@@ -384,7 +384,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -408,7 +408,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(1, logInfo.size());
-        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -434,7 +434,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(1, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived_legacy(any(), any(), any());
     }
 
     @Test
@@ -996,7 +996,7 @@ class BridgeSupportReleaseBtcTest {
         Assertions.assertEquals(shouldPegout ? 1 : 0, provider.getReleaseRequestQueue().getEntries().size());
 
         Assertions.assertEquals(1, logInfo.size());
-        verify(eventLogger, shouldPegout ? times(1) : never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, shouldPegout ? times(1) : never()).logReleaseBtcRequestReceived_legacy(any(), any(), any());
         ArgumentCaptor<RejectedPegoutReason> argumentCaptor = ArgumentCaptor.forClass(RejectedPegoutReason.class);
         verify(eventLogger, shouldPegout ? never() : times(1)).logReleaseBtcRequestRejected(any(), any(), argumentCaptor.capture());
         if (!shouldPegout) {
