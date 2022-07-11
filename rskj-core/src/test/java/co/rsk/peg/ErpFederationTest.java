@@ -18,15 +18,25 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.resources.TestConstants;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -151,6 +161,61 @@ public class ErpFederationTest {
         );
 
         Assert.assertEquals(ERP_KEYS, federationWithUncompressedKeys.getErpPubKeys());
+    }
+
+    static class RawGeneratedRedeemScript {
+        List<BtcECKey> mainFed;
+        List<BtcECKey> emergencyFed;
+        Long timelock;
+        Script script;
+
+
+        @JsonCreator
+        public RawGeneratedRedeemScript(@JsonProperty("mainFed") List<String> mainFed,
+                                        @JsonProperty("emergencyFed") List<String> emergencyFed,
+                                        @JsonProperty("timelock") Long timelock,
+                                        @JsonProperty("script") String script) {
+            this.mainFed = parseFed(mainFed);
+            this.emergencyFed = parseFed(emergencyFed);
+            this.timelock = timelock;
+            this.script = new Script(Hex.decode(script));
+        }
+
+        private List<BtcECKey> parseFed(List<String> fed) {
+            return fed.stream().map(Hex::decode).map(BtcECKey::fromPublicOnly).collect(Collectors.toList());
+        }
+    }
+
+    @Test
+    public void getErpRedeemScript_compareOtherImplementation() throws IOException {
+
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        byte[] rawRedeemScripts;
+        try {
+            rawRedeemScripts = Files.readAllBytes(Paths.get("src/test/resources/redeemScripts.json"));
+        } catch (IOException e) {
+            System.out.println("redeemScripts.json file not found");
+            throw(e);
+        }
+
+        RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
+        for (RawGeneratedRedeemScript generatedScript :  generatedScripts) {
+            Federation erpFederation = new ErpFederation(
+                    FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
+                    ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                    0L,
+                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+                    generatedScript.emergencyFed,
+                    generatedScript.timelock,
+                    activations
+            );
+
+            Script rskjScript = erpFederation.getRedeemScript();
+            Script alternativeScript = generatedScript.script;
+            Assert.assertEquals(alternativeScript, rskjScript);
+        }
+
     }
 
     @Test(expected = VerificationException.class)
