@@ -39,7 +39,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -180,7 +179,7 @@ public class ErpFederationTest {
         }
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
-        for (RawGeneratedRedeemScript generatedScript :  generatedScripts) {
+        for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             Federation erpFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
