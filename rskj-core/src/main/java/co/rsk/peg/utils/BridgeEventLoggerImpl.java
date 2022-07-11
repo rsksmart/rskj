@@ -240,7 +240,17 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+    public void logReleaseBtcRequestReceived_legacy(String sender, byte[] btcDestinationAddress, Coin amount) {
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(btcDestinationAddress, amount.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    @Override
+    public void logReleaseBtcRequestReceived(String sender, String btcDestinationAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
