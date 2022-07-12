@@ -36,8 +36,8 @@ repositories {
     }
 }
 
-sourceCompatibility = 8
-targetCompatibility = 8
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
@@ -163,14 +163,6 @@ javadoc {
 
 def generatedResources = "$buildDir/generated-resources"
 
-sourceSets {
-    main {
-        resources {
-            srcDirs += generatedResources
-        }
-    }
-}
-
 publishing {
     publications {
         rskj(MavenPublication) {
@@ -190,10 +182,6 @@ publishing {
 
 task generateResources {
     def buildInfoFile = 'build-info.properties'
-
-    // This line was added, because this file is not getting overwritten in Mac M1 machines by this task.
-    // For now we are deleting the file and adding it again.
-    delete "${generatedResources}/${buildInfoFile}"
 
     doLast {
         mkdir generatedResources
@@ -218,10 +206,7 @@ task javadocJar(type: Jar) {
 }
 
 jar {
-    def prevDuplicateStrategy = duplicatesStrategy
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     dependsOn 'generateResources'
-    duplicatesStrategy = prevDuplicateStrategy
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
