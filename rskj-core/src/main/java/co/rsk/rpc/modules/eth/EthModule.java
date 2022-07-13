@@ -18,32 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static java.util.Arrays.copyOfRange;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionExecutor;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.converters.CallArgumentsToByteArray;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.ProgramResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -57,6 +31,26 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.converters.CallArgumentsToByteArray;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.GasCost;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+
+import static java.util.Arrays.copyOfRange;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 // TODO add all RPC methods
 public class EthModule
@@ -180,6 +174,10 @@ public class EthModule
         long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
                 reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
                 reversibleExecutionResult.getMaxGasUsed();
+
+        if (reversibleExecutionResult.isCallWithValuePerformed()) {
+            estimatedGas += GasCost.STIPEND_CALL;
+        }
 
         return HexUtils.toQuantityJsonHex(estimatedGas);
     }

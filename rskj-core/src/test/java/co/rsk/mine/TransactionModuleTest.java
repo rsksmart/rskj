@@ -66,12 +66,12 @@ import org.ethereum.net.server.ChannelManagerImpl;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -80,7 +80,6 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
-import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
 
@@ -282,36 +281,36 @@ public class TransactionModuleTest {
         BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
         RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
         int gasLimit = 5000000; // start with 5M
-        int consumed = checkEstimateGas(callCallWithValue, 33472,gasLimit,srcAddr,contractAddress,web3, repository);
+        int consumed = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, gasLimit, srcAddr, contractAddress, web3, repository);
 
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
         // differentiate between OOG and success.
-        int consumed2 = checkEstimateGas(callCallWithValue,33472,consumed+1, srcAddr,contractAddress,web3, repository);
+        int consumed2 = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
 
-        Assert.assertEquals(consumed,consumed2);
+        Assert.assertEquals(consumed, consumed2);
 
-        consumed = checkEstimateGas(callUnfill, 46942, gasLimit,srcAddr,contractAddress,web3, repository);
-        consumed2 = checkEstimateGas(callUnfill, 46942, consumed+1,srcAddr,contractAddress,web3, repository);
+        consumed = checkEstimateGas(callUnfill, 46942, gasLimit, srcAddr, contractAddress, web3, repository);
+        consumed2 = checkEstimateGas(callUnfill, 46942, consumed + 1, srcAddr, contractAddress, web3, repository);
 
-        Assert.assertEquals(consumed,consumed2);
+        Assert.assertEquals(consumed, consumed2);
     }
 
     // We check that the transaction does not fail!
     // This is clearly missing for estimateGas. It should return a tuple
     // (success,gasConsumed)
-    public int checkEstimateGas(int method,int expectedValue,int gasLimit,
-                                 RskAddress srcAddr,RskAddress contractAddress,Web3Impl web3,RepositorySnapshot repository) {
+    public int checkEstimateGas(int method, long expectedValue, long gasLimit,
+                                RskAddress srcAddr, RskAddress contractAddress, Web3Impl web3, RepositorySnapshot repository) {
         // If expected value given is the gasLimit we must fail because estimateGas cannot
         // differentiate between transaction failure (OOG) and success.
-        Assert.assertNotEquals(expectedValue,gasLimit);
+        Assert.assertNotEquals(expectedValue, gasLimit);
 
-        CallArguments args = getContractCallTransactionParameters(method,gasLimit,srcAddr,contractAddress,web3, repository);
+        CallArguments args = getContractCallTransactionParameters(method, gasLimit, srcAddr, contractAddress, repository);
         String gas = web3.eth_estimateGas(args);
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
-        BigInteger gasReturned =BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
+        BigInteger gasReturned = BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
         int gasReturnedInt = gasReturned.intValueExact();
-        Assert.assertNotEquals(gasReturnedInt,gasLimit);
+        Assert.assertNotEquals(gasReturnedInt, gasLimit);
         Assert.assertEquals(expectedValue, gasReturnedInt);
         return gasReturnedInt;
     }
@@ -346,9 +345,8 @@ public class TransactionModuleTest {
         return txInBlock;
     }
 
-    private String sendContractCreationTransaction(RskAddress srcaddr,Web3Impl web3, RepositorySnapshot repository) {
-
-        CallArguments args = getContractCreationTransactionParameters(srcaddr,web3, repository);
+    private String sendContractCreationTransaction(RskAddress srcaddr, Web3Impl web3, RepositorySnapshot repository) {
+        CallArguments args = getContractCreationTransactionParameters(srcaddr, web3, repository);
 
         return web3.eth_sendTransaction(args);
     }
@@ -400,7 +398,7 @@ public class TransactionModuleTest {
     }
     //////////////////////////////// */
     private CallArguments getContractCreationTransactionParameters(
-            RskAddress addr1,Web3Impl web3, RepositorySnapshot repository) {
+            RskAddress addr1, Web3Impl web3, RepositorySnapshot repository) {
 
         BigInteger value = BigInteger.valueOf(7);
         BigInteger gasPrice = BigInteger.valueOf(8);
@@ -418,18 +416,19 @@ public class TransactionModuleTest {
 
         return args;
     }
-    public final int callUnfill =0;
+
+    public final int callUnfill = 0;
     public final int callCallWithValue = 1;
 
-    private CallArguments getContractCallTransactionParameters(
-            int methodToCall,int gasLimitInt,RskAddress addr1,RskAddress destContract,Web3Impl web3, RepositorySnapshot repository) {
+    private CallArguments getContractCallTransactionParameters(int methodToCall, long gasLimitInt, RskAddress addr1,
+                                                               RskAddress destContract, RepositorySnapshot repository) {
 
         BigInteger value;
         BigInteger gasPrice = BigInteger.valueOf(8);
         BigInteger gasLimit = BigInteger.valueOf(gasLimitInt);
-        String data ="";
+        String data = "";
         byte[] encoded = null;
-        if (methodToCall==callUnfill) {
+        if (methodToCall == callUnfill) {
             value = BigInteger.valueOf(0);
             CallTransaction.Function func = CallTransaction.Function.fromSignature(
                     "unfill",
@@ -532,7 +531,7 @@ public class TransactionModuleTest {
                                                       TransactionPool transactionPool,
                                                       BlockStore blockStore,
                                                       TransactionGateway transactionGateway,
-                                                      TransactionExecutorFactory transactionExecutorFactory){
+                                                      TransactionExecutorFactory transactionExecutorFactory) {
         StateRootHandler stateRootHandler = createStateRootHandler();
         return internalCreateEnvironment(
                 blockchain,

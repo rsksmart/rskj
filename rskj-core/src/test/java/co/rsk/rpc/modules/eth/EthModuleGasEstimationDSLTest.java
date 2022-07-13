@@ -19,18 +19,12 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.FileNotFoundException;
-import java.math.BigInteger;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.TransactionReceipt;
@@ -44,17 +38,17 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslProcessorException;
-import co.rsk.util.HexUtils;
+import java.io.FileNotFoundException;
+import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.junit.Assert.*;
 
 public class EthModuleGasEstimationDSLTest {
 
-    public static final long BLOCK_GAS_LIMIT = new TestSystemProperties().getTargetGasLimit();
-    private ProgramResult localCallResult;
+    private static final long BLOCK_GAS_LIMIT = new TestSystemProperties().getTargetGasLimit();
 
     @Test
     public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
@@ -103,7 +97,7 @@ public class EthModuleGasEstimationDSLTest {
 
     /**
      * A contract with an internal CALL with value transfer, it should take into account the STIPEND_CALL amount
-     * */
+     */
     @Test
     public void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValue.txt");
@@ -160,13 +154,13 @@ public class EthModuleGasEstimationDSLTest {
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
     /**
      * A contract with already initialized storage cells, the estimation should take into account the storage refunds
-     * */
+     */
     @Test
     public void testEstimateGas_storageRefunds() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/updateStorage.txt");
@@ -207,7 +201,7 @@ public class EthModuleGasEstimationDSLTest {
 
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
-        assertTrue( 0 < clearStorageGasUsed && clearStorageGasUsed < initStorageGasUsed);
+        assertTrue(0 < clearStorageGasUsed && clearStorageGasUsed < initStorageGasUsed);
         assertTrue(clearStoreageEstimatedGas < initStorageGasUsed);
         assertTrue(clearStoreageEstimatedGas > clearStorageGasUsed);
         assertEquals(clearStoreageEstimatedGas,
@@ -272,7 +266,7 @@ public class EthModuleGasEstimationDSLTest {
 
     /**
      * Test if a user can estimate a transaction that exceeds the block limit
-     * */
+     */
     @Test
     public void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
@@ -302,7 +296,7 @@ public class EthModuleGasEstimationDSLTest {
 
     /**
      * A contract call containing one storage refund + one call with value
-     * */
+     */
     @Test
     public void estimateGas_callWithValuePlusSStoreRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValuePlusSstoreRefund.txt");
@@ -331,7 +325,7 @@ public class EthModuleGasEstimationDSLTest {
 
         long estimatedGas = estimateGas(eth, args);
         assertTrue(estimatedGas > callConstantGasUsed);
-        assertEquals(callConstant.getMaxGasUsed(), estimatedGas);
+        assertEquals(callConstant.getMaxGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
         assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
@@ -341,12 +335,12 @@ public class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
     /**
-     * Sending one rBTC across three contracts, they will perfomrm 3 CALLs with value.
+     * Sending one rBTC across three contracts, they will perform 3 CALLs with value.
      * NOTE: each nested call retains 10000 gas to emit events
      */
     @Test
@@ -407,24 +401,166 @@ public class EthModuleGasEstimationDSLTest {
 
         assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
-        assertEquals(callConstant.getGasUsed(), estimatedGas);
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        assertEquals(callConstantGasUsed, estimatedGas);
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * One contract makes a CALL to the second one without value, which then makes a CALL with value to third one
+     * NOTE: subsequent CALL with value should increase gas estimation by stipend of 2300 gas units
+     * NOTE 2: sequence if calls:
+     * [USER] -call-without-value-> [CONTRUCT #1] -call-without-value-> [CONTRUCT #2] -call-with-value-> [CONTRUCT #3]
+     */
+    @Test
+    public void estimateGas_subsequentCallWithValueAndGasStipendCase1() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/subsequentCallWithValueCase1.txt");
+
+        TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
+        byte[] status = contractDeployA.getStatus();
+
+        assertNotNull(status);
+        assertEquals(1, status.length);
+        assertEquals(0x01, status[0]);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+
+        TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
+        byte[] status2 = contractDeployB.getStatus();
+
+        assertNotNull(status2);
+        assertEquals(1, status2.length);
+        assertEquals(0x01, status2[0]);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+
+        TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
+        byte[] status3 = contractDeployC.getStatus();
+
+        assertNotNull(status3);
+        assertEquals(1, status3.length);
+        assertEquals(0x01, status3[0]);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        // call callNextAddress, it should start the nested calls
+        final CallArguments args = new CallArguments();
+        args.setTo(contractAddressA);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(7));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("0x18d3af63"); // callNextAddress()
+
+        ProgramResult callConstant = eth.callConstant(args, block);
+        List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
+
+        assertEquals(internalTransactions.get(internalTransactions.size() - 1).getValue(), Coin.valueOf(1000));
+        assertEquals(2, internalTransactions.size());
+        assertEquals(2, callConstant.getLogInfoList().size());
+        assertEvents(callConstant, "NestedCallWithoutValue", 1);
+        assertEvents(callConstant, "NestedCallWithValue", 1);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
+        assertTrue(callConstant.isCallWithValuePerformed());
+
+        long estimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
+
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * One contract makes a CALL to the second one without value, which then makes a CALL with value to third one
+     * NOTE: subsequent CALL with value should increase gas estimation by stipend of 2300 gas units
+     * NOTE 2: sequence if calls:
+     * [USER] -call-without-value-> [CONTRUCT #1] -call-with-value-> [CONTRUCT #2] -call-with-value-> [CONTRUCT #3]
+     */
+    @Test
+    public void estimateGas_subsequentCallWithValueAndGasStipendCase2() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/subsequentCallWithValueCase2.txt");
+
+        TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
+        byte[] status = contractDeployA.getStatus();
+
+        assertNotNull(status);
+        assertEquals(1, status.length);
+        assertEquals(0x01, status[0]);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+
+        TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
+        byte[] status2 = contractDeployB.getStatus();
+
+        assertNotNull(status2);
+        assertEquals(1, status2.length);
+        assertEquals(0x01, status2[0]);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+
+        TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
+        byte[] status3 = contractDeployC.getStatus();
+
+        assertNotNull(status3);
+        assertEquals(1, status3.length);
+        assertEquals(0x01, status3[0]);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        // call callNextAddress, it should start the nested calls
+        final CallArguments args = new CallArguments();
+        args.setTo(contractAddressA);
+        args.setValue(HexUtils.toQuantityJsonHex(0));
+        args.setNonce(HexUtils.toQuantityJsonHex(9));
+        args.setGas(HexUtils.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("0x18d3af63"); // callNextAddress()
+
+        ProgramResult callConstant = eth.callConstant(args, block);
+        List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
+
+        assertEquals(internalTransactions.get(internalTransactions.size() - 1).getValue(), Coin.valueOf(1000));
+        assertEquals(2, internalTransactions.size());
+        assertEquals(2, callConstant.getLogInfoList().size());
+        assertEvents(callConstant, "NestedCallWithoutValue", 0);
+        assertEvents(callConstant, "NestedCallWithValue", 2);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
+        assertTrue(callConstant.isCallWithValuePerformed());
+
+        long estimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
+
+        assertEquals(callConstant.getGasUsed() + GasCost.STIPEND_CALL, estimatedGas);
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
     /**
      * Send 1 rBTC accross three contracts, then the last contract frees a storage cell and does a CALL with value
      * NOTE: each nested call retains 10000 gas to emit events
-     * */
+     */
     @Test
     public void estimateGas_nestedCallsWithValueGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueAndStorageRefund.txt");
@@ -486,7 +622,7 @@ public class EthModuleGasEstimationDSLTest {
 
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
-        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
+        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL, estimatedGas);
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
@@ -494,14 +630,14 @@ public class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
     /**
      * Send 1 rBTC accross three contracts, then the last contract frees a storage cell and does a CALL with value
      * NOTE: this test uses a fixed amount of gas for each internal call
-     * */
+     */
     @Test
     public void estimateGas_nestedCallsWithValueFixedGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueStorageRefundAndFixedGas.txt");
@@ -561,7 +697,7 @@ public class EthModuleGasEstimationDSLTest {
 
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
-        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
+        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund() + GasCost.STIPEND_CALL, estimatedGas);
         assertTrue(callConstant.getMovedRemainingGasToChild());
 
         args.setGas(HexUtils.toQuantityJsonHex(callConstantGasUsed));
@@ -570,12 +706,12 @@ public class EthModuleGasEstimationDSLTest {
         args.setGas(HexUtils.toQuantityJsonHex(estimatedGas));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
-        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - GasCost.STIPEND_CALL - 1));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
     public boolean runWithArgumentsAndBlock(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
-        localCallResult = ethModule.callConstant(args, block);
+        ProgramResult localCallResult = ethModule.callConstant(args, block);
 
         return localCallResult.getException() == null;
     }
@@ -585,12 +721,13 @@ public class EthModuleGasEstimationDSLTest {
     }
 
     // todo this is duplicated code, should be extracted into a test util
+
     /**
      * Checks how many times an event is contained on a receipt
-     * */
+     */
     public void assertEvents(ProgramResult programResult, String eventSignature, int times) {
         Stream<String> events = programResult.getLogInfoList().stream().map(logInfo -> eventSignature(logInfo));
-        List<String> eventsSignature = events.filter(event -> isExpectedEventSignature(event, eventSignature,  new String[0]))
+        List<String> eventsSignature = events.filter(event -> isExpectedEventSignature(event, eventSignature, new String[0]))
                 .collect(Collectors.toList());
 
         assertEquals(times, eventsSignature.size());
