@@ -376,11 +376,6 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, genesis.getHeader());
 
-        short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
-
-        Assert.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
-        // Check tx2 was excluded
-        Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
         Assert.assertArrayEquals(
                 calculateTxTrieRoot(expectedTxList, block.getNumber()),
