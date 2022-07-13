@@ -13,11 +13,11 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.peg.resources.TestConstants;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -30,7 +30,6 @@ import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Test.None;
 
 public class ErpFederationTest {
     private ErpFederation federation;
@@ -168,27 +167,27 @@ public class ErpFederationTest {
     }
 
     @Test(expected = VerificationException.class)
-    public void createInvalidErpFederation_csvValueAboveMax() {
+    public void createInvalidErpFederation_csvValueNegative() {
         new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_KEYS,
-            ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
+            -100,
             activations
         );
     }
 
     @Test(expected = VerificationException.class)
-    public void createInvalidErpFederation_csvValueBelowMin() {
+    public void createInvalidErpFederation_csvValueZero() {
         new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_KEYS,
-            ErpFederationRedeemScriptParser.MIN_CSV_VALUE - 1,
+            0,
             activations
         );
     }
@@ -671,9 +670,10 @@ public class ErpFederationTest {
         Long csvValue,
         boolean isRskip293Active) {
 
+        int expectedCsvValueLength = isRskip293Active ? BigInteger.valueOf(csvValue).toByteArray().length : 2;
         byte[] serializedCsvValue = isRskip293Active ?
-            Utils.unsignedLongToByteArrayLE(csvValue, ErpFederationRedeemScriptParser.CSV_SERIALIZED_LENGTH) :
-            Utils.unsignedLongToByteArrayBE(csvValue, ErpFederationRedeemScriptParser.CSV_SERIALIZED_LENGTH);
+            Utils.signedLongToByteArrayLE(csvValue) :
+            Utils.unsignedLongToByteArrayBE(csvValue, expectedCsvValueLength);
 
         byte[] script = erpRedeemScript.getProgram();
         Assert.assertTrue(script.length > 0);
@@ -704,10 +704,10 @@ public class ErpFederationTest {
         Assert.assertEquals(ScriptOpCodes.OP_ELSE, script[index++]);
 
         // Next byte should equal csv value length
-        Assert.assertEquals(ErpFederationRedeemScriptParser.CSV_SERIALIZED_LENGTH, script[index++]);
+        Assert.assertEquals(expectedCsvValueLength, script[index++]);
 
         // Next bytes should equal the csv value in bytes
-        for (int i = 0; i < ErpFederationRedeemScriptParser.CSV_SERIALIZED_LENGTH; i++) {
+        for (int i = 0; i < expectedCsvValueLength; i++) {
             Assert.assertEquals(serializedCsvValue[i], script[index++]);
         }
 
