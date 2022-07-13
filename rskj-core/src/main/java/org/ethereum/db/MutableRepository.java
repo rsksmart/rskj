@@ -387,7 +387,11 @@ public class MutableRepository implements Repository {
     }
 
     private void internalPut(byte[] key, byte[] value) {
-        if (Arrays.equals(value, mutableTrie.get(key))) return; // writes the same value
+        // writes the same value
+        if (Arrays.equals(value, mutableTrie.get(key))) {
+            return;
+        }
+
         tracker.addNewWrittenKey(new ByteArrayWrapper(key));
         mutableTrie.put(key, value);
     }

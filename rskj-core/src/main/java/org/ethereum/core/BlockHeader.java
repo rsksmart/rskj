@@ -460,7 +460,7 @@ public class BlockHeader {
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
-        toStringBuff.append("  txExecutionSublistsEdges=").append(txExecutionSublistsEdges).append(suffix);
+        toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(txExecutionSublistsEdges)).append(suffix);
 
         return toStringBuff.toString();
     }

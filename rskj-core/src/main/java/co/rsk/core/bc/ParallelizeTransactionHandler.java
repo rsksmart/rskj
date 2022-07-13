@@ -31,12 +31,12 @@ public class ParallelizeTransactionHandler {
     private final Map<RskAddress, TransactionSublist> sublistBySender;
     private final ArrayList<TransactionSublist> sublists;
 
-    public ParallelizeTransactionHandler(short sublists, long sublistGasLimit) {
+    public ParallelizeTransactionHandler(short numberOfSublists, long sublistGasLimit) {
         this.sublistBySender = new HashMap<>();
         this.sublistByWrittenKey = new HashMap<>();
         this.sublistsByReadKey = new HashMap<>();
         this.sublists = new ArrayList<>();
-        for (short i = 0; i < sublists; i++){
+        for (short i = 0; i < numberOfSublists; i++){
             this.sublists.add(new TransactionSublist(sublistGasLimit, false));
         }
         this.sublists.add(new TransactionSublist(sublistGasLimit, true));
@@ -96,7 +96,7 @@ public class ParallelizeTransactionHandler {
             if (sublist.getTransactions().isEmpty() || sublist.isSequential()) {
                 continue;
             }
-            sublistEdges += sublist.getTransactions().size();
+            sublistEdges += (short) sublist.getTransactions().size();
             sublistSizes.add(sublistEdges);
         }
 
@@ -249,7 +249,7 @@ public class ParallelizeTransactionHandler {
         }
 
         public List<Transaction> getTransactions() {
-            return this.transactions;
+            return new ArrayList<>(this.transactions);
         }
 
         public boolean isSequential() {

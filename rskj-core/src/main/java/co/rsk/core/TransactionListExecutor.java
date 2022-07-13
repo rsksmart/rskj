@@ -66,7 +66,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.vmTrace = vmTrace;
         this.vmTraceOptions = vmTraceOptions;
         this.transactions = new ArrayList<>(transactions);
-        this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.deletedAccounts = deletedAccounts;
         this.discardInvalidTxs = discardInvalidTxs;
         this.acceptInvalidTransactions = acceptInvalidTransactions;
         this.executedTransactions = executedTransactions;
