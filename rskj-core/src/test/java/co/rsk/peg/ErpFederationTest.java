@@ -16,6 +16,9 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.resources.TestConstants;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -151,6 +154,26 @@ public class ErpFederationTest {
         );
 
         Assert.assertEquals(ERP_KEYS, federationWithUncompressedKeys.getErpPubKeys());
+    }
+
+    @Test
+    public void createErpFederation_testnet_constants_before_RSKIP293() {
+        createErpFederation(BridgeTestNetConstants.getInstance(), false);
+    }
+
+    @Test
+    public void createErpFederation_testnet_constants_after_RSKIP293() {
+        createErpFederation(BridgeTestNetConstants.getInstance(), true);
+    }
+
+    @Test
+    public void createErpFederation_mainnet_constants_before_RSKIP293() {
+        createErpFederation(BridgeMainNetConstants.getInstance(), false);
+    }
+
+    @Test
+    public void createErpFederation_mainnet_constants_after_RSKIP293() {
+        createErpFederation(BridgeMainNetConstants.getInstance(), true);
     }
 
     @Test(expected = VerificationException.class)
@@ -430,6 +453,40 @@ public class ErpFederationTest {
         Assert.assertEquals(erpFederation, otherErpFederation);
     }
 
+    @Test(expected = FederationCreationException.class)
+    public void createErpFedWithSameRedeemScriptAsHardcodedOne_after_RSKIP293_fails() {
+        // We can't test the same condition before RSKIP293 since the serialization used by bj-thin
+        // prior to RSKIP293 enforces the CSV value to be encoded using 2 bytes.
+        // The hardcoded script has a 3 byte long CSV value
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        List<BtcECKey> standardMultisigKeys = Arrays.stream(new String[]{
+            "0208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce",
+            "0225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f4",
+            "02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da",
+            "0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09",
+            "039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        List<BtcECKey> emergencyMultisigKeys = Arrays.stream(new String[]{
+            "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
+            "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14",
+            "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f"
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+
+        long activationDelay = 5_295_360L;
+
+        new ErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+            emergencyMultisigKeys,
+            activationDelay,
+            activations
+        );
+    }
+
     @Test(expected = ScriptException.class)
     public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig() {
         // Should fail due to the wrong encoding of the CSV value
@@ -622,6 +679,32 @@ public class ErpFederationTest {
 //        System.out.println(Hex.toHexString(pegOutTx.bitcoinSerialize()));
     }
 
+    private void createErpFederation(BridgeConstants constants, boolean isRskip293Active) {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
+
+        Federation erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(DEFAULT_FED_KEYS),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            constants.getBtcParams(),
+            constants.getErpFedPubKeysList(),
+            constants.getErpFedActivationDelay(),
+            activations
+        );
+
+        List<BtcECKey> sortedErpKeys = constants.getErpFedPubKeysList()
+            .stream()
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .collect(Collectors.toList());
+        validateErpRedeemScript(
+            erpFederation.getRedeemScript(),
+            DEFAULT_FED_KEYS,
+            sortedErpKeys,
+            constants.getErpFedActivationDelay(),
+            isRskip293Active
+        );
+    }
+
     private Script createInputScript(
         Script fedRedeemScript,
         BtcECKey.ECDSASignature signature1,
@@ -670,6 +753,22 @@ public class ErpFederationTest {
         Long csvValue,
         boolean isRskip293Active) {
 
+        validateErpRedeemScript(
+            erpRedeemScript,
+            DEFAULT_FED_KEYS,
+            ERP_KEYS,
+            csvValue,
+            isRskip293Active
+        );
+    }
+
+    private void validateErpRedeemScript(
+        Script erpRedeemScript,
+        List<BtcECKey> defaultMultisigKeys,
+        List<BtcECKey> emergencyMultisigKeys,
+        Long csvValue,
+        boolean isRskip293Active) {
+
         int expectedCsvValueLength = isRskip293Active ? BigInteger.valueOf(csvValue).toByteArray().length : 2;
         byte[] serializedCsvValue = isRskip293Active ?
             Utils.signedLongToByteArrayLE(csvValue) :
@@ -684,20 +783,20 @@ public class ErpFederationTest {
         Assert.assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        int m = DEFAULT_FED_KEYS.size() / 2 + 1;
+        int m = defaultMultisigKeys.size() / 2 + 1;
         Assert.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         // Assert public keys
-        for (BtcECKey key: DEFAULT_FED_KEYS) {
+        for (BtcECKey key: defaultMultisigKeys) {
             byte[] pubkey = key.getPubKey();
             Assert.assertEquals(pubkey.length, script[index++]);
-            for (int pkIndex = 0; pkIndex < pubkey.length; pkIndex++) {
-                Assert.assertEquals(pubkey[pkIndex], script[index++]);
+            for (byte b : pubkey) {
+                Assert.assertEquals(b, script[index++]);
             }
         }
 
         // Next byte should equal N, from an M/N multisig
-        int n = DEFAULT_FED_KEYS.size();
+        int n = defaultMultisigKeys.size();
         Assert.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_ELSE
@@ -715,19 +814,19 @@ public class ErpFederationTest {
         Assert.assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
-        m = ERP_KEYS.size() / 2 + 1;
+        m = emergencyMultisigKeys.size() / 2 + 1;
         Assert.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
-        for (BtcECKey key: ERP_KEYS) {
+        for (BtcECKey key: emergencyMultisigKeys) {
             byte[] pubkey = key.getPubKey();
             Assert.assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
-            for (int pkIndex = 0; pkIndex < pubkey.length; pkIndex++) {
-                Assert.assertEquals(pubkey[pkIndex], script[index++]);
+            for (byte b : pubkey) {
+                Assert.assertEquals(b, script[index++]);
             }
         }
 
         // Next byte should equal N, from an M/N multisig
-        n = ERP_KEYS.size();
+        n = emergencyMultisigKeys.size();
         Assert.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         Assert.assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
