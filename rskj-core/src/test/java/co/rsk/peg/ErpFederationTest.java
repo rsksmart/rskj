@@ -487,11 +487,30 @@ public class ErpFederationTest {
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig() {
-        // Should fail due to the wrong encoding of the CSV value
+    @Test(expected = Test.None.class)
+    public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_can_spend() {
+        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+
+        // The CSV value defined in BridgeTestnetConstants,
+        // actually allows the emergency multisig to spend before the expected amount of blocks
+        // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            false,
+            true
+        );
+    }
+
+    @Test(expected = ScriptException.class)
+    public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_cant_spend() {
+        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+
+        // Should fail due to the wrong encoding of the CSV value
+        // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
+        // This causes the validation to fail
+        spendFromErpFed(
+            constants.getBtcParams(),
             300,
             false,
             true
@@ -500,20 +519,41 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_before_RSKIP293_testnet_using_standard_multisig() {
+        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+
         // Should validate since it's not executing the path of the script with the CSV value
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             false,
             false
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig() {
-        // Should fail due to the wrong encoding of the CSV value
+    @Test(expected = Test.None.class)
+    public void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_can_spend() {
+        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
+        // The CSV value defined in BridgeMainnetConstants,
+        // actually allows the emergency multisig to spend before the expected amount of blocks
+        // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            false,
+            true
+        );
+    }
+
+    @Test(expected = ScriptException.class)
+    public void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_cant_spend() {
+        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
+        // Should fail due to the wrong encoding of the CSV value
+        // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
+        // This causes the validation to fail
+        spendFromErpFed(
+            constants.getBtcParams(),
             300,
             false,
             true
@@ -522,10 +562,12 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_before_RSKIP293_mainnet_using_standard_multisig() {
+        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
         // Should validate since it's not executing the path of the script with the CSV value
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             false,
             false
         );
@@ -533,10 +575,12 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_testnet_using_erp_multisig() {
+        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+
         // Post RSKIP293 activation it should encode the CSV value correctly
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             true,
             true
         );
@@ -544,9 +588,11 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_testnet_using_standard_multisig() {
+        BridgeConstants constants = BridgeTestNetConstants.getInstance();
+
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             true,
             false
         );
@@ -554,10 +600,12 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_mainnet_using_erp_multisig() {
+        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
         // Post RSKIP293 activation it should encode the CSV value correctly
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             true,
             true
         );
@@ -565,9 +613,11 @@ public class ErpFederationTest {
 
     @Test(expected = Test.None.class)
     public void spendFromErpFed_after_RSKIP293_mainnet_using_standard_multisig() {
+        BridgeConstants constants = BridgeMainNetConstants.getInstance();
+
         spendFromErpFed(
-            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
-            300,
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
             true,
             false
         );
