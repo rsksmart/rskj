@@ -19,7 +19,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class RepositoryTrackingTest {
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 
@@ -93,16 +92,6 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    public void doesntTrackWriteInAddBalanceZero () {
-        repository.createAccount(COW);
-        tracker.clear();
-
-        repository.addBalance(COW, Coin.ZERO);
-
-        assertRepositoryHasSize(1, 0);
-    }
-
-    @Test
     public void tracksReadOnGetStorageBytes () {
         repository.createAccount(COW);
         tracker.clear();
@@ -144,7 +133,7 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    public void doesntTrackWriteOnAddStorageSameBytes () {
+    public void tracksWriteOnAddStorageSameBytes () {
         repository.createAccount(COW);
 
         byte[] cowValue = Hex.decode("A4A5A6");
@@ -156,6 +145,38 @@ public class RepositoryTrackingTest {
 
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
 
-        assertRepositoryHasSize(1, 0);
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceOfNonExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceZeroOfNonExistent () {
+        repository.addBalance(COW, Coin.valueOf(0));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceOfExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        tracker.clear();
+
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceZeroOfExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        tracker.clear();
+
+        repository.addBalance(COW, Coin.valueOf(0));
+
+        assertRepositoryHasSize(1, 1);
     }
 }
