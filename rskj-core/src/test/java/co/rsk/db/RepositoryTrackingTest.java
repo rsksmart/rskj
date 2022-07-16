@@ -170,13 +170,13 @@ public class RepositoryTrackingTest {
         assertRepositoryHasSize(1, 1);
     }
 
-    public void tracksReadAndWriteOnAddBalanceZeroOfExistent () {
+    public void doesntTrackWriteOnAddBalanceZeroOfExistent () {
         repository.addBalance(COW, Coin.valueOf(1));
 
         tracker.clear();
 
         repository.addBalance(COW, Coin.valueOf(0));
 
-        assertRepositoryHasSize(1, 1);
+        assertRepositoryHasSize(1, 0);
     }
 }
