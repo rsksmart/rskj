@@ -151,7 +151,7 @@ public interface KeyValueDataSource extends DataSource {
             if (databaseReset) {
                 KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
             } else {
-                LoggerFactory.getLogger("KeyValueDataSource").warn("Use the flag --reset when running the application if you are using a different datasource.");
+                LoggerFactory.getLogger("KeyValueDataSource").warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
                 throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
             }
         }
