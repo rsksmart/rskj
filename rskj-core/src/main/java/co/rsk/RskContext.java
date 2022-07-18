@@ -88,6 +88,7 @@ import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -607,6 +608,18 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (rskSystemProperties == null) {
             rskSystemProperties = buildRskSystemProperties();
+
+            boolean acceptAnyHost = Optional.ofNullable(rskSystemProperties)
+                    .map(SystemProperties::rpcHttpHost)
+                    .orElse(new ArrayList<>())
+                    .contains("*");
+
+            if (acceptAnyHost && rskSystemProperties.isWalletEnabled()) {
+                logger.warn("It is not recommended to bypass hosts checks, by setting '*' in" +
+                        " the host list, and have wallet enabled both together." +
+                        " If you bypass hosts check we suggest to have wallet disabled, the same thing" +
+                        " if you want to enable wallet, then it is suggested to not bypass hosts check.");
+            }
         }
 
         return rskSystemProperties;
