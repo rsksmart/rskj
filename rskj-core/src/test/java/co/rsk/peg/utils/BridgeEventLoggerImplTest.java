@@ -355,28 +355,28 @@ public class BridgeEventLoggerImplTest {
     public void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "6bf06473af5f595cf97702229b007e50d6cfba83".getBytes();
+        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived_legacy(sender, btcDestinationAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(), new Object[]{sender}, new Object[]{btcRecipientAddress.getHash160(), amount.value});
     }
 
     @Test
     public void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
         String sender = "0x00000000000000000000000000000000000000";
-        String btcDestAddress = "1AqjHHMU34paaNGh23R7kM6SwVfrhNeJoJ";
+        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcDestAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestAddress, amount.value});
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcRecipientAddress.toString(), amount.value});
     }
 
 
