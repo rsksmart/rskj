@@ -14,79 +14,97 @@ public class ValidTxExecutionSublistsEdgesTest {
 
     private BlockHeader blockHeader;
     private Block block;
-    private List txSublist;
+    private List txList;
+    private ValidTxExecutionSublistsEdgesRule rule;
 
     @Before
     public void setUp() {
         blockHeader = Mockito.mock(org.ethereum.core.BlockHeader.class);
         block = Mockito.mock(Block.class);
-        txSublist = Mockito.mock(LinkedList.class);
+        txList = Mockito.mock(LinkedList.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
-        Mockito.when(block.getTransactionsList()).thenReturn(txSublist);
-        Mockito.when(txSublist.size()).thenReturn(10);
+        Mockito.when(block.getTransactionsList()).thenReturn(txList);
+        Mockito.when(txList.size()).thenReturn(10);
+
+        rule = new ValidTxExecutionSublistsEdgesRule();
     }
 
+    private void mockGetTxExecutionListsEdges (short[] edges) {
+        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(edges);
+    }
+
+    // valid cases
     @Test
     public void blockWithValidEdges() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{2, 5, 6});
+        mockGetTxExecutionListsEdges(new short[]{2, 5, 6});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
     @Test
     public void blockWithNullEdges() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(null);
+        mockGetTxExecutionListsEdges(null);
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
     @Test
     public void blockWithEmptyEdges() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[0]);
+        mockGetTxExecutionListsEdges(new short[0]);
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertTrue(rule.isValid(block));
     }
 
+    // invalid cases
     @Test
     public void blockWithTooManyEdges() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{2, 5, 6, 8, 10, 12, 14});
+        mockGetTxExecutionListsEdges(new short[]{1, 2, 3, 4, 5});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
+        Assert.assertFalse(rule.isValid(block));
+    }
+
+    @Test
+    public void blockWithOutOfBoundsEdgesBecauseOfRemascTx() {
+        // include the last tx in a parallelized thread
+        // shouldn't be valid because the last transaction
+        // is the remasc transaction and cannot be parallelized
+        mockGetTxExecutionListsEdges(new short[]{10});
+
         Assert.assertFalse(rule.isValid(block));
     }
 
     @Test
     public void blockWithOutOfBoundsEdges() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{12});
+        mockGetTxExecutionListsEdges(new short[]{12});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
     @Test
     public void blockWithNegativeEdge() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{-2});
+        mockGetTxExecutionListsEdges(new short[]{-2});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 
     @Test
-    public void blockWithEmptyListDefined() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{2, 2});
+    public void blockWithEdgeZero() {
+        mockGetTxExecutionListsEdges(new short[]{0, 2});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
+        Assert.assertFalse(rule.isValid(block));
+    }
+
+    @Test
+    public void blockWithRepeatedEdge() {
+        mockGetTxExecutionListsEdges(new short[]{2, 2});
+
         Assert.assertFalse(rule.isValid(block));
     }
 
     @Test
     public void blockWithEdgesNotInOrder() {
-        Mockito.when(blockHeader.getTxExecutionSublistsEdges()).thenReturn(new short[]{2, 4, 3});
+        mockGetTxExecutionListsEdges(new short[]{2, 4, 3});
 
-        ValidTxExecutionSublistsEdgesRule rule = new ValidTxExecutionSublistsEdgesRule();
         Assert.assertFalse(rule.isValid(block));
     }
 }

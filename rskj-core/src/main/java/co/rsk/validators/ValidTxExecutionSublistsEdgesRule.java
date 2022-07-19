@@ -19,29 +19,34 @@ public class ValidTxExecutionSublistsEdgesRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         short[] edges = block.getHeader().getTxExecutionSublistsEdges();
-        int nTxs = block.getTransactionsList().size();
 
-        if (edges == null) {
+        if (edges == null || edges.length == 0) {
             return true;
         }
+
         if (edges.length > Constants.getTransactionExecutionThreads()) {
             logger.warn("Invalid block: number of execution lists edges is greater than number of execution threads ({} vs {})",
                         edges.length, Constants.getTransactionExecutionThreads());
             return false;
         }
-        short prev = 0;
 
-        for (short edge : edges) {
-            if (edge <= prev) {
+        if (edges[0] <= 0) {
+            logger.warn("Invalid block: execution list edge is out of bounds");
+            return false;
+        }
+
+        for (int i = 0; i < edges.length - 1; i++) {
+            if (edges[i] >= edges[i + 1]) {
                 logger.warn("Invalid block: execution lists edges are not in ascending order");
                 return false;
             }
-            if (edge > nTxs) {
-                logger.warn("Invalid block: execution list edge is out of bounds: {}", edge);
-                return false;
-            }
-            prev = edge;
         }
+
+        if (edges[edges.length-1] > block.getTransactionsList().size() - 1) {
+            logger.warn("Invalid block: execution list edge is out of bounds");
+            return false;
+        }
+
         return true;
     }
 }
