@@ -91,17 +91,7 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    void doesntTrackWriteInAddBalanceZero() {
-        repository.createAccount(COW);
-        tracker.clear();
-
-        repository.addBalance(COW, Coin.ZERO);
-
-        assertRepositoryHasSize(1, 0);
-    }
-
-    @Test
-    void tracksReadOnGetStorageBytes() {
+    void tracksReadOnGetStorageBytes () {
         repository.createAccount(COW);
         tracker.clear();
 
@@ -142,7 +132,7 @@ public class RepositoryTrackingTest {
     }
 
     @Test
-    void doesntTrackWriteOnAddStorageSameBytes() {
+    void tracksWriteOnAddStorageSameBytes() {
         repository.createAccount(COW);
 
         byte[] cowValue = Hex.decode("A4A5A6");
@@ -153,6 +143,38 @@ public class RepositoryTrackingTest {
         tracker.clear();
 
         repository.addStorageBytes(COW, DataWord.valueOf(cowKey), cowValue);
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceOfNonExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceZeroOfNonExistent () {
+        repository.addBalance(COW, Coin.valueOf(0));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void tracksReadAndWriteOnAddBalanceOfExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        tracker.clear();
+
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        assertRepositoryHasSize(1, 1);
+    }
+
+    public void doesntTrackWriteOnAddBalanceZeroOfExistent () {
+        repository.addBalance(COW, Coin.valueOf(1));
+
+        tracker.clear();
+
+        repository.addBalance(COW, Coin.valueOf(0));
 
         assertRepositoryHasSize(1, 0);
     }
