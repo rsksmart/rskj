@@ -33,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ErpFederationTest {
@@ -467,6 +468,9 @@ public class ErpFederationTest {
         Assert.assertEquals(erpFederation, otherErpFederation);
     }
 
+    // Can't recreate the hardcoded redeem script since the needed CSV value is above the max
+    // Keeping the test ignored as testimonial
+    @Ignore
     @Test(expected = FederationCreationException.class)
     public void createErpFedWithSameRedeemScriptAsHardcodedOne_after_RSKIP293_fails() {
         // We can't test the same condition before RSKIP293 since the serialization used by bj-thin
