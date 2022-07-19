@@ -84,6 +84,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.ConfigFileLoader;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -615,6 +616,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (rskSystemProperties == null) {
             rskSystemProperties = buildRskSystemProperties();
+            ConfigFileLoader.setRemaps(rskSystemProperties.getConfigFilePathRemaps());
 
             boolean acceptAnyHost = Optional.ofNullable(rskSystemProperties)
                     .map(SystemProperties::rpcHttpHost)
@@ -755,7 +757,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (buildInfo == null) {
             try {
                 Properties props = new Properties();
-                InputStream buildInfoFile = RskContext.class.getClassLoader().getResourceAsStream("build-info.properties");
+                InputStream buildInfoFile = ConfigFileLoader.loadConfigurationFile(RskContext.class,false,
+                        "build-info","","build-info.properties");
                 props.load(buildInfoFile);
                 buildInfo = new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
             } catch (IOException | NullPointerException e) {

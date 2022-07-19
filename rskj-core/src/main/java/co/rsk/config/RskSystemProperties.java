@@ -22,6 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.ConfigValue;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
@@ -31,9 +33,7 @@ import org.ethereum.crypto.HashUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -290,6 +290,18 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return configFromFiles.getStringList("messages.recorder.commands");
+    }
+
+    public Map<String,String> getConfigFilePathRemaps() {
+        if (!configFromFiles.hasPath("path-remaps")) {
+            return null;
+        }
+
+        HashMap<String,String> map = new HashMap<>();
+        for (Map.Entry<String, ConfigValue> e :configFromFiles.getConfig("path-remaps").entrySet()) {
+            map.put(e.getKey(),(String) e.getValue().unwrapped());
+        }
+        return map;
     }
 
     public long getTargetGasLimit() {

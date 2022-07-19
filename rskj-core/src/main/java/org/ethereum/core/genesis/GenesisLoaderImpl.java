@@ -24,6 +24,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.ConfigFileLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -81,7 +82,8 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 activationConfig,
                 stateRootHandler,
                 trieStore,
-                GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
+                ConfigFileLoader.loadConfigurationFile(GenesisLoaderImpl.class,true,
+                        "genesis" , "/genesis/",genesisFile),
                 initialNonce,
                 isRsk,
                 useRskip92Encoding,

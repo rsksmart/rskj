@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.remasc.RemascException;
+import co.rsk.util.ConfigFileLoader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -43,7 +44,9 @@ public class RemascConfigFactory {
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
-        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)){
+        // configPath is actually currently a filename. The field name does not help.
+        try (InputStream is = ConfigFileLoader.loadConfigurationFile(RemascConfigFactory.class,false,
+                "remasc","",this.configPath)){
             JsonNode node = mapper.readTree(is);
             remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
         } catch (Exception ex) {

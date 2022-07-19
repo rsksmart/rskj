@@ -65,6 +65,7 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.util.ConfigFileLoader;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
@@ -210,10 +211,12 @@ public class BridgeSupport {
 
     @VisibleForTesting
     InputStream getCheckPoints() {
-        InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+        String fileName = bridgeConstants.getBtcParams().getId() + ".checkpoints";
+        InputStream checkpoints = ConfigFileLoader.loadConfigurationFile(BridgeSupport.class,true,
+                "rskbitcoincheckpoints" ,"/rskbitcoincheckpoints/",fileName );
         if (checkpoints == null) {
             // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
-            checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+            checkpoints = BridgeSupport.class.getResourceAsStream("/"+ fileName);
         }
         return checkpoints;
     }
