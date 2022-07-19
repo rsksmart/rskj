@@ -13,6 +13,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
@@ -211,6 +212,19 @@ public class ErpFederationTest {
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             ERP_KEYS,
             0,
+            activations
+        );
+    }
+
+    @Test(expected = VerificationException.class)
+    public void createInvalidErpFederation_csvValueAboveMax() {
+        new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            ERP_KEYS,
+            ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
             activations
         );
     }
