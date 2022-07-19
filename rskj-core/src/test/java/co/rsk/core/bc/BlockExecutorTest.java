@@ -55,7 +55,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -334,10 +333,8 @@ public class BlockExecutorTest {
         Assertions.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance(boolean activeRskip144) {
-        doReturn(activeRskip144).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
+
+    private Block createBlockWithExcludedTransaction(boolean withRemasc, boolean activeRskip144) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
@@ -379,6 +376,16 @@ public class BlockExecutorTest {
         txs.add(tx);
         txs.add(tx2);
 
+
+        List<Transaction> expectedTxList = new ArrayList<Transaction>();
+        expectedTxList.add(tx);
+
+        if (withRemasc) {
+            Transaction remascTx = new RemascTransaction(1L);
+            txs.add(remascTx);
+            expectedTxList.add(remascTx);
+        }
+
         List<BlockHeader> uncles = new ArrayList<>();
 
         BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
@@ -388,16 +395,27 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, genesis.getHeader());
 
+        Assertions.assertEquals(tx, block.getTransactionsList().get(0));
+        Assertions.assertArrayEquals(
+                calculateTxTrieRoot(expectedTxList, block.getNumber()),
+                block.getTxTrieRoot()
+        );
+
+        return block;
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance(boolean activeRskip144) {
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
+        Block block = createBlockWithExcludedTransaction(false, activeRskip144);
+
         short[] expectedEdges = activeRskip144 ? new short[]{(short) block.getTransactionsList().size()} : null;
 
         Assertions.assertArrayEquals(expectedEdges, block.getHeader().getTxExecutionSublistsEdges());
         // Check tx2 was excluded
+
         Assertions.assertEquals(1, block.getTransactionsList().size());
-        Assertions.assertEquals(tx, block.getTransactionsList().get(0));
-        Assertions.assertArrayEquals(
-                calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
-                block.getTxTrieRoot()
-        );
 
         Assertions.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
@@ -718,6 +736,60 @@ public class BlockExecutorTest {
 
         Assertions.assertArrayEquals(result2.getFinalState().getHash().getBytes(), result1.getFinalState().getHash().getBytes());
         Assertions.assertArrayEquals(block1.getHash().getBytes(), block2.getHash().getBytes());
+    }
+
+    private void testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition (int txAmount, short [] expectedSublistsEdges, Boolean activeRskip144) {
+        Block block = getBlockWithNIndependentTransactions(txAmount, BigInteger.valueOf(21000), true);
+
+        assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, txAmount, expectedSublistsEdges, activeRskip144);
+    }
+
+    private void assertBlockResultHasTxEdgesAndRemascAtLastPosition (Block block, int txAmount, short [] expectedSublistsEdges, Boolean activeRskip144) {
+        Block parent = blockchain.getBestBlock();
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
+        BlockResult blockResult = executor.executeAndFill(block, parent.getHeader());
+
+        int expectedTxSize = txAmount + 1;
+
+        Assertions.assertArrayEquals(expectedSublistsEdges, blockResult.getTxEdges());
+        Assertions.assertEquals(expectedTxSize, blockResult.getExecutedTransactions().size());
+        Assertions.assertTrue(blockResult.getExecutedTransactions().get(txAmount).isRemascTransaction(txAmount, expectedTxSize));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void blockWithOnlyRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(0, new short[]{}, activeRskip144);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void blockWithOneTxRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(1, new short[]{ 1 }, activeRskip144);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void blockWithManyTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(3, new short[]{ 1, 2, 3 }, activeRskip144);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void blockWithMoreThanThreadsTxsRemascShouldGoToSequentialSublist (boolean activeRskip144) {
+        if (!activeRskip144) return;
+        testBlockWithTxTxEdgesMatchAndRemascTxIsAtLastPosition(5, new short[]{ 2, 3, 4, 5 }, activeRskip144);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void blockWithExcludedTransactionHasRemascInSequentialSublist (boolean activeRskip144) {
+        if (!activeRskip144) return;
+        Block block = createBlockWithExcludedTransaction(true, activeRskip144);
+        assertBlockResultHasTxEdgesAndRemascAtLastPosition(block, 0, new short[]{}, activeRskip144);
     }
 
     @ParameterizedTest
