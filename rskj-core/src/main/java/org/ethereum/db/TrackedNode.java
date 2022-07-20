@@ -9,16 +9,16 @@ public class TrackedNode {
     protected final ByteArrayWrapper key; // a trie key
     protected final OperationType operationType; // an operation type
     protected final String transactionHash; // a transaction  hash
-    protected final boolean isSuccessful; // whether the operation was successful or not
+    protected final boolean nodeExistsInTrie; // if the tracked node exists in the trie or not
 
     public TrackedNode(ByteArrayWrapper rawKey, OperationType operationType,
-                       String transactionHash, boolean isSuccessful) {
+                       String transactionHash, boolean nodeExistsInTrie) {
         this.key = rawKey;
         this.operationType = operationType;
         this.transactionHash = transactionHash;
-        this.isSuccessful = isSuccessful;
+        this.nodeExistsInTrie = nodeExistsInTrie;
 
-        if(operationType == WRITE_OPERATION && !isSuccessful) {
+        if(operationType == WRITE_OPERATION && !nodeExistsInTrie) {
             throw new IllegalArgumentException("a WRITE_OPERATION should always have a true result");
         }
     }
@@ -35,15 +35,15 @@ public class TrackedNode {
         return transactionHash;
     }
 
-    public boolean getSuccessful() {
-        return this.isSuccessful;
+    public boolean getNodeExistsInTrie() {
+        return this.nodeExistsInTrie;
     }
 
     @Override
     public String toString() {
         return "TrackedNode[key: " + key +
                 ", operationType: " + operationType +
-                ", isSuccessful:" + isSuccessful +
+                ", nodeExistsInTrie:" + nodeExistsInTrie +
                 ", transactionHash: " + transactionHash
                 +"]";
     }
@@ -69,8 +69,8 @@ public class TrackedNode {
     }
 
     public boolean useForStorageRent(String transactionHash) {
-        // to filter storage rent nodes, excluding mismatches and deletes
-        return this.isSuccessful &&
+        // to filter storage rent nodes, excluding non-existing nodes and deletes
+        return this.nodeExistsInTrie &&
                 this.operationType != DELETE_OPERATION &&
                 this.transactionHash.equals(transactionHash);
     }

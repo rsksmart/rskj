@@ -28,7 +28,7 @@ public class MutableRepositoryTestable extends MutableRepositoryTracked {
         super.trackNode(key, READ_OPERATION, result);
     }
 
-    public void trackNodeReadContractOperation(byte[] key, boolean result) {
-        super.trackNode(key, READ_CONTRACT_CODE_OPERATION, result);
+    public void trackNodeReadContractOperation(byte[] key, boolean nodeExistsInTrie) {
+        super.trackNode(key, READ_CONTRACT_CODE_OPERATION, nodeExistsInTrie);
     }
 }

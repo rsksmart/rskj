@@ -174,12 +174,12 @@ public class MutableRepositoryTracked extends MutableRepository {
     @Override
     protected byte[] internalGet(byte[] key, boolean readsContractCode) {
         byte[] value = super.internalGet(key, readsContractCode);
-        boolean isSuccessful = value != null;
+        boolean nodeExistsInTrie = value != null;
 
         if(readsContractCode) {
-            trackNodeReadContractOperation(key, isSuccessful);
+            trackNodeReadContractOperation(key, nodeExistsInTrie);
         } else {
-            trackNodeReadOperation(key, isSuccessful);
+            trackNodeReadOperation(key, nodeExistsInTrie);
         }
 
         return value;
@@ -227,17 +227,17 @@ public class MutableRepositoryTracked extends MutableRepository {
         trackNode(key, READ_OPERATION, result);
     }
 
-    protected void trackNodeReadContractOperation(byte[] key, boolean result) {
-        trackNode(key, READ_CONTRACT_CODE_OPERATION, result);
+    protected void trackNodeReadContractOperation(byte[] key, boolean nodeExistsInTrie) {
+        trackNode(key, READ_CONTRACT_CODE_OPERATION, nodeExistsInTrie);
     }
 
-    protected void trackNode(byte[] key, OperationType operationType, boolean isSuccessful) {
+    protected void trackNode(byte[] key, OperationType operationType, boolean nodeExistsInTrie) {
         if(this.enableTracking) {
             TrackedNode trackedNode = new TrackedNode(
                     new ByteArrayWrapper(key),
                     operationType,
                     this.trackedTransactionHash,
-                    isSuccessful
+                    nodeExistsInTrie
             );
             this.trackedNodes.add(trackedNode);
         }
