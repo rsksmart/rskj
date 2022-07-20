@@ -1,7 +1,6 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.TrackedNode;
 
 import static co.rsk.storagerent.StorageRentComputation.*;

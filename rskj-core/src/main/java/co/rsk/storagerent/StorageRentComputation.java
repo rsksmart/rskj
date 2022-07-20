@@ -52,7 +52,8 @@ public class StorageRentComputation {
      * @return an amount of gas to be paid
      */
     public static long computeRent(long rentDue, long rentCap, long rentThreshold) {
-        validateArgumentsComputeRent(rentCap, rentThreshold);
+        validPositiveValue(rentCap, "cap must be positive");
+        validPositiveValue(rentThreshold, "threshold must be positive");
 
         long computedRent = Math.min(rentCap, rentDue);
         
@@ -69,7 +70,9 @@ public class StorageRentComputation {
      */
     // todo(fedejinich) this should be a private method, it's only used in computeRent & computeNewTimestamp
     public static long rentDue(long nodeSize, long duration) {
-        validateArgumentsRentDue(nodeSize, duration);
+        validPositiveValue(nodeSize, "node size must be positive");
+        validPositiveValue(duration, "duration must be positive");
+
         long nodeSizeWithOverhead = nodeSize + STORAGE_OVERHEAD;
 
         return (long) Math.floor(Double.valueOf(nodeSizeWithOverhead) *
@@ -91,8 +94,11 @@ public class StorageRentComputation {
      * */
     public static long computeNewTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp,
                                            long currentBlockTimestamp, long rentCap, long rentThreshold) {
-        validateArgumentsComputeTimestamp(nodeSize, rentDue, currentBlockTimestamp,
-                rentCap, rentThreshold);
+        validPositiveValue(nodeSize, "nodeSize must be positive");
+        validPositiveValue(rentDue, "rentDue must be positive");
+        validPositiveValue(currentBlockTimestamp, "currentBlockTimestamp must be positive");
+        validPositiveValue(rentCap, "rentCap must be positive");
+        validPositiveValue(rentThreshold, "rentThreshold must be positive");
 
         if(lastPaidTimestamp == Trie.NO_RENT_TIMESTAMP) {
             return currentBlockTimestamp;
@@ -110,26 +116,6 @@ public class StorageRentComputation {
         long timePaid = (long) Math.floor(rentCap / (nodeSize * RENTAL_RATE));
 
         return lastPaidTimestamp + timePaid;
-    }
-
-    private static void validateArgumentsComputeTimestamp(long nodeSize, long rentDue,
-                                                          long currentBlockTimestamp, long rentCap,
-                                                          long rentThreshold) {
-        validPositiveValue(nodeSize, "nodeSize must be positive");
-        validPositiveValue(rentDue, "rentDue must be positive");
-        validPositiveValue(currentBlockTimestamp, "currentBlockTimestamp must be positive");
-        validPositiveValue(rentCap, "rentCap must be positive");
-        validPositiveValue(rentThreshold, "rentThreshold must be positive");
-    }
-
-    private static void validateArgumentsRentDue(long nodeSize, long duration) {
-        validPositiveValue(nodeSize, "node size must be positive");
-        validPositiveValue(duration, "duration must be positive");
-    }
-
-    private static void validateArgumentsComputeRent(long cap, long threshold) {
-        validPositiveValue(cap, "cap must be positive");
-        validPositiveValue(threshold, "threshold must be positive");
     }
 
     private static void validPositiveValue(long value, String s) {
