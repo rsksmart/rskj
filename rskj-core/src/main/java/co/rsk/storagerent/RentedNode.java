@@ -18,7 +18,7 @@ public class RentedNode extends TrackedNode {
 
     public RentedNode(TrackedNode trackedNode, Long nodeSize, Long rentTimestamp) {
         super(trackedNode.getKey(), trackedNode.getOperationType(),
-                trackedNode.getTransactionHash(), trackedNode.getSuccessful());
+                trackedNode.getTransactionHash(), trackedNode.getNodeExistsInTrie());
         this.nodeSize = nodeSize;
         this.rentTimestamp = rentTimestamp;
     }
@@ -110,7 +110,7 @@ public class RentedNode extends TrackedNode {
     public String toString() {
         return "RentedNode[key: " + key +
                 ", operationType: " + operationType +
-                ", isSuccessful: " + isSuccessful +
+                ", nodeExistsInTrie: " + nodeExistsInTrie +
                 ", loadsContractCode: " + loadsContractCode +
                 ", transactionHash: " + transactionHash +
                 ", nodeSize: " + nodeSize +
