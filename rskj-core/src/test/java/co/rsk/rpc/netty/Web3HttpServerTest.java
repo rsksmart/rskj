@@ -121,6 +121,7 @@ public class Web3HttpServerTest {
             assertThat(response.code(), is(HttpResponseStatus.OK.code()));
             assertThat(response.headers().get("Content-Length"), is(notNullValue()));
             assertThat(Integer.parseInt(response.header("Content-Length")), is(responseBody.getBytes().length));
+            assertThat(response.headers().get("Connection"), is("Close"));
             assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
         } finally {
             server.stop();
