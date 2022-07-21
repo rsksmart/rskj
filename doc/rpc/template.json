@@ -11,29 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getFilterChanges",
-      "summary": "Polling method for a filter, which returns an array of logs which occurred since last poll.",
-      "params": [
-        {
-          "name": "filterId",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/FilterId"
-          }
-        }
-      ],
-      "result": {
-        "name": "logResult",
-        "schema": {
-          "title": "logResult",
-          "type": "array",
-          "items": {
-            "$ref": "#/components/schemas/Log"
-          }
-        }
-      }
-    },
-    {
       "name": "eth_getFilterLogs",
       "summary": "Returns an array of all logs matching filter with given id.",
       "params": [
@@ -779,11 +756,6 @@
         "description": "The boundary condition ('target'), 2^256 / difficulty.",
         "$ref": "#/components/schemas/DataWord"
       },
-      "FilterId": {
-        "title": "filterId",
-        "type": "string",
-        "description": "An identifier used to reference the filter."
-      },
       "BlockNumber": {
         "title": "blockNumber",
         "type": "string",
@@ -911,48 +883,6 @@
         "title": "bloomFilter",
         "type": "string",
         "description": "A 2048 bit bloom filter from the logs of the transaction. Each log sets 3 bits though taking the low-order 11 bits of each of the first three pairs of bytes in a Keccak 256 hash of the log's byte series"
-      },
-      "Log": {
-        "title": "log",
-        "type": "object",
-        "description": "An indexed event generated during a transaction",
-        "properties": {
-          "address": {
-            "title": "LogAddress",
-            "description": "Sender of the transaction",
-            "$ref": "#/components/schemas/Address"
-          },
-          "blockHash": {
-            "$ref": "#/components/schemas/BlockHash"
-          },
-          "blockNumber": {
-            "$ref": "#/components/schemas/BlockNumber"
-          },
-          "data": {
-            "title": "LogData",
-            "description": "The data/input string sent along with the transaction",
-            "$ref": "#/components/schemas/Bytes"
-          },
-          "logIndex": {
-            "title": "LogIndex",
-            "description": "The index of the event within its transaction, null when its pending",
-            "$ref": "#/components/schemas/IntegerHex"
-          },
-          "removed": {
-            "title": "logIsRemoved",
-            "description": "Whether or not the log was orphaned off the main chain",
-            "type": "boolean"
-          },
-          "topics": {
-            "$ref": "#/components/schemas/Topics"
-          },
-          "transactionHash": {
-            "$ref": "#/components/schemas/TransactionHash"
-          },
-          "transactionIndex": {
-            "$ref": "#/components/schemas/TransactionIndex"
-          }
-        }
       },
       "Topics": {
         "title": "LogTopics",
