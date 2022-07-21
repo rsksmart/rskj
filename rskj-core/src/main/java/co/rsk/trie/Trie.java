@@ -79,7 +79,7 @@ public class Trie {
     // size of the storage rent timestamp
     public static final int TIMESTAMP_SIZE = Long.BYTES;
 
-    // represents a non-initialized rent timestamp
+    // a constant for an uninitialized rent timestamp
     public static final long NO_RENT_TIMESTAMP = -1;
 
     // an rskip240 trie node will serialize with this version
@@ -457,7 +457,8 @@ public class Trie {
      */
     public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, value, false);
+        Trie trie = put(keySlice, value, NO_RENT_TIMESTAMP, false,
+                true, false);
 
         return trie == null ? new Trie(this.store) : trie;
     }
@@ -496,7 +497,8 @@ public class Trie {
     // This is O(1). The node with exact key "key" MUST exists.
     public Trie deleteRecursive(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, null, true);
+        Trie trie = put(keySlice, null, NO_RENT_TIMESTAMP, true,
+                true, false);
 
         return trie == null ? new Trie(this.store) : trie;
     }
@@ -802,7 +804,13 @@ public class Trie {
      *
      * @return the new NewTrie containing the tree with the new key value association
      */
-    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+    private Trie put(TrieKeySlice key, byte[] value, long newRentTimestamp, boolean isRecursiveDelete,
+                     boolean isSetValue, boolean isRentTimestampUpdate) {
+        if(isRentTimestampUpdate && !isSetValue) {
+            return this.internalPut(key, value, newRentTimestamp, isRecursiveDelete,
+                    false, true);
+        }
+
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -810,7 +818,8 @@ public class Trie {
             value = null;
         }
 
-        Trie trie = this.internalPut(key, value, isRecursiveDelete);
+        Trie trie = this.internalPut(key, value, newRentTimestamp, isRecursiveDelete,
+                isSetValue, isRentTimestampUpdate);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -865,49 +874,54 @@ public class Trie {
         return new Uint24(value.length);
     }
 
-    private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+    private Trie internalPut(TrieKeySlice key, byte[] value, long newRentTimestamp, boolean isRecursiveDelete,
+                             boolean isSetValue, boolean isRentTimestampUpdate) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
-        if (commonPath.length() < sharedPath.length()) {
+        if (commonPath.length() < sharedPath.length() && isSetValue) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
             if (value == null) {
                 return this;
             }
 
-            return this.split(commonPath).put(key, value, isRecursiveDelete);
+            return this.split(commonPath).put(key, value, newRentTimestamp, isRecursiveDelete,
+                    true, false);
         }
 
         // key found
         if (sharedPath.length() >= key.length()) {
-            // To compare values we need to retrieve the previous value
-            // if not already done so. We could also compare by hash, to avoid retrieval
-            // We do a small optimization here: if sizes are not equal, then values
-            // obviously are not.
-            if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
-                return this;
-            }
+            if(isSetValue) {
+                // To compare values we need to retrieve the previous value
+                // if not already done so. We could also compare by hash, to avoid retrieval
+                // We do a small optimization here: if sizes are not equal, then values
+                // obviously are not.
+                if (this.valueLength.equals(getDataLength(value)) &&
+                        Arrays.equals(this.getValue(), value)) {
+                    return this;
+                }
 
-            if (isRecursiveDelete) {
-                return new Trie(this.store, this.sharedPath, null, NO_RENT_TIMESTAMP);
-            }
+                if (isRecursiveDelete) {
+                    return new Trie(this.store, this.sharedPath, null, NO_RENT_TIMESTAMP);
+                }
 
-            if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
-                return null;
+                if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
+                    return null;
+                }
             }
 
             // updates value from the already existing key
             return new Trie(
                     this.store,
                     this.sharedPath,
-                    cloneArray(value),
+                    isSetValue? cloneArray(value) : this.value,
                     this.left,
                     this.right,
-                    getDataLength(value),
+                    isSetValue? getDataLength(value) : this.valueLength,
                     null,
                     this.childrenSize,
-                    this.lastRentPaidTimestamp);
+                    isRentTimestampUpdate? newRentTimestamp : this.lastRentPaidTimestamp);
         }
 
-        if (isEmptyTrie()) {
+        if (isEmptyTrie() && isSetValue) {
             // new trie leaf
             return new Trie(this.store, key, cloneArray(value), NO_RENT_TIMESTAMP);
         }
@@ -921,7 +935,8 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.put(subKey, value, isRecursiveDelete);
+        Trie newNode = node.put(subKey, value, newRentTimestamp, isRecursiveDelete,
+                isSetValue, isRentTimestampUpdate);
 
         // reference equality
         if (newNode == node) {
@@ -950,7 +965,7 @@ public class Trie {
             }
         }
 
-        if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
+        if (isEmptyTrie(this.valueLength, newLeft, newRight) && isSetValue) {
             return null;
         }
 
@@ -1203,73 +1218,9 @@ public class Trie {
      * @param key a trie key
      * @param newRentPaidTimestamp a new rent timestamp
      */
-    // todo(fedejinich) this should be refactored by reusing internalPut method
     public Trie updateLastRentPaidTimestamp(TrieKeySlice key, long newRentPaidTimestamp) {
-        // key found
-        if (sharedPath.length() >= key.length()) {
-            // updates last rent paid timestamp
-            return new Trie(
-                    this.store,
-                    this.sharedPath,
-                    cloneArray(this.value),
-                    this.left,
-                    this.right,
-                    getDataLength(this.value),
-                    null,
-                    this.childrenSize,
-                    newRentPaidTimestamp); // updated timestamp
-        }
-
-        // in the following part it goes down to the next child and tries to update the timestamp (if the key is found)
-
-        // this bit will be implicit and not present in a shared path
-        byte pos = key.get(sharedPath.length());
-
-        Trie node = retrieveNode(pos);
-
-        // this should never happen, it retrieves an existing node
-        if (node == null) { // NOSONAR this should be refactored by reusing the internalPut method
-            nodeStopper.stop(1);
-        }
-
-        TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        // sonarcloud/lgtm refuses because 'node' is nullable, but it's handled in Trie:1244,
-        // therefore we have to disable it for this line
-        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp); // NOSONAR lgtm [java/dereferenced-value-may-be-null]
-
-        // reference equality
-        if (newNode == node) { // NOSONAR this should be refactored by reusing the internalPut method
-            return this;
-        }
-
-        // at this point, they key has already been updated (creating a new branch). Now it creates new node reference,
-        // and updates the parent reference (from the bottom up to the trie root).
-
-        VarInt childrenSize = this.childrenSize;
-
-        NodeReference newNodeReference = new NodeReference(this.store, newNode, null);
-
-        NodeReference newLeft;
-        NodeReference newRight;
-        if (pos == 0) {
-            newLeft = newNodeReference;
-            newRight = this.right;
-
-            if (childrenSize != null) {
-                childrenSize = new VarInt(childrenSize.value - this.left.referenceSize() + newLeft.referenceSize());
-            }
-        } else {
-            newLeft = this.left;
-            newRight = newNodeReference;
-
-            if (childrenSize != null) {
-                childrenSize = new VarInt(childrenSize.value - this.right.referenceSize() + newRight.referenceSize());
-            }
-        }
-
-        // going up to the trie root with new updated left/right
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight,
-                this.valueLength, this.valueHash, childrenSize, this.lastRentPaidTimestamp); // use the already existing timestamp (this can be used to timestamp intermediate nodes also)
+        return this.internalPut(key, new byte[]{}, newRentPaidTimestamp, false,
+                false, true);
     }
 
     public long getLastRentPaidTimestamp() {
