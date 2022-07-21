@@ -1,0 +1,24 @@
+{
+  "name": "eth_getBlockByNumber",
+  "summary": "Returns information about a block by block number",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumber"
+    },
+    {
+      "name": "fullTransactionObjects",
+      "description": "If `true` returns the full transaction objects, if `false` only the hashes of the transactions.",
+      "required": true,
+      "schema": {
+        "title": "fullTransactionObjects",
+        "type": "boolean"
+      }
+    }
+  ],
+  "result": {
+    "name": "getBlockByNumberResult",
+    "schema": {
+      "$ref": "#/components/schemas/BlockOrNull"
+    }
+  }
+}

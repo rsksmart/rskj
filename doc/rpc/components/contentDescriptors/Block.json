@@ -1,0 +1,10 @@
+{
+  "Block": {
+    "name": "block",
+    "summary": "A block",
+    "description": "A block object",
+    "schema": {
+      "$ref": "#/components/schemas/Block"
+    }
+  }
+}

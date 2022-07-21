@@ -29,6 +29,8 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import java.math.BigInteger;
 import java.util.Map;
 
+// TODO:I check, in all modules, if we have doc for all methods
+
 public interface Web3EthModule {
     default String[] eth_accounts() {
         return getEthModule().accounts();
@@ -38,7 +40,7 @@ public interface Web3EthModule {
         return getEthModule().sign(addr, data);
     }
 
-    default String eth_call(CallArguments args, String bnOrId) {
+    default String eth_call(CallArguments args, String bnOrId) { // TODO:I create doc for bnOrId param (or simply define it in this method if not used anywhere else)
         return getEthModule().call(args, bnOrId);
     }
 
@@ -70,13 +72,13 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
-    String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR // TODO:I missing doc
 
     String eth_getBalance(String address, String block) throws Exception;
 
     String eth_getBalance(String address) throws Exception;
 
-    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
+    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception; // NOSONAR // TODO:I missing doc
 
     String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception; // NOSONAR
 

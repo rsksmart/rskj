@@ -1,0 +1,15 @@
+{
+  "name": "net_peerCount",
+  "summary": "Number of peers",
+  "description": "Returns the number of peers currently connected to this client.",
+  "params": [],
+  "result": {
+    "name": "quantity",
+    "description": "Hex of the number of connected peers.",
+    "schema": {
+      "title": "numConnectedPeers",
+      "description": "Hex representation of number of connected peers",
+      "type": "string"
+    }
+  }
+}

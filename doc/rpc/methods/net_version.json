@@ -1,0 +1,33 @@
+{
+  "name": "net_version",
+  "summary": "Network identifier associated with network",
+  "description": "Returns the current network id.",
+  "params": [],
+  "result": {
+    "name": "networkId",
+    "description": "Network ID associated with the current network",
+    "schema": {
+      "title": "networkId",
+      "type": "string",
+      "pattern": "^[\\d]+$"
+    }
+  },
+  "examples": [
+    {
+      "name": "rskMainnetId",
+      "params": [],
+      "result": {
+        "name": "rskMainnetId",
+        "value": 30
+      }
+    },
+    {
+      "name": "rskTestnetID",
+      "params": [],
+      "result": {
+        "name": "rskTestnetID",
+        "value": 31
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "name": "eth_blockNumber",
+  "summary": "Returns the number of most recent block.",
+  "params": [],
+  "result": {
+    "$ref": "#/components/contentDescriptors/BlockNumber"
+  }
+}

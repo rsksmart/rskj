@@ -1,0 +1,30 @@
+{
+  "name": "net_peerList",
+  "summary": "List of peers",
+  "description": "Returns the list of peers currently connected to this client.",
+  "params": [],
+  "result": {
+    "name": "array",
+    "description": "The list of peers",
+    "schema": {
+      "title": "connectedPeers",
+      "description": "The list of peers",
+      "type": "array"
+    }
+  },
+  "examples": [
+    {
+      "name": "connectedPeersExample",
+      "description": "Example with connected peers",
+      "params": [],
+      "result": {
+        "name": "connectedPeersResult",
+        "value": [
+          "3fd44f66 | ec2-52-15-37-171.us-east-2.compute.amazonaws.com/52.15.37.171:5050",
+          "50517861 | bootstrap14.rsk.co/54.169.136.187:5050",
+          "434f8932 | bootstrap07.rsk.co/54.169.12.15:5050"
+        ]
+      }
+    }
+  ]
+}
