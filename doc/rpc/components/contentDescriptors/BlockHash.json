@@ -1,0 +1,9 @@
+{
+  "BlockHash": {
+    "name": "blockHash",
+    "required": true,
+    "schema": {
+      "$ref": "#/components/schemas/BlockHash"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "eth_getBlockTransactionCountByHash",
+  "summary": "Returns the number of transactions in a block from a block matching the given block hash.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockHash"
+    }
+  ],
+  "result": {
+    "name": "blockTransactionCountByHash",
+    "description": "The Number of total transactions in the given block",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerOrNull"
+    }
+  }
+}

@@ -27,8 +27,8 @@ import (
 	"os"
 )
 
-const basePath = "/Users/iagolluque/workspace/rskj/doc/rpc"              // TODO:I param?
-const destPath = "/Users/iagolluque/workspace/rskj/doc/rpc/openrpc.json" // TODO:I param?
+const basePath = "/Users/iagolluque/workspace/rskj/doc/rpc"                                // TODO:I param?
+const destPath = "/Users/iagolluque/workspace/other/openrpc_playgrond/public/openrpc.json" // TODO:I param?
 
 type TemplateDoc struct {
 	Version    string        `json:"openrpc"`
