@@ -203,18 +203,6 @@ public class MutableRepositoryTracked extends MutableRepository {
         return valueLength;
     }
 
-    @Override
-    protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
-        Iterator<DataWord> storageKeys = super.internalGetStorageKeys(addr);
-
-        boolean result = !storageKeys.equals(Collections.emptyIterator());
-        byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
-
-        trackNodeReadOperation(accountStoragePrefixKey, result);
-
-        return storageKeys;
-    }
-
     protected void trackNodeWriteOperation(byte[] key) {
         trackNode(key, WRITE_OPERATION, true);
     }
