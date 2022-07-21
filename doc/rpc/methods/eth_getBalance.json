@@ -11,11 +11,7 @@
       }
     },
     {
-      "name": "blockNumber",
-      "description": "integer block number, or the string `\"latest\"`, `\"earliest\"` or `\"pending\"`",
-      "schema": {
-        "$ref": "#/components/schemas/BlockNumber"
-      }
+      "$ref": "#/components/contentDescriptors/BlockRefOrNumberOrTag"
     }
   ],
   "result": {

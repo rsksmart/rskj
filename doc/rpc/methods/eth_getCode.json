@@ -11,21 +11,7 @@
       }
     },
     {
-      "name": "blockNumberOrTag",
-      "description": "A BlockNumber of which the code existed",
-      "schema": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/BlockRef"
-          },
-          {
-            "$ref": "#/components/schemas/BlockNumberHex"
-          },
-          {
-            "$ref": "#/components/schemas/BlockNumberTag"
-          }
-        ]
-      }
+      "$ref": "#/components/contentDescriptors/BlockRefOrNumberOrTag"
     }
   ],
   "result": {
