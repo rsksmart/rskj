@@ -268,10 +268,22 @@ public class MutableRepository implements Repository {
         return internalGet(triekey, false);
     }
 
+    /**
+     * Gets all the storage keys for a given address.<br/>
+     * This method is never called  by consensus code, but only by debug code
+     * or other RPC functionality.<br/>
+     * Rent should never be tracked (If it is tracked, then the result of processing
+     * will differ if a certain debug mode is activated or deactivated).
+     *
+     * @param addr an rsk address
+     * @return an iterator with all the storage keys for the provided address.
+     * */
+    // todo(fedejinich) rename it to getDebugStorageKeys to avoid confusion
+    //  (this will be done in a different PR)
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         // -1 b/c the first bit is implicit in the storage node
-        return internalGetStorageKeys(addr);
+        return mutableTrie.getStorageKeys(addr);
     }
 
     @Override
@@ -400,9 +412,5 @@ public class MutableRepository implements Repository {
 
     protected Uint24 internalGetValueLength(byte[] key) {
         return mutableTrie.getValueLength(key);
-    }
-
-    protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
-        return mutableTrie.getStorageKeys(addr);
     }
 }

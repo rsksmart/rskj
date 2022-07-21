@@ -291,28 +291,6 @@ public class MutableRepositoryTrackedTest {
         verifyNodeTracking(2, 1, 0);
     }
 
-    // Testing internalGetStorageKeys calls: getStorageKeys
-
-    @Test
-    public void internalGetStorageKeys_getStorageKeys_shouldTrackNodesIfValueItsPresent() {
-        // should track on nonexistent account state
-        spyRepository.getStorageKeys(randomAccountAddress());
-
-        verifyNodeTracking(1, 0, 0);
-
-        spyRepository = newMutableRepositoryTestable();
-
-        RskAddress accAddress1 = randomAccountAddress();
-
-        spyRepository.createAccount(accAddress1);
-        spyRepository.setupContract(accAddress1);
-        spyRepository.saveCode(accAddress1, "something".getBytes(StandardCharsets.UTF_8));
-
-        spyRepository.getStorageKeys(accAddress1);
-
-        verifyNodeTracking(2, 3, 0);
-    }
-
     // testing trackNode
 
     @Test
