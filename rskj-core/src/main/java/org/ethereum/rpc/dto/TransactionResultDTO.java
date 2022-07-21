@@ -77,9 +77,9 @@ public class TransactionResultDTO {
             r = HexUtils.toQuantityJsonHex(signature.getR());
             s = HexUtils.toQuantityJsonHex(signature.getS());
         } else {
-            v = "0x0";
-            r = "0x0";
-            s = "0x0";
+            v = "0x";
+            r = "0x";
+            s = "0x";
         }
     }
 
