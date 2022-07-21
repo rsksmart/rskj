@@ -11,22 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getFilterLogs",
-      "summary": "Returns an array of all logs matching filter with given id.",
-      "params": [
-        {
-          "name": "filterId",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/FilterId"
-          }
-        }
-      ],
-      "result": {
-        "$ref": "#/components/contentDescriptors/Logs"
-      }
-    },
-    {
       "name": "eth_getRawTransactionByHash",
       "summary": "Returns raw transaction data of a transaction with the given hash.",
       "params": [
@@ -1320,17 +1304,6 @@
         "required": true,
         "schema": {
           "$ref": "#/components/schemas/Position"
-        }
-      },
-      "Logs": {
-        "name": "logs",
-        "description": "An array of all logs matching filter with given id.",
-        "schema": {
-          "title": "setOfLogs",
-          "type": "array",
-          "items": {
-            "$ref": "#/components/schemas/Log"
-          }
         }
       },
       "FilterId": {
