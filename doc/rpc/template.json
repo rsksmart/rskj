@@ -11,33 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getCode",
-      "summary": "Returns code at a given contract address",
-      "params": [
-        {
-          "name": "address",
-          "required": true,
-          "description": "The address of the contract",
-          "schema": {
-            "$ref": "#/components/schemas/Address"
-          }
-        },
-        {
-          "name": "blockNumber",
-          "description": "A BlockNumber of which the code existed",
-          "schema": {
-            "$ref": "#/components/schemas/BlockNumber"
-          }
-        }
-      ],
-      "result": {
-        "name": "bytes",
-        "schema": {
-          "$ref": "#/components/schemas/Bytes"
-        }
-      }
-    },
-    {
       "name": "eth_getFilterChanges",
       "summary": "Polling method for a filter, which returns an array of logs which occurred since last poll.",
       "params": [
