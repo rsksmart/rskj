@@ -83,3 +83,5 @@ classes/
 
 #Infer
 infer-out/
+
+doc/rpc/openrpc.json

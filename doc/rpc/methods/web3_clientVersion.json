@@ -1,0 +1,25 @@
+{
+  "name": "web3_clientVersion",
+  "description": "Returns the version of the current client",
+  "summary": "current client version",
+  "params": [],
+  "result": {
+    "name": "clientVersion",
+    "description": "Client version",
+    "schema": {
+      "title": "clientVersion",
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "name": "basicExample",
+      "params": [],
+      "result": {
+        "name": "version",
+        "description": "Current client version",
+        "value": "RskJ/3.3.1/Linux/Java1.8/IRIS-58406e0"
+      }
+    }
+  ]
+}

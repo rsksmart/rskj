@@ -1,0 +1,28 @@
+{
+  "name": "eth_getBlockByHash",
+  "summary": "Returns information about a block by hash",
+  "params": [
+    {
+      "name": "blockHash",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/BlockHash"
+      }
+    },
+    {
+      "name": "fullTransactionObjects",
+      "description": "If `true` this method returns the full transaction objects, if `false` only the hashes of the transactions.",
+      "required": true,
+      "schema": {
+        "title": "fullTransactionObjects",
+        "type": "boolean"
+      }
+    }
+  ],
+  "result": {
+    "name": "getBlockByHashResult",
+    "schema": {
+      "$ref": "#/components/schemas/BlockOrNull"
+    }
+  }
+}

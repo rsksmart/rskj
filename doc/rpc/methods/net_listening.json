@@ -1,0 +1,25 @@
+{
+  "name": "net_listening",
+  "summary": "Returns client listening status",
+  "description": "Determines if this client is actively listening for new network connections.",
+  "params": [],
+  "result": {
+    "name": "netListeningResult",
+    "description": "`true` if listening is active, `false` otherwise",
+    "schema": {
+      "title": "isNetListening",
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "name": "netListeningTrueExample",
+      "description": "Example when result is true",
+      "params": [],
+      "result": {
+        "name": "netListeningExampleTrueResult",
+        "value": true
+      }
+    }
+  ]
+}

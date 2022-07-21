@@ -25,7 +25,7 @@ package org.ethereum.rpc;
  *
  * Note: you can find more info about hex encoding in this site https://eth.wiki/json-rpc/API
  * */
-public class CallArguments {
+public class CallArguments { // TODO:I Missing doc, sometimes Ethereum uses Transaction, replace it when doc for this one gets created
     private String from;
     private String to;
     private String gas;

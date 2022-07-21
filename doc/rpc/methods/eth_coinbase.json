@@ -1,0 +1,12 @@
+{
+  "name": "eth_coinbase",
+  "summary": "Returns the client coinbase address.",
+  "params": [],
+  "result": {
+    "name": "address",
+    "description": "The address owned by the client that is used as default for things like the mining reward",
+    "schema": {
+      "$ref": "#/components/schemas/Address"
+    }
+  }
+}

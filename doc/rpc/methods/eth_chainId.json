@@ -1,0 +1,31 @@
+{
+  "name": "eth_chainId",
+  "summary": "Returns the currently configured chain id",
+  "description": "Returns the currently configured chain id, a value used in replay-protected transaction signing as introduced by EIP-155.",
+  "params": [],
+  "result": {
+    "name": "chainId",
+    "description": "hex format integer of the current chain id. Defaults are Mainnet=30, Testnet=31",
+    "schema": {
+      "$ref": "#/components/schemas/Integer"
+    }
+  },
+  "examples": [
+    {
+      "name": "rskMainnetChainId",
+      "params": [],
+      "result": {
+        "name": "rskMainnetChainId",
+        "value": "0x1e"
+      }
+    },
+    {
+      "name": "rskTestnetChainId",
+      "params": [],
+      "result": {
+        "name": "rskTestnetChainId",
+        "value": "0x1f"
+      }
+    }
+  ]
+}
