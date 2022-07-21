@@ -160,7 +160,7 @@
           "description": "The ordering in which a transaction is mined within its block.",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           }
         }
       ],
@@ -217,7 +217,7 @@
           "description": "The ordering in which a transaction is mined within its block.",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           }
         }
       ],
@@ -256,7 +256,7 @@
           "description": "The ordering in which a transaction is mined within its block.",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           }
         }
       ],
@@ -338,7 +338,7 @@
           "description": "The ordering in which a uncle is included within its block.",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           }
         }
       ],
@@ -366,7 +366,7 @@
           "description": "The ordering in which a uncle is included within its block.",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           }
         }
       ],
@@ -473,7 +473,7 @@
                 "balance": {
                   "title": "proofAccountBalance",
                   "description": "The Ether balance of the account or contract of the request",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 },
                 "codeHash": {
                   "title": "proofAccountCodeHash",
@@ -533,7 +533,7 @@
         "name": "hashesPerSecond",
         "description": "Integer of the number of hashes per second",
         "schema": {
-          "$ref": "#/components/schemas/Integer"
+          "$ref": "#/components/schemas/IntegerHex"
         }
       }
     },
@@ -569,7 +569,7 @@
         "name": "filterId",
         "description": "The filter ID for use in `eth_getFilterChanges`",
         "schema": {
-          "$ref": "#/components/schemas/Integer"
+          "$ref": "#/components/schemas/IntegerHex"
         }
       }
     },
@@ -600,7 +600,7 @@
         "name": "protocolVersion",
         "description": "The current ethereum protocol version",
         "schema": {
-          "$ref": "#/components/schemas/Integer"
+          "$ref": "#/components/schemas/IntegerHex"
         }
       }
     },
@@ -728,27 +728,27 @@
                 "startingBlock": {
                   "title": "syncingDataStartingBlock",
                   "description": "Block at which the import started (will only be reset, after the sync reached his head)",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 },
                 "currentBlock": {
                   "title": "syncingDataCurrentBlock",
                   "description": "The current block, same as eth_blockNumber",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 },
                 "highestBlock": {
                   "title": "syncingDataHighestBlock",
                   "description": "The estimated highest block",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 },
                 "knownStates": {
                   "title": "syncingDataKnownStates",
                   "description": "The known states",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 },
                 "pulledStates": {
                   "title": "syncingDataPulledStates",
                   "description": "The pulled states",
-                  "$ref": "#/components/schemas/Integer"
+                  "$ref": "#/components/schemas/IntegerHex"
                 }
               }
             },
@@ -785,7 +785,7 @@
       "StorageProofKey": {
         "title": "storageProofKey",
         "description": "The key used to get the storage slot in its account tree.",
-        "$ref": "#/components/schemas/Integer"
+        "$ref": "#/components/schemas/IntegerHex"
       },
       "StorageProof": {
         "title": "storageProofSet",
@@ -802,7 +802,7 @@
             "value": {
               "title": "storageProofValue",
               "description": "The value of the storage slot in its account tree",
-              "$ref": "#/components/schemas/Integer"
+              "$ref": "#/components/schemas/IntegerHex"
             },
             "proof": {
               "$ref": "#/components/schemas/ProofNodes"
@@ -853,7 +853,7 @@
         "title": "blockNumber",
         "type": "string",
         "description": "The hex representation of the block's height",
-        "$ref": "#/components/schemas/Integer"
+        "$ref": "#/components/schemas/IntegerHex"
       },
       "BlockNumberTag": {
         "title": "blockNumberTag",
@@ -880,7 +880,7 @@
         "title": "integerOrNull",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           },
           {
             "$ref": "#/components/schemas/Null"
@@ -930,7 +930,7 @@
           "cumulativeGasUsed": {
             "title": "ReceiptCumulativeGasUsed",
             "description": "The gas units used by the transaction",
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           },
           "from": {
             "$ref": "#/components/schemas/From"
@@ -938,7 +938,7 @@
           "gasUsed": {
             "title": "ReceiptGasUsed",
             "description": "The total gas used by the transaction",
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           },
           "logs": {
             "title": "logs",
@@ -1001,7 +1001,7 @@
           "logIndex": {
             "title": "LogIndex",
             "description": "The index of the event within its transaction, null when its pending",
-            "$ref": "#/components/schemas/Integer"
+            "$ref": "#/components/schemas/IntegerHex"
           },
           "removed": {
             "title": "logIsRemoved",
@@ -1295,7 +1295,7 @@
       "Nonce": {
         "title": "nonce",
         "description": "A number only to be used once",
-        "$ref": "#/components/schemas/Integer"
+        "$ref": "#/components/schemas/IntegerHex"
       },
       "Null": {
         "title": "null",
@@ -1366,7 +1366,7 @@
         "schema": {
           "title": "gasPriceResult",
           "description": "Integer of the gas price",
-          "$ref": "#/components/schemas/Integer"
+          "$ref": "#/components/schemas/IntegerHex"
         }
       },
       "Transaction": {
