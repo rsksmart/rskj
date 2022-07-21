@@ -11,22 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getBlockTransactionCountByHash",
-      "summary": "Returns the number of transactions in a block from a block matching the given block hash.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockHash"
-        }
-      ],
-      "result": {
-        "name": "blockTransactionCountByHash",
-        "description": "The Number of total transactions in the given block",
-        "schema": {
-          "$ref": "#/components/schemas/IntegerOrNull"
-        }
-      }
-    },
-    {
       "name": "eth_getBlockTransactionCountByNumber",
       "summary": "Returns the number of transactions in a block from a block matching the given block number.",
       "params": [
@@ -843,12 +827,6 @@
         "type": "string",
         "description": "An identifier used to reference the filter."
       },
-      "BlockHash": {
-        "title": "blockHash",
-        "type": "string",
-        "pattern": "^0x[a-fA-F\\d]{64}$",
-        "description": "The hex representation of the Keccak 256 of the RLP encoded block"
-      },
       "BlockNumber": {
         "title": "blockNumber",
         "type": "string",
@@ -1441,13 +1419,6 @@
         "required": true,
         "schema": {
           "$ref": "#/components/schemas/Address"
-        }
-      },
-      "BlockHash": {
-        "name": "blockHash",
-        "required": true,
-        "schema": {
-          "$ref": "#/components/schemas/BlockHash"
         }
       },
       "Nonce": {

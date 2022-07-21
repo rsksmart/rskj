@@ -1,0 +1,8 @@
+{
+  "BlockHash": {
+    "title": "blockHash",
+    "type": "string",
+    "pattern": "^0x[a-fA-F\\d]{64}$",
+    "description": "The hex representation of the Keccak 256 of the RLP encoded block"
+  }
+}
