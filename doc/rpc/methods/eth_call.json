@@ -6,7 +6,7 @@
       "$ref": "#/components/contentDescriptors/Transaction"
     },
     {
-      "$ref": "#/components/contentDescriptors/BlockNumberOrId"
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
     }
   ],
   "result": {

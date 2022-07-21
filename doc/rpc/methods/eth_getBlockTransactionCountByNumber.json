@@ -1,0 +1,34 @@
+{
+  "name": "eth_getBlockTransactionCountByNumber",
+  "summary": "Returns the number of transactions in a block from a block matching the given block number.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    }
+  ],
+  "result": {
+    "name": "blockTransactionCountByHash",
+    "description": "The Number of total transactions in the given block",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "blockWithTransactions",
+      "params": [],
+      "result": {
+        "name": "blockWithTransactions",
+        "value": "0x5"
+      }
+    },
+    {
+      "name": "blockWithoutTransactions (just coinbase)",
+      "params": [],
+      "result": {
+        "name": "blockWithoutTransactions",
+        "value": "0x1"
+      }
+    }
+  ]
+}
