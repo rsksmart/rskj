@@ -13,5 +13,41 @@
     "schema": {
       "$ref": "#/components/schemas/Integer"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "description": "Example",
+      "params": [
+        {
+          "name": "from",
+          "value": ""
+        },
+        {
+          "name": "to",
+          "value": ""
+        },
+        {
+          "name": "gas",
+          "value": ""
+        },
+        {
+          "name": "gasPrice",
+          "value": ""
+        },
+        {
+          "name": "value",
+          "value": ""
+        },
+        {
+          "name": "data",
+          "value": ""
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x5208"
+      }
+    }
+  ]
 }
