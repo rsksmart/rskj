@@ -18,6 +18,7 @@
 package co.rsk.rpc.netty;
 
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -25,8 +26,9 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
+import static io.netty.handler.codec.http.HttpHeaders.Values.CLOSE;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
@@ -38,13 +40,17 @@ public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<W
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
+        ByteBuf content = msg.getContent();
+
         DefaultFullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.valueOf(httpStatusCodeProvider.getHttpStatusCode(msg.getCode())),
-                msg.getContent()
+                content
         );
 
         response.headers().add(CONTENT_TYPE, APPLICATION_JSON);
+        response.headers().add(CONTENT_LENGTH, content.readableBytes());
+        response.headers().add(CONNECTION, CLOSE);
 
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
