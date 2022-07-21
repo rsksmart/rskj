@@ -12,5 +12,23 @@
     "schema": {
       "$ref": "#/components/schemas/IntegerOrNull"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "blockWithTransactions",
+      "params": [],
+      "result": {
+        "name": "blockWithTransactions",
+        "value": "0x5"
+      }
+    },
+    {
+      "name": "blockWithoutTransactions (just coinbase)",
+      "params": [],
+      "result": {
+        "name": "blockWithoutTransactions",
+        "value": "0x1"
+      }
+    }
+  ]
 }

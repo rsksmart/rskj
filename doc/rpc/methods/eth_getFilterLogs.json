@@ -1,6 +1,6 @@
 {
-  "name": "eth_getFilterChanges",
-  "summary": "Polling method for a filter, which returns an array of logs which occurred since last poll.",
+  "name": "eth_getFilterLogs",
+  "summary": "Returns an array of all logs matching filter with given id.",
   "externalDocs": {
     "description": "Result of this method is too big for this doc, please check more info on",
     "url": "https://developers.rsk.co/rsk/node/architecture/json-rpc/"
@@ -15,19 +15,11 @@
     }
   ],
   "result": {
-    "name": "logResult",
-    "schema": {
-      "title": "logResult",
-      "type": "array",
-      "description": "Array of log objects, or an empty array if nothing has changed since last poll.",
-      "items": {
-        "$ref": "#/components/schemas/Log"
-      }
-    }
+    "$ref": "#/components/contentDescriptors/Logs"
   },
   "examples": [
     {
-      "name": "logResult",
+      "name": "logsResult",
       "params": [
         {
           "name": "filterId",

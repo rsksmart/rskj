@@ -7,7 +7,7 @@
     }
   ],
   "result": {
-    "name": "blockTransactionCountByHash",
+    "name": "blockTransactionCountByNumber",
     "description": "The Number of total transactions in the given block",
     "schema": {
       "$ref": "#/components/schemas/IntegerHex"
