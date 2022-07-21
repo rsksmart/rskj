@@ -31,6 +31,8 @@ import java.util.Map;
 
 // TODO:I check, in all modules, if we have doc for all methods
 
+// TODO:I add examples to methods without them
+
 public interface Web3EthModule {
     default String[] eth_accounts() {
         return getEthModule().accounts();

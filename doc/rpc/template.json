@@ -11,22 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getBlockTransactionCountByNumber",
-      "summary": "Returns the number of transactions in a block from a block matching the given block number.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
-        }
-      ],
-      "result": {
-        "name": "blockTransactionCountByHash",
-        "description": "The Number of total transactions in the given block",
-        "schema": {
-          "$ref": "#/components/schemas/IntegerOrNull"
-        }
-      }
-    },
-    {
       "name": "eth_getCode",
       "summary": "Returns code at a given contract address",
       "params": [

@@ -1,6 +1,6 @@
 {
-  "BlockNumberOrId": {
-    "name": "blockNumberOrId",
+  "BlockNumberOrTag": {
+    "name": "blockNumberOrTag",
     "required": true,
     "schema": {
       "title": "blockNumberOrTag",
