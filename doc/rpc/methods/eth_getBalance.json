@@ -22,5 +22,25 @@
       "pattern": "^0x[a-fA-F0-9]+$",
       "description": "Hex representation of the integer, `0x0` if the address is not found"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "description": "Example",
+      "params": [
+        {
+          "name": "address",
+          "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+        },
+        {
+          "name": "blockTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x0234c8a3397aab58"
+      }
+    }
+  ]
 }
