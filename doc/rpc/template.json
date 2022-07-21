@@ -858,7 +858,7 @@
       "BlockNumberTag": {
         "title": "blockNumberTag",
         "type": "string",
-        "description": "The optional block height description",
+        "description": "A fixed tag describing block height, check options below.",
         "enum": [
           "earliest",
           "latest",
