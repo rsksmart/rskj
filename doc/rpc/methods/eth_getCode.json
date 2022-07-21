@@ -1,0 +1,38 @@
+{
+  "name": "eth_getCode",
+  "summary": "Returns code at a given contract address",
+  "params": [
+    {
+      "name": "address",
+      "required": true,
+      "description": "The address of the contract",
+      "schema": {
+        "$ref": "#/components/schemas/Address"
+      }
+    },
+    {
+      "name": "blockNumberOrTag",
+      "description": "A BlockNumber of which the code existed",
+      "schema": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BlockRef"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberHex"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberTag"
+          }
+        ]
+      }
+    }
+  ],
+  "result": {
+    "name": "code",
+    "description": "The code from the given address",
+    "schema": {
+      "$ref": "#/components/schemas/Bytes"
+    }
+  }
+}
