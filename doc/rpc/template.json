@@ -11,30 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getTransactionReceipt",
-      "summary": "Returns the receipt information of a transaction by its hash.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/TransactionHash"
-        }
-      ],
-      "result": {
-        "name": "transactionReceiptResult",
-        "description": "returns either a receipt or null",
-        "schema": {
-          "title": "transactionReceiptOrNull",
-          "oneOf": [
-            {
-              "$ref": "#/components/schemas/Receipt"
-            },
-            {
-              "$ref": "#/components/schemas/Null"
-            }
-          ]
-        }
-      }
-    },
-    {
       "name": "eth_getUncleByBlockHashAndIndex",
       "summary": "Returns information about a uncle of a block by hash and uncle index position.",
       "params": [
@@ -588,80 +564,6 @@
             "$ref": "#/components/schemas/Null"
           }
         ]
-      },
-      "Receipt": {
-        "title": "receipt",
-        "type": "object",
-        "description": "The receipt of a transaction",
-        "required": [
-          "blockHash",
-          "blockNumber",
-          "contractAddress",
-          "cumulativeGasUsed",
-          "from",
-          "gasUsed",
-          "logs",
-          "logsBloom",
-          "to",
-          "transactionHash",
-          "transactionIndex"
-        ],
-        "properties": {
-          "blockHash": {
-            "$ref": "#/components/schemas/BlockHash"
-          },
-          "blockNumber": {
-            "$ref": "#/components/schemas/BlockNumberHex"
-          },
-          "contractAddress": {
-            "title": "ReceiptContractAddress",
-            "description": "The contract address created, if the transaction was a contract creation, otherwise null",
-            "$ref": "#/components/schemas/AddressOrNull"
-          },
-          "cumulativeGasUsed": {
-            "title": "ReceiptCumulativeGasUsed",
-            "description": "The gas units used by the transaction",
-            "$ref": "#/components/schemas/IntegerHex"
-          },
-          "from": {
-            "$ref": "#/components/schemas/From"
-          },
-          "gasUsed": {
-            "title": "ReceiptGasUsed",
-            "description": "The total gas used by the transaction",
-            "$ref": "#/components/schemas/IntegerHex"
-          },
-          "logs": {
-            "title": "logs",
-            "type": "array",
-            "description": "An array of all the logs triggered during the transaction",
-            "items": {
-              "$ref": "#/components/schemas/Log"
-            }
-          },
-          "logsBloom": {
-            "$ref": "#/components/schemas/BloomFilter"
-          },
-          "to": {
-            "$ref": "#/components/schemas/To"
-          },
-          "transactionHash": {
-            "$ref": "#/components/schemas/TransactionHash"
-          },
-          "transactionIndex": {
-            "$ref": "#/components/schemas/TransactionIndex"
-          },
-          "postTransactionState": {
-            "title": "ReceiptPostTransactionState",
-            "description": "The intermediate stateRoot directly after transaction execution.",
-            "$ref": "#/components/schemas/Keccak"
-          },
-          "status": {
-            "title": "ReceiptStatus",
-            "description": "Whether or not the transaction threw an error.",
-            "type": "boolean"
-          }
-        }
       },
       "BloomFilter": {
         "title": "bloomFilter",
