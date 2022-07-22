@@ -1,0 +1,7 @@
+{
+  "Nonce": {
+    "title": "nonce",
+    "description": "A number only to be used once",
+    "$ref": "#/components/schemas/IntegerHex"
+  }
+}

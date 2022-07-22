@@ -11,32 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getTransactionCount",
-      "summary": "Returns the number of transactions sent from an address",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/Address"
-        },
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
-        }
-      ],
-      "result": {
-        "name": "transactionCount",
-        "schema": {
-          "title": "nonceOrNull",
-          "oneOf": [
-            {
-              "$ref": "#/components/schemas/Nonce"
-            },
-            {
-              "$ref": "#/components/schemas/Null"
-            }
-          ]
-        }
-      }
-    },
-    {
       "name": "eth_getTransactionReceipt",
       "summary": "Returns the receipt information of a transaction by its hash.",
       "params": [
@@ -878,11 +852,6 @@
         "type": "string",
         "description": "Hex representation of a Keccak 256 hash",
         "pattern": "^0x[a-fA-F\\d]{64}$"
-      },
-      "Nonce": {
-        "title": "nonce",
-        "description": "A number only to be used once",
-        "$ref": "#/components/schemas/IntegerHex"
       },
       "Integer": {
         "title": "integer",
