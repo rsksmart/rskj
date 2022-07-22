@@ -13,7 +13,7 @@
         "$ref": "#/components/schemas/BlockHash"
       },
       "blockNumber": {
-        "$ref": "#/components/schemas/BlockNumber"
+        "$ref": "#/components/schemas/BlockNumberHex"
       },
       "data": {
         "title": "LogData",

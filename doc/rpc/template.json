@@ -30,7 +30,7 @@
           "$ref": "#/components/contentDescriptors/Address"
         },
         {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
+          "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
         }
       ],
       "result": {
@@ -104,7 +104,7 @@
           "description": "The block in which the uncle was included",
           "required": true,
           "schema": {
-            "$ref": "#/components/schemas/BlockNumber"
+            "$ref": "#/components/schemas/BlockNumberHex"
           }
         },
         {
@@ -164,7 +164,7 @@
       "summary": "Returns the number of uncles in a block from a block matching the given block number.",
       "params": [
         {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
+          "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
         }
       ],
       "result": {
@@ -195,7 +195,7 @@
           }
         },
         {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
+          "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
         }
       ],
       "result": {
@@ -584,12 +584,6 @@
         "description": "The boundary condition ('target'), 2^256 / difficulty.",
         "$ref": "#/components/schemas/DataWord"
       },
-      "BlockNumber": {
-        "title": "blockNumber",
-        "type": "string",
-        "description": "The hex representation of the block's height // TODO:I check if possible to delete",
-        "$ref": "#/components/schemas/IntegerHex"
-      },
       "BlockNumberTag": {
         "title": "blockNumberTag",
         "type": "string",
@@ -655,7 +649,7 @@
             "$ref": "#/components/schemas/BlockHash"
           },
           "blockNumber": {
-            "$ref": "#/components/schemas/BlockNumber"
+            "$ref": "#/components/schemas/BlockNumberHex"
           },
           "contractAddress": {
             "title": "ReceiptContractAddress",
@@ -722,7 +716,7 @@
         "description": "The block number or null when its the pending block",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/BlockNumber"
+            "$ref": "#/components/schemas/BlockNumberHex"
           },
           {
             "$ref": "#/components/schemas/Null"
@@ -995,21 +989,6 @@
         "name": "filterId",
         "schema": {
           "$ref": "#/components/schemas/FilterId"
-        }
-      },
-      "BlockNumber": {
-        "name": "blockNumber",
-        "required": true,
-        "schema": {
-          "title": "blockNumberOrTag",
-          "oneOf": [
-            {
-              "$ref": "#/components/schemas/BlockNumber"
-            },
-            {
-              "$ref": "#/components/schemas/BlockNumberTag"
-            }
-          ]
         }
       },
       "TransactionHash": {
