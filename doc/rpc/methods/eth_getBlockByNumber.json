@@ -3,7 +3,7 @@
   "summary": "Returns information about a block by block number",
   "params": [
     {
-      "$ref": "#/components/contentDescriptors/BlockNumber"
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
     },
     {
       "name": "fullTransactionObjects",
