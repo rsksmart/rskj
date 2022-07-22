@@ -44,7 +44,7 @@
       }
     },
     {
-      "name": "uncleBlockNotFoud",
+      "name": "uncleBlockNotFound",
       "params": [
         {
           "name": "blockNumber",
