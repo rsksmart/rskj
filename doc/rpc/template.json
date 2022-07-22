@@ -11,26 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getTransactionByBlockNumberAndIndex",
-      "summary": "Returns the information about a transaction requested by the block number and index of which it was mined.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
-        },
-        {
-          "name": "index",
-          "description": "The ordering in which a transaction is mined within its block.",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/IntegerHex"
-          }
-        }
-      ],
-      "result": {
-        "$ref": "#/components/contentDescriptors/TransactionResult"
-      }
-    },
-    {
       "name": "eth_getTransactionByHash",
       "summary": "Returns the information about a transaction requested by transaction hash.",
       "params": [
