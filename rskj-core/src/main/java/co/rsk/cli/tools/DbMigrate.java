@@ -98,6 +98,10 @@ public class DbMigrate extends CliToolRskContextAware {
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {
         logger.info("Starting db migration...");
 
+        if (args.length == 0) {
+            throw new IllegalArgumentException("Db to migrate not specified. Please specify in the first argument.");
+        }
+
         DbKind sourceDbKind = ctx.getRskSystemProperties().databaseKind();
         DbKind targetDbKind = DbKind.ofName(args[0]);
 
@@ -203,6 +207,7 @@ public class DbMigrate extends CliToolRskContextAware {
                 logger.info("Indexes for {} were migrated successfully", sourceKeyValueDataSource.getName());
             } catch (IOException e) {
                 logger.error("An error happened while migrating indexes", e);
+                throw new RuntimeException(e);
             }
         } else {
             logger.info("No indexes found for {}", sourceKeyValueDataSource.getName());
