@@ -11,18 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getTransactionByHash",
-      "summary": "Returns the information about a transaction requested by transaction hash.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/TransactionHash"
-        }
-      ],
-      "result": {
-        "$ref": "#/components/contentDescriptors/TransactionResult"
-      }
-    },
-    {
       "name": "eth_getTransactionCount",
       "summary": "Returns the number of transactions sent from an address",
       "params": [
@@ -874,12 +862,6 @@
           "$ref": "#/components/schemas/Transaction"
         }
       },
-      "TransactionHash": {
-        "title": "transactionHash",
-        "type": "string",
-        "description": "Keccak 256 Hash of the RLP encoding of a transaction",
-        "$ref": "#/components/schemas/Keccak"
-      },
       "KeccakOrPending": {
         "title": "keccakOrPending",
         "oneOf": [
@@ -989,13 +971,6 @@
         "name": "filterId",
         "schema": {
           "$ref": "#/components/schemas/FilterId"
-        }
-      },
-      "TransactionHash": {
-        "name": "transactionHash",
-        "required": true,
-        "schema": {
-          "$ref": "#/components/schemas/TransactionHash"
         }
       }
     }

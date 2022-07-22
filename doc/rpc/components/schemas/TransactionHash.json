@@ -1,0 +1,8 @@
+{
+  "TransactionHash": {
+    "title": "transactionHash",
+    "type": "string",
+    "description": "Keccak 256 Hash of the RLP encoding of a transaction",
+    "$ref": "#/components/schemas/Keccak"
+  }
+}
