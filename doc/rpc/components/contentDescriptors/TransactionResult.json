@@ -1,0 +1,17 @@
+{
+  "TransactionResult": {
+    "name": "transactionResult",
+    "description": "Returns a transaction or null",
+    "schema": {
+      "title": "TransactionOrNull",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/Transaction"
+        },
+        {
+          "$ref": "#/components/schemas/Null"
+        }
+      ]
+    }
+  }
+}
