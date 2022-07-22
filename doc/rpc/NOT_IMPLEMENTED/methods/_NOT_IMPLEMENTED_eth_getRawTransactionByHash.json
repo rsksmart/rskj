@@ -1,0 +1,16 @@
+{
+  "name": "eth_getRawTransactionByHash",
+  "summary": "Returns raw transaction data of a transaction with the given hash.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionHash"
+    }
+  ],
+  "result": {
+    "name": "rawTransactionByHash",
+    "description": "The raw transaction data",
+    "schema": {
+      "$ref": "#/components/schemas/Bytes"
+    }
+  }
+}

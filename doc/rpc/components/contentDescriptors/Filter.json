@@ -1,0 +1,33 @@
+{
+  "Filter": {
+    "name": "filter",
+    "required": true,
+    "schema": {
+      "title": "filter",
+      "type": "object",
+      "description": "A filter used to monitor the blockchain for log/events",
+      "properties": {
+        "fromBlock": {
+          "$ref": "#/components/schemas/BlockNumberHex"
+        },
+        "toBlock": {
+          "$ref": "#/components/schemas/BlockNumberHex"
+        },
+        "address": {
+          "title": "oneOrArrayOfAddresses",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/Address"
+            },
+            {
+              "$ref": "#/components/schemas/Addresses"
+            }
+          ]
+        },
+        "topics": {
+          "$ref": "#/components/schemas/Topics"
+        }
+      }
+    }
+  }
+}

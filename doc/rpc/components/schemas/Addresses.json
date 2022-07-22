@@ -1,0 +1,10 @@
+{
+  "Addresses": {
+    "title": "addresses",
+    "type": "array",
+    "description": "List of contract addresses from which to monitor events",
+    "items": {
+      "$ref": "#/components/schemas/Address"
+    }
+  }
+}
