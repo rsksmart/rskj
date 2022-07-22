@@ -44,16 +44,7 @@
             "contractAddress": "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
             "logs": [
               {
-                "logIndex": "0x1",
-                "blockNumber": "0xb",
-                "blockHash": "0xc6ef2fc5426d6ad6fd9e2a26abeab0aa2411b7ab17f30a99d3cb96aed1d1055b",
-                "transactionHash": "0xb903239f8543d04b5dc1ba6579132b143087c68db1b2168786408fcbce568238",
-                "transactionIndex": "0x1",
-                "address": "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
-                "data": "0x0000000000000000000000000000000000000000000000000000000000000000",
-                "topics": [
-                  "0x59ebeb90bc63057b6515673c3ecf9438e5058bca0f92585014eced636878c9a5"
-                ]
+                "$ref": "#/components/schemas/LogExampleResult"
               }
             ],
             "logsBloom": "0x00...0",
