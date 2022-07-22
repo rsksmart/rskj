@@ -1,0 +1,8 @@
+{
+  "Position": {
+    "title": "position",
+    "type": "string",
+    "description": "Hex representation of the storage slot where the variable exists",
+    "pattern": "^0x([a-fA-F0-9]?)+$"
+  }
+}

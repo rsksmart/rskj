@@ -11,27 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getStorageAt",
-      "summary": "Gets a storage value from a contract address, a position, and an optional blockNumber",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/Address"
-        },
-        {
-          "$ref": "#/components/contentDescriptors/Position"
-        },
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
-        }
-      ],
-      "result": {
-        "name": "dataWord",
-        "schema": {
-          "$ref": "#/components/schemas/DataWord"
-        }
-      }
-    },
-    {
       "name": "eth_getTransactionByBlockHashAndIndex",
       "summary": "Returns the information about a transaction requested by the block hash and index of which it was mined.",
       "params": [
@@ -1068,12 +1047,6 @@
         "pattern": "^0x[a-fA-F0-9]+$",
         "description": "Hex representation of the integer"
       },
-      "Position": {
-        "title": "position",
-        "type": "string",
-        "description": "Hex representation of the storage slot where the variable exists",
-        "pattern": "^0x([a-fA-F0-9]?)+$"
-      },
       "DataWord": {
         "title": "dataWord",
         "type": "string",
@@ -1164,13 +1137,6 @@
         "required": true,
         "schema": {
           "$ref": "#/components/schemas/Nonce"
-        }
-      },
-      "Position": {
-        "name": "key",
-        "required": true,
-        "schema": {
-          "$ref": "#/components/schemas/Position"
         }
       },
       "FilterId": {

@@ -1,0 +1,44 @@
+{
+  "name": "eth_getStorageAt",
+  "summary": "Gets a storage value from a contract address, a position, and an optional blockNumber",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/Address"
+    },
+    {
+      "$ref": "#/components/contentDescriptors/Position"
+    },
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    }
+  ],
+  "result": {
+    "name": "dataWord",
+    "schema": {
+      "$ref": "#/components/schemas/DataWord"
+    }
+  },
+  "examples": [
+    {
+      "name": "storageValue",
+      "params": [
+        {
+          "name": "address",
+          "value": "0x295a70b2de5e3953354a6a8344e616ed314d7251"
+        },
+        {
+          "name": "position",
+          "value": "0x6661e9d6d8b923d5bbaab1b96e1dd51ff6ea2a93520fdc9eb75d059238b8c5e9"
+        },
+        {
+          "name": "blockTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x000000000000000000000000000000000000000000000000000000000000162e"
+      }
+    }
+  ]
+}
