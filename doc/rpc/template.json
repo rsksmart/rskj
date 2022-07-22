@@ -11,29 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getUncleByBlockHashAndIndex",
-      "summary": "Returns information about a uncle of a block by hash and uncle index position.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockHash"
-        },
-        {
-          "name": "index",
-          "description": "The ordering in which a uncle is included within its block.",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/IntegerHex"
-          }
-        }
-      ],
-      "result": {
-        "name": "uncle",
-        "schema": {
-          "$ref": "#/components/schemas/BlockOrNull"
-        }
-      }
-    },
-    {
       "name": "eth_getUncleByBlockNumberAndIndex",
       "summary": "Returns information about a uncle of a block by hash and uncle index position.",
       "params": [
@@ -530,17 +507,6 @@
           "earliest",
           "latest",
           "pending"
-        ]
-      },
-      "BlockOrNull": {
-        "title": "blockOrNull",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/Block"
-          },
-          {
-            "$ref": "#/components/schemas/Null"
-          }
         ]
       },
       "IntegerOrNull": {
