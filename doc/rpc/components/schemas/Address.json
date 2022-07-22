@@ -1,0 +1,8 @@
+{
+  "Address": {
+    "title": "address",
+    "type": "string",
+    "description": "EOA or Contract address",
+    "pattern": "^0x[a-fA-F\\d]{40}$"
+  }
+}

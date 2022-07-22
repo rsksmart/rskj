@@ -11,82 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getRawTransactionByHash",
-      "summary": "Returns raw transaction data of a transaction with the given hash.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/TransactionHash"
-        }
-      ],
-      "result": {
-        "name": "rawTransactionByHash",
-        "description": "The raw transaction data",
-        "schema": {
-          "$ref": "#/components/schemas/Bytes"
-        }
-      }
-    },
-    {
-      "name": "eth_getRawTransactionByBlockHashAndIndex",
-      "summary": "Returns raw transaction data of a transaction with the block hash and index of which it was mined.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockHash"
-        },
-        {
-          "name": "index",
-          "description": "The ordering in which a transaction is mined within its block.",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/Integer"
-          }
-        }
-      ],
-      "result": {
-        "name": "rawTransaction",
-        "description": "The raw transaction data",
-        "schema": {
-          "$ref": "#/components/schemas/Bytes"
-        }
-      }
-    },
-    {
-      "name": "eth_getRawTransactionByBlockNumberAndIndex",
-      "summary": "Returns raw transaction data of a transaction with the block number and index of which it was mined.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumber"
-        },
-        {
-          "name": "index",
-          "description": "The ordering in which a transaction is mined within its block.",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/IntegerHex"
-          }
-        }
-      ],
-      "result": {
-        "name": "rawTransaction",
-        "description": "The raw transaction data",
-        "schema": {
-          "$ref": "#/components/schemas/Bytes"
-        }
-      }
-    },
-    {
-      "name": "eth_getLogs",
-      "summary": "Returns an array of all logs matching a given filter object.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/Filter"
-        }
-      ],
-      "result": {
-        "$ref": "#/components/contentDescriptors/Logs"
-      }
-    },
-    {
       "name": "eth_getStorageAt",
       "summary": "Gets a storage value from a contract address, a position, and an optional blockNumber",
       "params": [
@@ -743,7 +667,7 @@
       "BlockNumber": {
         "title": "blockNumber",
         "type": "string",
-        "description": "The hex representation of the block's height",
+        "description": "The hex representation of the block's height // TODO:I check if possible to delete",
         "$ref": "#/components/schemas/IntegerHex"
       },
       "BlockNumberTag": {
@@ -867,19 +791,6 @@
         "title": "bloomFilter",
         "type": "string",
         "description": "A 2048 bit bloom filter from the logs of the transaction. Each log sets 3 bits though taking the low-order 11 bits of each of the first three pairs of bytes in a Keccak 256 hash of the log's byte series"
-      },
-      "Topics": {
-        "title": "LogTopics",
-        "description": "Topics are order-dependent. Each topic can also be an array of DATA with 'or' options.",
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/Topic"
-        }
-      },
-      "Topic": {
-        "title": "topic",
-        "description": "32 Bytes DATA of indexed log arguments. (In solidity: The first topic is the hash of the signature of the event (e.g. Deposit(address,bytes32,uint256))",
-        "$ref": "#/components/schemas/DataWord"
       },
       "TransactionIndex": {
         "title": "transactionIndex",
@@ -1157,19 +1068,6 @@
         "pattern": "^0x[a-fA-F0-9]+$",
         "description": "Hex representation of the integer"
       },
-      "Address": {
-        "title": "address",
-        "type": "string",
-        "pattern": "^0x[a-fA-F\\d]{40}$"
-      },
-      "Addresses": {
-        "title": "addresses",
-        "type": "array",
-        "description": "List of contract addresses from which to monitor events",
-        "items": {
-          "$ref": "#/components/schemas/Address"
-        }
-      },
       "Position": {
         "title": "position",
         "type": "string",
@@ -1252,37 +1150,6 @@
         "required": true,
         "schema": {
           "$ref": "#/components/schemas/Bytes"
-        }
-      },
-      "Filter": {
-        "name": "filter",
-        "required": true,
-        "schema": {
-          "title": "filter",
-          "type": "object",
-          "description": "A filter used to monitor the blockchain for log/events",
-          "properties": {
-            "fromBlock": {
-              "$ref": "#/components/schemas/BlockNumber"
-            },
-            "toBlock": {
-              "$ref": "#/components/schemas/BlockNumber"
-            },
-            "address": {
-              "title": "oneOrArrayOfAddresses",
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/Address"
-                },
-                {
-                  "$ref": "#/components/schemas/Addresses"
-                }
-              ]
-            },
-            "topics": {
-              "$ref": "#/components/schemas/Topics"
-            }
-          }
         }
       },
       "Address": {
