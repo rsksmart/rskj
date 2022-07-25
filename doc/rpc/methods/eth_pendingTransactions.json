@@ -10,7 +10,7 @@
   },
   "examples": [
     {
-      "name": "eth_pendingTransactions",
+      "name": "pendingTransactions",
       "params": [],
       "result": {
         "name": "transactions",

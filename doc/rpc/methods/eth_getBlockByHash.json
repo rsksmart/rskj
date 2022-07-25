@@ -24,5 +24,24 @@
     "schema": {
       "$ref": "#/components/schemas/BlockOrNull"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "blockWithTransactions",
+      "description": "blockWithTransactions",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": true
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResult"
+      }
+    }
+  ]
 }

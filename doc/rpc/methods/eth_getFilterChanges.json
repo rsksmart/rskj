@@ -19,7 +19,7 @@
     "schema": {
       "title": "logResult",
       "type": "array",
-      "description": "Array of log objects, or an empty array if nothing has changed since last poll.",
+      "description": "Array of log objects, or an empty array if nothing has changed since last poll. For more info check https://developers.rsk.co/rsk/node/architecture/json-rpc/",
       "items": {
         "$ref": "#/components/schemas/Log"
       }
