@@ -4,5 +4,15 @@
   "params": [],
   "result": {
     "$ref": "#/components/contentDescriptors/FilterId"
-  }
+  },
+  "examples": [
+    {
+      "name": "newBlockFilter",
+      "params": [],
+      "result": {
+        "name": "filterId",
+        "value": "0x1"
+      }
+    }
+  ]
 }

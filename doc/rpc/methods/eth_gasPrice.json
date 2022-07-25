@@ -4,5 +4,15 @@
   "params": [],
   "result": {
     "$ref": "#/components/contentDescriptors/GasPrice"
-  }
+  },
+  "examples": [
+    {
+      "name": "gasPrice",
+      "params": [],
+      "result": {
+        "name": "gasPrice",
+        "value": "0x09184e72a000"
+      }
+    }
+  ]
 }

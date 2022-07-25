@@ -20,5 +20,24 @@
     "schema": {
       "$ref": "#/components/schemas/BlockOrNull"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "blockWithTransactions",
+      "description": "blockWithTransactions",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x1b4"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": true
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResult"
+      }
+    }
+  ]
 }

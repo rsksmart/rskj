@@ -8,5 +8,15 @@
     "schema": {
       "$ref": "#/components/schemas/Address"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "coinbaseAddress",
+      "params": [],
+      "result": {
+        "name": "coinbaseAddress",
+        "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+      }
+    }
+  ]
 }

@@ -11,5 +11,15 @@
       "description": "Hex representation of number of connected peers",
       "type": "string"
     }
-  }
+  },
+  "examples": [
+    {
+      "name": "peerCount",
+      "params": [],
+      "result": {
+        "name": "peerCount",
+        "value": "0x2"
+      }
+    }
+  ]
 }
