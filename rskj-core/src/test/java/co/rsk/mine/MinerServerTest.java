@@ -59,6 +59,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -89,6 +90,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -147,7 +149,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 rskTestContext.getTransactionExecutorFactory(),
                 signatureCache,
                 10,
-                100);
+                100, 
+                Mockito.mock(TxQuotaChecker.class), 
+                Mockito.mock(GasPriceTracker.class));
         
         transactionPool.processBest(standardBlockchain.getBestBlock());
         
@@ -746,9 +750,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void onNewTxBuildBlockToMine() throws InterruptedException {
-
+ 
         // prepare for miner server
-        Ethereum ethereum = spy(new EthereumImpl(null, null, compositeEthereumListener, standardBlockchain));
+        Ethereum ethereum = spy(new EthereumImpl(null, null, compositeEthereumListener, standardBlockchain, Mockito.mock(GasPriceTracker.class)) );
         doReturn(ImportResult.IMPORTED_BEST).when(ethereum).addNewMinedBlock(any());
         
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
