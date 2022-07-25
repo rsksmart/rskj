@@ -11,18 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_protocolVersion",
-      "summary": "Returns the current ethereum protocol version.",
-      "params": [],
-      "result": {
-        "name": "protocolVersion",
-        "description": "The current ethereum protocol version",
-        "schema": {
-          "$ref": "#/components/schemas/IntegerHex"
-        }
-      }
-    },
-    {
       "name": "eth_sendRawTransaction",
       "summary": "Creates new message call transaction or a contract creation for signed transactions.",
       "params": [

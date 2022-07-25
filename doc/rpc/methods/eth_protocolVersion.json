@@ -1,0 +1,22 @@
+{
+  "name": "eth_protocolVersion",
+  "summary": "Returns the current ethereum protocol version.",
+  "params": [],
+  "result": {
+    "name": "protocolVersion",
+    "description": "The current ethereum protocol version",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "protocolVersion",
+      "params": [],
+      "result": {
+        "name": "protocolVersion",
+        "value": "0x54"
+      }
+    }
+  ]
+}
