@@ -1,0 +1,8 @@
+{
+  "Bytes": {
+    "title": "bytes",
+    "type": "string",
+    "description": "Hex representation of a variable length byte array",
+    "pattern": "^0x([a-fA-F0-9]?)+$"
+  }
+}

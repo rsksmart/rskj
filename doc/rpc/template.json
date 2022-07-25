@@ -11,27 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_sendRawTransaction",
-      "summary": "Creates new message call transaction or a contract creation for signed transactions.",
-      "params": [
-        {
-          "name": "signedTransactionData",
-          "required": true,
-          "description": "The signed transaction data",
-          "schema": {
-            "$ref": "#/components/schemas/Bytes"
-          }
-        }
-      ],
-      "result": {
-        "name": "transactionHash",
-        "description": "The transaction hash, or the zero hash if the transaction is not yet available.",
-        "schema": {
-          "$ref": "#/components/schemas/Keccak"
-        }
-      }
-    },
-    {
       "name": "eth_submitHashrate",
       "deprecated": true,
       "summary": "Used for submitting mining hashrate.",
@@ -441,12 +420,6 @@
           }
         ]
       },
-      "Keccak": {
-        "title": "keccak",
-        "type": "string",
-        "description": "Hex representation of a Keccak 256 hash",
-        "pattern": "^0x[a-fA-F\\d]{64}$"
-      },
       "Integer": {
         "title": "integer",
         "type": "string",
@@ -458,12 +431,6 @@
         "type": "string",
         "description": "Hex representation of a 256 bit unit of data",
         "pattern": "^0x([a-fA-F\\d]{64})?$"
-      },
-      "Bytes": {
-        "title": "bytes",
-        "type": "string",
-        "description": "Hex representation of a variable length byte array",
-        "pattern": "^0x([a-fA-F0-9]?)+$"
       }
     },
     "contentDescriptors": {
