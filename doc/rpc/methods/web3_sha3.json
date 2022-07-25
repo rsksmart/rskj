@@ -1,7 +1,7 @@
 {
   "name": "web3_sha3",
   "summary": "Hashes data",
-  "description": "Returns Keccak-256 (not the standardized SHA3-256) of the given data",
+  "description": "Returns Keccak-256 (`NOT` the standardized SHA3-256) of the given data",
   "params": [
     {
       "name": "data",

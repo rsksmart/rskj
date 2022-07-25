@@ -1,11 +1,11 @@
 {
   "name": "eth_chainId",
   "summary": "Returns the currently configured chain id",
-  "description": "Returns the currently configured chain id, a value used in replay-protected transaction signing as introduced by EIP-155.",
+  "description": "Returns the currently configured chain id, a value used in replay-protected transaction signing as introduced by **EIP-155**.",
   "params": [],
   "result": {
     "name": "chainId",
-    "description": "hex format integer of the current chain id. Defaults are Mainnet=30, Testnet=31",
+    "description": "hex format integer of the current chain id. Defaults are `Mainnet=30`, `Testnet=31`",
     "schema": {
       "$ref": "#/components/schemas/IntegerHex"
     }
