@@ -10,26 +10,6 @@
     }
   },
   "methods": [
-    {
-      "name": "eth_uninstallFilter",
-      "summary": "Uninstalls a filter with given id. Should always be called when watch is no longer needed. Additionally Filters timeout when they aren't requested with eth_getFilterChanges for a period of time.",
-      "params": [
-        {
-          "name": "filterId",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/FilterId"
-          }
-        }
-      ],
-      "result": {
-        "name": "filterUninstalledSuccess",
-        "description": "returns true if the filter was successfully uninstalled, false otherwise.",
-        "schema": {
-          "type": "boolean"
-        }
-      }
-    }
   ],
   "components": {
     "schemas": {
