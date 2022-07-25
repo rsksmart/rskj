@@ -1,7 +1,7 @@
 {
   "name": "net_version",
   "summary": "Network identifier associated with network",
-  "description": "Returns the current network id.",
+  "description": "Returns the current network id.\n\nMainnet Chain Id = `30`, Testnet Chain Id = `31`.",
   "params": [],
   "result": {
     "name": "networkId",

@@ -21,6 +21,7 @@
   "examples": [
     {
       "name": "storageValue",
+      "description": "See example explanation in [Dev Portal](https://developers.rsk.co/rsk/node/architecture/json-rpc/)",
       "params": [
         {
           "name": "address",

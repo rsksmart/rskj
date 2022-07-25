@@ -13,12 +13,11 @@
   },
   "examples": [
     {
-      "name": "netListeningTrueExample",
-      "description": "Example when result is true",
+      "name": "peerCount",
       "params": [],
       "result": {
-        "name": "netListeningExampleTrueResult",
-        "value": true
+        "name": "count",
+        "value": "0x2"
       }
     }
   ]
