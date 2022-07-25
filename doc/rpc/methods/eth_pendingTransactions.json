@@ -1,0 +1,25 @@
+{
+  "name": "eth_pendingTransactions",
+  "summary": "Returns the transactions that are pending in the transaction pool and have a from address that is one of the accounts this node manages.",
+  "params": [],
+  "result": {
+    "name": "pendingTransactions",
+    "schema": {
+      "$ref": "#/components/schemas/Transactions"
+    }
+  },
+  "examples": [
+    {
+      "name": "eth_pendingTransactions",
+      "params": [],
+      "result": {
+        "name": "transactions",
+        "value": [
+          {
+            "$ref": "#/components/schemas/TransactionExampleResult"
+          }
+        ]
+      }
+    }
+  ]
+}
