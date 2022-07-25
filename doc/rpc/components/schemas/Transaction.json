@@ -51,7 +51,7 @@
       "value": {
         "title": "transactionValue",
         "description": "Value of Ether being transferred in Wei",
-        "$ref": "#/components/schemas/Keccak"
+        "$ref": "#/components/schemas/IntegerHex"
       },
       "v": {
         "title": "transactionSigV",

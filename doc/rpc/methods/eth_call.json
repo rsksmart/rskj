@@ -3,7 +3,12 @@
   "summary": "Executes a new message call (locally) immediately without creating a transaction on the block chain.",
   "params": [
     {
-      "$ref": "#/components/contentDescriptors/Transaction"
+      "name": "transactionData",
+      "required": true,
+      "description": "The transaction data",
+      "schema": {
+        "$ref": "#/components/schemas/TransactionCreate"
+      }
     },
     {
       "name": "blockRefOrNumberOrTag",
