@@ -34,7 +34,9 @@
         "$ref": "#/components/schemas/IntegerHex"
       },
       "from": {
-        "$ref": "#/components/schemas/From"
+        "title": "From",
+        "description": "The sender of the transaction",
+        "$ref": "#/components/schemas/Address"
       },
       "gasUsed": {
         "title": "ReceiptGasUsed",
@@ -53,7 +55,7 @@
         "$ref": "#/components/schemas/BloomFilter"
       },
       "to": {
-        "$ref": "#/components/schemas/To"
+        "$ref": "#/components/schemas/DestinationAddress"
       },
       "transactionHash": {
         "$ref": "#/components/schemas/TransactionHash"

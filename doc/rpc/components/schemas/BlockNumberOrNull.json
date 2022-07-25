@@ -1,0 +1,14 @@
+{
+  "BlockNumberOrNull": {
+    "title": "blockNumberOrNull",
+    "description": "The block number or null when its the pending block",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

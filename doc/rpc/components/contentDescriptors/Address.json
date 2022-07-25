@@ -1,0 +1,9 @@
+{
+  "Address": {
+    "name": "address",
+    "required": true,
+    "schema": {
+      "$ref": "#/components/schemas/Address"
+    }
+  }
+}

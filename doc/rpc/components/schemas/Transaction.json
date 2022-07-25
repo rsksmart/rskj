@@ -15,7 +15,9 @@
         "$ref": "#/components/schemas/BlockNumberOrNull"
       },
       "from": {
-        "$ref": "#/components/schemas/From"
+        "title": "From",
+        "description": "The sender of the transaction",
+        "$ref": "#/components/schemas/Address"
       },
       "gas": {
         "title": "transactionGas",
@@ -41,7 +43,7 @@
         "$ref": "#/components/schemas/Nonce"
       },
       "to": {
-        "$ref": "#/components/schemas/To"
+        "$ref": "#/components/schemas/DestinationAddress"
       },
       "transactionIndex": {
         "$ref": "#/components/schemas/TransactionIndex"

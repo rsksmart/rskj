@@ -7,7 +7,7 @@
     "name": "chainId",
     "description": "hex format integer of the current chain id. Defaults are Mainnet=30, Testnet=31",
     "schema": {
-      "$ref": "#/components/schemas/Integer"
+      "$ref": "#/components/schemas/IntegerHex"
     }
   },
   "examples": [

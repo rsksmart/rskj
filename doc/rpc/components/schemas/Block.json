@@ -1,0 +1,111 @@
+{
+  "Block": {
+    "title": "Block",
+    "description": "The Block is the collection of relevant pieces of information (known as the block header), together with information corresponding to the comprised transactions, and a set of other block headers that are known to have a parent equal to the present block’s parent’s parent.",
+    "type": "object",
+    "properties": {
+      "number": {
+        "$ref": "#/components/schemas/BlockNumberOrNull"
+      },
+      "hash": {
+        "$ref": "#/components/schemas/BlockHashOrNull"
+      },
+      "parentHash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "nonce": {
+        "$ref": "#/components/schemas/NonceOrNull"
+      },
+      "sha3Uncles": {
+        "title": "blockShaUncles",
+        "description": "Keccak hash of the uncles data in the block",
+        "$ref": "#/components/schemas/Keccak"
+      },
+      "logsBloom": {
+        "title": "blockLogsBloom",
+        "type": "string",
+        "description": "The bloom filter for the logs of the block or null when its the pending block",
+        "pattern": "^0x[a-fA-F\\d]+$"
+      },
+      "transactionsRoot": {
+        "title": "blockTransactionsRoot",
+        "description": "The root of the transactions trie of the block.",
+        "$ref": "#/components/schemas/Keccak"
+      },
+      "stateRoot": {
+        "title": "blockStateRoot",
+        "description": "The root of the final state trie of the block",
+        "$ref": "#/components/schemas/Keccak"
+      },
+      "receiptsRoot": {
+        "title": "blockReceiptsRoot",
+        "description": "The root of the receipts trie of the block",
+        "$ref": "#/components/schemas/Keccak"
+      },
+      "miner": {
+        "$ref": "#/components/schemas/AddressOrNull"
+      },
+      "difficulty": {
+        "title": "blockDifficulty",
+        "type": "string",
+        "description": "Integer of the difficulty for this block"
+      },
+      "totalDifficulty": {
+        "title": "blockTotalDifficulty",
+        "description": "Integer of the total difficulty of the chain until this block",
+        "$ref": "#/components/schemas/IntegerOrNull"
+      },
+      "extraData": {
+        "title": "blockExtraData",
+        "type": "string",
+        "description": "The 'extra data' field of this block"
+      },
+      "size": {
+        "title": "blockSize",
+        "type": "string",
+        "description": "Integer the size of this block in bytes"
+      },
+      "gasLimit": {
+        "title": "blockGasLimit",
+        "type": "string",
+        "description": "The maximum gas allowed in this block"
+      },
+      "gasUsed": {
+        "title": "blockGasUsed",
+        "type": "string",
+        "description": "The total used gas by all transactions in this block"
+      },
+      "timestamp": {
+        "title": "blockTimeStamp",
+        "type": "string",
+        "description": "The unix timestamp for when the block was collated"
+      },
+      "transactions": {
+        "title": "transactionsOrHashes",
+        "description": "Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter",
+        "type": "array",
+        "items": {
+          "title": "transactionOrTransactionHash",
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/Transaction"
+            },
+            {
+              "$ref": "#/components/schemas/TransactionHash"
+            }
+          ]
+        }
+      },
+      "uncles": {
+        "title": "uncleHashes",
+        "description": "Array of uncle hashes",
+        "type": "array",
+        "items": {
+          "title": "uncleHash",
+          "description": "Block hash of the RLP encoding of an uncle block",
+          "$ref": "#/components/schemas/Keccak"
+        }
+      }
+    }
+  }
+}

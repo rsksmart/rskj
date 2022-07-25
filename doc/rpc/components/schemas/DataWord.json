@@ -1,0 +1,8 @@
+{
+  "DataWord": {
+    "title": "dataWord",
+    "type": "string",
+    "description": "Hex representation of a 256 bit unit of data",
+    "pattern": "^0x([a-fA-F\\d]{64})?$"
+  }
+}

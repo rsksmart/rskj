@@ -1,0 +1,14 @@
+{
+  "DestinationAddress": {
+    "title": "To",
+    "description": "Destination address of the transaction. Null if it was a contract create.",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Address"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "BlockHashOrNull": {
+    "title": "blockHashOrNull",
+    "description": "The block hash or null when its the pending block",
+    "$ref": "#/components/schemas/KeccakOrPending"
+  }
+}
