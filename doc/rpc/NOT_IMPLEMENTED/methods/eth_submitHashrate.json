@@ -1,0 +1,29 @@
+{
+  "name": "eth_submitHashrate",
+  "deprecated": true,
+  "summary": "Used for submitting mining hashrate.",
+  "params": [
+    {
+      "name": "hashRate",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/DataWord"
+      }
+    },
+    {
+      "name": "id",
+      "required": true,
+      "description": "String identifying the client",
+      "schema": {
+        "$ref": "#/components/schemas/DataWord"
+      }
+    }
+  ],
+  "result": {
+    "name": "submitHashRateSuccess",
+    "description": "whether of not submitting went through successfully",
+    "schema": {
+      "type": "boolean"
+    }
+  }
+}
