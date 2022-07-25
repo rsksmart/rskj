@@ -3,12 +3,7 @@
   "summary": "Creates new message call transaction or a contract creation, if the data field contains code.",
   "params": [
     {
-      "name": "transactionData",
-      "required": true,
-      "description": "The transaction data",
-      "schema": {
-        "$ref": "#/components/schemas/TransactionCreate"
-      }
+      "$ref": "#/components/contentDescriptors/TransactionCreate"
     }
   ],
   "result": {
