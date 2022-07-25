@@ -1,5 +1,5 @@
 {
-  "name": "mrn_submitWork",
+  "name": "mnr_submitWork",
   "summary": "Used for submitting a proof-of-work solution.",
   "params": [
     {
@@ -21,8 +21,8 @@
     }
   ],
   "result": {
-    "name": "solutionValid",
-    "description": "returns true if the provided solution is valid, otherwise false.",
+    "name": "isSolutionValid",
+    "description": "returns `true` if the provided solution is valid, otherwise `false`.",
     "schema": {
       "type": "boolean"
     }
@@ -33,17 +33,14 @@
       "params": [
         {
           "name": "nonceExample",
-          "description": "example of a number only used once",
           "value": "0x0000000000000001"
         },
         {
           "name": "powHashExample",
-          "description": "proof of work to submit",
           "value": "0x6bf2cAE0dE3ec3ecA5E194a6C6e02cf42aADfe1C2c4Fff12E5D36C3Cf7297F22"
         },
         {
           "name": "mixHashExample",
-          "description": "the mix digest example",
           "value": "0xD1FE5700000000000000000000000000D1FE5700000000000000000000000000"
         }
       ],
