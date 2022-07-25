@@ -1,0 +1,7 @@
+{
+  "Difficulty": {
+    "title": "difficulty",
+    "description": "The boundary condition ('target'), 2^256 / difficulty.",
+    "$ref": "#/components/schemas/DataWord"
+  }
+}

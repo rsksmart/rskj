@@ -1,5 +1,5 @@
 {
-  "name": "eth_submitWork",
+  "name": "mrn_submitWork",
   "summary": "Used for submitting a proof-of-work solution.",
   "params": [
     {
