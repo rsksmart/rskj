@@ -1,6 +1,6 @@
 {
   "IntegerHex": {
-    "title": "integer",
+    "title": "integer hex",
     "type": "string",
     "pattern": "^0x[a-fA-F0-9]+$",
     "description": "Hex representation of the integer"

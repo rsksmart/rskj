@@ -1,0 +1,23 @@
+{
+  "name": "eth_getWork",
+  "summary": "Returns the hash of the current block, the seedHash, and the boundary condition to be met ('target').",
+  "params": [],
+  "result": {
+    "name": "work",
+    "schema": {
+      "title": "getWorkResults",
+      "type": "array",
+      "items": [
+        {
+          "$ref": "#/components/schemas/PowHash"
+        },
+        {
+          "$ref": "#/components/schemas/SeedHash"
+        },
+        {
+          "$ref": "#/components/schemas/Difficulty"
+        }
+      ]
+    }
+  }
+}

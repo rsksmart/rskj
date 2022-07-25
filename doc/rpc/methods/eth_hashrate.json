@@ -1,0 +1,22 @@
+{
+  "name": "eth_hashrate",
+  "summary": "Returns the number of hashes per second that the node is mining with.",
+  "params": [],
+  "result": {
+    "name": "hashesPerSecond",
+    "description": "Integer (hex) of the number of hashes per second",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "hashRate",
+      "params": [],
+      "result": {
+        "name": "result",
+        "value": "0x38a"
+      }
+    }
+  ]
+}
