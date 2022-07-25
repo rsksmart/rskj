@@ -1,0 +1,8 @@
+{
+  "FilterId": {
+    "name": "filterId",
+    "schema": {
+      "$ref": "#/components/schemas/FilterId"
+    }
+  }
+}

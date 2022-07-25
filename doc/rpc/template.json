@@ -11,14 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_newBlockFilter",
-      "summary": "Creates a filter in the node, to notify when a new block arrives. To check if the state has changed, call eth_getFilterChanges.",
-      "params": [],
-      "result": {
-        "$ref": "#/components/contentDescriptors/FilterId"
-      }
-    },
-    {
       "name": "eth_newFilter",
       "summary": "Creates a filter object, based on filter options, to notify when the state changes (logs). To check if the state has changed, call eth_getFilterChanges.",
       "params": [
@@ -584,12 +576,6 @@
         "required": true,
         "schema": {
           "$ref": "#/components/schemas/Nonce"
-        }
-      },
-      "FilterId": {
-        "name": "filterId",
-        "schema": {
-          "$ref": "#/components/schemas/FilterId"
         }
       }
     }
