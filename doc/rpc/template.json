@@ -13,11 +13,6 @@
   ],
   "components": {
     "schemas": {
-      "MixHash": {
-        "title": "mixHash",
-        "description": "The mix digest.",
-        "$ref": "#/components/schemas/DataWord"
-      },
       "BlockNumberTag": {
         "title": "blockNumberTag",
         "type": "string",
