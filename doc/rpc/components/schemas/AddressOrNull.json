@@ -1,0 +1,13 @@
+{
+  "AddressOrNull": {
+    "title": "addressOrNull",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Address"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

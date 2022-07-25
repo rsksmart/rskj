@@ -1,0 +1,14 @@
+{
+  "NonceOrNull": {
+    "title": "nonceOrNull",
+    "description": "Randomly selected number to satisfy the proof-of-work or null when its the pending block",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Nonce"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

@@ -11,7 +11,7 @@
     "name": "gasUsed",
     "description": "The amount of gas used",
     "schema": {
-      "$ref": "#/components/schemas/Integer"
+      "$ref": "#/components/schemas/IntegerHex"
     }
   },
   "examples": [
