@@ -21,7 +21,7 @@
       "result": {
         "name": "transaction",
         "value": {
-          "$ref": "#/components/schemas/TransactionResultExample"
+          "$ref": "#/components/schemas/TransactionExampleResult"
         }
       }
     },{
