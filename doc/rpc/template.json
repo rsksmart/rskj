@@ -11,22 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_newFilter",
-      "summary": "Creates a filter object, based on filter options, to notify when the state changes (logs). To check if the state has changed, call eth_getFilterChanges.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/Filter"
-        }
-      ],
-      "result": {
-        "name": "filterId",
-        "description": "The filter ID for use in `eth_getFilterChanges`",
-        "schema": {
-          "$ref": "#/components/schemas/IntegerHex"
-        }
-      }
-    },
-    {
       "name": "eth_newPendingTransactionFilter",
       "summary": "Creates a filter in the node, to notify when new pending transactions arrive. To check if the state has changed, call eth_getFilterChanges.",
       "params": [],
