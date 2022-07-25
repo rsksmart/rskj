@@ -22,7 +22,7 @@
         "timestamp": "0x54e34e8e",
         "transactions": [
           {
-            "$ref": "#/components/schemas/TransactionResultExample"
+            "$ref": "#/components/schemas/TransactionExampleResult"
           }
         ],
         "uncles": [
