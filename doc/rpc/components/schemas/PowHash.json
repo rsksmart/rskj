@@ -1,0 +1,7 @@
+{
+  "PowHash": {
+    "title": "powHash",
+    "description": "Current block header PoW hash.",
+    "$ref": "#/components/schemas/DataWord"
+  }
+}
