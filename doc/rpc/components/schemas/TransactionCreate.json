@@ -1,0 +1,46 @@
+{
+  "TransactionCreate": {
+    "title": "transaction",
+    "type": "object",
+    "required": [
+      "from",
+      "data"
+    ],
+    "properties": {
+      "from": {
+        "title": "From",
+        "description": "The address the transaction is send from",
+        "$ref": "#/components/schemas/Address"
+      },
+      "to": {
+        "$ref": "#/components/schemas/DestinationAddress",
+        "description": "The address the transaction is directed to. Optional when creating new contract."
+      },
+      "gas": {
+        "title": "transactionGas",
+        "type": "string",
+        "description": "Integer of the gas provided for the transaction execution. It will return unused gas. Default: 90000."
+      },
+      "gasPrice": {
+        "title": "transactionGasPrice",
+        "type": "string",
+        "description": "Integer of the gasPrice used for each paid gas."
+      },
+      "value": {
+        "title": "transactionValue",
+        "description": "Integer of the value sent with this transaction",
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "data": {
+        "title": "transactionData",
+        "description": "The compiled code of a contract OR the hash of the invoked method signature and encoded parameters. For details see https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI or https://docs.soliditylang.org/en/latest/abi-spec.html.",
+        "$ref": "#/components/schemas/Bytes"
+      },
+      "nonce": {
+        "title": "transactionNonce",
+        "description": "The total number of prior transactions made by the sender",
+        "$ref": "#/components/schemas/Nonce"
+      }
+    }
+  }
+}
