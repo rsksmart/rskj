@@ -11,14 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_newPendingTransactionFilter",
-      "summary": "Creates a filter in the node, to notify when new pending transactions arrive. To check if the state has changed, call eth_getFilterChanges.",
-      "params": [],
-      "result": {
-        "$ref": "#/components/contentDescriptors/FilterId"
-      }
-    },
-    {
       "name": "eth_pendingTransactions",
       "summary": "Returns the transactions that are pending in the transaction pool and have a from address that is one of the accounts this node manages.",
       "params": [],
