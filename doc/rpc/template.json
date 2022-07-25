@@ -11,18 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_getUncleCountByBlockNumber",
-      "summary": "Returns the number of uncles in a block from a block matching the given block number.",
-      "params": [
-        {
-          "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
-        }
-      ],
-      "result": {
-        "$ref": "#/components/contentDescriptors/UncleCountResult"
-      }
-    },
-    {
       "name": "eth_getProof",
       "summary": "Returns the account- and storage-values of the specified account including the Merkle-proof.",
       "params": [
@@ -445,17 +433,6 @@
           "pending"
         ]
       },
-      "IntegerOrNull": {
-        "title": "integerOrNull",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/IntegerHex"
-          },
-          {
-            "$ref": "#/components/schemas/Null"
-          }
-        ]
-      },
       "AddressOrNull": {
         "title": "addressOrNull",
         "oneOf": [
@@ -710,13 +687,6 @@
         "name": "transaction",
         "schema": {
           "$ref": "#/components/schemas/Transaction"
-        }
-      },
-      "UncleCountResult": {
-        "name": "uncleCountResult",
-        "description": "The Number of total uncles in the given block",
-        "schema": {
-          "$ref": "#/components/schemas/IntegerOrNull"
         }
       },
       "Message": {
