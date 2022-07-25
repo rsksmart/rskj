@@ -11,17 +11,6 @@
   },
   "methods": [
     {
-      "name": "eth_pendingTransactions",
-      "summary": "Returns the transactions that are pending in the transaction pool and have a from address that is one of the accounts this node manages.",
-      "params": [],
-      "result": {
-        "name": "pendingTransactions",
-        "schema": {
-          "$ref": "#/components/schemas/Transactions"
-        }
-      }
-    },
-    {
       "name": "eth_protocolVersion",
       "summary": "Returns the current ethereum protocol version.",
       "params": [],
@@ -451,14 +440,6 @@
               "$ref": "#/components/schemas/Keccak"
             }
           }
-        }
-      },
-      "Transactions": {
-        "title": "transactions",
-        "description": "An array of transactions",
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/Transaction"
         }
       },
       "KeccakOrPending": {
