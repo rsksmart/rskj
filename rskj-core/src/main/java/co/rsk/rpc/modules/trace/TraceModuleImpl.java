@@ -124,7 +124,7 @@ public class TraceModuleImpl implements TraceModule {
 
         List<TransactionTrace> blockTraces = buildBlockTraces(block);
 
-        return blockTraces == null ? null : OBJECT_MAPPER.valueToTree(blockTraces);
+        return OBJECT_MAPPER.valueToTree(blockTraces);
     }
 
     @Override
@@ -139,9 +139,7 @@ public class TraceModuleImpl implements TraceModule {
         while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
-            if (builtTraces != null) {
-                blockTracesGroup.add(builtTraces);
-            }
+            blockTracesGroup.add(builtTraces);
 
             block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
@@ -178,10 +176,8 @@ public class TraceModuleImpl implements TraceModule {
 
         List<TransactionTrace> traces = buildBlockTraces(block);
 
-        TransactionTrace transactionTrace = null;
-        if(traces != null) {
-            transactionTrace = traces.get(request.getTracePositionsAsListOfIntegers().get(0));
-        }
+        TransactionTrace transactionTrace = traces.get(
+                request.getTracePositionsAsListOfIntegers().get(0));
         
         return OBJECT_MAPPER.valueToTree(transactionTrace);
     }
@@ -258,7 +254,7 @@ public class TraceModuleImpl implements TraceModule {
 
                 if (programTrace == null) {
                     blockTraces.clear();
-                    return null;
+                    return Collections.emptyList();
                 }
 
                 List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
