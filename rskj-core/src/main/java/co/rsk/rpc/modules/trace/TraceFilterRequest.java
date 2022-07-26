@@ -98,11 +98,11 @@ public class TraceFilterRequest {
     }
 
     public List<String> getFromAddress() {
-        return this.fromAddress;
+        return this.fromAddress == null ? Collections.emptyList() : this.fromAddress;
     }
 
     public List<String> getToAddress() {
-        return toAddress;
+        return this.toAddress == null ? Collections.emptyList() : this.toAddress;
     }
 
     public List<RskAddress> getToAddressAsRskAddresses() {
