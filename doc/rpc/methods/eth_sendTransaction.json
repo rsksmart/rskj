@@ -18,33 +18,12 @@
       "name": "transaction",
       "params": [
         {
-          "name": "from",
-          "value": "0xb60e8dd61c5d32be8058bb8eb970870f07233155"
-        },
-        {
-          "name": "to",
-          "value": "0xd46e8dd67c5d32be8058bb8eb970870f07244567"
-        },
-        {
-          "name": "gas",
-          "value": "0x76c0"
-        },
-        {
-          "name": "gasPrice",
-          "value": "0x9184e72a000"
-        },
-        {
-          "name": "value",
-          "value": "0x9184e72a"
-        },
-        {
-          "name": "data",
-          "value": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"
+          "$ref": "#/components/schemas/TransactionCreateExampleParam"
         }
       ],
       "result": {
         "name": "transactionHash",
-        "value": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+        "value": "0x0297ed9012b044e671a86a8e88bc7cfc79311a1da38b807783ac87b9b89b1b69"
       }
     }
   ]

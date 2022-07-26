@@ -15,17 +15,17 @@
   },
   "examples": [
     {
-      "name": "example",
-      "description": "Example",
+      "name": "uncleCount",
+      "description": "uncleCount",
       "params": [
         {
           "name": "blockHash",
-          "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
         }
       ],
       "result": {
         "name": "result",
-        "value": "0xc"
+        "value": "0x2"
       }
     }
   ]

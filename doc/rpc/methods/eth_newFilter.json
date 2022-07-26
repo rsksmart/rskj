@@ -19,17 +19,15 @@
       "name": "newFilter",
       "params": [
         {
-          "name": "fromBlock",
-          "value": "0x1"
-        },{
-          "name": "toBlock",
-          "value": "0x2"
-        },{
-          "name": "address",
-          "value": "0x8888f1f195afa192cfee860698584c030f4c9db1"
-        },{
-          "name": "topics",
-          "value": ["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b", null, ["0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b", "0x0000000000000000000000000aff3454fce5edbc8cca8697c15331677e6ebccc"]]
+          "name": "filter",
+          "value": {
+            "fromBlock": "0x1",
+            "toBlock": "0x2",
+            "address": "0x8888f1f195afa192cfee860698584c030f4c9db1",
+            "topics": [
+              "0x0000000000000000000000000000000000000000000000000000000012341234"
+            ]
+          }
         }
       ],
       "result": {

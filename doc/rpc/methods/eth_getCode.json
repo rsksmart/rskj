@@ -23,8 +23,7 @@
   },
   "examples": [
     {
-      "name": "example",
-      "description": "Example",
+      "name": "getCodeExample",
       "params": [
         {
           "name": "transaction",

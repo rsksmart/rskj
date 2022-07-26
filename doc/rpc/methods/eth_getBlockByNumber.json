@@ -23,8 +23,8 @@
   },
   "examples": [
     {
-      "name": "blockWithTransactions",
-      "description": "blockWithTransactions",
+      "name": "blockWithFullTransactions",
+      "description": "blockWithFullTransactions",
       "params": [
         {
           "name": "blockNumber",
@@ -36,7 +36,23 @@
         }
       ],
       "result": {
-        "$ref": "#/components/schemas/BlockExampleResult"
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
+      }
+    }, {
+      "name": "blockWithTransactionHash",
+      "description": "blockWithTransactionHash",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x1b4"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": false
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultTransactionHash"
       }
     }
   ]

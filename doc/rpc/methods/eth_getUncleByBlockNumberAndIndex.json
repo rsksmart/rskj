@@ -40,7 +40,7 @@
         }
       ],
       "result": {
-        "$ref": "#/components/schemas/BlockExampleResult"
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
       }
     },
     {

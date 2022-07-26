@@ -27,12 +27,12 @@
   },
   "examples": [
     {
-      "name": "blockWithTransactions",
-      "description": "blockWithTransactions",
+      "name": "blockWithFullTransactions",
+      "description": "blockWithFullTransactions",
       "params": [
         {
           "name": "blockHash",
-          "value": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
         },
         {
           "name": "fullTransactionObjects",
@@ -40,7 +40,23 @@
         }
       ],
       "result": {
-        "$ref": "#/components/schemas/BlockExampleResult"
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
+      }
+    }, {
+      "name": "blockWithTransactionHash",
+      "description": "blockWithTransactionHash",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": false
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultTransactionHash"
       }
     }
   ]

@@ -105,6 +105,30 @@
           "description": "Block hash of the RLP encoding of an uncle block",
           "$ref": "#/components/schemas/Keccak"
         }
+      },
+      "bitcoinMergedMiningHeader": {
+        "title": "bitcoinMergedMiningHeader",
+        "type": "string",
+        "description": "The 80-byte bitcoin block header for merged mining"
+      },
+      "bitcoinMergedMiningCoinbaseTransaction": {
+        "title": "bitcoinMergedMiningCoinbaseTransaction",
+        "type": "string",
+        "description": "The bitcoin protobuf serialized coinbase tx for merged mining"
+      },
+      "bitcoinMergedMiningMerkleProof": {
+        "title": "bitcoinMergedMiningMerkleProof",
+        "type": "string",
+        "description": "The bitcoin merkle proof of coinbase tx for merged mining"
+      },
+      "hashForMergedMining": {
+        "title": "hashForMergedMining",
+        "type": "string",
+        "description": "The the base hash for merged mining"
+      },
+      "paidFees": {
+        "title": "paidFees",
+        "$ref": "#/components/schemas/IntegerHex"
       }
     }
   }

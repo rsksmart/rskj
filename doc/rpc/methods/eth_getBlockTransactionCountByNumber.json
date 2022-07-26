@@ -16,15 +16,25 @@
   "examples": [
     {
       "name": "blockWithTransactions",
-      "params": [],
+      "params": [
+        {
+          "name": "blockNumer",
+          "value": "0x2e5e54"
+        }
+      ],
       "result": {
         "name": "blockWithTransactions",
-        "value": "0x5"
+        "value": "0x2"
       }
     },
     {
       "name": "blockWithoutTransactions (just coinbase)",
-      "params": [],
+      "params": [
+        {
+          "name": "blockNumer",
+          "value": "0x2e5e56"
+        }
+      ],
       "result": {
         "name": "blockWithoutTransactions",
         "value": "0x1"

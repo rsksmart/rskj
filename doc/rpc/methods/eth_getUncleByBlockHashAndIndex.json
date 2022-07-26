@@ -26,7 +26,7 @@
       "params": [
         {
           "name": "blockHash",
-          "value": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+          "value": "0x0297ed9012b044e671a86a8e88bc7cfc79311a1da38b807783ac87b9b89b1b69"
         },
         {
           "name": "uncleIndex",
@@ -34,7 +34,7 @@
         }
       ],
       "result": {
-        "$ref": "#/components/schemas/BlockExampleResult"
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
       }
     },
     {
@@ -42,7 +42,7 @@
       "params": [
         {
           "name": "blockHash",
-          "value": "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d1527331"
+          "value": "0x0297ed9012b044e671a86a8e88bc7cfc79311a1da38b807783ac87b9b89b1b69"
         },
         {
           "name": "uncleIndex",

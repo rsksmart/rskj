@@ -15,12 +15,12 @@
       "params": [
         {
           "name": "blockNumberOrTag",
-          "value": "0xe8"
+          "value": "0x1b4"
         }
       ],
       "result": {
         "name": "result",
-        "value": "0x1"
+        "value": "0x2"
       }
     }
   ]
