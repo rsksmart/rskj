@@ -81,7 +81,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash) throws Exception {
+    public JsonNode traceTransaction(String transactionHash) {
         logger.trace("trace_transaction({})", transactionHash);
 
         byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
@@ -128,7 +128,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
+    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) {
         List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
 
         Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
@@ -162,7 +162,7 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceGet(String transactionHash, List<String> positions) throws Exception {
+    public JsonNode traceGet(String transactionHash, List<String> positions) {
         TraceGetRequest request = new TraceGetRequest(transactionHash, positions);
 
         TransactionInfo txInfo = this.receiptStore.getInMainChain(request.getTransactionHashAsByteArray(), this.blockStore).orElse(null);
