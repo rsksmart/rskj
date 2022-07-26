@@ -18,7 +18,6 @@
 
 package co.rsk.rpc.modules.trace;
 
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +26,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import co.rsk.config.VmConfig;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.rpc.ExecutionBlockRetriever;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -41,13 +47,6 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import co.rsk.config.VmConfig;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.util.HexUtils;
 
 public class TraceModuleImpl implements TraceModule {

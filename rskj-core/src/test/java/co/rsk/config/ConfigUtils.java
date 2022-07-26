@@ -25,7 +25,7 @@ public class ConfigUtils {
         return new MiningConfig(
                 new RskAddress(coinbaseAddress),
                 0.0,
-                0.0,
+                1.0,
                 0,
                 10,
                 7,

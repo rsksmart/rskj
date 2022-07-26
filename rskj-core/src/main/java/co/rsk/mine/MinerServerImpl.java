@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.annotation.Nonnull;
@@ -41,6 +42,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -67,6 +69,8 @@ import co.rsk.util.DifficultyUtils;
 import co.rsk.util.HexUtils;
 import co.rsk.util.ListArrayUtil;
 import co.rsk.validators.ProofOfWorkRule;
+
+
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -95,7 +99,7 @@ public class MinerServerImpl implements MinerServer {
     private final BlockFactory blockFactory;
 
     private Timer refreshWorkTimer;
-    private NewBlockListener blockListener;
+    private NewBlockTxListener blockListener;
 
     private boolean started;
 
@@ -120,6 +124,8 @@ public class MinerServerImpl implements MinerServer {
     private final BlockProcessor nodeBlockProcessor;
     private final SubmissionRateLimitHandler submissionRateLimitHandler;
 
+    private final boolean updateWorkOnNewTransaction;
+    
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,
@@ -170,6 +176,8 @@ public class MinerServerImpl implements MinerServer {
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getGasUnitInDollars());
 
+        updateWorkOnNewTransaction = config.updateWorkOnNewTransaction();
+        
         extraData = buildExtraData(config, buildInfo);
     }
 
@@ -180,6 +188,9 @@ public class MinerServerImpl implements MinerServer {
 
     private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
         return new LinkedHashMap<Keccak256, Block>(CACHE_SIZE) {
+
+            private static final long serialVersionUID = 8044729378421476319L;
+
             @Override
             protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
                 return size() > CACHE_SIZE;
@@ -188,7 +199,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @VisibleForTesting
-    Map<Keccak256, Block> getBlocksWaitingForPoW() {
+    public Map<Keccak256, Block> getBlocksWaitingForPoW() {
         return blocksWaitingForPoW;
     }
 
@@ -221,7 +232,7 @@ public class MinerServerImpl implements MinerServer {
 
         synchronized (lock) {
             started = true;
-            blockListener = new NewBlockListener();
+            blockListener = new NewBlockTxListener(mainchainView, this::buildBlockToMine, nodeBlockProcessor, updateWorkOnNewTransaction);
             ethereum.addListener(blockListener);
             buildBlockToMine(false);
 
@@ -274,7 +285,7 @@ public class MinerServerImpl implements MinerServer {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
 
         return processSolution(
@@ -393,8 +404,9 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public MinerWork getWork() {
-        MinerWork work = currentWork;
 
+        MinerWork work = currentWork;
+        
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
@@ -408,7 +420,7 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
+                       currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -475,6 +487,7 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public void buildBlockToMine(boolean createCompetitiveBlock) {
+        
         BlockHeader newBlockParentHeader = mainchainView.get().get(0);
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
@@ -540,11 +553,26 @@ public class MinerServerImpl implements MinerServer {
         return Optional.ofNullable(latestBlock);
     }
 
-    class NewBlockListener extends EthereumListenerAdapter {
+    @VisibleForTesting
+    static class NewBlockTxListener extends EthereumListenerAdapter {
 
-        @Override
+        private final MiningMainchainView mainchainView;
+        private final Consumer<Boolean> buildBlock;
+        private final BlockProcessor nodeBlockProcessor;
+        
+        private final boolean updateWorkOnNewTransaction;
+        
+        public NewBlockTxListener(MiningMainchainView mainchainView, Consumer<Boolean> buildBlock, BlockProcessor nodeBlockProcessor, boolean updateWorkOnNewTransaction) {
+            this.mainchainView = mainchainView;
+            this.buildBlock = buildBlock;
+            this.nodeBlockProcessor = nodeBlockProcessor;
+            this.updateWorkOnNewTransaction = updateWorkOnNewTransaction;
+        }
+        
+        
         // This event executes in the thread context of the caller.
         // In case of private miner, it's the "Private Mining timer" task
+        @Override
         public void onBestBlock(Block newBestBlock, List<TransactionReceipt> receipts) {
             if (isSyncing()) {
                 return;
@@ -552,14 +580,31 @@ public class MinerServerImpl implements MinerServer {
 
             logger.trace("Start onBestBlock");
 
-            logger.debug(
-                    "There is a new best block: {}, number: {}",
-                    newBestBlock.getPrintableHashForMergedMining(),
-                    newBestBlock.getNumber());
+            if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "There is a new best block: {}, number: {}",
+                        newBestBlock.getPrintableHashForMergedMining(),
+                        newBestBlock.getNumber());
+            }
+
             mainchainView.addBest(newBestBlock.getHeader());
-            buildBlockToMine(false);
+
+            buildBlock.accept(false);
 
             logger.trace("End onBestBlock");
+        }
+
+        @Override
+        public void onPendingTransactionsReceived(List<Transaction> transactions) {
+
+            if (!updateWorkOnNewTransaction || isSyncing()) {
+                return;
+            }
+
+            logger.trace("Pending Transactions Received");
+
+            buildBlock.accept(false);
+
         }
 
         private boolean isSyncing() {
