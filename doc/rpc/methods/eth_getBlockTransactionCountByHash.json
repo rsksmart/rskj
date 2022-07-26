@@ -16,15 +16,25 @@
   "examples": [
     {
       "name": "blockWithTransactions",
-      "params": [],
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xb125fbdfa4a07258e2653c4c7412d060362928aaf062b5f91321d5ceed66854a"
+        }
+      ],
       "result": {
         "name": "blockWithTransactions",
-        "value": "0x5"
+        "value": "0x2"
       }
     },
     {
       "name": "blockWithoutTransactions (just coinbase)",
-      "params": [],
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0x4ed6a09e66f012643bebd2944a79b4eaf96faf822d11fa3904b6bb7c4b16d66c"
+        }
+      ],
       "result": {
         "name": "blockWithoutTransactions",
         "value": "0x1"

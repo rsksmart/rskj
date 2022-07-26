@@ -25,8 +25,8 @@
   },
   "examples": [
     {
-      "name": "example",
-      "description": "Example",
+      "name": "getBalanceExample",
+      "description": "getBalanceExample",
       "params": [
         {
           "name": "address",

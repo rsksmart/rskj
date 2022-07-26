@@ -6,7 +6,7 @@
     "name": "protocolVersion",
     "description": "The current ethereum protocol version",
     "schema": {
-      "$ref": "#/components/schemas/IntegerHex"
+      "$ref": "#/components/schemas/IntegerDec"
     }
   },
   "examples": [
@@ -15,7 +15,7 @@
       "params": [],
       "result": {
         "name": "protocolVersion",
-        "value": "0x54"
+        "value": "62"
       }
     }
   ]
