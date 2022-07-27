@@ -300,6 +300,10 @@ public class MutableRepository implements Repository {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         Coin result = account.addToBalance(value);
+
+        if (value.compareTo(Coin.ZERO) == 0) {
+            return result;
+        }
         updateAccountState(addr, account);
 
         return result;

@@ -162,9 +162,12 @@ public class TransactionExecutor {
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
-        if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
+        if (!gasIsValid(txGasLimit, 35029295)) {
             return false;
         }
+//        if (!gasIsValid(txGasLimit, 35029295)) {
+//            return false;
+//        }
 
         if (!nonceIsValid()) {
             return false;

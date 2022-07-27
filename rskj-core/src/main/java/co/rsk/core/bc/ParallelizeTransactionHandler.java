@@ -37,9 +37,9 @@ public class ParallelizeTransactionHandler {
         this.bucketByReadKey = new HashMap<>();
         this.buckets = new ArrayList<>();
         for (short i = 0; i < buckets; i++){
-            this.buckets.add(new TransactionBucket(i, bucketGasLimit, false));
+            this.buckets.add(new TransactionBucket(i, 35029295 / 2, false));
         }
-        this.buckets.add(new TransactionBucket(buckets, bucketGasLimit, true));
+        this.buckets.add(new TransactionBucket(buckets, 35029295, true));
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {

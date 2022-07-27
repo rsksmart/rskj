@@ -27,6 +27,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.remasc.RemascTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -56,7 +57,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
  * Note that this class IS NOT guaranteed to be thread safe because its dependencies might hold state.
  */
 public class BlockExecutor {
-    private static final int THREAD_COUNT = 4;
+    private static final int THREAD_COUNT = 2;
 
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -523,10 +524,12 @@ public class BlockExecutor {
             } catch (ExecutionException e) {
                 logger.warn("block: [{}] execution failed", block.getNumber());
                 logger.trace("", e);
+                e.printStackTrace();
                 profiler.stop(metric);
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
             }
         }
+        readWrittenKeysTracker.clear();
 
         // execute remaining transactions after the parallel subsets
         List<Transaction> sublist = block.getTransactionsList().subList(start, block.getTransactionsList().size());
@@ -623,10 +626,9 @@ public class BlockExecutor {
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
-        short buckets = 2;
 
         //TODO(Juli): Is there a better way to calculate the bucket gas limit?
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit())/buckets);
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short)THREAD_COUNT, 0);
 
         int txindex = 0;
 
@@ -635,7 +637,7 @@ public class BlockExecutor {
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    txindex++,
+                    txindex,
                     block.getCoinbase(),
                     track,
                     block,
@@ -649,6 +651,7 @@ public class BlockExecutor {
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                    txindex++;
                     continue;
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
@@ -659,7 +662,7 @@ public class BlockExecutor {
             }
 
             Optional<Long> bucketGasAccumulated;
-            if (tx.isRemascTransaction(txindex, transactionsList.size())) {
+            if (tx.getClass() == RemascTransaction.class) {
                 bucketGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
                 bucketGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
@@ -710,7 +713,7 @@ public class BlockExecutor {
                 receipt.setCumulativeGas(bucketGasAccumulated.get());
             } else {
                 //This line is used for testing only when acceptInvalidTransactions is set.
-                receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn(buckets));
+                receipt.setCumulativeGas(parallelizeTransactionHandler.getGasUsedIn((short)THREAD_COUNT));
             }
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
@@ -723,6 +726,7 @@ public class BlockExecutor {
             logger.trace("tx[{}].receipt", i);
 
             i++;
+            txindex++;
 
             receiptsByTx.put(tx, receipt);
 
@@ -748,12 +752,17 @@ public class BlockExecutor {
             receipts.add(receiptsByTx.get(tx));
         }
 
+        int nTxs = executedTransactions.size();
+        int nSeq = nTxs - bucketOrder[bucketOrder.length - 1];
+
+        //System.out.println((float)nSeq / (float)nTxs);
+
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,
                 receipts,
                 bucketOrder,
-                gasUsedInBlock,
+                gasUsedInBlock, // totalBlock = parallel1 + parallel2 + sequential?
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
