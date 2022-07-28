@@ -1,0 +1,108 @@
+# acc1 = "0xa0663f719962ec10bb57865532bef522059dfd96"
+account_new acc1 20000000
+# acc2 = "0x2178f4c6eecc0424f4f658fdffc4a319c3adbd1c"
+account_new acc2 20000000
+
+# Deploy PartiallyAdvance
+transaction_build tx01
+    sender acc1
+    nonce 0
+    receiver 00
+    data 608060405234801561001057600080fd5b50601160008190555060e0806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063209652551460375780633fa4f245146051575b600080fd5b603d606b565b604051604891906087565b60405180910390f35b60576074565b604051606291906087565b60405180910390f35b60008054905090565b60005481565b60818160a0565b82525050565b6000602082019050609a6000830184607a565b92915050565b600081905091905056fea264697066735822122047d01e8745c042d3cb141f26226c214ab5a6871bc94140523184424bb23df61264736f6c63430008070033
+    gas 6000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success tx01
+
+# Accumulate rent for 3 blocks (empty blocks)
+
+block_build b02
+    parent b01
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
+
+block_build b03
+    parent b02
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b03
+assert_best b03
+
+block_build b04
+    parent b03
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b04
+assert_best b04
+
+# Then read value by two transactions
+
+transaction_build tx02
+    sender acc1
+    nonce 1
+    contract tx01 # created in tx01
+    data 20965255 # getValue()
+    gas 6000000
+    build
+
+transaction_build tx03
+    sender acc1
+    nonce 2
+    contract tx01 # created in tx01
+    data 20965255 # getValue()
+    gas 6000000
+    build
+
+block_build b05
+    parent b04
+    transactions tx02 tx03
+    gasLimit 6800000
+    build
+
+block_connect b05
+assert_best b05
+assert_tx_success tx02
+assert_tx_success tx03
+
+block_build b06
+    parent b05
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b06
+assert_best b06
+
+# Contract used
+comment
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.2;
+
+contract PartiallyAdvance {
+    uint public value;
+
+    constructor() {
+        value = 17;
+    }
+
+    function getValue() public view returns (uint) {
+        return value;
+    }
+}
+end

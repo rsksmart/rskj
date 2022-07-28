@@ -94,6 +94,7 @@ public class StorageRentComputation {
         validateArgumentsComputeTimestamp(nodeSize, rentDue, currentBlockTimestamp,
                 rentCap, rentThreshold);
 
+        // provides the initial timestamp
         if(lastPaidTimestamp == Trie.NO_RENT_TIMESTAMP) {
             return currentBlockTimestamp;
         }

@@ -82,6 +82,11 @@ public class RentedNode extends TrackedNode {
         return duration;
     }
 
+    @VisibleForTesting
+    public long getRentDue(long currentBlockTimestamp) {
+        return StorageRentComputation.rentDue(this.nodeSize, duration(currentBlockTimestamp));
+    }
+
     public long rentThreshold() {
         switch (operationType) {
             case WRITE_OPERATION:

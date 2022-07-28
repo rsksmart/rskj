@@ -1,20 +1,30 @@
 package co.rsk.storagerent;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.MutableRepositoryTracked;
+import org.ethereum.db.TrackedNode;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import static co.rsk.storagerent.StorageRentComputation.*;
+import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
 
 /**
@@ -164,6 +174,71 @@ public class StorageRentDSLTests {
         );
 //        checkStorageRent(world, "tx04", 5002, 0, 8, 0, 0);
         checkStorageRent(world, "tx04", 2501, 0, 8, 0);
+    }
+
+    @Test
+    public void partiallyAdvanceTimestamp() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 9000000; // accumulates a lot of rent per block
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/partially_advance_twice.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+
+        // trie nodes are created so there's no rent to collect
+        checkStorageRent(world, "tx01", 0, 0, 5, 0);
+
+        String contractAddress = "6252703f5ba322ec64d3ac45e56241b7d9e481ad"; // deployed contract (PartiallyAdvance)
+        DataWord storageKey = DataWord.ZERO; // key for the field PartiallyAdvance.value
+
+        // check that the contract contains the expected value (PartiallyAdvance.value = 17)
+        assertEquals(DataWord.valueOf(17),
+                world.getRepositoryLocator()
+                        .findSnapshotAt(world.getBlockByName("b05").getHeader())
+                        .get()
+                        .getStorageValue(new RskAddress(contractAddress), storageKey));
+
+        assertEquals(0, rentAtStorageKey(world, "b01", contractAddress, storageKey));
+
+        // accumulated amount when no interactions
+        int accumulatedRentAtEmptyBlock = 16608;
+        assertEquals(accumulatedRentAtEmptyBlock, 
+                rentAtStorageKey(world, "b02", contractAddress, storageKey));
+        assertEquals(accumulatedRentAtEmptyBlock * 2,
+                rentAtStorageKey(world, "b03", contractAddress, storageKey));
+
+        long rentBeforeAdvance = rentAtStorageKey(world, "b04", contractAddress, storageKey);
+
+        // check accumulated rent at PartiallyAdvance.value storage key
+        assertEquals(accumulatedRentAtEmptyBlock * 3, rentBeforeAdvance);
+
+        // should pay rent cap for each key
+        checkStorageRent(world, "tx02", RENT_CAP_CONTRACT_CODE + RENT_CAP * 3,
+                0, 4, 0);
+        // should pay rent cap for each key
+        checkStorageRent(world, "tx03", RENT_CAP_CONTRACT_CODE + RENT_CAP * 3,
+                0, 4, 0);
+
+        long rentAfterAdvance = rentAtStorageKey(world, "b05", contractAddress, storageKey);
+
+        // check accumulated rent at PartiallyAdvance.value storage key
+        assertEquals(65142, rentAfterAdvance);
+
+        // check after reading twice from PartiallyAdvance.value
+        assertEquals(2 * RENT_CAP, rentAfterAdvance - rentBeforeAdvance);
+    }
+
+    private long rentAtStorageKey(World world, String blockNumber, String contractAddress, DataWord key) {
+        Block block = world.getBlockByName(blockNumber);
+        MutableRepositoryTracked repository = world.getRepositoryLocator()
+                .trackedRepositoryAt(block.getHeader());
+
+        byte[] storageKey = new TrieKeyMapper().getAccountStorageKey(new RskAddress(contractAddress), key);
+
+        // the only relevant field it's rawKey
+        RentedNode rentedNode = repository.getRentedNode(new TrackedNode(new ByteArrayWrapper(storageKey),
+                READ_OPERATION,"notRelevant", true));
+
+        return rentedNode.getRentDue(block.getTimestamp());
     }
 
     /**
