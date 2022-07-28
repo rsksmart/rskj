@@ -468,9 +468,7 @@ public class ErpFederationTest {
         Assert.assertEquals(erpFederation, otherErpFederation);
     }
 
-    // Can't recreate the hardcoded redeem script since the needed CSV value is above the max
-    // Keeping the test ignored as testimonial
-    @Ignore
+    @Ignore("Can't recreate the hardcoded redeem script since the needed CSV value is above the max. Keeping the test ignored as testimonial")
     @Test(expected = FederationCreationException.class)
     public void createErpFedWithSameRedeemScriptAsHardcodedOne_after_RSKIP293_fails() {
         // We can't test the same condition before RSKIP293 since the serialization used by bj-thin

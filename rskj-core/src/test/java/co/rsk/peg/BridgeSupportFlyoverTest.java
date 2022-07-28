@@ -1698,7 +1698,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertFalse(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
@@ -1891,7 +1891,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertFalse(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -2084,7 +2084,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertFalse(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -2124,7 +2124,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertTrue(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2263,7 +2263,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertTrue(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2429,7 +2429,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertTrue(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2601,7 +2601,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertTrue(btcTx.getHash().equals(btcTx.getHash(true)));
+        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
