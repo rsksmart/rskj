@@ -24,6 +24,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.remasc.RemascTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -257,8 +258,7 @@ public class BlockExecutor {
 
     public BlockResult executeForMining(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         boolean rskip144Active = activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber());
-
-        if (rskip144Active || (block.getHeader().getTxExecutionSublistsEdges() != null)) {
+        if (rskip144Active || block.getHeader().getTxExecutionSublistsEdges() != null) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute);
         } else {
             return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
@@ -607,7 +607,8 @@ public class BlockExecutor {
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
 
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
+//ejecucion 1 en los buckets paralelos la mitad de esto, y en el secuencial este nro para poder meter las mismas txs exactamente que tiene cada bloque de ethereum en uno de rsk paralelo
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()), GasCost.toGas(block.getGasLimit())/2);
 
         int txindex = 0;
 
@@ -638,7 +639,7 @@ public class BlockExecutor {
             }
 
             Optional<Long> sublistGasAccumulated;
-            if (tx.isRemascTransaction(txindex, transactionsList.size())) {
+            if (tx.getClass() == RemascTransaction.class) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
                 sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed());
