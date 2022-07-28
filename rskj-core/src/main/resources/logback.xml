@@ -18,7 +18,7 @@
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${logging.stdout:-OFF}</level>
+            <level>${logging.stdout:-INFO}</level>
         </filter>
     </appender>
 

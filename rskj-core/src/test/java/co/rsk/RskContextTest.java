@@ -237,7 +237,7 @@ public class RskContextTest {
 
     @Test
     public void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskContext rskContext = new RskContext(new String[0], false, true);
 
         rskContext.close();
 
@@ -280,7 +280,7 @@ public class RskContextTest {
     }
 
     private RskContext makeRskContext() {
-        return new RskContext(new String[0]) {
+        return new RskContext(new String[0], false, true) {
             @Override
             public RskSystemProperties getRskSystemProperties() {
                 return testProperties;

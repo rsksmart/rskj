@@ -1326,8 +1326,8 @@ public class BlockExecutorTest {
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(cfg, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-        );
+                ),
+                false, false);
     }
 
     public static class TestObjects {

@@ -177,8 +177,8 @@ public class World {
                             programInvokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             blockTxSignatureCache
-                    )
-            );
+                    ),
+                    false, false);
         }
 
         return this.blockExecutor;

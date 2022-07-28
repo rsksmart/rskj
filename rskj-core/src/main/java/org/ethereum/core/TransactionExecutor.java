@@ -426,7 +426,6 @@ public class TransactionExecutor {
 
             result = program.getResult();
             gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
-
             if (tx.isContractCreation() && !result.isRevert()) {
                 createContract();
             }

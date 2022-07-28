@@ -146,8 +146,8 @@ class RemascTestRunner {
                         programInvokeFactory,
                         precompiledContracts,
                         blockTxSignatureCache
-                )
-        );
+                ),
+                false, false);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;

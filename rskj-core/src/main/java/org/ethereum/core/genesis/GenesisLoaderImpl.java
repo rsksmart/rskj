@@ -41,6 +41,8 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -105,8 +107,11 @@ public class GenesisLoaderImpl implements GenesisLoader {
         this.isRsk = isRsk;
         this.useRskip92Encoding = useRskip92Encoding;
         this.isRskip126Enabled = isRskip126Enabled;
-
-        this.genesisJson = readGenesisJson(resourceAsStream);
+        try {
+            this.genesisJson = readGenesisJson(new FileInputStream("./genesis/rsk-block-performance-test.json"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
