@@ -606,7 +606,6 @@ public class BlockExecutor {
         Coin totalPaidFees = Coin.ZERO;
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-
 //ejecucion 1 en los buckets paralelos la mitad de esto, y en el secuencial este nro para poder meter las mismas txs exactamente que tiene cada bloque de ethereum en uno de rsk paralelo
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()), GasCost.toGas(block.getGasLimit())/2);
 
