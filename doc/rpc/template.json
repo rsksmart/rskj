@@ -1,12 +1,12 @@
 {
-  "openrpc": "1.0.0",
+  "openrpc": "1.2.6",
   "info": {
-    "version": "1.0.10",
-    "title": "RSK JSON-RPC",
+    "version": "x.y.z",
+    "title": "RSKj JSON-RPC",
     "description": "This API lets you interact with a RSK client via JSON-RPC",
     "license": {
-      "name": "Apache 2.0",
-      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+      "name": "GNU Lesser General Public License",
+      "url": "https://www.gnu.org/licenses/lgpl-3.0.en.html"
     }
   },
   "methods": [
