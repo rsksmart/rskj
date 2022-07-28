@@ -699,12 +699,13 @@ public class ErpFederationTest {
         // Below code can be used to create a transaction spending from the emergency multisig in testnet or mainnet
 //        String RAW_FUND_TX = "";
 //        BtcTransaction pegInTx = new BtcTransaction(networkParameters, Hex.decode(RAW_FUND_TX));
+        int outputIndex = 0; // Remember to change this value accordingly in case of using an existing raw tx
         BtcTransaction pegInTx = new BtcTransaction(networkParameters);
         pegInTx.addOutput(Coin.valueOf(990_000), erpFed.getAddress());
 
         Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         BtcTransaction pegOutTx = new BtcTransaction(networkParameters);
-        pegOutTx.addInput(pegInTx.getOutput(0));
+        pegOutTx.addInput(pegInTx.getOutput(outputIndex));
         pegOutTx.addOutput(Coin.valueOf(900_000), destinationAddress);
         pegOutTx.setVersion(2);
         pegOutTx.getInput(0).setSequenceNumber(activationDelay);
@@ -733,15 +734,15 @@ public class ErpFederationTest {
         // Try different signature permutations
         Script inputScript = createInputScript(erpFed.getRedeemScript(), signature1, signature2, signWithEmergencyMultisig);
         pegOutTx.getInput(0).setScriptSig(inputScript);
-        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(0).getScriptPubKey());
+        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(outputIndex).getScriptPubKey());
 
         inputScript = createInputScript(erpFed.getRedeemScript(), signature1, signature3, signWithEmergencyMultisig);
         pegOutTx.getInput(0).setScriptSig(inputScript);
-        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(0).getScriptPubKey());
+        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(outputIndex).getScriptPubKey());
 
         inputScript = createInputScript(erpFed.getRedeemScript(), signature2, signature3, signWithEmergencyMultisig);
         pegOutTx.getInput(0).setScriptSig(inputScript);
-        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(0).getScriptPubKey());
+        inputScript.correctlySpends(pegOutTx,0, pegInTx.getOutput(outputIndex).getScriptPubKey());
 
         // Uncomment to print the raw tx in console and broadcast https://blockstream.info/testnet/tx/push
 //        System.out.println(Hex.toHexString(pegOutTx.bitcoinSerialize()));
