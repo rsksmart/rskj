@@ -17,8 +17,6 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JavaType;
@@ -28,18 +26,18 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,35 +56,24 @@ import java.util.stream.Stream;
  *     <li><b>args[1]</b>: destination file containing the final OpenRPC json doc</li>
  * </ol>
  */
-public class GenerateOpenRpcDoc extends CliToolRskContextAware {
+public class GenerateOpenRpcDoc {
 
     public static final JavaType TEMPLATE_DOC_TYPE = TypeFactory.defaultInstance().constructType(TemplateDoc.class);
     private static final JavaType OBJECT_TYPE = TypeFactory.defaultInstance().constructType(Object.class);
     private static final MapType MAP_TYPE = TypeFactory.defaultInstance().constructMapType(HashMap.class, String.class, Object.class);
 
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper()
+    private static final Logger logger = LoggerFactory.getLogger(GenerateOpenRpcDoc.class);
+
+    protected static final ObjectMapper JSON_MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
 
-
     public static void main(String[] args) {
-        create(MethodHandles.lookup().lookupClass()).execute(args);
-    }
-
-    private final Printer printer;
-
-    @SuppressWarnings("unused")
-    public GenerateOpenRpcDoc() { // used via reflection
-        this(GenerateOpenRpcDoc::printInfo);
+        new GenerateOpenRpcDoc().execute(args);
     }
 
     @VisibleForTesting
-    GenerateOpenRpcDoc(@Nonnull Printer printer) {
-        this.printer = Objects.requireNonNull(printer);
-    }
-
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
+    void execute(@Nonnull String[] args) {
         String version = args[0];
         String workDirPath = args[1];
         String destPath = args[2];
@@ -101,32 +88,32 @@ public class GenerateOpenRpcDoc extends CliToolRskContextAware {
     }
 
     private TemplateDoc loadTemplate(String workDirPath) {
-        printer.println("Loading template...");
+        logger.info("Loading template...");
         return (TemplateDoc) loadFileAsJson(workDirPath, "template.json", TEMPLATE_DOC_TYPE);
     }
 
     private List<Object> loadMethods(String workDirPath) {
-        printer.println("Loading methods...");
+        logger.info("Loading methods...");
         return loadFilesInPathAsJson(workDirPath, "methods", OBJECT_TYPE);
     }
 
     private Map<String, Object> loadSchemas(String workDirPath) {
-        printer.println("Loading schemas...");
+        logger.info("Loading schemas...");
         return loadComponentsUnder(workDirPath, "components/schemas");
     }
 
     private Map<String, Object> loadContentDescriptors(String workDirPath) {
-        printer.println("Loading contentDescriptors...");
+        logger.info("Loading contentDescriptors...");
         return loadComponentsUnder(workDirPath, "components/contentDescriptors");
     }
 
     private Object loadFileAsJson(String basePath, String fileName, JavaType toType) {
         try {
             String path = buildFullPath(basePath, fileName);
-            printer.println("Loading file: " + path);
+            logger.info("Loading file {}", path);
             return JSON_MAPPER.readValue(Files.newInputStream(Paths.get(path)), toType);
         } catch (IOException e) {
-            printer.println("Error loading file as json: " + basePath);
+            logger.error("Error loading {} as json", basePath);
             throw new GenerateOpenRpcException(e);
         }
     }
@@ -142,7 +129,7 @@ public class GenerateOpenRpcDoc extends CliToolRskContextAware {
                     .map(fileName -> this.loadFileAsJson(parentPath, fileName, toType))
                     .collect(Collectors.toList());
         } catch (IOException e) {
-            printer.println("Error loading files under dir as json: " + parentPath);
+            logger.error("Error loading files under {} as json", parentPath);
             throw new GenerateOpenRpcException(e);
         }
     }
@@ -168,7 +155,7 @@ public class GenerateOpenRpcDoc extends CliToolRskContextAware {
         try {
             JSON_MAPPER.writeValue(new File(destPath), templateDoc);
         } catch (IOException e) {
-            printer.println("Error writing result to file: " + destPath);
+            logger.error("Error writing result to {}", destPath);
             throw new GenerateOpenRpcException(e);
         }
     }
@@ -213,4 +200,5 @@ public class GenerateOpenRpcDoc extends CliToolRskContextAware {
             super(e);
         }
     }
+
 }

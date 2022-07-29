@@ -35,6 +35,9 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightChecksUtils;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -42,8 +45,13 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.*;
-import org.ethereum.db.*;
+import org.ethereum.datasource.DbKind;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -659,5 +667,35 @@ public class CliToolsTest {
         // [60..63] - ignored, [64..300] - processed
         // 192 (3*64) processed and saved, and 45 processed but not saved
         verify(blockStore, times(192 + 45)).getChainBlockByNumber(anyLong());
+    }
+
+    @Test
+    public void generateOpenRpcDoc() throws IOException {
+        String version = "1.1.1";
+
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        File workDir = new File(classLoader.getResource("doc/rpc").getFile());
+        File destFile = new File(tempFolder.getRoot(), "generated_openrpc.json");
+
+        GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc();
+
+        String[] args = new String[]{version, workDir.getAbsolutePath(), destFile.getAbsolutePath()};
+
+        try {
+            generateOpenRpcDocCliTool.execute(args);
+        } catch (RuntimeException e) {
+            fail("should have not thrown " + e.getMessage());
+        }
+
+        ObjectMapper jsonMapper = new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
+
+        Object actual = jsonMapper.readValue(destFile, Object.class);
+
+        File expectedResultFile = new File(classLoader.getResource("doc/rpc/expected_result.json").getFile());
+        Object expected = jsonMapper.readValue(expectedResultFile, Object.class);
+
+        assertEquals(expected, actual);
     }
 }
