@@ -18,18 +18,19 @@
 
 package org.ethereum.rpc.dto;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.signature.ECDSASignature;
-
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.signature.ECDSASignature;
 
 /**
  * Created by Ruben on 8/1/2016.
  */
 public class TransactionResultDTO {
+
+    private static final String HEX_ZERO = "0x0";
 
     private String hash;
     private String nonce;
@@ -46,7 +47,7 @@ public class TransactionResultDTO {
     private String r;
     private String s;
 
-    public TransactionResultDTO(Block b, Integer index, Transaction tx) {
+    public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc) {
         hash = tx.getHash().toJsonString();
 
         nonce = HexUtils.toQuantityJsonHex(tx.getNonce());
@@ -69,13 +70,18 @@ public class TransactionResultDTO {
 
         input = HexUtils.toUnformattedJsonHex(tx.getData());
 
-        if (!(tx instanceof RemascTransaction)) {
+        boolean isRemasc = tx instanceof RemascTransaction;
+        if (!isRemasc) {
             ECDSASignature signature = tx.getSignature();
 
             v = String.format("0x%02x", tx.getEncodedV());
 
             r = HexUtils.toQuantityJsonHex(signature.getR());
             s = HexUtils.toQuantityJsonHex(signature.getS());
+        } else if (zeroSignatureIfRemasc) {
+            v = HEX_ZERO;
+            r = HEX_ZERO;
+            s = HEX_ZERO;
         }
     }
 

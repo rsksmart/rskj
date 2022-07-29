@@ -146,7 +146,7 @@ public class RskSystemProperties extends SystemProperties {
     public boolean updateWorkOnNewTransaction() {
         return getBoolean("miner.server.updateWorkOnNewTransaction", false);
     }
-    
+
     public long minerMinGasPrice() {
         return configFromFiles.getLong("miner.minGasPrice");
     }
@@ -413,5 +413,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public Integer getMessageQueueMaxSize() {
         return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
+    }
+
+    public boolean rpcZeroSignatureIfRemasc() {
+        return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
     }
 }

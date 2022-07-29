@@ -31,10 +31,13 @@ import java.util.Random;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 public class TransactionResultDTOTest {
+
+    private static final String HEX_ZERO = "0x0";
+
     private final TestSystemProperties config = new TestSystemProperties();
     private final byte chainId = config.getNetworkConstants().getChainId();
 
@@ -42,7 +45,7 @@ public class TransactionResultDTOTest {
     public void remascAddressSerialization() {
         RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction);
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false);
         assertThat(dto.getFrom(), is("0x0000000000000000000000000000000000000000"));
         assertThat(dto.getR(), is(nullValue()));
         assertThat(dto.getS(), is(nullValue()));
@@ -58,7 +61,7 @@ public class TransactionResultDTOTest {
 
         originalTransaction.sign(new byte[]{});
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction, false);
 
         Assert.assertNotNull(dto.getR());
         Assert.assertNotNull(dto.getS());
@@ -78,7 +81,7 @@ public class TransactionResultDTOTest {
 
         originalTransaction.sign(new byte[]{});
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction, false);
 
         Assert.assertNotNull(dto.getNonce());
         Assert.assertEquals("0x0", dto.getNonce());
@@ -93,10 +96,28 @@ public class TransactionResultDTOTest {
 
         originalTransaction.sign(new byte[]{});
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction, false);
 
         Assert.assertNotNull(dto.getNonce());
         Assert.assertEquals("0x1", dto.getNonce());
+    }
+
+    @Test
+    public void transactionRemascHasSignatureNullWhenFlagIsFalse() {
+        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false);
+        assertNull(dto.getV());
+        assertNull(dto.getR());
+        assertNull(dto.getS());
+    }
+
+    @Test
+    public void transactionRemascHasSignatureZeroWhenFlagIsTrue() {
+        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, true);
+        assertEquals(HEX_ZERO, dto.getV());
+        assertEquals(HEX_ZERO, dto.getR());
+        assertEquals(HEX_ZERO, dto.getS());
     }
 }
 

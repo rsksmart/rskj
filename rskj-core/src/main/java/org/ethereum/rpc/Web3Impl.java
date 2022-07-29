@@ -637,7 +637,7 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResultDTO getBlockResult(Block b, boolean fullTx) {
-        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc());
+        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc());
     }
 
     public BlockInformationResult[] eth_getBlocksByNumber(String number) {
@@ -705,7 +705,7 @@ public class Web3Impl implements Web3 {
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
-                        return s = new TransactionResultDTO(null, null, tx);
+                        return s = new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc());
                     }
                 }
             } else {
@@ -722,7 +722,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction());
+            return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), config.rpcZeroSignatureIfRemasc());
         } finally {
             logger.debug("eth_getTransactionByHash({}): {}", transactionHash, s);
         }
@@ -746,7 +746,7 @@ public class Web3Impl implements Web3 {
 
             Transaction tx = b.getTransactionsList().get(idx);
 
-            return s = new TransactionResultDTO(b, idx, tx);
+            return s = new TransactionResultDTO(b, idx, tx, config.rpcZeroSignatureIfRemasc());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionByBlockHashAndIndex({}, {}): {}", blockHash, index, s);
@@ -769,7 +769,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            s = new TransactionResultDTO(block.get(), idx, txs.get(idx));
+            s = new TransactionResultDTO(block.get(), idx, txs.get(idx), config.rpcZeroSignatureIfRemasc());
             return s;
         } finally {
             if (logger.isDebugEnabled()) {

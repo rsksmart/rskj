@@ -18,17 +18,12 @@
 
 package org.ethereum.rpc.dto;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.HexUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -39,14 +34,21 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.genesis.TestGenesisLoader;
-import co.rsk.remasc.RemascTransaction;
-import co.rsk.test.builders.BlockBuilder;
-import co.rsk.test.builders.TransactionBuilder;
-import co.rsk.util.HexUtils;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BlockResultDTOTest {
+
+    private static final String HEX_ZERO = "0x0";
+
     private Block block;
     private BlockStore blockStore;
     public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
@@ -63,7 +65,7 @@ public class BlockResultDTOTest {
 
     @Test
     public void getBlockResultDTOWithRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false);
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assert.assertNotNull(blockResultDTO);
@@ -74,7 +76,7 @@ public class BlockResultDTOTest {
 
     @Test
     public void getBlockResultDTOWithoutRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false);
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assert.assertNotNull(blockResultDTO);
@@ -86,7 +88,7 @@ public class BlockResultDTOTest {
     @Test
     public void getBlockResultDTOWithoutRemasc_emptyTransactions() {
         Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false);
 
         Assert.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
 
@@ -96,20 +98,41 @@ public class BlockResultDTOTest {
 
 
     @Test
-    public void getBlockResultDTOWithRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false);
-
-        List<String> transactionResultsHashes = transactionResultsByBlock(blockResultDTO).stream().map(e -> e.getHash()).collect(Collectors.toList());
-
+    public void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false);
         Assert.assertNotNull(blockResultDTO);
         Assert.assertEquals(2, blockResultDTO.getTransactions().size());
-        Assert.assertTrue(transactionResultsHashes.contains(TRANSACTION.getHash().toJsonString()));
-        Assert.assertTrue(transactionResultsHashes.contains(REMASC_TRANSACTION.getHash().toJsonString()));
+
+        TransactionResultDTO regularTransaction = (TransactionResultDTO) blockResultDTO.getTransactions().get(0);
+        Assert.assertNotNull(regularTransaction);
+
+        TransactionResultDTO remascTransaction = (TransactionResultDTO) blockResultDTO.getTransactions().get(1);
+        Assert.assertNotNull(remascTransaction);
+        Assert.assertNull(remascTransaction.getV());
+        Assert.assertNull(remascTransaction.getR());
+        Assert.assertNull(remascTransaction.getS());
+    }
+
+
+    @Test
+    public void getBlockResultDTOWithWithZeroSignatureRemascAndFullTransactions() {
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, true);
+        Assert.assertNotNull(blockResultDTO);
+        Assert.assertEquals(2, blockResultDTO.getTransactions().size());
+
+        TransactionResultDTO regularTransaction = (TransactionResultDTO) blockResultDTO.getTransactions().get(0);
+        Assert.assertNotNull(regularTransaction);
+
+        TransactionResultDTO remascTransaction = (TransactionResultDTO) blockResultDTO.getTransactions().get(1);
+        Assert.assertNotNull(remascTransaction);
+        Assert.assertEquals(HEX_ZERO, remascTransaction.getV());
+        Assert.assertEquals(HEX_ZERO, remascTransaction.getR());
+        Assert.assertEquals(HEX_ZERO, remascTransaction.getS());
     }
 
     @Test
     public void getBlockResultDTOWithoutRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, true);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, true, false);
 
         List<String> transactionResultsHashes = transactionResultsByBlock(blockResultDTO).stream().map(e -> e.getHash()).collect(Collectors.toList());
 
