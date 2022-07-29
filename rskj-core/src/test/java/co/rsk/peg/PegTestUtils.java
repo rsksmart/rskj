@@ -248,13 +248,13 @@ public class PegTestUtils {
         );
     }
 
-    public static Address getFastBridgeAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+    public static Address getFlyoverAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             redeemScript,
             derivationArgumentHash
         );
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+        Script flyoverP2SH = ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), flyoverP2SH);
     }
 
     public static Federation createSimpleActiveFederation(BridgeConstants bridgeConstants) {

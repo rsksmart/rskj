@@ -7,7 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
+import co.rsk.peg.flyover.FlyoverTxResponseCodes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -367,7 +367,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_before_RSKIP176_activation() throws VMException {
+    public void registerFlyoverBtcTransaction_before_RSKIP176_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -392,7 +392,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
+    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
@@ -401,7 +401,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+        when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
             anyInt(),
@@ -446,7 +446,7 @@ public class BridgeTest {
 
         //Assert
         assertEquals(BigInteger.valueOf(-900), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
-        verify(bridgeSupportMock, times(0)).registerFastBridgeBtcTransaction(
+        verify(bridgeSupportMock, times(0)).registerFlyoverBtcTransaction(
             any(Transaction.class),
             eq(value),
             eq(1),
@@ -460,7 +460,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
+    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
@@ -469,7 +469,7 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+        when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
             anyInt(),
@@ -514,7 +514,7 @@ public class BridgeTest {
 
         //Assert
         assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
-        verify(bridgeSupportMock, times(1)).registerFastBridgeBtcTransaction(
+        verify(bridgeSupportMock, times(1)).registerFlyoverBtcTransaction(
             any(Transaction.class),
             eq(value),
             eq(1),
@@ -528,14 +528,14 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_generic_error()
+    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_generic_error()
         throws VMException, IOException, BlockStoreException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+        when(bridgeSupportMock.registerFlyoverBtcTransaction(
             any(Transaction.class),
             any(byte[].class),
             anyInt(),
@@ -545,7 +545,7 @@ public class BridgeTest {
             any(RskAddress.class),
             any(Address.class),
             anyBoolean()
-        )).thenReturn(BigInteger.valueOf(FastBridgeTxResponseCodes.GENERIC_ERROR.value()));
+        )).thenReturn(BigInteger.valueOf(FlyoverTxResponseCodes.GENERIC_ERROR.value()));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         BtcECKey btcECKeyRefund = new BtcECKey();
@@ -567,12 +567,12 @@ public class BridgeTest {
         );
         byte[] result = bridge.execute(data);
 
-        assertEquals(FastBridgeTxResponseCodes.GENERIC_ERROR.value(),
+        assertEquals(FlyoverTxResponseCodes.GENERIC_ERROR.value(),
             ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+    public void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);

@@ -1,30 +1,30 @@
-package co.rsk.peg.fastbridge;
+package co.rsk.peg.flyover;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
 import org.spongycastle.util.encoders.Hex;
 
-public class FastBridgeFederationInformation {
+public class FlyoverFederationInformation {
     private final Keccak256 derivationHash;
 
     // The hash of the p2sh redeem script corresponding to the active Federation
     // (but without the flyover derivation hash).
-    // This field must also correspond to the fastBridgeScript P2SH redeem script hash
-    // stored in fastBridgeFederationRedeemScriptHash
+    // This field must also correspond to the flyoverScript P2SH redeem script hash
+    // stored in flyoverFederationRedeemScriptHash
     private final byte[] federationRedeemScriptHash;
 
     // The hash of the p2sh redeem script corresponding to the Flyover federation
-    private final byte[] fastBridgeFederationRedeemScriptHash;
+    private final byte[] flyoverFederationRedeemScriptHash;
 
-    public FastBridgeFederationInformation(
+    public FlyoverFederationInformation(
         Keccak256 derivationHash,
         byte[] federationRedeemScriptHash,
-        byte[] fastBridgeFederationRedeemScriptHash
+        byte[] flyoverFederationRedeemScriptHash
     ) {
         this.derivationHash = derivationHash;
         this.federationRedeemScriptHash = federationRedeemScriptHash.clone();
-        this.fastBridgeFederationRedeemScriptHash = fastBridgeFederationRedeemScriptHash.clone();
+        this.flyoverFederationRedeemScriptHash = flyoverFederationRedeemScriptHash.clone();
     }
 
     public Keccak256 getDerivationHash() {
@@ -35,20 +35,20 @@ public class FastBridgeFederationInformation {
         return federationRedeemScriptHash.clone();
     }
 
-    public byte[] getFastBridgeFederationRedeemScriptHash() {
-        return this.fastBridgeFederationRedeemScriptHash.clone();
+    public byte[] getFlyoverFederationRedeemScriptHash() {
+        return this.flyoverFederationRedeemScriptHash.clone();
     }
 
-    public Address getFastBridgeFederationAddress(NetworkParameters networkParameters) {
-        return Address.fromP2SHHash(networkParameters, this.fastBridgeFederationRedeemScriptHash);
+    public Address getFlyoverFederationAddress(NetworkParameters networkParameters) {
+        return Address.fromP2SHHash(networkParameters, this.flyoverFederationRedeemScriptHash);
     }
 
     @Override
     public String toString() {
         return String.format(
-            "derivationHash: %s, fastBridgeFederationRedeemScriptHash: %s, federationRedeemScriptHash: %s",
+            "derivationHash: %s, flyoverFederationRedeemScriptHash: %s, federationRedeemScriptHash: %s",
             derivationHash,
-            Hex.toHexString(fastBridgeFederationRedeemScriptHash),
+            Hex.toHexString(flyoverFederationRedeemScriptHash),
             Hex.toHexString(federationRedeemScriptHash)
         );
     }

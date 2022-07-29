@@ -41,7 +41,7 @@ import org.junit.runners.Suite;
         RegisterBtcCoinbaseTransactionTest.class,
         HasBtcBlockCoinbaseTransactionInformationTest.class,
         LockingCapTest.class,
-        RegisterFastBridgeBtcTransactionTest.class,
+        RegisterFlyoverBtcTransactionTest.class,
         GetBtcBlockchainBestBlockHeaderTest.class,
         GetBtcBlockchainBlockHeaderByHashTest.class,
         GetBtcBlockchainBlockHeaderByHeightTest.class,
