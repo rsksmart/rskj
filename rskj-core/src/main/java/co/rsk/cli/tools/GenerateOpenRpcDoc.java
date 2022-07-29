@@ -162,6 +162,7 @@ public class GenerateOpenRpcDoc {
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     @JsonPropertyOrder({"openrpc", "info", "methods", "components"})
+    @SuppressWarnings("java:S1068") // actually used for json
     private static class TemplateDoc {
         private String openrpc;
         private Info info;
@@ -174,6 +175,7 @@ public class GenerateOpenRpcDoc {
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     @JsonPropertyOrder({"version", "title", "description", "license"})
+    @SuppressWarnings("java:S1068") // actually used for json
     private static class Info {
         private String version;
         private String title;
@@ -186,6 +188,7 @@ public class GenerateOpenRpcDoc {
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     @JsonPropertyOrder({"schemas", "contentDescriptors"})
+    @SuppressWarnings("java:S1068") // actually used for json
     private static class Components {
         private Map<String, Object> schemas;
         private Map<String, Object> contentDescriptors;
