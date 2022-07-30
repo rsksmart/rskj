@@ -1,0 +1,14 @@
+{
+   "java.jdt.ls.java.home": "/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home",
+   "java.configuration.runtimes": [
+      {
+        "name": "JavaSE-1.8",
+        "path": "/Library/Internet Plug-Ins/JavaAppletPlugin.plugin/Contents/Home",
+        "default": true
+      },
+      {
+        "name": "JavaSE-17",
+        "path": "/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home",
+      },
+    ]
+}
