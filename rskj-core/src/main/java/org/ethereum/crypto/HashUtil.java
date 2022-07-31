@@ -39,6 +39,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
     public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    public static final byte[] EMPTY_LIST_HASH = keccak256(RLP.encodeList());
 
     private static final MessageDigest sha256digest = makeMessageDigest();
 

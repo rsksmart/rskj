@@ -137,38 +137,32 @@ public class BlockFactory {
         Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
         if (!canBeDecoded(rlpHeader, blockNumber)) {
+            String expectedSizes = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? "17/20" : "16/19";
             throw new IllegalArgumentException(String.format(
-                    "A block header must have 16/17 elements or 19/20 including merged-mining fields but it had %d",
+                    "A block header for height %d must have %s elements but it had %d",
+                    blockNumber,
+                    expectedSizes,
                     rlpHeader.size()
             ));
         }
 
-        int r = 15;
+        byte[] ucBytes = rlpHeader.get(15).getRLPData();
+        int uncleCount = parseBigInteger(ucBytes).intValueExact();
 
-        boolean isUmm = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber);
-
-        boolean includeUncleCount = isUmm ||
-            // sizes prior to UMM activation
-            rlpHeader.size() == (RLP_HEADER_SIZE-1) || rlpHeader.size() == (RLP_HEADER_SIZE_WITH_MERGED_MINING-1);
-
-        int uncleCount = 0;
-        if (includeUncleCount) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
+        int r = 16;
 
         byte[] ummRoot = null;
-        if (isUmm) {
-            ummRoot = rlpHeader.get(r++).getRLPRawData();
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
+            ummRoot = rlpHeader.get(r).getRLPRawData(); r += 1;
         }
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
         if (rlpHeader.size() > r) {
-            bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
-            bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
+            bitcoinMergedMiningHeader = rlpHeader.get(r).getRLPData(); r += 1;
+            bitcoinMergedMiningMerkleProof = rlpHeader.get(r).getRLPRawData(); r += 1;
+            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r).getRLPData(); r += 1;
         }
 
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, blockNumber);
