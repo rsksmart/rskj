@@ -1,7 +1,5 @@
 package co.rsk.storagerent;
 
-import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 import org.junit.Test;
@@ -146,7 +144,6 @@ public class RentedNodeTest {
         RentedNode rentedNode = new RentedNode(
             someKey,
             operationType,
-            new Keccak256(HashUtil.keccak256("something".getBytes(StandardCharsets.UTF_8))).toHexString(),
             true,
             NODE_SIZE,
             lastRentPaidTimestamp

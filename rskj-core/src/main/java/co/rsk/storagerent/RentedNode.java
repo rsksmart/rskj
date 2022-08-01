@@ -14,7 +14,6 @@ import static org.ethereum.db.OperationType.*;
 public class RentedNode {
     private final ByteArrayWrapper key; // a trie key
     private final OperationType operationType; // an operation type
-    private final String transactionHash; // a transaction  hash
     private final boolean nodeExistsInTrie; // if the tracked node exists in the trie or not
 
     private final Long nodeSize;
@@ -23,10 +22,9 @@ public class RentedNode {
     private boolean loadsContractCode = false;
 
     public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
-                       String transactionHash, boolean nodeExistsInTrie, Long nodeSize, Long rentTimestamp) {
+                      boolean nodeExistsInTrie, Long nodeSize, Long rentTimestamp) {
         this.key = rawKey;
         this.operationType = operationType;
-        this.transactionHash = transactionHash;
         this.nodeExistsInTrie = nodeExistsInTrie;
 
         if(operationType == WRITE_OPERATION && !nodeExistsInTrie) {
@@ -38,8 +36,8 @@ public class RentedNode {
     }
 
     public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
-                      String transactionHash, boolean nodeExistsInTrie) {
-        this(rawKey, operationType,transactionHash, nodeExistsInTrie, null, null);
+                      boolean nodeExistsInTrie) {
+        this(rawKey, operationType, nodeExistsInTrie, null, null);
     }
 
     /**
@@ -131,7 +129,6 @@ public class RentedNode {
                 ", operationType: " + operationType +
                 ", nodeExistsInTrie: " + nodeExistsInTrie +
                 ", loadsContractCode: " + loadsContractCode +
-                ", transactionHash: " + transactionHash +
                 ", nodeSize: " + nodeSize +
                 ", lastRentPaidTimestamp: " + rentTimestamp
                 +"]";
@@ -145,20 +142,15 @@ public class RentedNode {
         return operationType;
     }
 
-    public String getTransactionHash() {
-        return transactionHash;
-    }
-
     public boolean getNodeExistsInTrie() {
         return this.nodeExistsInTrie;
     }
 
 
-    public boolean useForStorageRent(String transactionHash) {
+    public boolean useForStorageRent() {
         // to filter storage rent nodes, excluding non-existing nodes and deletes
         return this.nodeExistsInTrie &&
-                this.operationType != DELETE_OPERATION &&
-                this.transactionHash.equals(transactionHash);
+                this.operationType != DELETE_OPERATION;
     }
 
     @Override
@@ -172,7 +164,6 @@ public class RentedNode {
         if (loadsContractCode != that.loadsContractCode) return false;
         if (!key.equals(that.key)) return false;
         if (operationType != that.operationType) return false;
-        if (!transactionHash.equals(that.transactionHash)) return false;
         if (nodeSize != null ? !nodeSize.equals(that.nodeSize) : that.nodeSize != null) return false;
         return rentTimestamp != null ? rentTimestamp.equals(that.rentTimestamp) : that.rentTimestamp == null;
     }
@@ -181,7 +172,6 @@ public class RentedNode {
     public int hashCode() {
         int result = key.hashCode();
         result = 31 * result + operationType.hashCode();
-        result = 31 * result + transactionHash.hashCode();
         result = 31 * result + (nodeExistsInTrie ? 1 : 0);
         result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
         result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
