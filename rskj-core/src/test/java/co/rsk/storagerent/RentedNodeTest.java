@@ -4,7 +4,6 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
-import org.ethereum.db.TrackedNode;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -145,12 +144,10 @@ public class RentedNodeTest {
 
     private RentedNode rentedNode(ByteArrayWrapper someKey, OperationType operationType, Long lastRentPaidTimestamp) {
         RentedNode rentedNode = new RentedNode(
-            new TrackedNode(
-                someKey,
-                operationType,
-                new Keccak256(HashUtil.keccak256("something".getBytes(StandardCharsets.UTF_8))).toHexString(),
-                true
-            ),
+            someKey,
+            operationType,
+            new Keccak256(HashUtil.keccak256("something".getBytes(StandardCharsets.UTF_8))).toHexString(),
+            true,
             NODE_SIZE,
             lastRentPaidTimestamp
         );

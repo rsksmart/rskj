@@ -1,26 +1,45 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
-import org.ethereum.db.TrackedNode;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.OperationType;
 
 import static co.rsk.storagerent.StorageRentComputation.*;
-import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
+import static org.ethereum.db.OperationType.*;
 
 /**
  * A RentedNode contains the relevant data of an involved node during transaction execution.
  * It also returns the relevant information to pay the storage rent.
  * */
-public class RentedNode extends TrackedNode {
+public class RentedNode {
+    private final ByteArrayWrapper key; // a trie key
+    private final OperationType operationType; // an operation type
+    private final String transactionHash; // a transaction  hash
+    private final boolean nodeExistsInTrie; // if the tracked node exists in the trie or not
+
     private final Long nodeSize;
     private final Long rentTimestamp;
 
     private boolean loadsContractCode = false;
 
-    public RentedNode(TrackedNode trackedNode, Long nodeSize, Long rentTimestamp) {
-        super(trackedNode.getKey(), trackedNode.getOperationType(),
-                trackedNode.getTransactionHash(), trackedNode.getNodeExistsInTrie());
+    public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
+                       String transactionHash, boolean nodeExistsInTrie, Long nodeSize, Long rentTimestamp) {
+        this.key = rawKey;
+        this.operationType = operationType;
+        this.transactionHash = transactionHash;
+        this.nodeExistsInTrie = nodeExistsInTrie;
+
+        if(operationType == WRITE_OPERATION && !nodeExistsInTrie) {
+            throw new IllegalArgumentException("a WRITE_OPERATION should always exist in trie");
+        }
+
         this.nodeSize = nodeSize;
         this.rentTimestamp = rentTimestamp;
+    }
+
+    public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
+                      String transactionHash, boolean nodeExistsInTrie) {
+        this(rawKey, operationType,transactionHash, nodeExistsInTrie, null, null);
     }
 
     /**
@@ -116,5 +135,57 @@ public class RentedNode extends TrackedNode {
                 ", nodeSize: " + nodeSize +
                 ", lastRentPaidTimestamp: " + rentTimestamp
                 +"]";
+    }
+
+    public ByteArrayWrapper getKey() {
+        return key;
+    }
+
+    public OperationType getOperationType() {
+        return operationType;
+    }
+
+    public String getTransactionHash() {
+        return transactionHash;
+    }
+
+    public boolean getNodeExistsInTrie() {
+        return this.nodeExistsInTrie;
+    }
+
+
+    public boolean useForStorageRent(String transactionHash) {
+        // to filter storage rent nodes, excluding non-existing nodes and deletes
+        return this.nodeExistsInTrie &&
+                this.operationType != DELETE_OPERATION &&
+                this.transactionHash.equals(transactionHash);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RentedNode)) return false;
+
+        RentedNode that = (RentedNode) o;
+
+        if (nodeExistsInTrie != that.nodeExistsInTrie) return false;
+        if (loadsContractCode != that.loadsContractCode) return false;
+        if (!key.equals(that.key)) return false;
+        if (operationType != that.operationType) return false;
+        if (!transactionHash.equals(that.transactionHash)) return false;
+        if (nodeSize != null ? !nodeSize.equals(that.nodeSize) : that.nodeSize != null) return false;
+        return rentTimestamp != null ? rentTimestamp.equals(that.rentTimestamp) : that.rentTimestamp == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = key.hashCode();
+        result = 31 * result + operationType.hashCode();
+        result = 31 * result + transactionHash.hashCode();
+        result = 31 * result + (nodeExistsInTrie ? 1 : 0);
+        result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
+        result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
+        result = 31 * result + (loadsContractCode ? 1 : 0);
+        return result;
     }
 }

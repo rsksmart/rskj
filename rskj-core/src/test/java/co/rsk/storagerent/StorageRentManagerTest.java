@@ -3,7 +3,6 @@ package co.rsk.storagerent;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
-import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.program.Program;
 import org.junit.Test;
 
@@ -25,14 +24,14 @@ public class StorageRentManagerTest {
         long threeYearsAccumulatedRent = new GregorianCalendar(2019, 1, 1).getTime().getTime();
 
         // params
-        Set<TrackedNode> rentedNodes = new HashSet<>(Arrays.asList(
+        Set<RentedNode> rentedNodes = new HashSet<>(Arrays.asList(
             trackedNodeWriteOperation("key2"), // should pay rent cap
             trackedNodeWriteOperation("key4"), // should pay rent cap
             trackedNodeWriteOperation("key7"), // should pay rent cap
             trackedNodeReadOperation("key1", true), // should pay rent cap
             trackedNodeReadOperation("key6", true) // should pay rent cap
         ));
-        List<TrackedNode> rollbackNodes = Arrays.asList(
+        List<RentedNode> rollbackNodes = Arrays.asList(
             trackedNodeWriteOperation("key3"), // should pay 25% rent
             trackedNodeReadOperation("key5", true), // should pay 25% rent
             trackedNodeWriteOperation("key8") // should pay 25% rent
@@ -67,7 +66,7 @@ public class StorageRentManagerTest {
         long oneDayAccumulatedRent = new GregorianCalendar(2021, 12, 31).getTime().getTime();
 
         // params
-        Set<TrackedNode> rentedNodes = new HashSet<>(Arrays.asList(
+        Set<RentedNode> rentedNodes = new HashSet<>(Arrays.asList(
             // not enough accumulated rent, should pay zero gas
             trackedNodeReadOperation("key1", true),
             // not enough accumulated rent, should pay zero gas
@@ -75,7 +74,7 @@ public class StorageRentManagerTest {
             // not enough accumulated rent, should pay zero gas
             trackedNodeWriteOperation("key4")
         ));
-        List<TrackedNode> rollbackNodes = new ArrayList<>();
+        List<RentedNode> rollbackNodes = new ArrayList<>();
         long gasRemaining = 28750;
         long executionBlockTimestamp = new GregorianCalendar(2022, 1, 1).getTime().getTime();
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
@@ -104,8 +103,8 @@ public class StorageRentManagerTest {
         int notRelevant = -1;
 
         // params
-        Set<TrackedNode> rentedNodes = new HashSet<>(); // empty
-        List<TrackedNode> rollbackNodes = new ArrayList<>(); // empty
+        Set<RentedNode> rentedNodes = new HashSet<>(); // empty
+        List<RentedNode> rollbackNodes = new ArrayList<>(); // empty
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class); // useful to spy fetched data
 
@@ -128,14 +127,14 @@ public class StorageRentManagerTest {
         long threeYearsAccumulatedRent = new GregorianCalendar(2019, 1, 1).getTime().getTime();
 
         // params
-        Set<TrackedNode> rentedNodes = new HashSet<>(Arrays.asList(
+        Set<RentedNode> rentedNodes = new HashSet<>(Arrays.asList(
             trackedNodeReadOperation("key1", true), // should pay rent cap
             trackedNodeWriteOperation("key2"), // should pay rent cap
             trackedNodeWriteOperation("key4"), // should pay rent cap
             trackedNodeReadOperation("key6", true), // should pay rent cap
             trackedNodeWriteOperation("key7") // should pay rent cap
         ));
-        List<TrackedNode> rollbackNodes = Arrays.asList(
+        List<RentedNode> rollbackNodes = Arrays.asList(
             trackedNodeWriteOperation("key3"), // should pay 25%
             trackedNodeReadOperation("key5", true), // should pay 25%
             trackedNodeWriteOperation("key8") // should pay 25%
@@ -184,10 +183,14 @@ public class StorageRentManagerTest {
         }
     }
 
-    private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Set<TrackedNode> rentedNodes,
-                                   List<TrackedNode> rollbackNodes, long nodeSize, long rentTimestamp) {
-        rentedNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(new RentedNode(r, nodeSize, rentTimestamp)));
-        rollbackNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(new RentedNode(r, nodeSize, rentTimestamp)));
+    private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Set<RentedNode> rentedNodes,
+                                   List<RentedNode> rollbackNodes, long nodeSize, long rentTimestamp) {
+        rentedNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(
+                new RentedNode(r.getKey(), r.getOperationType(), r.getTransactionHash(),
+                        r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
+        rollbackNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(
+                new RentedNode(r.getKey(), r.getOperationType(), r.getTransactionHash(),
+                        r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
     }
 
     /**
@@ -210,16 +213,16 @@ public class StorageRentManagerTest {
         assertEquals(expectedRollbackNodesCount, storageRentResult.getRollbackNodes().size());
     }
 
-    public static TrackedNode trackedNodeReadOperation(String key, boolean result) {
+    public static RentedNode trackedNodeReadOperation(String key, boolean result) {
         return trackedNode(key, READ_OPERATION, result);
     }
 
-    public static TrackedNode trackedNodeWriteOperation(String key) {
+    public static RentedNode trackedNodeWriteOperation(String key) {
         return trackedNode(key, WRITE_OPERATION, true);
     }
 
-    private static TrackedNode trackedNode(String key, OperationType operationType, boolean result) {
-        return new TrackedNode(
+    private static RentedNode trackedNode(String key, OperationType operationType, boolean result) {
+        return new RentedNode(
             new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
             operationType,
             TRANSACTION_HASH,

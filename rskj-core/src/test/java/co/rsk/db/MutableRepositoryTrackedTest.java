@@ -1,12 +1,12 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
+import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
-import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.DataWord;
 import org.junit.Before;
 import org.junit.Test;
@@ -295,7 +295,7 @@ public class MutableRepositoryTrackedTest {
 
     @Test
     public void trackNode_shouldTrackNodesWithoutDuplicates() {
-        List<TrackedNode> testNodes = Arrays.asList(
+        List<RentedNode> testNodes = Arrays.asList(
                 trackedNodeReadOperation("key1", false),
                 trackedNodeWriteOperation("key1"),
                 trackedNodeReadOperation("key1", true),
@@ -332,19 +332,18 @@ public class MutableRepositoryTrackedTest {
             }
         });
 
-        Set<TrackedNode> trackedNodes = repository.getTrackedNodes()
+        Set<RentedNode> trackedNodes = repository.getTrackedNodes()
                 .stream()
                 .filter(trackedNode -> trackedNode.getTransactionHash().equals(TRANSACTION_HASH))
                 .collect(Collectors.toSet());
 
         // all new nodes, they should be tracked normally
-        assertEquals(11, trackedNodes.size());
+        assertEquals(12, trackedNodes.size());
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key1",false)));
         assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key1")));
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key1", true)));
         assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key2")));
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key2", true)));
-        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key2")));
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key3",true)));
         assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key3")));
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key4", true)));
@@ -354,16 +353,16 @@ public class MutableRepositoryTrackedTest {
         assertTrue(trackedNodes.contains(trackedNodeReadOperation("key7", false)));
     }
 
-    private TrackedNode trackedNodeWriteOperation(String key) {
+    private RentedNode trackedNodeWriteOperation(String key) {
         return trackedNode(key, WRITE_OPERATION, true);
     }
 
-    private TrackedNode trackedNodeReadOperation(String key, boolean result) {
+    private RentedNode trackedNodeReadOperation(String key, boolean result) {
         return trackedNode(key, READ_OPERATION, result);
     }
 
-    private static TrackedNode trackedNode(String key, OperationType operationType, boolean result) {
-        return new TrackedNode(
+    private static RentedNode trackedNode(String key, OperationType operationType, boolean result) {
+        return new RentedNode(
                 new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
                 operationType,
                 TRANSACTION_HASH,

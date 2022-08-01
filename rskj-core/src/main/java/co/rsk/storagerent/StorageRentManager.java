@@ -2,7 +2,6 @@ package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
 import org.ethereum.db.MutableRepositoryTracked;
-import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -38,11 +37,11 @@ public class StorageRentManager {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
-        Set<TrackedNode> storageRentNodes = new HashSet<>();
-        blockTrack.getStorageRentNodes(transactionHash).forEach(trackedNode -> storageRentNodes.add(trackedNode));
-        transactionTrack.getStorageRentNodes(transactionHash).forEach(trackedNode -> storageRentNodes.add(trackedNode));
+        Set<RentedNode> storageRentNodes = new HashSet<>();
+        blockTrack.getStorageRentNodes(transactionHash).forEach(rentedNode -> storageRentNodes.add(rentedNode));
+        transactionTrack.getStorageRentNodes(transactionHash).forEach(rentedNode -> storageRentNodes.add(rentedNode));
 
-        List<TrackedNode> rollbackNodes = new ArrayList<>();
+        List<RentedNode> rollbackNodes = new ArrayList<>();
         blockTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
         transactionTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
 
@@ -53,10 +52,10 @@ public class StorageRentManager {
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
         Set<RentedNode> rentedNodes = storageRentNodes.stream()
-                .map(trackedNode -> blockTrack.getRentedNode(trackedNode))
+                .map(rentedNode -> blockTrack.getRentedNode(rentedNode))
                 .collect(Collectors.toSet());
         List<RentedNode> rollbackRentedNodes = rollbackNodes.stream()
-                .map(trackedNode -> blockTrack.getRentedNode(trackedNode))
+                .map(rentedNode -> blockTrack.getRentedNode(rentedNode))
                 .collect(Collectors.toList());
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
