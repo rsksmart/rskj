@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
@@ -309,6 +308,7 @@ public class MutableRepositoryTrackedTest {
                 trackedNodeReadOperation("key4", true),
                 trackedNodeReadOperation("key4", true),
                 trackedNodeReadOperation("key4", true),
+                trackedNodeReadOperation("key4", true),
                 trackedNodeWriteOperation("key5"),
                 trackedNodeReadOperation("key6", true),
                 trackedNodeWriteOperation("key6"),
@@ -317,7 +317,6 @@ public class MutableRepositoryTrackedTest {
 
         MutableRepositoryTestable repository = MutableRepositoryTestable
                 .trackedRepository(new MutableTrieImpl(null, new Trie()));
-        repository.setTrackedTransactionHash(TRANSACTION_HASH);
 
         // track nodes
         testNodes.forEach(v -> {
@@ -332,10 +331,7 @@ public class MutableRepositoryTrackedTest {
             }
         });
 
-        Set<RentedNode> trackedNodes = repository.getTrackedNodes()
-                .stream()
-                .filter(trackedNode -> trackedNode.getTransactionHash().equals(TRANSACTION_HASH))
-                .collect(Collectors.toSet());
+        Set<RentedNode> trackedNodes = repository.getTrackedNodes();
 
         // all new nodes, they should be tracked normally
         assertEquals(12, trackedNodes.size());
@@ -365,7 +361,6 @@ public class MutableRepositoryTrackedTest {
         return new RentedNode(
                 new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
                 operationType,
-                TRANSACTION_HASH,
                 result
         );
     }
@@ -381,7 +376,6 @@ public class MutableRepositoryTrackedTest {
     private MutableRepositoryTestable newMutableRepositoryTestable() {
         MutableTrieCache mutableTrie = new MutableTrieCache(new MutableTrieImpl(null, new Trie()));
         MutableRepositoryTestable repositoryTestable = MutableRepositoryTestable.trackedRepository(mutableTrie);
-        repositoryTestable.setTrackedTransactionHash(TRANSACTION_HASH);
 
         return spy(repositoryTestable);
     }

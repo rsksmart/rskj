@@ -16,7 +16,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class StorageRentManagerTest {
-    public static final String TRANSACTION_HASH = "something";
 
     @Test
     public void pay_shouldPayRent() {
@@ -42,8 +41,8 @@ public class StorageRentManagerTest {
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class);
 
         // mocks
-        when(mockBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
-        when(mockBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
+        when(mockBlockTrack.getStorageRentNodes()).thenReturn(rentedNodes);
+        when(mockBlockTrack.getRollBackNodes()).thenReturn(rollbackNodes);
         mockGetRentedNode(mockBlockTrack, rentedNodes, rollbackNodes, nodeSize, threeYearsAccumulatedRent);
 
         // expected
@@ -81,8 +80,8 @@ public class StorageRentManagerTest {
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class);
 
         // mocks
-        when(mockBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
-        when(mockBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
+        when(mockBlockTrack.getStorageRentNodes()).thenReturn(rentedNodes);
+        when(mockBlockTrack.getRollBackNodes()).thenReturn(rollbackNodes);
         mockGetRentedNode(mockBlockTrack, rentedNodes, rollbackNodes, nodeSize, oneDayAccumulatedRent);
 
         // expected
@@ -108,8 +107,8 @@ public class StorageRentManagerTest {
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class); // useful to spy fetched data
 
-        when(mockBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
-        when(mockBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
+        when(mockBlockTrack.getStorageRentNodes()).thenReturn(rentedNodes);
+        when(mockBlockTrack.getRollBackNodes()).thenReturn(rollbackNodes);
 
         try {
             // there are no expected values because this test should fail
@@ -145,8 +144,8 @@ public class StorageRentManagerTest {
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class);
 
-        when(mockBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
-        when(mockBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
+        when(mockBlockTrack.getStorageRentNodes()).thenReturn(rentedNodes);
+        when(mockBlockTrack.getRollBackNodes()).thenReturn(rollbackNodes);
         mockGetRentedNode(mockBlockTrack, rentedNodes, rollbackNodes, nodeSize, threeYearsAccumulatedRent);
 
         // expected
@@ -167,8 +166,8 @@ public class StorageRentManagerTest {
         MutableRepositoryTracked unusedTrack = mock(MutableRepositoryTracked.class);
         MutableRepositoryTracked newBlockTrack = mock(MutableRepositoryTracked.class);
 
-        when(newBlockTrack.getStorageRentNodes(TRANSACTION_HASH)).thenReturn(rentedNodes);
-        when(newBlockTrack.getRollBackNodes(TRANSACTION_HASH)).thenReturn(rollbackNodes);
+        when(newBlockTrack.getStorageRentNodes()).thenReturn(rentedNodes);
+        when(newBlockTrack.getRollBackNodes()).thenReturn(rollbackNodes);
         mockGetRentedNode(newBlockTrack, rentedNodes, rollbackNodes, nodeSize, threeYearsAccumulatedRent);
 
         try {
@@ -185,11 +184,11 @@ public class StorageRentManagerTest {
 
     private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Set<RentedNode> rentedNodes,
                                    List<RentedNode> rollbackNodes, long nodeSize, long rentTimestamp) {
-        rentedNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(
-                new RentedNode(r.getKey(), r.getOperationType(), r.getTransactionHash(),
+        rentedNodes.forEach(r -> when(mockBlockTrack.fillUpRentedNode(r)).thenReturn(
+                new RentedNode(r.getKey(), r.getOperationType(),
                         r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
-        rollbackNodes.forEach(r -> when(mockBlockTrack.getRentedNode(r)).thenReturn(
-                new RentedNode(r.getKey(), r.getOperationType(), r.getTransactionHash(),
+        rollbackNodes.forEach(r -> when(mockBlockTrack.fillUpRentedNode(r)).thenReturn(
+                new RentedNode(r.getKey(), r.getOperationType(),
                         r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
     }
 
@@ -201,7 +200,7 @@ public class StorageRentManagerTest {
                                          long expectedPaidRent, long expectedPayableRent, long expectedRollbacksRent,
                                          long expectedRentedNodesCount, long expectedRollbackNodesCount) {
         StorageRentResult storageRentResult = StorageRentManager.pay(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack, TRANSACTION_HASH);
+                mockBlockTrack, mockTransactionTrack);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
         assertTrue(remainingGasAfterPayingRent >= 0);
@@ -225,8 +224,7 @@ public class StorageRentManagerTest {
         return new RentedNode(
             new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
             operationType,
-            TRANSACTION_HASH,
-            result
+                result
         );
     }
 }

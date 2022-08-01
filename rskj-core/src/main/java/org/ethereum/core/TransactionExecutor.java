@@ -519,8 +519,7 @@ public class TransactionExecutor {
             Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
 
             storageRentResult = StorageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
-                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
-                    tx.getHash().toHexString());
+                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack);
 
             profiler.stop(storageRentMetric);
 

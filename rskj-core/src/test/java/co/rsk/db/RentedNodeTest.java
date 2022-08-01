@@ -17,15 +17,14 @@ import static org.junit.Assert.assertEquals;
 public class RentedNodeTest {
 
     public static final ByteArrayWrapper VALID_KEY = new ByteArrayWrapper(Keccak256Helper.keccak256("something".getBytes(StandardCharsets.UTF_8)));
-    private static final String TRANSACTION_HASH = "this can be any non-empty string";
 
     @Test
     public void createValidTrackedNodes() {
         List<RentedNode> validElements = Arrays.asList(
-            new RentedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, true),
-            new RentedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, false),
-            new RentedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true),
-            new RentedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true)
+            new RentedNode(VALID_KEY, READ_OPERATION, true),
+            new RentedNode(VALID_KEY, READ_OPERATION, false),
+            new RentedNode(VALID_KEY, WRITE_OPERATION, true),
+            new RentedNode(VALID_KEY, WRITE_OPERATION, true)
         );
 
         assertEquals(4, validElements.size());
@@ -34,7 +33,7 @@ public class RentedNodeTest {
     @Test
     public void invalidTrackedNode() {
         try {
-            new RentedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, false);
+            new RentedNode(VALID_KEY, WRITE_OPERATION, false);
         } catch (IllegalArgumentException e) {
             assertEquals("a WRITE_OPERATION should always exist in trie", e.getMessage());
         }
@@ -42,7 +41,7 @@ public class RentedNodeTest {
         OperationType[] values = OperationType.values();
         for(int i = 0; i < values.length; i++) {
             try {
-                new RentedNode(VALID_KEY, values[i], "", true);
+                new RentedNode(VALID_KEY, values[i], true);
             } catch (IllegalArgumentException e) {
                 assertEquals("transaction hash can not be empty", e.getMessage());
             }

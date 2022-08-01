@@ -32,18 +32,17 @@ public class StorageRentManager {
      * @return new remaining gas
      * */
     public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
-                    MutableRepositoryTracked blockTrack, MutableRepositoryTracked transactionTrack,
-                    String transactionHash) {
+                                        MutableRepositoryTracked blockTrack, MutableRepositoryTracked transactionTrack) {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
         Set<RentedNode> storageRentNodes = new HashSet<>();
-        blockTrack.getStorageRentNodes(transactionHash).forEach(rentedNode -> storageRentNodes.add(rentedNode));
-        transactionTrack.getStorageRentNodes(transactionHash).forEach(rentedNode -> storageRentNodes.add(rentedNode));
+        blockTrack.getStorageRentNodes().forEach(rentedNode -> storageRentNodes.add(rentedNode));
+        transactionTrack.getStorageRentNodes().forEach(rentedNode -> storageRentNodes.add(rentedNode));
 
         List<RentedNode> rollbackNodes = new ArrayList<>();
-        blockTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
-        transactionTrack.getRollBackNodes(transactionHash).forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
+        blockTrack.getRollBackNodes().forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
+        transactionTrack.getRollBackNodes().forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
 
         if(storageRentNodes.isEmpty() && rollbackNodes.isEmpty()) {
             throw new RuntimeException("there should be rented nodes or rollback nodes");
@@ -52,10 +51,10 @@ public class StorageRentManager {
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
         Set<RentedNode> rentedNodes = storageRentNodes.stream()
-                .map(rentedNode -> blockTrack.getRentedNode(rentedNode))
+                .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
                 .collect(Collectors.toSet());
         List<RentedNode> rollbackRentedNodes = rollbackNodes.stream()
-                .map(rentedNode -> blockTrack.getRentedNode(rentedNode))
+                .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
                 .collect(Collectors.toList());
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",

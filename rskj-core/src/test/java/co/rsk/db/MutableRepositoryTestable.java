@@ -12,12 +12,12 @@ import static org.ethereum.db.OperationType.*;
 
 public class MutableRepositoryTestable extends MutableRepositoryTracked {
     public MutableRepositoryTestable(MutableTrie mutableTrie,
-                                     MutableRepositoryTracked parentRepository, boolean enableTracking) {
-        super(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>(), enableTracking);
+                                     MutableRepositoryTracked parentRepository){
+        super(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>());
     }
 
     public static MutableRepositoryTestable trackedRepository(MutableTrie mutableTrie) {
-        return new MutableRepositoryTestable(mutableTrie, null, true);
+        return new MutableRepositoryTestable(mutableTrie, null);
     }
 
     public void trackNodeWriteOperation(byte[] key) {
