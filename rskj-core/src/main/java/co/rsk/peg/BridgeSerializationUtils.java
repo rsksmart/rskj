@@ -776,6 +776,9 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeSha256Hash(Sha256Hash hash) {
+        if (hash == null){
+            return null;
+        }
         return RLP.encodeElement(hash.getBytes());
     }
 
@@ -785,6 +788,26 @@ public class BridgeSerializationUtils {
             return null;
         }
         return Sha256Hash.wrap(element.getRLPData());
+    }
+
+    public static Optional<Keccak256> deserializeKeccak256(byte[] data) {
+        if (data == null) {
+            return Optional.empty();
+        }
+
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() != 1) {
+            throw new RuntimeException(String.format("Invalid serialized keccak256. Expected 1 element, but got %d", rlpList.size()));
+        }
+
+        return Optional.of(new Keccak256(rlpList.get(0).getRLPRawData()));
+    }
+
+    public static byte[] serializeKeccak256(Keccak256 data) {
+        if (data == null){
+            return null;
+        }
+        return RLP.encodeList(RLP.encodeElement(data.getBytes()));
     }
 
     public static byte[] serializeScript(Script script) {
