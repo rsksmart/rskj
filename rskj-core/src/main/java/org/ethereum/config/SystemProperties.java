@@ -26,6 +26,7 @@ import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
@@ -41,8 +42,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -115,6 +116,8 @@ public abstract class SystemProperties {
 
     private ActivationConfig activationConfig;
     private Constants constants;
+
+    private static final Random RANDOM = new Random();
 
     protected SystemProperties(ConfigLoader loader) {
         try {
@@ -464,50 +467,101 @@ public abstract class SystemProperties {
                     logger.info("Public IP identified {}", publicIp);
                     return publicIp;
                 } catch (IllegalArgumentException e) {
-                    logger.warn("Can't resolve public IP", e);
+                    logger.warn("Can't resolve Public IP", e);
                 }
                 publicIp = null;
             }
         }
 
-        publicIp = getMyPublicIpFromRemoteService().getHostAddress();
+        publicIp = getMyPublicIpFromRemoteServices().getHostAddress();
         return publicIp;
     }
 
-    private InetAddress getMyPublicIpFromRemoteService() {
-        try {
-            URL ipCheckService = publicIpCheckService();
-            logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
+    private InetAddress getMyPublicIpFromRemoteServices() {
+        List<URI> ipCheckServices = getPublicIpCheckServices();
 
-            String ipFromService;
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(ipCheckService.openStream()))) {
-                ipFromService = in.readLine();
-            }
+        logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckServices);
 
-            if (ipFromService == null || ipFromService.trim().isEmpty()) {
-                logger.warn("Unable to retrieve public IP from {} {}.", ipCheckService, ipFromService);
-                throw new IOException("Invalid address: '" + ipFromService + "'");
-            }
-
-            InetAddress resolvedIp = tryParseIpOrThrow(ipFromService);
-            logger.info("Identified public IP: {}", resolvedIp);
-            return resolvedIp;
-        } catch (IOException e) {
-            logger.error("Can't get public IP", e);
-        } catch (IllegalArgumentException e) {
-            logger.error("Can't get public IP", e);
+        Optional<InetAddress> resolvedIp = getPublicIpFromFirstWorkingService(ipCheckServices);
+        if (resolvedIp.isPresent()) {
+            return resolvedIp.get();
         }
 
         InetAddress bindAddress = getBindAddress();
-        if (bindAddress.isAnyLocalAddress()) {
-            throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
+        if (!bindAddress.isAnyLocalAddress()) {
+            logger.info("Using bind address {} as fallback Public IP", bindAddress);
+            return bindAddress;
         }
 
-        return bindAddress;
+        logger.warn("Wildcard on bind address {} is not allowed as fallback for Public IP ", bindAddress);
+
+        InetAddress fallbackPublicIP = generateNonLocalIPAddressV4();
+        logger.info("Using dummy address {} as fallback for Public IP", fallbackPublicIP);
+
+        return fallbackPublicIP;
     }
 
-    private URL publicIpCheckService() throws MalformedURLException {
-        return new URL(configFromFiles.getString("public.ipCheckService"));
+    private List<URI> getPublicIpCheckServices() {
+        List<URI> services = new ArrayList<>();
+
+        for (String url : configFromFiles.getStringList("public.ipCheckServices")) {
+            try {
+                services.add(new URI(url));
+            } catch (IllegalArgumentException | URISyntaxException e) {
+                logger.warn("Invalid URI for Public IP service in conf {}", url);
+            }
+        }
+
+        if (services.isEmpty()) {
+            logger.error("Couldn't get any valid Public IP service from conf");
+        }
+
+        return services;
+    }
+
+    private Optional<InetAddress> getPublicIpFromFirstWorkingService(List<URI> ipCheckServices) {
+        for (URI service : ipCheckServices) {
+            Optional<InetAddress> ipFromService = getPublicIpFromService(service);
+            if (ipFromService.isPresent()) {
+                logger.info("Identified Public IP {} from {}.", ipFromService.get(), service);
+                return ipFromService;
+            }
+        }
+
+        logger.warn("Could not get Public IP from any of the configured services");
+        return Optional.empty();
+    }
+
+    private Optional<InetAddress> getPublicIpFromService(URI service) {
+        String ipFromService;
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(service.toURL().openStream()))) {
+            ipFromService = in.readLine();
+        } catch (IOException ioe) {
+            logger.warn("Unable to get Public IP from {}, error {}.", service, ioe.getMessage());
+            return Optional.empty();
+        }
+
+        if (StringUtils.isBlank(ipFromService)) {
+            logger.warn("Unable to get Public IP from {}, invalid value {}.", service, ipFromService);
+            return Optional.empty();
+        } else {
+            return tryParseIp(ipFromService);
+        }
+    }
+
+    private static InetAddress generateNonLocalIPAddressV4() {
+        byte[] bytes = new byte[4];
+        RANDOM.nextBytes(bytes);
+
+        int max = 255;
+        int min = 173;
+        bytes[0] = (byte) (RANDOM.nextInt(max - min) + min);
+
+        try {
+            return InetAddress.getByAddress(bytes);
+        } catch (UnknownHostException uhe) {
+            throw new IllegalStateException("Could not generate fallback Public IP");
+        }
     }
 
     public boolean isSyncEnabled() {
@@ -682,12 +736,18 @@ public abstract class SystemProperties {
      * Parses a list of IPs separated by commas. E.g. "171.99.160.48, 171.99.160.48".
      */
     private InetAddress tryParseIpOrThrow(String ipsToParse) {
+        return tryParseIp(ipsToParse)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid address(es): '" + ipsToParse + "'"));
+    }
+
+    private Optional<InetAddress> tryParseIp(String ipsToParse) {
         try {
             String[] ips = ipsToParse.split(", ");
             String ipToParse = ips[ips.length - 1];
-            return InetAddress.getByName(ipToParse);
+            return Optional.of(InetAddress.getByName(ipToParse));
         } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Invalid address(es): '" + ipsToParse + "'", e);
+            logger.warn("Invalid address(es): {}", ipsToParse, e);
+            return Optional.empty();
         }
     }
 
