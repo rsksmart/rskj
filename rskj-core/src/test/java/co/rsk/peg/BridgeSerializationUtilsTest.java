@@ -32,6 +32,7 @@ import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1161,6 +1162,27 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void deserializeCoinbaseInformation_dataIsNull_returnsNull() {
         Assert.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
+    }
+
+    @Test
+    public void serializeSha256Hash_dataIsNull_returnsNull() {
+        Assert.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
+    }
+
+    @Test
+    public void serializeSha256Hash_ok() {
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(BridgeSerializationUtils.serializeSha256Hash(hash));
+        Assert.assertEquals(
+            result,
+            hash
+        );
+    }
+
+    @Test
+    public void deserializeSha256Hash_null() {
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
+        Assert.assertNull(result);
     }
 
     @Test

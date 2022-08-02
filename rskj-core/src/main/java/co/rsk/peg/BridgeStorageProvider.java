@@ -140,6 +140,9 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
+    private Sha256Hash pegoutCreationEntryBtcTxHash;
+    private Keccak256 pegoutCreationEntryRskTxHash;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
@@ -943,6 +946,45 @@ public class BridgeStorageProvider {
         return getReleaseRequestQueue().getEntries().size();
     }
 
+    public void setPegoutCreationEntry(Sha256Hash btcTxHash, Keccak256 rskTxHash){
+        if (!activations.isActive(RSKIP298)){
+            return;
+        }
+        this.pegoutCreationEntryBtcTxHash = btcTxHash;
+        this.pegoutCreationEntryRskTxHash = rskTxHash;
+    }
+
+    public Optional<Keccak256> getPegoutCreationEntry(Sha256Hash btcTxHash){
+        if(!activations.isActive(RSKIP298)){
+            return Optional.empty();
+        }
+
+        return safeGetFromRepository(
+            getStorageKeyForPegoutCreationIndex(
+                btcTxHash
+            ),
+            BridgeSerializationUtils::deserializeKeccak256
+        );
+    }
+
+    public void savePegoutCreationEntry(){
+        if (
+            this.pegoutCreationEntryBtcTxHash == null
+                || this.pegoutCreationEntryRskTxHash == null
+                || !activations.isActive(RSKIP298)
+        ){
+            return;
+        }
+
+        safeSaveToRepository(
+            getStorageKeyForPegoutCreationIndex(
+                this.pegoutCreationEntryBtcTxHash
+            ),
+            this.pegoutCreationEntryRskTxHash,
+            BridgeSerializationUtils::serializeKeccak256
+        );
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -1004,6 +1046,10 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForFlyoverFederationInformation(byte[] flyoverFederationRedeemScriptHash) {
         return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(flyoverFederationRedeemScriptHash));
+    }
+
+    private DataWord getStorageKeyForPegoutCreationIndex(Sha256Hash btcTxHash) {
+        return DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
