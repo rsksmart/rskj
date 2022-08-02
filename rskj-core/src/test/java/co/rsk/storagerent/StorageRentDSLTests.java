@@ -1,6 +1,7 @@
 package co.rsk.storagerent;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -9,11 +10,17 @@ import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -166,6 +173,49 @@ public class StorageRentDSLTests {
         checkStorageRent(world, "tx04", 2501, 0, 8, 0);
     }
 
+    @Test
+    public void rollbackFees() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 99999999;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/rollbackFees.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+        String transactionName = "tx02";
+        String contractAddress = "6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+
+        checkStorageRent(world, transactionName, 47500, 7500, 3, 6);
+
+        // check for the value
+        assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
+                .snapshotAt(world.getBlockByName("b02").getHeader())
+                .getStorageValue(new RskAddress(contractAddress), DataWord.ZERO));
+
+        checkNoDuplicatedPayments(world, transactionName);
+    }
+
+    private void checkNoDuplicatedPayments(World world, String txName) {
+        List<ByteArrayWrapper> rollbackKeys = world.getTransactionExecutor(txName)
+                .getStorageRentResult()
+                .getRollbackNodes()
+                .stream()
+                .map(RentedNode::getKey)
+                .collect(Collectors.toList());
+
+        Set<ByteArrayWrapper> rollBackKeysWithoutDuplicates = new HashSet<>(rollbackKeys);
+        assertEquals(rollbackKeys.size(), rollBackKeysWithoutDuplicates.size());
+
+        List<ByteArrayWrapper> rentedKeys = world.getTransactionExecutor(txName)
+                .getStorageRentResult()
+                .getRentedNodes()
+                .stream()
+                .map(RentedNode::getKey)
+                .collect(Collectors.toList());
+
+        Set<ByteArrayWrapper> rentedKeysWithoutDuplicates = new HashSet<>(rentedKeys);
+        assertEquals(rentedKeys.size(), rentedKeysWithoutDuplicates.size());
+    }
+
+
     /**
      * Returns the token balance of an account given a txName.
      * @param world a world
@@ -205,6 +255,8 @@ public class StorageRentDSLTests {
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
         assertEquals(paidRent, storageRentResult.paidRent());
+
+        checkNoDuplicatedPayments(world, txName);
     }
 
     private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
