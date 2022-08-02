@@ -6,12 +6,12 @@ import java.util.Set;
 public class StorageRentResult {
 
     private final Set<RentedNode> rentedNodes;
-    private final List<RentedNode> rollbackNodes;
+    private final Set<RentedNode> rollbackNodes;
     private final long rollbacksRent;
     private final long payableRent;
     private final long gasAfterPayingRent;
 
-    public StorageRentResult(Set<RentedNode> rentedNodes, List<RentedNode> rollbackNodes, long payableRent, long rollbacksRent, long gasAfterPayingRent) {
+    public StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long payableRent, long rollbacksRent, long gasAfterPayingRent) {
         this.rentedNodes = rentedNodes;
         this.rollbackNodes = rollbackNodes;
         this.payableRent = payableRent;
@@ -27,7 +27,7 @@ public class StorageRentResult {
         return rentedNodes;
     }
 
-    public List<RentedNode> getRollbackNodes() {
+    public Set<RentedNode> getRollbackNodes() {
         return rollbackNodes;
     }
 

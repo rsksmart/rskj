@@ -1,6 +1,7 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.Program;
@@ -36,13 +37,17 @@ public class StorageRentManager {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
-        Set<RentedNode> storageRentNodes = new HashSet<>();
-        blockTrack.getStorageRentNodes().forEach(rentedNode -> storageRentNodes.add(rentedNode));
-        transactionTrack.getStorageRentNodes().forEach(rentedNode -> storageRentNodes.add(rentedNode));
+        Map<ByteArrayWrapper, RentedNode> storageRentNodes = new HashMap<>();
+        blockTrack.getStorageRentNodes().values().forEach(rentedNode ->
+                        MutableRepositoryTracked.track(rentedNode.getKey(), rentedNode, storageRentNodes));
+        transactionTrack.getStorageRentNodes().values().forEach(rentedNode ->
+                        MutableRepositoryTracked.track(rentedNode.getKey(), rentedNode, storageRentNodes));
 
-        List<RentedNode> rollbackNodes = new ArrayList<>();
-        blockTrack.getRollBackNodes().forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
-        transactionTrack.getRollBackNodes().forEach(rollBackNode -> rollbackNodes.add(rollBackNode));
+        Map<ByteArrayWrapper, RentedNode> rollbackNodes = new HashMap<>();
+        blockTrack.getRollBackNodes().values().forEach(rollBackNode ->
+                MutableRepositoryTracked.track(rollBackNode.getKey(), rollBackNode, rollbackNodes));
+        transactionTrack.getRollBackNodes().values().forEach(rollBackNode ->
+                MutableRepositoryTracked.track(rollBackNode.getKey(), rollBackNode, rollbackNodes));
 
         if(storageRentNodes.isEmpty() && rollbackNodes.isEmpty()) {
             throw new RuntimeException("there should be rented nodes or rollback nodes");
@@ -50,12 +55,12 @@ public class StorageRentManager {
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        Set<RentedNode> rentedNodes = storageRentNodes.stream()
+        Set<RentedNode> rentedNodes = storageRentNodes.values().stream()
                 .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
                 .collect(Collectors.toSet());
-        List<RentedNode> rollbackRentedNodes = rollbackNodes.stream()
+        Set<RentedNode> rollbackRentedNodes = rollbackNodes.values().stream()
                 .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackNodes.size());
@@ -108,4 +113,5 @@ public class StorageRentManager {
 
         return rentedNodes.isEmpty() || !rent.isPresent() ? 0 : rent.get();
     }
+
 }

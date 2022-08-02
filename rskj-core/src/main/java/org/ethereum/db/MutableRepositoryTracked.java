@@ -9,23 +9,25 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 
+/**
+ * A `Repository` to track all the used trie nodes.
+ * */
 public class MutableRepositoryTracked extends MutableRepository {
 
-    // a set to track all the used trie-value-containing nodes in this repository (and its children repositories)
-    private Set<RentedNode> trackedNodes;
-    // a list of nodes tracked nodes that were rolled back (due to revert or OOG)
-    private List<RentedNode> rollbackNodes;
+    // used trie nodes in this repository (and its sub-repositories)
+    private Map<ByteArrayWrapper, RentedNode> trackedNodes;
+    // nodes that have been part of a rolled back repository
+    private Map<ByteArrayWrapper, RentedNode> rollbackNodes;
     // parent repository to commit tracked nodes
     private MutableRepositoryTracked parentRepository;
 
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
-                                       Set<RentedNode> trackedNodes, List<RentedNode> rollbackNodes){
+                                       Map<ByteArrayWrapper, RentedNode> trackedNodes, Map<ByteArrayWrapper, RentedNode> rollbackNodes){
         super(mutableTrie);
         this.parentRepository = parentRepository;
         this.trackedNodes = trackedNodes;
@@ -35,7 +37,7 @@ public class MutableRepositoryTracked extends MutableRepository {
     // creates a tracked repository, all the child repositories (created with startTracking()) will also be tracked.
     // this should be only called from RepositoryLocator.trackedRepository
     public static MutableRepositoryTracked trackedRepository(MutableTrie mutableTrieCache) {
-        return new MutableRepositoryTracked(mutableTrieCache, null, new HashSet<>(), new ArrayList<>());
+        return new MutableRepositoryTracked(mutableTrieCache, null, new HashMap<>(), new HashMap<>());
     }
 
     @Override
@@ -43,8 +45,8 @@ public class MutableRepositoryTracked extends MutableRepository {
         MutableRepositoryTracked mutableRepositoryTracked = new MutableRepositoryTracked(
             new MutableTrieCache(this.mutableTrie),
             this,
-            new HashSet<>(),
-            new ArrayList<>()
+            new HashMap<>(),
+            new HashMap<>()
         );
 
         return mutableRepositoryTracked;
@@ -72,14 +74,12 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     @VisibleForTesting
-    public Set<RentedNode> getTrackedNodes() {
+    public Map<ByteArrayWrapper, RentedNode> getTrackedNodes() {
         return this.trackedNodes;
     }
 
-    public List<RentedNode> getRollBackNodes() {
-        return this.rollbackNodes.stream()
-                .filter(trackedNode -> trackedNode.useForStorageRent())
-                .collect(Collectors.toList());
+    public Map<ByteArrayWrapper, RentedNode> getRollBackNodes() {
+        return this.rollbackNodes;
     }
 
     /**
@@ -111,40 +111,8 @@ public class MutableRepositoryTracked extends MutableRepository {
         });
     }
 
-    public Set<RentedNode> getStorageRentNodes() {
-        Map<ByteArrayWrapper, RentedNode> storageRentNodes = new HashMap<>();
-        this.trackedNodes.stream()
-                .filter(trackedNode -> trackedNode.useForStorageRent())
-                .forEach(trackedNode -> {
-                    ByteArrayWrapper key = new ByteArrayWrapper(trackedNode.getKey().getData());
-                    RentedNode containedNode = storageRentNodes.get(key);
-
-                    boolean isContainedNode = containedNode != null;
-                    if(isContainedNode) {
-                        long notRelevant = -1;
-                        RentedNode nodeToBeReplaced = new RentedNode(containedNode.getKey(),
-                                containedNode.getOperationType(),
-                                containedNode.getNodeExistsInTrie(), notRelevant, notRelevant);
-                        RentedNode newNode = new RentedNode(trackedNode.getKey(), trackedNode.getOperationType(),
-                                trackedNode.getNodeExistsInTrie(),
-                                notRelevant, notRelevant);
-                        if(shouldBeReplaced(nodeToBeReplaced, newNode)) {
-                            storageRentNodes.put(key, trackedNode);
-                        }
-                    } else {
-                        storageRentNodes.put(key, trackedNode);
-                    }
-                });
-
-        return new HashSet<>(storageRentNodes.values());
-    }
-
-    /**
-     * Determines if a node should be replaced by another one due to different operation types,
-     * the operation with the lowest threshold it's the one that leads the storage rent payment.
-     * */
-    public boolean shouldBeReplaced(RentedNode nodeToBeReplaced, RentedNode newNode) {
-        return newNode.rentThreshold() < nodeToBeReplaced.rentThreshold();
+    public Map<ByteArrayWrapper, RentedNode> getStorageRentNodes() {
+        return this.trackedNodes;
     }
 
     // Internal methods contains node tracking
@@ -213,25 +181,42 @@ public class MutableRepositoryTracked extends MutableRepository {
         trackNode(key, READ_CONTRACT_CODE_OPERATION, nodeExistsInTrie);
     }
 
-    protected void trackNode(byte[] key, OperationType operationType, boolean nodeExistsInTrie) {
-            RentedNode trackedNode = new RentedNode(
-                    new ByteArrayWrapper(key),
-                    operationType,
-                    nodeExistsInTrie
-            );
-            this.trackedNodes.add(trackedNode);
+    protected void trackNode(byte[] rawKeyToTrack, OperationType operationType, boolean nodeExistsInTrie) {
+        ByteArrayWrapper keyToTrack = new ByteArrayWrapper(rawKeyToTrack);
+        RentedNode nodeToTrack = new RentedNode(keyToTrack, operationType, nodeExistsInTrie);
+
+        track(keyToTrack, nodeToTrack, this.trackedNodes);
     }
 
-    private void mergeTrackedNodes(Set<RentedNode> trackedNodes) {
-        this.trackedNodes.addAll(trackedNodes);
+    // todo(fedejinich) refactor needed: remove unnecessary key, should only accept (RentedNode, Map)
+    public static void track(ByteArrayWrapper keyToTrack, RentedNode nodeToTrack,
+                             Map<ByteArrayWrapper, RentedNode> trackedNodesMap) {
+        if(!nodeToTrack.useForStorageRent()) {
+            return;
+        }
+
+        RentedNode alreadyContainedNode = trackedNodesMap.get(keyToTrack);
+
+        if(alreadyContainedNode == null) {
+            trackedNodesMap.put(keyToTrack, nodeToTrack);
+        } else {
+            // track nodes with the lowest threshold
+            if(nodeToTrack.rentThreshold() < alreadyContainedNode.rentThreshold()) {
+                trackedNodesMap.put(keyToTrack, nodeToTrack);
+            }
+        }
     }
 
-    private void addRollbackNodes(Collection<RentedNode> trackedNodes) {
-        this.rollbackNodes.addAll(trackedNodes);
+    private void mergeTrackedNodes(Map<ByteArrayWrapper, RentedNode> trackedNodes) {
+        // tracked nodes should ONLY be added by the trackNode() method
+        trackedNodes.values().forEach(t -> trackNode(t.getKey().getData(), t.getOperationType(), t.getNodeExistsInTrie()));
     }
 
+    private void addRollbackNodes(Map<ByteArrayWrapper, RentedNode> rollbackNodes) {
+        rollbackNodes.values().forEach(t -> track(t.getKey(), t, this.rollbackNodes));
+    }
     public void clearTrackedNodes() {
-        this.trackedNodes = new HashSet<>();
-        this.rollbackNodes = new ArrayList<>();
+        this.trackedNodes = new HashMap<>();
+        this.rollbackNodes = new HashMap<>();
     }
 }
