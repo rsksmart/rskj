@@ -6,6 +6,7 @@ import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import static org.ethereum.db.OperationType.*;
@@ -13,7 +14,7 @@ import static org.ethereum.db.OperationType.*;
 public class MutableRepositoryTestable extends MutableRepositoryTracked {
     public MutableRepositoryTestable(MutableTrie mutableTrie,
                                      MutableRepositoryTracked parentRepository){
-        super(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>());
+        super(mutableTrie, parentRepository, new HashMap<>(), new HashMap<>());
     }
 
     public static MutableRepositoryTestable trackedRepository(MutableTrie mutableTrie) {
