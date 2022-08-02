@@ -77,6 +77,7 @@ public enum ConsensusRule {
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
     RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP298("rskip298"), // peg-out creation index
     RSKIP353("rskip353"),
     RSKIP357("rskip357");
 
