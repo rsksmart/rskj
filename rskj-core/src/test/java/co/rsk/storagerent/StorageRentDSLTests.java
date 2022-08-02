@@ -1,6 +1,7 @@
 package co.rsk.storagerent;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -9,11 +10,17 @@ import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -101,7 +108,7 @@ public class StorageRentDSLTests {
         );
 
         // rollbackRent should be >0, we want to "penalize" failed access
-        checkStorageRent(world, "tx04", 2781, 280, 8, 10);
+        checkStorageRent(world, "tx04",  2571, 70, 8, 3);
     }
 
     /**
@@ -124,13 +131,14 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 1501, 1501, 3, 10);
+        checkStorageRent(world, "tx04", 770, 770, 3, 6);
     }
 
     /**
      * Executes a transaction with nested internal transactions, they all end up ok but the main transaction fails
      *
-     * It should pay 25% of the storage rent
+     * It should
+     * - Pay 25% of the storage rent
      * */
     @Test
     public void internalTransactionsSucceedsButOverallFails() throws FileNotFoundException, DslProcessorException {
@@ -145,14 +153,14 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 1501, 1501, 3, 11);
+        checkStorageRent(world, "tx04", 770, 770, 3, 7);
     }
 
     /**
      * Executes a transaction with nested internal transactions, they all end up ok and the main transactions succeeds
      *
      * It should
-     * - Pay storage rent for each internal transaction +
+     * - Pay storage rent for each internal transaction
      * - Pay storage rent for the main transaction
      * */
     @Test
@@ -165,6 +173,55 @@ public class StorageRentDSLTests {
 //        checkStorageRent(world, "tx04", 5002, 0, 8, 0, 0);
         checkStorageRent(world, "tx04", 2501, 0, 8, 0);
     }
+
+    /**
+     * Read and write the same storage cell and then revert.
+     *
+     * It should
+     * - Pay only once for that cell.
+     * - Pay 25% of the storage rent.
+     * */
+    @Test
+    public void rollbackFees() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 99999999;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/rollbackFees.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+        String transactionName = "tx02";
+        String contractAddress = "6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+
+        checkStorageRent(world, transactionName, 43750, 3750, 3, 3);
+        // todo(fedejinich) it seems there are less nodes than it should (3)
+
+        // check for the value
+        assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
+                .snapshotAt(world.getBlockByName("b02").getHeader())
+                .getStorageValue(new RskAddress(contractAddress), DataWord.ZERO));
+
+        checkNoDuplicatedPayments(world, transactionName);
+    }
+
+    private void checkNoDuplicatedPayments(World world, String txName) {
+        List<ByteArrayWrapper> rollbackKeys = world.getTransactionExecutor(txName)
+                .getStorageRentResult()
+                .getRollbackNodes()
+                .stream()
+                .map(RentedNode::getKey)
+                .collect(Collectors.toList());
+
+        assertEquals(new HashSet<>(rollbackKeys).size(), rollbackKeys.size());
+
+        List<ByteArrayWrapper> rentedKeys = world.getTransactionExecutor(txName)
+                .getStorageRentResult()
+                .getRentedNodes()
+                .stream()
+                .map(RentedNode::getKey)
+                .collect(Collectors.toList());
+
+        assertEquals(new HashSet<>(rentedKeys).size(), rentedKeys.size());
+    }
+
 
     /**
      * Returns the token balance of an account given a txName.
@@ -199,6 +256,8 @@ public class StorageRentDSLTests {
         TransactionExecutor transactionExecutor = world.getTransactionExecutor(txName);
 
         StorageRentResult storageRentResult = transactionExecutor.getStorageRentResult();
+
+        checkNoDuplicatedPayments(world, txName);
 
         assertTrue(transactionExecutor.isStorageRentEnabled());
         assertEquals(rentedNodesCount, storageRentResult.getRentedNodes().size());
