@@ -1,14 +1,14 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.util.List;
 import java.util.Optional;
 
-public class FastBridgeCompatibleBtcWalletWithStorage extends FastBridgeCompatibleBtcWallet {
+public class FlyoverCompatibleBtcWalletWithStorage extends FlyoverCompatibleBtcWallet {
     private final BridgeStorageProvider bridgeStorageProvider;
 
-    public FastBridgeCompatibleBtcWalletWithStorage(
+    public FlyoverCompatibleBtcWalletWithStorage(
         Context btcContext,
         List<Federation> federations,
         BridgeStorageProvider bridgeStorageProvider
@@ -18,8 +18,8 @@ public class FastBridgeCompatibleBtcWalletWithStorage extends FastBridgeCompatib
     }
 
     @Override
-    protected Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(
+    protected Optional<FlyoverFederationInformation> getFlyoverFederationInformation(
         byte[] payToScriptHash) {
-        return this.bridgeStorageProvider.getFastBridgeFederationInformation(payToScriptHash);
+        return this.bridgeStorageProvider.getFlyoverFederationInformation(payToScriptHash);
     }
 }

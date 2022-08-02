@@ -28,7 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -1073,8 +1073,8 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeFastBridgeFederationInformation_no_data() {
-        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+    public void deserializeFlyoverFederationInformation_no_data() {
+        FlyoverFederationInformation result = BridgeSerializationUtils.deserializeFlyoverFederationInformation(
             new byte[]{},
             new byte[]{}
         );
@@ -1083,8 +1083,8 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeFastBridgeFederationInformation_null_data() {
-        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+    public void deserializeFlyoverFederationInformation_null_data() {
+        FlyoverFederationInformation result = BridgeSerializationUtils.deserializeFlyoverFederationInformation(
             null,
             null
         );
@@ -1093,23 +1093,23 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void deserializeFastBridgeFederationInformation_one_data() {
+    public void deserializeFlyoverFederationInformation_one_data() {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        BridgeSerializationUtils.deserializeFlyoverFederationInformation(
             RLP.encodeList(rlpElements),
             new byte[]{(byte)0x23}
         );
     }
 
     @Test
-    public void deserializeFastBridgeFederationInformation_ok() {
+    public void deserializeFlyoverFederationInformation_ok() {
         byte[][] rlpElements = new byte[2][];
         rlpElements[0] = RLP.encodeElement(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes());
         rlpElements[1] = RLP.encodeElement(new byte[]{(byte)0x22});
 
-        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+        FlyoverFederationInformation result = BridgeSerializationUtils.deserializeFlyoverFederationInformation(
             RLP.encodeList(rlpElements),
             new byte[]{(byte)0x23}
         );
@@ -1120,41 +1120,41 @@ public class BridgeSerializationUtilsTest {
             result.getDerivationHash().getBytes()
         );
         Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationRedeemScriptHash());
-        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFastBridgeFederationRedeemScriptHash());
+        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFlyoverFederationRedeemScriptHash());
     }
 
     @Test
-    public void serializeFastBridgeFederationInformation_no_data() {
-        byte[] result = BridgeSerializationUtils.serializeFastBridgeFederationInformation(null);
+    public void serializeFlyoverFederationInformation_no_data() {
+        byte[] result = BridgeSerializationUtils.serializeFlyoverFederationInformation(null);
 
         Assert.assertEquals(0, result.length);
     }
 
     @Test
-    public void serializeFastBridgeFederationInformation_Ok() {
-        byte[] fastBridgeFederationRedeemScriptHash = new byte[]{(byte)0x23};
-        FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
+    public void serializeFlyoverFederationInformation_Ok() {
+        byte[] flyoverFederationRedeemScriptHash = new byte[]{(byte)0x23};
+        FlyoverFederationInformation flyoverFederationInformation = new FlyoverFederationInformation(
             PegTestUtils.createHash3(2),
             new byte[]{(byte)0x22},
-            fastBridgeFederationRedeemScriptHash
+            flyoverFederationRedeemScriptHash
         );
 
-        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
-            BridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation),
-            fastBridgeFederationRedeemScriptHash
+        FlyoverFederationInformation result = BridgeSerializationUtils.deserializeFlyoverFederationInformation(
+            BridgeSerializationUtils.serializeFlyoverFederationInformation(flyoverFederationInformation),
+            flyoverFederationRedeemScriptHash
         );
 
         Assert.assertArrayEquals(
-            fastBridgeFederationInformation.getDerivationHash().getBytes(),
+            flyoverFederationInformation.getDerivationHash().getBytes(),
             result.getDerivationHash().getBytes()
         );
         Assert.assertArrayEquals(
-            fastBridgeFederationInformation.getFederationRedeemScriptHash(),
+            flyoverFederationInformation.getFederationRedeemScriptHash(),
             result.getFederationRedeemScriptHash()
         );
         Assert.assertArrayEquals(
-            fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash(),
-            result.getFastBridgeFederationRedeemScriptHash()
+            flyoverFederationInformation.getFlyoverFederationRedeemScriptHash(),
+            result.getFlyoverFederationRedeemScriptHash()
         );
     }
 

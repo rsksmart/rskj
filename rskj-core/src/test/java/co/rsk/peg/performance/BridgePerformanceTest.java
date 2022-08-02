@@ -41,11 +41,13 @@ import org.junit.runners.Suite;
         RegisterBtcCoinbaseTransactionTest.class,
         HasBtcBlockCoinbaseTransactionInformationTest.class,
         LockingCapTest.class,
-        RegisterFastBridgeBtcTransactionTest.class,
+        RegisterFlyoverBtcTransactionTest.class,
         GetBtcBlockchainBestBlockHeaderTest.class,
         GetBtcBlockchainBlockHeaderByHashTest.class,
         GetBtcBlockchainBlockHeaderByHeightTest.class,
-        GetBtcBlockchainParentBlockHeaderByHashTest.class
+        GetBtcBlockchainParentBlockHeaderByHashTest.class,
+        PowpegRedeemScriptTest.class,
+        PegoutBatchingBridgeMethodsTest.class
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
