@@ -1,7 +1,0 @@
-{
-  "StorageProofKey": {
-    "title": "storageProofKey",
-    "description": "The key used to get the storage slot in its account tree.",
-    "$ref": "#/components/schemas/IntegerHex"
-  }
-}
