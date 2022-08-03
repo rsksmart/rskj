@@ -30,6 +30,8 @@ public class ParallelizeTransactionHandler {
     private final HashMap<ByteArrayWrapper, Set<TransactionSublist>> sublistsHavingReadFromKey;
     private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
+    private boolean collided;
+    private int collisions;
 
     public ParallelizeTransactionHandler(short numberOfSublists, long sequentialSublistGasLimit, long parallelSublistGast) {
         this.sublistOfSender = new HashMap<>();
@@ -40,6 +42,7 @@ public class ParallelizeTransactionHandler {
             this.sublists.add(new TransactionSublist(parallelSublistGast, false));
         }
         this.sublists.add(new TransactionSublist(sequentialSublistGasLimit, true));
+        this.collided = false;
     }
 
     public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
@@ -114,6 +117,9 @@ public class ParallelizeTransactionHandler {
         return getSequentialSublist().getGasUsed();
     }
 
+    public boolean getCollision() {
+        return this.collided;
+    }
     private void addNewKeysToMaps(RskAddress sender, TransactionSublist sublist, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         for (ByteArrayWrapper key : newReadKeys) {
             Set<TransactionSublist> sublistsAlreadyRead = sublistsHavingReadFromKey.getOrDefault(key, new HashSet<>());
@@ -186,6 +192,7 @@ public class ParallelizeTransactionHandler {
                 Set<TransactionSublist> sublist = sublistsHavingReadFromKey.get(newWrittenKey);
 
                 if (sublist.size() > 1) {
+                    this.collided = true;
                     return getSequentialSublist();
                 }
 
@@ -206,6 +213,7 @@ public class ParallelizeTransactionHandler {
 
     private TransactionSublist returnsSequentialIfBothAreDifferent(TransactionSublist sublist1, TransactionSublist sublist2) {
         if (!sublist1.equals(sublist2)) {
+            this.collided = true;
             return getSequentialSublist();
         }
         return sublist1;
@@ -217,6 +225,19 @@ public class ParallelizeTransactionHandler {
 
     private TransactionSublist getSequentialSublist() {
         return this.sublists.get(this.sublists.size()-1);
+    }
+
+    public int getTxInSequential() {
+        return this.getSequentialSublist().getTransactions().size();
+    }
+
+    public int getTxInParallel() {
+        int transactionsInParallelSublist = 0;
+        for (int i = 0; i < this.sublists.size()-1; i++) {
+            transactionsInParallelSublist += this.sublists.get(i).getTransactions().size();
+        }
+
+        return transactionsInParallelSublist;
     }
 
     private static class TransactionSublist {

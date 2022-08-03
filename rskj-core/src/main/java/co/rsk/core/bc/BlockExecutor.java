@@ -39,6 +39,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -563,6 +568,29 @@ public class BlockExecutor {
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
+
+        String filePath = "/Users/julianlen/workspace/output-experiments/execute-parallel.csv";
+        Path file = Paths.get(filePath);
+
+        // bNumber, numExecutedTx, feeTotal, gasTotal
+        String header = "bNumber,numExecutedTx,feeTotal,gasTotal\r";
+        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"\r";
+        try {
+            FileWriter myWriter;
+
+            if (!Files.exists(file)) {
+                myWriter = new FileWriter(filePath, true);
+                myWriter.write(header);
+                myWriter.write(data);
+            } else {
+                myWriter = new FileWriter(filePath,     true);
+                myWriter.write(data);
+            }
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         profiler.stop(metric);
         logger.trace("End executeParallel.");
         return result;
@@ -710,6 +738,30 @@ public class BlockExecutor {
                 totalPaidFees,
                 track.getTrie()
         );
+
+        String filePath = "/Users/julianlen/workspace/output-experiments/execute-for-mining.csv";
+        Path file = Paths.get(filePath);
+
+        // bNumber, numExecutedTx, feeTotal, gasTotal, numTxInSequential, numTxInParallel
+        String header = "bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees.toString()+","+ gasUsedInBlock +","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
+
+        try {
+            FileWriter myWriter;
+
+            if (!Files.exists(file)) {
+                myWriter = new FileWriter(filePath, true);
+                myWriter.write(header);
+                myWriter.write(data);
+            } else {
+                myWriter = new FileWriter(filePath,     true);
+                myWriter.write(data);
+            }
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         profiler.stop(metric);
         logger.trace("End executeForMining.");
         return result;
