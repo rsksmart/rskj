@@ -1,9 +1,16 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @deprecated Methods included in this class are to be used only prior to the latest HF activation
@@ -68,5 +75,73 @@ public class BridgeUtilsLegacy {
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
 
         return new Address(networkParameters, version, hashBytes);
+    }
+
+    /**
+     * Legacy version for getting the amount sent to a btc address.
+     *
+     *
+     * @param activations
+     * @param networkParameters
+     * @param btcTx
+     * @param btcAddress
+     * @return total amount sent to the given address.
+     */
+    @Deprecated
+    protected static Coin getAmountSentToAddress(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        BtcTransaction btcTx,
+        Address btcAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)) {
+            throw new DeprecatedMethodCallException(
+                "Calling BridgeUtilsLegacy.getAmountSentToAddress method after RSKIP293 activation"
+            );
+        }
+        Coin value = Coin.ZERO;
+        for (TransactionOutput output : btcTx.getOutputs()) {
+            if (output.getScriptPubKey().getToAddress(networkParameters).equals(btcAddress)) {
+                value = value.add(output.getValue());
+            }
+        }
+        return value;
+    }
+
+    /**
+     * @param activations
+     * @param networkParameters
+     * @param btcTx
+     * @param btcAddress
+     * @return the list of UTXOs in a given btcTx for a given address
+     */
+    @Deprecated
+    protected static List<UTXO> getUTXOsSentToAddress(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        BtcTransaction btcTx,
+        Address btcAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)) {
+            throw new DeprecatedMethodCallException(
+                "Calling BridgeUtilsLegacy.getUTXOsSentToAddress method after RSKIP293 activation"
+            );
+        }
+        List<UTXO> utxosList = new ArrayList<>();
+        for (TransactionOutput o : btcTx.getOutputs()) {
+            if (o.getScriptPubKey().getToAddress(networkParameters).equals(btcAddress)) {
+                utxosList.add(
+                    new UTXO(
+                        btcTx.getHash(),
+                        o.getIndex(),
+                        o.getValue(),
+                        0,
+                        btcTx.isCoinBase(),
+                        o.getScriptPubKey()
+                    )
+                );
+            }
+        }
+        return utxosList;
     }
 }

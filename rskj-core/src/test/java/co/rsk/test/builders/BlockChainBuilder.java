@@ -255,6 +255,7 @@ public class BlockChainBuilder {
         if (this.blocks != null) {
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
+                b.seal();
                 blockChain.tryToConnect(b);
             }
         }
@@ -278,8 +279,10 @@ public class BlockChainBuilder {
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);
 
-            for (Block block: blocks)
+            for (Block block: blocks) {
+                block.seal();
                 Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
+            }
         }
 
         return blockChain;
@@ -291,8 +294,11 @@ public class BlockChainBuilder {
 
         long height = original.getStatus().getBestBlockNumber();
 
-        for (long k = 0; k <= height; k++)
-            blockChain.tryToConnect(original.getBlockByNumber(k));
+        for (long k = 0; k <= height; k++) {
+            Block b = original.getBlockByNumber(k);
+            b.seal();
+            blockChain.tryToConnect(b);
+        }
 
         return blockChain;
     }
@@ -320,7 +326,9 @@ public class BlockChainBuilder {
     private static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining, Block initialBlock) {
         List<Block> blocks = new BlockGenerator().getBlockChain(initialBlock, size, 0, withUncles, mining, null);
 
-        for (Block block: blocks)
+        for (Block block: blocks) {
+            block.seal();
             blockchain.tryToConnect(block);
+        }
     }
 }

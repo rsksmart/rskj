@@ -73,6 +73,7 @@ public enum ConsensusRule {
     RSKIP271("rskip271"), // Peg Out Batching
     RSKIP284("rskip284"),
     RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
+    RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
     RSKIP297("rskip297"); // Increase max timestamp difference between btc and rsk blocks for Testnet
 
