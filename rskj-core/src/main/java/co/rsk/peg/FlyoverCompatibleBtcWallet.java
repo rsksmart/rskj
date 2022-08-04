@@ -9,31 +9,31 @@ import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
-public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
+public abstract class FlyoverCompatibleBtcWallet extends BridgeBtcWallet {
 
-    protected FastBridgeCompatibleBtcWallet(Context btcContext, List<Federation> federations) {
+    protected FlyoverCompatibleBtcWallet(Context btcContext, List<Federation> federations) {
         super(btcContext, federations);
     }
 
-    protected abstract Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] payToScriptHash);
+    protected abstract Optional<FlyoverFederationInformation> getFlyoverFederationInformation(byte[] payToScriptHash);
 
     @Nullable
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
-        Optional<FastBridgeFederationInformation> fastBridgeFederationInformation =
-            this.getFastBridgeFederationInformation(payToScriptHash);
+        Optional<FlyoverFederationInformation> flyoverFederationInformation =
+            this.getFlyoverFederationInformation(payToScriptHash);
 
-        if (fastBridgeFederationInformation.isPresent()) {
-            FastBridgeFederationInformation fastBridgeFederationInformationInstance =
-                fastBridgeFederationInformation.get();
+        if (flyoverFederationInformation.isPresent()) {
+            FlyoverFederationInformation flyoverFederationInformationInstance =
+                flyoverFederationInformation.get();
 
             Optional<Federation> destinationFederation = getDestinationFederation(
-                fastBridgeFederationInformationInstance.getFederationRedeemScriptHash()
+                flyoverFederationInformationInstance.getFederationRedeemScriptHash()
             );
 
             if (!destinationFederation.isPresent()) {
@@ -44,27 +44,27 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
             Script fedRedeemScript = destinationFederationInstance.getRedeemScript();
 
             RedeemScriptParser parser = RedeemScriptParserFactory.get(fedRedeemScript.getChunks());
-            Script fastBridgeRedeemScript;
+            Script flyoverRedeemScript;
 
             if (parser.getMultiSigType() == MultiSigType.ERP_FED) {
-                fastBridgeRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+                flyoverRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
                     fedRedeemScript,
-                    Sha256Hash.wrap(fastBridgeFederationInformationInstance
+                    Sha256Hash.wrap(flyoverFederationInformationInstance
                         .getDerivationHash()
                         .getBytes()
                     )
                 );
             } else {
-                fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
                     fedRedeemScript,
-                    Sha256Hash.wrap(fastBridgeFederationInformationInstance
+                    Sha256Hash.wrap(flyoverFederationInformationInstance
                         .getDerivationHash()
                         .getBytes()
                     )
                 );
             }
 
-            return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), fastBridgeRedeemScript);
+            return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), flyoverRedeemScript);
         }
 
         return super.findRedeemDataFromScriptHash(payToScriptHash);

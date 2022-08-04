@@ -450,6 +450,17 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP134),
             fixedPermission(true)
     ),
+    GET_ACTIVE_POWPEG_REDEEM_SCRIPT(
+            CallTransaction.Function.fromSignature(
+                    "getActivePowpegRedeemScript",
+                    new String[]{},
+                    new String[]{"bytes"}
+            ),
+            fixedCost(30_000L),
+            (BridgeMethodExecutorTyped) Bridge::getActivePowpegRedeemScript,
+            activations -> activations.isActive(RSKIP293),
+            fixedPermission(false)
+    ),
     GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(
                     "getActiveFederationCreationBlockHeight",
@@ -610,7 +621,7 @@ public enum BridgeMethods {
                     new String[]{"int256"}
             ),
             fixedCost(25_000L),
-            (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
+            (BridgeMethodExecutorTyped) Bridge::registerFlyoverBtcTransaction,
             activations -> activations.isActive(RSKIP176),
             fixedPermission(false)
     ),
@@ -664,7 +675,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
@@ -675,7 +686,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
@@ -686,7 +697,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"uint256"}
             ),
-            fixedCost(3_000L), // TODO: calculate gas cost
+            fixedCost(10_000L),
             (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
