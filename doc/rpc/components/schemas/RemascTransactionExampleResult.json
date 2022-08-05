@@ -1,0 +1,18 @@
+{
+  "RemascTransactionExampleResult": {
+    "hash": "0x97914bf800adafc822d8ff5d2d4014999c57eff42f7326a0ce4387cafeaec5e6",
+    "nonce": "0x2ec6b7",
+    "blockHash": "0x89d446b103322c8f35cddb4e11185997f747b3748bb42d3b7b3bbe214748af85",
+    "blockNumber": "0x2ec6b8",
+    "transactionIndex": "0x1",
+    "from": "0x0000000000000000000000000000000000000000",
+    "to": "0x0000000000000000000000000000000001000008",
+    "gas": "0x0",
+    "gasPrice": "0x0",
+    "value": "0x0",
+    "input": "0x",
+    "v": "0x0",
+    "r": "0x0",
+    "s": "0x0"
+  }
+}

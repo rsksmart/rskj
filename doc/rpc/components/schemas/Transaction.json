@@ -54,19 +54,40 @@
         "$ref": "#/components/schemas/IntegerHex"
       },
       "v": {
-        "title": "transactionSigV",
-        "type": "string",
-        "description": "ECDSA recovery id"
+        "oneOf": [
+          {
+            "title": "transactionSigV",
+            "type": "string",
+            "description": "ECDSA recovery id for regular transaction"
+          },
+          {
+            "$ref": "#/components/schemas/RemascTransactionSignature"
+          }
+        ]
       },
       "r": {
-        "title": "transactionSigR",
-        "type": "string",
-        "description": "ECDSA signature r"
+        "oneOf": [
+          {
+            "title": "transactionSigR",
+            "type": "string",
+            "description": "ECDSA signature r for regular transaction"
+          },
+          {
+            "$ref": "#/components/schemas/RemascTransactionSignature"
+          }
+        ]
       },
       "s": {
-        "title": "transactionSigS",
-        "type": "string",
-        "description": "ECDSA signature s"
+        "oneOf": [
+          {
+            "title": "transactionSigS",
+            "type": "string",
+            "description": "ECDSA signature s for regular transaction"
+          },
+          {
+            "$ref": "#/components/schemas/RemascTransactionSignature"
+          }
+        ]
       }
     }
   }

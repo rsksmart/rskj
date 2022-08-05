@@ -11,17 +11,31 @@
   },
   "examples": [
     {
-      "name": "transactionFound",
+      "name": "regularTransactionFound",
       "params": [
         {
           "name": "txHash",
-          "value": "0x05140aca6b0312a2d7dce35a3227b86b8a973fc69e508c5d4beb2b3c88fa28a1"
+          "value": "0x507e901e6d5d22f3218937d74e2f6c2118ff53cec73b890b808b78cb3f80cfa3"
         }
       ],
       "result": {
-        "name": "transaction",
+        "name": "regular transaction",
         "value": {
           "$ref": "#/components/schemas/TransactionExampleResult"
+        }
+      }
+    },{
+      "name": "remascTransactionFound",
+      "params": [
+        {
+          "name": "txHash",
+          "value": "0x97914bf800adafc822d8ff5d2d4014999c57eff42f7326a0ce4387cafeaec5e6"
+        }
+      ],
+      "result": {
+        "name": "remasc transaction",
+        "value": {
+          "$ref": "#/components/schemas/RemascTransactionExampleResult"
         }
       }
     },{

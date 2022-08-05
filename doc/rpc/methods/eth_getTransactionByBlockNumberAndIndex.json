@@ -19,11 +19,11 @@
   },
   "examples": [
     {
-      "name": "existingExample",
+      "name": "regularTransactionFound",
       "params": [
         {
           "name": "blockNumber",
-          "value": "0x29c"
+          "value": "0x2ec6b8"
         },
         {
           "name": "index",
@@ -31,9 +31,27 @@
         }
       ],
       "result": {
-        "name": "transaction",
+        "name": "regular transaction",
         "value": {
           "$ref": "#/components/schemas/TransactionExampleResult"
+        }
+      }
+    },{
+      "name": "remascTransactionFound",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x2ec6b8"
+        },
+        {
+          "name": "index",
+          "value": "0x1"
+        }
+      ],
+      "result": {
+        "name": "remasc transaction",
+        "value": {
+          "$ref": "#/components/schemas/RemascTransactionExampleResult"
         }
       }
     },{

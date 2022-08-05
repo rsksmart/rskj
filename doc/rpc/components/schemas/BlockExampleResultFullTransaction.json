@@ -21,6 +21,8 @@
       "transactions": [
         {
           "$ref": "#/components/schemas/TransactionExampleResult"
+        },{
+          "$ref": "#/components/schemas/RemascTransactionExampleResult"
         }
       ],
       "uncles": [

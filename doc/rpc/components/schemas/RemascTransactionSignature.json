@@ -1,0 +1,7 @@
+{
+  "RemascTransactionSignature": {
+    "title": "zero value",
+    "type": "string",
+    "description": "'0x0' for Remasc Transaction"
+  }
+}
