@@ -499,11 +499,15 @@ public abstract class SystemProperties {
         }
 
         InetAddress bindAddress = getBindAddress();
-        if (bindAddress.isAnyLocalAddress()) {
-            throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
+        if (!bindAddress.isAnyLocalAddress()) {
+            return bindAddress;
         }
 
-        return bindAddress;
+        try {
+            return InetAddress.getByName("127.0.0.1");
+        } catch (UnknownHostException e) {
+            throw new IllegalStateException("Could not provide a public IP", e);
+        }
     }
 
     private URL publicIpCheckService() throws MalformedURLException {
