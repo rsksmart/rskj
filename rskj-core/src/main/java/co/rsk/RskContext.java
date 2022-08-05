@@ -249,6 +249,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private PeerScoringReporterService peerScoringReporterService;
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
+    private BlockChainFlusher blockChainFlusher;
 
     private volatile boolean closed;
 
@@ -866,10 +867,28 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockchain(),
                     getBlockStore(),
                     getReceiptStore(),
-                    getWeb3InformationRetriever());
+                    getWeb3InformationRetriever(),
+                    getFlusher());
         }
 
         return rskModule;
+    }
+
+    public synchronized BlockChainFlusher getBlockChainFlusher() {
+        if (this.blockChainFlusher==null)
+        this.blockChainFlusher = new BlockChainFlusher(
+                getRskSystemProperties().flushNumberOfBlocks(),
+                getCompositeEthereumListener(),
+                getTrieStore(),
+                getBlockStore(),
+                getReceiptStore(),
+                getBlocksBloomStore(),
+                getStateRootsStore());
+        return blockChainFlusher;
+    }
+
+    public Flusher getFlusher() {
+        return getBlockChainFlusher();
     }
 
     public synchronized NetworkStateExporter getNetworkStateExporter() {
@@ -1022,14 +1041,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             internalServices.add(getPeerScoringReporterService());
         }
 
-        internalServices.add(new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore(),
-                getReceiptStore(),
-                getBlocksBloomStore(),
-                getStateRootsStore()));
+
+        internalServices.add(getBlockChainFlusher());
 
         internalServices.add(getExecutionBlockRetriever());
 

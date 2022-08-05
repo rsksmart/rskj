@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import co.rsk.util.NodeStopper;
+import co.rsk.Flusher;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -30,6 +31,7 @@ public class RskModuleImpl implements RskModule {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final Web3InformationRetriever web3InformationRetriever;
+    private final Flusher flusher;
 
     private final NodeStopper nodeStopper;
 
@@ -37,19 +39,30 @@ public class RskModuleImpl implements RskModule {
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
                          Web3InformationRetriever web3InformationRetriever,
+                         Flusher flusher,
                          NodeStopper nodeStopper) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.web3InformationRetriever = web3InformationRetriever;
+        this.flusher = flusher;
         this.nodeStopper = nodeStopper;
     }
 
     public RskModuleImpl(Blockchain blockchain,
                          BlockStore blockStore,
                          ReceiptStore receiptStore,
-                         Web3InformationRetriever web3InformationRetriever) {
-        this(blockchain, blockStore, receiptStore, web3InformationRetriever, System::exit);
+                         Web3InformationRetriever web3InformationRetriever,
+                         Flusher flusher) {
+        this(blockchain, blockStore, receiptStore, web3InformationRetriever, flusher, System::exit);
+    }
+
+    @Override
+    public void flush() {
+        if (flusher==null)
+            return;
+        flusher.forceFlush();
+
     }
 
     @Override
