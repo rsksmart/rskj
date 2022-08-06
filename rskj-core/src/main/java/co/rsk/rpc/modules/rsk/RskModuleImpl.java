@@ -41,6 +41,11 @@ public class RskModuleImpl implements RskModule {
     }
 
     @Override
+    public void shutdown() {
+         System.exit(0);
+    }
+
+    @Override
     public String getRawTransactionReceiptByHash(String transactionHash) {
         String s = null;
         try {

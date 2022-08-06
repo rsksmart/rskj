@@ -10,4 +10,5 @@ public interface RskModule {
 
     String getRawBlockHeaderByNumber(String bnOrId);
 
+    void shutdown();
 }
