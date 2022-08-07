@@ -355,7 +355,7 @@ public class CliToolsTest {
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
         byte[] result = trieDB.get(key);
         trieDB.close();
 
@@ -473,7 +473,7 @@ public class CliToolsTest {
     @Test
     public void dbMigrate() throws IOException {
         File nodeIdPropsFile = new File(tempFolder.getRoot(), "nodeId.properties");
-        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
+        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE);
 
         if (nodeIdPropsFile.createNewFile()) {
             FileWriter myWriter = new FileWriter(nodeIdPropsFile);
@@ -520,7 +520,7 @@ public class CliToolsTest {
 
     @Test
     public void dbMigrateThrowsExceptionBecauseMigratingToSameDb() throws IOException {
-        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
+        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSourceUtils.DB_KIND_PROPERTIES_FILE);
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
