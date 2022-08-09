@@ -49,6 +49,10 @@ import java.util.Optional;
  * - args[2] - file path
  * - args[3] - database format
  *
+ * FIX
+ * - args[1] - root (hex)
+ * - args[2] - file path
+ * - args[3] - database format
  * SHOWROOT:
  *  - args[1] - block number
  *
@@ -70,7 +74,8 @@ public class MigrateState extends CliToolRskContextAware  {
         COPY("COPY"),
         MIGRATE("MIGRATE"),
         SHOWROOT("SHOWROOT"),
-        CHECK("CHECK");
+        CHECK("CHECK"),
+        FIX("FIX");
 
         private final String name;
 
@@ -106,9 +111,10 @@ public class MigrateState extends CliToolRskContextAware  {
         String filePath = args[filePathIdx];
         KeyValueDataSource dsSrc = KeyValueDataSourceUtils.makeDataSource(Paths.get(filePath),
                 DbKind.ofName(args[dbFormatIdx]));
-
+        System.out.println("src: "+filePath);
         KeyValueDataSource dsDst = dsSrc;
         byte[] root = null;
+
 
 
         if (command==Command.CHECK) {
@@ -117,6 +123,13 @@ public class MigrateState extends CliToolRskContextAware  {
             System.out.println("State root: "+ Hex.toHexString(root));
             // do not migrate: check that migration is ok.
             trieStore = new TrieStoreImpl(dsSrc);
+        } else if (command==Command.FIX) {
+            System.out.println("fixing...");
+            root = Hex.decode(args[rootIdx]);
+            System.out.println("State root: "+ Hex.toHexString(root));
+            // do not migrate: check that migration is ok.
+            trieStore = new TrieStoreImpl(dsSrc);
+            fixSrcTrieStore = ctx.getTrieStore();
         } else if (command==Command.COPY) {
             System.out.println("copying...");
             root = Hex.decode(args[rootIdx]);
@@ -125,6 +138,7 @@ public class MigrateState extends CliToolRskContextAware  {
             dsDst =
                     KeyValueDataSourceUtils.makeDataSource(Paths.get(filePathcopy),
                             DbKind.ofName(args[2]));
+            System.out.println("dst: "+filePathcopy);
             trieStore = new TrieStoreImpl(dsSrc);
         } else if (command==Command.MIGRATE) {
             System.out.println("migrating...");
@@ -140,6 +154,7 @@ public class MigrateState extends CliToolRskContextAware  {
             dsDst.close();
 
     }
+    TrieStore fixSrcTrieStore;
 
     private void showMem() {
         Runtime runtime = Runtime.getRuntime();
@@ -174,6 +189,11 @@ public class MigrateState extends CliToolRskContextAware  {
 
         boolean ret ;
         ret = processTrie(trie, dsSrc,dsDst);
+        if (ret) {
+            System.out.println("success!");
+        } else {
+            System.out.println("Failed");
+        }
         showStat();
         return ret;
     }
@@ -193,6 +213,9 @@ public class MigrateState extends CliToolRskContextAware  {
             dsDst.flush();
 
         }
+        if (nodesExported==340023) {
+            System.out.println("end ");
+        }
         /*
         if (nodesExported >= 2_500_000) { //  2_775_000 bad
             return false; // avoid copying the root nodes of unfinished trees
@@ -202,61 +225,87 @@ public class MigrateState extends CliToolRskContextAware  {
             skipped++;
             return true; // already exists
         }
+        boolean fixme = false;
+        try {
+            NodeReference leftReference = trie.getLeft();
 
+            if (!leftReference.isEmpty()) {
+                Optional<Trie> left = leftReference.getNodeDetached();
 
-        NodeReference leftReference = trie.getLeft();
+                if (left.isPresent()) {
+                    Trie leftTrie = left.get();
 
-        if (!leftReference.isEmpty()) {
-            Optional<Trie> left = leftReference.getNodeDetached();
-
-            if (left.isPresent()) {
-                Trie leftTrie = left.get();
-
-                if (!leftReference.isEmbeddable()) {
-                    if (!processTrie(leftTrie, dsSrc,dsDst)) {
-                        return false;
+                    if (!leftReference.isEmbeddable()) {
+                        if (!processTrie(leftTrie, dsSrc, dsDst)) {
+                            return false;
+                        }
                     }
                 }
             }
-        }
 
-        NodeReference rightReference = trie.getRight();
+            NodeReference rightReference = trie.getRight();
 
-        if (!rightReference.isEmpty()) {
-            Optional<Trie> right = rightReference.getNodeDetached();
+            if (!rightReference.isEmpty()) {
+                Optional<Trie> right = rightReference.getNodeDetached();
 
-            if (right.isPresent()) {
-                Trie rightTrie = right.get();
+                if (right.isPresent()) {
+                    Trie rightTrie = right.get();
 
-                if (!rightReference.isEmbeddable()) {
-                    if (!processTrie(rightTrie, dsSrc,dsDst)) {
-                        return false;
+                    if (!rightReference.isEmbeddable()) {
+                        if (!processTrie(rightTrie, dsSrc, dsDst)) {
+                            return false;
+                        }
                     }
                 }
             }
-        }
 
-        // copy those that are not on the cache
-        byte[] m = trie.toMessage();
-        if (command==Command.CHECK) {
-            byte[] ret =dsSrc.get(hash);
-            if (!Arrays.equals(ret,m)) {
-                System.out.println("Node incorrect: "+trie.getHash().toHexString());
+
+            // copy those that are not on the cache
+            byte[] m = trie.toMessage();
+            if ((command == Command.CHECK) || (command == Command.FIX)) {
+                byte[] ret = dsSrc.get(hash);
+                if (!Arrays.equals(ret, m)) {
+                    System.out.println("Node incorrect: " + trie.getHash().toHexString());
+                    if (command == Command.CHECK)
+                       return false;
+                    fixme = true;
+                }
+                if (trie.hasLongValue()) {
+                    byte[] lv = dsSrc.get(trie.getValueHash().getBytes());
+                    if (!Arrays.equals(lv, trie.getValue())) {
+                        System.out.println("Long value incorrect node: " + trie.getHash().toHexString());
+                        System.out.println("long value hash: " + trie.getValueHash().toHexString());
+                        if (command == Command.CHECK)
+                            return false;
+                        fixme = true;
+                    }
+                }
+            } else {
+                dsDst.put(hash, m);
+                if (trie.hasLongValue()) {
+                    dsDst.put(trie.getValueHash().getBytes(), trie.getValue());
+                }
+            }
+
+        } catch (RuntimeException e) {
+            System.out.println("Node invalid: " + trie.getHash().toHexString());
+            if (command == Command.CHECK)
+                return false;
+            fixme = true;
+
+        }
+        if (fixme) {
+            Optional<Trie> origNode = fixSrcTrieStore.retrieve(hash);
+            if (!origNode.isPresent()) {
+                System.out.println("cannot fix");
                 return  false;
             }
-            if (trie.hasLongValue()) {
-                byte[] lv = dsSrc.get(trie.getValueHash().getBytes());
-                if (!Arrays.equals(lv, trie.getValue())) {
-                    System.out.println("Long value incorrect node: " + trie.getHash().toHexString());
-                    System.out.println("long value hash: " + trie.getValueHash().toHexString());
-                    return false;
-                }
+            Trie o = origNode.get();
+            dsDst.put(hash, o.toMessage());
+            if (o.hasLongValue()) {
+                dsDst.put(o.getValueHash().getBytes(), o.getValue());
             }
-        } else {
-            dsDst.put(hash, m);
-            if (trie.hasLongValue()) {
-                dsDst.put(trie.getValueHash().getBytes(), trie.getValue());
-            }
+
         }
         return true;
     }
