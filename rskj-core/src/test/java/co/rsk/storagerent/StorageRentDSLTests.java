@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
@@ -170,7 +171,6 @@ public class StorageRentDSLTests {
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
             BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, aprox 25 days
         );
-//        checkStorageRent(world, "tx04", 5002, 0, 8, 0, 0);
         checkStorageRent(world, "tx04", 2501, 0, 8, 0);
     }
 
@@ -190,14 +190,30 @@ public class StorageRentDSLTests {
         );
         String transactionName = "tx02";
         String contractAddress = "6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        String sender = "a0663f719962ec10bb57865532bef522059dfd96";
 
         checkStorageRent(world, transactionName, 43750, 3750, 3, 3);
-        // todo(fedejinich) it seems there are less nodes than it should (3)
 
         // check for the value
         assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
                 .snapshotAt(world.getBlockByName("b02").getHeader())
                 .getStorageValue(new RskAddress(contractAddress), DataWord.ZERO));
+
+        List<byte[]> rollbackNodesKeys = world.getTransactionExecutor("tx02")
+                .getStorageRentResult()
+                .getRollbackNodes()
+                .stream()
+                .map(RentedNode::getKey)
+                .map(ByteArrayWrapper::getData)
+                .collect(Collectors.toList());
+
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        // check there's only ONE storage-cell node
+        assertArrayEquals(trieKeyMapper.getAccountKey(new RskAddress(contractAddress)), rollbackNodesKeys.get(0));
+        assertArrayEquals(trieKeyMapper.getAccountStorageKey(new RskAddress(contractAddress), DataWord.ZERO),
+                rollbackNodesKeys.get(1)); // storage cell 
+        assertArrayEquals(trieKeyMapper.getAccountKey(new RskAddress(sender)), rollbackNodesKeys.get(2));
 
         checkNoDuplicatedPayments(world, transactionName);
     }
