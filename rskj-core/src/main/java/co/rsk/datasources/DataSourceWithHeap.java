@@ -61,8 +61,10 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     public void flush() {
         super.flush();
         try {
-            bamap.save();
-            sharedBaHeap.save(0);
+            if (bamap.modified()) {
+                bamap.save();
+                sharedBaHeap.save(0);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

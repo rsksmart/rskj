@@ -1096,7 +1096,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 .make();
 
         DbKind currentDbKind = getRskSystemProperties().databaseKind();
-        KeyValueDataSource blocksDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
+        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
@@ -1195,7 +1195,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
         Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
-        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(bloomsStorePath, getRskSystemProperties().databaseKind());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, getRskSystemProperties().databaseKind());
 
         if (bloomsCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
@@ -1275,7 +1275,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
-        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"), rskSystemProperties.databaseKind());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"), rskSystemProperties.databaseKind());
 
         if (receiptsCacheSize != 0) {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
@@ -1316,7 +1316,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(trieStorePath, rskSystemProperties.trieDatabaseKind());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, rskSystemProperties.trieDatabaseKind());
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
@@ -1345,7 +1345,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int stateRootsCacheSize = rskSystemProperties.getStateRootsCacheSize();
-        KeyValueDataSource stateRootsDB = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "stateRoots"), rskSystemProperties.databaseKind());
+        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "stateRoots"), rskSystemProperties.databaseKind());
 
         if (stateRootsCacheSize > 0) {
             stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
@@ -1396,7 +1396,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = KeyValueDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"), rskSystemProperties.databaseKind());
+        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"), rskSystemProperties.databaseKind());
 
         return new Wallet(ds);
     }
@@ -1443,7 +1443,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
                 boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
                 if (gcWasEnabled) {
-                    KeyValueDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths, rskSystemProperties.databaseKind());
+                    KeyValueDataSourceUtils.mergeDataSources(trieStorePath, multiTrieStorePaths, rskSystemProperties.databaseKind());
                     // cleanup MultiTrieStore data sources
                     multiTrieStorePaths.stream()
                             .map(Path::toString)

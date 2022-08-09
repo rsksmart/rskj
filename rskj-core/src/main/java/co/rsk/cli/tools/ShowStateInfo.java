@@ -84,25 +84,30 @@ public class ShowStateInfo extends CliToolRskContextAware {
 
         Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
 
+
         if (otrie.isPresent()) {
             Trie trie = otrie.get();
+            printer.println("Trie MB: " + (double) trie.getChildrenSize().value / (1024*1024));
 
-            processTrie(trie, stateInfo);
+            //processTrie(trie, stateInfo);
         }
 
         printer.println("Trie nodes: " + stateInfo.nnodes);
         printer.println("Trie long values: " + stateInfo.nvalues);
-        printer.println("Trie MB: " + (double) stateInfo.nbytes / (1024*1024));
+        //printer.println("Trie MB: " + (double) stateInfo.nbytes / (1024*1024));
     }
 
     private static void processTrie(Trie trie, StateInfo stateInfo) {
         stateInfo.nnodes++;
-        stateInfo.nbytes += trie.getMessageLength();
+        //stateInfo.nbytes += trie.getMessageLength();
+        if (stateInfo.nnodes % 1000==0) {
+            System.out.println("nodes: " +(stateInfo.nnodes/1000)+"k");
 
+        }
         NodeReference leftReference = trie.getLeft();
 
         if (!leftReference.isEmpty()) {
-            Optional<Trie> left = leftReference.getNode();
+            Optional<Trie> left = leftReference.getNodeDetached();
 
             if (left.isPresent()) {
                 Trie leftTrie = left.get();
@@ -111,17 +116,13 @@ public class ShowStateInfo extends CliToolRskContextAware {
                     processTrie(leftTrie, stateInfo);
                 }
 
-                if (leftTrie.hasLongValue()) {
-                    stateInfo.nvalues++;
-                    stateInfo.nbytes += leftTrie.getValue().length;
-                }
             }
         }
 
         NodeReference rightReference = trie.getRight();
 
         if (!rightReference.isEmpty()) {
-            Optional<Trie> right = rightReference.getNode();
+            Optional<Trie> right = rightReference.getNodeDetached();
 
             if (right.isPresent()) {
                 Trie rightTrie = right.get();
@@ -130,10 +131,6 @@ public class ShowStateInfo extends CliToolRskContextAware {
                     processTrie(rightTrie, stateInfo);
                 }
 
-                if (rightTrie.hasLongValue()) {
-                    stateInfo.nvalues++;
-                    stateInfo.nbytes += rightTrie.getValue().length;
-                }
             }
         }
 

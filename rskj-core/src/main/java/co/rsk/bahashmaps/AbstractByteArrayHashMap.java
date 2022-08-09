@@ -1320,36 +1320,41 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         this.mapPath = mapPath;
     }
 
+    public boolean modified() {
+        return (!loaded) || (table.modified());
+    }
+
     public void save() throws IOException {
-        File file = mapPath.toFile();
-        String fileName = file.getAbsolutePath();
-        String headerFileName = fileName+".hdr";
-        Header header = new Header();
 
-        header.dbVersion = format.dbVersion;
-        header.totalSize = table.length();
-        header.size = size;
-        header.threshold = threshold;
+        if ((!loaded) || (table.modified())) {
+            File file = mapPath.toFile();
+            String fileName = file.getAbsolutePath();
+            String headerFileName = fileName + ".hdr";
+            Header header = new Header();
 
-        writeHeader(headerFileName,header);
+            header.dbVersion = format.dbVersion;
+            header.totalSize = table.length();
+            header.size = size;
+            header.threshold = threshold;
 
+            writeHeader(headerFileName, header);
 
-        RandomAccessFile sc
-                = new RandomAccessFile(fileName, "rw");
-        FileChannel fileChannel = sc.getChannel();
+            RandomAccessFile sc
+                    = new RandomAccessFile(fileName, "rw");
+            FileChannel fileChannel = sc.getChannel();
 
-        // Size cannot exceed Integer.MAX_VALUE !! Horrible thing in file.map().
-        // However, we can map in parts.
-        //ByteBuffer buf = file.map(FileChannel.MapMode.READ_WRITE, 0, 4L * 3);
-        try {
-            if ((loaded) && (!resized)) {
-                System.out.println("Updating table..");
-                table.update(fileChannel, 0);
+            // Size cannot exceed Integer.MAX_VALUE !! Horrible thing in file.map().
+            // However, we can map in parts.
+            //ByteBuffer buf = file.map(FileChannel.MapMode.READ_WRITE, 0, 4L * 3);
+            try {
+                if ((loaded) && (!resized)) {
+                    System.out.println("Updating table..");
+                    table.update(fileChannel, 0);
+                } else
+                    table.copyTo(fileChannel, 0);
+            } finally {
+                fileChannel.close();
             }
-            else
-                table.copyTo(fileChannel, 0);
-        } finally {
-            fileChannel.close();
         }
         loaded = true;
         resized = false;

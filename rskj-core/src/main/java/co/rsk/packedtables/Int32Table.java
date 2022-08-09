@@ -11,6 +11,7 @@ public class Int32Table implements Table {
 
     int table[];
 
+    boolean isModified;
     public Int32Table(int cap) {
         table = new int[cap];
     }
@@ -24,6 +25,7 @@ public class Int32Table implements Table {
     @Override
     public void setPos(int i, long value) {
         table[i] = (int) value;
+        isModified = true;
     }
 
     @Override
@@ -44,18 +46,25 @@ public class Int32Table implements Table {
     public void copyTo(FileChannel file, int ofs) throws IOException {
         // Child to -do
         FileMapUtil.mapAndCopyIntArray(file,ofs,table.length,table);
+        isModified =false;
     }
 
     @Override
     public void update(FileChannel file, int ofs) throws IOException {
         // update not implemented
         FileMapUtil.mapAndCopyIntArray(file,ofs,table.length,table);
+        isModified =false;
     }
 
     @Override
     public
     void fillWithZero() {
         Arrays.fill(table, 0);
+    }
+
+    @Override
+    public boolean modified() {
+        return isModified;
     }
 
     public
@@ -77,10 +86,11 @@ public class Int32Table implements Table {
             // TO DO: compress here
             setPos(i, din.readInt());
         }
+        isModified =false;
     }
 
     @Override
     public void clearPageTracking() {
-
+        isModified =false;
     }
 }

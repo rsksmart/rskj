@@ -17,4 +17,5 @@ public interface Table {
     void fill(long value);
     void fillWithZero();
 
+    boolean modified();
 }

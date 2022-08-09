@@ -10,7 +10,7 @@ import java.util.Arrays;
 public class LongTable implements Table {
 
     long table[];
-
+    boolean isModified;
     public LongTable(int cap) {
         table = new long[cap];
     }
@@ -23,6 +23,7 @@ public class LongTable implements Table {
     @Override
     public void setPos(int i, long value) {
         table[i] = value;
+        isModified = true;
     }
 
     @Override
@@ -43,18 +44,25 @@ public class LongTable implements Table {
     public void copyTo(FileChannel file, int ofs) throws IOException {
         // Child to -do
           FileMapUtil.mapAndCopyLongArray(file,ofs,table.length,table);
+        isModified =false;
     }
 
     @Override
     public void update(FileChannel file, int ofs) throws IOException {
         // update not implemented
         FileMapUtil.mapAndCopyLongArray(file,ofs,table.length,table);
+        isModified =false;
     }
 
     @Override
     public
     void fillWithZero() {
         Arrays.fill(table, 0);
+    }
+
+    @Override
+    public boolean modified() {
+        return  isModified;
     }
 
     public
@@ -76,10 +84,11 @@ public class LongTable implements Table {
             // TO DO: compress here
             setPos(i, din.readLong());
         }
+        isModified =false;
     }
 
     @Override
     public void clearPageTracking() {
-
+        isModified =false;
     }
 }

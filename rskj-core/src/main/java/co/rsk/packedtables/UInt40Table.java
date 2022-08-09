@@ -56,6 +56,9 @@ public class UInt40Table implements Table {
     }
 
 
+    public boolean modified() {
+        return (modifiedPageCount>0);
+    }
     @Override
     public void update(FileChannel file, int ofs) throws IOException {
         System.out.println("pageSize: "+pageSize);
@@ -127,5 +130,6 @@ public class UInt40Table implements Table {
         for (int i = 0; i < count; i++) {
            setPos(i, ObjectIO.readLong5(din));
         }
+        clearPageTracking();
     }
 }
