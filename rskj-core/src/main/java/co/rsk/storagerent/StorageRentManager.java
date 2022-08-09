@@ -3,6 +3,7 @@ package co.rsk.storagerent;
 import co.rsk.trie.Trie;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
+import org.ethereum.db.OperationType;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -33,21 +34,15 @@ public class StorageRentManager {
      * @return new remaining gas
      * */
     public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
-                                        MutableRepositoryTracked blockTrack, MutableRepositoryTracked transactionTrack) {
+                                        MutableRepositoryTracked blockTrack,
+                                        MutableRepositoryTracked transactionTrack) {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
-        Map<ByteArrayWrapper, RentedNode> storageRentNodes = new HashMap<>();
-        blockTrack.getStorageRentNodes().values().forEach(rentedNode ->
-                        MutableRepositoryTracked.track(rentedNode.getKey(), rentedNode, storageRentNodes));
-        transactionTrack.getStorageRentNodes().values().forEach(rentedNode ->
-                        MutableRepositoryTracked.track(rentedNode.getKey(), rentedNode, storageRentNodes));
-
-        Map<ByteArrayWrapper, RentedNode> rollbackNodes = new HashMap<>();
-        blockTrack.getRollBackNodes().values().forEach(rollBackNode ->
-                MutableRepositoryTracked.track(rollBackNode.getKey(), rollBackNode, rollbackNodes));
-        transactionTrack.getRollBackNodes().values().forEach(rollBackNode ->
-                MutableRepositoryTracked.track(rollBackNode.getKey(), rollBackNode, rollbackNodes));
+        Map<ByteArrayWrapper, OperationType> storageRentNodes = mergeNodes(blockTrack.getStorageRentNodes(),
+                transactionTrack.getStorageRentNodes());
+        Map<ByteArrayWrapper, OperationType> rollbackNodes = mergeNodes(blockTrack.getRollBackNodes(),
+                transactionTrack.getRollBackNodes());
 
         if(storageRentNodes.isEmpty() && rollbackNodes.isEmpty()) {
             throw new RuntimeException("there should be rented nodes or rollback nodes");
@@ -55,23 +50,16 @@ public class StorageRentManager {
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        Set<RentedNode> rentedNodes = storageRentNodes.values().stream()
-                .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
-                .collect(Collectors.toSet());
-        Set<RentedNode> rollbackRentedNodes = rollbackNodes.values().stream()
-                .map(rentedNode -> blockTrack.fillUpRentedNode(rentedNode))
-                .collect(Collectors.toSet());
+        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentNodes, blockTrack);
+        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackNodes, blockTrack);
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackNodes.size());
 
         // calculate rent
 
-        long payableRent = rentBy(rentedNodes,
-                rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-
-        long rollbacksRent = rentBy(rollbackRentedNodes,
-                rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp));
+        long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
+        long rollbacksRent = rentBy(rollbackRentedNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp));
         
         long rentToPay = payableRent + rollbacksRent;
 
@@ -101,6 +89,24 @@ public class StorageRentManager {
         return result;
     }
 
+    private static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes, MutableRepositoryTracked blockTrack) {
+        return nodes.entrySet()
+                .stream()
+                .map(entry -> blockTrack.fetchRentedNode(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toSet());
+    }
+
+    private static Map<ByteArrayWrapper, OperationType> mergeNodes(Map<ByteArrayWrapper, OperationType> nodes1,
+                                                                   Map<ByteArrayWrapper, OperationType> nodes2) {
+        Map<ByteArrayWrapper, OperationType> merged = new HashMap<>();
+
+        nodes1.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
+        nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
+
+        return merged;
+    }
+
+    // todo(fedejinich) filter DELETE_OPERATION for timestamp update
     private static boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
         return rentedNode.payableRent(executionBlockTimestamp) > 0 ||
                 rentedNode.getRentTimestamp() == Trie.NO_RENT_TIMESTAMP;
@@ -113,5 +119,4 @@ public class StorageRentManager {
 
         return rentedNodes.isEmpty() || !rent.isPresent() ? 0 : rent.get();
     }
-
 }

@@ -5,9 +5,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
-import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.AccountState;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
@@ -19,8 +17,8 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
+import static co.rsk.storagerent.RentedNode.rentThreshold;
 import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -295,82 +293,29 @@ public class MutableRepositoryTrackedTest {
 
     // testing trackNode
 
-    @Test
-    public void trackNode_shouldTrackNodesWithoutDuplicates() {
-        List<RentedNode> testNodes = Arrays.asList(
-                trackedNodeReadOperation("key1", false),
-                trackedNodeWriteOperation("key1"),
-                trackedNodeReadOperation("key1", true),
-                trackedNodeReadOperation("key1", true),
-                trackedNodeWriteOperation("key2"),
-                trackedNodeReadOperation("key2", true),
-                trackedNodeReadContractCodeOperation("key2", true),
-                trackedNodeWriteOperation("key2"),
-                trackedNodeReadOperation("key3", true),
-                trackedNodeWriteOperation("key3"),
-                trackedNodeReadOperation("key4", true),
-                trackedNodeReadOperation("key4", true),
-                trackedNodeReadOperation("key4", true),
-                trackedNodeReadContractCodeOperation("key4", true),
-                trackedNodeReadOperation("key4", true),
-                trackedNodeReadOperation("key4", true),
-                trackedNodeWriteOperation("key5"),
-                trackedNodeReadOperation("key6", true),
-                trackedNodeWriteOperation("key6"),
-                trackedNodeReadOperation("key7", false)
-        );
-
-        MutableRepositoryTestable repository = MutableRepositoryTestable
-                .trackedRepository(new MutableTrieImpl(null, new Trie()));
-
-        // track nodes
-        testNodes.forEach(v -> {
-            if(v.getOperationType().equals(READ_OPERATION)) {
-                repository.trackNodeReadOperation(v.getKey().getData(), v.getNodeExistsInTrie());
-            } else if(v.getOperationType().equals(READ_CONTRACT_CODE_OPERATION)) {
-                repository.trackNodeReadContractOperation(v.getKey().getData(), v.getNodeExistsInTrie());
-            } else if(v.getOperationType().equals(WRITE_OPERATION)) {
-                repository.trackNodeWriteOperation(v.getKey().getData());
-            } else {
-                fail("shouldn't reach here");
-            }
-        });
-
-        Map<ByteArrayWrapper, RentedNode> trackedNodes = repository.getTrackedNodes();
-
-        // all new nodes, they should be tracked normally
-        assertTrue(trackedNodes.containsKey(trackedNodeWriteOperation("key1").getKey()));
-        assertTrue(trackedNodes.containsKey(trackedNodeWriteOperation("key2").getKey()));
-        assertTrue(trackedNodes.containsKey(trackedNodeWriteOperation("key3").getKey()));
-        assertTrue(trackedNodes.containsKey(trackedNodeReadOperation("key4", true).getKey()));
-        assertTrue(trackedNodes.containsKey(trackedNodeWriteOperation("key5").getKey()));
-        assertTrue(trackedNodes.containsKey(trackedNodeWriteOperation("key6").getKey()));
-        assertEquals(6, trackedNodes.size());
-    }
-
     /**
      * Track all different keys, should track them all
      * */
     @Test
     public void track_trackAllDifferentKeys() {
-        Map<ByteArrayWrapper, RentedNode> trackedNodes = new HashMap<>();
+        Map<ByteArrayWrapper, OperationType> trackedNodes = new HashMap<>();
 
-        RentedNode node1 = new RentedNode(key("1"), READ_OPERATION, true);
-        RentedNode node2 = new RentedNode(key("2"), READ_OPERATION, true);
-        RentedNode node3 = new RentedNode(key("3"), WRITE_OPERATION, true);
-        RentedNode node4 = new RentedNode(key("4"), READ_CONTRACT_CODE_OPERATION, true);
+        long notRelevant = 0;
 
-        MutableRepositoryTracked.track(node1.getKey(), node1, trackedNodes);
-        MutableRepositoryTracked.track(node2.getKey(), node2, trackedNodes);
-        MutableRepositoryTracked.track(node3.getKey(), node3, trackedNodes);
-        MutableRepositoryTracked.track(node4.getKey(), node4, trackedNodes);
+        RentedNode node1 = new RentedNode(key("1"), READ_OPERATION, notRelevant, notRelevant);
+        RentedNode node2 = new RentedNode(key("2"), READ_OPERATION, notRelevant, notRelevant);
+        RentedNode node3 = new RentedNode(key("3"), WRITE_OPERATION, notRelevant, notRelevant);
+        RentedNode node4 = new RentedNode(key("4"), READ_CONTRACT_CODE_OPERATION, notRelevant, notRelevant);
+
+        // todo(fedejinich) get rid of ALL the RentedNode instances, there's no point on using them
+        MutableRepositoryTracked.track(node1.getKey(), node1.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(node2.getKey(), node2.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(node3.getKey(), node3.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(node4.getKey(), node4.getOperationType(), trackedNodes);
 
         assertEquals(4, trackedNodes.size());
 
-        List<ByteArrayWrapper> trackedKeys = trackedNodes.values()
-                .stream()
-                .map(RentedNode::getKey)
-                .collect(Collectors.toList());
+        Set<ByteArrayWrapper> trackedKeys = trackedNodes.keySet();
 
         // all different keys
         assertEquals(new HashSet<>(trackedKeys).size(), trackedKeys.size());
@@ -391,26 +336,30 @@ public class MutableRepositoryTrackedTest {
      * */
     @Test
     public void track_duplicatedKeys() {
-        Map<ByteArrayWrapper, RentedNode> trackedNodes = new HashMap<>();
+        Map<ByteArrayWrapper, OperationType> trackedNodes = new HashMap<>();
+
+        long notRelevant = 0;
 
         ByteArrayWrapper key = key("1");
-        RentedNode thresholdHigh = new RentedNode(key, READ_OPERATION, true);
-        RentedNode thresholdLow = new RentedNode(key, WRITE_OPERATION, true);
+        RentedNode thresholdHigh = new RentedNode(key, READ_OPERATION, notRelevant, notRelevant);
+        RentedNode thresholdLow = new RentedNode(key, WRITE_OPERATION, notRelevant, notRelevant);
 
-        MutableRepositoryTracked.track(key, thresholdHigh, trackedNodes);
-        MutableRepositoryTracked.track(key, thresholdHigh, trackedNodes);
+        // todo(fedejinich) there's no need to use RentedNode
+
+        MutableRepositoryTracked.track(thresholdHigh.getKey(), thresholdHigh.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(thresholdHigh.getKey(), thresholdHigh.getOperationType(), trackedNodes);
 
         // contains just one element (no duplicates)
         assertEquals(1, trackedNodes.size());
-        assertEquals(thresholdHigh, trackedNodes.get(key));
+        assertEquals(thresholdHigh.getOperationType(), trackedNodes.get(key));
 
         // add the same key but with a lower threshold
-        MutableRepositoryTracked.track(key, thresholdLow, trackedNodes);
+        MutableRepositoryTracked.track(thresholdLow.getKey(), thresholdLow.getOperationType(), trackedNodes);
 
         // the key should be replaced with the lower threshold node
         assertEquals(1, trackedNodes.size());
-        assertEquals(thresholdLow, trackedNodes.get(key));
-        assertTrue(trackedNodes.get(key).rentThreshold() < thresholdHigh.rentThreshold());
+        assertEquals(thresholdLow.getOperationType(), trackedNodes.get(key));
+        assertTrue(rentThreshold(trackedNodes.get(key)) < rentThreshold(thresholdHigh.getOperationType()));
     }
 
     /**
@@ -434,10 +383,8 @@ public class MutableRepositoryTrackedTest {
         tempRepository.addBalance(address2, Coin.valueOf(10));
 
         assertEquals(2, tempRepository.getTrackedNodes().size());
-        assertEquals(new RentedNode(address1TrieKey, WRITE_OPERATION, true),
-                tempRepository.getTrackedNodes().get(address1TrieKey));
-        assertEquals(new RentedNode(address2TrieKey, WRITE_OPERATION, true),
-                tempRepository.getTrackedNodes().get(address2TrieKey));
+        assertEquals(WRITE_OPERATION, tempRepository.getTrackedNodes().get(address1TrieKey));
+        assertEquals(WRITE_OPERATION, tempRepository.getTrackedNodes().get(address2TrieKey));
 
         // creating two repositories to merge them and check tracked nodes
         MutableRepositoryTracked repository = MutableRepositoryTracked.trackedRepository(mutableTrieCache);
@@ -447,10 +394,8 @@ public class MutableRepositoryTrackedTest {
         repository.getBalance(address2);
 
         assertEquals(2, repository.getTrackedNodes().size());
-        assertEquals(new RentedNode(address1TrieKey, READ_OPERATION, true),
-                repository.getTrackedNodes().get(address1TrieKey));
-        assertEquals(new RentedNode(address2TrieKey, READ_OPERATION, true),
-                repository.getTrackedNodes().get(address2TrieKey));
+        assertEquals(READ_OPERATION, repository.getTrackedNodes().get(address1TrieKey));
+        assertEquals(READ_OPERATION, repository.getTrackedNodes().get(address2TrieKey));
 
         // creating a child repository to perform a WRITE_OPERATION for address1
         MutableRepositoryTracked childRepository = (MutableRepositoryTracked) repository.startTracking();
@@ -458,38 +403,15 @@ public class MutableRepositoryTrackedTest {
         childRepository.addBalance(address1, Coin.valueOf(10));
 
         assertEquals(1, childRepository.getTrackedNodes().size());
-        assertEquals(new RentedNode(address1TrieKey, WRITE_OPERATION, true),
-                childRepository.getTrackedNodes().get(address1TrieKey));
+        assertEquals(WRITE_OPERATION, childRepository.getTrackedNodes().get(address1TrieKey));
 
         // merging both repositories
         childRepository.commit();
 
         // now there are two nodes, but one has been replaced with the WRITE_OPERATION (which has the lowest threshold)
         assertEquals(2, repository.getTrackedNodes().size());
-        assertEquals(new RentedNode(address1TrieKey, WRITE_OPERATION, true),
-                repository.getTrackedNodes().get(address1TrieKey));
-        assertEquals(new RentedNode(address2TrieKey, READ_OPERATION, true),
-                repository.getTrackedNodes().get(address2TrieKey));
-    }
-
-    private RentedNode trackedNodeWriteOperation(String key) {
-        return trackedNode(key, WRITE_OPERATION, true);
-    }
-
-    private RentedNode trackedNodeReadOperation(String key, boolean result) {
-        return trackedNode(key, READ_OPERATION, result);
-    }
-
-    private RentedNode trackedNodeReadContractCodeOperation(String key, boolean result) {
-        return trackedNode(key, READ_CONTRACT_CODE_OPERATION, result);
-    }
-
-    private static RentedNode trackedNode(String key, OperationType operationType, boolean result) {
-        return new RentedNode(
-                new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
-                operationType,
-                result
-        );
+        assertEquals(WRITE_OPERATION, repository.getTrackedNodes().get(address1TrieKey));
+        assertEquals(READ_OPERATION, repository.getTrackedNodes().get(address2TrieKey));
     }
 
     private static RskAddress randomAccountAddress() {
