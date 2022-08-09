@@ -1195,6 +1195,12 @@ public class BridgeSupport {
                 logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
                 availableUTXOs.removeAll(selectedUTXOs);
 
+                if (activations.isActive(ConsensusRule.RSKIP298)){
+                    provider.setPegoutCreationEntry(
+                        generatedTransaction.getHash(),
+                        rskTx.getHash()
+                    );
+                }
                 eventLogger.logBatchPegoutCreated(generatedTransaction,
                     pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
