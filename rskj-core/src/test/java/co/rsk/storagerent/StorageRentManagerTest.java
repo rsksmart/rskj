@@ -22,17 +22,19 @@ public class StorageRentManagerTest {
         long nodeSize = 20L;
         long threeYearsAccumulatedRent = new GregorianCalendar(2019, 1, 1).getTime().getTime();
 
+
+        // todo(fedejinich) should refactor this into Map<ByteArray, OperationType> and avoid using RentedNode instances
         // params
-        Map<ByteArrayWrapper, RentedNode> rentedNodes = mockRentedNodes(Arrays.asList(
+        Map<ByteArrayWrapper, OperationType> rentedNodes = mockRentedNodes(Arrays.asList(
             trackedNodeWriteOperation("key2"), // should pay rent cap
             trackedNodeWriteOperation("key4"), // should pay rent cap
             trackedNodeWriteOperation("key7"), // should pay rent cap
-            trackedNodeReadOperation("key1", true), // should pay rent cap
-            trackedNodeReadOperation("key6", true) // should pay rent cap
+            trackedNodeReadOperation("key1"), // should pay rent cap
+            trackedNodeReadOperation("key6") // should pay rent cap
         ));
-        Map<ByteArrayWrapper, RentedNode> rollbackNodes = mockRentedNodes(Arrays.asList(
+        Map<ByteArrayWrapper, OperationType> rollbackNodes = mockRentedNodes(Arrays.asList(
             trackedNodeWriteOperation("key3"), // should pay 25% rent
-            trackedNodeReadOperation("key5", true), // should pay 25% rent
+            trackedNodeReadOperation("key5"), // should pay 25% rent
             trackedNodeWriteOperation("key8") // should pay 25% rent
         ));
         long gasRemaining = 28750;
@@ -56,7 +58,6 @@ public class StorageRentManagerTest {
         checkStorageRentPayment(gasRemaining, executionBlockTimestamp,
                 mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPaidRent, expectedPayableRent,
                 expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount);
-//        todo verifyTimestampUpdateInvoke(rentedNodes, executionBlockTimestamp, mockTransactionTrack);
     }
 
     @Test
@@ -65,15 +66,15 @@ public class StorageRentManagerTest {
         long oneDayAccumulatedRent = new GregorianCalendar(2021, 12, 31).getTime().getTime();
 
         // params
-        Map<ByteArrayWrapper, RentedNode> rentedNodes = mockRentedNodes(Arrays.asList(
+        Map<ByteArrayWrapper, OperationType> rentedNodes = mockRentedNodes(Arrays.asList(
             // not enough accumulated rent, should pay zero gas
-            trackedNodeReadOperation("key1", true),
+            trackedNodeReadOperation("key1"),
             // not enough accumulated rent, should pay zero gas
             trackedNodeWriteOperation("key3"),
             // not enough accumulated rent, should pay zero gas
             trackedNodeWriteOperation("key4")
         ));
-        Map<ByteArrayWrapper, RentedNode> rollbackNodes = new HashMap<>();
+        Map<ByteArrayWrapper, OperationType> rollbackNodes = new HashMap<>();
         long gasRemaining = 28750;
         long executionBlockTimestamp = new GregorianCalendar(2022, 1, 1).getTime().getTime();
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
@@ -97,9 +98,9 @@ public class StorageRentManagerTest {
                 expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount);
     }
 
-    private Map<ByteArrayWrapper, RentedNode> mockRentedNodes(List<RentedNode> rentedNodes) {
-        Map<ByteArrayWrapper, RentedNode> rentedNodeMap = new HashMap<>();
-        rentedNodes.forEach(r -> rentedNodeMap.put(r.getKey(), r));
+    private Map<ByteArrayWrapper, OperationType> mockRentedNodes(List<RentedNode> rentedNodes) {
+        Map<ByteArrayWrapper, OperationType> rentedNodeMap = new HashMap<>();
+        rentedNodes.forEach(r -> rentedNodeMap.put(r.getKey(), r.getOperationType()));
         return rentedNodeMap;
     }
 
@@ -108,8 +109,8 @@ public class StorageRentManagerTest {
         int notRelevant = -1;
 
         // params
-        Map<ByteArrayWrapper, RentedNode> rentedNodes = new HashMap<>(); // empty
-        Map<ByteArrayWrapper, RentedNode> rollbackNodes = new HashMap<>(); // empty
+        Map<ByteArrayWrapper, OperationType> rentedNodes = new HashMap<>(); // empty
+        Map<ByteArrayWrapper, OperationType> rollbackNodes = new HashMap<>(); // empty
         MutableRepositoryTracked mockTransactionTrack = mock(MutableRepositoryTracked.class); // useful to spy rent updates
         MutableRepositoryTracked mockBlockTrack = mock(MutableRepositoryTracked.class); // useful to spy fetched data
 
@@ -132,16 +133,16 @@ public class StorageRentManagerTest {
         long threeYearsAccumulatedRent = new GregorianCalendar(2019, 1, 1).getTime().getTime();
 
         // params
-        Map<ByteArrayWrapper, RentedNode> rentedNodes = mockRentedNodes(Arrays.asList(
-            trackedNodeReadOperation("key1", true), // should pay rent cap
+        Map<ByteArrayWrapper, OperationType> rentedNodes = mockRentedNodes(Arrays.asList(
+            trackedNodeReadOperation("key1"), // should pay rent cap
             trackedNodeWriteOperation("key2"), // should pay rent cap
             trackedNodeWriteOperation("key4"), // should pay rent cap
-            trackedNodeReadOperation("key6", true), // should pay rent cap
+            trackedNodeReadOperation("key6"), // should pay rent cap
             trackedNodeWriteOperation("key7") // should pay rent cap
         ));
-        Map<ByteArrayWrapper, RentedNode> rollbackNodes = mockRentedNodes(Arrays.asList(
+        Map<ByteArrayWrapper, OperationType> rollbackNodes = mockRentedNodes(Arrays.asList(
             trackedNodeWriteOperation("key3"), // should pay 25%
-            trackedNodeReadOperation("key5", true), // should pay 25%
+            trackedNodeReadOperation("key5"), // should pay 25%
             trackedNodeWriteOperation("key8") // should pay 25%
         ));
 
@@ -188,14 +189,12 @@ public class StorageRentManagerTest {
         }
     }
 
-    private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Map<ByteArrayWrapper, RentedNode> rentedNodes,
-                                   Map<ByteArrayWrapper, RentedNode> rollbackNodes, long nodeSize, long rentTimestamp) {
-        rentedNodes.values().forEach(r -> when(mockBlockTrack.fillUpRentedNode(r)).thenReturn(
-                new RentedNode(r.getKey(), r.getOperationType(),
-                        r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
-        rollbackNodes.values().forEach(r -> when(mockBlockTrack.fillUpRentedNode(r)).thenReturn(
-                new RentedNode(r.getKey(), r.getOperationType(),
-                        r.getNodeExistsInTrie(), nodeSize, rentTimestamp)));
+    private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Map<ByteArrayWrapper, OperationType> rentedNodes,
+                                   Map<ByteArrayWrapper, OperationType> rollbackNodes, long nodeSize, long rentTimestamp) {
+        rentedNodes.forEach((key, operationType) -> when(mockBlockTrack.fetchRentedNode(key, operationType)).thenReturn(
+                new RentedNode(key, operationType, nodeSize, rentTimestamp)));
+        rollbackNodes.forEach((key, operationType) -> when(mockBlockTrack.fetchRentedNode(key, operationType)).thenReturn(
+                new RentedNode(key, operationType, nodeSize, rentTimestamp)));
     }
 
     /**
@@ -218,19 +217,22 @@ public class StorageRentManagerTest {
         assertEquals(expectedRollbackNodesCount, storageRentResult.getRollbackNodes().size());
     }
 
-    public static RentedNode trackedNodeReadOperation(String key, boolean result) {
-        return trackedNode(key, READ_OPERATION, result);
+    public static RentedNode trackedNodeReadOperation(String key) {
+        return trackedNode(key, READ_OPERATION);
     }
 
     public static RentedNode trackedNodeWriteOperation(String key) {
-        return trackedNode(key, WRITE_OPERATION, true);
+        return trackedNode(key, WRITE_OPERATION);
     }
 
-    private static RentedNode trackedNode(String key, OperationType operationType, boolean result) {
+    private static RentedNode trackedNode(String key, OperationType operationType) {
+        // todo(fedejinich) should remove this
+        long notRelevant = 0;
         return new RentedNode(
             new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
             operationType,
-                result
+            notRelevant,
+            notRelevant
         );
     }
 }

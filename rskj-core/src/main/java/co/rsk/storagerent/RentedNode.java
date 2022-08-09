@@ -5,7 +5,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 
 import static co.rsk.storagerent.StorageRentComputation.*;
-import static org.ethereum.db.OperationType.*;
+import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
 
 /**
  * A RentedNode contains the relevant data of an involved node during transaction execution.
@@ -14,30 +14,14 @@ import static org.ethereum.db.OperationType.*;
 public class RentedNode {
     private final ByteArrayWrapper key; // a trie key
     private final OperationType operationType; // an operation type
-    private final boolean nodeExistsInTrie; // if the tracked node exists in the trie or not
+    private final long nodeSize;
+    private final long rentTimestamp;
 
-    private final Long nodeSize;
-    private final Long rentTimestamp;
-
-    private boolean loadsContractCode = false;
-
-    public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
-                      boolean nodeExistsInTrie, Long nodeSize, Long rentTimestamp) {
+    public RentedNode(ByteArrayWrapper rawKey, OperationType operationType, long nodeSize, long rentTimestamp) {
         this.key = rawKey;
         this.operationType = operationType;
-        this.nodeExistsInTrie = nodeExistsInTrie;
-
-        if(operationType == WRITE_OPERATION && !nodeExistsInTrie) {
-            throw new IllegalArgumentException("a WRITE_OPERATION should always exist in trie");
-        }
-
         this.nodeSize = nodeSize;
         this.rentTimestamp = rentTimestamp;
-    }
-
-    public RentedNode(ByteArrayWrapper rawKey, OperationType operationType,
-                      boolean nodeExistsInTrie) {
-        this(rawKey, operationType, nodeExistsInTrie, null, null);
     }
 
     /**
@@ -51,7 +35,7 @@ public class RentedNode {
         return computeRent(
                 rentDue(getNodeSize(), duration(currentBlockTimestamp)),
                 rentCap(),
-                rentThreshold());
+                rentThreshold(getOperationType()));
     }
     /**
      * Calculates the new timestamp after paying the rent
@@ -67,7 +51,7 @@ public class RentedNode {
                 getRentTimestamp(),
                 currentBlockTimestamp,
                 rentCap(),
-                rentThreshold()
+                rentThreshold(getOperationType())
         );
     }
 
@@ -88,8 +72,9 @@ public class RentedNode {
      */
     private long duration(long currentBlockTimestamp) {
         long duration = 0;
+
         if(getRentTimestamp() == Trie.NO_RENT_TIMESTAMP) {
-            // new nodes or old nodes (before hop) have zero duration, but they receive the timestamp of the current block
+            // new nodes or old nodes (before hop) have zero duration, they receive the timestamp of the current block
             return duration;
         }
 
@@ -98,7 +83,7 @@ public class RentedNode {
         return duration;
     }
 
-    public long rentThreshold() {
+    public static long rentThreshold(OperationType operationType) {
         switch (operationType) {
             case WRITE_OPERATION:
                 return WRITE_THRESHOLD;
@@ -127,8 +112,6 @@ public class RentedNode {
     public String toString() {
         return "RentedNode[key: " + key +
                 ", operationType: " + operationType +
-                ", nodeExistsInTrie: " + nodeExistsInTrie +
-                ", loadsContractCode: " + loadsContractCode +
                 ", nodeSize: " + nodeSize +
                 ", lastRentPaidTimestamp: " + rentTimestamp
                 +"]";
@@ -142,17 +125,6 @@ public class RentedNode {
         return operationType;
     }
 
-    public boolean getNodeExistsInTrie() {
-        return this.nodeExistsInTrie;
-    }
-
-
-    public boolean useForStorageRent() {
-        // to filter storage rent nodes, excluding non-existing nodes and deletes
-        return this.nodeExistsInTrie &&
-                this.operationType != DELETE_OPERATION;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -160,22 +132,18 @@ public class RentedNode {
 
         RentedNode that = (RentedNode) o;
 
-        if (nodeExistsInTrie != that.nodeExistsInTrie) return false;
-        if (loadsContractCode != that.loadsContractCode) return false;
-        if (!key.equals(that.key)) return false;
-        if (operationType != that.operationType) return false;
-        if (nodeSize != null ? !nodeSize.equals(that.nodeSize) : that.nodeSize != null) return false;
-        return rentTimestamp != null ? rentTimestamp.equals(that.rentTimestamp) : that.rentTimestamp == null;
+        if (getNodeSize() != that.getNodeSize()) return false;
+        if (getRentTimestamp() != that.getRentTimestamp()) return false;
+        if (!getKey().equals(that.getKey())) return false;
+        return getOperationType() == that.getOperationType();
     }
 
     @Override
     public int hashCode() {
-        int result = key.hashCode();
-        result = 31 * result + operationType.hashCode();
-        result = 31 * result + (nodeExistsInTrie ? 1 : 0);
-        result = 31 * result + (nodeSize != null ? nodeSize.hashCode() : 0);
-        result = 31 * result + (rentTimestamp != null ? rentTimestamp.hashCode() : 0);
-        result = 31 * result + (loadsContractCode ? 1 : 0);
+        int result = getKey().hashCode();
+        result = 31 * result + getOperationType().hashCode();
+        result = 31 * result + (int) (getNodeSize() ^ (getNodeSize() >>> 32));
+        result = 31 * result + (int) (getRentTimestamp() ^ (getRentTimestamp() >>> 32));
         return result;
     }
 }
