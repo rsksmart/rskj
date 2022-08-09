@@ -481,6 +481,85 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
+    public void test_processPegoutsIndividually_before_RSKIP298_activation() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP298)).thenReturn(false);
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = new ArrayList<>();
+        utxos.add(PegTestUtils.createUTXO(1, 0, Coin.COIN.multiply(3), federation.getAddress()));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(Arrays.asList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.COIN))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withActivations(activationMock)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        verify(provider, never()).setPegoutCreationEntry(any(), any());
+    }
+
+    @Test
+    public void test_processPegoutsInBatch_after_RSKIP298() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = new ArrayList<>();
+        utxos.add(PegTestUtils.createUTXO(1, 0, Coin.COIN.multiply(4), federation.getAddress()));
+
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(
+            Arrays.asList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams()), Coin.MILLICOIN)));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue()).thenReturn(releaseRequestQueue);
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        Coin totalValue = releaseRequestQueue.getEntries()
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
+
+        List<Keccak256> rskHashesList = releaseRequestQueue.getEntries()
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getRskTxHash)
+            .collect(Collectors.toList());
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activationMock)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withEventLogger(eventLogger)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+
+        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
+
+        verify(provider, times(1)).setPegoutCreationEntry(generatedTransaction.getHash(), rskTx.getHash());
+    }
+
+    @Test
     void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
