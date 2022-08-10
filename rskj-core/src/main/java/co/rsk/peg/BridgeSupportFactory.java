@@ -27,7 +27,10 @@ import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
+
+import co.rsk.peg.utils.BrigeEventLoggerLegacyImpl;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.LogInfo;
@@ -67,7 +70,11 @@ public class BridgeSupportFactory {
         if (logs == null) {
             eventLogger = null;
         } else {
-            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+            } else {
+                eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs);
+            }
         }
 
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
