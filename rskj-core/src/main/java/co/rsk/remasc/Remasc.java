@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
@@ -194,8 +193,15 @@ public class Remasc {
     }
 
     RskAddress getRskLabsAddress() {
-        boolean isRskip218Enabled = activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber());
-        return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
+        if (activationConfig.isActive(ConsensusRule.RSKIP348, executionBlock.getNumber())) {
+            return remascConstants.getRskLabsAddressRskip348();
+        }
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber())) {
+            return remascConstants.getRskLabsAddressRskip218();
+        }
+
+        return remascConstants.getRskLabsAddress();
     }
 
     private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {

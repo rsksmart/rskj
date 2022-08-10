@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.config.blockchain.upgrades;
 
 public enum ConsensusRule {
@@ -75,7 +74,8 @@ public enum ConsensusRule {
     RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
     RSKIP293("rskip293"), // Flyover improvements
     RSKIP294("rskip294"),
-    RSKIP297("rskip297"); // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP297("rskip297"), // Increase max timestamp difference between btc and rsk blocks for Testnet
+    RSKIP348("rskip348"); // New rewards fee address
 
     private String configKey;
 

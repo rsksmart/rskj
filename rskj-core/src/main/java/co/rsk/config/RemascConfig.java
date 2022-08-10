@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
@@ -39,6 +38,11 @@ public class RemascConfig {
     // Note that his has to be a basic type (such as String) because RemascConfig
     // is deserialized automatically from JSON.
     private String rskLabsAddressRskip218;
+
+    // RSK labs address.
+    // Note that his has to be a basic type (such as String) because RemascConfig
+    // is deserialized automatically from JSON.
+    private String rskLabsAddressRskip348;
 
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
     private long rskLabsDivisor = 5;
@@ -76,6 +80,10 @@ public class RemascConfig {
 
     public RskAddress getRskLabsAddressRskip218() {
         return new RskAddress(this.rskLabsAddressRskip218);
+    }
+
+    public RskAddress getRskLabsAddressRskip348() {
+        return new RskAddress(this.rskLabsAddressRskip348);
     }
 
     public long getRskLabsDivisor() {

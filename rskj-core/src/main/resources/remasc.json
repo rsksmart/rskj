@@ -8,6 +8,7 @@
       "federationDivisor" : 100,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0002",
       "rskLabsAddressRskip218" : "dabadabadabadabadabadabadabadabadaba0002",
+      "rskLabsAddressRskip348" : "dabadabadabadabadabadabadabadabadaba0002",
       "lateUncleInclusionPunishmentDivisor": 20
    },
    "regtest": {
@@ -19,6 +20,7 @@
       "federationDivisor" : 100,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0001",
       "rskLabsAddressRskip218" : "dabadabadabadabadabadabadabadabadaba0001",
+      "rskLabsAddressRskip348" : "dabadabadabadabadabadabadabadabadaba0001",
       "lateUncleInclusionPunishmentDivisor": 20,
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
@@ -32,6 +34,7 @@
       "federationDivisor" : 100,
       "rskLabsAddress" : "14d3065c8Eb89895f4df12450EC6b130049F8034",
       "rskLabsAddressRskip218" : "dcb12179ba4697350f66224c959bdd9c282818df",
+      "rskLabsAddressRskip348" : "dcb12179ba4697350f66224c959bdd9c282818df",
       "lateUncleInclusionPunishmentDivisor": 20,
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
@@ -45,6 +48,7 @@
       "federationDivisor" : 100,
       "rskLabsAddress" : "14d3065c8Eb89895f4df12450EC6b130049F8034",
       "rskLabsAddressRskip218" : "dcb12179ba4697350f66224c959bdd9c282818df",
+      "rskLabsAddressRskip348" : "dcb12179ba4697350f66224c959bdd9c282818df",
       "lateUncleInclusionPunishmentDivisor": 20,
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
@@ -58,6 +62,7 @@
       "federationDivisor" : 100,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0003",
       "rskLabsAddressRskip218" : "dabadabadabadabadabadabadabadabadaba0003",
+      "rskLabsAddressRskip348" : "dabadabadabadabadabadabadabadabadaba0003",
       "lateUncleInclusionPunishmentDivisor": 20,
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
