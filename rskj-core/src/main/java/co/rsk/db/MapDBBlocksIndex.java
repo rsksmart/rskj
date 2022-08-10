@@ -18,7 +18,7 @@
 
 package co.rsk.db;
 
-import org.ethereum.datasource.CachedMap;
+import org.ethereum.datasource.TransientMap;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
@@ -56,7 +56,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
                 .makeOrGet();
 
         if (readOnly)
-            index = CachedMap.cachedMap(aindex);
+            index = TransientMap.transientMap(aindex);
         else
             index = aindex;
 
@@ -66,7 +66,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
                 .makeOrGet();
 
         if (readOnly)
-            metadata = CachedMap.cachedMap(ametadata);
+            metadata = TransientMap.transientMap(ametadata);
         else
             metadata = ametadata;
 
