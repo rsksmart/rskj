@@ -50,6 +50,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
+    private boolean readOnly;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -59,10 +60,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name, String databaseDir) {
+    public LevelDbDataSource(String name, String databaseDir,boolean readOnly) {
         this.databaseDir = databaseDir;
         this.name = name;
+        this.readOnly = readOnly;
         logger.debug("New LevelDbDataSource: {}", name);
+    }
+    public LevelDbDataSource(String name, String databaseDir) {
+        this(name,databaseDir,false);
     }
 
     public static KeyValueDataSource makeDataSource(Path datasourcePath) {
@@ -85,7 +90,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             Objects.requireNonNull(name, "no name set to the db");
 
             Options options = new Options();
-            options.createIfMissing(true);
+            options.createIfMissing(!readOnly);
             options.compressionType(CompressionType.NONE);
             options.blockSize(10 * 1024 * 1024);
             options.writeBufferSize(10 * 1024 * 1024);
@@ -98,8 +103,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.debug("Opening database");
                 Path dbPath = getPathForName(name, databaseDir);
 
-                Files.createDirectories(dbPath.getParent());
-
+                if (!readOnly) {
+                    Files.createDirectories(dbPath.getParent());
+                }
                 logger.debug("Initializing new or existing database: '{}'", name);
                 db = factory.open(dbPath.toFile(), options);
 
@@ -177,8 +183,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
+    private void checkReadOnly() {
+        if (readOnly)
+            throw new IllegalArgumentException("database is readonly");
+    }
     @Override
     public byte[] put(byte[] key, byte[] value) {
+        checkReadOnly();
+
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
@@ -203,6 +215,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
+        checkReadOnly();
+
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
@@ -274,6 +288,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        checkReadOnly();
+
         if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
