@@ -19,9 +19,9 @@ public class MigrateStateUtil {
         String srcTrieStorePath = "/tmp/export_4430k/statedb";
         String dstTrieStorePath = "/tmp/export_4430k_level/statedb";
         KeyValueDataSource dsSrc= KeyValueDataSourceUtils.makeDataSource(Paths.get(srcTrieStorePath),
-                DbKind.ROCKS_DB);
+                DbKind.ROCKS_DB,true);
         KeyValueDataSource dsDst= KeyValueDataSourceUtils.makeDataSource(Paths.get(dstTrieStorePath),
-                DbKind.LEVEL_DB);
+                DbKind.LEVEL_DB,false);
         Set<ByteArrayWrapper>  keys =dsSrc.keys();
         long nodesExported=0;
         for (ByteArrayWrapper key: keys) {

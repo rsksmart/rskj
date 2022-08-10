@@ -110,7 +110,7 @@ public class MigrateState extends CliToolRskContextAware  {
         }
         String filePath = args[filePathIdx];
         KeyValueDataSource dsSrc = KeyValueDataSourceUtils.makeDataSource(Paths.get(filePath),
-                DbKind.ofName(args[dbFormatIdx]));
+                DbKind.ofName(args[dbFormatIdx]),(command==Command.CHECK));
         System.out.println("src: "+filePath);
         KeyValueDataSource dsDst = dsSrc;
         byte[] root = null;
@@ -137,7 +137,7 @@ public class MigrateState extends CliToolRskContextAware  {
             String filePathcopy = args[dstPathIdx];
             dsDst =
                     KeyValueDataSourceUtils.makeDataSource(Paths.get(filePathcopy),
-                            DbKind.ofName(args[2]));
+                            DbKind.ofName(args[2]),false);
             System.out.println("dst: "+filePathcopy);
             trieStore = new TrieStoreImpl(dsSrc);
         } else if (command==Command.MIGRATE) {
