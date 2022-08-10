@@ -1113,6 +1113,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
         if (!blockIndexDirectory.exists()) {
+            if (getRskSystemProperties().readOnlyMode())
+                throw new IllegalArgumentException(String.format(
+                        "Unable to create blocks directory in read-only mode: %s", blockIndexDirectory
+                ));
             if (!blockIndexDirectory.mkdirs()) {
                 throw new IllegalArgumentException(String.format(
                         "Unable to create blocks directory: %s", blockIndexDirectory
@@ -1120,14 +1124,22 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             }
         }
 
-        DB indexDB = DBMaker.fileDB(dbFile)
-                .make();
+        DB indexDB;
+        if (getRskSystemProperties().readOnlyMode())
+            indexDB = DBMaker.fileDB(dbFile).readOnly().make();
+        else
+            indexDB= DBMaker.fileDB(dbFile).make();
 
         DbKind currentDbKind = getRskSystemProperties().databaseKind();
         KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind,
                 getRskSystemProperties().readOnlyMode());
 
-        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
+        // if in read-only mode add a cache in the middle to store the modified values
+        // in memory
+        if (getRskSystemProperties().readOnlyMode()) {
+            blocksDB = new DataSourceWithCache(blocksDB,100,null,true);
+        }
+        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB,getRskSystemProperties().readOnlyMode()));
     }
 
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {

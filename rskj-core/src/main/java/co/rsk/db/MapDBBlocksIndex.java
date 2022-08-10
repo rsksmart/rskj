@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import org.ethereum.datasource.CachedMap;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
@@ -38,23 +39,36 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
+    private boolean readOnly;
 
     private final DB indexDB;
 
-    public MapDBBlocksIndex(DB indexDB) {
-
+    public MapDBBlocksIndex(DB indexDB,boolean readOnly) {
+        this.readOnly = readOnly;
         this.indexDB = indexDB;
+        Map<Long, List<IndexedBlockStore.BlockInfo>> aindex;
+        Map<String, byte[]> ametadata;
 
-        index = indexDB.hashMapCreate("index")
+        aindex = indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)
                 .counterEnable()
                 .makeOrGet();
 
-        metadata = indexDB.hashMapCreate("metadata")
+        if (readOnly)
+            index = CachedMap.cachedMap(aindex);
+        else
+            index = aindex;
+
+        ametadata = indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
                 .makeOrGet();
+
+        if (readOnly)
+            metadata = CachedMap.cachedMap(ametadata);
+        else
+            metadata = ametadata;
 
         // Max block number initialization assumes an index without gap
         if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
@@ -133,7 +147,10 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public void flush() {
-        indexDB.commit();
+        // a read-only mapDB cannot be committed, even if there is nothing to commit
+        if (!readOnly) {
+            indexDB.commit();
+        }
     }
 
     @Override
