@@ -17,17 +17,17 @@ public class KeyValueDataSourceUtils {
     static private String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
 
     @Nonnull
-    static public KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    static public KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind,boolean readOnly) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
         KeyValueDataSource ds;
         switch (kind) {
             case LEVEL_DB:
-                ds = new LevelDbDataSource(name, databaseDir);
+                ds = new LevelDbDataSource(name, databaseDir,readOnly);
                 break;
             case ROCKS_DB:
-                ds = new RocksDbDataSource(name, databaseDir);
+                ds = new RocksDbDataSource(name, databaseDir,readOnly);
                 break;
             case FLAT_DB:
                 int maxNodeCount = 16_000_000;
@@ -51,13 +51,13 @@ public class KeyValueDataSourceUtils {
     static public void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind,true);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind,false);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }

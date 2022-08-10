@@ -117,6 +117,9 @@ public class RskSystemProperties extends SystemProperties {
     public boolean isMinerClientEnabled() {
         return configFromFiles.getBoolean("miner.client.enabled");
     }
+    public boolean readOnlyMode() {
+        return configFromFiles.getBoolean("blockchain.readonly");
+    }
 
     public Duration minerClientDelayBetweenBlocks() {
         return configFromFiles.getDuration("miner.client.delayBetweenBlocks");
