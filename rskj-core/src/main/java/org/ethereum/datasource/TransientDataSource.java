@@ -18,7 +18,6 @@
  */
 package org.ethereum.datasource;
 
-import co.rsk.util.FormatUtils;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -26,59 +25,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/* Important invariant that must always hold:
-   A key cannot be in the committedCache and uncommittedCache cache at the same time.
-   This is because, for performance reasons it seams, get() queries the committedCache BEFORE the
-   uncommittedCache.
+// Datasource without cache. Only stored changes and avoid flushing to base.
+public class TransientDataSource implements KeyValueDataSource {
 
- */
-public class DataSourceWithCache implements KeyValueDataSource {
+    private static final Logger logger = LoggerFactory.getLogger("transientdatasource");
 
-    private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
-
-    private final int cacheSize;
-    private final boolean preventWritesToBase;
     private final KeyValueDataSource base;
-    // When preventWritesToBase=true, uncommittedCache will forever contain
-    // the changes, and committedCache will still work as a cache.
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
-    private final Map<ByteArrayWrapper, byte[]> committedCache;
-
     private final AtomicInteger numOfPuts = new AtomicInteger();
     private final AtomicInteger numOfGets = new AtomicInteger();
     private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    @Nullable
-    private final CacheSnapshotHandler cacheSnapshotHandler;
-
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
-        this(base, cacheSize, null);
-    }
-
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler,
-                               boolean preventWritesToBase) {
-        this.preventWritesToBase = preventWritesToBase;
-        this.cacheSize = cacheSize;
+    public TransientDataSource(@Nonnull KeyValueDataSource base) {
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new HashMap<>();
-        this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
-        this.cacheSnapshotHandler = cacheSnapshotHandler;
+
     }
 
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-      this(base,cacheSize,cacheSnapshotHandler,false);
-    }
 
     @Override
     public byte[] get(byte[] key) {
@@ -91,9 +62,6 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.readLock().lock();
 
         try {
-            if (committedCache.containsKey(wrappedKey)) {
-                return committedCache.get(wrappedKey);
-            }
 
             if (uncommittedCache.containsKey(wrappedKey)) {
                 return uncommittedCache.get(wrappedKey);
@@ -105,8 +73,6 @@ public class DataSourceWithCache implements KeyValueDataSource {
                 numOfGetsFromStore.incrementAndGet();
             }
 
-            //null value, as expected, is allowed here to be stored in committedCache
-            committedCache.put(wrappedKey, value);
         } finally {
             if (traceEnabled) {
                 numOfGets.incrementAndGet();
@@ -131,31 +97,26 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.writeLock().lock();
 
         try {
-            // here I could check for equal data or just move to the uncommittedCache.
-            byte[] priorValue = committedCache.get(wrappedKey);
+            byte[] priorValue = uncommittedCache.get(wrappedKey);
 
-            if (priorValue != null && Arrays.equals(priorValue, value)) {
-                return value;
+            if (priorValue != null) {
+                if (Arrays.equals(priorValue, value)) {
+                    return value;
+                }
+            } else {
+                if (value==null)
+                    return null;
             }
-
-            committedCache.remove(wrappedKey);
-            this.putKeyValue(wrappedKey, value);
+            byte[] ret = uncommittedCache.put(wrappedKey, value);
+            if (ret==null)
+                ret = base.get(wrappedKey.getData()); // get previous value
+            return ret;
         } finally {
             if (logger.isTraceEnabled()) {
                 numOfPuts.incrementAndGet();
             }
 
             this.lock.writeLock().unlock();
-        }
-
-        return value;
-    }
-
-    private void putKeyValue(ByteArrayWrapper key, byte[] value) {
-        uncommittedCache.put(key, value);
-
-        if (uncommittedCache.size() > cacheSize) {
-            this.flush();
         }
     }
 
@@ -168,20 +129,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.writeLock().lock();
 
         try {
-            // always mark for deletion if we don't know the state in the underlying store
-            if (!committedCache.containsKey(wrappedKey)) {
-                this.putKeyValue(wrappedKey, null);
-                return;
-            }
-
-            byte[] valueToRemove = committedCache.get(wrappedKey);
-
-            // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
-            if (valueToRemove != null) {
-                committedCache.remove(wrappedKey);
-                this.putKeyValue(wrappedKey, null);
-
-            }
+            uncommittedCache.put(wrappedKey, null);
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -198,9 +146,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         try {
             baseKeys = base.keys().stream();
-            committedKeys = committedCache.entrySet().stream()
-                    .filter(e -> e.getValue() != null)
-                    .map(Map.Entry::getKey);
+
             uncommittedKeys = uncommittedCache.entrySet().stream()
                     .filter(e -> e.getValue() != null)
                     .map(Map.Entry::getKey);
@@ -212,7 +158,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             this.lock.readLock().unlock();
         }
 
-        Stream<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys);
+        Stream<ByteArrayWrapper> knownKeys = Stream.concat(baseKeys, uncommittedKeys);
         return knownKeys.filter(k -> !uncommittedKeysToRemove.contains(k))
                 .collect(Collectors.toCollection(HashSet::new));
     }
@@ -238,41 +184,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public void flush() {
-        if (preventWritesToBase) {
-            return;
-        }
-        Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
-
-        this.lock.writeLock().lock();
-
-        try {
-            long saveTime = System.nanoTime();
-
-            this.uncommittedCache.forEach((key, value) -> {
-                if (value != null) {
-                    uncommittedBatch.put(key, value);
-                }
-            });
-
-            Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
-
-            base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
-            committedCache.putAll(uncommittedCache);
-            uncommittedCache.clear();
-
-            long totalTime = System.nanoTime() - saveTime;
-
-            if (logger.isTraceEnabled()) {
-                logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
-            }
-            base.flush(); // Shouldn't this be done here ?
-        } finally {
-            this.lock.writeLock().unlock();
-        }
     }
 
     public String getName() {
-        return base.getName() + "-with-uncommittedCache";
+        return "transient-"+base.getName() ;
     }
 
     public void init() {
@@ -289,11 +204,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         try {
             flush();
             base.close();
-            if ((cacheSnapshotHandler != null) && (!preventWritesToBase)) {
-                cacheSnapshotHandler.save(committedCache);
-            }
             uncommittedCache.clear();
-            committedCache.clear();
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -317,16 +228,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Nonnull
-    private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize,
-                                                                    @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+    private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize) {
         Map<ByteArrayWrapper, byte[]> cache;
-
         cache = new MaxSizeHashMap<>(cacheSize, true);
-
-        if (cacheSnapshotHandler != null) {
-            cacheSnapshotHandler.load(cache);
-        }
-
         return cache;
     }
 }
