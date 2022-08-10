@@ -6,7 +6,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class CachedMap<K, V> implements Map<K, V>, Serializable {
+public class TransientMap<K, V> implements Map<K, V>, Serializable {
         private static final long serialVersionUID = -1034234728574286014L;
         private Map<K, V> m;
         private transient Set<K> keySet;
@@ -16,7 +16,7 @@ public class CachedMap<K, V> implements Map<K, V>, Serializable {
         private transient Map<K, V> changed;
         private transient Set<K> deleted;
 
-        CachedMap(Map<? extends K, ? extends V> m) {
+        TransientMap(Map<? extends K, ? extends V> m) {
             if (m == null) {
                 throw new NullPointerException();
             } else {
@@ -206,7 +206,7 @@ public class CachedMap<K, V> implements Map<K, V>, Serializable {
         }
 
 
-        public static <K, V> Map<K, V> cachedMap(Map<? extends K, ? extends V> m) {
-            return new CachedMap(m);
+        public static <K, V> Map<K, V> transientMap(Map<? extends K, ? extends V> m) {
+            return new TransientMap(m);
         }
     }
