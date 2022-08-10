@@ -52,6 +52,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String name;
     private RocksDB db;
     private boolean alive;
+    private boolean readOnly;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -61,12 +62,15 @@ public class RocksDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public RocksDbDataSource(String name, String databaseDir) {
+    public RocksDbDataSource(String name, String databaseDir,boolean readOnly) {
+        this.readOnly = readOnly;
         this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New RocksDbDataSource: {}", name);
     }
-
+    public RocksDbDataSource(String name, String databaseDir) {
+        this(name,databaseDir,false);
+    }
     public static KeyValueDataSource makeDataSource(Path datasourcePath) {
         KeyValueDataSource ds = new RocksDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
         ds.init();
@@ -86,7 +90,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
             Objects.requireNonNull(name, "no name set to the db");
 
-            options.setCreateIfMissing(true);
+            options.setCreateIfMissing(!readOnly);
             options.setCompressionType(CompressionType.NO_COMPRESSION);
             options.setArenaBlockSize(GENERAL_SIZE);
             options.setWriteBufferSize(GENERAL_SIZE);
@@ -96,8 +100,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
             logger.debug("Opening database");
             Path dbPath = getPathForName(name, databaseDir);
 
-            Files.createDirectories(dbPath.getParent());
-
+            if (!readOnly) {
+                Files.createDirectories(dbPath.getParent());
+            }
             logger.debug("Initializing new or existing database: '{}'", name);
             openDb(options, dbPath);
 
@@ -193,8 +198,15 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return result;
     }
 
+    private void checkReadOnly() {
+        if (readOnly)
+            throw new IllegalArgumentException("database is readonly");
+    }
+
     @Override
     public byte[] put(byte[] key, byte[] value) {
+        checkReadOnly();
+
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
@@ -224,6 +236,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
+        checkReadOnly();
+
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
 
@@ -300,6 +314,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        checkReadOnly();
+
         if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }

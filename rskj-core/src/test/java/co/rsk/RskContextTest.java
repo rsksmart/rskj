@@ -20,9 +20,11 @@ package co.rsk;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.*;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.trie.MultiTrieStore;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.Constants;
@@ -30,7 +32,11 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.ethereum.util.RskTestContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,13 +47,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
@@ -113,12 +117,32 @@ public class RskContextTest {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
         long preExistingEpochs = 4;
+
+        List<byte[]> hashes = new ArrayList<>();
         for (int i = 0; i < preExistingEpochs; i++) {
-            Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
+            Path path = testDatabasesDirectory.resolve(String.format("unitrie_%d", i));
+            // Files.createDirectory(
+            KeyValueDataSource dataSource = KeyValueDataSourceUtils.makeDataSource(path,
+                    rskContext.getRskSystemProperties().databaseKind(),false);
+            TrieStore ts = new TrieStoreImpl(dataSource);
+            byte[] v =new byte[]{(byte)i};
+            byte[] key = Keccak256Helper.keccak256(v);
+            Trie trie = new Trie(ts).put(key,v);
+            hashes.add(trie.getHash().getBytes());
+            ts.save(trie);
+            dataSource.close();
         }
 
         assertThat(Files.list(testDatabasesDirectory).count(), is(preExistingEpochs));
         TrieStore trieStore = rskContext.getTrieStore();
+
+        // Perform an actual validation of the contents
+        for (int i = 0; i < preExistingEpochs; i++) {
+            byte[] v =new byte[]{(byte)i};
+            Optional<Trie> t = trieStore.retrieve(hashes.get(i));
+            assertTrue(t.isPresent());
+            assertThat(t.get().getValue(),is(v));
+        }
         assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
         assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
     }

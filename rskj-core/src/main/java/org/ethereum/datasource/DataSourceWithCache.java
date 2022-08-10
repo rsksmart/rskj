@@ -33,11 +33,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/* Important invariant that must always hold:
+   A key cannot be in the committedCache and uncommittedCache cache at the same time.
+   This is because, for performance reasons it seams, get() queries the committedCache BEFORE the
+   uncommittedCache.
+
+ */
 public class DataSourceWithCache implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
     private final int cacheSize;
+    private boolean preventWritesToBase;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
@@ -56,12 +63,19 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+                               @Nullable CacheSnapshotHandler cacheSnapshotHandler,
+                               boolean preventWritesToBase) {
+        this.preventWritesToBase = preventWritesToBase;
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
-        this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
+        this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler, preventWritesToBase));
         this.cacheSnapshotHandler = cacheSnapshotHandler;
+    }
+
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
+                               @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+      this(base,cacheSize,cacheSnapshotHandler,false);
     }
 
     @Override
@@ -162,8 +176,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
             if (valueToRemove != null) {
-                this.putKeyValue(wrappedKey, null);
                 committedCache.remove(wrappedKey);
+                this.putKeyValue(wrappedKey, null);
             }
         } finally {
             this.lock.writeLock().unlock();
@@ -235,7 +249,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
             });
 
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
-            base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
+            if (!preventWritesToBase)
+                base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
 
@@ -296,9 +311,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Nonnull
     private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize,
-                                                                    @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(cacheSize, true);
-
+                                                                    @Nullable CacheSnapshotHandler cacheSnapshotHandler,boolean readOnly) {
+        Map<ByteArrayWrapper, byte[]> cache;
+        if (!readOnly) {
+            cache = new MaxSizeHashMap<>(cacheSize, true);
+        } else {
+            // immutable ever-growing map
+            cache = new HashMap<>(cacheSize);
+        }
         if (cacheSnapshotHandler != null) {
             cacheSnapshotHandler.load(cache);
         }
