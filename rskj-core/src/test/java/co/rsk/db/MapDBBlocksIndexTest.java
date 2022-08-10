@@ -53,7 +53,7 @@ public class MapDBBlocksIndexTest {
                 .thenReturn(mock(HTreeMap.class))
                 .thenReturn(mock(HTreeMap.class));
 
-        target = new MapDBBlocksIndex(indexDB);
+        target = new MapDBBlocksIndex(indexDB,false);
 
         index = new HashMap<>();
         Field indexF = target.getClass().getDeclaredField("index");

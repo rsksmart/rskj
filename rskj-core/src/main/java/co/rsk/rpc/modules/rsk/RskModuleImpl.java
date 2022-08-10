@@ -52,7 +52,8 @@ public class RskModuleImpl implements RskModule {
 
     @Override
     public void flush() {
-        flusher.forceFlush();
+        if (flusher!=null)
+         flusher.forceFlush();
 
     }
 
