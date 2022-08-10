@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.Config;
@@ -39,6 +38,7 @@ public class ActivationConfigTest {
             "    twoToThree: 0",
             "    iris300: 0",
             "    hop400: 0",
+            "    finger500: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -98,6 +98,7 @@ public class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip348: finger500",
             "}"
     ));
 
