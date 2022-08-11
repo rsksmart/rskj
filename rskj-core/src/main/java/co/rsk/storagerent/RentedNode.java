@@ -1,8 +1,12 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static co.rsk.storagerent.StorageRentComputation.*;
 import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
@@ -55,7 +59,7 @@ public class RentedNode {
         );
     }
 
-    private Long getNodeSize() {
+    private long getNodeSize() {
         return nodeSize;
     }
 
@@ -100,11 +104,34 @@ public class RentedNode {
         return this.operationType == READ_CONTRACT_CODE_OPERATION ? RENT_CAP_CONTRACT_CODE : RENT_CAP;
     }
 
-    public long rollbackFee(long executionBlockTimestamp) {
+    /**
+     * The rollback fee represents the 25% of accumulated rent at a given block.
+     * If the same key is already contained and has a positive rent, then the fee is zero.
+     * This is because rent is fully paid by payableRent() and not as rollbackFee()
+     *
+     * @param executionBlockTimestamp the current block timestamp
+     * @param rentedNodeSet nodes that are already paying storage rent
+     *
+     * @return a gas fee to pay (for being part of a rollback)
+     * */
+    public long rollbackFee(long executionBlockTimestamp, Set<RentedNode> rentedNodeSet) {
         long computedRent = computeRent(
                 rentDue(getNodeSize(), duration(executionBlockTimestamp)),
                 rentCap(),
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
+        // todo(fedejinich) is this still happening? to me we need to setup a threshold (or use payableRent())
+
+        long payableRent = payableRent(executionBlockTimestamp);
+        boolean alreadyPaysRent = rentedNodeSet.stream().map(RentedNode::getKey)
+                .collect(Collectors.toSet())
+                .contains(this.key);
+
+        return alreadyPaysRent && payableRent > 0 ? 0 : feeByRent(computedRent);
+    }
+
+    @VisibleForTesting
+    public long feeByRent(long computedRent) {
+        // todo(fedejinich) should we use bigdecimal also here?
         return (long) (computedRent * 0.25);
     }
 
@@ -145,5 +172,10 @@ public class RentedNode {
         result = 31 * result + (int) (getNodeSize() ^ (getNodeSize() >>> 32));
         result = 31 * result + (int) (getRentTimestamp() ^ (getRentTimestamp() >>> 32));
         return result;
+    }
+
+    @VisibleForTesting
+    public long rentByBlock(long executionBlockTimestamp) {
+        return rentDue(this.getNodeSize(), executionBlockTimestamp);
     }
 }

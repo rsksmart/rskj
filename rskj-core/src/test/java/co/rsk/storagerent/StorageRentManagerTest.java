@@ -1,8 +1,17 @@
 package co.rsk.storagerent;
 
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.program.Program;
 import org.junit.Test;
 
@@ -11,8 +20,7 @@ import java.util.*;
 
 import static org.ethereum.db.OperationType.READ_OPERATION;
 import static org.ethereum.db.OperationType.WRITE_OPERATION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class StorageRentManagerTest {
@@ -187,6 +195,139 @@ public class StorageRentManagerTest {
         } catch (Program.OutOfGasException e) {
             assertEquals("not enough gasRemaining to pay storage rent. gasRemaining: 28749, gasNeeded: 28750", e.getMessage());
         }
+    }
+
+
+    // todo(fedejinich) refactor pay_keyAsRentedAndRollbackNode/2, both tests share the same logic
+    /***
+     * Tests when a key is present as rentedNode (payableRent() > 0) and also as rollbackNode.
+     * It should pay rent.
+     */
+    @Test
+    public void pay_keyAsRentedAndRollbackNode() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        RskAddress anAddress = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        long firstBlockTimestamp = 7;
+        int enoughGas = 100000;
+
+        // init a new state
+        MutableRepositoryTracked initialRepository = repositoryTracked(trieStore, null);
+
+        initialRepository.addBalance(anAddress, Coin.valueOf(10));
+
+        // timestamping the trie
+        MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
+        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
+
+        repositoryWithTimestamps.commit();
+
+        // save into the trie store
+        initialRepository.save();
+
+        // new trie but same trie store & root
+        MutableRepositoryTracked blockTrack = repositoryTracked(trieStore, initialRepository.getRoot());
+
+        // check that the balance is already increased (this adds a tracked node)
+        assertEquals(Coin.valueOf(10), blockTrack.getBalance(anAddress));
+
+        // both repositories should contain the same rented node
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountKey(anAddress));
+        RentedNode initialNode = initialRepository.fetchRentedNode(key, READ_OPERATION);
+        assertEquals(initialNode, blockTrack.fetchRentedNode(key, READ_OPERATION));
+        assertEquals(firstBlockTimestamp, initialNode.getRentTimestamp());
+
+        // create a new repository as a normal transaction
+        MutableRepositoryTracked transactionTrack = (MutableRepositoryTracked) blockTrack.startTracking();
+
+        // create a child repository (as an internal transaction)
+        MutableRepositoryTracked internalTransaction = (MutableRepositoryTracked) transactionTrack.startTracking();
+
+        // try to add balance but rollback
+        internalTransaction.getBalance(anAddress);
+        internalTransaction.rollback();
+
+        // pay and update timestamp
+        long updatedTimestamp = 50000000000l;
+        StorageRentResult result = StorageRentManager.pay(enoughGas, updatedTimestamp,
+                blockTrack, transactionTrack);
+
+        transactionTrack.commit();
+
+        assertTrue(result.paidRent() > 0);
+        assertEquals(1, result.getRollbackNodes().size());
+        assertEquals(result.getRentedNodes(), result.getRollbackNodes());
+        assertEquals(new RentedNode(key, READ_OPERATION, 3, updatedTimestamp),
+                transactionTrack.fetchRentedNode(key, READ_OPERATION));
+    }
+
+    /***
+     * Tests when a key is present as rentedNode (payableRent() == 0) and also as rollbackNode.
+     * It should pay a rollback fee (25% of accumulated rent).
+     */
+    @Test
+    public void pay_keyAsRentedAndRollbackNode2() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        RskAddress anAddress = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        long firstBlockTimestamp = 7;
+        int enoughGas = 100000;
+
+        // init a new state
+        MutableRepositoryTracked initialRepository = repositoryTracked(trieStore, null);
+
+        initialRepository.addBalance(anAddress, Coin.valueOf(10));
+
+        // timestamping the trie
+        MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
+        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
+
+        repositoryWithTimestamps.commit();
+
+        // save into the trie store
+        initialRepository.save();
+
+        // new trie but same trie store & root
+        MutableRepositoryTracked blockTrack = repositoryTracked(trieStore, initialRepository.getRoot());
+
+        // check that the balance is already increased (this adds a tracked node)
+        assertEquals(Coin.valueOf(10), blockTrack.getBalance(anAddress));
+
+        // both repositories should contain the same rented node
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountKey(anAddress));
+        RentedNode initialNode = initialRepository.fetchRentedNode(key, READ_OPERATION);
+        assertEquals(initialNode, blockTrack.fetchRentedNode(key, READ_OPERATION));
+        assertEquals(firstBlockTimestamp, initialNode.getRentTimestamp());
+
+        // create a new repository as a normal transaction
+        MutableRepositoryTracked transactionTrack = (MutableRepositoryTracked) blockTrack.startTracking();
+
+        // create a child repository (as an internal transaction)
+        MutableRepositoryTracked internalTransaction = (MutableRepositoryTracked) transactionTrack.startTracking();
+
+        // try to add balance but rollback
+        internalTransaction.getBalance(anAddress);
+        internalTransaction.rollback();
+
+        // pay and update timestamp
+        long notEnoughtAccumulatedRent = firstBlockTimestamp + 100000000;
+        StorageRentResult result = StorageRentManager.pay(enoughGas, notEnoughtAccumulatedRent,
+                blockTrack, transactionTrack);
+
+        transactionTrack.commit();
+
+        // it shouldn't have updated the timestamp
+        assertTrue(result.paidRent() > 0);
+        assertEquals(1, result.getRollbackNodes().size());
+        assertEquals(result.getRentedNodes(), result.getRollbackNodes());
+        assertEquals(new RentedNode(key, READ_OPERATION, 3, firstBlockTimestamp), // no timestamp update
+                transactionTrack.fetchRentedNode(key, READ_OPERATION));
+        assertEquals(1, result.getRollbacksRent());
+        assertEquals(0, result.getPayableRent());
+    }
+
+    private MutableRepositoryTracked repositoryTracked(TrieStore trieStore, byte[] root) {
+        return MutableRepositoryTracked.trackedRepository(
+                new MutableTrieCache(new MutableTrieImpl(trieStore, root == null ? new Trie(trieStore) :
+                        trieStore.retrieve(root).get())));
     }
 
     private void mockGetRentedNode(MutableRepositoryTracked mockBlockTrack, Map<ByteArrayWrapper, OperationType> rentedNodes,
