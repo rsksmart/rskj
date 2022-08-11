@@ -1,6 +1,7 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
@@ -39,27 +40,27 @@ public class StorageRentManager {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
-        Map<ByteArrayWrapper, OperationType> storageRentNodes = mergeNodes(blockTrack.getStorageRentNodes(),
+        Map<ByteArrayWrapper, OperationType> storageRentKeys = mergeNodes(blockTrack.getStorageRentNodes(),
                 transactionTrack.getStorageRentNodes());
-        Map<ByteArrayWrapper, OperationType> rollbackNodes = mergeNodes(blockTrack.getRollBackNodes(),
+        Map<ByteArrayWrapper, OperationType> rollbackKeys = mergeNodes(blockTrack.getRollBackNodes(),
                 transactionTrack.getRollBackNodes());
 
-        if(storageRentNodes.isEmpty() && rollbackNodes.isEmpty()) {
+        if(storageRentKeys.isEmpty() && rollbackKeys.isEmpty()) {
             throw new RuntimeException("there should be rented nodes or rollback nodes");
         }
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentNodes, blockTrack);
-        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackNodes, blockTrack);
+        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
+        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackKeys, blockTrack);
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
-                rentedNodes.size(), rollbackNodes.size());
+                rentedNodes.size(), rollbackKeys.size());
 
         // calculate rent
 
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-        long rollbacksRent = rentBy(rollbackRentedNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp));
+        long rollbacksRent = rentBy(rollbackRentedNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
         
         long rentToPay = payableRent + rollbacksRent;
 
@@ -89,7 +90,8 @@ public class StorageRentManager {
         return result;
     }
 
-    private static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes, MutableRepositoryTracked blockTrack) {
+    @VisibleForTesting
+    public static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes, MutableRepositoryTracked blockTrack) {
         return nodes.entrySet()
                 .stream()
                 .map(entry -> blockTrack.fetchRentedNode(entry.getKey(), entry.getValue()))

@@ -17,6 +17,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -183,39 +184,40 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void rollbackFees() throws FileNotFoundException, DslProcessorException {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
         long blockCount = 99999999;
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/rollbackFees.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
-        String transactionName = "tx02";
-        String contractAddress = "6252703f5ba322ec64d3ac45e56241b7d9e481ad";
-        String sender = "a0663f719962ec10bb57865532bef522059dfd96";
+        String tx02 = "tx02";
+        RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+        RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
 
-        checkStorageRent(world, transactionName, 43750, 3750, 3, 3);
+        checkStorageRent(world, tx02, 41250, 1250, 3, 3);
 
         // check for the value
         assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
                 .snapshotAt(world.getBlockByName("b02").getHeader())
-                .getStorageValue(new RskAddress(contractAddress), DataWord.ZERO));
+                .getStorageValue(contract, DataWord.ZERO));
 
-        List<byte[]> rollbackNodesKeys = world.getTransactionExecutor("tx02")
+        Set<ByteArrayWrapper> rollbackNodes = world.getTransactionExecutor(tx02)
                 .getStorageRentResult()
                 .getRollbackNodes()
-                .stream()
-                .map(RentedNode::getKey)
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toList());
+                .stream().map(RentedNode::getKey)
+                .collect(Collectors.toSet());
 
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+        Set<ByteArrayWrapper> rentedNodes = world.getTransactionExecutor(tx02)
+                .getStorageRentResult()
+                .getRentedNodes()
+                .stream().map(RentedNode::getKey)
+                .collect(Collectors.toSet());
 
-        // check there's only ONE storage-cell node
-        assertArrayEquals(trieKeyMapper.getAccountKey(new RskAddress(contractAddress)), rollbackNodesKeys.get(0));
-        assertArrayEquals(trieKeyMapper.getAccountStorageKey(new RskAddress(contractAddress), DataWord.ZERO),
-                rollbackNodesKeys.get(1)); // storage cell 
-        assertArrayEquals(trieKeyMapper.getAccountKey(new RskAddress(sender)), rollbackNodesKeys.get(2));
+        assertTrue(rollbackNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountKey(sender))));
+        assertTrue(rollbackNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountStorageKey(contract, DataWord.ZERO))));
+        assertTrue(rollbackNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountKey(contract))));
 
-        checkNoDuplicatedPayments(world, transactionName);
+        checkNoDuplicatedPayments(world, tx02);
     }
 
     private void checkNoDuplicatedPayments(World world, String txName) {
@@ -236,6 +238,9 @@ public class StorageRentDSLTests {
                 .collect(Collectors.toList());
 
         assertEquals(new HashSet<>(rentedKeys).size(), rentedKeys.size());
+
+        // todo(fedejinich) discuss this assert with shree, what should we do if this happens?
+//        assertTrue(rollbackKeys.stream().allMatch(rollbackKey -> !rentedKeys.contains(rollbackKey)));
     }
 
 
