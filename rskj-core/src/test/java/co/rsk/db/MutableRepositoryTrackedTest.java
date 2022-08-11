@@ -3,7 +3,10 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.storagerent.RentedNode;
+import co.rsk.storagerent.StorageRentManager;
+import co.rsk.storagerent.StorageRentResult;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.datasource.HashMapDB;
@@ -412,6 +415,74 @@ public class MutableRepositoryTrackedTest {
         assertEquals(2, repository.getTrackedNodes().size());
         assertEquals(WRITE_OPERATION, repository.getTrackedNodes().get(address1TrieKey));
         assertEquals(READ_OPERATION, repository.getTrackedNodes().get(address2TrieKey));
+    }
+
+    /**
+     * Timestamp a trie and then read the same keys.
+     * They should contain the given timestamp
+     * */
+    @Test
+    public void readDataFromAnAlreadyTimestampedTrie() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        RskAddress anAddress = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        long firstBlockTimestamp = 7;
+
+        // init a new state
+        MutableRepositoryTracked initialRepository = repositoryTracked(trieStore, null);
+
+        initialRepository.addBalance(anAddress, Coin.valueOf(10));
+
+        // timestamping the trie
+        MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
+        StorageRentManager.pay(100000, firstBlockTimestamp,
+                initialRepository, repositoryWithTimestamps);
+
+        repositoryWithTimestamps.commit();
+
+        // save into the trie store
+        initialRepository.save();
+
+        // new trie but same trie store & root
+        MutableRepositoryTracked blockTrack = repositoryTracked(trieStore, initialRepository.getRoot());
+
+        // check that the balance is already increased (this adds a tracked node)
+        assertEquals(Coin.valueOf(10), blockTrack.getBalance(anAddress));
+
+        // both repositories should contain the same rented node
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountKey(anAddress));
+        RentedNode initialNode = initialRepository.fetchRentedNode(key, READ_OPERATION);
+        assertEquals(initialNode, blockTrack.fetchRentedNode(key, READ_OPERATION));
+        assertEquals(firstBlockTimestamp, initialNode.getRentTimestamp());
+
+        // create a new repository as a normal transaction
+        MutableRepositoryTracked transactionTrack = (MutableRepositoryTracked) blockTrack.startTracking();
+
+        // create a child repository (as an internal transaction)
+        MutableRepositoryTracked internalTransaction = (MutableRepositoryTracked) transactionTrack.startTracking();
+
+        // try to add balance but rollback
+        internalTransaction.getBalance(anAddress);
+        internalTransaction.rollback();
+
+        // pay and update timestamp
+        long updatedTimesteamp = 50000000000l;
+        StorageRentResult result = StorageRentManager.pay(100000, updatedTimesteamp,
+                blockTrack, transactionTrack);
+
+        RentedNode nodeAfterPayment = new RentedNode(key, READ_OPERATION, 3, updatedTimesteamp);
+
+        transactionTrack.commit();
+
+        assertTrue(result.paidRent() > 0);
+        assertEquals(1, result.getRollbackNodes().size());
+        assertEquals(result.getRentedNodes(), result.getRollbackNodes());
+        assertEquals(nodeAfterPayment, transactionTrack.fetchRentedNode(key, READ_OPERATION));
+    }
+
+    private static MutableRepositoryTracked repositoryTracked(TrieStore trieStore, byte[] root) {
+        return MutableRepositoryTracked.trackedRepository(
+                new MutableTrieCache(new MutableTrieImpl(trieStore, root == null ? new Trie(trieStore) :
+                        trieStore.retrieve(root).get())));
     }
 
     private static RskAddress randomAccountAddress() {
