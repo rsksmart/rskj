@@ -802,17 +802,17 @@ public class BridgeSerializationUtils {
 
     public static byte[] serializeSha256Hash(Sha256Hash hash) {
         if (hash == null){
-            return null;
+            return new byte[]{};
         }
         return RLP.encodeElement(hash.getBytes());
     }
 
-    public static Sha256Hash deserializeSha256Hash(byte[] data) {
+    public static Optional<Sha256Hash> deserializeSha256Hash(byte[] data) {
         RLPElement element = RLP.decodeFirstElement(data, 0);
         if (element == null) {
-            return null;
+            return Optional.empty();
         }
-        return Sha256Hash.wrap(element.getRLPData());
+        return Optional.of(Sha256Hash.wrap(element.getRLPData()));
     }
 
     public static Optional<Keccak256> deserializeKeccak256(byte[] data) {
@@ -820,19 +820,18 @@ public class BridgeSerializationUtils {
             return Optional.empty();
         }
 
-        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
-        if (rlpList.size() != 1) {
-            throw new RuntimeException(String.format("Invalid serialized keccak256. Expected 1 element, but got %d", rlpList.size()));
+        RLPElement element = RLP.decodeFirstElement(data, 0);
+        if (element == null) {
+            return Optional.empty();
         }
-
-        return Optional.of(new Keccak256(rlpList.get(0).getRLPRawData()));
+        return Optional.of(new Keccak256(element.getRLPRawData()));
     }
 
     public static byte[] serializeKeccak256(Keccak256 data) {
         if (data == null){
-            return null;
+            return new byte[]{};
         }
-        return RLP.encodeList(RLP.encodeElement(data.getBytes()));
+        return RLP.encode(data.getBytes());
     }
 
     public static byte[] serializeScript(Script script) {

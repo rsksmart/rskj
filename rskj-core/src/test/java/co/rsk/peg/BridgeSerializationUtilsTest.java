@@ -25,6 +25,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
@@ -32,7 +33,6 @@ import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.util.HexUtils;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1049,38 +1049,118 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
     }
 
+    private void test_deserializeKeccak256(byte[] serializedKeccak256Hash, Keccak256 expectedHash, boolean shouldDeserialize){
+        Optional<Keccak256> result = BridgeSerializationUtils.deserializeKeccak256(serializedKeccak256Hash);
+        Assertions.assertEquals(shouldDeserialize, result.isPresent());
+        if (shouldDeserialize) {
+            Assertions.assertEquals(expectedHash, result.get());
+        }
+    }
+
+    @Test
+    void deserializeKeccak256() {
+        byte[] serializedKeccak256Hash = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
+        Keccak256 expectedHash = new Keccak256("0200000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeKeccak256(serializedKeccak256Hash, expectedHash, true);
+    }
+
+    @Test
+    void deserializeKeccak256_nullValue() {
+        test_deserializeKeccak256(null, null, false);
+    }
+
+    @Test
+    void deserializeKeccak256_zeroHash() {
+        byte[] serializedKeccak256Hash = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
+        Keccak256 expectedHash = new Keccak256("0000000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeKeccak256(serializedKeccak256Hash, expectedHash, true);
+    }
+
+    private void test_serializeKeccak256(Keccak256 keccakHash, byte[] expectedSerializedKeccak256Hash) {
+        byte[] result = BridgeSerializationUtils.serializeKeccak256(keccakHash);
+        Assertions.assertArrayEquals(expectedSerializedKeccak256Hash, result);
+    }
+
+    @Test
+    public void serializeKeccak256() {
+        Keccak256 keccakHash = new Keccak256("0200000000000000000000000000000000000000000000000000000000000000");
+        byte[] expectedSerializedKeccak256Hash = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
+        test_serializeKeccak256(keccakHash, expectedSerializedKeccak256Hash);
+    }
+
+    @Test
+    void serializeKeccak256_zeroHash() {
+        Keccak256 originalHash = Keccak256.ZERO_HASH;
+        byte[] expectedSerializedKeccak256Hash = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
+        test_serializeKeccak256(originalHash, expectedSerializedKeccak256Hash);
+    }
+
+    @Test
+    void serializeKeccak256_nullValue() {
+        test_serializeKeccak256(null, new byte[]{});
+    }
+
+    private void test_serializeSha256Hash(Sha256Hash sha256Hash, byte[] expectedResult) {
+        byte[] result = BridgeSerializationUtils.serializeSha256Hash(sha256Hash);
+        Assertions.assertArrayEquals(expectedResult, result);
+    }
+
     @Test
     void serializeSha256Hash() {
-        Sha256Hash originalHash = PegTestUtils.createHash(2);
-        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+        Sha256Hash sha256Hash = Sha256Hash.wrap("0500000000000000000000000000000000000000000000000000000000000000");
+        byte[] encodedExpectedSha256Hash = Hex.decode("a00500000000000000000000000000000000000000000000000000000000000000");
+        test_serializeSha256Hash(
+            sha256Hash,
+            encodedExpectedSha256Hash
+        );
+    }
 
-        byte[] result = BridgeSerializationUtils.serializeSha256Hash(originalHash);
+    @Test
+    void serializeSha256Hash_zeroHash() {
+        test_serializeSha256Hash(
+            Sha256Hash.ZERO_HASH,
+            Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000")
+        );
+    }
 
-        Assertions.assertArrayEquals(encodedHash, result);
+    @Test
+    void serializeSha256Hash_nullValue() {
+        test_serializeSha256Hash(null, new byte[]{});
+    }
+
+    private void test_deserializeSha256Hash(byte[] serializedHashBytes, Sha256Hash expectedHash, boolean shouldDeserialize) {
+        Optional<Sha256Hash> result = BridgeSerializationUtils.deserializeSha256Hash(serializedHashBytes);
+        Assertions.assertEquals(shouldDeserialize, result.isPresent());
+        if (shouldDeserialize){
+            Assertions.assertEquals(expectedHash, result.get());
+        }
+
     }
 
     @Test
     void deserializeSha256Hash() {
-        Sha256Hash originalHash = PegTestUtils.createHash(2);
-        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+        byte[] serializedHashBytes = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0200000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
+    }
 
-        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
-        Assertions.assertEquals(originalHash, result);
+    @Test
+    void deserializeSha256Hash_zeroHash() {
+        byte[] serializedHashBytes = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
     }
 
     @Test
     void deserializeSha256Hash_nullValue() {
-        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
-        Assertions.assertNull(result);
+        test_deserializeSha256Hash(null, null, false);
     }
 
     @Test
-    void deserializeSha256Hash_hashWithLeadingZero() {
-        Sha256Hash originalHash = PegTestUtils.createHash(0);
-        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
-
-        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
-        Assertions.assertEquals(originalHash, result);
+    void deserializeSha256Hash_ok() {
+        byte[] serializedHashBytes = Hex.decode("a00150000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0150000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
     }
 
     @Test
@@ -1192,27 +1272,6 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeCoinbaseInformation_dataIsNull_returnsNull() {
         Assertions.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
-    }
-
-    @Test
-    public void serializeSha256Hash_dataIsNull_returnsNull() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
-    }
-
-    @Test
-    public void serializeSha256Hash_ok() {
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(BridgeSerializationUtils.serializeSha256Hash(hash));
-        Assert.assertEquals(
-            result,
-            hash
-        );
-    }
-
-    @Test
-    public void deserializeSha256Hash_null() {
-        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
-        Assert.assertNull(result);
     }
 
     @Test
