@@ -141,8 +141,7 @@ public class BridgeStorageProvider {
 
     private Long nextPegoutHeight;
 
-    private Sha256Hash pegoutCreationEntryBtcTxHash;
-    private Keccak256 pegoutCreationEntryRskTxHash;
+    private PegoutCreationEntry pegoutCreationEntry;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -685,12 +684,7 @@ public class BridgeStorageProvider {
         }
 
         DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
-        Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
-        if (blockHash != null) {
-            return Optional.of(blockHash);
-        }
-
-        return Optional.empty();
+        return safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
     }
 
     public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
@@ -957,15 +951,15 @@ public class BridgeStorageProvider {
         return getReleaseRequestQueue().getEntries().size();
     }
 
-    public void setPegoutCreationEntry(Sha256Hash btcTxHash, Keccak256 rskTxHash){
+    public void setPegoutCreationEntry(PegoutCreationEntry pegoutCreationEntry){
         if (!activations.isActive(RSKIP298)){
             return;
         }
-        this.pegoutCreationEntryBtcTxHash = btcTxHash;
-        this.pegoutCreationEntryRskTxHash = rskTxHash;
+
+        this.pegoutCreationEntry = pegoutCreationEntry;
     }
 
-    public Optional<Keccak256> getPegoutCreationEntry(Sha256Hash btcTxHash){
+    public Optional<Keccak256> getPegoutCreationRskTxHashByBtcTxHash(Sha256Hash btcTxHash){
         if(!activations.isActive(RSKIP298)){
             return Optional.empty();
         }
@@ -978,10 +972,9 @@ public class BridgeStorageProvider {
         );
     }
 
-    public void savePegoutCreationEntry(){
+    private void savePegoutCreationEntry(){
         if (
-            this.pegoutCreationEntryBtcTxHash == null
-                || this.pegoutCreationEntryRskTxHash == null
+            this.pegoutCreationEntry == null
                 || !activations.isActive(RSKIP298)
         ){
             return;
@@ -989,9 +982,9 @@ public class BridgeStorageProvider {
 
         safeSaveToRepository(
             getStorageKeyForPegoutCreationIndex(
-                this.pegoutCreationEntryBtcTxHash
+                this.pegoutCreationEntry.getBtcTxHash()
             ),
-            this.pegoutCreationEntryRskTxHash,
+            this.pegoutCreationEntry.getRskTxHash(),
             BridgeSerializationUtils::serializeKeccak256
         );
     }
@@ -1037,6 +1030,8 @@ public class BridgeStorageProvider {
         saveReceiveHeadersLastTimestamp();
 
         saveNextPegoutHeight();
+
+        savePegoutCreationEntry();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {

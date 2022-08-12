@@ -302,8 +302,8 @@ class BridgeStorageProviderTest {
 
         List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
 
-        assertEquals(utxos.get(0).getHash(), hash1);
-        assertEquals(utxos.get(1).getHash(), hash2);
+        assertEquals(hash1, utxos.get(0).getHash());
+        assertEquals(hash2, utxos.get(1).getHash());
     }
 
     @Test
@@ -3412,14 +3412,14 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getPegoutCreationEntry_before_RSKIP298() {
+    public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298() {
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(13);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
         when(
@@ -3429,7 +3429,7 @@ class BridgeStorageProviderTest {
             )
         ).thenReturn(BridgeSerializationUtils.serializeKeccak256(Keccak256.ZERO_HASH));
 
-        assertEquals(Optional.empty(), provider.getPegoutCreationEntry(
+        assertEquals(Optional.empty(), provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
         ));
 
@@ -3437,15 +3437,18 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getPegoutCreationEntry_after_RSKIP298() {
+    public void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298() {
         Repository repository = mock(Repository.class);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
-            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+            config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Keccak256 keccak256 = Keccak256.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(3);
+        Keccak256 keccak256 = PegTestUtils.createHash3(9);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
         when(
@@ -3455,7 +3458,7 @@ class BridgeStorageProviderTest {
             )
         ).thenReturn(BridgeSerializationUtils.serializeKeccak256(keccak256));
 
-        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationEntry(
+        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
         );
         assertTrue(pegoutCreationEntry.isPresent());
@@ -3469,7 +3472,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void setPegoutCreationEntry_before_RSKIP298() {
+    public void setPegoutCreationEntry_before_RSKIP298() throws IOException {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3477,76 +3480,80 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Keccak256 keccak256 = Keccak256.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(15);
+        Keccak256 keccak256 = PegTestUtils.createHash3(8);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
 
-        provider.setPegoutCreationEntry(hash, keccak256);
-        provider.savePegoutCreationEntry();
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
 
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(storageKeyForPegoutCreationIndex),
-            eq(BridgeSerializationUtils.serializeKeccak256(keccak256))
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
         );
     }
 
     @Test
-    public void setPegoutCreationEntry_ok_after_RSKIP298() {
+    public void setPegoutCreationEntry_ok_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
-            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+            config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Keccak256 keccak256 = Keccak256.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(14);
+        Keccak256 keccak256 = PegTestUtils.createHash3(7);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
 
-        provider.setPegoutCreationEntry(hash, keccak256);
-        provider.savePegoutCreationEntry();
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
 
         verify(repository, times(1)).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(storageKeyForPegoutCreationIndex),
-            eq(BridgeSerializationUtils.serializeKeccak256(keccak256))
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
         );
     }
 
     @Test
-    public void setPegoutCreationEntry_rskTxHash_is_null_after_RSKIP298() {
+    public void setPegoutCreationEntry_rskTxHash_is_null_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
-            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+            config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(8);
         Keccak256 keccak256 = null;
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
 
-        provider.setPegoutCreationEntry(hash, keccak256);
-        provider.savePegoutCreationEntry();
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
 
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(storageKeyForPegoutCreationIndex),
-            eq(BridgeSerializationUtils.serializeKeccak256(keccak256))
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
         );
 
-        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationEntry(
+        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
         );
         assertFalse(pegoutCreationEntry.isPresent());
     }
 
     @Test
-    public void savePegoutCreationEntry_before_RSKIP298() {
+    public void savePegoutCreationEntry_before_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3554,50 +3561,85 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Keccak256 keccak256 = Keccak256.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(6);
+        Keccak256 keccak256 = PegTestUtils.createHash3(12);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
 
-        provider.setPegoutCreationEntry(hash, keccak256);
-        provider.savePegoutCreationEntry();
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
 
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(storageKeyForPegoutCreationIndex),
-            eq(BridgeSerializationUtils.serializeKeccak256(keccak256))
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
         );
 
-        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationEntry(
+        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
         );
         assertFalse(pegoutCreationEntry.isPresent());
     }
 
     @Test
-    public void savePegoutCreationEntry_after_RSKIP298() {
+    public void savePegoutCreationEntry_zero_hash_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
-            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+            config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        Keccak256 keccak256 = Keccak256.ZERO_HASH;
+        Sha256Hash hash = PegTestUtils.createHash(17);
+        Keccak256 keccak256 = PegTestUtils.createHash3(4);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
 
-        provider.setPegoutCreationEntry(hash, keccak256);
-        provider.savePegoutCreationEntry();
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
 
         verify(repository, times(1)).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(storageKeyForPegoutCreationIndex),
-            eq(BridgeSerializationUtils.serializeKeccak256(keccak256))
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
         );
 
-        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationEntry(
+        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
+            hash
+        );
+        assertTrue(pegoutCreationEntry.isPresent());
+
+        assertEquals(keccak256, pegoutCreationEntry.get());
+    }
+
+    @Test
+    public void savePegoutCreationEntry_ok_after_RSKIP298() throws IOException {
+        Repository repository = spy(createRepository());
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activations
+        );
+
+        Sha256Hash hash = PegTestUtils.createHash(5);
+        Keccak256 keccak256 = PegTestUtils.createHash3(4);
+
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.save();
+
+        verify(repository, times(1)).addStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            storageKeyForPegoutCreationIndex,
+            BridgeSerializationUtils.serializeKeccak256(keccak256)
+        );
+
+        Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
         );
         assertTrue(pegoutCreationEntry.isPresent());
