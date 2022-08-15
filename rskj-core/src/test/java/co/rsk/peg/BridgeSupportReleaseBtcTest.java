@@ -190,7 +190,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
@@ -216,7 +216,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         bridgeSupport.releaseBtc(releaseTx);
@@ -290,7 +290,7 @@ class BridgeSupportReleaseBtcTest {
 
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx(Coin.ZERO);
@@ -318,7 +318,7 @@ class BridgeSupportReleaseBtcTest {
 
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx(Coin.ZERO);
@@ -351,7 +351,7 @@ class BridgeSupportReleaseBtcTest {
 
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx_fromContract(Coin.COIN);
@@ -382,7 +382,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logInfo);
+        BridgeEventLoggerImpl eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo);
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         releaseTx = buildReleaseRskTx_fromContract(Coin.COIN);
@@ -401,7 +401,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
@@ -469,7 +469,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value between old and new minimum pegout values
@@ -496,7 +496,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value exactly to legacy minimum
@@ -520,7 +520,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         // Get a value exactly to current minimum
@@ -1111,7 +1111,7 @@ class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         List<LogInfo> logInfo = new ArrayList<>();
-        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, logInfo));
+        BridgeEventLoggerImpl eventLogger = spy(new BridgeEventLoggerImpl(bridgeConstants, activationMock, logInfo));
         bridgeSupport = initBridgeSupport(eventLogger, activationMock);
 
         provider.setFeePerKb(feePerKB);

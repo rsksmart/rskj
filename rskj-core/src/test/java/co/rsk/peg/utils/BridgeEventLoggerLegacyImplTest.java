@@ -311,7 +311,8 @@ class BridgeEventLoggerLegacyImplTest {
     @Test
     void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "1234".getBytes();
+        String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        Address btcDestinationAddress = Address.fromBase58(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
         Coin amount = Coin.COIN;
 
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount));

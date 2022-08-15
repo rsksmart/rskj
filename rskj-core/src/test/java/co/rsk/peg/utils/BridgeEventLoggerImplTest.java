@@ -58,13 +58,16 @@ class BridgeEventLoggerImplTest {
     private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
+    private BridgeConstants constantsMock;
     private BtcTransaction btcTxMock;
     private BtcTransaction btcTx;
+    private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @BeforeEach
     void setup() {
         eventLogs = new LinkedList<>();
-        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, eventLogs);
+        constantsMock = mock(BridgeConstants.class);
+        eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
     }
@@ -114,7 +117,7 @@ class BridgeEventLoggerImplTest {
     void logPeginBtc() {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -274,7 +277,7 @@ class BridgeEventLoggerImplTest {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
@@ -308,7 +311,7 @@ class BridgeEventLoggerImplTest {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
