@@ -32,10 +32,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -43,10 +39,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -70,12 +64,13 @@ public class BridgeEventLoggerImplTest {
     BridgeConstants constantsMock;
     BtcTransaction btcTxMock;
     BtcTransaction btcTx;
+    ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @Before
     public void setup() {
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BridgeEventLoggerImpl(constantsMock, eventLogs);
+        eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
     }
@@ -126,7 +121,7 @@ public class BridgeEventLoggerImplTest {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -286,7 +281,7 @@ public class BridgeEventLoggerImplTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
@@ -321,7 +316,7 @@ public class BridgeEventLoggerImplTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
