@@ -136,7 +136,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+    public void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
         throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logReleaseBtcRequestReceived method after RSKIP146 activation");
     }
 

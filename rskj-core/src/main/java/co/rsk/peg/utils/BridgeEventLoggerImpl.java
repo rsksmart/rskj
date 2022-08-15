@@ -27,6 +27,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
@@ -53,7 +55,10 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private List<LogInfo> logs;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs) {
+    private ActivationConfig.ForBlock activations;
+
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
+        this.activations = activations;
         this.bridgeConstants = bridgeConstants;
         this.logs = logs;
     }
