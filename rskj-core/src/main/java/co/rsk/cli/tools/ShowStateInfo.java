@@ -110,7 +110,7 @@ public class ShowStateInfo extends PicoCliToolRskContextAware {
         NodeReference leftReference = trie.getLeft();
 
         if (!leftReference.isEmpty()) {
-            Optional<Trie> left = leftReference.getNode();
+            Optional<Trie> left = leftReference.getNodeDetached();
 
             if (left.isPresent()) {
                 Trie leftTrie = left.get();
@@ -129,7 +129,7 @@ public class ShowStateInfo extends PicoCliToolRskContextAware {
         NodeReference rightReference = trie.getRight();
 
         if (!rightReference.isEmpty()) {
-            Optional<Trie> right = rightReference.getNode();
+            Optional<Trie> right = rightReference.getNodeDetached();
 
             if (right.isPresent()) {
                 Trie rightTrie = right.get();
