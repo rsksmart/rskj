@@ -29,13 +29,13 @@ public class FlatDB extends DataSourceWithHeap {
         return format;
     }
     public FlatDB(int maxNodeCount, long beHeapCapacity, String databaseName,
-                  EnumSet<CreationFlag> creationFlags,int dbVersion) throws IOException {
+                  EnumSet<CreationFlag> creationFlags,int dbVersion,boolean readOnly) throws IOException {
         // single-thread test:
         //  With rwlocks or exclusive locks: 85k/sec.
         //  Without locks: 102K/sec
         super(maxNodeCount, beHeapCapacity,databaseName,LockType.RW,
                 getFormat(creationFlags,dbVersion),
-                (creationFlags.contains(CreationFlag.supportAdditionalKV)));
+                (creationFlags.contains(CreationFlag.supportAdditionalKV)),readOnly);
         this.flags = creationFlags;
     }
 

@@ -31,8 +31,8 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
                               String databaseName,LockType lockType,
-                              Format format,boolean additionalKV) throws IOException {
-        super(databaseName,additionalKV);
+                              Format format,boolean additionalKV,boolean readOnly) throws IOException {
+        super(databaseName,additionalKV,readOnly);
         this.format = format;
         mapPath = Paths.get(databaseName, "hash.map");
         dbPath = Paths.get(databaseName, "store");
@@ -61,7 +61,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     public void flush() {
         super.flush();
         try {
-            if (bamap.modified()) {
+            if ((!readOnly) && (bamap.modified())) {
                 bamap.save();
                 sharedBaHeap.save(0);
             }
@@ -97,8 +97,6 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     protected Map<ByteArrayWrapper, byte[]> makeCommittedCache(int maxNodeCount, long beHeapCapacity) throws IOException {
         if (maxNodeCount==0) return null;
-
-        Map<ByteArrayWrapper, byte[]> cache;
 
         MyBAKeyValueRelation myKR = new MyBAKeyValueRelation();
 

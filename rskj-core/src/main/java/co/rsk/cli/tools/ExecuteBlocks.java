@@ -60,7 +60,9 @@ public class ExecuteBlocks extends CliToolRskContextAware {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
+        long start = System.currentTimeMillis();
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
+            System.out.println("executing :"+n);
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
@@ -72,7 +74,8 @@ public class ExecuteBlocks extends CliToolRskContextAware {
                 break;
             }
         }
-
+        long stop = System.currentTimeMillis();
+        System.out.println("Total time: "+(stop-start)/1000+" secs");
         trieStore.flush();
         blockStore.flush();
     }

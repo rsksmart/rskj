@@ -1321,56 +1321,58 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     public boolean modified() {
-        return (!loaded) || (table.modified());
+        return (!loaded) || ((table!=null) && (table.modified()));
+    }
+
+    protected int tableLength() {
+        if (table==null)
+            return 0;
+        return table.length();
     }
 
     public void save() throws IOException {
 
-        if ((!loaded) || (table.modified())) {
-            File file = mapPath.toFile();
-            String fileName = file.getAbsolutePath();
-            String headerFileName = fileName + ".hdr";
-            Header header = new Header();
-
-            header.dbVersion = format.dbVersion;
-            header.totalSize = table.length();
-            header.size = size;
-            header.threshold = threshold;
-
-            writeHeader(headerFileName, header);
-
-            RandomAccessFile sc
-                    = new RandomAccessFile(fileName, "rw");
-            FileChannel fileChannel = sc.getChannel();
-
-            // Size cannot exceed Integer.MAX_VALUE !! Horrible thing in file.map().
-            // However, we can map in parts.
-            //ByteBuffer buf = file.map(FileChannel.MapMode.READ_WRITE, 0, 4L * 3);
-            try {
-                if ((loaded) && (!resized)) {
-                    System.out.println("Updating table..");
-                    table.update(fileChannel, 0);
-                } else
-                    table.copyTo(fileChannel, 0);
-            } finally {
-                fileChannel.close();
+        if (modified()) {
+            String fileName =  mapPath.toAbsolutePath().toString();
+            createAndWriteHeader(fileName);
+            if (tableLength()!=0) {
+                writeTable(fileName);
             }
         }
         loaded = true;
         resized = false;
-        /* Slower
-        DataOutputStream os = new DataOutputStream(
-                new FileOutputStream(fileName));
 
-        //write the length first so that you can later know how many ints to read
-        os.writeInt(table.length());
-        os.writeInt(size);
-        os.writeInt(threshold);
-        for (int i =0 ; i < table.length(); ++i){
-            os.writeInt(table.getPos(i]);
+    }
+
+    private void createAndWriteHeader(String fileName) throws IOException {
+        String headerFileName = fileName + ".hdr";
+        Header header = new Header();
+
+        header.dbVersion = format.dbVersion;
+        header.totalSize = tableLength();
+        header.size = size;
+        header.threshold = threshold;
+
+        writeHeader(headerFileName, header);
+    }
+
+    private void writeTable(String fileName) throws IOException {
+        RandomAccessFile sc
+                = new RandomAccessFile(fileName, "rw");
+        FileChannel fileChannel = sc.getChannel();
+
+        // Size cannot exceed Integer.MAX_VALUE !! Horrible thing in file.map().
+        // However, we can map in parts.
+        //ByteBuffer buf = file.map(FileChannel.MapMode.READ_WRITE, 0, 4L * 3);
+        try {
+            if ((loaded) && (!resized)) {
+                System.out.println("Updating table..");
+                table.update(fileChannel, 0);
+            } else
+                table.copyTo(fileChannel, 0);
+        } finally {
+            fileChannel.close();
         }
-        os.close();
-         */
     }
 
     void writeHeader(String headerFileName,Header header) throws IOException {

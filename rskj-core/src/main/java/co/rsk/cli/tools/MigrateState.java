@@ -1,26 +1,16 @@
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
-import co.rsk.trie.NodeReference;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
-import org.ethereum.db.BlockStore;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
-import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The entry point for export state CLI tool
@@ -33,285 +23,170 @@ import java.util.Optional;
  *
  * - args[0] - command "migrate" or "check" or "copy" or "showroot"
  *
- * MIGRATE:
- * - args[1] - block number
- * - args[2] - file path
- * - args[3] - Destination database format
+ * MIGRATE: (migrate does not writes key or children if dst key already exists)
+ * - args[1] - root
+ * - args[2] - src file path
+ * - args[3] - src database format
+ * - args[4] - dst file path
+ * - args[5] - dst database format
  *
- * COPY:
- * - args[1] - root (hex)
- * - args[2] - src database file path
- * - args[3] - Destination and source database format
- * - args[4] - destination file path
+ * COPY: (copy a tree or all key/values obtained by keys() property)
+ * - args[1] - root (hex) or "all" to copy all key/values
+ * - args[2] - src file path
+ * - args[3] - src database format
+ * - args[4] - dst file path
+ * - args[5] - dst database format
  *
- * CHECK:
- * - args[1] - root (hex)
- * - args[2] - file path
- * - args[3] - database format
- *
- * FIX
+ * CHECK: (checks that a certain tree in the db is good, by scannign recursively)
  * - args[1] - root (hex)
  * - args[2] - file path
  * - args[3] - database format
- * SHOWROOT:
- *  - args[1] - block number
+ *
+ * FIX (fixes missing key/values on a database (dst) by retrieving the missing values from another (src)
+ * - args[1] - root (hex)
+ * - args[2] - src file path (this is the one that is fine)
+ * - args[3] - src database format
+ * - args[4] - dst file path
+ * - args[5] - dst database format
+ *
+ * MIGRATE2 (migrates a tree from a database src, into another database (dst)
+ * using a third database (cache) as cache)
+ * Reads will be first performed on cache, and if not found, on src.
+ *
+ * NODEEXISTS
+ * - args[1] - key (hex)
+ * - args[2] - file path
+ * - args[3] - database format
+ *
+ * VALUEEXISTS
+ * - args[1] - key (hex)
+ * - args[2] - file path
+ * - args[3] - database format
  *
  * For maximum performance, disable the state cache by adding the argument:
  *  -Xcache.states.max-elements=0
  */
-public class MigrateState extends CliToolRskContextAware  {
+public class MigrateState {
     static int commandIdx = 0;
-    static int blockNumberIdx = 1;
     static int rootIdx = 1;
-    static int filePathIdx = 2;
-    static int dbFormatIdx = 3;
+    static int srcFilePathIdx = 2;
+    static int srcFileFormatIdx = 3;
     static int dstPathIdx = 4;
+    static int dstFileFormatIdx = 5;
+    static int cachePathIdx = 6;
+    static int cacheFileFormatIdx = 7;
+
 
     public static void main(String[] args) {
-        create(MethodHandles.lookup().lookupClass()).execute(args);
-    }
-    enum Command {
-        COPY("COPY"),
-        MIGRATE("MIGRATE"),
-        SHOWROOT("SHOWROOT"),
-        CHECK("CHECK"),
-        FIX("FIX");
+        new MigrateState().onExecute(args);
 
-        private final String name;
-
-        Command(@Nonnull String name) {
-            this.name = name;
-        }
-
-        public static Command ofName(@Nonnull String name) {
-            Objects.requireNonNull(name, "name cannot be null");
-            return Arrays.stream(Command.values()).filter(cmd -> cmd.name.equals(name) || cmd.name().equals(name))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalArgumentException(String.format("%s: not found as Command", name)));
-        }
     }
 
-    Command command;
 
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        command = Command.ofName(args[commandIdx].toUpperCase(Locale.ROOT));
+    MigrateStateUtil.Command command;
 
-        BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = null;
-        long blockNumber = -1;
+    protected void onExecute(@Nonnull String[] args)  {
+        command = MigrateStateUtil.Command.ofName(args[commandIdx].toUpperCase(Locale.ROOT));
+
+        TrieStore srcTrieStore = null;
+        TrieStore dstTrieStore = null;
         Block block = null;
-        if (command==Command.SHOWROOT) {
-            blockNumber = Long.parseLong(args[blockNumberIdx]);
-            block = blockStore.getChainBlockByNumber(blockNumber);
-            System.out.println("block "+blockNumber+" state root: "+
-                    Hex.toHexString(block.getStateRoot()));
-            return;
+        KeyValueDataSource dsDst =null;
+
+        String srcFilePath = args[srcFilePathIdx];
+        boolean readOnlySrc = (command==MigrateStateUtil.Command.CHECK) ||
+                (command==MigrateStateUtil.Command.NODEEXISTS) ||
+                (command==MigrateStateUtil.Command.VALUEEXISTS);
+
+        KeyValueDataSource dsSrc = null;
+        DbKind srcFileFmt = DbKind.ofName(args[srcFileFormatIdx]);
+
+        dsSrc= KeyValueDataSourceUtils.makeDataSource(
+                Paths.get(srcFilePath),
+                srcFileFmt,true);
+
+        System.out.println("src path: " + srcFilePath);
+        System.out.println("src format: "+srcFileFmt);
+
+        if (!readOnlySrc) {
+            // Use two databases
+
+            String dstFilePath = args[dstPathIdx];
+            DbKind dstFileFmt =DbKind.ofName(args[dstFileFormatIdx]);
+            dsDst = KeyValueDataSourceUtils.makeDataSource(
+                    Paths.get(dstFilePath),
+                    dstFileFmt, false);
+            System.out.println("dst path: " + dstFilePath);
+            System.out.println("dst format: "+dstFileFmt);
         }
-        String filePath = args[filePathIdx];
-        KeyValueDataSource dsSrc = KeyValueDataSourceUtils.makeDataSource(Paths.get(filePath),
-                DbKind.ofName(args[dbFormatIdx]),(command==Command.CHECK));
-        System.out.println("src: "+filePath);
-        KeyValueDataSource dsDst = dsSrc;
+
         byte[] root = null;
+        String cacheFilePath = null;
+        DbKind cacheFileFmt =null;
+        KeyValueDataSource dsCache = null;
 
 
-
-        if (command==Command.CHECK) {
+        if ((command==MigrateStateUtil.Command.NODEEXISTS)
+                || (command==MigrateStateUtil.Command.VALUEEXISTS)) {
+            System.out.println("check key existence...");
+            root = Hex.decode(args[rootIdx]);
+            System.out.println("State key: " + Hex.toHexString(root));
+            // do not migrate: check that migration is ok.
+            srcTrieStore = new TrieStoreImpl(dsSrc);
+        } else
+        if (command==MigrateStateUtil.Command.CHECK) {
             System.out.println("checking...");
             root = Hex.decode(args[rootIdx]);
             System.out.println("State root: "+ Hex.toHexString(root));
             // do not migrate: check that migration is ok.
-            trieStore = new TrieStoreImpl(dsSrc);
-        } else if (command==Command.FIX) {
+            srcTrieStore = new TrieStoreImpl(dsSrc);
+        } else if (command==MigrateStateUtil.Command.FIX) {
             System.out.println("fixing...");
             root = Hex.decode(args[rootIdx]);
             System.out.println("State root: "+ Hex.toHexString(root));
             // do not migrate: check that migration is ok.
-            trieStore = new TrieStoreImpl(dsSrc);
-            fixSrcTrieStore = ctx.getTrieStore();
-        } else if (command==Command.COPY) {
-            System.out.println("copying...");
-            root = Hex.decode(args[rootIdx]);
-            System.out.println("State root: "+ Hex.toHexString(root));
-            String filePathcopy = args[dstPathIdx];
-            dsDst =
-                    KeyValueDataSourceUtils.makeDataSource(Paths.get(filePathcopy),
-                            DbKind.ofName(args[2]),false);
-            System.out.println("dst: "+filePathcopy);
-            trieStore = new TrieStoreImpl(dsSrc);
-        } else if (command==Command.MIGRATE) {
-            System.out.println("migrating...");
-            blockNumber = Long.parseLong(args[blockNumberIdx]);
-            block = blockStore.getChainBlockByNumber(blockNumber);
-            root = block.getStateRoot();
-            trieStore = ctx.getTrieStore();
-        } else System.exit(1);
+            // We iterate the trie over the new (dst) database, to make it faster
+            srcTrieStore = new TrieStoreImpl(dsSrc);
+            dstTrieStore = new TrieStoreImpl(dsDst);
+        } else if (command==MigrateStateUtil.Command.COPY) {
+            String rootStr = args[rootIdx];
+            if (rootStr.toUpperCase().equals("ALL")) {
+                root = null;
+                command = MigrateStateUtil.Command.COPYALL;
+                System.out.println("copying all...");
+            } else {
+                root = Hex.decode(args[rootIdx]);
+                System.out.println("copying from root...");
+                System.out.println("State root: " + Hex.toHexString(root));
+                srcTrieStore = new TrieStoreImpl(dsSrc);
+            }
 
-        migrateStateToDatabase(args, root, trieStore, dsSrc, dsDst);
+        } else if (command==MigrateStateUtil.Command.MIGRATE) {
+            System.out.println("migrating...");
+            root = Hex.decode(args[rootIdx]);
+            srcTrieStore = new TrieStoreImpl(dsSrc);
+        } else if (command==MigrateStateUtil.Command.MIGRATE2) {
+            System.out.println("migrating with cache...");
+            cacheFilePath = args[cachePathIdx];
+            cacheFileFmt =DbKind.ofName(args[cacheFileFormatIdx]);
+            dsCache = KeyValueDataSourceUtils.makeDataSource(
+                    Paths.get(cacheFilePath),
+                    cacheFileFmt, true);
+            System.out.println("cache path: " + cacheFilePath);
+            System.out.println("cache format: "+cacheFileFmt);
+            root = Hex.decode(args[rootIdx]);
+            srcTrieStore = new TrieStoreImpl(dsSrc);
+
+        }else
+            System.exit(1);
+
+        MigrateStateUtil mu = new MigrateStateUtil(root, srcTrieStore, dsSrc, dsDst,dsCache);
+        mu.executeCommand(command);
         dsSrc.close();
-        if (dsDst != dsSrc)
+        if (( dsDst !=null) &&  (dsDst != dsSrc))
             dsDst.close();
 
     }
-    TrieStore fixSrcTrieStore;
 
-    private void showMem() {
-        Runtime runtime = Runtime.getRuntime();
-
-        NumberFormat format = NumberFormat.getInstance();
-
-        long memory = runtime.totalMemory() - runtime.freeMemory();
-        System.gc();
-        long memory2 = runtime.totalMemory() - runtime.freeMemory();
-        System.out.println("  used memory: " + format.format(memory/ 1000) + "k -> "+
-                        format.format(memory2/ 1000) + "k");
-
-    }
-
-    int nodesExported =0;
-    long skipped =0;
-
-    private boolean migrateStateToDatabase(String[] args, byte[] root , TrieStore trieStore,
-                                        KeyValueDataSource dsSrc,
-                                           KeyValueDataSource dsDst
-                                           ) {
-
-
-        Optional<Trie> otrie = trieStore.retrieve(root);
-
-        if (!otrie.isPresent()) {
-            System.out.println("Root not found");
-            return false;
-        }
-
-        Trie trie = otrie.get();
-
-        boolean ret ;
-        long start = System.currentTimeMillis();
-        ret = processTrie(trie, dsSrc,dsDst);
-        long end = System.currentTimeMillis();
-        long elapsedTimeSec = (end-start)/1000;
-        System.out.println("Elapsed time: "+elapsedTimeSec+" sec");
-        if (elapsedTimeSec>0) {
-            System.out.println("Nodes/sec: "+nodesExported/elapsedTimeSec);
-        }
-        showStat();
-        return ret;
-    }
-
-
-    private void showStat() {
-        //System.out.println("nodes scanned: " +(nodesExported/1000)+"k skipped: "+(skipped/1000)+"k");
-        System.out.println("nodes scanned: "+nodesExported+" skipped: "+skipped);
-    }
-    int StatPrintInterval = 50_000;
-    private boolean processTrie(Trie trie, KeyValueDataSource dsSrc,KeyValueDataSource dsDst) {
-
-        nodesExported++;
-        if (nodesExported % StatPrintInterval == 0) {
-            showStat();
-            showMem();
-            if (command==Command.MIGRATE)
-               dsDst.flush();
-
-        }
-        /*
-        if (nodesExported==340023) {
-            System.out.println("end ");
-        }
-
-        if (nodesExported >= 2_500_000) { //  2_775_000 bad
-            return false; // avoid copying the root nodes of unfinished trees
-        }*/
-        byte[] hash = trie.getHash().getBytes();
-        if ((command==Command.MIGRATE) && (dsSrc.get(hash) != null)) {
-            skipped++;
-            return true; // already exists
-        }
-        boolean fixme = false;
-        try {
-            NodeReference leftReference = trie.getLeft();
-
-            if (!leftReference.isEmpty()) {
-                Optional<Trie> left = leftReference.getNodeDetached();
-
-                if (left.isPresent()) {
-                    Trie leftTrie = left.get();
-
-                    if (!leftReference.isEmbeddable()) {
-                        if (!processTrie(leftTrie, dsSrc, dsDst)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            NodeReference rightReference = trie.getRight();
-
-            if (!rightReference.isEmpty()) {
-                Optional<Trie> right = rightReference.getNodeDetached();
-
-                if (right.isPresent()) {
-                    Trie rightTrie = right.get();
-
-                    if (!rightReference.isEmbeddable()) {
-                        if (!processTrie(rightTrie, dsSrc, dsDst)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-
-
-            // copy those that are not on the cache
-            byte[] m = trie.toMessage();
-            if ((command == Command.CHECK) || (command == Command.FIX)) {
-                byte[] ret = dsSrc.get(hash);
-                if (!Arrays.equals(ret, m)) {
-                    System.out.println("Node incorrect: " + trie.getHash().toHexString());
-                    if (command == Command.CHECK)
-                       return false;
-                    fixme = true;
-                }
-                if (trie.hasLongValue()) {
-                    byte[] lv = dsSrc.get(trie.getValueHash().getBytes());
-                    if (!Arrays.equals(lv, trie.getValue())) {
-                        System.out.println("Long value incorrect node: " + trie.getHash().toHexString());
-                        System.out.println("long value hash: " + trie.getValueHash().toHexString());
-                        if (command == Command.CHECK)
-                            return false;
-                        fixme = true;
-                    }
-                }
-            } else {
-                dsDst.put(hash, m);
-                if (trie.hasLongValue()) {
-                    dsDst.put(trie.getValueHash().getBytes(), trie.getValue());
-                }
-            }
-
-        } catch (RuntimeException e) {
-            System.out.println("Node invalid: " + trie.getHash().toHexString());
-            if (command == Command.CHECK)
-                return false;
-            fixme = true;
-
-        }
-        if (fixme) {
-            Optional<Trie> origNode = fixSrcTrieStore.retrieve(hash);
-            if (!origNode.isPresent()) {
-                System.out.println("cannot fix");
-                return  false;
-            }
-            Trie o = origNode.get();
-            dsDst.put(hash, o.toMessage());
-            if (o.hasLongValue()) {
-                dsDst.put(o.getValueHash().getBytes(), o.getValue());
-            }
-
-        }
-        return true;
-    }
 
 }

@@ -35,14 +35,15 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     long gets;
     String databaseName;
 
-    public DataSourceWithAuxKV(String databaseName,boolean additionalKV) throws IOException {
+    public DataSourceWithAuxKV(String databaseName,boolean additionalKV,boolean readOnly) throws IOException {
         this.databaseName = databaseName;
+        this.readOnly = readOnly;
         if (additionalKV) {
             kvPath = Paths.get(databaseName, "kv");
 
             // This normal LevelDV database is used to store non content-addressable KV pairs
             // using the kvPut() kvGet() methods
-            dsKV = LevelDbDataSource.makeDataSource(kvPath);
+            dsKV = LevelDbDataSource.makeDataSource(kvPath,readOnly);
         }
     }
 
@@ -135,15 +136,19 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     @Override
     public Set<ByteArrayWrapper> keys() {
-        Stream<ByteArrayWrapper> committedKeys = null;
 
-        committedKeys = committedCache.entrySet().stream()
-                .filter(e -> e.getValue() != null)
-                .map(Map.Entry::getKey);
 
+        // committedCache does not store (key,null) values.
+        // (key,null) puts are interpreted as deletes.
+        // Therefore, we don't need to filter the entrySet() for
+        // null values: we can simple use keys().
+        // Stream<ByteArrayWrapper> committedKeys = null;
+        //committedKeys = committedCache.entrySet().stream()
+        //        .filter(e -> e.getValue() != null)
+        //        .map(Map.Entry::getKey);
         // note that toSet doesn't work with byte[], so we have to do this extra step
-        return committedKeys
-                .collect(Collectors.toSet());
+        //return committedKeys.collect(Collectors.toSet());
+        return committedCache.keySet();
     }
 
     @Override

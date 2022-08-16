@@ -86,6 +86,7 @@ public class TrieStoreImpl implements TrieStore {
     /**
      * @param isRootNode it is the root node of the trie
      */
+    int cc =0;
     private void save(Trie trie, boolean isRootNode, int level, @Nullable TraceInfo traceInfo) {
         if (trie.wasSaved()) {
             return;

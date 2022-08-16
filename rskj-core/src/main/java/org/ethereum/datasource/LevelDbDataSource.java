@@ -70,8 +70,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
         this(name,databaseDir,false);
     }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
+    public static KeyValueDataSource makeDataSource(Path datasourcePath,boolean readOnly) {
+        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(),
+                datasourcePath.getParent().toString(),readOnly);
         ds.init();
         return ds;
     }

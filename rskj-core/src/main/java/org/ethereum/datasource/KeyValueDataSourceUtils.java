@@ -34,7 +34,7 @@ public class KeyValueDataSourceUtils {
                 int maxCapacity  = maxNodeCount*100;
                 try {
                     ds = new FlatDB(maxNodeCount,maxCapacity,
-                            datasourcePath.toString(), FlatDB.CreationFlag.All,FlatDB.latestDBVersion);
+                            datasourcePath.toString(), FlatDB.CreationFlag.All,FlatDB.latestDBVersion,readOnly);
                 } catch (IOException e) {
                     ds = null;
                 }
