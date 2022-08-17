@@ -443,7 +443,7 @@ public class BlockExecutor {
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-
+        readWrittenKeysTracker.clear();
         LongAccumulator totalGasUsed = new LongAccumulator(Long::sum, 0);
         AtomicReference<Coin> totalPaidFees = new AtomicReference<>(Coin.ZERO);
         Map<Integer, TransactionReceipt> receipts = new ConcurrentSkipListMap<>();
@@ -588,7 +588,7 @@ public class BlockExecutor {
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-
+        readWrittenKeysTracker.clear();
         int i = 1;
         long gasUsedInBlock = 0;
         Coin totalPaidFees = Coin.ZERO;
