@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAccumulator;
 
 public class TransactionListExecutor implements Callable<Boolean> {
@@ -32,7 +33,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Map<Integer, TransactionReceipt> receipts;
     private final Map<Keccak256, ProgramResult> transactionResults;
     private final ProgramTraceProcessor programTraceProcessor;
-    private final LongAccumulator accumulatedFees;
+    private final AtomicReference<Coin> accumulatedFees;
     private final LongAccumulator accumulatedGas;
 
     private int i;
@@ -54,7 +55,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             Map<Keccak256, ProgramResult> transactionResults,
             boolean registerProgramResults,
             @Nullable ProgramTraceProcessor programTraceProcessor,
-            LongAccumulator accumulatedFees,
+            AtomicReference<Coin> accumulatedFees,
             LongAccumulator accumulatedGas,
             int firstTxIndex) {
         this.readWrittenKeysTracker = readWrittenKeysTracker;
@@ -155,7 +156,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             logger.trace("tx[{}] done", i);
         }
         accumulatedGas.accumulate(totalGasUsed);
-        accumulatedFees.accumulate(totalPaidFees.asBigInteger().longValue());
+        accumulatedFees.getAndAccumulate(totalPaidFees, Coin::add);
 
         return true;
     }

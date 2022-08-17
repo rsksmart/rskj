@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAccumulator;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
@@ -444,7 +445,7 @@ public class BlockExecutor {
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
         LongAccumulator totalGasUsed = new LongAccumulator(Long::sum, 0);
-        LongAccumulator totalPaidFees = new LongAccumulator(Long::sum, 0);
+        AtomicReference<Coin> totalPaidFees = new AtomicReference<>(Coin.ZERO);
         Map<Integer, TransactionReceipt> receipts = new ConcurrentSkipListMap<>();
         Map<Integer, Transaction> executedTransactions = new ConcurrentSkipListMap<>();
         Set<DataWord> deletedAccounts = ConcurrentHashMap.newKeySet();
