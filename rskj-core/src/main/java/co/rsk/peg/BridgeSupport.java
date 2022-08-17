@@ -2846,6 +2846,13 @@ public class BridgeSupport {
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
     }
 
+    public Optional<Keccak256> getPegoutCreationRskTxHashByBtcTxHash(Sha256Hash btcTxHash) {
+        if (activations.isActive(ConsensusRule.RSKIP298)) {
+            return provider.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
+        }
+        return Optional.empty();
+    }
+
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash) {
         return createFlyoverFederationInformation(flyoverDerivationHash, getActiveFederation());
     }

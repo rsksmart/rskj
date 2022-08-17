@@ -953,6 +953,10 @@ public class BridgeStorageProvider {
             return Optional.empty();
         }
 
+        if (btcTxHash == null){
+            return Optional.empty();
+        }
+
         return safeGetFromRepository(
             getStorageKeyForPegoutCreationIndex(
                 btcTxHash
