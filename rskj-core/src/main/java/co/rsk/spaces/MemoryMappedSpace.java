@@ -12,16 +12,23 @@ public class MemoryMappedSpace extends Space {
 
 
     MappedByteBuffer out;
+    RandomAccessFile file;
     int size;
 
     public void createMemoryMapped(int size,String fileName) throws IOException {
-        RandomAccessFile file = new RandomAccessFile(fileName, "rw");
+        file = new RandomAccessFile(fileName, "rw");
         this.out = file.getChannel()
                 .map(FileChannel.MapMode.READ_WRITE, 0, size);
         this.size = size;
 
     }
+    public void sync() {
 
+            // file.getFD().sync();
+            // file.getChannel().force();
+            // out.force() this is the recommended way according to https://stackoverflow.com/questions/14011398/do-i-need-filedescriptor-sync-and-mappedbytebuffer-force
+            out.force();
+    }
     @Override
     public byte getByte(long pos) {
         return out.get( (int) pos);

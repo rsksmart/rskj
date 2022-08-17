@@ -130,6 +130,7 @@ public abstract class Space {
     abstract public void readFromFile(String fileName,boolean map);
 
     abstract public void saveToFile(String fileName );
+    abstract public void sync();
 
 
 }

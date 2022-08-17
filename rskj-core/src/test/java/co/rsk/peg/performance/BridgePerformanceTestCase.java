@@ -27,6 +27,7 @@ import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -213,7 +214,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private BridgeStorageProvider storageProvider;
 
             private TrieStore createTrieStore() {
-                return new TrieStoreImpl(new HashMapDB());
+                return TmpTrieStoreFactory.newInstance();
             }
 
             @Override

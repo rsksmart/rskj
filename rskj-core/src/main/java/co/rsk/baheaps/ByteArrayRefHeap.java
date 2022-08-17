@@ -419,8 +419,8 @@ public class ByteArrayRefHeap extends ByteArrayHeap implements AbstractByteArray
         return r;
     }
 
-    public void save(long rootOfs) throws IOException {
-        super.save(rootOfs);
+    public void save() throws IOException {
+        super.save();
         saveToFile(baseFileName+".ref");
     }
 

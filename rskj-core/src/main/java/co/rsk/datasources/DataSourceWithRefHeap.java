@@ -26,7 +26,7 @@ public class DataSourceWithRefHeap extends DataSourceWithHeap {
                                  String databaseName, LockType lockType,
                                  Format format, boolean additionalKV,boolean readOnly) throws IOException {
         super(maxNodeCount,  beHeapCapacity,
-        databaseName,lockType,format, additionalKV,readOnly);
+        databaseName,lockType,format, additionalKV,null,readOnly);
         this.format = format;
 
     }

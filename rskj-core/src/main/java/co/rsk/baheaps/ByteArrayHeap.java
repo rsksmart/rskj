@@ -8,7 +8,15 @@ import java.nio.file.Paths;
 public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArrayHeap {
 
     public boolean fileExists() {
-        Path path = Paths.get(baseFileName + ".desc");
+        String fileName = null;
+        if (descDataSource!=null) {
+            // here we could check the presence of certain key in the data source
+            // now we simply check that there is at least one space
+            fileName = getSpaceFileName(0);
+        } else {
+            fileName =baseFileName + ".desc";
+        }
+        Path path = Paths.get(fileName);
         File f = path.toFile();
         return (f.exists() && !f.isDirectory());
     }
@@ -19,8 +27,8 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
         return r;
     }
 
-    public void save(long rootOfs) throws IOException {
-        super.save(rootOfs);
+    public void save() throws IOException {
+        super.save();
     }
 
 }

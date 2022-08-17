@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -63,7 +64,7 @@ public class NetworkStateExporterTest {
 
     @Before
     public void setup() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();;
         MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
         blockchain = mock(Blockchain.class);

@@ -39,6 +39,7 @@ import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -3184,7 +3185,7 @@ public class BridgeTestPowerMock {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 

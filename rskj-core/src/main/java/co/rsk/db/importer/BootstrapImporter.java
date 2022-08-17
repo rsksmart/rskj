@@ -19,6 +19,7 @@
 package co.rsk.db.importer;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.db.StateRootsStore;
 import co.rsk.db.importer.provider.BootstrapDataProvider;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -84,7 +85,7 @@ public class BootstrapImporter {
         start = System.currentTimeMillis();
         logger.debug("Preparing state for insertion...");
         fillUpRlpDataQueues(nodeDataQueue, nodeValueQueue, Objects.requireNonNull(rlpElementQueue.poll()));
-        fillUpTrieQueue(trieQueue, nodeDataQueue, nodeValueQueue, hashMapDB);
+        fillUpTrieQueue(trieQueue, nodeDataQueue, nodeValueQueue, hashMapDB,null); // TODO: set a valid StateRootsStore here
         logger.debug("State has been prepared in {} mills", System.currentTimeMillis() - start);
 
         start = System.currentTimeMillis();
@@ -129,8 +130,9 @@ public class BootstrapImporter {
 
     private static void fillUpTrieQueue(Queue<Trie> trieQueue,
                                         Queue<byte[]> nodeDataQueue, Queue<byte[]> nodeValueQueue,
-                                        HashMapDB hashMapDB) {
-        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
+                                        HashMapDB hashMapDB,
+                                        StateRootsStore rootStore) {
+        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB,rootStore);
 
         for (byte[] nodeData = nodeDataQueue.poll(); nodeData != null; nodeData = nodeDataQueue.poll()) {
             Trie trie = Trie.fromMessage(nodeData, fakeStore);

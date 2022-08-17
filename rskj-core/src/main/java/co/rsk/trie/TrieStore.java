@@ -21,6 +21,8 @@ package co.rsk.trie;
 import java.util.Optional;
 
 public interface TrieStore {
+    // This method assures consistency: if a top node is really saved, then all child nodes must
+    // also be saved. In case of failure, some subtrees may be saved, but never the top node.
     void save(Trie trie);
 
     void flush();

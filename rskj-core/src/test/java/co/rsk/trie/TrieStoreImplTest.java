@@ -39,7 +39,7 @@ public class TrieStoreImplTest {
     @Before
     public void setUp() {
         this.map = spy(new HashMapDB());
-        this.store = new TrieStoreImpl(map);
+        this.store = TmpTrieStoreFactory.newInstance();
     }
 
     @Test

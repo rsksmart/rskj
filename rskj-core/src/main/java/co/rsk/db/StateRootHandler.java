@@ -52,10 +52,12 @@ public class StateRootHandler {
     }
 
     public void register(BlockHeader executedBlock, Trie executionResult) {
-        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, executedBlock.getNumber());
-        if (isRskip126Enabled) {
-            return;
-        }
+        // We keep this map, because it's  the best way to find wether a block state
+        // has been committed.
+        // boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, executedBlock.getNumber());
+        // if (isRskip126Enabled) {
+        //    return;
+        // }
 
         stateRootsStore.put(executedBlock.getStateRoot(), executionResult.getHash());
     }

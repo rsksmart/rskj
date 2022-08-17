@@ -26,6 +26,7 @@ public interface AbstractByteArrayHeap {
     public int getUsagePercent();
 
     public long load() throws IOException;
-    public void save(long rootOfs) throws IOException;
+    public void save() throws IOException;
+    public void setRootOfs(long rootOfs);
 
 }

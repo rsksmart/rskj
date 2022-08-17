@@ -1,6 +1,6 @@
 package org.ethereum.datasource;
 
-import co.rsk.datasources.FlatDB;
+import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +33,8 @@ public class KeyValueDataSourceUtils {
                 int maxNodeCount = 16_000_000;
                 int maxCapacity  = maxNodeCount*100;
                 try {
-                    ds = new FlatDB(maxNodeCount,maxCapacity,
-                            datasourcePath.toString(), FlatDB.CreationFlag.All,FlatDB.latestDBVersion,readOnly);
+                    ds = new FlatDbDataSource(maxNodeCount,maxCapacity,
+                            datasourcePath.toString(), FlatDbDataSource.CreationFlag.All, FlatDbDataSource.latestDBVersion,readOnly);
                 } catch (IOException e) {
                     ds = null;
                 }

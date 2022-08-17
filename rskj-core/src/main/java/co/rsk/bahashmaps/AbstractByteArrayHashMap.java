@@ -3,11 +3,13 @@ package co.rsk.bahashmaps;
 import co.rsk.baheaps.ByteArrayHeap;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.packedtables.Table;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -31,6 +33,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     int threshold;
 
     float loadFactor;
+    KeyValueDataSource dataSource;
 
     ///////////////////////////
     // For file I/O
@@ -1212,7 +1215,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     public void convertFiles() throws IOException {
         File file = mapPath.toFile();
         String fileName = file.getAbsolutePath();
-        Header header = readHeader(fileName,false);
+        Header header = readHeaderFromFile(fileName,false);
 
         String tmpFileName = fileName+".tmp";
         // Now move the file into a new temporary file, taking out the header
@@ -1262,7 +1265,11 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         /*if (!headerFileExists()){
             convertFiles();
         }*/
-        readFromFiles(true);
+        if (dataSource!=null) {
+            loadFromDataSource(true);
+        } else {
+            loadFromFiles(true);
+        }
     }
 
     protected class Header  {
@@ -1272,38 +1279,74 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         public int threshold;
     }
 
-    public Header readHeader(String fileName,boolean includeVersion) throws IOException {
+    public Header loadHeaderFromDataSource(boolean includeVersion) throws IOException {
         Header header = new Header();
-        File hfile = new File(fileName);
-        FileInputStream hfin = new FileInputStream(hfile);
-        BufferedInputStream hbin = new BufferedInputStream(hfin);
-        DataInputStream hdin = new DataInputStream(hbin);
-
+        byte[] data= dataSource.get(headerKey);
+        ByteArrayInputStream bin = new ByteArrayInputStream(data);
+        DataInputStream hdin = new DataInputStream(bin);
         try {
-            if (includeVersion)
-                header.dbVersion = hdin.readInt();
-            header.totalSize =  hdin.readInt();
-            header.size = hdin.readInt();
-            header.threshold = hdin.readInt();
+            readFromInputStream(includeVersion, header, hdin);
         } finally {
             hdin.close();
         }
         return header;
     }
 
-    public void readFromFiles( boolean map) throws IOException {
-        System.out.println("Reading hash table header");
+    public Header readHeaderFromFile(String fileName, boolean includeVersion) throws IOException {
+        Header header = new Header();
+        File hfile = new File(fileName);
+        FileInputStream hfin = new FileInputStream(hfile);
+        BufferedInputStream hbin = new BufferedInputStream(hfin);
+        DataInputStream hdin = new DataInputStream(hbin);
+        try {
+            readFromInputStream(includeVersion, header, hdin);
+        } finally {
+            hdin.close();
+        }
+        return header;
+    }
+
+    private void readFromInputStream(boolean includeVersion, Header header, DataInputStream hdin) throws IOException {
+        if (includeVersion)
+            header.dbVersion = hdin.readInt();
+        header.totalSize =  hdin.readInt();
+        header.size = hdin.readInt();
+        header.threshold = hdin.readInt();
+    }
+
+    public void loadFromDataSource(boolean map) throws IOException {
+        System.out.println("Reading hash table header from DB");
+        Header header = loadHeaderFromDataSource(true);
+        fillMapDataWithHeader(header);
+        loadTableFromFile(header);
+    }
+
+    public void loadFromFiles(boolean map) throws IOException {
+        Header header = loadHeaderFromFile();
+        fillMapDataWithHeader(header);
+        loadTableFromFile(header);
+    }
+
+    private Header loadHeaderFromFile() throws IOException {
+        System.out.println("Reading hash table header from file");
         File file = mapPath.toFile();
         String fileName = file.getAbsolutePath();
-        String headerFileName = fileName+".hdr";
+        String headerFileName = fileName + ".hdr";
+        Header header = readHeaderFromFile(headerFileName, true);
+        return header;
 
-        Header header = readHeader(headerFileName,true);
+    }
+
+    private void fillMapDataWithHeader(Header header) {
         this.threshold = header.threshold;
         this.size = header.size;
         this.format.dbVersion = header.dbVersion;
+    }
 
+    void loadTableFromFile(Header header) throws IOException {
         table = createTable(header.totalSize);
         System.out.println("Reading hash table");
+        File file = mapPath.toFile();
         FileInputStream fin = new FileInputStream(file);
         BufferedInputStream bin = new BufferedInputStream(fin);
         DataInputStream din = new DataInputStream(bin);
@@ -1314,6 +1357,10 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             din.close();
         }
         System.out.println("done");
+    }
+
+    public void setDataSource(KeyValueDataSource ds) {
+        this.dataSource =ds;
     }
 
     public void setPath(Path mapPath) {
@@ -1330,29 +1377,56 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         return table.length();
     }
 
-    public void save() throws IOException {
+    protected void saveToFile() throws IOException {
+        String fileName =  mapPath.toAbsolutePath().toString();
+        createAndWriteHeader(fileName);
+        if (tableLength()!=0) {
+            writeTable(fileName);
+        }
+    }
 
-        if (modified()) {
+    protected void saveToDataSource() throws IOException {
+        createAndWriteHeaderToDataSource();
+
+        // In the future the table will also be stored in the datasource, split in pages
+        if (tableLength()!=0) {
             String fileName =  mapPath.toAbsolutePath().toString();
-            createAndWriteHeader(fileName);
-            if (tableLength()!=0) {
-                writeTable(fileName);
+            writeTable(fileName);
+        }
+    }
+
+    public void save() throws IOException {
+        if (modified()) {
+            if (dataSource!=null) {
+                saveToDataSource();
+            } else {
+                saveToFile();
             }
+
         }
         loaded = true;
         resized = false;
 
     }
 
-    private void createAndWriteHeader(String fileName) throws IOException {
-        String headerFileName = fileName + ".hdr";
+    protected Header createHeader() {
         Header header = new Header();
 
         header.dbVersion = format.dbVersion;
         header.totalSize = tableLength();
         header.size = size;
         header.threshold = threshold;
+        return header;
+    }
 
+    protected void createAndWriteHeaderToDataSource() throws IOException  {
+        Header header = createHeader();
+        writeHeaderToDataSource(header);
+    }
+
+    protected void createAndWriteHeader(String fileName) throws IOException {
+        String headerFileName = fileName + ".hdr";
+        Header header = createHeader();
         writeHeader(headerFileName, header);
     }
 
@@ -1375,17 +1449,33 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
     }
 
-    void writeHeader(String headerFileName,Header header) throws IOException {
+    protected void writeHeader(String headerFileName,Header header) throws IOException {
         DataOutputStream hos = new DataOutputStream(
                 new FileOutputStream(headerFileName));
         try {
-            hos.writeInt(header.dbVersion);
-            hos.writeInt(header.totalSize);
-            hos.writeInt(header.size);
-            hos.writeInt(header.threshold);
+            writeHeaderToOutputStream(header, hos);
         } finally {
             hos.close();
         }
+    }
+    static final protected byte[] headerKey = "header".getBytes(StandardCharsets.UTF_8);
+
+    void writeHeaderToDataSource(Header header) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream hos = new DataOutputStream(bos);
+
+        try {
+            writeHeaderToOutputStream(header, hos);
+            dataSource.put(headerKey,bos.toByteArray());
+        } finally {
+            hos.close();
+        }
+    }
+    private void writeHeaderToOutputStream(Header header, DataOutputStream hos) throws IOException {
+        hos.writeInt(header.dbVersion);
+        hos.writeInt(header.totalSize);
+        hos.writeInt(header.size);
+        hos.writeInt(header.threshold);
     }
 
 

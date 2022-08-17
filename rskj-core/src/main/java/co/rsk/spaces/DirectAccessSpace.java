@@ -124,6 +124,9 @@ public class DirectAccessSpace extends Space {
 
 
     }
+    public void sync() {
+        // nothing to do
+    }
     public void saveToFile(String fileName )  {
 
         try {

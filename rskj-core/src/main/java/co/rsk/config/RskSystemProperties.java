@@ -381,6 +381,12 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
 
+    public String unitriePath() {
+        String r =configFromFiles.getString("blockchain.unitrie.path");
+        if (r.length()==0)
+            r = "unitrie";
+        return r;
+    }
     public String cryptoLibrary() {
         return configFromFiles.getString("crypto.library");
     }

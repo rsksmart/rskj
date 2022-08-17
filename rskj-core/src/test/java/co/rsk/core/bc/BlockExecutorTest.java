@@ -28,6 +28,7 @@ import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -278,7 +279,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
         Repository track = repository.startTracking();
@@ -341,7 +342,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
         Repository track = repository.startTracking();
@@ -396,7 +397,7 @@ public class BlockExecutorTest {
 
     @Test
     public void validateStateRootWithRskip126DisabledAndValidStateRoot() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Trie trie = new Trie(trieStore);
 
         Block block = new BlockGenerator().getBlock(1);
@@ -418,7 +419,7 @@ public class BlockExecutorTest {
 
     @Test
     public void validateStateRootWithRskip126DisabledAndInvalidStateRoot() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Trie trie = new Trie(trieStore);
 
         Block block = new BlockGenerator().getBlock(1);
@@ -512,7 +513,7 @@ public class BlockExecutorTest {
     }
 
     private static TestObjects generateBlockWithOneTransaction() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
 
         Repository track = repository.startTracking();
@@ -736,7 +737,7 @@ public class BlockExecutorTest {
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
         Repository track = repository.startTracking();
 

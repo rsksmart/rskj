@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -40,7 +41,7 @@ public class BridgeStateTest {
     @Test
     public void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         BridgeStorageProvider provider = new BridgeStorageProvider(

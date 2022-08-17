@@ -28,6 +28,7 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -623,7 +624,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
@@ -702,7 +703,7 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());

@@ -22,6 +22,7 @@ package co.rsk.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -747,7 +748,7 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        TrieStore trieStore = TmpTrieStoreFactory.newInstance();
         MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         final Repository repository = new MutableRepository(mutableTrie);
 

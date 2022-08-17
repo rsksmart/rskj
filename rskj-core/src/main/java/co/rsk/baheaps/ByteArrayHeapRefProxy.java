@@ -84,7 +84,12 @@ public class ByteArrayHeapRefProxy implements AbstractByteArrayHeap {
     }
 
     @Override
-    public void save(long rootOfs) throws IOException {
+    public void save() throws IOException {
+
+    }
+
+    @Override
+    public void setRootOfs(long rootOfs) {
 
     }
 }

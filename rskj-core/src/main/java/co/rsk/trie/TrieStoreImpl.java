@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import co.rsk.db.StateRootsStore;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
@@ -42,9 +43,16 @@ public class TrieStoreImpl implements TrieStore {
     private static final ThreadLocal<TraceInfo> traceInfoLocal = ThreadLocal.withInitial(TraceInfo::new);
 
     private final KeyValueDataSource store;
+    KeyValueDataSource rootsDataSource;
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
+        this.rootsDataSource = null;
+    }
+
+    public TrieStoreImpl(KeyValueDataSource store, StateRootsStore rootStore) {
+        this.store = store;
+        this.rootsDataSource = rootsDataSource;
     }
 
     /**
@@ -81,7 +89,12 @@ public class TrieStoreImpl implements TrieStore {
 
             traceInfoLocal.remove();
         }
+        if (rootsDataSource!=null) {
+            rootsDataSource.put(trie.getHash().getBytes(),nodePresent);
+        }
     }
+
+    static byte[] nodePresent = new byte[]{1};
 
     /**
      * @param isRootNode it is the root node of the trie
@@ -113,6 +126,8 @@ public class TrieStoreImpl implements TrieStore {
             traceInfo.numOfSavesInBlockProcess++;
         }
 
+        // Save first the children to maintain trie database consistency
+        // The last we write is the parent node.
         NodeReference leftNodeReference = trie.getLeft();
 
         if (leftNodeReference.wasLoaded()) {

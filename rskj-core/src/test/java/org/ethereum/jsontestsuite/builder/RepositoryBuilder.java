@@ -22,6 +22,7 @@ package org.ethereum.jsontestsuite.builder;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -40,7 +41,7 @@ import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 public class RepositoryBuilder {
 
     public static Repository build(Map<String, AccountTck> accounts) {
-        return build(new TrieStoreImpl(new HashMapDB()), accounts);
+        return build(TmpTrieStoreFactory.newInstance(), accounts);
     }
 
     public static Repository build(TrieStore trieStore, Map<String, AccountTck> accounts) {

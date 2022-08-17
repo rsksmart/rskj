@@ -1345,7 +1345,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().readOnlyMode());
         }
 
-        return new TrieStoreImpl(ds);
+        return new TrieStoreImpl(ds,getStateRootsStore());
     }
 
     protected synchronized RepositoryLocator buildRepositoryLocator() {
@@ -1458,7 +1458,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 throw new IllegalStateException("Unable to build multi trie store", e);
             }
         } else {
-            Path trieStorePath = databasePath.resolve("unitrie");
+            String unitrieSubdir = rskSystemProperties.unitriePath();
+            Path trieStorePath = databasePath.resolve(unitrieSubdir);
             try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
                 List<Path> multiTrieStorePaths = databasePathFilesStream
                         .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))

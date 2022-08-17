@@ -29,7 +29,7 @@ public class TrieSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = TmpTrieStoreFactory.newInstance();
 
         Trie trie = new Trie(store);
 
@@ -54,7 +54,7 @@ public class TrieSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyLongValues() {
         HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+        TrieStoreImpl store = TmpTrieStoreFactory.newInstance();
 
         Trie trie = new Trie(store);
 

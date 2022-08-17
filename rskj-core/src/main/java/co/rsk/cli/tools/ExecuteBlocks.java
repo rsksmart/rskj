@@ -29,6 +29,8 @@ import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nonnull;
 import java.lang.invoke.MethodHandles;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 /**
@@ -55,19 +57,35 @@ public class ExecuteBlocks extends CliToolRskContextAware {
         executeBlocks(args, blockExecutor, blockStore, trieStore, stateRootHandler);
     }
 
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
+    void consoleLog(String s) {
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println(dtf.format(now)+": "+s);
+    }
+    private void printArgs(String[] args) {
+        System.out.print("args: ");
+        for(int i=0;i<args.length;i++) {
+            System.out.print(args[i]+" ");
+        }
+        System.out.println();
+    }
+
     private void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
                                StateRootHandler stateRootHandler) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
-
+        printArgs(args);
         long start = System.currentTimeMillis();
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
-            System.out.println("executing :"+n);
+            consoleLog("executing :"+n);
+            long estart = System.currentTimeMillis();
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             BlockResult blockResult = blockExecutor.execute(block, parent.getHeader(), false, false);
-
+            long eend = System.currentTimeMillis();
+            consoleLog(" time: "+(eend-estart)+ " msec");
             Keccak256 stateRootHash = stateRootHandler.translate(block.getHeader());
             if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), stateRootHash.getBytes())) {
                 printError("Invalid state root block number " + n);
@@ -75,7 +93,7 @@ public class ExecuteBlocks extends CliToolRskContextAware {
             }
         }
         long stop = System.currentTimeMillis();
-        System.out.println("Total time: "+(stop-start)/1000+" secs");
+        consoleLog("Total time: "+(stop-start)/1000+" secs");
         trieStore.flush();
         blockStore.flush();
     }

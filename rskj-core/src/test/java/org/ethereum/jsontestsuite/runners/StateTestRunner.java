@@ -31,6 +31,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -130,7 +131,7 @@ public class StateTestRunner {
     public List<String> runImpl() {
         vStats = new ValidationStats();
         logger.info("");
-        trieStore = new TrieStoreImpl(new HashMapDB());
+        trieStore = TmpTrieStoreFactory.newInstance();
         repository = RepositoryBuilder.build(trieStore, stateTestCase.getPre());
         logger.info("loaded repository");
 

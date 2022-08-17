@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import co.rsk.spaces.*;
+import org.ethereum.datasource.KeyValueDataSource;
 
 // This class represents a heap where elements are addressed by their physical
 // position on the heap.
@@ -37,6 +38,8 @@ public class ByteArrayHeapBase {
 
     public Space[] spaces;
     public BitSet oldSpacesBitmap = new BitSet();
+    long rootOfs; // user-provided
+    protected KeyValueDataSource descDataSource;
 
     SpaceHead headOfPartiallyFilledSpaces = new SpaceHead();
     SpaceHead headOfFilledSpaces = new SpaceHead();
@@ -74,6 +77,11 @@ public class ByteArrayHeapBase {
         memoryMapped = fileMapping;
     }
 
+    // Pass null to use external files
+    public void setDescriptionFileSource(KeyValueDataSource ds) {
+        this.descDataSource =ds;
+    }
+
     public void setFileName(String fileName) {
         baseFileName = fileName;
     }
@@ -107,36 +115,71 @@ public class ByteArrayHeapBase {
         desiredMaxMemory = m;
     }
 
-    public void save(long rootOfs) throws IOException {
-        if (!memoryMapped) {
-            int head = headOfFilledSpaces.head;
-            while (head != -1) {
-                spaces[head].saveToFile(getSpaceFileName(head));
-                head = spaces[head].previousSpaceNum;
-            }
-            head = headOfPartiallyFilledSpaces.head;
-            while (head != -1) {
-                spaces[head].saveToFile(getSpaceFileName( head));
-                head = spaces[head].previousSpaceNum;
-            }
-            getCurSpace().saveToFile(getSpaceFileName( curSpaceNum));
-        }
-        saveDesc(rootOfs);
+
+    public void setRootOfs(long rootOfs) {
+        this.rootOfs = rootOfs;
     }
 
-    void saveDesc(long rootOfs ) {
+    protected void saveSpaces() {
+        int head = headOfFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].saveToFile(getSpaceFileName(head));
+            head = spaces[head].previousSpaceNum;
+        }
+        head = headOfPartiallyFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].saveToFile(getSpaceFileName( head));
+            head = spaces[head].previousSpaceNum;
+        }
+        getCurSpace().saveToFile(getSpaceFileName( curSpaceNum));
+    }
+    protected void syncSpaces() {
+        // Here we MUST synch all spaces using specific OS commands
+        // that guarantee the memory pages are actually written to disk.
+        int head = headOfFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].sync();
+            head = spaces[head].previousSpaceNum;
+        }
+        head = headOfPartiallyFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].sync();
+            head = spaces[head].previousSpaceNum;
+        }
+        getCurSpace().sync();
+    }
+
+    public void save() throws IOException {
+        if (!memoryMapped) {
+            saveSpaces();
+        } else {
+            syncSpaces();
+        }
+        saveDesc();
+    }
+
+    void saveDesc() {
         HeapFileDesc desc = new HeapFileDesc();
         desc.filledSpaces = getSpaces(headOfFilledSpaces);
         desc.emptySpaces = getSpaces(headOfPartiallyFilledSpaces);
         desc.currentSpace = curSpaceNum;
         desc.rootOfs = rootOfs;
         desc.metadataLen = lastMetadataLen;
-        desc.saveToFile(baseFileName + ".desc");
+        if (descDataSource!=null) {
+            desc.SaveToDataSource(descDataSource,"desc");
+        } else {
+            desc.saveToFile(baseFileName + ".desc");
+        }
     }
 
 
     public long load() throws IOException {
-        HeapFileDesc desc = HeapFileDesc.loadFromFile(baseFileName + ".desc");
+        HeapFileDesc desc;
+        if (descDataSource!=null) {
+            desc = HeapFileDesc.loadFromDataSource(descDataSource,"desc");
+        } else {
+            desc = HeapFileDesc.loadFromFile(baseFileName + ".desc");
+        }
         setHead(headOfFilledSpaces, desc.filledSpaces, true);
         setHead(headOfPartiallyFilledSpaces, desc.emptySpaces, false);
 
@@ -283,6 +326,7 @@ public class ByteArrayHeapBase {
         spaces = new Space[maxSpaces];
 
         // Add them in reverse order so the first to take is always 0.
+        // This loop will create the space files if they don't already exists in disk!
         for (int i = maxSpaces-1; i >=0; i--) {
             spaces[i] = newSpace();
             headOfPartiallyFilledSpaces.addSpace(i);

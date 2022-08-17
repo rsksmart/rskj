@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.trie.TmpTrieStoreFactory;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -60,7 +61,7 @@ public class RepositoryTest {
 
     @Before
     public void setUp() {
-        trieStore = new TrieStoreImpl(new HashMapDB());
+        trieStore = TmpTrieStoreFactory.newInstance();
         mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
     }

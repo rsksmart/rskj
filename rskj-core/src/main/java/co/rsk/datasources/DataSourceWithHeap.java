@@ -5,23 +5,28 @@ import co.rsk.bahashmaps.Format;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.ByteArrayHeap;
 import co.rsk.bahashmaps.AbstractByteArrayHashMap;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.PrefixedKeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class DataSourceWithHeap extends DataSourceWithAuxKV {
-    AbstractByteArrayHashMap bamap;
-    AbstractByteArrayHeap sharedBaHeap;
-    EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags;
-    Format format;
-
-    Path mapPath;
-    Path dbPath;
-
+    protected AbstractByteArrayHashMap bamap;
+    protected AbstractByteArrayHeap sharedBaHeap;
+    protected EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags;
+    protected Format format;
+    protected Path mapPath;
+    protected Path dbPath;
+    protected KeyValueDataSource descDataSource;
+    LockType lockType;
+    int maxNodeCount;
+    long beHeapCapacity;
 
     public enum LockType {
         Exclusive,
@@ -31,13 +36,29 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
                               String databaseName,LockType lockType,
-                              Format format,boolean additionalKV,boolean readOnly) throws IOException {
+                              Format format,boolean additionalKV,
+                              KeyValueDataSource descDataSource,
+                              boolean readOnly) throws IOException {
         super(databaseName,additionalKV,readOnly);
+        this.descDataSource = descDataSource;
         this.format = format;
         mapPath = Paths.get(databaseName, "hash.map");
         dbPath = Paths.get(databaseName, "store");
+        this.lockType = lockType;
+        this.maxNodeCount = maxNodeCount;
+        this.beHeapCapacity = beHeapCapacity;
 
-        Map<ByteArrayWrapper, byte[]> iCache = makeCommittedCache(maxNodeCount,beHeapCapacity);
+    }
+
+    public void init() {
+
+        Map<ByteArrayWrapper, byte[]> iCache = null;
+        try {
+            iCache = makeCommittedCache(maxNodeCount,beHeapCapacity);
+        } catch (IOException e) {
+            // TO DO:  What ?
+            e.printStackTrace();
+        }
         if (lockType==LockType.RW)
             this.committedCache =RWLockedCollections.rwSynchronizedMap(iCache);
         else
@@ -45,9 +66,8 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
             this.committedCache = Collections.synchronizedMap(iCache);
         else
             this.committedCache = iCache;
-
+      super.init();
     }
-
 
     public String getModifiers() {
         return "";
@@ -62,8 +82,8 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         super.flush();
         try {
             if ((!readOnly) && (bamap.modified())) {
+                sharedBaHeap.save();
                 bamap.save();
-                sharedBaHeap.save(0);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,15 +101,23 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         }
     }
 
+    static protected final byte[] heapPrefix = "heap.".getBytes(StandardCharsets.UTF_8);
+    static protected final byte[] mapPrefix = "map.".getBytes(StandardCharsets.UTF_8);
+
     AbstractByteArrayHeap createByteArrayHeap(float loadFactor, long maxNodeCount, long maxCapacity) throws IOException {
         ByteArrayHeap baHeap = new ByteArrayHeap();
         baHeap.setMaxMemory(maxCapacity); //730_000_000L); // 500 Mb / 1 GB
         Files.createDirectories(Paths.get(databaseName));
-
+        if (descDataSource!=null) {
+            baHeap.setDescriptionFileSource(new PrefixedKeyValueDataSource(heapPrefix,descDataSource));
+        }
         baHeap.setFileName(dbPath.toString());
         baHeap.setFileMapping(true);
+        // Initialize will create the space files on disk if they don't exists, so we must
+        // query first if they exists of not.
+        boolean filesExists= baHeap.fileExists();
         baHeap.initialize();
-        if (baHeap.fileExists())
+        if (filesExists)
             baHeap.load(); // We throw away the root...
         return baHeap;
 
@@ -117,7 +145,10 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.bamap =  new ByteArray40HashMap(initialSize,loadFActor,myKR,
                 (long) beHeapCapacity,
                 sharedBaHeap,0,format);
-
+        if (descDataSource!=null) {
+            this.bamap.setDataSource(
+                    new PrefixedKeyValueDataSource(mapPrefix,descDataSource));
+        }
         this.bamap.setPath(mapPath);
         if (bamap.dataFileExists()) {
             bamap.load();

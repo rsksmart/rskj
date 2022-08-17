@@ -1,8 +1,10 @@
 package co.rsk.spaces;
 
 import co.rsk.dbutils.ObjectIO;
+import org.ethereum.datasource.KeyValueDataSource;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class HeapFileDesc {
 
@@ -12,21 +14,29 @@ public class HeapFileDesc {
     public long rootOfs;
     public int metadataLen;
 
+    public void SaveToDataSource(KeyValueDataSource ds,String key) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            saveToOutputStream(out);
+            out.flush();
+            //closing the stream
+            ds.put(key.getBytes(StandardCharsets.UTF_8), out.toByteArray());
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public void saveToFile(String fileName) {
         try {
             //out = new BufferedOutputStream(new FileOutputStream(fileName));
             FileOutputStream out = new FileOutputStream(fileName);
-            writeArray(out,filledSpaces);
-            writeArray(out,emptySpaces);
-            ObjectIO.writeInt(out,currentSpace);
-            ObjectIO.writeLong(out,rootOfs);
-            ObjectIO.writeInt(out,metadataLen);
-
+            saveToOutputStream(out);
             out.flush();
             //closing the stream
             out.close();
             System.out.println("File "+fileName+" written.");
-
     } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -34,11 +44,36 @@ public class HeapFileDesc {
         }
     }
 
-    public void writeArray(FileOutputStream out,int[] a) throws IOException {
+    private void saveToOutputStream(OutputStream out) throws IOException {
+        writeArray(out,filledSpaces);
+        writeArray(out,emptySpaces);
+        ObjectIO.writeInt(out,currentSpace);
+        ObjectIO.writeLong(out,rootOfs);
+        ObjectIO.writeInt(out,metadataLen);
+
+
+    }
+
+    public void writeArray(OutputStream out,int[] a) throws IOException {
         ObjectIO.writeInt(out,a.length);
         for(int i=0;i<a.length;i++) {
             ObjectIO.writeInt(out,a[i]);
         }
+
+    }
+    public static HeapFileDesc loadFromDataSource(KeyValueDataSource ds,String key) {
+        HeapFileDesc d = new HeapFileDesc();
+
+        byte[] data = ds.get(key.getBytes(StandardCharsets.UTF_8));
+        InputStream in = new ByteArrayInputStream(data);
+        try {
+            readFromInputStream(d, in);
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return d;
 
     }
     public static HeapFileDesc loadFromFile(String fileName) {
@@ -48,20 +83,22 @@ public class HeapFileDesc {
 
             //in = new BufferedInputStream(new FileInputStream(fileName));
             in = new FileInputStream(fileName);
-            d.filledSpaces =loadArray(in);
-            d.emptySpaces = loadArray(in);
-            d.currentSpace = ObjectIO.readInt(in);
-            d.rootOfs = ObjectIO.readLong(in);
-            d.metadataLen = ObjectIO.readInt(in);
+            readFromInputStream(d, in);
             in.close();
-
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return d;
+    }
+
+    private static void readFromInputStream(HeapFileDesc d, InputStream in) throws IOException {
+        d.filledSpaces =loadArray(in);
+        d.emptySpaces = loadArray(in);
+        d.currentSpace = ObjectIO.readInt(in);
+        d.rootOfs = ObjectIO.readLong(in);
+        d.metadataLen = ObjectIO.readInt(in);
     }
 
     public static int[] loadArray(InputStream in) throws IOException {
