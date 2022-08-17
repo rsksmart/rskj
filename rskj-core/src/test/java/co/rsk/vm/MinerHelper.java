@@ -72,8 +72,6 @@ public class MinerHelper {
         totalGasUsed = 0;
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
-
 
         Repository track = repositoryLocator.startTrackingAt(parent.getHeader());
 
@@ -106,7 +104,7 @@ public class MinerHelper {
                     null,
                     new PrecompiledContracts(config, bridgeSupportFactory), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed, remascFees);
+                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.executeTransaction();
 
@@ -121,10 +119,8 @@ public class MinerHelper {
             * fees are sent to the Remasc address once all the transactions are executed.
             * Since the only test using this helper processes one transaction, so the loop has no sense.
             * */
-            long fees = remascFees.get();
-            if (fees > 0) {
-                track.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(fees));
-                track.commit();
+            if (config.isRemascEnabled() && totalPaidFees.compareTo(Coin.ZERO) > 0) {
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, totalPaidFees);
             }
 
             track.commit();

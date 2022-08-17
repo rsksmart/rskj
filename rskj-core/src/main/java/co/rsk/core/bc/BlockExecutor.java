@@ -334,7 +334,6 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         int txindex = 0;
 
@@ -350,8 +349,8 @@ public class BlockExecutor {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts,
-                    remascFees);
+                    deletedAccounts
+            );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -393,7 +392,7 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(remascFees, track);
+        addFeesToRemasc(totalPaidFees, track);
 
         loggingEndTxsExecutions();
 
@@ -449,7 +448,6 @@ public class BlockExecutor {
         Map<Integer, TransactionReceipt> receipts = new ConcurrentSkipListMap<>();
         Map<Integer, Transaction> executedTransactions = new ConcurrentSkipListMap<>();
         Set<DataWord> deletedAccounts = ConcurrentHashMap.newKeySet();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
         ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -475,7 +473,6 @@ public class BlockExecutor {
                     transactionResults,
                     registerProgramResults,
                     programTraceProcessor,
-                    remascFees,
                     totalPaidFees,
                     totalGasUsed,
                     start
@@ -527,7 +524,6 @@ public class BlockExecutor {
                 transactionResults,
                 registerProgramResults,
                 programTraceProcessor,
-                remascFees,
                 totalPaidFees,
                 totalGasUsed,
                 start
@@ -537,7 +533,7 @@ public class BlockExecutor {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
-        addFeesToRemasc(remascFees, track);
+        addFeesToRemasc(totalPaidFees.get(), track);
 
         loggingEndTxsExecutions();
         if (!vmTrace) {
@@ -551,7 +547,7 @@ public class BlockExecutor {
                 new LinkedList<>(receipts.values()),
                 new short[0],
                 totalGasUsed.longValue(),
-                Coin.valueOf(totalPaidFees.longValue()),
+                totalPaidFees.get(),
                 vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
@@ -559,10 +555,10 @@ public class BlockExecutor {
         return result;
     }
 
-    private void addFeesToRemasc(LongAccumulator remascFees, Repository track) {
-        long fee = remascFees.get();
-        if (fee > 0) {
-            track.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(fee));
+    private void addFeesToRemasc(Coin remascFees, Repository track) {
+        if (remascFees.compareTo(Coin.ZERO) > 0) {
+            logger.trace("Adding fee to remasc contract account");
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, remascFees);
         }
     }
 
@@ -597,7 +593,6 @@ public class BlockExecutor {
         Coin totalPaidFees = Coin.ZERO;
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
 
@@ -615,8 +610,8 @@ public class BlockExecutor {
                     parallelizeTransactionHandler.getGasUsedInSequential(),
                     false,
                     0,
-                    deletedAccounts,
-                    remascFees);
+                    deletedAccounts
+            );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -677,8 +672,7 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(remascFees, track);
-
+        addFeesToRemasc(totalPaidFees, track);
         loggingEndTxsExecutions();
 
         saveTrack(track);

@@ -32,7 +32,6 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Map<Integer, TransactionReceipt> receipts;
     private final Map<Keccak256, ProgramResult> transactionResults;
     private final ProgramTraceProcessor programTraceProcessor;
-    private final LongAccumulator remascFees;
     private final LongAccumulator accumulatedFees;
     private final LongAccumulator accumulatedGas;
 
@@ -55,7 +54,6 @@ public class TransactionListExecutor implements Callable<Boolean> {
             Map<Keccak256, ProgramResult> transactionResults,
             boolean registerProgramResults,
             @Nullable ProgramTraceProcessor programTraceProcessor,
-            LongAccumulator remascFees,
             LongAccumulator accumulatedFees,
             LongAccumulator accumulatedGas,
             int firstTxIndex) {
@@ -77,7 +75,6 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.accumulatedFees = accumulatedFees;
         this.accumulatedGas = accumulatedGas;
         this.i = firstTxIndex;
-        this.remascFees = remascFees;
     }
 
     @Override
@@ -95,8 +92,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts,
-                    remascFees
+                    deletedAccounts
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
