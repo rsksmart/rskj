@@ -204,6 +204,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public static final CallTransaction.Function GET_ACTIVE_POWPEG_REDEEM_SCRIPT = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction();
 
+    public static final CallTransaction.Function GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH = BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction();
+
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
@@ -1229,6 +1231,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getEstimatedFeesForNextPegOutEvent");
 
         return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
+    public byte[] getPegoutCreationRskTxHashByBtcTxHash(Object[] args) {
+        logger.trace("getPegoutCreationRskTxHashByBtcTxHash");
+        try {
+            byte[] hashBytes = (byte[])args[0];
+            Sha256Hash hash = Sha256Hash.wrap(hashBytes);
+
+            Optional<Keccak256> rskTxHash = this.bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(hash);
+            if (rskTxHash.isPresent()){
+                return rskTxHash.get().getBytes();
+            } else {
+                return ByteUtil.EMPTY_BYTE_ARRAY;
+            }
+        } catch (Exception e) {
+            logger.warn("Exception in getPegoutCreationRskTxHashByBtcTxHash", e);
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

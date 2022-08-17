@@ -83,6 +83,65 @@ class BridgeTest {
     }
 
     @Test
+    public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP298), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+
+        Sha256Hash btcTxHash = PegTestUtils.createHash(30);
+
+        byte[] data = BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction().encode(
+            btcTxHash.getBytes()
+        );
+
+        assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298_activation() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP298), anyLong());
+
+        Sha256Hash btcTxHash = PegTestUtils.createHash(13);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(7);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(
+            Optional.of(rskTxHash)
+        );
+
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+
+        byte[] data = BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction().encode(
+            btcTxHash.getBytes()
+        );
+        byte[] result = (byte[]) BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction().decodeResult(bridge.execute(data))[0];
+
+        assertArrayEquals(rskTxHash.getBytes(), result);
+    }
+
+    @Test
+    public void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP298), anyLong());
+
+        Sha256Hash btcTxHash = PegTestUtils.createHash(17);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(
+            Optional.empty()
+        );
+
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+
+        byte[] data = BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction().encode(
+            btcTxHash.getBytes()
+        );
+        byte[] result = (byte[]) BridgeMethods.GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH.getFunction().decodeResult(bridge.execute(data))[0];
+
+        assertArrayEquals(new byte[32], result);
+    }
+
+    @Test
     void getLockingCap_before_RSKIP134_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
@@ -1000,4 +1059,6 @@ class BridgeTest {
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
     }
+
+
 }

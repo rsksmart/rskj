@@ -701,7 +701,19 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getEstimatedFeesForNextPegOutEvent,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
-    );
+    ),
+    GET_PEGOUT_CREATION_RSK_TX_HASH_BY_BTC_TX_HASH(
+        CallTransaction.Function.fromSignature(
+            "getPegoutCreationRskTxHashByBtcTxHash",
+            new String[]{"bytes32"},
+            new String[]{"bytes32"}
+        ),
+        fixedCost(10_000L), // TODO: PENDING TO DEFINE
+        (BridgeMethodExecutorTyped) Bridge::getPegoutCreationRskTxHashByBtcTxHash,
+        activations -> activations.isActive(RSKIP298),
+        fixedPermission(false)
+    ),
+    ;
 
     private final CallTransaction.Function function;
     private final CostProvider costProvider;

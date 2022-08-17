@@ -3422,12 +3422,6 @@ class BridgeStorageProviderTest {
         Sha256Hash hash = PegTestUtils.createHash(13);
 
         DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
-        when(
-            repository.getStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                storageKeyForPegoutCreationIndex
-            )
-        ).thenReturn(BridgeSerializationUtils.serializeKeccak256(Keccak256.ZERO_HASH));
 
         assertEquals(Optional.empty(), provider.getPegoutCreationRskTxHashByBtcTxHash(
             hash
