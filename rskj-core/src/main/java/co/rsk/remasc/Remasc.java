@@ -171,10 +171,10 @@ public class Remasc {
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        RskAddress rskLabsAddress = getRskLabsAddress();
-        Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
-        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, rskLabsAddress, logs);
-        syntheticReward = syntheticReward.subtract(payToRskLabs);
+        RskAddress remascRewardAddress = getRemascRewardAddress();
+        Coin payToRemasc = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRemascDivisor()));
+        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRemasc, remascRewardAddress, logs);
+        syntheticReward = syntheticReward.subtract(payToRemasc);
         Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
@@ -192,16 +192,16 @@ public class Remasc {
         }
     }
 
-    RskAddress getRskLabsAddress() {
+    RskAddress getRemascRewardAddress() {
         if (activationConfig.isActive(ConsensusRule.RSKIP348, executionBlock.getNumber())) {
-            return remascConstants.getRskLabsAddressRskip348();
+            return remascConstants.getRemascRewardAddressRskip348();
         }
 
         if (activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber())) {
-            return remascConstants.getRskLabsAddressRskip218();
+            return remascConstants.getRemascRewardAddressRskip218();
         }
 
-        return remascConstants.getRskLabsAddress();
+        return remascConstants.getRemascRewardAddress();
     }
 
     private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {

@@ -32,20 +32,20 @@ public class RemascConfig {
     // RSK labs address.
     // Note that his has to be a basic type (such as String) because RemascConfig
     // is deserialized automatically from JSON.
-    private String rskLabsAddress;
+    private String remascRewardAddress;
 
     // RSK labs address.
     // Note that his has to be a basic type (such as String) because RemascConfig
     // is deserialized automatically from JSON.
-    private String rskLabsAddressRskip218;
+    private String remascRewardAddressRskip218;
 
     // RSK labs address.
     // Note that his has to be a basic type (such as String) because RemascConfig
     // is deserialized automatically from JSON.
-    private String rskLabsAddressRskip348;
+    private String remascRewardAddressRskip348;
 
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
-    private long rskLabsDivisor = 5;
+    private long remascDivisor = 5;
 
     // Federation cut. Available reward / rskFederationDivisor is what Federation gets.
     private long federationDivisor = 100;
@@ -74,20 +74,20 @@ public class RemascConfig {
         return syntheticSpan;
     }
 
-    public RskAddress getRskLabsAddress() {
-        return new RskAddress(this.rskLabsAddress);
+    public RskAddress getRemascRewardAddress() {
+        return new RskAddress(this.remascRewardAddress);
     }
 
-    public RskAddress getRskLabsAddressRskip218() {
-        return new RskAddress(this.rskLabsAddressRskip218);
+    public RskAddress getRemascRewardAddressRskip218() {
+        return new RskAddress(this.remascRewardAddressRskip218);
     }
 
-    public RskAddress getRskLabsAddressRskip348() {
-        return new RskAddress(this.rskLabsAddressRskip348);
+    public RskAddress getRemascRewardAddressRskip348() {
+        return new RskAddress(this.remascRewardAddressRskip348);
     }
 
-    public long getRskLabsDivisor() {
-        return rskLabsDivisor;
+    public long getRemascDivisor() {
+        return remascDivisor;
     }
 
     public long getFederationDivisor() {
