@@ -92,16 +92,15 @@ public class RentedNode {
             case WRITE_OPERATION:
                 return WRITE_THRESHOLD;
             case READ_OPERATION:
-                return READ_THRESHOLD;
             case READ_CONTRACT_CODE_OPERATION:
-                return READ_THRESHOLD_CONTRACT_CODE;
+                return READ_THRESHOLD;
             default:
                 throw new RuntimeException("this shouldn't happen");
         }
     }
 
     private long rentCap() {
-        return this.operationType == READ_CONTRACT_CODE_OPERATION ? RENT_CAP_CONTRACT_CODE : RENT_CAP;
+        return RENT_CAP;
     }
 
     /**

@@ -32,11 +32,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class StorageRentComputation {
     public static final long READ_THRESHOLD = 2500;
-    public static final long READ_THRESHOLD_CONTRACT_CODE = 15000;
     public static final long WRITE_THRESHOLD = 1000;
     public static final long RENT_CAP = 5000;
-    public static final long RENT_CAP_CONTRACT_CODE = 30000;
-
     private static final double RENTAL_RATE = (1 / Math.pow(2, 21));
     private static final long STORAGE_OVERHEAD = 128;
 
