@@ -600,7 +600,7 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
         );
 
-        String filePath = "/Users/julianlen/workspace/output-experiments/execute-parallel.csv";
+        String filePath = "/home/ubuntu/output/execute-parallel.csv";
         Path file = Paths.get(filePath);
 
         // bNumber, numExecutedTx, feeTotal, gasTotal
@@ -770,7 +770,7 @@ public class BlockExecutor {
                 track.getTrie()
         );
 
-        String filePath = "/Users/julianlen/workspace/output-experiments/execute-for-mining.csv";
+        String filePath = "/home/ubuntu/output/execute-for-mining.csv";
         Path file = Paths.get(filePath);
 
         // bNumber, numExecutedTx, feeTotal, gasTotal, numTxInSequential, numTxInParallel
