@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 /**
- * This is the grey box testing of the StorageRent feature (RSKIP240)
+ * Grey box testing of the StorageRent feature (RSKIP240)
  * */
 public class StorageRentDSLTests {
 
@@ -83,20 +83,20 @@ public class StorageRentDSLTests {
          * */
 
         // balanceOf
-        checkStorageRent(world,"tx02", 0, 0, 4, 0);
-        checkStorageRent(world,"tx03", 0, 0, 3, 0);
+        checkStorageRent(world,"tx02", 5000, 0, 4, 0);
+        checkStorageRent(world,"tx03", 5000, 0, 3, 0);
 
         // transfer(senderAccountState, contractCode, balance1, balance2, storageRoot, ...)
-        checkStorageRent(world,"tx04", 15001, 0, 5, 0);
+        checkStorageRent(world,"tx04", 5000, 0, 5, 0);
 
         // balanceOf
-        checkStorageRent(world,"tx05", 0, 0, 4, 0);
-        checkStorageRent(world,"tx06", 0, 0, 4, 0);
+        checkStorageRent(world,"tx05", 5000, 0, 4, 0);
+        checkStorageRent(world,"tx06", 5000, 0, 4, 0);
     }
 
     /**
-     * Executes a transaction with an internal transaction that is going to fail, but the main transaction succeeds
-     *
+     * Executes a transaction with an internal transaction that is going to fail, but the main transaction succeeds.
+     * <br/>
      * It should
      * - Pay storage rent of the main transaction +
      * - 25% of the internal transaction
@@ -110,7 +110,7 @@ public class StorageRentDSLTests {
         );
 
         // rollbackRent should be >0, we want to "penalize" failed access
-        checkStorageRent(world, "tx04",  2571, 70, 8, 3);
+        checkStorageRent(world, "tx04",  5072, 70, 8, 3);
     }
 
     /**
@@ -133,7 +133,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 770, 770, 3, 6);
+        checkStorageRent(world, "tx04", 3271, 770, 3, 6);
     }
 
     /**
@@ -155,7 +155,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 770, 770, 3, 7);
+        checkStorageRent(world, "tx04", 3271, 770, 3, 7);
     }
 
     /**
@@ -172,7 +172,7 @@ public class StorageRentDSLTests {
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
             BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, aprox 25 days
         );
-        checkStorageRent(world, "tx04", 2501, 0, 8, 0);
+        checkStorageRent(world, "tx04", 5002, 0, 8, 0);
     }
 
     /**
@@ -194,7 +194,7 @@ public class StorageRentDSLTests {
         RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
         RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
 
-        checkStorageRent(world, tx02, 41250, 1250, 3, 3);
+        checkStorageRent(world, tx02, 16250, 1250, 3, 3);
 
         // check for the value
         assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
