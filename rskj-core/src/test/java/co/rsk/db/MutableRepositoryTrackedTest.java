@@ -55,7 +55,7 @@ public class MutableRepositoryTrackedTest {
 
         spyRepository.getCode(accAddress1);
 
-        verifyNodeTracking(3, 3, 1);
+        verifyNodeTracking(4, 3, 1);
     }
 
     @Test
@@ -240,7 +240,6 @@ public class MutableRepositoryTrackedTest {
     private void verifyNodeTracking(int invokedReads, int invokedWrites, int invokedReadsContract) {
         verify(spyRepository, times(invokedReads)).trackNodeReadOperation(any(), anyBoolean());
         verify(spyRepository, times(invokedWrites)).trackNodeWriteOperation(any());
-        verify(spyRepository, times(invokedReadsContract)).trackNodeReadContractOperation(any(), anyBoolean());
     }
 
     // Testing internalGetValueLength calls: isExist, getCodeLength
@@ -308,7 +307,7 @@ public class MutableRepositoryTrackedTest {
         RentedNode node1 = new RentedNode(key("1"), READ_OPERATION, notRelevant, notRelevant);
         RentedNode node2 = new RentedNode(key("2"), READ_OPERATION, notRelevant, notRelevant);
         RentedNode node3 = new RentedNode(key("3"), WRITE_OPERATION, notRelevant, notRelevant);
-        RentedNode node4 = new RentedNode(key("4"), READ_CONTRACT_CODE_OPERATION, notRelevant, notRelevant);
+        RentedNode node4 = new RentedNode(key("4"), READ_OPERATION, notRelevant, notRelevant);
 
         // todo(fedejinich) get rid of ALL the RentedNode instances, there's no point on using them
         MutableRepositoryTracked.track(node1.getKey(), node1.getOperationType(), trackedNodes);

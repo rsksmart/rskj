@@ -24,7 +24,6 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
@@ -215,13 +214,13 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return internalGet(key, true);
+        return internalGet(key);
     }
 
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        return internalGet(prefix, false) != null;
+        return internalGet(prefix) != null;
     }
 
     @Override
@@ -255,7 +254,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = internalGet(triekey, false);
+        byte[] value = internalGet(triekey);
         if (value == null) {
             return null;
         }
@@ -265,7 +264,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        return internalGet(triekey, false);
+        return internalGet(triekey);
     }
 
     /**
@@ -375,7 +374,7 @@ public class MutableRepository implements Repository {
     }
 
     private byte[] getAccountData(RskAddress addr) {
-        return internalGet(trieKeyMapper.getAccountKey(addr), false);
+        return internalGet(trieKeyMapper.getAccountKey(addr));
     }
 
     @VisibleForTesting // todo(techdebt) this method shouldn't be here
@@ -402,7 +401,7 @@ public class MutableRepository implements Repository {
         mutableTrie.deleteRecursive(key);
     }
 
-    protected byte[] internalGet(byte[] key, boolean readsContractCode) {
+    protected byte[] internalGet(byte[] key) {
         return mutableTrie.get(key);
     }
 
