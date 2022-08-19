@@ -5,6 +5,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
 
@@ -105,7 +106,10 @@ public class MutableRepositoryTracked extends MutableRepository {
         rentedNodes.forEach(node -> {
             long updatedRentTimestamp = node.getUpdatedRentTimestamp(executionBlockTimestamp);
 
-            this.mutableTrie.putRentTimestamp(node.getKey().getData(), updatedRentTimestamp);
+            // only updates to bigger timestamps
+            if(updatedRentTimestamp > node.getRentTimestamp()) {
+                this.mutableTrie.putRentTimestamp(node.getKey().getData(), updatedRentTimestamp);
+            }
         });
     }
 
@@ -123,6 +127,10 @@ public class MutableRepositoryTracked extends MutableRepository {
         } else {
             trackNodeWriteOperation(key);
         }
+    }
+
+    public long getValueLength(byte[] key) {
+        return this.mutableTrie.getValueLength(key).intValue();
     }
 
     @Override
@@ -163,7 +171,7 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     protected void trackNodeDeleteOperation(byte[] key) {
-        trackNode(key, DELETE_OPERATION, true);
+        trackNode(key,  DELETE_OPERATION, true);
     }
 
     protected void trackNodeReadOperation(byte[] key, boolean result) {
@@ -179,11 +187,6 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     public static void track(ByteArrayWrapper keyToTrack, OperationType operationTypeToTrack, Map<ByteArrayWrapper, OperationType> trackedNodesMap) {
-        // todo(fedejinich) track DELETEs
-        if(operationTypeToTrack == DELETE_OPERATION) {
-            return;
-        }
-
         OperationType alreadyContainedOperationType = trackedNodesMap.get(keyToTrack);
 
         if(alreadyContainedOperationType == null) {

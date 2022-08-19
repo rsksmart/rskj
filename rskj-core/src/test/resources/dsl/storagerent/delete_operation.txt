@@ -1,0 +1,57 @@
+# acc1 = "0xa0663f719962ec10bb57865532bef522059dfd96"
+account_new acc1 20000000
+
+# Deploy Contract
+transaction_build tx01
+    sender acc1
+    nonce 0
+    receiver 00
+    data 608060405234801561001057600080fd5b50600760008190555060ce806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80633fa4f24514603757806361461954146051575b600080fd5b603d6059565b604051604891906075565b60405180910390f35b6057605f565b005b60005481565b60008081905550565b606f81608e565b82525050565b6000602082019050608860008301846068565b92915050565b600081905091905056fea26469706673582212202d8208ff578daa5e3a86eb0df2105f6b3bd9c6bce30cf5340e7f8f1458e9cf7764736f6c63430008070033
+    gas 6000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success tx01
+
+# Call .execute
+transaction_build tx02
+    sender acc1
+    nonce 1
+    contract tx01
+    data 61461954 # execute()
+    gas 6000000
+    build
+
+block_build b02
+    parent b01
+    transactions tx02
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
+
+# Contract used
+comment
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.2;
+
+contract DeleteOperation {
+    uint public value;
+
+    constructor() {
+        value = 7; // set some value
+    }
+
+    function execute() public {
+        value = 0; // delete
+    }
+}
+end
