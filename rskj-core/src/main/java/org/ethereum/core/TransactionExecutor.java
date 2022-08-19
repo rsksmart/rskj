@@ -36,6 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -459,7 +460,10 @@ public class TransactionExecutor {
             profiler.stop(metric);
             return;
         }
-        transactionTrack.commit();
+        // todo(fedejinich) this is producing troubles on delete operations, what's the purpose of it?
+//        transactionTrack.commit();
+        // todo(fedejinich) this commit() makes no sense here. There are two consecutive commits() when one of them
+        //  it's supposed to be used for localCalls and the other one for real calls.
         profiler.stop(metric);
     }
 
@@ -506,6 +510,7 @@ public class TransactionExecutor {
         // RSK if local call gas balances must not be changed
         if (localCall) {
             // there's no need to save any change
+            transactionTrack.commit(); // todo(fedejinich) this was previously done at the end of go() method
             localCallFinalization();
             return;
         }

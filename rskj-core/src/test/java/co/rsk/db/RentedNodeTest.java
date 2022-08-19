@@ -47,4 +47,5 @@ public class RentedNodeTest {
         assertEquals((long) (rentedNode.rentByBlock(executionBlockTimestamp) * 0.25), rentedNode.rollbackFee(executionBlockTimestamp, Collections.singleton(rentedNode)));
     }
 
+    // todo(fedejinich) add more tests
 }

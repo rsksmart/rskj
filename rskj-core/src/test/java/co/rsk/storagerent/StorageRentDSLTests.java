@@ -6,8 +6,10 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ByteArrayWrapper;
@@ -17,13 +19,16 @@ import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static co.rsk.storagerent.StorageRentComputation.RENT_CAP;
+import static co.rsk.storagerent.StorageRentComputation.WRITE_THRESHOLD;
+import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
+import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
 
 /**
@@ -218,6 +223,107 @@ public class StorageRentDSLTests {
         assertTrue(rollbackNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountKey(contract))));
 
         checkNoDuplicatedPayments(world, tx02);
+
+        assertEquals(3, rentedNodes.size());
+        assertTrue(rentedNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountKey(sender))));
+        assertTrue(rentedNodes.contains(new ByteArrayWrapper(trieKeyMapper.getAccountKey(contract))));
+        assertTrue(rentedNodes.contains(new ByteArrayWrapper(trieKeyMapper.getCodeKey(contract))));
+    }
+
+    /**
+     * Delete an existing trie node with accumulated rent.
+     *
+     * It should:
+     * - pay the accumulated rent
+     * */
+    @Test
+    public void deleteNodeWithAccumulatedRent() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 974_875;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/delete_operation.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+        // pay for deleted keys
+        checkStorageRent(world, "tx02", 10163, 0, 4, 0);
+
+        RskAddress addr = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
+
+        // check cell initialized at b01
+        assertEquals(DataWord.valueOf(7), getStorageValueByBlockName(world, addr, "b01"));
+
+        // check node after execution
+        Set<RentedNode> rentedNodeSet = world.getTransactionExecutor("tx02")
+                .getStorageRentResult()
+                .getRentedNodes();
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(addr, DataWord.ZERO));
+        RentedNode expectedNode = new RentedNode(
+                key,
+                DELETE_OPERATION,
+                1,
+                29246250000l
+        );
+        assertTrue(rentedNodeSet.contains(expectedNode));
+
+        RentedNode deletedNode = rentedNodeSet.stream().filter(r -> r.getKey().equals(key))
+                .collect(Collectors.toList())
+                .get(0);
+
+        long paidRent = deletedNode.payableRent(world.getBlockByName("b02").getTimestamp()); // node was deleted at b02
+        assertTrue(WRITE_THRESHOLD <= paidRent && paidRent < RENT_CAP);
+
+        // check deleted storage cell
+        assertNull(getStorageValueByBlockName(world, addr, "b02"));
+    }
+
+    // todo(fedejinich) there's duplicated code between this test and deleteNodeWithAccumulatedRent
+    /**
+     * Delete an existing trie node with accumulated outstanding rent.
+     * It should:
+     * - pay up the rent cap
+     * */
+    @Test
+    public void deleteNodeWithAccumulatedOutstandingRent() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 974_8750;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/delete_operation.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+        // pay for deleted keys
+        checkStorageRent(world, "tx02", 20000, 0, 4, 0);
+
+        RskAddress addr = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
+
+        // check cell initialized at b01
+        assertEquals(DataWord.valueOf(7), getStorageValueByBlockName(world, addr, "b01"));
+
+        // check node after execution
+        Set<RentedNode> rentedNodeSet = world.getTransactionExecutor("tx02")
+                .getStorageRentResult()
+                .getRentedNodes();
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(addr, DataWord.ZERO));
+        RentedNode expectedNode = new RentedNode(
+                key,
+                DELETE_OPERATION,
+                1,
+                292462500000l
+        );
+        assertTrue(rentedNodeSet.contains(expectedNode));
+
+        RentedNode deletedNode = rentedNodeSet.stream().filter(r -> r.getKey().equals(key))
+                .collect(Collectors.toList())
+                .get(0);
+
+        long paidRent = deletedNode.payableRent(world.getBlockByName("b02").getTimestamp()); // node was deleted at b02
+        assertEquals(RENT_CAP, paidRent); // pays rent cap
+
+        // check deleted storage cell
+        assertNull(getStorageValueByBlockName(world, addr, "b02"));
+    }
+
+    private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {
+        return world.getRepositoryLocator()
+            .snapshotAt(world.getBlockByName(blockName).getHeader())
+            .getStorageValue(addr, DataWord.ZERO);
     }
 
     private void checkNoDuplicatedPayments(World world, String txName) {
@@ -285,6 +391,24 @@ public class StorageRentDSLTests {
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
         assertEquals(paidRent, storageRentResult.paidRent());
+        // todo(fedejinich) add assert for payableRent()
+        nodesSizesPositive(storageRentResult.getRentedNodes());
+        nodesSizesPositive(storageRentResult.getRollbackNodes());
+
+    }
+
+    private void nodesSizesPositive(Set<RentedNode> nodes) {
+        boolean positiveSizes = nodes.stream()
+                .filter(r -> r.getRentTimestamp() != NO_RENT_TIMESTAMP)
+                .allMatch(r -> r.getNodeSize() > 0);
+
+        // if a node is not timestamped yet then its size is zero
+        boolean noTimestampNoSize = nodes.stream()
+                .filter(r -> r.getRentTimestamp() == NO_RENT_TIMESTAMP)
+                .allMatch(r -> r.getNodeSize() == 0);
+
+        assertTrue(positiveSizes);
+        assertTrue(noTimestampNoSize);
     }
 
     private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
