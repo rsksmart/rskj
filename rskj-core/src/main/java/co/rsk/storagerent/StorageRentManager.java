@@ -14,6 +14,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
+
 /**
  * StorageRentManager, responsible for paying StorageRent (RSKIP240)
  * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
@@ -51,8 +53,8 @@ public class StorageRentManager {
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
-        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackKeys, blockTrack);
+        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack, transactionTrack);
+        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackKeys, blockTrack, transactionTrack);
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackKeys.size());
@@ -91,7 +93,9 @@ public class StorageRentManager {
     }
 
     @VisibleForTesting
-    public static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes, MutableRepositoryTracked blockTrack) {
+    public static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
+                                                   MutableRepositoryTracked blockTrack,
+                                                   MutableRepositoryTracked transactionTrack) {
         return nodes.entrySet()
                 .stream()
                 .map(entry -> blockTrack.fetchRentedNode(entry.getKey(), entry.getValue()))
@@ -108,10 +112,9 @@ public class StorageRentManager {
         return merged;
     }
 
-    // todo(fedejinich) filter DELETE_OPERATION for timestamp update
     private static boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
         return rentedNode.payableRent(executionBlockTimestamp) > 0 ||
-                rentedNode.getRentTimestamp() == Trie.NO_RENT_TIMESTAMP;
+                rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP;
     }
 
     private static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {

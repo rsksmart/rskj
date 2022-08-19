@@ -302,20 +302,15 @@ public class MutableRepositoryTrackedTest {
     public void track_trackAllDifferentKeys() {
         Map<ByteArrayWrapper, OperationType> trackedNodes = new HashMap<>();
 
-        long notRelevant = 0;
+        MutableRepositoryTracked.track(key("1"), READ_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("2"), READ_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("3"), WRITE_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("4"), READ_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("5"), DELETE_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("6"), WRITE_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key("7"), DELETE_OPERATION, trackedNodes);
 
-        RentedNode node1 = new RentedNode(key("1"), READ_OPERATION, notRelevant, notRelevant);
-        RentedNode node2 = new RentedNode(key("2"), READ_OPERATION, notRelevant, notRelevant);
-        RentedNode node3 = new RentedNode(key("3"), WRITE_OPERATION, notRelevant, notRelevant);
-        RentedNode node4 = new RentedNode(key("4"), READ_OPERATION, notRelevant, notRelevant);
-
-        // todo(fedejinich) get rid of ALL the RentedNode instances, there's no point on using them
-        MutableRepositoryTracked.track(node1.getKey(), node1.getOperationType(), trackedNodes);
-        MutableRepositoryTracked.track(node2.getKey(), node2.getOperationType(), trackedNodes);
-        MutableRepositoryTracked.track(node3.getKey(), node3.getOperationType(), trackedNodes);
-        MutableRepositoryTracked.track(node4.getKey(), node4.getOperationType(), trackedNodes);
-
-        assertEquals(4, trackedNodes.size());
+        assertEquals(7, trackedNodes.size());
 
         Set<ByteArrayWrapper> trackedKeys = trackedNodes.keySet();
 
@@ -327,6 +322,9 @@ public class MutableRepositoryTrackedTest {
         assertTrue(trackedNodes.containsKey(key("2")));
         assertTrue(trackedNodes.containsKey(key("3")));
         assertTrue(trackedNodes.containsKey(key("4")));
+        assertTrue(trackedNodes.containsKey(key("5")));
+        assertTrue(trackedNodes.containsKey(key("6")));
+        assertTrue(trackedNodes.containsKey(key("7")));
     }
 
     private ByteArrayWrapper key(String key) {
@@ -340,28 +338,22 @@ public class MutableRepositoryTrackedTest {
     public void track_duplicatedKeys() {
         Map<ByteArrayWrapper, OperationType> trackedNodes = new HashMap<>();
 
-        long notRelevant = 0;
-
         ByteArrayWrapper key = key("1");
-        RentedNode thresholdHigh = new RentedNode(key, READ_OPERATION, notRelevant, notRelevant);
-        RentedNode thresholdLow = new RentedNode(key, WRITE_OPERATION, notRelevant, notRelevant);
 
-        // todo(fedejinich) there's no need to use RentedNode
-
-        MutableRepositoryTracked.track(thresholdHigh.getKey(), thresholdHigh.getOperationType(), trackedNodes);
-        MutableRepositoryTracked.track(thresholdHigh.getKey(), thresholdHigh.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(key, READ_OPERATION, trackedNodes);
+        MutableRepositoryTracked.track(key, READ_OPERATION, trackedNodes);
 
         // contains just one element (no duplicates)
         assertEquals(1, trackedNodes.size());
-        assertEquals(thresholdHigh.getOperationType(), trackedNodes.get(key));
+        assertEquals(READ_OPERATION, trackedNodes.get(key));
 
         // add the same key but with a lower threshold
-        MutableRepositoryTracked.track(thresholdLow.getKey(), thresholdLow.getOperationType(), trackedNodes);
+        MutableRepositoryTracked.track(key, WRITE_OPERATION, trackedNodes);
 
-        // the key should be replaced with the lower threshold node
+        // the key should've been replaced by the node with the lowest threshold
         assertEquals(1, trackedNodes.size());
-        assertEquals(thresholdLow.getOperationType(), trackedNodes.get(key));
-        assertTrue(rentThreshold(trackedNodes.get(key)) < rentThreshold(thresholdHigh.getOperationType()));
+        assertEquals(WRITE_OPERATION, trackedNodes.get(key));
+        assertTrue(rentThreshold(WRITE_OPERATION) < rentThreshold(READ_OPERATION));
     }
 
     /**

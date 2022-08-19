@@ -26,6 +26,8 @@ import co.rsk.trie.Trie;
 
 import java.util.concurrent.TimeUnit;
 
+import static co.rsk.trie.Trie.*;
+
 /**
  * Rent computation util according to the RSKIP240
  * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
@@ -97,7 +99,7 @@ public class StorageRentComputation {
         validPositiveValue(rentCap, "rentCap must be positive");
         validPositiveValue(rentThreshold, "rentThreshold must be positive");
 
-        if(lastPaidTimestamp == Trie.NO_RENT_TIMESTAMP) {
+        if(lastPaidTimestamp == NO_RENT_TIMESTAMP) {
             return currentBlockTimestamp;
         }
 
