@@ -58,7 +58,7 @@ public class RentedNode {
         );
     }
 
-    private long getNodeSize() {
+    public long getNodeSize() {
         return nodeSize;
     }
 
@@ -89,6 +89,7 @@ public class RentedNode {
     public static long rentThreshold(OperationType operationType) {
         switch (operationType) {
             case WRITE_OPERATION:
+            case DELETE_OPERATION:
                 return WRITE_THRESHOLD;
             case READ_OPERATION:
                 return READ_THRESHOLD;
