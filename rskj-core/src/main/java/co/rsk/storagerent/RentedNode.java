@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static co.rsk.storagerent.StorageRentComputation.*;
-import static org.ethereum.db.OperationType.READ_CONTRACT_CODE_OPERATION;
 
 /**
  * A RentedNode contains the relevant data of an involved node during transaction execution.
@@ -92,7 +91,6 @@ public class RentedNode {
             case WRITE_OPERATION:
                 return WRITE_THRESHOLD;
             case READ_OPERATION:
-            case READ_CONTRACT_CODE_OPERATION:
                 return READ_THRESHOLD;
             default:
                 throw new RuntimeException("this shouldn't happen");

@@ -132,15 +132,10 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     @Override
-    protected byte[] internalGet(byte[] key, boolean readsContractCode) {
-        byte[] value = super.internalGet(key, readsContractCode);
-        boolean nodeExistsInTrie = value != null;
+    protected byte[] internalGet(byte[] key) {
+        byte[] value = super.internalGet(key);
 
-        if(readsContractCode) {
-            trackNodeReadContractOperation(key, nodeExistsInTrie);
-        } else {
-            trackNodeReadOperation(key, nodeExistsInTrie);
-        }
+        trackNodeReadOperation(key, value != null);
 
         return value;
     }
@@ -173,10 +168,6 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     protected void trackNodeReadOperation(byte[] key, boolean result) {
         trackNode(key, READ_OPERATION, result);
-    }
-
-    protected void trackNodeReadContractOperation(byte[] key, boolean nodeExistsInTrie) {
-        trackNode(key, READ_CONTRACT_CODE_OPERATION, nodeExistsInTrie);
     }
 
     protected void trackNode(byte[] rawKeyToTrack, OperationType operationType, boolean nodeExistsInTrie) {
