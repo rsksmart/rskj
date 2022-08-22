@@ -52,8 +52,9 @@ import java.util.stream.Stream;
  * <br>
  * Required cli args:
  * <ol>
- *     <li><b>args[0]</b>: work directory where the json template and individual json files are present</li>
- *     <li><b>args[1]</b>: destination file containing the final OpenRPC json doc</li>
+ *     <li><b>args[0]</b>: RSKj version, will be present on final doc</li>
+ *     <li><b>args[1]</b>: work directory where the json template and individual json files are present</li>
+ *     <li><b>args[2]</b>: destination file containing the final OpenRPC json doc</li>
  * </ol>
  */
 public class GenerateOpenRpcDoc {
