@@ -396,6 +396,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     public TxQuotaChecker getTxQuotaChecker() {
+        checkIfNotClosed();
+
         if (this.txQuotaChecker == null) {
             this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis);
         }
@@ -540,6 +542,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     public GasPriceTracker getGasPriceTracker() {
+        checkIfNotClosed();
+
         if (this.gasPriceTracker == null) {
             this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
         }
