@@ -18,7 +18,25 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.CheckpointManager;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.InsufficientMoneyException;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProviderException;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -48,6 +66,21 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -68,20 +101,15 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
- *
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
@@ -201,7 +229,6 @@ public class BridgeSupport {
 
     /**
      * Receives an array of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
-     *
      * @param headers The bitcoin headers
      */
     public void receiveHeaders(BtcBlock[] headers) throws IOException, BlockStoreException {
@@ -226,7 +253,6 @@ public class BridgeSupport {
 
     /**
      * Receives only one header of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
-     *
      * @param header The bitcoin headers
      */
     public Integer receiveHeader(BtcBlock header) throws IOException, BlockStoreException {
@@ -271,31 +297,31 @@ public class BridgeSupport {
 
     /**
      * Get the wallet for the currently active federation
-     *
-     * @param shouldConsiderFlyoverUTXOs
      * @return A BTC wallet for the currently active federation
+     *
      * @throws IOException
+     * @param shouldConsiderFlyoverUTXOs
      */
     public Wallet getActiveFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = getActiveFederationBtcUTXOs();
 
         return BridgeUtils.getFederationSpendWallet(
-                btcContext,
-                federation,
-                utxos,
-                shouldConsiderFlyoverUTXOs,
-                provider
+            btcContext,
+            federation,
+            utxos,
+            shouldConsiderFlyoverUTXOs,
+            provider
         );
     }
 
     /**
      * Get the wallet for the currently retiring federation
      * or null if there's currently no retiring federation
-     *
-     * @param shouldConsiderFlyoverUTXOs
      * @return A BTC wallet for the currently active federation
+     *
      * @throws IOException
+     * @param shouldConsiderFlyoverUTXOs
      */
     public Wallet getRetiringFederationWallet(boolean shouldConsiderFlyoverUTXOs) throws IOException {
         List<UTXO> retiringFederationBtcUTXOs = getRetiringFederationBtcUTXOs();
@@ -317,25 +343,20 @@ public class BridgeSupport {
 
         logger.debug("[getRetiringFederationWallet] Fetching retiring federation spend wallet");
         return BridgeUtils.getFederationSpendWallet(
-                btcContext,
-                federation,
-                utxos,
-                shouldConsiderFlyoverUTXOs,
-                provider
+            btcContext,
+            federation,
+            utxos,
+            shouldConsiderFlyoverUTXOs,
+            provider
         );
-    }
-
-    @VisibleForTesting
-    BtcBlockStoreWithCache getBtcBlockStore() {
-        return btcBlockStore;
     }
 
     /**
      * Get the wallet for the currently live federations
      * but limited to a specific list of UTXOs
-     *
      * @return A BTC wallet for the currently live federation(s)
      * limited to the given list of UTXOs
+     *
      */
     public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFlyoverCompatible) {
         return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFlyoverCompatible, provider);
@@ -343,8 +364,8 @@ public class BridgeSupport {
 
     /**
      * Get a no spend wallet for the currently live federations
-     *
      * @return A no spend BTC wallet for the currently live federation(s)
+     *
      */
     public Wallet getNoSpendWalletForLiveFederations(boolean isFlyoverCompatible) {
         return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFlyoverCompatible, provider);
@@ -353,11 +374,10 @@ public class BridgeSupport {
     /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
-     *
-     * @param rskTx           The RSK transaction
+     * @param rskTx The RSK transaction
      * @param btcTxSerialized The raw BTC tx
-     * @param height          The height of the BTC block that contains the tx
-     * @param pmtSerialized   The raw partial Merkle tree
+     * @param height The height of the BTC block that contains the tx
+     * @param pmtSerialized The raw partial Merkle tree
      * @throws BlockStoreException
      * @throws IOException
      */
@@ -406,6 +426,11 @@ public class BridgeSupport {
         }
     }
 
+    @VisibleForTesting
+    BtcBlockStoreWithCache getBtcBlockStore() {
+        return btcBlockStore;
+    }
+
     protected TxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
@@ -417,24 +442,24 @@ public class BridgeSupport {
         }
 
         if (BridgeUtils.isValidPegInTx(
-                btcTx,
-                getLiveFederations(),
-                retiredFederationP2SHScript,
-                btcContext,
-                bridgeConstants,
-                activations
+            btcTx,
+            getLiveFederations(),
+            retiredFederationP2SHScript,
+            btcContext,
+            bridgeConstants,
+            activations
         )) {
             return TxType.PEGIN;
         }
 
         if (BridgeUtils.isMigrationTx(
-                btcTx,
-                getActiveFederation(),
-                getRetiringFederation(),
-                retiredFederationP2SHScript,
-                btcContext,
-                bridgeConstants,
-                activations
+            btcTx,
+            getActiveFederation(),
+            getRetiringFederation(),
+            retiredFederationP2SHScript,
+            btcContext,
+            bridgeConstants,
+            activations
         )) {
             return TxType.MIGRATION;
         }
@@ -460,19 +485,19 @@ public class BridgeSupport {
     }
 
     protected void processPegIn(
-            BtcTransaction btcTx,
-            Transaction rskTx,
-            int height,
-            Sha256Hash btcTxHash) throws IOException, RegisterBtcTransactionException {
+        BtcTransaction btcTx,
+        Transaction rskTx,
+        int height,
+        Sha256Hash btcTxHash) throws IOException, RegisterBtcTransactionException {
 
         logger.debug("[processPegIn] This is a lock tx {}", btcTx);
 
         Coin totalAmount = computeTotalAmountSent(btcTx);
 
         PeginInformation peginInformation = new PeginInformation(
-                btcLockSenderProvider,
-                peginInstructionsProvider,
-                activations
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            activations
         );
         try {
             peginInformation.parse(btcTx);
@@ -488,9 +513,9 @@ public class BridgeSupport {
             }
 
             String message = String.format(
-                    "Error while trying to parse peg-in information for tx %s. %s",
-                    btcTx.getHash(),
-                    e.getMessage()
+                "Error while trying to parse peg-in information for tx %s. %s",
+                btcTx.getHash(),
+                e.getMessage()
             );
             logger.warn("[processPegIn] {}", message);
             throw new RegisterBtcTransactionException(message);
@@ -518,11 +543,11 @@ public class BridgeSupport {
     }
 
     private void processPegInVersionLegacy(
-            BtcTransaction btcTx,
-            Transaction rskTx,
-            int height,
-            PeginInformation peginInformation,
-            Coin totalAmount) throws IOException, RegisterBtcTransactionException {
+        BtcTransaction btcTx,
+        Transaction rskTx,
+        int height,
+        PeginInformation peginInformation,
+        Coin totalAmount) throws IOException, RegisterBtcTransactionException {
 
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
@@ -554,10 +579,10 @@ public class BridgeSupport {
     }
 
     private void processPegInVersion1(
-            BtcTransaction btcTx,
-            Transaction rskTx,
-            PeginInformation peginInformation,
-            Coin totalAmount) throws RegisterBtcTransactionException, IOException {
+        BtcTransaction btcTx,
+        Transaction rskTx,
+        PeginInformation peginInformation,
+        Coin totalAmount) throws RegisterBtcTransactionException, IOException {
 
         if (!activations.isActive(ConsensusRule.RSKIP170)) {
             throw new RegisterBtcTransactionException("Can't process version 1 peg-ins before RSKIP 170 activation");
@@ -587,10 +612,10 @@ public class BridgeSupport {
         logger.debug("[executePegIn] [btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), senderBtcAddressType);
         this.transferTo(peginInformation.getRskDestinationAddress(), amountInWeis);
         logger.info(
-                "[executePegIn] Transferring from BTC Address {}. RSK Address: {}. Amount: {}",
-                senderBtcAddress,
-                rskDestinationAddress,
-                amountInWeis
+            "[executePegIn] Transferring from BTC Address {}. RSK Address: {}. Amount: {}",
+            senderBtcAddress,
+            rskDestinationAddress,
+            amountInWeis
         );
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
@@ -606,10 +631,10 @@ public class BridgeSupport {
     }
 
     private void refundTxSender(
-            BtcTransaction btcTx,
-            Transaction rskTx,
-            PeginInformation peginInformation,
-            Coin amount) throws IOException {
+        BtcTransaction btcTx,
+        Transaction rskTx,
+        PeginInformation peginInformation,
+        Coin amount) throws IOException {
 
         Address btcRefundAddress = peginInformation.getBtcRefundAddress();
         if (btcRefundAddress != null) {
@@ -634,16 +659,16 @@ public class BridgeSupport {
 
     protected void processRelease(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
         logger.debug("[processRelease] This is a release tx {}", btcTx);
-        // do-nothing
-        // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
-        // Used utxos should had been removed when we created the release tx.
-        // Invoking removeUsedUTXOs() here would make "some" sense in theses scenarios:
-        // a) In testnet, devnet or local: we restart the RSK blockchain without changing the federation address. We don't want to have utxos that were already spent.
-        // Open problem: TxA spends TxB. registerBtcTransaction() for TxB is called, it spends a utxo the bridge is not yet aware of,
-        // so nothing is removed. Then registerBtcTransaction() for TxA and the "already spent" utxo is added as it was not spent.
-        // When is not guaranteed to be called in the chronological order, so a Federator can inform
-        // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
-        // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
+            // do-nothing
+            // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
+            // Used utxos should had been removed when we created the release tx.
+            // Invoking removeUsedUTXOs() here would make "some" sense in theses scenarios:
+            // a) In testnet, devnet or local: we restart the RSK blockchain without changing the federation address. We don't want to have utxos that were already spent.
+            // Open problem: TxA spends TxB. registerBtcTransaction() for TxB is called, it spends a utxo the bridge is not yet aware of,
+            // so nothing is removed. Then registerBtcTransaction() for TxA and the "already spent" utxo is added as it was not spent.
+            // When is not guaranteed to be called in the chronological order, so a Federator can inform
+            // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
+            // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
 
         markTxAsProcessed(btcTx);
 
@@ -664,7 +689,7 @@ public class BridgeSupport {
     }
 
     private boolean shouldProcessPegInVersionLegacy(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx,
-                                                    Address senderBtcAddress, Coin totalAmount, int height) {
+                                       Address senderBtcAddress, Coin totalAmount, int height) {
         return isTxLockableForLegacyVersion(txSenderAddressType, btcTx, senderBtcAddress) &&
                 verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
                 verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
@@ -677,10 +702,10 @@ public class BridgeSupport {
             return true;
         } else {
             logger.warn(
-                    "[isTxLockableForLegacyVersion]: [btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
-                    btcTx.getHash(),
-                    txSenderAddressType,
-                    senderBtcAddress
+                "[isTxLockableForLegacyVersion]: [btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
+                btcTx.getHash(),
+                txSenderAddressType,
+                senderBtcAddress
             );
             return false;
         }
@@ -690,8 +715,8 @@ public class BridgeSupport {
      * Internal method to transfer RSK to an RSK account
      * It also produce the appropiate internal transaction subtrace if needed
      *
-     * @param receiver address that receives the amount
-     * @param amount   amount to transfer
+     * @param receiver  address that receives the amount
+     * @param amount    amount to transfer
      */
     private void transferTo(RskAddress receiver, co.rsk.core.Coin amount) {
         rskRepository.transfer(
@@ -706,7 +731,7 @@ public class BridgeSupport {
         DataWord value = DataWord.valueOf(amount.getBytes());
 
         TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
-        ProgramResult result = ProgramResult.empty();
+        ProgramResult result     = ProgramResult.empty();
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
         logger.info("Transferred {} weis to {}", amount, receiver);
@@ -720,7 +745,7 @@ public class BridgeSupport {
     private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet(
-                false));
+            false));
         for (TransactionOutput output : outputsToTheActiveFederation) {
             UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
             getActiveFederationBtcUTXOs().add(utxo);
@@ -742,7 +767,6 @@ public class BridgeSupport {
      * This is the default contract method.
      * The funds will be sent to the bitcoin address controlled by the private key that signed the rsk tx.
      * The amount sent to the bridge in this tx will be the amount sent in the btc network minus fees.
-     *
      * @param rskTx The rsk tx being executed.
      * @throws IOException
      */
@@ -788,7 +812,7 @@ public class BridgeSupport {
      * to be processed later.
      *
      * @param destinationAddress the destination BTC address.
-     * @param value              the amount of BTC to release.
+     * @param value the amount of BTC to release.
      * @throws IOException
      */
     private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
@@ -801,13 +825,13 @@ public class BridgeSupport {
             // On top of this, the remainder after the fee should be enough for the user to be able to operate
             // For this, the calculation includes an additional percentage to assert for this
             Coin requireFundsForFee = feePerKB
-                    .multiply(pegoutSize) // times the size in bytes
-                    .divide(1000); // Get the s/b
+                .multiply(pegoutSize) // times the size in bytes
+                .divide(1000); // Get the s/b
             requireFundsForFee = requireFundsForFee
-                    .add(requireFundsForFee
-                            .times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
-                            .divide(100)
-                    ); // add the gap
+                .add(requireFundsForFee
+                    .times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
+                    .divide(100)
+                ); // add the gap
 
             // The pegout value should be greater or equals than the max of these two values
             Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValueInSatoshis().value, requireFundsForFee.value));
@@ -815,9 +839,9 @@ public class BridgeSupport {
             // Since Iris the peg-out the rule is that the minimum is inclusive
             if (value.isLessThan(minValue)) {
                 optionalRejectedPegoutReason = Optional.of(
-                        Objects.equals(minValue, requireFundsForFee) ?
-                                RejectedPegoutReason.FEE_ABOVE_VALUE :
-                                RejectedPegoutReason.LOW_AMOUNT
+                    Objects.equals(minValue, requireFundsForFee) ?
+                    RejectedPegoutReason.FEE_ABOVE_VALUE:
+                    RejectedPegoutReason.LOW_AMOUNT
                 );
             }
         } else {
@@ -829,17 +853,17 @@ public class BridgeSupport {
 
         if (optionalRejectedPegoutReason.isPresent()) {
             logger.warn(
-                    "releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
-                    destinationAddress,
-                    rskTx,
-                    value,
-                    optionalRejectedPegoutReason.get()
+                "releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                destinationAddress,
+                rskTx,
+                value,
+                optionalRejectedPegoutReason.get()
             );
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 refundAndEmitRejectEvent(
-                        value,
-                        rskTx.getSender(),
-                        optionalRejectedPegoutReason.get()
+                    value,
+                    rskTx.getSender(),
+                    optionalRejectedPegoutReason.get()
                 );
             }
         } else {
@@ -875,9 +899,8 @@ public class BridgeSupport {
      * migrations from retiring federations;
      * processing of any outstanding btc release requests; and
      * processing of any outstanding release btc transactions.
-     *
-     * @param rskTx current RSK transaction
      * @throws IOException
+     * @param rskTx current RSK transaction
      */
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
@@ -895,8 +918,8 @@ public class BridgeSupport {
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
         Wallet retiringFederationWallet = activations.isActive(RSKIP294) ?
-                getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
-                getRetiringFederationWallet(true);
+            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
+            getRetiringFederationWallet(true);
 
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         Federation activeFederation = getActiveFederation();
@@ -904,17 +927,17 @@ public class BridgeSupport {
         if (federationIsInMigrationAge(activeFederation)) {
             long federationAge = rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber();
             logger.trace("[processFundsMigration] Active federation (age={}) is in migration age.", federationAge);
-            if (hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            if (hasMinimumFundsToMigrate(retiringFederationWallet)){
                 logger.info(
-                        "[processFundsMigration] Retiring federation has funds to migrate: {}.",
-                        retiringFederationWallet.getBalance().toFriendlyString()
+                    "[processFundsMigration] Retiring federation has funds to migrate: {}.",
+                    retiringFederationWallet.getBalance().toFriendlyString()
                 );
 
                 migrateFunds(
-                        rskTx.getHash(),
-                        retiringFederationWallet,
-                        activeFederation.getAddress(),
-                        availableUTXOs
+                    rskTx.getHash(),
+                    retiringFederationWallet,
+                    activeFederation.getAddress(),
+                    availableUTXOs
                 );
             }
         }
@@ -922,30 +945,30 @@ public class BridgeSupport {
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 logger.info(
-                        "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
-                        retiringFederationWallet.getBalance().toFriendlyString()
+                    "[processFundsMigration] Federation is past migration age and will try to migrate remaining balance: {}.",
+                    retiringFederationWallet.getBalance().toFriendlyString()
                 );
 
                 try {
                     migrateFunds(
-                            rskTx.getHash(),
-                            retiringFederationWallet,
-                            activeFederation.getAddress(),
-                            availableUTXOs
+                        rskTx.getHash(),
+                        retiringFederationWallet,
+                        activeFederation.getAddress(),
+                        availableUTXOs
                     );
                 } catch (Exception e) {
                     logger.error(
-                            "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
-                            retiringFederationWallet.getBalance().toFriendlyString(),
-                            getRetiringFederationAddress()
+                        "[processFundsMigration] Unable to complete retiring federation migration. Balance left: {} in {}",
+                        retiringFederationWallet.getBalance().toFriendlyString(),
+                        getRetiringFederationAddress()
                     );
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
 
             logger.info(
-                    "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
-                    availableUTXOs.size()
+                "[processFundsMigration] Retiring federation migration finished. Available UTXOs left: {}.",
+                availableUTXOs.size()
             );
             provider.setOldFederation(null);
         }
@@ -974,10 +997,10 @@ public class BridgeSupport {
     }
 
     private void migrateFunds(
-            Keccak256 rskTxHash,
-            Wallet retiringFederationWallet,
-            Address activeFederationAddress,
-            List<UTXO> availableUTXOs) throws IOException {
+        Keccak256 rskTxHash,
+        Wallet retiringFederationWallet,
+        Address activeFederationAddress,
+        List<UTXO> availableUTXOs) throws IOException {
 
         ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
         Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
@@ -985,22 +1008,22 @@ public class BridgeSupport {
         List<UTXO> selectedUTXOs = createResult.getRight();
 
         logger.debug(
-                "[migrateFunds] consumed {} UTXOs.",
-                selectedUTXOs.size()
+            "[migrateFunds] consumed {} UTXOs.",
+            selectedUTXOs.size()
         );
 
         // Add the TX to the release set
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             Coin amountMigrated = selectedUTXOs.stream()
-                    .map(UTXO::getValue)
-                    .reduce(Coin.ZERO, Coin::add);
+                .map(UTXO::getValue)
+                .reduce(Coin.ZERO, Coin::add);
             releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
             // Log the Release request
             logger.debug(
-                    "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
-                    rskTxHash,
-                    btcTx.getHash(),
-                    amountMigrated
+                "[migrateFunds] release requested. rskTXHash: {}, btcTxHash: {}, amount: {}",
+                rskTxHash,
+                btcTx.getHash(),
+                amountMigrated
             );
             eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amountMigrated);
         } else {
@@ -1009,7 +1032,7 @@ public class BridgeSupport {
 
         // Mark UTXOs as spent
         availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-                utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
+            utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
         ));
     }
 
@@ -1058,10 +1081,10 @@ public class BridgeSupport {
     }
 
     private void addPegoutTxToReleaseTransactionSet(
-            BtcTransaction generatedTransaction,
-            ReleaseTransactionSet releaseTransactionSet,
-            Keccak256 rskTxHash,
-            Coin amount
+        BtcTransaction generatedTransaction,
+        ReleaseTransactionSet releaseTransactionSet,
+        Keccak256 rskTxHash,
+        Coin amount
     ) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             // Add the TX
@@ -1079,28 +1102,28 @@ public class BridgeSupport {
     }
 
     private void processPegoutsIndividually(
-            ReleaseRequestQueue releaseRequestQueue,
-            ReleaseTransactionBuilder txBuilder,
-            List<UTXO> availableUTXOs,
-            ReleaseTransactionSet releaseTransactionSet,
-            Wallet wallet
+        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseTransactionBuilder txBuilder,
+        List<UTXO> availableUTXOs,
+        ReleaseTransactionSet releaseTransactionSet,
+        Wallet wallet
     ) {
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildAmountTo(
-                    releaseRequest.getDestination(),
-                    releaseRequest.getAmount()
+                releaseRequest.getDestination(),
+                releaseRequest.getAmount()
             );
 
             if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
-                // Couldn't build a transaction to release these funds
-                // Log the event and return false so that the request remains in the
-                // queue for future processing.
-                // Further logging is done at the tx builder level.
+            // Couldn't build a transaction to release these funds
+            // Log the event and return false so that the request remains in the
+            // queue for future processing.
+            // Further logging is done at the tx builder level.
                 logger.warn(
-                        "Couldn't build a release BTC tx for <{}, {}>. Reason: {}",
-                        releaseRequest.getDestination().toBase58(),
-                        releaseRequest.getAmount(),
-                        result.getResponseCode());
+                    "Couldn't build a release BTC tx for <{}, {}>. Reason: {}",
+                    releaseRequest.getDestination().toBase58(),
+                    releaseRequest.getAmount(),
+                    result.getResponseCode());
                 return false;
             }
 
@@ -1118,21 +1141,21 @@ public class BridgeSupport {
     }
 
     private void processPegoutsInBatch(
-            ReleaseRequestQueue releaseRequestQueue,
-            ReleaseTransactionBuilder txBuilder,
-            List<UTXO> availableUTXOs,
-            ReleaseTransactionSet releaseTransactionSet,
-            Wallet wallet,
-            Transaction rskTx) {
+        ReleaseRequestQueue releaseRequestQueue,
+        ReleaseTransactionBuilder txBuilder,
+        List<UTXO> availableUTXOs,
+        ReleaseTransactionSet releaseTransactionSet,
+        Wallet wallet,
+        Transaction rskTx) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
             List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
             Coin totalPegoutValue = pegoutEntries
-                    .stream()
-                    .map(ReleaseRequestQueue.Entry::getAmount)
-                    .reduce(Coin.ZERO, Coin::add);
+                .stream()
+                .map(ReleaseRequestQueue.Entry::getAmount)
+                .reduce(Coin.ZERO, Coin::add);
 
             if (wallet.getBalance().isLessThan(totalPegoutValue)) {
                 logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
@@ -1152,10 +1175,10 @@ public class BridgeSupport {
 
                 if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
                     logger.warn(
-                            "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
-                            releaseRequestQueue.getEntries().size(),
-                            totalPegoutValue,
-                            result.getResponseCode());
+                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
+                        releaseRequestQueue.getEntries().size(),
+                        totalPegoutValue,
+                        result.getResponseCode());
                     return;
                 }
 
@@ -1173,7 +1196,7 @@ public class BridgeSupport {
                 availableUTXOs.removeAll(selectedUTXOs);
 
                 eventLogger.logBatchPegoutCreated(generatedTransaction,
-                        pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
+                    pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
                 adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
             }
@@ -1192,7 +1215,6 @@ public class BridgeSupport {
      * It basically looks for transactions with enough confirmations
      * and marks them as ready for signing as well as removes them
      * from the set.
-     *
      * @param rskTx the RSK transaction that is causing this processing.
      */
     private void processReleaseTransactions(Transaction rskTx) {
@@ -1228,7 +1250,8 @@ public class BridgeSupport {
                 // The release transaction may have been created prior to the Consensus Rule activation
                 // therefore it won't have a rskTxHash value, fallback to this transaction's hash
                 txsWaitingForSignatures.put(entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash(), entry.getTransaction());
-            } else {
+            }
+            else {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
             }
         }
@@ -1281,9 +1304,9 @@ public class BridgeSupport {
      * The hash for the signature must be calculated with Transaction.SigHash.ALL and anyoneCanPay=false. The signature must be canonical.
      * If enough signatures were added, ask federators to broadcast the btc release tx.
      *
-     * @param federatorPublicKey Federator who is signing
-     * @param signatures         1 signature per btc tx input
-     * @param rskTxHash          The id of the rsk tx
+     * @param federatorPublicKey   Federator who is signing
+     * @param signatures           1 signature per btc tx input
+     * @param rskTxHash            The id of the rsk tx
      */
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
@@ -1294,7 +1317,7 @@ public class BridgeSupport {
                 activeFederation.hasBtcPublicKey(federatorPublicKey) ?
                         activeFederation :
                         (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey) ?
-                                retiringFederation :
+                                retiringFederation:
                                 null);
 
         if (federation == null) {
@@ -1344,11 +1367,11 @@ public class BridgeSupport {
 
             if (!federatorPublicKey.verify(sighash, sig)) {
                 logger.warn(
-                        "Signature {} {} is not valid for hash {} and public key {}",
-                        i,
-                        ByteUtil.toHexString(sig.encodeToDER()),
-                        sighash,
-                        federatorPublicKey
+                    "Signature {} {} is not valid for hash {} and public key {}",
+                    i,
+                    ByteUtil.toHexString(sig.encodeToDER()),
+                    sighash,
+                    federatorPublicKey
                 );
                 return;
             }
@@ -1413,7 +1436,6 @@ public class BridgeSupport {
 
     /**
      * Returns the btc tx that federators need to sign or broadcast
-     *
      * @return a StateForFederator serialized in RLP
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
@@ -1423,7 +1445,6 @@ public class BridgeSupport {
 
     /**
      * Returns the insternal state of the bridge
-     *
      * @return a BridgeState serialized in RLP
      */
     public byte[] getStateForDebugging() throws IOException, BlockStoreException {
@@ -1447,13 +1468,14 @@ public class BridgeSupport {
     }
 
     /**
-     * @return a List of bitcoin block hashes
-     * @deprecated Returns an array of block hashes known by the bridge contract.
+     * @deprecated
+     * Returns an array of block hashes known by the bridge contract.
      * Federators can use this to find what is the latest block in the mainchain the bridge has.
+     * @return a List of bitcoin block hashes
      */
     @Deprecated
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException, BlockStoreException {
-        StoredBlock initialBtcStoredBlock = this.getLowestBlock();
+        StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
         StoredBlock cursor = getBtcBlockchainChainHead();
@@ -1570,7 +1592,7 @@ public class BridgeSupport {
                 return BASIC_COST;
             }
 
-            return BASIC_COST + blockDepth * STEP_COST + branchHashesSize * DOUBLE_HASH_COST;
+            return BASIC_COST + blockDepth*STEP_COST + branchHashesSize*DOUBLE_HASH_COST;
         } catch (IOException | BlockStoreException e) {
             logger.warn("getBtcTransactionConfirmationsGetCost btcBlockHash:{} there was a problem " +
                     "gathering the block depth while calculating the gas cost. " +
@@ -1580,7 +1602,7 @@ public class BridgeSupport {
     }
 
     /**
-     * @param btcTxHash    The BTC transaction Hash
+     * @param btcTxHash The BTC transaction Hash
      * @param btcBlockHash The BTC block hash
      * @param merkleBranch The merkle branch
      * @throws BlockStoreException
@@ -1607,7 +1629,7 @@ public class BridgeSupport {
         try {
             StoredBlock storedBlock = btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight());
             // Make sure it belongs to the best chain
-            if (storedBlock == null || !storedBlock.equals(block)) {
+            if (storedBlock == null || !storedBlock.equals(block)){
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
@@ -1644,7 +1666,6 @@ public class BridgeSupport {
     /**
      * Returns whether a given btc transaction hash has already
      * been processed by the bridge.
-     *
      * @param btcTxHash the btc tx hash to check.
      * @return a Boolean indicating whether the given btc tx hash was
      * already processed by the bridge.
@@ -1657,7 +1678,6 @@ public class BridgeSupport {
     /**
      * Returns the RSK blockchain height a given btc transaction hash
      * was processed at by the bridge.
-     *
      * @param btcTxHash the btc tx hash for which to retrieve the height.
      * @return a Long with the processed height. If the hash was not processed
      * -1 is returned.
@@ -1670,11 +1690,10 @@ public class BridgeSupport {
 
     /**
      * Returns if tx was already processed by the bridge
-     *
      * @param btcTxHash the btc tx hash for which to retrieve the height.
      * @return true or false according
-     * @throws IOException
-     */
+     * @throws  IOException
+     * */
     public boolean isAlreadyBtcTxHashProcessed(Sha256Hash btcTxHash) throws IOException {
         if (getBtcTxHashProcessedHeight(btcTxHash) > -1L) {
             logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
@@ -1687,7 +1706,6 @@ public class BridgeSupport {
     /**
      * Returns the currently active federation.
      * See getActiveFederationReference() for details.
-     *
      * @return the currently active federation.
      */
     public Federation getActiveFederation() {
@@ -1697,7 +1715,6 @@ public class BridgeSupport {
     /**
      * Returns the currently retiring federation.
      * See getRetiringFederationReference() for details.
-     *
      * @return the retiring federation.
      */
     @Nullable
@@ -1715,7 +1732,6 @@ public class BridgeSupport {
 
     /**
      * Returns the federation bitcoin address.
-     *
      * @return the federation bitcoin address.
      */
     public Address getFederationAddress() {
@@ -1724,7 +1740,6 @@ public class BridgeSupport {
 
     /**
      * Returns the federation's size
-     *
      * @return the federation size
      */
     public Integer getFederationSize() {
@@ -1733,7 +1748,6 @@ public class BridgeSupport {
 
     /**
      * Returns the federation's minimum required signatures
-     *
      * @return the federation minimum required signatures
      */
     public Integer getFederationThreshold() {
@@ -1742,7 +1756,6 @@ public class BridgeSupport {
 
     /**
      * Returns the public key of the federation's federator at the given index
-     *
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
@@ -1752,8 +1765,7 @@ public class BridgeSupport {
 
     /**
      * Returns the public key of given type of the federation's federator at the given index
-     *
-     * @param index   the federator's index (zero-based)
+     * @param index the federator's index (zero-based)
      * @param keyType the key type
      * @return the federator's public key
      */
@@ -1763,7 +1775,6 @@ public class BridgeSupport {
 
     /**
      * Returns the federation's creation time
-     *
      * @return the federation creation time
      */
     public Instant getFederationCreationTime() {
@@ -1772,7 +1783,6 @@ public class BridgeSupport {
 
     /**
      * Returns the federation's creation block number
-     *
      * @return the federation creation block number
      */
     public long getFederationCreationBlockNumber() {
@@ -1781,7 +1791,6 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation bitcoin address.
-     *
      * @return the retiring federation bitcoin address, null if no retiring federation exists
      */
     public Address getRetiringFederationAddress() {
@@ -1795,7 +1804,6 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's size
-     *
      * @return the retiring federation size, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationSize() {
@@ -1809,7 +1817,6 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's minimum required signatures
-     *
      * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationThreshold() {
@@ -1823,7 +1830,6 @@ public class BridgeSupport {
 
     /**
      * Returns the public key of the retiring federation's federator at the given index
-     *
      * @param index the retiring federator's index (zero-based)
      * @return the retiring federator's public key, null if no retiring federation exists
      */
@@ -1844,8 +1850,7 @@ public class BridgeSupport {
 
     /**
      * Returns the public key of the given type of the retiring federation's federator at the given index
-     *
-     * @param index   the retiring federator's index (zero-based)
+     * @param index the retiring federator's index (zero-based)
      * @param keyType the key type
      * @return the retiring federator's public key of the given type, null if no retiring federation exists
      */
@@ -1860,7 +1865,6 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's creation time
-     *
      * @return the retiring federation creation time, null if no retiring federation exists
      */
     public Instant getRetiringFederationCreationTime() {
@@ -1874,7 +1878,6 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's creation block number
-     *
      * @return the retiring federation creation block number,
      * -1 if no retiring federation exists
      */
@@ -1890,7 +1893,6 @@ public class BridgeSupport {
      * Returns the currently live federations
      * This would be the active federation plus
      * potentially the retiring federation
-     *
      * @return a list of live federations
      */
     private List<Federation> getLiveFederations() {
@@ -1910,7 +1912,6 @@ public class BridgeSupport {
      * Otherwise, -1 is returned if there's already a pending federation,
      * -2 is returned if there is a federation awaiting to be active,
      * or -3 if funds are left from a previous one.
-     *
      * @param dryRun whether to just do a dry run
      * @return 1 upon success, -1 when a pending federation is present,
      * -2 when a federation is to be activated,
@@ -1962,8 +1963,8 @@ public class BridgeSupport {
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
-                currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
-                currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
+            currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
+            currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
             return -2;
         }
 
@@ -1987,9 +1988,8 @@ public class BridgeSupport {
      * and the pending federation is wiped out.
      * Also, UTXOs are moved from active to retiring so that the transfer of funds can
      * begin.
-     *
      * @param dryRun whether to just do a dry run
-     * @param hash   the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
@@ -2026,12 +2026,12 @@ public class BridgeSupport {
         Federation oldFederation = getActiveFederation();
         provider.setOldFederation(oldFederation);
         provider.setNewFederation(
-                currentPendingFederation.buildFederation(
-                        creationTime,
-                        rskExecutionBlock.getNumber(),
-                        bridgeConstants,
-                        activations
-                )
+            currentPendingFederation.buildFederation(
+                creationTime,
+                rskExecutionBlock.getNumber(),
+                bridgeConstants,
+                activations
+            )
         );
         provider.setPendingFederation(null);
 
@@ -2055,7 +2055,6 @@ public class BridgeSupport {
     /**
      * Rolls back the currently pending federation
      * That is, the pending federation is wiped out.
-     *
      * @param dryRun whether to just do a dry run
      * @return 1 upon success, 1 if there was no pending federation
      */
@@ -2194,7 +2193,6 @@ public class BridgeSupport {
 
     /**
      * Returns the currently pending federation hash, or null if none exists
-     *
      * @return the currently pending federation hash, or null if none exists
      */
     public byte[] getPendingFederationHash() {
@@ -2209,7 +2207,6 @@ public class BridgeSupport {
 
     /**
      * Returns the currently pending federation size, or -1 if none exists
-     *
      * @return the currently pending federation size, or -1 if none exists
      */
     public Integer getPendingFederationSize() {
@@ -2224,7 +2221,6 @@ public class BridgeSupport {
 
     /**
      * Returns the currently pending federation federator's public key at the given index, or null if none exists
-     *
      * @param index the federator's index (zero-based)
      * @return the pending federation's federator public key
      */
@@ -2246,8 +2242,7 @@ public class BridgeSupport {
 
     /**
      * Returns the public key of the given type of the pending federation's federator at the given index
-     *
-     * @param index   the federator's index (zero-based)
+     * @param index the federator's index (zero-based)
      * @param keyType the key type
      * @return the pending federation's federator public key of given type
      */
@@ -2264,7 +2259,6 @@ public class BridgeSupport {
     /**
      * Returns the lock whitelist size, that is,
      * the number of whitelisted addresses
-     *
      * @return the lock whitelist size
      */
     public Integer getLockWhitelistSize() {
@@ -2275,7 +2269,6 @@ public class BridgeSupport {
      * Returns the lock whitelist address stored
      * at the given index, or null if the
      * index is out of bounds
-     *
      * @param index the index at which to get the address
      * @return the base58-encoded address stored at the given index, or null if index is out of bounds
      */
@@ -2290,6 +2283,7 @@ public class BridgeSupport {
     }
 
     /**
+     *
      * @param addressBase58
      * @return
      */
@@ -2307,8 +2301,7 @@ public class BridgeSupport {
      * Adds the given address to the lock whitelist.
      * Returns 1 upon success, or -1 if the address was
      * already in the whitelist.
-     *
-     * @param addressBase58    the base58-encoded address to add to the whitelist
+     * @param addressBase58 the base58-encoded address to add to the whitelist
      * @param maxTransferValue the max amount of satoshis enabled to transfer for this address
      * @return 1 upon success, -1 if the address was already
      * in the whitelist, -2 if address is invalid
@@ -2365,7 +2358,6 @@ public class BridgeSupport {
      * Removes the given address from the lock whitelist.
      * Returns 1 upon success, or -1 if the address was
      * not in the whitelist.
-     *
      * @param addressBase58 the base58-encoded address to remove from the whitelist
      * @return 1 upon success, -1 if the address was not
      * in the whitelist, -2 if the address is invalid,
@@ -2397,7 +2389,6 @@ public class BridgeSupport {
 
     /**
      * Returns the minimum amount of satoshis a user should send to the federation.
-     *
      * @return the minimum amount of satoshis a user should send to the federation.
      */
     public Coin getMinimumPeginTxValue() {
@@ -2416,11 +2407,11 @@ public class BridgeSupport {
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
-        if (!feePerKb.isPositive()) {
+        if(!feePerKb.isPositive()){
             return NEGATIVE_FEE_PER_KB_ERROR_CODE;
         }
 
-        if (feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
+        if(feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
             return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
         }
 
@@ -2462,8 +2453,7 @@ public class BridgeSupport {
 
     /**
      * Sets a delay in the BTC best chain to disable lock whitelist
-     *
-     * @param tx                  current RSK transaction
+     * @param tx current RSK transaction
      * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
      * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
      */
@@ -2502,8 +2492,8 @@ public class BridgeSupport {
      */
     public Optional<Script> getActivePowpegRedeemScript() {
         return activations.isActive(RSKIP293) ?
-                Optional.of(getActiveFederation().getRedeemScript()) :
-                Optional.empty();
+            Optional.of(getActiveFederation().getRedeemScript()) :
+            Optional.empty();
     }
 
     public boolean increaseLockingCap(Transaction tx, Coin newCap) {
@@ -2533,9 +2523,9 @@ public class BridgeSupport {
 
     public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
         Context.propagate(btcContext);
-        try {
+        try{
             this.ensureBtcBlockStore();
-        } catch (BlockStoreException | IOException e) {
+        }catch (BlockStoreException | IOException e) {
             logger.warn("Exception in registerBtcCoinbaseTransaction", e);
             throw new VMException("Exception in registerBtcCoinbaseTransaction", e);
         }
@@ -2592,7 +2582,7 @@ public class BridgeSupport {
 
         Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
 
-        if (!witnessCommitment.equals(btcTx.findWitnessCommitment())) {
+        if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
             logger.warn("[btcTx:{}] WitnessCommitment does not match", btcTxHash);
             throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
         }
@@ -2661,15 +2651,15 @@ public class BridgeSupport {
     }
 
     public BigInteger registerFlyoverBtcTransaction(
-            Transaction rskTx,
-            byte[] btcTxSerialized,
-            int height,
-            byte[] pmtSerialized,
-            Keccak256 derivationArgumentsHash,
-            Address userRefundAddress,
-            RskAddress lbcAddress,
-            Address lpBtcAddress,
-            boolean shouldTransferToContract
+        Transaction rskTx,
+        byte[] btcTxSerialized,
+        int height,
+        byte[] pmtSerialized,
+        Keccak256 derivationArgumentsHash,
+        Address userRefundAddress,
+        RskAddress lbcAddress,
+        Address lpBtcAddress,
+        boolean shouldTransferToContract
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             logger.debug("[registerFlyoverBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
@@ -2678,9 +2668,9 @@ public class BridgeSupport {
 
         if (!rskTx.getSender().equals(lbcAddress)) {
             logger.debug(
-                    "[registerFlyoverBtcTransaction] Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
-                    rskTx.getSender(),
-                    lbcAddress
+                "[registerFlyoverBtcTransaction] Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
+                rskTx.getSender(),
+                lbcAddress
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value());
         }
@@ -2690,26 +2680,26 @@ public class BridgeSupport {
         logger.debug("[registerFlyoverBtcTransaction] btc tx hash: {}", btcTxHash);
 
         Keccak256 flyoverDerivationHash = getFlyoverDerivationHash(
-                derivationArgumentsHash,
-                userRefundAddress,
-                lpBtcAddress,
-                lbcAddress
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
         );
         logger.debug("[registerFlyoverBtcTransaction] flyover derivation hash: {}", flyoverDerivationHash);
 
         if (provider.isFlyoverDerivationHashUsed(btcTxHash, flyoverDerivationHash)) {
             logger.debug(
-                    "[registerFlyoverBtcTransaction] Transaction {} and derivation hash {} already used.",
-                    btcTxHash,
-                    flyoverDerivationHash
+                "[registerFlyoverBtcTransaction] Transaction {} and derivation hash {} already used.",
+                btcTxHash,
+                flyoverDerivationHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
             logger.debug(
-                    "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
-                    btcTxHash
+                "[registerFlyoverBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
+                btcTxHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
         }
@@ -2721,12 +2711,12 @@ public class BridgeSupport {
         logger.debug("[registerFlyoverBtcTransaction] btc tx hash without witness: {}", btcTxHashWithoutWitness);
 
         if (!btcTxHashWithoutWitness.equals(btcTxHash) &&
-                provider.isFlyoverDerivationHashUsed(btcTxHashWithoutWitness, flyoverDerivationHash)
+            provider.isFlyoverDerivationHashUsed(btcTxHashWithoutWitness, flyoverDerivationHash)
         ) {
             logger.debug(
-                    "[registerFlyoverBtcTransaction] Transaction {} and derivation hash {} already used. Checking hash without witness",
-                    btcTxHashWithoutWitness,
-                    flyoverDerivationHash
+                "[registerFlyoverBtcTransaction] Transaction {} and derivation hash {} already used. Checking hash without witness",
+                btcTxHashWithoutWitness,
+                flyoverDerivationHash
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
         }
@@ -2742,31 +2732,31 @@ public class BridgeSupport {
         if (activations.isActive(RSKIP293) && retiringFederation != null) {
             flyoverRetiringFederationInformation = Optional.of(createFlyoverFederationInformation(flyoverDerivationHash, retiringFederation));
             Address flyoverRetiringFederationAddress = flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(
-                    bridgeConstants.getBtcParams()
+                bridgeConstants.getBtcParams()
             );
             addresses.add(flyoverRetiringFederationAddress);
             logger.debug("[registerFlyoverBtcTransaction] flyover retiring federation address: {}", flyoverRetiringFederationAddress);
         }
 
         FlyoverTxResponseCodes txResponse = BridgeUtils.validateFlyoverPeginValue(
-                activations,
-                bridgeConstants,
-                btcContext,
-                btcTx,
-                addresses
+            activations,
+            bridgeConstants,
+            btcContext,
+            btcTx,
+            addresses
         );
         logger.debug("[registerFlyoverBtcTransaction] validate flyover pegin value response: {}", txResponse.value());
 
-        if (txResponse != FlyoverTxResponseCodes.VALID_TX) {
+        if (txResponse != FlyoverTxResponseCodes.VALID_TX){
             return BigInteger.valueOf(txResponse.value());
         }
 
         Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
-                activations,
-                bridgeConstants.getBtcParams(),
-                btcContext,
-                btcTx,
-                addresses
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            addresses
         );
         logger.debug("[registerFlyoverBtcTransaction] total amount sent to flyover federations: {}", totalAmount);
 
@@ -2774,8 +2764,8 @@ public class BridgeSupport {
             InternalTransaction internalTx = (InternalTransaction) rskTx;
             logger.info("[registerFlyoverBtcTransaction] Locking cap surpassed, going to return funds!");
             List<FlyoverFederationInformation> fbFederations = flyoverRetiringFederationInformation.isPresent() ?
-                    Arrays.asList(flyoverActiveFederationInformation, flyoverRetiringFederationInformation.get()) :
-                    Collections.singletonList(flyoverActiveFederationInformation);
+                Arrays.asList(flyoverActiveFederationInformation, flyoverRetiringFederationInformation.get()) :
+                Collections.singletonList(flyoverActiveFederationInformation);
             WalletProvider walletProvider = createFlyoverWalletProvider(fbFederations);
 
             provider.markFlyoverDerivationHashAsUsed(btcTxHashWithoutWitness, flyoverDerivationHash);
@@ -2794,52 +2784,52 @@ public class BridgeSupport {
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
 
         List<UTXO> utxosForFlyoverActiveFed = BridgeUtils.getUTXOsSentToAddresses(
-                activations,
-                bridgeConstants.getBtcParams(),
-                btcContext,
-                btcTx,
-                Collections.singletonList(flyoverActiveFederationAddress)
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            Collections.singletonList(flyoverActiveFederationAddress)
         );
         logger.info(
-                "[registerFlyoverBtcTransaction]  going to register {} utxos for active flyover federation",
-                utxosForFlyoverActiveFed.size()
+            "[registerFlyoverBtcTransaction]  going to register {} utxos for active flyover federation",
+            utxosForFlyoverActiveFed.size()
         );
 
         saveFlyoverActiveFederationDataInStorage(
-                btcTxHashWithoutWitness,
-                flyoverDerivationHash,
-                flyoverActiveFederationInformation,
-                utxosForFlyoverActiveFed
+            btcTxHashWithoutWitness,
+            flyoverDerivationHash,
+            flyoverActiveFederationInformation,
+            utxosForFlyoverActiveFed
         );
 
         if (activations.isActive(RSKIP293) && flyoverRetiringFederationInformation.isPresent()) {
             List<UTXO> utxosForRetiringFed = BridgeUtils.getUTXOsSentToAddresses(
-                    activations,
-                    bridgeConstants.getBtcParams(),
-                    btcContext,
-                    btcTx,
-                    Collections.singletonList(
-                            flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(bridgeConstants.getBtcParams())
-                    )
+                activations,
+                bridgeConstants.getBtcParams(),
+                btcContext,
+                btcTx,
+                Collections.singletonList(
+                    flyoverRetiringFederationInformation.get().getFlyoverFederationAddress(bridgeConstants.getBtcParams())
+                )
             );
 
-            if (!utxosForRetiringFed.isEmpty()) {
+            if (!utxosForRetiringFed.isEmpty()){
                 logger.info(
-                        "[registerFlyoverBtcTransaction]  going to register {} utxos for retiring flyover federation",
-                        utxosForRetiringFed.size()
+                    "[registerFlyoverBtcTransaction]  going to register {} utxos for retiring flyover federation",
+                    utxosForRetiringFed.size()
                 );
                 saveFlyoverRetiringFederationDataInStorage(
-                        btcTxHashWithoutWitness,
-                        flyoverDerivationHash,
-                        flyoverRetiringFederationInformation.get(),
-                        utxosForRetiringFed
+                    btcTxHashWithoutWitness,
+                    flyoverDerivationHash,
+                    flyoverRetiringFederationInformation.get(),
+                    utxosForRetiringFed
                 );
             }
         }
 
         logger.info(
-                "[registerFlyoverBtcTransaction] (btcTx:{}) transaction registered successfully",
-                btcTxHashWithoutWitness
+            "[registerFlyoverBtcTransaction] (btcTx:{}) transaction registered successfully",
+            btcTxHashWithoutWitness
         );
 
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
@@ -2851,28 +2841,28 @@ public class BridgeSupport {
 
     protected FlyoverFederationInformation createFlyoverFederationInformation(Keccak256 flyoverDerivationHash, Federation federation) {
         Script flyoverScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                federation.getRedeemScript(),
-                Sha256Hash.wrap(flyoverDerivationHash.getBytes())
+            federation.getRedeemScript(),
+            Sha256Hash.wrap(flyoverDerivationHash.getBytes())
         );
 
         Script flyoverScriptHash = ScriptBuilder.createP2SHOutputScript(flyoverScript);
 
         return new FlyoverFederationInformation(
-                flyoverDerivationHash,
-                federation.getP2SHScript().getPubKeyHash(),
-                flyoverScriptHash.getPubKeyHash()
+            flyoverDerivationHash,
+            federation.getP2SHScript().getPubKeyHash(),
+            flyoverScriptHash.getPubKeyHash()
         );
     }
 
     private WalletProvider createFlyoverWalletProvider(
-            List<FlyoverFederationInformation> fbFederations) {
+        List<FlyoverFederationInformation> fbFederations) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
             List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
-                    activations,
-                    bridgeConstants.getBtcParams(),
-                    btcContext,
-                    btcTx,
-                    addresses
+                activations,
+                bridgeConstants.getBtcParams(),
+                btcContext,
+                btcTx,
+                addresses
             );
             return getFlyoverWallet(btcContext, utxosList, fbFederations);
         };
@@ -2887,64 +2877,64 @@ public class BridgeSupport {
     }
 
     protected Keccak256 getFlyoverDerivationHash(
-            Keccak256 derivationArgumentsHash,
-            Address userRefundAddress,
-            Address lpBtcAddress,
-            RskAddress lbcAddress
+        Keccak256 derivationArgumentsHash,
+        Address userRefundAddress,
+        Address lpBtcAddress,
+        RskAddress lbcAddress
     ) {
         byte[] flyoverDerivationHashData = derivationArgumentsHash.getBytes();
         byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
         byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
         byte[] lbcAddressBytes = lbcAddress.getBytes();
         byte[] result = new byte[
-                flyoverDerivationHashData.length +
-                        userRefundAddressBytes.length +
-                        lpBtcAddressBytes.length +
-                        lbcAddressBytes.length
-                ];
+            flyoverDerivationHashData.length +
+            userRefundAddressBytes.length +
+            lpBtcAddressBytes.length +
+            lbcAddressBytes.length
+        ];
 
         int dstPosition = 0;
 
         System.arraycopy(
-                flyoverDerivationHashData,
-                0,
-                result,
-                dstPosition,
-                flyoverDerivationHashData.length
+            flyoverDerivationHashData,
+            0,
+            result,
+            dstPosition,
+            flyoverDerivationHashData.length
         );
         dstPosition += flyoverDerivationHashData.length;
 
         System.arraycopy(
-                userRefundAddressBytes,
-                0,
-                result,
-                dstPosition,
-                userRefundAddressBytes.length
+            userRefundAddressBytes,
+            0,
+            result,
+            dstPosition,
+            userRefundAddressBytes.length
         );
         dstPosition += userRefundAddressBytes.length;
 
         System.arraycopy(
-                lbcAddressBytes,
-                0,
-                result,
-                dstPosition,
-                lbcAddressBytes.length
+            lbcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lbcAddressBytes.length
         );
         dstPosition += lbcAddressBytes.length;
 
         System.arraycopy(
-                lpBtcAddressBytes,
-                0,
-                result,
-                dstPosition,
-                lpBtcAddressBytes.length
+            lpBtcAddressBytes,
+            0,
+            result,
+            dstPosition,
+            lpBtcAddressBytes.length
         );
 
         return new Keccak256(HashUtil.keccak256(result));
     }
 
-    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
-    // and will look like.
+   // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
+   // and will look like.
     protected void saveFlyoverActiveFederationDataInStorage(
             Sha256Hash btcTxHash,
             Keccak256 derivationHash,
@@ -2957,10 +2947,10 @@ public class BridgeSupport {
     }
 
     protected void saveFlyoverRetiringFederationDataInStorage(
-            Sha256Hash btcTxHash,
-            Keccak256 derivationHash,
-            FlyoverFederationInformation flyoverRetiringFederationInformation,
-            List<UTXO> utxosList
+        Sha256Hash btcTxHash,
+        Keccak256 derivationHash,
+        FlyoverFederationInformation flyoverRetiringFederationInformation,
+        List<UTXO> utxosList
     ) throws IOException {
         provider.markFlyoverDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFlyoverRetiringFederationInformation(flyoverRetiringFederationInformation);
@@ -2994,7 +2984,7 @@ public class BridgeSupport {
     private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
         Coin expectedMigrationValue = originWallet.getBalance();
         logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
-        for (; ; ) {
+        for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
 
@@ -3020,10 +3010,9 @@ public class BridgeSupport {
                         .collect(Collectors.toList());
 
                 return Pair.of(migrationBtcTx, selectedUTXOs);
-            } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize |
-                     Wallet.CouldNotAdjustDownwards e) {
+            } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
                 expectedMigrationValue = expectedMigrationValue.divide(2);
-            } catch (Wallet.DustySendRequested e) {
+            } catch(Wallet.DustySendRequested e) {
                 throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
             } catch (UTXOProviderException e) {
                 throw new RuntimeException("Unexpected UTXO provider error", e);
@@ -3042,12 +3031,12 @@ public class BridgeSupport {
 
     // Make sure the local bitcoin blockstore is instantiated
     private void ensureBtcBlockStore() throws IOException, BlockStoreException {
-        if (btcBlockStore == null) {
+        if(btcBlockStore == null) {
             btcBlockStore = btcBlockStoreFactory.newInstance(
-                    rskRepository,
-                    bridgeConstants,
-                    provider,
-                    activations
+                rskRepository,
+                bridgeConstants,
+                provider,
+                activations
             );
             NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
 
@@ -3067,19 +3056,19 @@ public class BridgeSupport {
     }
 
     private void generateRejectionRelease(
-            BtcTransaction btcTx,
-            Address btcRefundAddress,
-            List<Address> spendingAddresses,
-            Keccak256 rskTxHash,
-            Coin totalAmount,
-            WalletProvider walletProvider) throws IOException {
+        BtcTransaction btcTx,
+        Address btcRefundAddress,
+        List<Address> spendingAddresses,
+        Keccak256 rskTxHash,
+        Coin totalAmount,
+        WalletProvider walletProvider) throws IOException {
 
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                btcContext.getParams(),
-                walletProvider.provide(btcTx, spendingAddresses),
-                btcRefundAddress,
-                getFeePerKb(),
-                activations
+            btcContext.getParams(),
+            walletProvider.provide(btcTx, spendingAddresses),
+            btcRefundAddress,
+            getFeePerKb(),
+            activations
         );
 
         ReleaseTransactionBuilder.BuildResult buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
@@ -3098,28 +3087,28 @@ public class BridgeSupport {
     }
 
     private void generateRejectionRelease(
-            BtcTransaction btcTx,
-            Address senderBtcAddress,
-            Transaction rskTx,
-            Coin totalAmount
+        BtcTransaction btcTx,
+        Address senderBtcAddress,
+        Transaction rskTx,
+        Coin totalAmount
     ) throws IOException {
         WalletProvider createWallet = (BtcTransaction btcTransaction, List<Address> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
             List<UTXO> utxosToUs = btcTx.getWalletOutputs(
-                            getNoSpendWalletForLiveFederations(false)
+                getNoSpendWalletForLiveFederations(false)
+            )
+                .stream()
+                .map(output ->
+                    new UTXO(
+                        btcTx.getHash(),
+                        output.getIndex(),
+                        output.getValue(),
+                        0,
+                        btcTx.isCoinBase(),
+                        output.getScriptPubKey()
                     )
-                    .stream()
-                    .map(output ->
-                            new UTXO(
-                                    btcTx.getHash(),
-                                    output.getIndex(),
-                                    output.getValue(),
-                                    0,
-                                    btcTx.isCoinBase(),
-                                    output.getScriptPubKey()
-                            )
-                    ).collect(Collectors.toList());
+                ).collect(Collectors.toList());
             // Use the list of UTXOs to build a transaction builder
             // for the return btc transaction generation
             return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
@@ -3178,14 +3167,15 @@ public class BridgeSupport {
         if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
             logger.trace("block merkle root is valid");
             isValid = true;
-        } else {
+        }
+        else {
             if (activations.isActive(ConsensusRule.RSKIP143)) {
                 CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
                 if (coinbaseInformation == null) {
                     logger.trace("coinbase information for block {} is not yet registered", blockHeader.getHash());
                 }
                 isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
-                logger.trace("witness merkle root is {} valid", (isValid ? "" : "NOT"));
+                logger.trace("witness merkle root is {} valid", (isValid ? "":"NOT"));
             } else {
                 logger.trace("RSKIP143 is not active, avoid checking witness merkle root");
             }
@@ -3201,10 +3191,10 @@ public class BridgeSupport {
         try {
             int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
             if (!BridgeUtils.validateHeightAndConfirmations(
-                    height,
-                    getBtcBlockchainBestChainHeight(),
-                    acceptableConfirmationsAmount,
-                    btcTxHash)) {
+                height,
+                getBtcBlockchainBestChainHeight(),
+                acceptableConfirmationsAmount,
+                btcTxHash)) {
                 return false;
             }
         } catch (Exception e) {
@@ -3242,12 +3232,12 @@ public class BridgeSupport {
         logger.trace("[validationsForRegisterBtcTransaction] Getting btc block at height: {}", height);
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
         logger.trace("[validationsForRegisterBtcTransaction] Validating block merkle root at height: {}", height);
-        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)) {
+        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
-                    "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
-                    btcTxHash.toString(),
-                    merkleRoot,
-                    blockHeader.getMerkleRoot()
+                "[validationsForRegisterBtcTransaction] Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                btcTxHash.toString(),
+                merkleRoot,
+                blockHeader.getMerkleRoot()
             );
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
