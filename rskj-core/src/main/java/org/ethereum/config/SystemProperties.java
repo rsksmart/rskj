@@ -504,6 +504,8 @@ public abstract class SystemProperties {
         }
 
         try {
+            // workaround to provide a last resort fallback to calculate node's public IP
+            // this value is safe because it is not being used in any of the protocols; however, once we implement a better solution to identify actual public IP, this fallback should be removed
             return InetAddress.getByName("127.0.0.1");
         } catch (UnknownHostException e) {
             throw new IllegalStateException("Could not provide a public IP", e);
