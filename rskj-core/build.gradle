@@ -122,6 +122,8 @@ ext {
     ]
 }
 
+// WARN: consider different setups and sure to not use GPG elements without checksums or without signature file
+// in the remote repository (see https://github.com/gradle/gradle/security/advisories/GHSA-j6wc-xfg8-jx2j)
 dependencies {
     implementation "${libs.nettyLib}"
     implementation "${libs.spongyCastleLib}"
