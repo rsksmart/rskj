@@ -485,6 +485,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     // This method is public only to recontruct the table using
     //  LogManager.
     public void processLogEntry(int i,long value) {
+        if ((tableIsNull()) || (table.length()) == 0) {
+            this.resize();
+        }
         table.setPos(i, value);
     }
 

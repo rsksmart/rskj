@@ -60,6 +60,7 @@ public class FlatDbDataSourceTest {
     @Rule
     //public TemporaryFolder databaseDir = new TemporaryFolder(new File("/tmp/myTmp"));
     public TemporaryFolder databaseDir = new TemporaryFolder();
+
     @Test
     public void testBatchUpdatingInterrupted() throws IOException {
         // We test a batch update that is interrupted by a power failure.
@@ -97,6 +98,7 @@ public class FlatDbDataSourceTest {
         }
 
     }
+
     @Test
     public void testBatchUpdatingInterrupted2() throws IOException {
         // We test a batch update that is interrupted by a power failure.
@@ -135,6 +137,36 @@ public class FlatDbDataSourceTest {
             assertNull(dataSource2.get(entry.getKey().getData()));
         }
         for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch2.entrySet()) {
+            assertNull(dataSource2.get(entry.getKey().getData()));
+        }
+    }
+
+    @Test
+    public void testBatchUpdatingInterrupted3() throws IOException {
+        // We test a batch update that is interrupted by a power failure.
+        // we make sure the description files are written
+        String tmpPath = getTmpDbPath();
+        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        dataSource.init();
+
+        final int batchSize = 3;
+        Map<ByteArrayWrapper, byte[]> batch1 = createBatch(batchSize);
+
+        dataSource.updateBatch(batch1, Collections.emptySet());
+
+        // we don't write the actual data until flush()
+        // now we generate a power failure in the middle of flush
+        dataSource.flushWithPowerFailure();
+
+        // Now create another database for the same files:
+        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        dataSource2.init();
+
+
+        assertEquals(batchSize, dataSource2.keys().size());
+
+        // But the batch should 1 be there
+        for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch1.entrySet()) {
             assertNull(dataSource2.get(entry.getKey().getData()));
         }
     }

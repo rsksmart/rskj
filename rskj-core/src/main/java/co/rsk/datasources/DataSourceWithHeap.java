@@ -159,6 +159,10 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         baHeap.initialize();
         if (filesExists)
             baHeap.load(); // We throw away the root...
+        else {
+            // save the description and the files as soon as possible
+            baHeap.save();
+        }
         return baHeap;
 
     }
@@ -205,6 +209,9 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.bamap.setPath(mapPath);
         if (bamap.dataFileExists()) {
             bamap.load();
+
+        } else {
+            bamap.save(); // save the map as soon as possible
         }
             // Check if a log exists
         if (logManager!=null) {
