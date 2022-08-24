@@ -11,7 +11,9 @@ import org.ethereum.util.ByteUtil;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -60,6 +62,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     boolean supportNullValues;
     boolean supportBigValues;
     boolean allowRemovals;
+    boolean autoUpgrade;
     // This masks are only used if supportNullValues is true.
     final static long nullMarkedOffsetBitMask = 0x8000000000L;
     final static long emptyMarkedOffset = 0x0L;
@@ -1303,11 +1306,21 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         /*if (!headerFileExists()){
             convertFiles();
         }*/
+        if ((autoUpgrade) && (headerFileExists())) {
+            upgradeHeader();
+
+        }
         if (dataSource!=null) {
             loadFromDataSource(true);
         } else {
             loadFromFiles(true);
         }
+    }
+    protected void upgradeHeader() throws IOException {
+        Header header = loadHeaderFromFile();
+        String headerFilename =  getHeaderFilename();
+        writeHeaderToFile(headerFilename ,header);
+        Files.delete(Paths.get(headerFilename));
     }
 
     protected class Header  {
@@ -1397,6 +1410,10 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         System.out.println("done");
     }
 
+    public void setAutoUpgrade(boolean autoUpgrade) {
+        this.autoUpgrade = autoUpgrade;
+    }
+
     public void setDataSource(KeyValueDataSource ds) {
         this.dataSource =ds;
     }
@@ -1463,11 +1480,19 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     protected void createAndWriteHeader(String fileName) throws IOException {
-        String headerFileName = fileName + ".hdr";
         Header header = createHeader();
-        writeHeader(headerFileName, header);
+        writeHeaderToFile(fileName, header);
     }
 
+    protected String getHeaderFilename() {
+        String fileName =  mapPath.toAbsolutePath().toString();
+        String headerFileName = fileName + ".hdr";
+        return headerFileName;
+    }
+    protected void writeHeaderToFile(String fileName,Header header) throws IOException {
+        String headerFileName = fileName + ".hdr";
+        writeHeader(headerFileName, header);
+    }
     private void writeTable(String fileName) throws IOException {
         RandomAccessFile sc
                 = new RandomAccessFile(fileName, "rw");

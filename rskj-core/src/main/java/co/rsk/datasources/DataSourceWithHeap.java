@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.locks.ReadWriteLock;
 
 public class DataSourceWithHeap extends DataSourceWithAuxKV {
     protected AbstractByteArrayHashMap bamap;
@@ -30,6 +29,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     int maxNodeCount;
     long beHeapCapacity;
     boolean atomicBatches;
+    boolean autoUpgrade;
     LogManager logManager;
 
     public enum LockType {
@@ -44,6 +44,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
                               String databaseName,LockType lockType,
                               Format format,boolean additionalKV,
                               boolean atomicBatches,
+                              boolean autoUpgrade,
                               KeyValueDataSource descDataSource,
                               boolean readOnly) throws IOException {
         super(databaseName,additionalKV,readOnly);
@@ -55,6 +56,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.lockType = lockType;
         this.maxNodeCount = maxNodeCount;
         this.beHeapCapacity = beHeapCapacity;
+        this.autoUpgrade = autoUpgrade;
 
         if (atomicBatches) {
             logManager = new LogManager(Paths.get(databaseName));
@@ -150,6 +152,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         Files.createDirectories(Paths.get(databaseName));
         if (descDataSource!=null) {
             baHeap.setDescriptionFileSource(new PrefixedKeyValueDataSource(heapPrefix,descDataSource));
+            baHeap.setAutoUpgrade(autoUpgrade);
         }
         baHeap.setFileName(dbPath.toString());
         baHeap.setFileMapping(true);
@@ -205,6 +208,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         if (descDataSource!=null) {
             this.bamap.setDataSource(
                     new PrefixedKeyValueDataSource(mapPrefix,descDataSource));
+            this.bamap.setAutoUpgrade(autoUpgrade);
         }
         this.bamap.setPath(mapPath);
         if (bamap.dataFileExists()) {

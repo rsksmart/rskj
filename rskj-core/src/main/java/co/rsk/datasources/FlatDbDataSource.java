@@ -6,7 +6,6 @@ import co.rsk.datasources.flatdb.DbLock;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +24,8 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         supportBigValues, // support values with lengths higher than 127 bytes to be efficiently handled
         supportAdditionalKV, // Support KVs with keys that are not hashes of data.
         atomicBatches,
-        useDBForDescriptions;
+        useDBForDescriptions,
+        autoUpgrade;
 
         public static final EnumSet<CreationFlag> All = EnumSet.allOf(CreationFlag.class);
         public static final EnumSet<CreationFlag> None = EnumSet.noneOf(CreationFlag.class);
@@ -59,6 +59,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
                 getFormat(creationFlags,dbVersion),
                 (creationFlags.contains(CreationFlag.supportAdditionalKV)),
                 (creationFlags.contains(CreationFlag.atomicBatches)),
+                (creationFlags.contains(CreationFlag.autoUpgrade)),
                 createDescDataSource(databaseName,(creationFlags.contains(CreationFlag.useDBForDescriptions)),readOnly),
                 readOnly);
         this.flags = creationFlags;

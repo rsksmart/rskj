@@ -1,6 +1,9 @@
 package co.rsk.baheaps;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -40,6 +43,7 @@ public class ByteArrayHeapBase {
     public BitSet oldSpacesBitmap = new BitSet();
     long rootOfs; // user-provided
     protected KeyValueDataSource descDataSource;
+    boolean autoUpgrade;
 
     SpaceHead headOfPartiallyFilledSpaces = new SpaceHead();
     SpaceHead headOfFilledSpaces = new SpaceHead();
@@ -81,6 +85,10 @@ public class ByteArrayHeapBase {
     public void setDescriptionFileSource(KeyValueDataSource ds) {
         this.descDataSource =ds;
     }
+    public void setAutoUpgrade(boolean autoUpgrade) {
+        this.autoUpgrade =autoUpgrade;
+    }
+
 
     public void setFileName(String fileName) {
         baseFileName = fileName;
@@ -187,6 +195,17 @@ public class ByteArrayHeapBase {
         }
     }
 
+    protected boolean descFileExists() {
+        return Files.exists(Paths.get(baseFileName + ".desc"));
+    }
+
+    protected void deleteDescFile() {
+        try {
+            Files.delete(Paths.get(baseFileName + ".desc"));
+        } catch (IOException e) {
+            // ignore
+        }
+    }
 
     public long load() throws IOException {
         HeapFileDesc desc;

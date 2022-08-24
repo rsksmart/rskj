@@ -38,7 +38,8 @@ public class KeyValueDataSourceUtils {
                             EnumSet.of(FlatDbDataSource.CreationFlag.supportBigValues,
                                     FlatDbDataSource.CreationFlag.supportNullValues,
                                     FlatDbDataSource.CreationFlag.allowRemovals,
-                                    FlatDbDataSource.CreationFlag. supportAdditionalKV),
+                                    FlatDbDataSource.CreationFlag.supportAdditionalKV,
+                                    FlatDbDataSource.CreationFlag.autoUpgrade),
                             //FlatDbDataSource.CreationFlag.All,
                             FlatDbDataSource.latestDBVersion,readOnly);
                 } catch (IOException e) {
