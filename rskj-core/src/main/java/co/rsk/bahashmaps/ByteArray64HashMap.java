@@ -1,5 +1,6 @@
 package co.rsk.bahashmaps;
 
+import co.rsk.datasources.flatdb.LogManager;
 import co.rsk.packedtables.LongTable;
 import co.rsk.packedtables.Table;
 import co.rsk.baheaps.AbstractByteArrayHeap;
@@ -13,13 +14,13 @@ public class ByteArray64HashMap extends AbstractByteArrayHashMap {
                               long newBeHeapCapacity,
                               AbstractByteArrayHeap sharedBaHeap,
                               int maxElements,
-                              Format format) {
+                              Format format, LogManager logManager) {
         super(initialCapacity,  loadFactor,
         BAKeyValueRelation,
         newBeHeapCapacity,
          sharedBaHeap,
                 maxElements,
-                format);
+                format,logManager);
     }
 
     protected int getElementSize() {

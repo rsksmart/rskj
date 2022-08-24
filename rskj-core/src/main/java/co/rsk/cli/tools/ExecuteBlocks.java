@@ -22,16 +22,26 @@ import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.MapDBBlocksIndex;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.datasource.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 import javax.annotation.Nonnull;
+import java.io.File;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * The entry point for execute blocks CLI tool
@@ -43,21 +53,51 @@ import java.util.Arrays;
  */
 public class ExecuteBlocks extends CliToolRskContextAware {
 
+
     public static void main(String[] args) {
+        TrieStoreImpl.forcePerformanceLogging = true;
+        DataSourceWithCache.forcePerformanceLogging = true;
+        DataSourceWithCache.forcePerformanceCacheLogging = true;
         create(MethodHandles.lookup().lookupClass()).execute(args);
+    }
+
+    public static BlockStore getBlockStoreFromPath(String blocksDir, BlockFactory blockFactory) {
+        File blockIndexDirectory = new File(blocksDir);
+        File dbFile = new File(blockIndexDirectory, "index");
+        if (!blockIndexDirectory.exists()) {
+            throw new IllegalArgumentException(String.format(
+                    "Unable to create blocks directory in read-only mode: %s", blockIndexDirectory
+            ));
+        }
+
+        DB indexDB;
+        indexDB = DBMaker.fileDB(dbFile).readOnly().make();
+        DbKind currentDbKind = DbKind.LEVEL_DB; // fixed now
+        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(blocksDir),
+                currentDbKind, true);
+
+        return new IndexedBlockStore(blockFactory, blocksDB,
+                new MapDBBlocksIndex(indexDB, true));
     }
 
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
-        BlockStore blockStore = ctx.getBlockStore();
+
         TrieStore trieStore = ctx.getTrieStore();
         StateRootHandler stateRootHandler = ctx.getStateRootHandler();
 
-        executeBlocks(args, blockExecutor, blockStore, trieStore, stateRootHandler);
+        executeBlocks(args,ctx, blockExecutor,  trieStore, stateRootHandler);
     }
 
     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
+    void ConsoleLogList(String msg,List<String> list) {
+        consoleLog(msg);
+        for(int i=0;i<list.size();i++) {
+            System.out.println(" "+list.get(i));
+        }
+    }
 
     void consoleLog(String s) {
         LocalDateTime now = LocalDateTime.now();
@@ -71,11 +111,19 @@ public class ExecuteBlocks extends CliToolRskContextAware {
         System.out.println();
     }
 
-    private void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
+    private void executeBlocks(String[] args,     RskContext ctx,BlockExecutor blockExecutor,  TrieStore trieStore,
                                StateRootHandler stateRootHandler) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
+        BlockStore blockStore;
+        if (args[2].equals("(db)")) {
+            blockStore = ctx.getBlockStore();
+        } else {
+            blockStore = getBlockStoreFromPath(args[2],ctx.getBlockFactory());
+        }
+
         printArgs(args);
+
         long start = System.currentTimeMillis();
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             consoleLog("executing :"+n);
@@ -89,12 +137,20 @@ public class ExecuteBlocks extends CliToolRskContextAware {
             Keccak256 stateRootHash = stateRootHandler.translate(block.getHeader());
             if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), stateRootHash.getBytes())) {
                 printError("Invalid state root block number " + n);
+                printError(" execution result: "+blockResult.getFinalState().getHash().toHexString());
+                printError(" stored state: "+stateRootHash.toHexString());
                 break;
             }
         }
         long stop = System.currentTimeMillis();
         consoleLog("Total time: "+(stop-start)/1000+" secs");
+        // Save cache even if we have opened our blockchain is readonly mode
+        //trieStore.saveCache();
+
         trieStore.flush();
         blockStore.flush();
+        List<String> stats =ctx.getTrieStore().getStats();
+        ConsoleLogList("Stats:",stats);
+
     }
 }

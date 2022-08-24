@@ -20,6 +20,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         allowRemovals,      // allow remove() to really remove the values from the heap
         supportBigValues, // support values with lengths higher than 127 bytes to be efficiently handled
         supportAdditionalKV, // Support KVs with keys that are not hashes of data.
+        atomicBatches,
         useDBForDescriptions;
 
         public static final EnumSet<CreationFlag> All = EnumSet.allOf(CreationFlag.class);
@@ -53,6 +54,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         super(maxNodeCount, beHeapCapacity,databaseName,LockType.RW,
                 getFormat(creationFlags,dbVersion),
                 (creationFlags.contains(CreationFlag.supportAdditionalKV)),
+                (creationFlags.contains(CreationFlag.atomicBatches)),
                 createDescDataSource(databaseName,(creationFlags.contains(CreationFlag.useDBForDescriptions)),readOnly),
                 readOnly);
         this.flags = creationFlags;
@@ -64,7 +66,28 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         super.init();
 
     }
-
+    public void flushWithPowerFailure() {
+        dbLock.writeLock().lock();
+        try {
+            //
+            super.flushWithPowerFailure();
+            // close the description file so it can be re-opened
+            descDataSource.close();
+        } finally {
+            dbLock.writeLock().unlock();
+        }
+    }
+    public void powerFailure() {
+        dbLock.writeLock().lock();
+        try {
+            //
+            super.powerFailure();
+            // close the description file so it can be re-opened
+            descDataSource.close();
+        } finally {
+            dbLock.writeLock().unlock();
+        }
+    }
     public void close() {
         dbLock.writeLock().lock();
         try {
@@ -83,7 +106,6 @@ public class FlatDbDataSource extends DataSourceWithHeap {
             cfs.add(AbstractByteArrayHashMap.CreationFlag.allowRemovals);
         if (creationFlags.contains(CreationFlag.supportBigValues))
             cfs.add(AbstractByteArrayHashMap.CreationFlag.supportBigValues);
-
         return cfs;
     }
 }

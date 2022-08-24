@@ -92,4 +92,9 @@ public class ByteArrayHeapRefProxy implements AbstractByteArrayHeap {
     public void setRootOfs(long rootOfs) {
 
     }
+
+    @Override
+    public void powerFailure() {
+
+    }
 }

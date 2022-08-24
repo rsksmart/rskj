@@ -31,4 +31,9 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
         super.save();
     }
 
+    @Override
+    public void powerFailure() {
+        super.closeFiles();
+    }
+
 }

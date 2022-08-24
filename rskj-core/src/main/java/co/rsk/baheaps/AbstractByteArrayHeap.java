@@ -29,4 +29,6 @@ public interface AbstractByteArrayHeap {
     public void save() throws IOException;
     public void setRootOfs(long rootOfs);
 
+    public void powerFailure();
+
 }

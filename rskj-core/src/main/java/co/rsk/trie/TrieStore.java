@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TrieStore {
@@ -36,4 +37,24 @@ public interface TrieStore {
     byte[] retrieveValue(byte[] hash);
 
     void dispose();
+
+
+    /*
+     * This method is used for logging, debugging and monitoring.
+     * Implementor can retrieve any relevant information regarding the state
+     * of the data source, such as number of gets, puts, etc.
+     * If no imformation is available, it can return simply null.
+     */
+    List<String> getStats();
+
+    /*
+    * This method returns a name given to this trie store. It is used for easy debugging and
+    * logging.
+    */
+    String getName();
+
+    /* This is a forced save of the cache to disk
+     * Only used in testing performance to create a cache file for a certain height.
+     */
+    default void saveCache() {}
 }

@@ -2,6 +2,8 @@ package co.rsk.bahashmaps;
 
 
 import co.rsk.baheaps.*;
+import co.rsk.datasources.flatdb.LogManager;
+
 import java.util.*;
 
 
@@ -14,11 +16,11 @@ public class ByteArrayRefHashMap extends ByteArray32HashMap  {
                                long newBeHeapCapacity,
                                AbstractByteArrayHeap sharedBaHeap,
                                int maxElements,
-                               Format format) {
+                               Format format, LogManager logManager) {
         // Here wwe must check if we need to change the initialCapacity
         // because of the indirection
         super(initialCapacity, loadFactor, BAKeyValueRelation, newBeHeapCapacity,
-            sharedBaHeap, maxElements,format);
+            sharedBaHeap, maxElements,format,logManager);
     }
 
     AbstractByteArrayHeap createByteArrayHeap(long initialCapacity, long newBeHeapCapacity)  {

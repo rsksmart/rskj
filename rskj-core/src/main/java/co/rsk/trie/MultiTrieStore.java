@@ -103,6 +103,31 @@ public class MultiTrieStore implements TrieStore {
         epochs.forEach(TrieStore::dispose);
     }
 
+    @Override
+    public List<String> getStats() {
+        List<String> list = new ArrayList<>();
+        int i =0;
+        for (TrieStore epochTrieStore : epochs) {
+            list.add("Epoch index "+i);
+            List<String> epochList = epochTrieStore.getStats();
+            if (epochList != null) {
+                list.addAll(epochList);
+            }
+            i++;
+        }
+        return list;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public void saveCache() {
+        epochs.forEach(TrieStore::saveCache);
+    }
+
     /**
      * Discards the oldest epoch.
      *

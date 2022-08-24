@@ -26,7 +26,7 @@ public class DataSourceWithRefHeap extends DataSourceWithHeap {
                                  String databaseName, LockType lockType,
                                  Format format, boolean additionalKV,boolean readOnly) throws IOException {
         super(maxNodeCount,  beHeapCapacity,
-        databaseName,lockType,format, additionalKV,null,readOnly);
+        databaseName,lockType,format, additionalKV,false,null,readOnly);
         this.format = format;
 
     }
@@ -81,7 +81,7 @@ public class DataSourceWithRefHeap extends DataSourceWithHeap {
         this.bamap =  new ByteArrayRefHashMap(initialSize,loadFActor,myKR,
                 (long) beHeapCapacity,
                 sharedBaHeap,0,
-                format);
+                format,null);
 
         this.bamap.setPath(mapPath);
         if (bamap.dataFileExists()) {

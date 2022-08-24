@@ -5,6 +5,7 @@ import co.rsk.bahashmaps.Format;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.ByteArrayHeap;
 import co.rsk.bahashmaps.AbstractByteArrayHashMap;
+import co.rsk.datasources.flatdb.LogManager;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.PrefixedKeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
 
 public class DataSourceWithHeap extends DataSourceWithAuxKV {
     protected AbstractByteArrayHashMap bamap;
@@ -27,6 +29,8 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     LockType lockType;
     int maxNodeCount;
     long beHeapCapacity;
+    boolean atomicBatches;
+    LogManager logManager;
 
     public enum LockType {
         Exclusive,
@@ -34,19 +38,27 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         None
     }
 
+
+
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
                               String databaseName,LockType lockType,
                               Format format,boolean additionalKV,
+                              boolean atomicBatches,
                               KeyValueDataSource descDataSource,
                               boolean readOnly) throws IOException {
         super(databaseName,additionalKV,readOnly);
         this.descDataSource = descDataSource;
         this.format = format;
+        this.atomicBatches = atomicBatches;
         mapPath = Paths.get(databaseName, "hash.map");
         dbPath = Paths.get(databaseName, "store");
         this.lockType = lockType;
         this.maxNodeCount = maxNodeCount;
         this.beHeapCapacity = beHeapCapacity;
+
+        if (atomicBatches) {
+            logManager = new LogManager(Paths.get(databaseName));
+        }
 
     }
 
@@ -59,12 +71,15 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
             // TO DO:  What ?
             e.printStackTrace();
         }
+        /* Syncrhonize at a higher level
         if (lockType==LockType.RW)
             this.committedCache =RWLockedCollections.rwSynchronizedMap(iCache);
         else
         if (lockType==LockType.Exclusive)
             this.committedCache = Collections.synchronizedMap(iCache);
         else
+
+         */
             this.committedCache = iCache;
       super.init();
     }
@@ -74,9 +89,21 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     }
 
     public String getName() {
-        return "DataSourceWithHeap-"+databaseName;
+        return getClass().getSimpleName()+":"+databaseName;
     }
 
+    public void flushWithPowerFailure() {
+        super.flush();
+        try {
+            if ((!readOnly) && (bamap.modified())) {
+                sharedBaHeap.save();
+                // We do not save the index!
+            }
+            // and we do not delete the log
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     @Override
     public void flush() {
         super.flush();
@@ -85,17 +112,30 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
                 sharedBaHeap.save();
                 bamap.save();
             }
+            deleteLog();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
+    public void powerFailure() {
+        dbLock.writeLock().lock();
+        try {
+            // do not flush
+            sharedBaHeap.powerFailure(); // unmap files
+            committedCache.clear();
+            if (dsKV!=null)
+                dsKV.close();
+        } finally {
+            dbLock.writeLock().unlock();
+        }
+    }
     public void close() {
         dbLock.writeLock().lock();
         try {
             flush();
             committedCache.clear();
-            dsKV.close();
+            if (dsKV!=null)
+                dsKV.close();
         } finally {
             dbLock.writeLock().unlock();
         }
@@ -123,7 +163,18 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     }
 
-    protected Map<ByteArrayWrapper, byte[]> makeCommittedCache(int maxNodeCount, long beHeapCapacity) throws IOException {
+    public void deleteLog() {
+       bamap.deleteLog();
+    }
+
+    public void beginLog() throws IOException {
+        bamap.beginLog();
+    }
+    public void endLog() throws IOException {
+        bamap.endLog();
+    }
+
+        protected Map<ByteArrayWrapper, byte[]> makeCommittedCache(int maxNodeCount, long beHeapCapacity) throws IOException {
         if (maxNodeCount==0) return null;
 
         MyBAKeyValueRelation myKR = new MyBAKeyValueRelation();
@@ -142,9 +193,11 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         // in the datatype that references offsets in the heap.
         // 2^39 bytes is equivalent to 512 Gigabytes.
         //
+
         this.bamap =  new ByteArray40HashMap(initialSize,loadFActor,myKR,
                 (long) beHeapCapacity,
-                sharedBaHeap,0,format);
+                sharedBaHeap,0,format,logManager);
+
         if (descDataSource!=null) {
             this.bamap.setDataSource(
                     new PrefixedKeyValueDataSource(mapPrefix,descDataSource));
@@ -152,6 +205,12 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.bamap.setPath(mapPath);
         if (bamap.dataFileExists()) {
             bamap.load();
+        }
+            // Check if a log exists
+        if (logManager!=null) {
+            if (logManager.logExists()) {
+                logManager.processLog(bamap);
+            }
         }
         return bamap;
     }

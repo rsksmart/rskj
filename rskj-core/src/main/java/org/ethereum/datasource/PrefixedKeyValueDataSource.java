@@ -4,10 +4,7 @@ import org.bouncycastle.util.Arrays;
 import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class PrefixedKeyValueDataSource implements KeyValueDataSource {
     byte[] prefix;
@@ -89,5 +86,10 @@ public class PrefixedKeyValueDataSource implements KeyValueDataSource {
     @Override
     public void flush() {
         base.flush();
+    }
+
+    @Override
+    public List<String> getStats() {
+        return base.getStats();
     }
 }

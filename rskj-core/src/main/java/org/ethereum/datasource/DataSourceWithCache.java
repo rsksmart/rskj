@@ -42,6 +42,8 @@ import java.util.stream.Stream;
  */
 public class DataSourceWithCache implements KeyValueDataSource {
 
+    public static boolean forcePerformanceLogging ;
+    public static boolean forcePerformanceCacheLogging ; // This will consume more memory
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
     private final int cacheSize;
@@ -51,10 +53,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
     // the changes, and committedCache will still work as a cache.
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
-
+    private final Set<ByteArrayWrapper> loadedCache; // only for performance measurements
     private final AtomicInteger numOfPuts = new AtomicInteger();
     private final AtomicInteger numOfGets = new AtomicInteger();
     private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
+    private final AtomicInteger numOfGetsFromLoadedCache  = new AtomicInteger();
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -73,6 +76,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new HashMap<>();
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
+        if (forcePerformanceCacheLogging)
+            this.loadedCache =  new HashSet<>(this.committedCache.keySet());
+        else
+            this.loadedCache = null;
         this.cacheSnapshotHandler = cacheSnapshotHandler;
     }
 
@@ -85,14 +92,19 @@ public class DataSourceWithCache implements KeyValueDataSource {
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
 
-        boolean traceEnabled = logger.isTraceEnabled();
+        boolean traceEnabled = (forcePerformanceLogging) || (logger.isTraceEnabled());
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         byte[] value;
 
         this.lock.readLock().lock();
 
         try {
+
+
             if (committedCache.containsKey(wrappedKey)) {
+                if ((loadedCache!=null) && loadedCache.contains(wrappedKey)) {
+                    numOfGetsFromLoadedCache.incrementAndGet();
+                }
                 return committedCache.get(wrappedKey);
             }
 
@@ -272,6 +284,27 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
+    @Override
+    public List<String> getStats() {
+        List<String> list = new ArrayList<>();
+        list.add("puts: " + numOfPuts.get());
+        list.add("gets: " + numOfGets.get());
+        list.add("GetsFromStore: "+
+                numOfGetsFromStore.get());
+        if (loadedCache!=null) {
+            list.add("numOfGetsFromLoadedCache: "+numOfGetsFromLoadedCache.get());
+            list.add("loadedCache.size(): "+loadedCache.size());
+        }
+        list.add("committedCache.size(): "+committedCache.size());
+
+        List<String> dsStats = base.getStats();
+        if (dsStats!=null) {
+            list.add("Base datasource stats ("+base.getName()+"):");
+            list.addAll(dsStats);
+        }
+        return list;
+    }
+
     public String getName() {
         return base.getName() + "-with-uncommittedCache";
     }
@@ -282,6 +315,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     public boolean isAlive() {
         return base.isAlive();
+    }
+
+    public void saveCache() {
+        this.lock.writeLock().lock();
+
+        try {
+         // This is a forced save, no matter what preventWritesToBase says.
+        cacheSnapshotHandler.save(committedCache);
+        } finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
     public void close() {
@@ -323,6 +367,18 @@ public class DataSourceWithCache implements KeyValueDataSource {
         Map<ByteArrayWrapper, byte[]> cache;
 
         cache = new MaxSizeHashMap<>(cacheSize, true);
+
+        if (cacheSnapshotHandler != null) {
+            cacheSnapshotHandler.load(cache);
+        }
+
+        return cache;
+    }
+    @Nonnull
+    private static Map<ByteArrayWrapper, byte[]> makeLoadedCache( @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        Map<ByteArrayWrapper, byte[]> cache;
+
+        cache = new HashMap<>();
 
         if (cacheSnapshotHandler != null) {
             cacheSnapshotHandler.load(cache);

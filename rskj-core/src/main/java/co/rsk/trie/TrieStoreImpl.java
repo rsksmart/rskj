@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -39,7 +41,7 @@ import java.util.Optional;
 public class TrieStoreImpl implements TrieStore {
 
     private static final Logger logger = LoggerFactory.getLogger("triestore");
-
+    public static boolean forcePerformanceLogging = false;
     private static final ThreadLocal<TraceInfo> traceInfoLocal = ThreadLocal.withInitial(TraceInfo::new);
 
     private final KeyValueDataSource store;
@@ -61,34 +63,30 @@ public class TrieStoreImpl implements TrieStore {
     @Override
     public void save(Trie trie) {
         TraceInfo traceInfo = null;
-        if (logger.isTraceEnabled()) {
-            traceInfo = traceInfoLocal.get();
-            traceInfo.numOfRetrievesInSaveTrie = 0;
-            traceInfo.numOfSavesInSaveTrie = 0;
-            traceInfo.numOfNoSavesInSaveTrie = 0;
+        SaveInfo saveInfo = null;
 
+        if ((forcePerformanceLogging) || (logger.isTraceEnabled())) {
+            traceInfo = traceInfoLocal.get();
+            saveInfo = new SaveInfo();
+            traceInfo.numOfTopLevelSaves++;
+        }
+
+        if ((logger.isTraceEnabled())) {
             logger.trace("Start saving trie root.");
         }
 
         // save a trie recursively
-        save(trie, true, 0, traceInfo);
+        save(trie, true, 0, traceInfo,saveInfo);
 
-        if (traceInfo != null) {
-            logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
-                    traceInfo.numOfRetrievesInSaveTrie, traceInfo.numOfSavesInSaveTrie, traceInfo.numOfNoSavesInSaveTrie);
-            logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
-                    traceInfo.numOfRetrievesInBlockProcess, traceInfo.numOfSavesInBlockProcess, traceInfo.numOfNoSavesInBlockProcess);
-
-            traceInfo.numOfRetrievesInBlockProcess = 0;
-            traceInfo.numOfSavesInBlockProcess = 0;
-            traceInfo.numOfNoSavesInBlockProcess = 0;
+        if (saveInfo != null) {
+            logger.trace("End saving trie root. No. Saves: {}. No. No Saves: {}",
+                    saveInfo.numOfSaves, saveInfo.numOfNoSaves);
 
             if (store instanceof DataSourceWithCache) {
                 ((DataSourceWithCache) store).emitLogs();
             }
-
-            traceInfoLocal.remove();
         }
+
         if (rootsDataSource!=null) {
             rootsDataSource.put(trie.getHash().getBytes(),nodePresent);
         }
@@ -100,7 +98,7 @@ public class TrieStoreImpl implements TrieStore {
      * @param isRootNode it is the root node of the trie
      */
     int cc =0;
-    private void save(Trie trie, boolean isRootNode, int level, @Nullable TraceInfo traceInfo) {
+    private void save(Trie trie, boolean isRootNode, int level, @Nullable TraceInfo traceInfo, @Nullable SaveInfo saveInfo) {
         if (trie.wasSaved()) {
             return;
         }
@@ -114,16 +112,20 @@ public class TrieStoreImpl implements TrieStore {
             logger.trace("End saving trie, level : {}, already saved.", level);
 
             if (traceInfo != null) {
-                traceInfo.numOfNoSavesInSaveTrie++;
-                traceInfo.numOfNoSavesInBlockProcess++;
+                traceInfo.numOfNoSaves++;
+            }
+            if (saveInfo != null) {
+                saveInfo.numOfNoSaves++;
             }
 
             return;
         }
 
         if (traceInfo != null) {
-            traceInfo.numOfSavesInSaveTrie++;
-            traceInfo.numOfSavesInBlockProcess++;
+            traceInfo.numOfSaves++;
+        }
+        if (saveInfo != null) {
+            saveInfo.numOfSaves++;
         }
 
         // Save first the children to maintain trie database consistency
@@ -132,14 +134,14 @@ public class TrieStoreImpl implements TrieStore {
 
         if (leftNodeReference.wasLoaded()) {
             logger.trace("Start left trie. Level: {}", level);
-            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
+            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo,saveInfo));
         }
 
         NodeReference rightNodeReference = trie.getRight();
 
         if (rightNodeReference.wasLoaded()) {
             logger.trace("Start right trie. Level: {}", level);
-            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
+            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo,saveInfo));
         }
 
         if (trie.hasLongValue()) {
@@ -182,10 +184,9 @@ public class TrieStoreImpl implements TrieStore {
             return Optional.empty();
         }
 
-        if (logger.isTraceEnabled()) {
+        if ((forcePerformanceLogging) || (logger.isTraceEnabled())) {
             TraceInfo traceInfo = traceInfoLocal.get();
-            traceInfo.numOfRetrievesInSaveTrie++;
-            traceInfo.numOfRetrievesInBlockProcess++;
+            traceInfo.numOfRetrieveTries++;
         }
 
         Trie trie = Trie.fromMessage(message, this).markAsSaved();
@@ -194,10 +195,9 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public byte[] retrieveValue(byte[] hash) {
-        if (logger.isTraceEnabled()) {
+        if ((forcePerformanceLogging) || (logger.isTraceEnabled())) {
             TraceInfo traceInfo = traceInfoLocal.get();
-            traceInfo.numOfRetrievesInSaveTrie++;
-            traceInfo.numOfRetrievesInBlockProcess++;
+            traceInfo.numOfRetrieveValues++;
         }
 
         return this.store.get(hash);
@@ -208,17 +208,49 @@ public class TrieStoreImpl implements TrieStore {
         store.close();
     }
 
+    public List<String> getStats() {
+        List<String> r = new ArrayList<>();
+        TraceInfo traceInfo = traceInfoLocal.get();
+        r.add("numOfRetrieveTries: " + traceInfo.numOfRetrieveTries);
+        r.add("numOfRetrieveValues: " + traceInfo.numOfRetrieveValues);
+        r.add("numOfNoSaves: " + traceInfo.numOfNoSaves);
+        r.add("numOfTopLevelSaves: " + traceInfo.numOfTopLevelSaves);
+        r.add("numOfSaves: " + traceInfo.numOfSaves);
+
+        List<String> dsStats = store.getStats();
+        if (dsStats!=null) {
+            r.add("DataSource stats ("+store.getName()+"):");
+            r.addAll(dsStats);
+        }
+        return r;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public void saveCache() {
+        store.saveCache();
+    }
+
     /**
      * This holds tracing information during execution of the {@link #save(Trie)} method.
      * Should not be used when logger tracing is disabled ({@link Logger#isTraceEnabled()} is {@code false}).
      */
     private static final class TraceInfo {
-        private int numOfRetrievesInBlockProcess;
-        private int numOfSavesInBlockProcess;
-        private int numOfNoSavesInBlockProcess;
+        private int numOfRetrieveTries;
+        private int numOfRetrieveValues;
+        private int numOfSaves;
+        private int numOfTopLevelSaves;
+        private int numOfNoSaves;
 
+    }
+
+    private static final class SaveInfo {
         private int numOfRetrievesInSaveTrie;
-        private int numOfSavesInSaveTrie;
-        private int numOfNoSavesInSaveTrie;
+        private int numOfSaves;
+        private int numOfNoSaves;
     }
 }

@@ -141,5 +141,10 @@ public class MemoryMappedSpace extends Space {
     public void saveToFile(String fileName) {
 
     }
+    @Override
+    public void destroy() {
+     super.destroy();
+     out = null; // hope this is garbage collected and the memory is unmapped
+    }
 
 }

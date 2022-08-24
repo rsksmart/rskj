@@ -2,6 +2,7 @@ package co.rsk.bahashmaps;
 
 import co.rsk.baheaps.ByteArrayHeap;
 import co.rsk.baheaps.AbstractByteArrayHeap;
+import co.rsk.datasources.flatdb.LogManager;
 import co.rsk.packedtables.Table;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
@@ -65,6 +66,29 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     final static long bigMarkedOffsetBitMask = 0x4000000000L;
     long removeMarksMask;
     int keysize;
+    LogManager logManager;
+
+    public void deleteLog() {
+        if (logManager==null) {
+            return;
+        }
+        logManager.deleteLog();
+    }
+    public void beginLog() throws IOException {
+        // from now on this object should be locked and only one thread should
+        // access it. The lock must be provided by the object calling beginLog()
+        if (logManager==null) {
+            return;
+        }
+        logManager.beginLog();
+    }
+
+    public void endLog() throws IOException {
+        if (logManager==null) {
+            return;
+        }
+        logManager.endLog();
+    }
 
     ///////////////////////////
     // For debugging:
@@ -89,7 +113,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                                     long newBeHeapCapacity,
                                     AbstractByteArrayHeap sharedBaHeap,
                                     int maxElements,
-                                    Format format) {
+                                    Format format,
+                                    LogManager logManager) {
         this.loadFactor = 0;
         this.format =format;
         if (format != null) {
@@ -132,6 +157,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             else
                 this.baHeap = sharedBaHeap;
         }
+        this.logManager = logManager;
 
     }
 
@@ -197,7 +223,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     public AbstractByteArrayHashMap(int initialCapacity, BAKeyValueRelation BAKeyValueRelation,
                                     Format format) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR, BAKeyValueRelation,defaultNewBeHeapCapacity,null,
-                0,format);
+                0,format,null);
     }
 
     public AbstractByteArrayHashMap() {
@@ -413,7 +439,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             // removal functionality if needed later.
             long pureOffset = getPureOffsetFromMarkedOffset(table.getPos(i));
             baHeap.removeObjectByOfs(pureOffset);
-            tableSetPos(i, emptyMarkedOffset);
+            // this is not needed, because later we overwrite the same slot
+            // tableSetPos(i, emptyMarkedOffset);
         } else
             this.size++;
 
@@ -455,8 +482,16 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         return c;
     }
 
-    void tableSetPos(int i,long value) {
+    // This method is public only to recontruct the table using
+    //  LogManager.
+    public void processLogEntry(int i,long value) {
         table.setPos(i, value);
+    }
+
+    public void tableSetPos(int i,long value) {
+        table.setPos(i, value);
+        if (logManager!=null)
+            logManager.logSetPos(i,value);
     }
 
     byte[] getNewMetadata() {

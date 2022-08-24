@@ -22,7 +22,7 @@ public class PrioritizedByteArrayHashMap extends ByteArrayRefHashMap {
                                        int maxElements,
                                        Format format) {
         super(initialCapacity,loadFactor,BAKeyValueRelation,newBeHeapCapacity,sharedBaHeap,maxElements,
-                format);
+                format,null);
     }
 
     public int getPriority(Object key) {

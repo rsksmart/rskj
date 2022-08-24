@@ -149,6 +149,21 @@ public class ByteArrayHeapBase {
         getCurSpace().sync();
     }
 
+    public void closeFiles() {
+        // We close all mapped files. This object will be unusable afterwards
+        // we can close files to simulate a power failure and re-open a database.
+        int head = headOfFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].destroy();
+            head = spaces[head].previousSpaceNum;
+        }
+        head = headOfPartiallyFilledSpaces.head;
+        while (head != -1) {
+            spaces[head].destroy();
+            head = spaces[head].previousSpaceNum;
+        }
+        getCurSpace().destroy();
+    }
     public void save() throws IOException {
         if (!memoryMapped) {
             saveSpaces();

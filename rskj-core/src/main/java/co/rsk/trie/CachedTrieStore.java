@@ -29,7 +29,9 @@ public class CachedTrieStore implements TrieStore {
 
     private TrieStore cache;
     private TrieStore base;
+
     /**
+     *
      */
     public CachedTrieStore(TrieStore cache, TrieStore base) {
 
@@ -49,7 +51,6 @@ public class CachedTrieStore implements TrieStore {
     }
 
 
-
     @Override
     public Optional<Trie> retrieve(byte[] rootHash) {
         Optional<Trie> t = cache.retrieve(rootHash);
@@ -62,7 +63,7 @@ public class CachedTrieStore implements TrieStore {
     @Override
     public byte[] retrieveValue(byte[] hash) {
         byte[] t = cache.retrieveValue(hash);
-        if (t==null) {
+        if (t == null) {
             t = base.retrieveValue(hash);
         }
         return t;
@@ -72,5 +73,27 @@ public class CachedTrieStore implements TrieStore {
     public void dispose() {
         base.dispose();
         cache.dispose();
+    }
+
+    @Override
+    public List<String> getStats() {
+        List<String> list = new ArrayList<>();
+
+        list.add("base ("+base.getClass().getSimpleName()+") :");
+        List<String> aList = base.getStats();
+        if (aList != null) {
+            list.addAll(aList);
+        }
+        list.add("cache ("+base.getClass().getSimpleName()+"):");
+        aList = cache.getStats();
+        if (aList != null) {
+            list.addAll(aList);
+        }
+        return list;
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName()+"base: "+base.getName();
     }
 }

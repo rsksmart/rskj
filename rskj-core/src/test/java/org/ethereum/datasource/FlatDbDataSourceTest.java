@@ -24,12 +24,15 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,14 +46,98 @@ public class FlatDbDataSourceTest {
     }
 
     public FlatDbDataSource createTmpFlatDb(String tmpDbPath) throws IOException {
+        // FlatDbDataSource.CreationFlag.All
+        EnumSet<FlatDbDataSource.CreationFlag> someFlags =
+                EnumSet.of(
+                        FlatDbDataSource.CreationFlag.atomicBatches,
+                        FlatDbDataSource.CreationFlag.useDBForDescriptions);
+
         return new FlatDbDataSource(1000,10_000,
                 tmpDbPath ,
-                FlatDbDataSource.CreationFlag.All,
+                someFlags ,
                 FlatDbDataSource.latestDBVersion,false);
     }
     @Rule
-    public TemporaryFolder databaseDir = new TemporaryFolder();
+    public TemporaryFolder databaseDir = new TemporaryFolder(new File("/tmp/myTmp"));
 
+    @Test
+    public void testBatchUpdatingInterrupted() throws IOException {
+        // We test a batch update that is interrupted by a power failure.
+        // the result should be that nothing gets written.
+        String tmpPath = getTmpDbPath();
+        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        dataSource.init();
+
+        // first write a single key
+        byte[] data1 = randomBytes(32);
+        byte[] key1 = Keccak256Helper.keccak256(data1);
+        dataSource.put(key1, data1);
+        dataSource.flush(); // make sure we flush the data to disk.
+
+        final int batchSize = 100;
+        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
+
+
+        dataSource.updateBatchInterrupted(batch, Collections.emptySet(),50);
+
+        dataSource.powerFailure();
+
+        // Now create another database for the same files:
+        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        dataSource2.init();
+
+        // The key1/value1 must still ve there
+        assertNotNull(dataSource2.get(key1));
+        assertArrayEquals(dataSource2.get(key1),data1);
+        assertEquals(1, dataSource2.keys().size());
+
+        // But the batch should not be there
+        for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch.entrySet()) {
+            assertNull(dataSource2.get(entry.getKey().getData()));
+        }
+
+    }
+    @Test
+    public void testBatchUpdatingInterrupted2() throws IOException {
+        // We test a batch update that is interrupted by a power failure.
+        // the result should be that nothing gets written.
+        String tmpPath = getTmpDbPath();
+        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        dataSource.init();
+
+        // first write a single key
+        byte[] data1 = randomBytes(32);
+        byte[] key1 = Keccak256Helper.keccak256(data1);
+        dataSource.put(key1, data1);
+        dataSource.flush(); // make sure we flush the data to disk.
+
+        final int batchSize = 3;
+        Map<ByteArrayWrapper, byte[]> batch1 = createBatch(batchSize);
+        Map<ByteArrayWrapper, byte[]> batch2 = createBatch(batchSize);
+
+        dataSource.updateBatch(batch1, Collections.emptySet());
+        dataSource.updateBatch(batch2, Collections.emptySet());
+        // we don't write the actual data until flush()
+        // now we generate a power failure in the middle of flush
+        dataSource.flushWithPowerFailure();
+
+        // Now create another database for the same files:
+        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        dataSource2.init();
+
+        // The key1/value1 must still ve there
+        assertNotNull(dataSource2.get(key1));
+        assertArrayEquals(dataSource2.get(key1),data1);
+        assertEquals(batchSize*2+1, dataSource2.keys().size());
+
+        // But the batch should 1 be there
+        for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch1.entrySet()) {
+            assertNull(dataSource2.get(entry.getKey().getData()));
+        }
+        for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch2.entrySet()) {
+            assertNull(dataSource2.get(entry.getKey().getData()));
+        }
+    }
     @Test
     public void testBatchUpdating() throws IOException {
         String tmpPath = getTmpDbPath();

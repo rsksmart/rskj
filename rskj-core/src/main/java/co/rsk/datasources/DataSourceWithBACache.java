@@ -62,7 +62,7 @@ public class DataSourceWithBACache extends DataSourceWithCacheAndStats {
             bamap = new MaxSizeByteArrayHashMap(initialSize,loadFActor,myKR,
                     (long) beHeapCapacity,
                     null,cacheSize,
-                    null
+                    null,null
                     );
         } catch (IOException e) {
             e.printStackTrace();

@@ -29,7 +29,7 @@ public class MaxSizeLinkedByteArrayHashMap extends ByteArrayRefHashMap {
                                          Format format) {
         super(initialCapacity,loadFactor,BAKeyValueRelation,newBeHeapCapacity,
                 sharedBaHeap,maxElements,
-                format);
+                format,null);
         this.lba = lba;
         isNull = new BitSet(maxElements);
         this.topPriorityOnAccess = topPriorityOnAccess;

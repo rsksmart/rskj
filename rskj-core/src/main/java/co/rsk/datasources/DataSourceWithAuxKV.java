@@ -67,8 +67,11 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         byte[] value;
 
         gets++;
-
-        value = committedCache.get(wrappedKey);
+        dbLock.readLock().lock(); try {
+          value = committedCache.get(wrappedKey);
+        } finally {
+            dbLock.readLock().unlock();
+        }
         if (value != null) {
             hits++;
         } else
@@ -118,8 +121,11 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     }
 
     private void putKeyValue(ByteArrayWrapper key, byte[] value) {
-        committedCache.put(key, value);
-
+        dbLock.writeLock().lock(); try {
+          committedCache.put(key, value);
+        } finally {
+            dbLock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -148,7 +154,12 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         //        .map(Map.Entry::getKey);
         // note that toSet doesn't work with byte[], so we have to do this extra step
         //return committedKeys.collect(Collectors.toSet());
-        return committedCache.keySet();
+        dbLock.readLock().lock(); try {
+          return committedCache.keySet();
+        } finally {
+            dbLock.readLock().unlock();
+        }
+
     }
 
     @Override
@@ -160,8 +171,64 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         // remove overlapping entries
         rows.keySet().removeAll(keysToRemove);
 
-        rows.forEach(this::put);
-        keysToRemove.forEach(this::delete);
+        dbLock.writeLock().lock(); try {
+            beginLog();
+            rows.forEach(this::put);
+            keysToRemove.forEach(this::delete);
+            endLog();
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        } finally {
+            dbLock.writeLock().unlock();
+        }
+
+    }
+
+    // This method is used to test power failures
+    public void updateBatchInterrupted(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove,int interruptionPoint) {
+        if (rows.containsKey(null) || rows.containsValue(null)) {
+            throw new IllegalArgumentException("Cannot update null values");
+        }
+
+        // remove overlapping entries
+        rows.keySet().removeAll(keysToRemove);
+        int counter =0;
+        dbLock.writeLock().lock(); try {
+            beginLog();
+            if (counter==interruptionPoint)
+                return;
+            counter++;
+            for (Map.Entry<ByteArrayWrapper,byte[]> row : rows.entrySet()) {
+                put(row.getKey(),row.getValue());
+
+                if (counter==interruptionPoint)
+                    return;
+                counter++;
+            }
+            for (ByteArrayWrapper key: keysToRemove) {
+                delete(key);
+
+                if (counter==interruptionPoint)
+                    return;
+                counter++;
+            }
+
+            if (counter==interruptionPoint)
+                return;
+            counter++;
+            endLog();
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        } finally {
+            dbLock.writeLock().unlock();
+        }
+
+    }
+    public void beginLog() throws IOException {
+
+    }
+    public void endLog() throws IOException {
+
     }
 
     @Override
@@ -191,8 +258,13 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
 
     public long countCommittedCachedElements() {
-        if (committedCache!=null) {
-            return committedCache.size();
+        if (committedCache != null) {
+            dbLock.readLock().lock();
+            try {
+                return committedCache.size();
+            } finally {
+                dbLock.readLock().unlock();
+            }
         } else
             return 0;
     }
@@ -219,7 +291,11 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
         list.add("Hits: " + hits);
         list.add("Misses: " + misses);
-        list.add("committedCache.size(): " + committedCache.size());
+        dbLock.readLock().lock(); try {
+          list.add("committedCache.size(): " + committedCache.size());
+        } finally {
+            dbLock.readLock().unlock();
+        }
         list.add("DB Hashtable stats:");
         list.addAll(getHashtableStats());
         return list;

@@ -3,6 +3,7 @@ package co.rsk.bahashmaps;
 import co.rsk.datasources.DataSourceWithHeap;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.AbstractByteArrayRefHeap;
+import co.rsk.datasources.flatdb.LogManager;
 import co.rsk.dbutils.ObjectIO;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -46,9 +47,9 @@ public class MaxSizeByteArrayHashMap extends ByteArrayRefHashMap {
                                    long newBeHeapCapacity,
                                    AbstractByteArrayHeap sharedBaHeap,
                                    int maxElements,
-                                   Format format) throws IOException {
+                                   Format format, LogManager logManager) throws IOException {
         super(initialCapacity,loadFactor,BAKeyValueRelation,newBeHeapCapacity,sharedBaHeap,maxElements,
-                format         );
+                format,logManager        );
     }
 
     final int metadataSize =8;
