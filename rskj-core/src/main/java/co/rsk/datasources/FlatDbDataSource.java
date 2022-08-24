@@ -2,10 +2,13 @@ package co.rsk.datasources;
 
 import co.rsk.bahashmaps.AbstractByteArrayHashMap;
 import co.rsk.bahashmaps.Format;
+import co.rsk.datasources.flatdb.DbLock;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
@@ -14,6 +17,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
 
     public static final int latestDBVersion = 1;
     EnumSet<CreationFlag> flags;
+    DbLock lockFile ;
 
     public enum CreationFlag {
         supportNullValues,  // Allow values to be null, and stored as such in the map
@@ -58,11 +62,23 @@ public class FlatDbDataSource extends DataSourceWithHeap {
                 createDescDataSource(databaseName,(creationFlags.contains(CreationFlag.useDBForDescriptions)),readOnly),
                 readOnly);
         this.flags = creationFlags;
+
     }
 
     public void init() {
+        // The descDataSource already has a lock, so if two applications try
+        // to open the same database, only one will be able to.
+        try {
+            Files.createDirectories(Paths.get(this.databaseName));
+            Path p =Paths.get(this.databaseName,"lock.dat");
+            lockFile = new DbLock(p.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
         if (descDataSource!=null)
             descDataSource.init();
+
         super.init();
 
     }
@@ -73,6 +89,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
             super.flushWithPowerFailure();
             // close the description file so it can be re-opened
             descDataSource.close();
+            lockFile.release();
         } finally {
             dbLock.writeLock().unlock();
         }
@@ -84,6 +101,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
             super.powerFailure();
             // close the description file so it can be re-opened
             descDataSource.close();
+            lockFile.release();
         } finally {
             dbLock.writeLock().unlock();
         }
@@ -93,6 +111,7 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         try {
             super.close();
             descDataSource.close();
+            lockFile.release();
         } finally {
             dbLock.writeLock().unlock();
         }

@@ -58,8 +58,8 @@ public class FlatDbDataSourceTest {
                 FlatDbDataSource.latestDBVersion,false);
     }
     @Rule
-    public TemporaryFolder databaseDir = new TemporaryFolder(new File("/tmp/myTmp"));
-
+    //public TemporaryFolder databaseDir = new TemporaryFolder(new File("/tmp/myTmp"));
+    public TemporaryFolder databaseDir = new TemporaryFolder();
     @Test
     public void testBatchUpdatingInterrupted() throws IOException {
         // We test a batch update that is interrupted by a power failure.
@@ -137,6 +137,28 @@ public class FlatDbDataSourceTest {
         for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch2.entrySet()) {
             assertNull(dataSource2.get(entry.getKey().getData()));
         }
+    }
+
+    @Test(expected = java.nio.channels.OverlappingFileLockException.class)
+    public void testLockFile() throws IOException {
+        // We test a batch update that is interrupted by a power failure.
+        // the result should be that nothing gets written.
+        String tmpPath = getTmpDbPath();
+        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        dataSource.init();
+
+        // first write a single key
+        byte[] data1 = randomBytes(32);
+        byte[] key1 = Keccak256Helper.keccak256(data1);
+        dataSource.put(key1, data1);
+        dataSource.flush(); // make sure we flush the data to disk.
+
+
+        // Now create another database for the same files:
+        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        dataSource2.init();
+
+
     }
     @Test
     public void testBatchUpdating() throws IOException {
