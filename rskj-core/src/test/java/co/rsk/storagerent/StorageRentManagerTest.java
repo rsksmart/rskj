@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.ethereum.db.OperationType.READ_OPERATION;
@@ -213,7 +212,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
+        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
 
         repositoryWithTimestamps.commit();
 
@@ -245,7 +244,7 @@ public class StorageRentManagerTest {
         // pay and update timestamp
         long updatedTimestamp = 50000000000l;
         StorageRentResult result = StorageRentManager.pay(enoughGas, updatedTimestamp,
-                blockTrack, transactionTrack);
+                blockTrack, transactionTrack, 0);
 
         transactionTrack.commit();
 
@@ -274,7 +273,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
+        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
 
         repositoryWithTimestamps.commit();
 
@@ -306,7 +305,7 @@ public class StorageRentManagerTest {
         // pay and update timestamp
         long notEnoughtAccumulatedRent = firstBlockTimestamp + 100000000;
         StorageRentResult result = StorageRentManager.pay(enoughGas, notEnoughtAccumulatedRent,
-                blockTrack, transactionTrack);
+                blockTrack, transactionTrack, 0);
 
         transactionTrack.commit();
 
@@ -342,7 +341,7 @@ public class StorageRentManagerTest {
                                          long expectedPaidRent, long expectedPayableRent, long expectedRollbacksRent,
                                          long expectedRentedNodesCount, long expectedRollbackNodesCount) {
         StorageRentResult storageRentResult = StorageRentManager.pay(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack);
+                mockBlockTrack, mockTransactionTrack, 0);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
         assertTrue(remainingGasAfterPayingRent >= 0);
