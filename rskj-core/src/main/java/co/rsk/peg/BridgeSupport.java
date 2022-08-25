@@ -878,7 +878,7 @@ public class BridgeSupport {
             if (activations.isActive(ConsensusRule.RSKIP185)) {
                 eventLogger.logReleaseBtcRequestReceived(rskTx.getSender().toHexString(), destinationAddress, value);
             }
-            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info("releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
         }
     }
 
