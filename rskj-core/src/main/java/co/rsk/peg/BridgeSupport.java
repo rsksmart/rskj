@@ -149,6 +149,8 @@ public class BridgeSupport {
 
     private static final String INVALID_ADDRESS_FORMAT_MESSAGE = "invalid address format";
 
+    private static final ConfigFileLoader.ResourceLoader RESOURCE_LOADER = BridgeSupport.class::getResourceAsStream;
+
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
@@ -212,11 +214,10 @@ public class BridgeSupport {
     @VisibleForTesting
     InputStream getCheckPoints() {
         String fileName = bridgeConstants.getBtcParams().getId() + ".checkpoints";
-        InputStream checkpoints = ConfigFileLoader.loadConfigurationFile(BridgeSupport.class,true,
-                "rskbitcoincheckpoints" ,"/rskbitcoincheckpoints/",fileName );
+        InputStream checkpoints = ConfigFileLoader.loadConfigurationFile("/rskbitcoincheckpoints/" + fileName, RESOURCE_LOADER, ConfigFileLoader.ConfigRemap.RSK_BITCOIN_CHECKPOINTS);
         if (checkpoints == null) {
             // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
-            checkpoints = BridgeSupport.class.getResourceAsStream("/"+ fileName);
+            checkpoints = RESOURCE_LOADER.getResourceAsStream("/"+ fileName);
         }
         return checkpoints;
     }

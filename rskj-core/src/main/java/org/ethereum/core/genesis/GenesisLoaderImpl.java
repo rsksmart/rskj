@@ -55,6 +55,9 @@ import java.util.Map;
  * 4. Registers the genesis state root in the state root handler
  */
 public class GenesisLoaderImpl implements GenesisLoader {
+
+    private static final ConfigFileLoader.ResourceLoader RESOURCE_LOADER = GenesisLoaderImpl.class::getResourceAsStream;
+
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private static final Logger logger = LoggerFactory.getLogger(GenesisLoaderImpl.class);
@@ -82,8 +85,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 activationConfig,
                 stateRootHandler,
                 trieStore,
-                ConfigFileLoader.loadConfigurationFile(GenesisLoaderImpl.class,true,
-                        "genesis" , "/genesis/",genesisFile),
+                ConfigFileLoader.loadConfigurationFile("/genesis/" + genesisFile, RESOURCE_LOADER, ConfigFileLoader.ConfigRemap.GENESIS),
                 initialNonce,
                 isRsk,
                 useRskip92Encoding,

@@ -1,62 +1,90 @@
 package co.rsk.util;
 
-import co.rsk.config.RskSystemProperties;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 public class ConfigFileLoader {
+
     // For now, this is a singleton class, and all methods are static.
     // Why? Because it will only be used for testing, and benchmarking, and tweaking,
     // but not in production.
 
-    static Map<String,String> fileLocations;
-    public static void setRemaps(Map<String,String> prop) {
-        fileLocations = prop;
+    private ConfigFileLoader() {
     }
 
-    public static InputStream loadConfigurationFileFromFilesystem( String strPathId, String fileName) {
-        if (fileLocations == null)
-            return null;
-        String location = null;
-        location = fileLocations.get(strPathId);
-        if (location==null)
-            return null;
-        Path path = Paths.get(location);
-        path = path.resolve(fileName);
+    private static Map<ConfigRemap, String> fileLocations = Collections.emptyMap();
 
-        try {
-            InputStream is = new FileInputStream(path.toFile());
+    public static void setRemaps(Map<ConfigRemap, String> remaps) {
+        if (remaps == null) {
+            throw new IllegalStateException("Remaps cannot be null");
+        }
+
+        fileLocations = remaps;
+    }
+
+    /**
+     * Retrieves Config either from filesystem (remapping) or regular embedded resource load.
+     *
+     * @param resourcePath   Path for the config file to be loaded as embedded resource. Can be relative to {@code origin} class or absolute depending on the provided {@code resourceLoader}. Ignored if a remap is defined and found.
+     * @param resourceLoader Embedded-resource loader. Ignored if a remap is defined and found.
+     * @param configRemap    Remap type to be checked & applied if defined and found.
+     * @return InputStream for the loaded config
+     */
+    public static InputStream loadConfigurationFile(String resourcePath, ResourceLoader resourceLoader, ConfigRemap configRemap) {
+        InputStream is = loadConfigurationFileFromFilesystem(configRemap);
+        if (is != null) {
             return is;
+        }
+
+        return resourceLoader.getResourceAsStream(resourcePath);
+    }
+
+    private static InputStream loadConfigurationFileFromFilesystem(ConfigRemap configRemap) {
+        String location = fileLocations.get(configRemap);
+        if (location == null) {
+            return null;
+        }
+
+        Path path = Paths.get(location);
+        try {
+            return new FileInputStream(path.toFile());
         } catch (FileNotFoundException e) {
             // if not found, abort
-            throw new RuntimeException("Configuration file " + path.toString() + " not found");
+            throw new IllegalStateException("Remapped config file " + path + " not found");
         }
 
     }
-    // If relativeToClass is true, then the strPathId will be searched relative to the .class file position,
-    // If relativeToClass is false, then strPathId will be an absolute path to be take from the resource root.
-    // The path will be remapped, BUT the filename is not.
-    public static InputStream loadConfigurationFile(Class origin,boolean relativeToClass,
-                                                    String strPathId, String resourcePath,String fileName) {
 
-        InputStream is = loadConfigurationFileFromFilesystem(strPathId,fileName);
-        if (is != null)
-            return is;
+    public interface ResourceLoader {
+        InputStream getResourceAsStream(String name);
+    }
 
-        String resourcePathname = resourcePath+fileName;
+    public enum ConfigRemap {
 
-        if (relativeToClass) {
-            is = origin.getResourceAsStream(resourcePathname);
-        } else {
-            is = origin.getClassLoader().getResourceAsStream(resourcePathname);
+        BUILD_INFO("build-info"),
+        REMASC("remasc"),
+        RSK_BITCOIN_CHECKPOINTS("rskbitcoincheckpoints"),
+        GENESIS("genesis");
+
+        private final String id;
+
+        ConfigRemap(String id) {
+            this.id = id;
         }
-        return is;
+
+        public String getId() {
+            return id;
+        }
+
+        public static Optional<ConfigRemap> lookUp(String id) {
+            return Arrays.stream(values()).filter(r -> r.id.equals(id)).findFirst();
+        }
     }
 }

@@ -33,8 +33,10 @@ import java.io.InputStream;
 public class RemascConfigFactory {
     private static final Logger logger = LoggerFactory.getLogger("RemascConfigFactory");
 
-    private ObjectMapper mapper;
-    private String configPath;
+    private final ObjectMapper mapper;
+    private final String configPath;
+
+    private static final ConfigFileLoader.ResourceLoader RESOURCE_LOADER = RemascConfigFactory.class.getClassLoader()::getResourceAsStream;
 
     public RemascConfigFactory(String remascConfigFile) {
         this.mapper = new ObjectMapper();
@@ -45,13 +47,12 @@ public class RemascConfigFactory {
         RemascConfig remascConfig;
 
         // configPath is actually currently a filename. The field name does not help.
-        try (InputStream is = ConfigFileLoader.loadConfigurationFile(RemascConfigFactory.class,false,
-                "remasc","",this.configPath)){
+        try (InputStream is = ConfigFileLoader.loadConfigurationFile(this.configPath, RESOURCE_LOADER, ConfigFileLoader.ConfigRemap.REMASC)) {
             JsonNode node = mapper.readTree(is);
             remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
-            throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);
+            throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
         }
 
         return remascConfig;
