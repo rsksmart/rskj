@@ -21,11 +21,13 @@ import static org.ethereum.db.OperationType.*;
 public class MutableRepositoryTracked extends MutableRepository {
 
     // used trie nodes in this repository (and its sub-repositories)
-    private Map<ByteArrayWrapper, OperationType> trackedNodes;
+    private Map<ByteArrayWrapper, OperationType> trackedNodes; // todo(fedejinich) this can be final
     // nodes that have been part of a rolled back repository
-    private Map<ByteArrayWrapper, OperationType> rollbackNodes;
+    private Map<ByteArrayWrapper, OperationType> rollbackNodes; // todo(fedejinich) this can be final
     // parent repository to commit tracked nodes
-    private MutableRepositoryTracked parentRepository;
+    private final MutableRepositoryTracked parentRepository;
+    // counter for reading non-existing keys
+    private int readMismatchesCount = 0;
 
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
@@ -61,6 +63,7 @@ public class MutableRepositoryTracked extends MutableRepository {
         if(this.parentRepository != null) {
             this.parentRepository.mergeTrackedNodes(this.trackedNodes);
             this.parentRepository.addRollbackNodes(this.rollbackNodes);
+            this.parentRepository.sumReadMismatchesCount(this.readMismatchesCount);
         }
     }
 
@@ -72,6 +75,7 @@ public class MutableRepositoryTracked extends MutableRepository {
             this.parentRepository.addRollbackNodes(this.trackedNodes);
             this.trackedNodes.clear();
             this.rollbackNodes.clear();
+            this.readMismatchesCount = 0;
         }
     }
 
@@ -117,6 +121,10 @@ public class MutableRepositoryTracked extends MutableRepository {
         return this.trackedNodes;
     }
 
+    public int getMismatchesCount() {
+        return this.readMismatchesCount;
+    }
+
     // Internal methods contains node tracking
 
     @Override
@@ -127,10 +135,6 @@ public class MutableRepositoryTracked extends MutableRepository {
         } else {
             trackNodeWriteOperation(key);
         }
-    }
-
-    public long getValueLength(byte[] key) {
-        return this.mutableTrie.getValueLength(key).intValue();
     }
 
     @Override
@@ -180,6 +184,7 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     protected void trackNode(byte[] rawKeyToTrack, OperationType operationType, boolean nodeExistsInTrie) {
         if(!nodeExistsInTrie) {
+            readMismatchesCount++;
             return;
         }
 
@@ -207,6 +212,11 @@ public class MutableRepositoryTracked extends MutableRepository {
     private void addRollbackNodes(Map<ByteArrayWrapper, OperationType> rollbackNodes) {
         rollbackNodes.forEach((key, operationType) -> track(key, operationType, this.rollbackNodes));
     }
+
+    private void sumReadMismatchesCount(int childReadMismatchesCount) {
+        this.readMismatchesCount += childReadMismatchesCount;
+    }
+
     public void clearTrackedNodes() {
         this.trackedNodes = new HashMap<>();
         this.rollbackNodes = new HashMap<>();

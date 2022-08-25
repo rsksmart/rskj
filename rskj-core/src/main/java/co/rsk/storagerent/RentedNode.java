@@ -27,6 +27,11 @@ public class RentedNode {
         this.rentTimestamp = rentTimestamp;
     }
 
+    @VisibleForTesting
+    public RentedNode(byte[] rawKey, OperationType operationType, long nodeSize, long rentTimestamp) {
+        this(new ByteArrayWrapper(rawKey), operationType, nodeSize, rentTimestamp);
+    }
+
     /**
      * Calculates the payable rent amount (the total amount it's limited by the rent cap)
      *

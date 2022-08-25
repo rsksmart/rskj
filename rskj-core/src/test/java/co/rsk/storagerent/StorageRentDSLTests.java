@@ -6,7 +6,6 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import co.rsk.trie.Trie;
 import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
 import org.apache.commons.lang3.NotImplementedException;
@@ -25,8 +24,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentComputation.RENT_CAP;
-import static co.rsk.storagerent.StorageRentComputation.WRITE_THRESHOLD;
+import static co.rsk.storagerent.StorageRentComputation.*;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
@@ -88,15 +86,15 @@ public class StorageRentDSLTests {
          * */
 
         // balanceOf
-        checkStorageRent(world,"tx02", 5000, 0, 4, 0);
-        checkStorageRent(world,"tx03", 5000, 0, 3, 0);
+        checkStorageRent(world,"tx02", 5000, 0, 4, 0, 0);
+        checkStorageRent(world,"tx03", 7500, 0, 3, 0, 1);
 
         // transfer(senderAccountState, contractCode, balance1, balance2, storageRoot, ...)
-        checkStorageRent(world,"tx04", 5000, 0, 5, 0);
+        checkStorageRent(world,"tx04", 10000, 0, 5, 0, 2);
 
         // balanceOf
-        checkStorageRent(world,"tx05", 5000, 0, 4, 0);
-        checkStorageRent(world,"tx06", 5000, 0, 4, 0);
+        checkStorageRent(world,"tx05", 5000, 0, 4, 0, 0);
+        checkStorageRent(world,"tx06", 5000, 0, 4, 0, 0);
     }
 
     /**
@@ -115,7 +113,7 @@ public class StorageRentDSLTests {
         );
 
         // rollbackRent should be >0, we want to "penalize" failed access
-        checkStorageRent(world, "tx04",  5072, 70, 8, 3);
+        checkStorageRent(world, "tx04",  15072, 70, 8, 3, 4);
     }
 
     /**
@@ -138,7 +136,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 3271, 770, 3, 6);
+        checkStorageRent(world, "tx04", 3271, 770, 3, 6, 0);
     }
 
     /**
@@ -160,7 +158,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 3271, 770, 3, 7);
+        checkStorageRent(world, "tx04", 3271, 770, 3, 7, 0);
     }
 
     /**
@@ -177,7 +175,7 @@ public class StorageRentDSLTests {
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
             BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, aprox 25 days
         );
-        checkStorageRent(world, "tx04", 5002, 0, 8, 0);
+        checkStorageRent(world, "tx04", 15002, 0, 8, 0, 4);
     }
 
     /**
@@ -199,7 +197,7 @@ public class StorageRentDSLTests {
         RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
         RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
 
-        checkStorageRent(world, tx02, 16250, 1250, 3, 3);
+        checkStorageRent(world, tx02, 16250, 1250, 3, 3, 0);
 
         // check for the value
         assertEquals(DataWord.valueOf(7), world.getRepositoryLocator()
@@ -244,18 +242,18 @@ public class StorageRentDSLTests {
                 BLOCK_AVERAGE_TIME * blockCount
         );
         // pay for deleted keys
-        checkStorageRent(world, "tx02", 10163, 0, 4, 0);
+        checkStorageRent(world, "tx02", 10163, 0, 4, 0, 0);
 
-        RskAddress addr = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
+        RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
 
         // check cell initialized at b01
-        assertEquals(DataWord.valueOf(7), getStorageValueByBlockName(world, addr, "b01"));
+        assertEquals(DataWord.valueOf(7), getStorageValueByBlockName(world, contract, "b01"));
 
         // check node after execution
         Set<RentedNode> rentedNodeSet = world.getTransactionExecutor("tx02")
                 .getStorageRentResult()
                 .getRentedNodes();
-        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(addr, DataWord.ZERO));
+        ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(contract, DataWord.ZERO));
         RentedNode expectedNode = new RentedNode(
                 key,
                 DELETE_OPERATION,
@@ -272,7 +270,7 @@ public class StorageRentDSLTests {
         assertTrue(WRITE_THRESHOLD <= paidRent && paidRent < RENT_CAP);
 
         // check deleted storage cell
-        assertNull(getStorageValueByBlockName(world, addr, "b02"));
+        assertNull(getStorageValueByBlockName(world, contract, "b02"));
     }
 
     // todo(fedejinich) there's duplicated code between this test and deleteNodeWithAccumulatedRent
@@ -289,7 +287,7 @@ public class StorageRentDSLTests {
                 BLOCK_AVERAGE_TIME * blockCount
         );
         // pay for deleted keys
-        checkStorageRent(world, "tx02", 20000, 0, 4, 0);
+        checkStorageRent(world, "tx02", 20000, 0, 4, 0, 0);
 
         RskAddress addr = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
 
@@ -318,6 +316,76 @@ public class StorageRentDSLTests {
 
         // check deleted storage cell
         assertNull(getStorageValueByBlockName(world, addr, "b02"));
+    }
+
+    /**
+     * A single transaction reads 5 non-existing keys
+     *
+     * It should:
+     * - pay for each failed attempt
+     * */
+    @Test
+    public void fixedPenaltyForReadingNonExistingKeys_singleTx() throws FileNotFoundException, DslProcessorException {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+        long blockCount = 974_875;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/mismatches.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+
+        RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+
+        StorageRentResult storageRentResult = world.getTransactionExecutor("tx02").getStorageRentResult();
+
+        long beforeUpdatingTimestamp = 29246250000l;
+        RentedNode senderRentedNode = new RentedNode(trieKeyMapper.getAccountKey(sender),
+                WRITE_OPERATION, 7, beforeUpdatingTimestamp);
+        RentedNode contractRentedNode = new RentedNode(trieKeyMapper.getAccountKey(contract),
+                WRITE_OPERATION, 3, beforeUpdatingTimestamp);
+        RentedNode codeRentedNode = new RentedNode(trieKeyMapper.getCodeKey(contract),
+                READ_OPERATION, 347, beforeUpdatingTimestamp);
+
+        assertTrue(storageRentResult.getRentedNodes().contains(senderRentedNode));
+        // todo(fedejinich) WRITE_OPERATION because transfers 0 from sender to contract, this is not intended.
+        //  What's the cause of this ZERO tx?
+        assertTrue(storageRentResult.getRentedNodes().contains(contractRentedNode));
+        assertTrue(storageRentResult.getRentedNodes().contains(codeRentedNode));
+
+        assertEquals(12500, storageRentResult.getMismatchesRent());
+
+        // payable rent is calculated with the most recent timestamp
+        long mostRecentTimestamp = 58492500000l;
+        long rentedNodesRent = senderRentedNode.payableRent(mostRecentTimestamp) +
+                contractRentedNode.payableRent(mostRecentTimestamp) +
+                codeRentedNode.payableRent(mostRecentTimestamp);
+
+        // pays mismatches penalty
+        checkStorageRent(world, "tx02",
+                rentedNodesRent + 5 * MISMATCH_PENALTY, 0,
+                3, 0, 5);
+        assertTrue(mostRecentTimestamp > beforeUpdatingTimestamp);
+    }
+
+    /**
+     * A block with multiple transactions, each tx reads 5 non existing keys
+     *
+     * It should:
+     * - each tx should pay for each failed attempt
+     * */
+    @Test
+    public void fixedPenaltyForReadingNonExistingKeys_multipleTx() {
+        throw new NotImplementedException("should be implemented");
+    }
+
+    @Test
+    public void fixedPenaltyForReadingNonExistingKeys_nestedTx() {
+        throw new NotImplementedException("should be implemented");
+    }
+
+    @Test
+    public void rentIsOnlyPaidOncePerBlockForTheSameNode() {
+        throw new NotImplementedException("should be implemented");
     }
 
     private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {
@@ -379,7 +447,7 @@ public class StorageRentDSLTests {
     }
 
     private void checkStorageRent(World world, String txName, long paidRent, long rollbackRent, long rentedNodesCount,
-                                  long rollbackNodesCount) {
+                                  long rollbackNodesCount, long mismatchCount) {
         TransactionExecutor transactionExecutor = world.getTransactionExecutor(txName);
 
         StorageRentResult storageRentResult = transactionExecutor.getStorageRentResult();
@@ -391,10 +459,11 @@ public class StorageRentDSLTests {
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
         assertEquals(paidRent, storageRentResult.paidRent());
+        assertEquals(mismatchCount, storageRentResult.getMismatchCount());
+        // todo(fedejinich) add assert for getMismatchesRent()
         // todo(fedejinich) add assert for payableRent()
         nodesSizesPositive(storageRentResult.getRentedNodes());
         nodesSizesPositive(storageRentResult.getRollbackNodes());
-
     }
 
     private void nodesSizesPositive(Set<RentedNode> nodes) {
