@@ -1,6 +1,5 @@
 package co.rsk.storagerent;
 
-import java.util.List;
 import java.util.Set;
 
 public class StorageRentResult {
@@ -10,17 +9,22 @@ public class StorageRentResult {
     private final long rollbacksRent;
     private final long payableRent;
     private final long gasAfterPayingRent;
+    private final long mismatchesCount;
 
-    public StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long payableRent, long rollbacksRent, long gasAfterPayingRent) {
+    // todo(fedejinich) refactor this, calculate rents instead of having fixed values
+
+    public StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long payableRent,
+                             long rollbacksRent, long gasAfterPayingRent, long mismatchesCount) {
         this.rentedNodes = rentedNodes;
         this.rollbackNodes = rollbackNodes;
         this.payableRent = payableRent;
         this.rollbacksRent = rollbacksRent;
         this.gasAfterPayingRent = gasAfterPayingRent;
+        this.mismatchesCount = mismatchesCount;
     }
 
     public long paidRent() {
-        return this.payableRent + this.rollbacksRent;
+        return this.payableRent + this.rollbacksRent + this.getMismatchesRent();
     }
 
     public Set<RentedNode> getRentedNodes() {
@@ -41,5 +45,13 @@ public class StorageRentResult {
 
     public long getGasAfterPayingRent() {
         return gasAfterPayingRent;
+    }
+
+    public long getMismatchesRent() {
+        return StorageRentManager.getMismatchesRent(this.mismatchesCount);
+    }
+
+    public long getMismatchCount() {
+        return this.mismatchesCount;
     }
 }

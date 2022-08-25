@@ -1,6 +1,5 @@
 package co.rsk.storagerent;
 
-import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
@@ -14,6 +13,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static co.rsk.storagerent.StorageRentComputation.MISMATCH_PENALTY;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
@@ -29,16 +29,16 @@ public class StorageRentManager {
     /**
      * Pay storage rent.
      *
-     * @param gasRemaining remaining gas amount to pay storage rent
+     * @param gasRemaining            remaining gas amount to pay storage rent
      * @param executionBlockTimestamp execution block timestamp
-     * @param blockTrack repository to fetch the relevant data before the transaction execution
-     * @param transactionTrack repository to update the rent timestamps
-     *
+     * @param blockTrack              repository to fetch the relevant data before the transaction execution
+     * @param transactionTrack        repository to update the rent timestamps
+     * @param initialMismatchesCount
      * @return new remaining gas
-     * */
+     */
     public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
                                         MutableRepositoryTracked blockTrack,
-                                        MutableRepositoryTracked transactionTrack) {
+                                        MutableRepositoryTracked transactionTrack, int initialMismatchesCount) {
         // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
 
@@ -60,11 +60,12 @@ public class StorageRentManager {
                 rentedNodes.size(), rollbackKeys.size());
 
         // calculate rent
-
+        long mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount() - initialMismatchesCount;
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-        long rollbacksRent = rentBy(rollbackRentedNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
-        
-        long rentToPay = payableRent + rollbacksRent;
+        long rollbacksRent = rentBy(rollbackRentedNodes,
+                rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
+        long rentToPay = payableRent + rollbacksRent + getMismatchesRent(mismatchesCount);
+
 
         if(gasRemaining < rentToPay) {
             // todo(fedejinich) this is not the right way to throw an OOG
@@ -84,12 +85,16 @@ public class StorageRentManager {
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
         StorageRentResult result = new StorageRentResult(rentedNodes, rollbackRentedNodes,
-                payableRent, rollbacksRent, gasAfterPayingRent);
+                payableRent, rollbacksRent, gasAfterPayingRent, mismatchesCount);
 
         LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
             result.paidRent(), result.getPayableRent(), result.getRollbacksRent());
 
         return result;
+    }
+
+    public static long getMismatchesRent(long mismatchesCount) {
+        return MISMATCH_PENALTY * mismatchesCount;
     }
 
     @VisibleForTesting

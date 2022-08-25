@@ -110,6 +110,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
     private boolean storageRentEnabled; // todo(fedejinich) this is a workaround to enable storage rent just in StorageRentDSLTest, it will be removed
     private StorageRentResult storageRentResult;
+    private int initialMismatchesCount;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -162,6 +163,11 @@ public class TransactionExecutor {
      */
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
+
+        if(isStorageRentEnabled()) {
+            // this saves the previous count (since blockTrack is shared across all the executed transactions)
+            initialMismatchesCount = ((MutableRepositoryTracked) blockTrack).getMismatchesCount();
+        }
 
         if (localCall) {
             return true;
@@ -524,7 +530,8 @@ public class TransactionExecutor {
             Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
 
             storageRentResult = StorageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
-                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack);
+                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
+                    initialMismatchesCount);
 
             profiler.stop(storageRentMetric);
 
