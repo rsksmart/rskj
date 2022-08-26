@@ -1,6 +1,7 @@
 package co.rsk.datasources;
 
 import co.rsk.bahashmaps.ByteArray40HashMap;
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.bahashmaps.Format;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.ByteArrayHeap;
@@ -30,6 +31,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     long beHeapCapacity;
     boolean useLogManager;
     boolean autoUpgrade;
+    boolean flushAfterPut;
     LogManager logManager;
 
     public enum LockType {
@@ -46,7 +48,6 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
                               boolean useLogManager,
                               boolean autoUpgrade,
                               KeyValueDataSource descDataSource,
-                              //EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags,
                               boolean readOnly) throws IOException {
         super(databaseName,additionalKV,readOnly);
         //this.creationFlags = creationFlags;
@@ -58,12 +59,18 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.lockType = lockType;
         this.maxNodeCount = maxNodeCount;
         this.beHeapCapacity = beHeapCapacity;
-        this.autoUpgrade = autoUpgrade;
+        this.autoUpgrade = format.creationFlags.contains(CreationFlag.autoUpgrade);
+        this.flushAfterPut = format.creationFlags.contains(CreationFlag.flushAfterPut);
 
         if (useLogManager) {
             logManager = new LogManager(Paths.get(databaseName));
         }
 
+    }
+
+    public void checkFlushAfterPut() {
+        if (flushAfterPut)
+            flush();
     }
 
     public void init() {
@@ -192,7 +199,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         if (maxNodeCount==0) return null;
 
         MyBAKeyValueRelation myKR = null;
-        if (!format.creationFlags.contains(AbstractByteArrayHashMap.CreationFlag.storeKeys))
+        if (!format.creationFlags.contains(CreationFlag.storeKeys))
             myKR = new MyBAKeyValueRelation();
 
         float loadFActor =getDefaultLoadFactor();

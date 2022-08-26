@@ -1,6 +1,7 @@
 package co.rsk.db.benchmarks;
 
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.*;
@@ -171,17 +172,17 @@ public class CompareDBs extends Benchmark {
         // These flas are the ideal to create a Trie DB, which is what
         // we aim to. So we do not supportNullValues, nor do we allowRemovals.
         flatDbOptions.creationFlags = EnumSet.of(
-                FlatDbDataSource.CreationFlag.supportBigValues,
-                FlatDbDataSource.CreationFlag.atomicBatches,
-                FlatDbDataSource.CreationFlag.useDBForDescriptions);
+                CreationFlag.supportBigValues,
+                CreationFlag.atomicBatches,
+                CreationFlag.useDBForDescriptions);
 
         if (!keyIsValueHash) {
-            flatDbOptions.creationFlags.add(FlatDbDataSource.CreationFlag.storeKeys);
+            flatDbOptions.creationFlags.add(CreationFlag.storeKeys);
         }
         if (config==DatabaseConfig.withLog) {
-            flatDbOptions.creationFlags.add(FlatDbDataSource.CreationFlag.useLogForBatchConsistency);
+            flatDbOptions.creationFlags.add(CreationFlag.useLogForBatchConsistency);
         } else {
-            flatDbOptions.creationFlags.add(FlatDbDataSource.CreationFlag.useMaxOffsetForBatchConsistency);
+            flatDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
         }
         dsDB = KeyValueDataSourceUtils.makeDataSourceExt(trieStorePath,database,false,
                 flatDbOptions);

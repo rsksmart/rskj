@@ -7,7 +7,7 @@ public class Format {
     public int dbVersion = latestDBVersion;
     public int tablePosSize;
     public int pageSize = 4096;
-    public EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags =
-            AbstractByteArrayHashMap.CreationFlag.All;
+    public EnumSet<CreationFlag> creationFlags =
+            CreationFlag.All;
 
 }

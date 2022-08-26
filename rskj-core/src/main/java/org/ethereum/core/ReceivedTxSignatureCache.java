@@ -30,6 +30,10 @@ public class ReceivedTxSignatureCache extends SignatureCache {
         super(MAX_CACHE_SIZE, true);
     }
 
+    public ReceivedTxSignatureCache(int size) {
+        super(size, true);
+    }
+
     @Override
     public synchronized RskAddress getSender(Transaction transaction) {
 

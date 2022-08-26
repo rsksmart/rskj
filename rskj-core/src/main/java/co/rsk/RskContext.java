@@ -18,12 +18,14 @@
 
 package co.rsk;
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
+import co.rsk.datasources.FlatDbDataSource;
 import co.rsk.db.*;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
@@ -1328,14 +1330,38 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         );
     }
 
+    Object getFlatDbOptionsForTrieStore() {
+        KeyValueDataSourceUtils.FlatDBOptions flatDbOptions = new KeyValueDataSourceUtils.FlatDBOptions();
+        flatDbOptions.maxKeys =16_000_000;
+        flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
+        flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
+
+        // These flas are the ideal to create a Trie DB, which is what
+        // we aim to. So we do not supportNullValues, nor do we allowRemovals.
+        flatDbOptions.creationFlags = EnumSet.of(
+                CreationFlag.supportBigValues,
+                CreationFlag.atomicBatches);
+          //      FlatDbDataSource.CreationFlag.useDBForDescriptions);
+
+
+        flatDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
+
+        return flatDbOptions;
+    }
+
     protected synchronized TrieStore buildTrieStore(Path trieStorePath) {
         checkIfNotClosed();
 
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
 
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, rskSystemProperties.trieDatabaseKind(),
-                getRskSystemProperties().readOnlyMode());
+        Object specialOptions=null;
+        if (rskSystemProperties.trieDatabaseKind()==DbKind.FLAT_DB) {
+            specialOptions = getFlatDbOptionsForTrieStore();
+        }
+            KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSourceExt(trieStorePath,
+                    rskSystemProperties.trieDatabaseKind(),
+                getRskSystemProperties().readOnlyMode(),specialOptions);
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
@@ -1430,7 +1456,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         Secp256k1.initialize(getRskSystemProperties());
     }
 
-    private BlockTxSignatureCache getBlockTxSignatureCache() {
+    public BlockTxSignatureCache getBlockTxSignatureCache() {
         if (blockTxSignatureCache == null) {
             blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
         }

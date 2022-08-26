@@ -28,6 +28,8 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.datasource.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
@@ -114,7 +116,11 @@ public class ExecuteBlocks extends CliToolRskContextAware {
     private void executeBlocks(String[] args,     RskContext ctx,BlockExecutor blockExecutor,  TrieStore trieStore,
                                StateRootHandler stateRootHandler) {
         long fromBlockNumber = Long.parseLong(args[0]);
-        long toBlockNumber = Long.parseLong(args[1]);
+        long toBlockNumber;
+        if (args[1].charAt(0)=='+') {
+            toBlockNumber =fromBlockNumber+Long.parseLong(args[1]);
+        }  else
+            toBlockNumber =Long.parseLong(args[1]);
         BlockStore blockStore;
         if (args[2].equals("(db)")) {
             blockStore = ctx.getBlockStore();
@@ -125,6 +131,20 @@ public class ExecuteBlocks extends CliToolRskContextAware {
         printArgs(args);
 
         long start = System.currentTimeMillis();
+        long sig_start = System.currentTimeMillis();
+        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
+            consoleLog("executing :"+n);
+            Block block = blockStore.getChainBlockByNumber(n);
+            SignatureCache sc = ctx.getBlockTxSignatureCache();
+            Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+            for (Transaction tx : block.getTransactionsList()) {
+                tx.getSender(sc);
+                sc.storeSender(tx);
+            }
+        }
+        long sig_end = System.currentTimeMillis();
+        consoleLog("sigcache fill time: "+(sig_end-sig_start)+ " msec");
+
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             consoleLog("executing :"+n);
             long estart = System.currentTimeMillis();

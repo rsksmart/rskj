@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class KeyValueDataSourceUtils {
     public static class FlatDBOptions {
         public int maxKeys;
         public long maxCapacity;
-        public EnumSet<FlatDbDataSource.CreationFlag> creationFlags;
+        public EnumSet<CreationFlag> creationFlags;
         public int dbVersion;
     }
 
@@ -54,7 +55,7 @@ public class KeyValueDataSourceUtils {
                     flatDbOptions.maxKeys =16_000_000;
                     flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
                     flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
-                    flatDbOptions.creationFlags = FlatDbDataSource.CreationFlag.Default;
+                    flatDbOptions.creationFlags =CreationFlag.Default;
                 }
                 try {
                     ds = new FlatDbDataSource(flatDbOptions.maxKeys,flatDbOptions.maxCapacity,

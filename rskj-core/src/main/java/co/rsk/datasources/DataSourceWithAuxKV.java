@@ -124,10 +124,14 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         dbLock.writeLock().lock(); try {
           committedCache.put(key, value);
         } finally {
+            checkFlushAfterPut();
             dbLock.writeLock().unlock();
         }
     }
 
+    public void checkFlushAfterPut() {
+
+    }
     @Override
     public void delete(byte[] key) {
         delete(ByteUtil.wrap(key));

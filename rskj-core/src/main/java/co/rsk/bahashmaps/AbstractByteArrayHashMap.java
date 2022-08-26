@@ -51,7 +51,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     int threshold;
     long maxOffset=-1;
     boolean inBatch;
-    long maxOffsetToCommit;
+    long maxOffsetToCommit =-1;
 
     float loadFactor;
     KeyValueDataSource dataSource;
@@ -108,12 +108,16 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     void computeMasks() {
         elementSize =getElementSize();
         int slotSizeBits =elementSize*8;//
+        int usedBits =0;
+        nullMarkedOffsetBitMask = (1L<<(slotSizeBits-1)); usedBits++;
+         bigMarkedOffsetBitMask = (1L<<(slotSizeBits-2));usedBits++;
+         if (useMWChecksumForSlotConsistency) {
+            numberOfZerosBitMask   = 7L*(1L<<(slotSizeBits-5)); // 3 bits
+            numberOfZerosShift = (slotSizeBits-5);
+             usedBits+=3;
 
-        nullMarkedOffsetBitMask = (1L<<(slotSizeBits-1));
-         bigMarkedOffsetBitMask = (1L<<(slotSizeBits-2));
-         numberOfZerosBitMask   = 7L*(1L<<(slotSizeBits-5)); // 3 bits
-        numberOfZerosShift = (slotSizeBits-5);
-        removeMarksMask = (1L<<(slotSizeBits-5))-1;
+         }
+        removeMarksMask = (1L<<(slotSizeBits-usedBits))-1;
     }
 
     public void deleteLog() {
@@ -212,7 +216,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
     }
 
-    void expandCreationFlags(EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags) {
+    void expandCreationFlags(EnumSet<CreationFlag> creationFlags) {
         this.supportNullValues = creationFlags.contains(CreationFlag.supportNullValues);
         this.allowRemovals = creationFlags.contains(CreationFlag.allowRemovals);
         this.supportBigValues = creationFlags.contains(CreationFlag.supportBigValues);
@@ -254,46 +258,6 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     static final int tableSizeFor(int cap) {
         int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
         return n < 0 ? 1 : (n >= 1073741824 ? 1073741824 : n + 1);
-    }
-
-    public enum CreationFlag {
-        storeKeys,
-        variableLengthKeys,
-        supportNullValues,
-        allowRemovals,
-        supportBigValues,
-        useLogForBatchConsistency,
-        useMaxOffsetForBatchConsistency,
-        useMWChecksumForSlotConsistency; // MerkleWinternitz;
-
-        public static final EnumSet<CreationFlag> Default = EnumSet.of(
-                storeKeys,variableLengthKeys,
-                supportNullValues ,  allowRemovals ,supportBigValues,
-                useMaxOffsetForBatchConsistency,
-                useMWChecksumForSlotConsistency
-        );
-        public static final EnumSet<CreationFlag> All = EnumSet.allOf(CreationFlag.class);
-
-        public static EnumSet<CreationFlag> fromBinary(int mask) {
-            EnumSet<CreationFlag> set = EnumSet.noneOf(CreationFlag.class);
-            for (CreationFlag value : CreationFlag.values()) {
-                if ((mask & (1 << value.ordinal())) != 0) {
-                    set.add(value);
-                }
-            }
-            return set;
-        }
-
-        public static int toBinary(EnumSet<CreationFlag> set) {
-            int mask = 0;
-
-            for (CreationFlag value : CreationFlag.values()) {
-                if (set.contains(value)) {
-                    mask |= (1 << value.ordinal());
-                }
-            }
-            return mask;
-        }
     }
 
 
@@ -1587,16 +1551,15 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         header.totalSize =  hdin.readInt();
         header.size = hdin.readInt();
         header.threshold = hdin.readInt();
-        header.flags   = hdin.readInt();
-        if (header.flags==-1)  {
+        try {
+            header.flags = hdin.readInt();
+            header.tableSlotSize = hdin.readByte();
+            header.maxOffset = hdin.readLong();
+        }  catch (EOFException e) {
             header.flags = 0;
             header.tableSlotSize = 5;
-            return;
+            header.maxOffset = Long.MAX_VALUE; // Allow anything
         }
-        header.tableSlotSize= hdin.readByte();
-        if (header.tableSlotSize<=0)
-            header.tableSlotSize = 5;
-        header.maxOffset = hdin.readLong();
     }
 
     public void loadFromDataSource(boolean map) throws IOException {
@@ -1732,7 +1695,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         header.size = size;
         header.threshold = threshold;
         header.tableSlotSize = (byte) getElementSize();
-        header.maxOffset = maxOffset;
+        header.maxOffset = maxOffsetToCommit;
         return header;
     }
 

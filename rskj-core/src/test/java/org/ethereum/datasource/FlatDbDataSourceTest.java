@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.datasources.FailureTrack;
 import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
@@ -64,16 +65,16 @@ public class FlatDbDataSourceTest {
     }
 
     public FlatDbDataSource createTmpFlatDb(String tmpDbPath) throws IOException {
-        // FlatDbDataSource.CreationFlag.All
-        EnumSet<FlatDbDataSource.CreationFlag> someFlags =
+        // CreationFlag.All
+        EnumSet<CreationFlag> someFlags =
                 EnumSet.of(
-                        FlatDbDataSource.CreationFlag.atomicBatches,
-                        FlatDbDataSource.CreationFlag.useDBForDescriptions);
+                        CreationFlag.atomicBatches,
+                        CreationFlag.useDBForDescriptions);
 
         if (config==DatabaseConfig.withLog) {
-            someFlags.add(FlatDbDataSource.CreationFlag.useLogForBatchConsistency);
+            someFlags.add(CreationFlag.useLogForBatchConsistency);
         } else {
-            someFlags.add(FlatDbDataSource.CreationFlag.useMaxOffsetForBatchConsistency);
+            someFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
         }
 
         return new FlatDbDataSource(1000,10_000,

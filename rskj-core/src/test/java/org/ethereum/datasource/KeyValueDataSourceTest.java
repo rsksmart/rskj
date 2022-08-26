@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
@@ -35,12 +36,12 @@ public class KeyValueDataSourceTest {
         return new FlatDbDataSource(1000,10_000,
                 Files.createTempDirectory(tmpDir, "default").resolve("test").toString(),
                 EnumSet.of(
-                        FlatDbDataSource.CreationFlag.storeKeys,
-                        FlatDbDataSource.CreationFlag.supportBigValues,
-                        FlatDbDataSource.CreationFlag.allowRemovals,
-                        FlatDbDataSource.CreationFlag.variableLengthKeys,
-                        FlatDbDataSource.CreationFlag.atomicBatches,
-                        FlatDbDataSource.CreationFlag.autoUpgrade),
+                        CreationFlag.storeKeys,
+                        CreationFlag.supportBigValues,
+                        CreationFlag.allowRemovals,
+                        CreationFlag.variableLengthKeys,
+                        CreationFlag.atomicBatches,
+                        CreationFlag.autoUpgrade),
                 FlatDbDataSource.latestDBVersion,false);
     }
 
