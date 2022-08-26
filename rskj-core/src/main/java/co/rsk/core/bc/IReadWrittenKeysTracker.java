@@ -19,14 +19,18 @@
 package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
+
+import java.util.Map;
 import java.util.Set;
 
 public interface IReadWrittenKeysTracker {
-    Set<ByteArrayWrapper> getTemporalReadKeys();
+    Set<ByteArrayWrapper> getThisThreadReadKeys();
 
-    Set<ByteArrayWrapper> getTemporalWrittenKeys();
+    Set<ByteArrayWrapper> getThisThreadWrittenKeys();
 
-    boolean hasCollided();
+    Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread();
+
+    Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread();
 
     void addNewReadKey(ByteArrayWrapper key);
 

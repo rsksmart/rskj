@@ -26,62 +26,66 @@ import java.util.Map;
 import java.util.Set;
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private Map<ByteArrayWrapper, Set<Long>> threadByReadKey;
-    private Map<ByteArrayWrapper, Long> threadByWrittenKey;
-    private boolean collision;
+
+    private Map<Long, Set<ByteArrayWrapper>> readKeysByThread;
+
+    private Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread;
+
 
     public ReadWrittenKeysTracker() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
-        this.collision = false;
+        this.readKeysByThread = new HashMap<>();
+        this.writtenKeysByThread = new HashMap<>();
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalReadKeys(){
-        return new HashSet<>(this.threadByReadKey.keySet());
+    public Set<ByteArrayWrapper> getThisThreadReadKeys(){
+        long threadId = Thread.currentThread().getId();
+        if (this.readKeysByThread.containsKey(threadId)) {
+            return new HashSet<>(this.readKeysByThread.get(threadId));
+        } else {
+            return new HashSet<>();
+        }
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalWrittenKeys(){
-        return new HashSet<>(this.threadByWrittenKey.keySet());
+    public Set<ByteArrayWrapper> getThisThreadWrittenKeys(){
+        long threadId = Thread.currentThread().getId();
+        if (this.writtenKeysByThread.containsKey(threadId)) {
+            return new HashSet<>(this.writtenKeysByThread.get(threadId));
+        } else {
+            return new HashSet<>();
+        }
     }
 
-    public boolean hasCollided() { return this.collision;}
+    @Override
+    public Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread() {
+        return new HashMap<>(this.readKeysByThread);
+    }
+
+    @Override
+    public Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread() {
+        return new HashMap<>(this.writtenKeysByThread);
+    }
 
     @Override
     public synchronized void addNewReadKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-        if (threadByWrittenKey.containsKey(key)) {
-            collision = collision || (threadId != threadByWrittenKey.get(key));
-        }
-        Set<Long> threadSet;
-        if (threadByReadKey.containsKey(key)) {
-            threadSet = threadByReadKey.get(key);
-        } else {
-            threadSet = new HashSet<>();
-        }
-        threadSet.add(threadId);
-        threadByReadKey.put(key, threadSet);
+        Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
+        readKeys.add(key);
+        readKeysByThread.put(threadId, readKeys);
     }
 
     @Override
     public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-        if (threadByWrittenKey.containsKey(key)) {
-            collision = collision || (threadId != threadByWrittenKey.get(key));
-        }
-
-        if (threadByReadKey.containsKey(key)) {
-            Set<Long> threadSet = threadByReadKey.get(key);
-            collision = collision || !(threadSet.contains(threadId)) || (threadSet.size() > 1);
-        }
-
-        threadByWrittenKey.put(key, threadId);
+        Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
+        writtenKeys.add(key);
+        writtenKeysByThread.put(threadId, writtenKeys);
     }
 
     @Override
     public synchronized void clear() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
+        this.readKeysByThread = new HashMap<>();
+        this.writtenKeysByThread = new HashMap<>();
     }
 }
