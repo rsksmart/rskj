@@ -19,13 +19,27 @@ public class FlatDbDataSource extends DataSourceWithHeap {
     DbLock lockFile ;
 
     public enum CreationFlag {
+        storeKeys,
         supportNullValues,  // Allow values to be null, and stored as such in the map
         allowRemovals,      // allow remove() to really remove the values from the heap
         supportBigValues, // support values with lengths higher than 127 bytes to be efficiently handled
         supportAdditionalKV, // Support KVs with keys that are not hashes of data.
         atomicBatches,
+        variableLengthKeys,
+        useLogForBatchConsistency,
+        useMaxOffsetForBatchConsistency,
+        useMWChecksumForSlotConsistency,
         useDBForDescriptions,
         autoUpgrade;
+
+        public static final EnumSet<CreationFlag> Default = EnumSet.of(
+                storeKeys,
+                supportBigValues,
+                allowRemovals,
+                atomicBatches,
+                variableLengthKeys,
+                useLogForBatchConsistency,
+                CreationFlag.autoUpgrade);
 
         public static final EnumSet<CreationFlag> All = EnumSet.allOf(CreationFlag.class);
         public static final EnumSet<CreationFlag> None = EnumSet.noneOf(CreationFlag.class);
@@ -50,7 +64,8 @@ public class FlatDbDataSource extends DataSourceWithHeap {
     }
 
     public FlatDbDataSource(int maxNodeCount, long beHeapCapacity, String databaseName,
-                            EnumSet<CreationFlag> creationFlags, int dbVersion, boolean readOnly) throws IOException {
+                            EnumSet<CreationFlag> creationFlags,
+                            int dbVersion, boolean readOnly) throws IOException {
         // single-thread test:
         //  With rwlocks or exclusive locks: 85k/sec.
         //  Without locks: 102K/sec
@@ -58,7 +73,9 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         super(maxNodeCount, beHeapCapacity,databaseName,LockType.RW,
                 getFormat(creationFlags,dbVersion),
                 (creationFlags.contains(CreationFlag.supportAdditionalKV)),
-                (creationFlags.contains(CreationFlag.atomicBatches)),
+                (creationFlags.contains(CreationFlag.atomicBatches)) &&
+                        (creationFlags.contains(CreationFlag.useLogForBatchConsistency))
+                ,
                 (creationFlags.contains(CreationFlag.autoUpgrade)),
                 createDescDataSource(databaseName,(creationFlags.contains(CreationFlag.useDBForDescriptions)),readOnly),
                 readOnly);
@@ -83,18 +100,20 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         super.init();
 
     }
-    public void flushWithPowerFailure() {
+    public void flushWithPowerFailure(FailureTrack failureTrack) {
         dbLock.writeLock().lock();
         try {
             //
-            super.flushWithPowerFailure();
+            super.flushWithPowerFailure(failureTrack);
             // close the description file so it can be re-opened
             descDataSource.close();
             lockFile.release();
+            FailureTrack.finish(failureTrack);
         } finally {
             dbLock.writeLock().unlock();
         }
     }
+
     public void powerFailure() {
         dbLock.writeLock().lock();
         try {
@@ -111,7 +130,8 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         dbLock.writeLock().lock();
         try {
             super.close();
-            descDataSource.close();
+            if (descDataSource!=null)
+                 descDataSource.close();
             lockFile.release();
         } finally {
             dbLock.writeLock().unlock();
@@ -126,6 +146,17 @@ public class FlatDbDataSource extends DataSourceWithHeap {
             cfs.add(AbstractByteArrayHashMap.CreationFlag.allowRemovals);
         if (creationFlags.contains(CreationFlag.supportBigValues))
             cfs.add(AbstractByteArrayHashMap.CreationFlag.supportBigValues);
+        if (creationFlags.contains(CreationFlag.useLogForBatchConsistency))
+            cfs.add(AbstractByteArrayHashMap.CreationFlag.useLogForBatchConsistency);
+        if (creationFlags.contains(CreationFlag.useMaxOffsetForBatchConsistency))
+            cfs.add(AbstractByteArrayHashMap.CreationFlag.useMaxOffsetForBatchConsistency);
+        if (creationFlags.contains(CreationFlag.useMWChecksumForSlotConsistency))
+            cfs.add(AbstractByteArrayHashMap.CreationFlag.useMWChecksumForSlotConsistency);
+        if (creationFlags.contains(CreationFlag.storeKeys))
+            cfs.add(AbstractByteArrayHashMap.CreationFlag.storeKeys);
+        if (creationFlags.contains(CreationFlag.variableLengthKeys))
+            cfs.add(AbstractByteArrayHashMap.CreationFlag.variableLengthKeys);
+
         return cfs;
     }
 }

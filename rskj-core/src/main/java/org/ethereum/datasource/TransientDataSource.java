@@ -186,6 +186,11 @@ public class TransientDataSource implements KeyValueDataSource {
     public void flush() {
     }
 
+    @Override
+    public boolean exists() {
+        return base.exists();
+    }
+
     public String getName() {
         return "transient-"+base.getName() ;
     }

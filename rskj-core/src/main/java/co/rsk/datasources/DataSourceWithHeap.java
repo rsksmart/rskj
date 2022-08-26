@@ -20,7 +20,7 @@ import java.util.*;
 public class DataSourceWithHeap extends DataSourceWithAuxKV {
     protected AbstractByteArrayHashMap bamap;
     protected AbstractByteArrayHeap sharedBaHeap;
-    protected EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags;
+    //protected EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags;
     protected Format format;
     protected Path mapPath;
     protected Path dbPath;
@@ -28,7 +28,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     LockType lockType;
     int maxNodeCount;
     long beHeapCapacity;
-    boolean atomicBatches;
+    boolean useLogManager;
     boolean autoUpgrade;
     LogManager logManager;
 
@@ -43,14 +43,16 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
                               String databaseName,LockType lockType,
                               Format format,boolean additionalKV,
-                              boolean atomicBatches,
+                              boolean useLogManager,
                               boolean autoUpgrade,
                               KeyValueDataSource descDataSource,
+                              //EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags,
                               boolean readOnly) throws IOException {
         super(databaseName,additionalKV,readOnly);
+        //this.creationFlags = creationFlags;
         this.descDataSource = descDataSource;
         this.format = format;
-        this.atomicBatches = atomicBatches;
+        this.useLogManager = useLogManager;
         mapPath = Paths.get(databaseName, "hash.map");
         dbPath = Paths.get(databaseName, "store");
         this.lockType = lockType;
@@ -58,7 +60,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.beHeapCapacity = beHeapCapacity;
         this.autoUpgrade = autoUpgrade;
 
-        if (atomicBatches) {
+        if (useLogManager) {
             logManager = new LogManager(Paths.get(databaseName));
         }
 
@@ -94,18 +96,23 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         return getClass().getSimpleName()+":"+databaseName;
     }
 
-    public void flushWithPowerFailure() {
+    public void flushWithPowerFailure(FailureTrack failureTrack) {
         super.flush();
         try {
             if ((!readOnly) && (bamap.modified())) {
                 sharedBaHeap.save();
                 // We do not save the index!
+                if (FailureTrack.shouldFailNow(failureTrack))
+                    return;
+
+                bamap.save(failureTrack);
             }
             // and we do not delete the log
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
     @Override
     public void flush() {
         super.flush();
@@ -184,7 +191,9 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         protected Map<ByteArrayWrapper, byte[]> makeCommittedCache(int maxNodeCount, long beHeapCapacity) throws IOException {
         if (maxNodeCount==0) return null;
 
-        MyBAKeyValueRelation myKR = new MyBAKeyValueRelation();
+        MyBAKeyValueRelation myKR = null;
+        if (!format.creationFlags.contains(AbstractByteArrayHashMap.CreationFlag.storeKeys))
+            myKR = new MyBAKeyValueRelation();
 
         float loadFActor =getDefaultLoadFactor();
         int initialSize = (int) (maxNodeCount/loadFActor);

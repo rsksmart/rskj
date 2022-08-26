@@ -18,6 +18,22 @@ public class KeyValueDataSourceUtils {
 
     @Nonnull
     static public KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind,boolean readOnly) {
+
+        return makeDataSourceExt(datasourcePath, kind, readOnly,null);
+    }
+
+    public static class FlatDBOptions {
+        public int maxKeys;
+        public long maxCapacity;
+        public EnumSet<FlatDbDataSource.CreationFlag> creationFlags;
+        public int dbVersion;
+    }
+
+    @Nonnull
+    static public KeyValueDataSource makeDataSourceExt(@Nonnull Path datasourcePath,
+                                                    @Nonnull DbKind kind,boolean readOnly,
+                                                       Object options
+                                                       ) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
@@ -30,18 +46,21 @@ public class KeyValueDataSourceUtils {
                 ds = new RocksDbDataSource(name, databaseDir,readOnly);
                 break;
             case FLAT_DB:
-                int maxNodeCount = 16_000_000;
-                int maxCapacity  = maxNodeCount*100;
+                FlatDBOptions flatDbOptions;
+                if (options!=null) {
+                    flatDbOptions = (FlatDBOptions) options;
+                } else {
+                    flatDbOptions = new FlatDBOptions();
+                    flatDbOptions.maxKeys =16_000_000;
+                    flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
+                    flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
+                    flatDbOptions.creationFlags = FlatDbDataSource.CreationFlag.Default;
+                }
                 try {
-                    ds = new FlatDbDataSource(maxNodeCount,maxCapacity,
+                    ds = new FlatDbDataSource(flatDbOptions.maxKeys,flatDbOptions.maxCapacity,
                             datasourcePath.toString(),
-                            EnumSet.of(FlatDbDataSource.CreationFlag.supportBigValues,
-                                    FlatDbDataSource.CreationFlag.supportNullValues,
-                                    FlatDbDataSource.CreationFlag.allowRemovals,
-                                    FlatDbDataSource.CreationFlag.supportAdditionalKV,
-                                    FlatDbDataSource.CreationFlag.autoUpgrade),
-                            //FlatDbDataSource.CreationFlag.All,
-                            FlatDbDataSource.latestDBVersion,readOnly);
+                            flatDbOptions.creationFlags,
+                            flatDbOptions.dbVersion,readOnly);
                 } catch (IOException e) {
                     ds = null;
                 }

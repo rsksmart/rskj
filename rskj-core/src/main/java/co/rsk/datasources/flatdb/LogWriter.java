@@ -1,5 +1,6 @@
 package co.rsk.datasources.flatdb;
 import co.rsk.bahashmaps.AbstractByteArrayHashMap;
+import org.bouncycastle.util.Arrays;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,6 +15,9 @@ import static java.util.Objects.requireNonNull;
 public class LogWriter {
     private final File file;
     private final FileChannel fileChannel;
+    int pageSize = 32768;
+    byte[] page = new byte[pageSize];
+    ByteBuffer pageBuffer = ByteBuffer.wrap(page);
 
     public LogWriter(File file)
             throws IOException
@@ -26,12 +30,28 @@ public class LogWriter {
 
     }
 
+    public void writeRemaining() throws IOException {
+        int count = pageBuffer.position();
+        if (count>0) {
+            pageBuffer.position(0);
+            //long fs = fileChannel.size();
+            fileChannel.write(pageBuffer.limit(count));
+            //long fs2 = fileChannel.size();
+            //System.out.println(""+fs+" "+fs2+" "+(fs2-fs)+ " "+count);
+            pageBuffer.limit(pageSize); // restore
+            //pageBuffer = ByteBuffer.wrap(page);
+            pageBuffer.position(0);
+        }
+    }
+
     public synchronized void close()
     {
         //closed.set(true);
 
+
         // try to forces the log to disk
         try {
+            writeRemaining();
             fileChannel.force(true);
         }
 
@@ -49,6 +69,7 @@ public class LogWriter {
         catch (IOException ignored) {
         }
     }
+
     public synchronized void delete()
     {
         //closed.set(true);
@@ -84,7 +105,12 @@ public class LogWriter {
     public synchronized void addRecord(LogRecord record, boolean force)
             throws IOException {
         //checkState(!closed.get(), "Log has been closed");
-        fileChannel.write(ByteBuffer.wrap(record.toBytes()));
+        pageBuffer.put(ByteBuffer.wrap(record.toBytes()));
+        if (pageBuffer.position()==pageSize) {
+            fileChannel.write(pageBuffer);
+            Arrays.clear(page);
+            pageBuffer.position(0);
+        }
 
         if (force) {
             fileChannel.force(false);

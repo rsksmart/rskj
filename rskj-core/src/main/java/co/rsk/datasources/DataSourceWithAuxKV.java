@@ -135,9 +135,11 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     private void delete(ByteArrayWrapper wrappedKey) {
 
-        // always mark for deletion if we don't know the state in the underlying store
-        this.putKeyValue(wrappedKey, null);
-        return;
+        dbLock.writeLock().lock(); try {
+            committedCache.remove(wrappedKey);
+        } finally {
+            dbLock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -233,8 +235,20 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     @Override
     public void flush() {
-        if (dsKV!=null)
-           dsKV.flush();
+        flushWithFailure(null);
+    }
+
+    public void flushWithFailure(FailureTrack failureTrack) {
+        if (dsKV!=null) {
+            dsKV.flush();
+            if (FailureTrack.shouldFailNow(failureTrack))
+                return;
+        }
+    }
+
+    @Override
+    public boolean exists() {
+        return true;
     }
 
 

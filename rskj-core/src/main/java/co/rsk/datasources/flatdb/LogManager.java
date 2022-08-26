@@ -43,7 +43,7 @@ public class LogManager {
         CheckBatchBegan();
 
         logWriter.addEndHeader(true);
-        logWriter.closeQuietly();
+        logWriter.close();
         logWriter = null;
         batchBegan = false;
     }
@@ -124,8 +124,6 @@ public class LogManager {
     }
 
     public void deleteLog() {
-        if (!batchBegan)
-            return;
         File logFile = logFilePath.toFile();
         logFile.delete();
     }

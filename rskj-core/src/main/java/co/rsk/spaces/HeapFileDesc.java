@@ -14,7 +14,7 @@ public class HeapFileDesc {
     public long rootOfs;
     public int metadataLen;
 
-    public void SaveToDataSource(KeyValueDataSource ds,String key) {
+    public void saveToDataSource(KeyValueDataSource ds, String key) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             saveToOutputStream(out);

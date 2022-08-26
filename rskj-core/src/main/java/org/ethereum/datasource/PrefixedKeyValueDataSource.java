@@ -89,6 +89,11 @@ public class PrefixedKeyValueDataSource implements KeyValueDataSource {
     }
 
     @Override
+    public boolean exists() {
+        return base.exists();
+    }
+
+    @Override
     public List<String> getStats() {
         return base.getStats();
     }

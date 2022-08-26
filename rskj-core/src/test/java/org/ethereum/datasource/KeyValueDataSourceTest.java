@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import co.rsk.datasources.FlatDbDataSource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -29,26 +30,55 @@ public class KeyValueDataSourceTest {
         this.withFlush = withFlush;
     }
 
+    public static KeyValueDataSource newFlatDbDataSource(Path tmpDir) throws IOException {
+        // Create a database that allows deteles and keys that are not value hashes.
+        return new FlatDbDataSource(1000,10_000,
+                Files.createTempDirectory(tmpDir, "default").resolve("test").toString(),
+                EnumSet.of(
+                        FlatDbDataSource.CreationFlag.storeKeys,
+                        FlatDbDataSource.CreationFlag.supportBigValues,
+                        FlatDbDataSource.CreationFlag.allowRemovals,
+                        FlatDbDataSource.CreationFlag.variableLengthKeys,
+                        FlatDbDataSource.CreationFlag.atomicBatches,
+                        FlatDbDataSource.CreationFlag.autoUpgrade),
+                FlatDbDataSource.latestDBVersion,false);
+    }
+
+    public static KeyValueDataSource newLevelDbDataSource(Path tmpDir) throws IOException {
+        return new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString());
+    }
+
+    public static KeyValueDataSource newRocksDbDataSource(Path tmpDir) throws IOException {
+        return new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString());
+    }
+
     @Parameterized.Parameters(name = "{1}, flush = {2}")
     public static Collection<Object[]> data() throws IOException {
         Path tmpDir = Files.createTempDirectory("rskj");
         return Arrays.asList(new Object[][]{
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
+                {newLevelDbDataSource(tmpDir) , LevelDbDataSource.class.getSimpleName(), true},
+                {newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), true},
+                {newFlatDbDataSource(tmpDir),FlatDbDataSource.class.getSimpleName(), true},
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
+                {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
+
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
+                {newLevelDbDataSource(tmpDir), LevelDbDataSource.class.getSimpleName(), false},
+                {newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), false},
+                {newFlatDbDataSource(tmpDir),FlatDbDataSource.class.getSimpleName(), false},
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
+                {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
         });
     }
 
     @Before
     public void setup() {
         keyValueDataSource.init();
+    }
+    @After
+    public void close() {
+        keyValueDataSource.close();
     }
 
     @Test

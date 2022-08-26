@@ -16,6 +16,8 @@ public interface Table {
     void clearPageTracking();
     void fill(long value);
     void fillWithZero();
-
+    int getSlotByteSize();
     boolean modified();
+
+    default void sync() {};
 }

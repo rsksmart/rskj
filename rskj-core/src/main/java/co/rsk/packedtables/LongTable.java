@@ -61,6 +61,11 @@ public class LongTable implements Table {
     }
 
     @Override
+    public int getSlotByteSize() {
+        return 8;
+    }
+
+    @Override
     public boolean modified() {
         return  isModified;
     }

@@ -22,6 +22,7 @@ public class Int32Table implements Table {
 
     }
 
+
     @Override
     public void setPos(int i, long value) {
         table[i] = (int) value;
@@ -60,6 +61,11 @@ public class Int32Table implements Table {
     public
     void fillWithZero() {
         Arrays.fill(table, 0);
+    }
+
+    @Override
+    public int getSlotByteSize() {
+        return 4;
     }
 
     @Override

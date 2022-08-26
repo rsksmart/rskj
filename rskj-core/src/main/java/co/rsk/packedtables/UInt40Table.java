@@ -97,6 +97,12 @@ public class UInt40Table implements Table {
 
 
     }
+
+    @Override
+    public int getSlotByteSize() {
+        return 5;
+    }
+
     @Override
     public
     void clearPageTracking() {

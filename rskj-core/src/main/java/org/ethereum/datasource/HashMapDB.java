@@ -106,4 +106,9 @@ public class HashMapDB implements KeyValueDataSource {
     public void flush(){
         // HashMapDB has no flush: everything is kept in memory.
     }
+
+    @Override
+    public boolean exists() {
+        return true;
+    }
 }

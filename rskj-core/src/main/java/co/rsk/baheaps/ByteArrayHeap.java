@@ -4,16 +4,28 @@ package co.rsk.baheaps;
 import co.rsk.spaces.HeapFileDesc;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArrayHeap {
 
+    // Here we need to return if the actual key in the datasource exists
+    // NOT if the database exists, because the database has already been
+    // initialized at this point, so all files exsits.
     public boolean dataSourceExists() {
+        /*
         String fileName = baseFileName + ".desc";
+
+
+        String fileName = baseFileName + ....
         Path path = Paths.get(fileName);
         File f = path.toFile();
         return (f.exists() && !f.isDirectory());
+
+         */
+        byte[] key = "desc".getBytes(StandardCharsets.UTF_8);
+        return descDataSource.get(key)!=null;
     }
 
     public boolean firstSpaceFileExists() {
@@ -48,7 +60,7 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
             }
             HeapFileDesc desc;
             desc = HeapFileDesc.loadFromFile(baseFileName + ".desc");
-            desc.saveToFile(baseFileName + ".desc");
+            desc.saveToDataSource(descDataSource,"desc");
             autoUpgrade = false;
         }
 

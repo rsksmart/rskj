@@ -351,7 +351,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
             profiler.stop(metric);
         }
     }
-
+    @Override
+    public boolean exists() {
+        return Paths.get(databaseDir,name,"CURRENT").toFile().exists();
+    }
     @Override
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush

@@ -324,6 +324,11 @@ public class DataSourceWithCacheAndStats implements KeyValueDataSource {
         }
     }
 
+    @Override
+    public boolean exists() {
+        return base.exists();
+    }
+
     public String getModifiers() {
         return "";
     }

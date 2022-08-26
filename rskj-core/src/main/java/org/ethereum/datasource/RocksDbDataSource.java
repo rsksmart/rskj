@@ -381,4 +381,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
+
+    @Override
+    public boolean exists() {
+        return Paths.get(databaseDir,name,"CURRENT").toFile().exists();
+    }
 }

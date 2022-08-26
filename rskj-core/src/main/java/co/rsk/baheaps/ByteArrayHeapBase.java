@@ -2,7 +2,6 @@ package co.rsk.baheaps;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -189,7 +188,7 @@ public class ByteArrayHeapBase {
         desc.rootOfs = rootOfs;
         desc.metadataLen = lastMetadataLen;
         if (descDataSource!=null) {
-            desc.SaveToDataSource(descDataSource,"desc");
+            desc.saveToDataSource(descDataSource,"desc");
         } else {
             desc.saveToFile(baseFileName + ".desc");
         }
@@ -680,6 +679,9 @@ public class ByteArrayHeapBase {
     }
 
     public void chooseCurrentSpace() {
+        // We could make the number of new spaces unbounded, instead of taking one
+        // from a predefined list. If there is no garbage collection or compaction,
+        // then spaces won't be reused.
         curSpaceNum = headOfPartiallyFilledSpaces.removeFirst();
         Space space = getCurSpace();
 

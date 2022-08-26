@@ -56,6 +56,10 @@ public interface KeyValueDataSource extends DataSource {
      * This makes things go to disk. To enable caching.
      */
     void flush();
+    /* This method results true if the database exists in disk. It can be called before
+    * init() is called.
+    */
+    boolean exists();
 
     /*
     * This method is used for logging, debugging and monitoring.

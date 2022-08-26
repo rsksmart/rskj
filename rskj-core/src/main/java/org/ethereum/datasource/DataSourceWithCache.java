@@ -285,6 +285,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
+    public boolean exists() {
+        return base.exists();
+    }
+
+    @Override
     public List<String> getStats() {
         List<String> list = new ArrayList<>();
         list.add("puts: " + numOfPuts.get());

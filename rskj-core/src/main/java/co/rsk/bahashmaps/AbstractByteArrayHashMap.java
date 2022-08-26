@@ -2,7 +2,9 @@ package co.rsk.bahashmaps;
 
 import co.rsk.baheaps.ByteArrayHeap;
 import co.rsk.baheaps.AbstractByteArrayHeap;
+import co.rsk.datasources.FailureTrack;
 import co.rsk.datasources.flatdb.LogManager;
+import co.rsk.dbutils.ObjectIO;
 import co.rsk.packedtables.Table;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
@@ -27,6 +29,19 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     static final float DEFAULT_LOAD_FACTOR = 0.5F;
     static final long defaultNewBeHeapCapacity = 750_000_000;
 
+    // Is seems that memory mapped index slows down reads at least 10X
+    // However, it triples the time of flushes() (but this only makes writing
+    // 10% slower on a 10M node file)
+    // One example 50M:
+    //  spentOnFlush: 136 sec
+    // Elapsed time [s]: 226
+    // With memory mapped index:
+    //  spentOnFlush: 72 sec
+    //  Elapsed time [s]: 184
+    // Therefore the flush time was reduced 50%, which overall decreased flush time 20%.
+    // Therefore it seems that memory mapping does not pay back (unless in Java).
+    // Maybe it's because of the JINI overhead.
+    static boolean memoryMappedIndex = false;
 
     static final boolean debugCheckHeap = false;
     static final String debugKey=null;
@@ -34,6 +49,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     transient int size;
     transient int modCount;
     int threshold;
+    long maxOffset=-1;
+    boolean inBatch;
+    long maxOffsetToCommit;
 
     float loadFactor;
     KeyValueDataSource dataSource;
@@ -58,18 +76,45 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     AbstractByteArrayHeap baHeap;
 
     //////////////////////////////////////////////////////////////////////////
-    // Management of marked handle methods
+    // Management of marked handle methods and other flags derived from
+    // Creation Flags
+    //
     boolean supportNullValues;
     boolean supportBigValues;
+    boolean storeKeys;
+    boolean variableLengthKeys;
     boolean allowRemovals;
     boolean autoUpgrade;
+    boolean useLogForBatchConsistency;
+    boolean useMaxOffsetForBatchConsistency;
+    boolean useMWChecksumForSlotConsistency;
+
     // This masks are only used if supportNullValues is true.
-    final static long nullMarkedOffsetBitMask = 0x8000000000L;
+    // nullMarkedOffsetBitMask marks when a key contains a null value
+    long nullMarkedOffsetBitMask ;//= 0x8000000000L;
     final static long emptyMarkedOffset = 0x0L;
-    final static long bigMarkedOffsetBitMask = 0x4000000000L;
+    // bigMarkedOffsetBitMask marks when a value is so big that the key
+    // is not dynamically computed from the data, but it is stored before
+    // the data.
+    long bigMarkedOffsetBitMask ;//= 0x4000000000L;
+    long numberOfZerosBitMask;
+    int numberOfZerosShift;
     long removeMarksMask;
+
     int keysize;
     LogManager logManager;
+    int elementSize;
+
+    void computeMasks() {
+        elementSize =getElementSize();
+        int slotSizeBits =elementSize*8;//
+
+        nullMarkedOffsetBitMask = (1L<<(slotSizeBits-1));
+         bigMarkedOffsetBitMask = (1L<<(slotSizeBits-2));
+         numberOfZerosBitMask   = 7L*(1L<<(slotSizeBits-5)); // 3 bits
+        numberOfZerosShift = (slotSizeBits-5);
+        removeMarksMask = (1L<<(slotSizeBits-5))-1;
+    }
 
     public void deleteLog() {
         if (logManager==null) {
@@ -77,16 +122,27 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
         logManager.deleteLog();
     }
+
     public void beginLog() throws IOException {
+
+        if (inBatch)
+            throw new RuntimeException("Cannot create a batch if already in a batch");
+        inBatch = true;
         // from now on this object should be locked and only one thread should
         // access it. The lock must be provided by the object calling beginLog()
         if (logManager==null) {
             return;
         }
+        // Only one thread may begin and work on a log at the same time
+        // beginLog() operations cannot be nested
         logManager.beginLog();
     }
 
     public void endLog() throws IOException {
+        if (!inBatch)
+            throw new RuntimeException("Not in a batch");
+        inBatch = false;
+        maxOffsetToCommit = maxOffset;
         if (logManager==null) {
             return;
         }
@@ -121,22 +177,14 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         this.loadFactor = 0;
         this.format =format;
         if (format != null) {
-            this.supportNullValues = format.creationFlags.contains(CreationFlag.supportNullValues);
-            this.allowRemovals = format.creationFlags.contains(CreationFlag.allowRemovals);
-            this.supportBigValues = format.creationFlags.contains(CreationFlag.supportBigValues);
+            expandCreationFlags(format.creationFlags);
         } else
             format = new Format();
 
-        keysize = BAKeyValueRelation.getKeySize();
+        if (BAKeyValueRelation!=null)
+            keysize = BAKeyValueRelation.getKeySize();
 
-        // Try to use all possible heap space if some features are not supported.
-        removeMarksMask = Long.MAX_VALUE;
-        if (supportBigValues)
-            removeMarksMask = bigMarkedOffsetBitMask -1;
-        else
-            if (supportNullValues)
-                removeMarksMask = nullMarkedOffsetBitMask-1;
-
+        computeMasks();
 
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
@@ -162,6 +210,17 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
         this.logManager = logManager;
 
+    }
+
+    void expandCreationFlags(EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags) {
+        this.supportNullValues = creationFlags.contains(CreationFlag.supportNullValues);
+        this.allowRemovals = creationFlags.contains(CreationFlag.allowRemovals);
+        this.supportBigValues = creationFlags.contains(CreationFlag.supportBigValues);
+        this.storeKeys = creationFlags.contains(CreationFlag.storeKeys);
+        this.variableLengthKeys = creationFlags.contains(CreationFlag.variableLengthKeys);
+        this.useLogForBatchConsistency= creationFlags.contains(CreationFlag.useLogForBatchConsistency);
+        this.useMaxOffsetForBatchConsistency= creationFlags.contains(CreationFlag.useMaxOffsetForBatchConsistency);
+        this.useMWChecksumForSlotConsistency= creationFlags.contains(CreationFlag.useMWChecksumForSlotConsistency);
     }
 
     protected int getElementSize() {
@@ -198,9 +257,43 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     public enum CreationFlag {
-        supportNullValues, allowRemovals,supportBigValues;
+        storeKeys,
+        variableLengthKeys,
+        supportNullValues,
+        allowRemovals,
+        supportBigValues,
+        useLogForBatchConsistency,
+        useMaxOffsetForBatchConsistency,
+        useMWChecksumForSlotConsistency; // MerkleWinternitz;
 
+        public static final EnumSet<CreationFlag> Default = EnumSet.of(
+                storeKeys,variableLengthKeys,
+                supportNullValues ,  allowRemovals ,supportBigValues,
+                useMaxOffsetForBatchConsistency,
+                useMWChecksumForSlotConsistency
+        );
         public static final EnumSet<CreationFlag> All = EnumSet.allOf(CreationFlag.class);
+
+        public static EnumSet<CreationFlag> fromBinary(int mask) {
+            EnumSet<CreationFlag> set = EnumSet.noneOf(CreationFlag.class);
+            for (CreationFlag value : CreationFlag.values()) {
+                if ((mask & (1 << value.ordinal())) != 0) {
+                    set.add(value);
+                }
+            }
+            return set;
+        }
+
+        public static int toBinary(EnumSet<CreationFlag> set) {
+            int mask = 0;
+
+            for (CreationFlag value : CreationFlag.values()) {
+                if (set.contains(value)) {
+                    mask |= (1 << value.ordinal());
+                }
+            }
+            return mask;
+        }
     }
 
 
@@ -282,15 +375,16 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     public long getNullMarkedOffsetFromPureOffset(long pureOffset) {
         if (!supportNullValues)
             throw new RuntimeException("null values not supported");
-        return ((pureOffset+1) | nullMarkedOffsetBitMask);
+        return setMWCheck((pureOffset+1) | nullMarkedOffsetBitMask);
     }
+
 
     public long getValueMarkedOffsetFromPureOffset(long pureOffset) {
-         return (pureOffset+1);
+         return setMWCheck(pureOffset+1);
     }
 
-    public long getBigValueMarkedOffsetFromPureOffset(long pureOffset) {
-        return (pureOffset+1) | bigMarkedOffsetBitMask;
+    public long getKeyStoredMarkedOffsetFromPureOffset(long pureOffset) {
+        return setMWCheck((pureOffset+1) | bigMarkedOffsetBitMask);
     }
 
     public boolean isValueMarkedOffset(long markedOffset) {
@@ -299,7 +393,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         return ((markedOffset & nullMarkedOffsetBitMask)==0);
     }
 
-    public boolean isBigValueMarkedOffset(long markedOffset) {
+    public boolean isKeyStoredMarkedOffset(long markedOffset) {
+        if (storeKeys)
+            return true;
         if (!supportBigValues)
             return false;
         return ((markedOffset & bigMarkedOffsetBitMask)!=0);
@@ -327,17 +423,26 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     public byte[] getKeyFromKPD(byte[] keyPlusData) {
-        byte[] c = new byte[keysize];
-        System.arraycopy(keyPlusData, 0, c,0 , keysize);
+        int keyLength;
+        int ofs;
+        if (variableLengthKeys) {
+            keyLength = ObjectIO.getInt(keyPlusData,0);
+            ofs = 4;
+        } else {
+            keyLength = keysize;
+            ofs =0;
+        }
+        byte[] c = new byte[keyLength];
+        System.arraycopy(keyPlusData, ofs, c, 0, keyLength);
         return c;
-
     }
+
     public byte[] getKeyFromKPD(byte[] kpd,long markedOffset) {
         if (!isValueMarkedOffset(markedOffset)) { //*
             return kpd;
         }
 
-        if (isBigValueMarkedOffset(markedOffset))
+        if (isKeyStoredMarkedOffset(markedOffset))
             return getKeyFromKPD(kpd);
 
         return BAKeyValueRelation.computeKey(kpd);
@@ -353,15 +458,22 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             return null;
         }
 
-        if (!isBigValueMarkedOffset(markedOffset))
+        if (!isKeyStoredMarkedOffset(markedOffset))
             return keyPlusData;
 
         return getDataFromKPD(keyPlusData);
 
     }
+
     public byte[] getDataFromKPD(byte[] keyPlusData) {
-        byte[] c = new byte[keyPlusData.length - keysize];
-        System.arraycopy(keyPlusData, keysize, c,0 , c.length);
+        int keySpaceLength;
+        if (variableLengthKeys) {
+            keySpaceLength = ObjectIO.getInt(keyPlusData,0)+4;
+        } else {
+           keySpaceLength = keysize;
+        }
+        byte[] c = new byte[keyPlusData.length - keySpaceLength];
+        System.arraycopy(keyPlusData, keySpaceLength, c, 0, c.length);
         return c;
 
     }
@@ -378,24 +490,74 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         if (tableIsNull())
             return -1;
         int n = table.length();
+        if (n==0) {
+            throw new RuntimeException("empty hashtable error");
+        }
         int idx = (n - 1) & hash;
         long markedOffset;
+        boolean markedOffsetWasValid;
         do {
             markedOffset  = table.getPos(idx);
             tableSlotChecks++;
-            if (markedOffset == emptyMarkedOffset)
+            if (markedOffset == emptyMarkedOffset) {
+                // If we want to perform auto-repair of "corrupted" hashtables during reads
+                // the we can check here if markedOffsetWasInvalid==true.
+                // In that case, we fill that slot with emptyMarkedOffset
                 return -1;
-            long pureOffset = getPureOffsetFromMarkedOffset(markedOffset);
-            byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
-            if (fastCompareKPDWithKey(kpd,(ByteArrayWrapper)key,markedOffset)) {
-                if (result != null) {
-                    result.data =  getDataFromKPD(kpd,markedOffset);
-                }
-                return markedOffset;
             }
-
+            markedOffsetWasValid = isValidMarkedOffset(markedOffset);
+            if (markedOffsetWasValid) {
+                long pureOffset = getPureOffsetFromMarkedOffset(markedOffset);
+                byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+                if (fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, markedOffset)) {
+                    if (result != null) {
+                        result.data = getDataFromKPD(kpd, markedOffset);
+                    }
+                    return markedOffset;
+                }
+            }
             idx = (idx+1) & (n-1);
         } while (true);
+    }
+
+    public long setMWCheck(long v) {
+        if (!useMWChecksumForSlotConsistency)
+            return v;
+
+       return  ((1L*countZeros(v))<<numberOfZerosShift) | v;
+    }
+
+    int countZeros(long payload) {
+        int zeros =0;
+        // up to 6 bytes (48 bits)
+        for (int i=0;i<elementSize;i++) {
+            if ((payload & 0xff) == 0) zeros++;
+            payload >>= 8;
+        }
+        return zeros;
+    }
+    int invalidEntriesSkipped =0;
+
+    private boolean isValidMarkedOffset(long markedOffset) {
+        if ((!useMWChecksumForSlotConsistency) && (!useMaxOffsetForBatchConsistency))
+            return true;
+
+        if( useMWChecksumForSlotConsistency) {
+            long payload = markedOffset & ~numberOfZerosBitMask;
+            int zeros = countZeros(payload);
+            int zerosCheck = (int) ((markedOffset & numberOfZerosBitMask) >> numberOfZerosShift);
+            boolean valid = (zerosCheck == zeros);
+            if (!valid) {
+                invalidEntriesSkipped++;
+                return false;
+            }
+        }
+        if (useMaxOffsetForBatchConsistency) {
+            long pureOffset = getPureOffsetFromMarkedOffset(markedOffset);
+            if (pureOffset>maxOffset)
+                return false;
+        }
+        return true;
     }
 
     public boolean fastCompareKPDWithKey(byte[] kpd,ByteArrayWrapper key,long markedOffset) {
@@ -406,7 +568,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     public boolean fastCompareKPDWithKeyOrValue(byte[] kpd,ByteArrayWrapper key,byte[] data,long markedOffset) {
-        if ((data!=null) && (isValueMarkedOffset(markedOffset))) { //*
+        if ((!storeKeys) && (data!=null) && (isValueMarkedOffset(markedOffset))) { //*
             // this is the same as comparing the key, because the keys depends on the data.
             // The advantage of comparing the data is that we don't need to recompute the key
             // for element oldValue. This optimization depends if the data is big or not.
@@ -437,34 +599,47 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
     final void setItemInTable(int i,int hash,byte[] key,byte[] data,byte[] metadata,boolean evict) {
         long offset ;
-        if (table.getPos(i)!= emptyMarkedOffset) {
+        long markedOffsetOld = table.getPos(i);
+        if (markedOffsetOld!= emptyMarkedOffset) {
             // We can't remove data from the baHeap now. But we'll keep
             // removal functionality if needed later.
-            long pureOffset = getPureOffsetFromMarkedOffset(table.getPos(i));
-            baHeap.removeObjectByOfs(pureOffset);
+
+            if (isValidMarkedOffset(markedOffsetOld)) {
+                long pureOffsetOld = getPureOffsetFromMarkedOffset(markedOffsetOld);
+                baHeap.removeObjectByOfs(pureOffsetOld);
+            }
             // this is not needed, because later we overwrite the same slot
             // tableSetPos(i, emptyMarkedOffset);
         } else
             this.size++;
 
-        long markedOffset;
+        long markedOffsetNew;
 
         if (data==null) {
             offset = baHeap.addObjectReturnOfs(key, metadata);
-            markedOffset =getNullMarkedOffsetFromPureOffset(offset);
+            markedOffsetNew =getNullMarkedOffsetFromPureOffset(offset);
         }   else {
-            if (data.length>StoreKeyThreshold) {
-                // Append the key before the data
-                byte[] keyPlusData = concat(key,data);
+            if ((storeKeys) || (data.length>StoreKeyThreshold)) {
+                byte[] keyPlusData;
+                if (variableLengthKeys) {
+                    // Leave room for keylength, then put key length
+                    keyPlusData = concat(4,key,data);
+                    ObjectIO.putInt(keyPlusData,0,key.length);
+                } else {
+                    // Append the key before the data
+                    keyPlusData = concat(0,key,data);
+                }
+
                 offset = baHeap.addObjectReturnOfs(keyPlusData, metadata);
-                markedOffset = getBigValueMarkedOffsetFromPureOffset(offset);
+                markedOffsetNew = getKeyStoredMarkedOffsetFromPureOffset(offset);
             } else {
                 offset = baHeap.addObjectReturnOfs(data, metadata);
-                markedOffset = getValueMarkedOffsetFromPureOffset(offset);
+                markedOffsetNew = getValueMarkedOffsetFromPureOffset(offset);
             }
         }
-        tableSetPos(i, markedOffset);
 
+        tableSetPos(i, markedOffsetNew);
+        registerNewPureOffset(offset);
         if (offset== debugOffset)
             offset = offset;
         if (i==debugIndex) {
@@ -473,15 +648,28 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             tabp = tabp;
         }
 
-        this.afterNodeInsertion(markedOffset,key,data,evict);
+        this.afterNodeInsertion(markedOffsetNew,key,data,evict);
+    }
+
+    // Register must be called only when the data key/value has been stored
+    // in memory (both the key and the data). This allows another thread to
+    // perform a flush() asynchronously.
+    void registerNewPureOffset(long offset) {
+        if (offset<=maxOffset) {
+            if (useMaxOffsetForBatchConsistency)
+                   throw new RuntimeException("Cannot add a lower offset. The heap database is corrupted.");
+        }
+        maxOffset = offset;
+        if (!inBatch)
+            maxOffsetToCommit = maxOffset;
     }
 
     final int StoreKeyThreshold = 1024;
 
-    byte[] concat(byte[] a,byte[] b) {
-        byte[] c = new byte[a.length + b.length];
-        System.arraycopy(a, 0, c, 0, a.length);
-        System.arraycopy(b, 0, c, a.length, b.length);
+    byte[] concat(int leftSpace,byte[] a,byte[] b) {
+        byte[] c = new byte[leftSpace+a.length + b.length];
+        System.arraycopy(a, 0, c, leftSpace, a.length);
+        System.arraycopy(b, 0, c, leftSpace+a.length, b.length);
         return c;
     }
 
@@ -520,18 +708,19 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
         do {
             p = table.getPos(i);
-            if (p == emptyMarkedOffset) {
-                setItemInTable(i,hash,key.getData(),value, getNewMetadata(),evict);
+            // If the position is empty OR invalid, we can reuse it
+            if ((p == emptyMarkedOffset) || (!isValidMarkedOffset(p))) {
+                setItemInTable(i, hash, key.getData(), value, getNewMetadata(), evict);
                 break;
             }
 
             long pureOffset = getPureOffsetFromMarkedOffset(p);
-            oldKPD =baHeap.retrieveDataByOfs(pureOffset);
-            boolean sameKey =(fastCompareKPDWithKeyOrValue(oldKPD,key,value,p));
-            if (!isValueMarkedOffset(p)) { //*
+            oldKPD = baHeap.retrieveDataByOfs(pureOffset);
+            boolean sameKey = (fastCompareKPDWithKeyOrValue(oldKPD, key, value, p));
+            if (!isValueMarkedOffset(p)) {
                 if (sameKey) {
                     // Key matches
-                    if (value==null)  {
+                    if (value == null) {
                         // the existing value is associated with null, and also the new value
                         return null;
                     }
@@ -542,32 +731,33 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
                     // replace a null value by a non-null value
                     // Do not increase this.size.
-                    setItemInTable(i,hash,key.getData(),value, getNewMetadata(),evict);
+                    setItemInTable(i, hash, key.getData(), value, getNewMetadata(), evict);
                     break;
                 }
             } else {
-                if (value==null) {
+                if (value == null) {
                     if (sameKey) {
                         if (!evict)
-                            return getDataFromKPD(oldKPD,p);
+                            return getDataFromKPD(oldKPD, p);
 
                         // replace
-                        setItemInTable(i,hash,key.getData(), null, getNewMetadata(),evict);
+                        setItemInTable(i, hash, key.getData(), null, getNewMetadata(), evict);
                         break;
                     }
                 } else {
                     if (sameKey) {
                         if (!evict)
-                            return getDataFromKPD(oldKPD,p);
+                            return getDataFromKPD(oldKPD, p);
 
                         // It the keys depend on values, there is no point in replacing
                         // the value by itself (unless to increase the priority
                         // specified in the metadata).
                         // Anyway, do not increase the size.
-                        setItemInTable(i, hash,key.getData(), value, getNewMetadata(),evict);
+                        setItemInTable(i, hash, key.getData(), value, getNewMetadata(), evict);
                         break;
                     }
                 }
+
             }
             i = (i + 1) & (n - 1);
         } while (true);
@@ -585,7 +775,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int tabLen = table.length();
         for (int j = 0; j < tabLen; ++j) {
             long p = table.getPos(j);
-            if (p != emptyMarkedOffset) {
+            if ((p != emptyMarkedOffset) && (isValidMarkedOffset(p))) {
                 byte[] key = null;
                 byte[] data = null;
                 long pureOffset = getPureOffsetFromMarkedOffset(p);
@@ -635,11 +825,19 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
 
         this.threshold = newThr;
-        renewTable(newCap);
+        try {
+            renewTable(newCap);
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
     }
     
-    public void renewTable(int newCap) {
+    public void renewTable(int newCap) throws IOException {
         Table oldTab = this.table;
+        // TO-DO: If table is memory mapped, this does not work,
+        // because it maps to the same file
+        if ((memoryMappedIndex) && (oldTab!=null))
+            throw new RuntimeException("Memorymapped table resize not implemented");
         Table newTab = createTable(newCap);
         // Filling is not required anymore because the empty element
         // is all zeros. newTab.fill(empty );
@@ -648,7 +846,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         if (oldTab != null) {
             for(int j = 0; j < oldTab.length(); ++j) {
                 long  p= oldTab.getPos(j);
-                if (p != emptyMarkedOffset) {
+                // Invalid slots are left behind, not copied
+                if ((p != emptyMarkedOffset) && (isValidMarkedOffset(p))) {
                     byte[] key;
                     ByteArrayWrapper k;
                     long pureOffset = getPureOffsetFromMarkedOffset(p);
@@ -678,27 +877,31 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         this.putMapEntries(m, true);
     }
 
+    // This method returns the data associated with the key removed
     public byte[] remove(Object key) {
-        long e;
+        long markedOffset;
         if (!allowRemovals) {
             throw new RuntimeException("Removals are not allowed");
         }
-        e = this.removeNode(hash(key), key);
+        markedOffset = this.removeNode(hash(key), key);
 
-        if (e==-1) {
+        if (markedOffset==-1) {
             return null;
         }
 
-        if (!isValueMarkedOffset(e)) { //*
+        if (!isValueMarkedOffset(markedOffset)) { //*
             return null;
         }
-        byte[] kpd = baHeap.retrieveDataByOfs(e);
+        long pureOffset = getPureOffsetFromMarkedOffset(markedOffset);
+        byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
         return getDataFromKPD(kpd);
     }
 
     int debugOffset = 954396;
     int debugIndex = 1;
 
+    // removeNode() returns the makedOffset of the element removed
+    // or -1 if no element was removed.
     final long  removeNode(int hash, Object key) {
 
         int n;
@@ -724,15 +927,17 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             if (p == emptyMarkedOffset) {
                 return -1;
             }
-            long pureOffset = getPureOffsetFromMarkedOffset(p);
-            byte[] kpd =baHeap.retrieveDataByOfs(pureOffset);
-            boolean sameKey =fastCompareKPDWithKey(kpd,(ByteArrayWrapper) key,p);
-            if (sameKey) {
-                if (isValueMarkedOffset(p)) //*
-                    baHeap.removeObjectByOfs(pureOffset);
-                tableSetPos(index, emptyMarkedOffset);
-                fillGap(index,n);
-                break;
+            if (isValidMarkedOffset(p)) {
+                long pureOffset = getPureOffsetFromMarkedOffset(p);
+                byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+                boolean sameKey = fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, p);
+                if (sameKey) {
+                    if (isValueMarkedOffset(p)) //*
+                        baHeap.removeObjectByOfs(pureOffset);
+                    tableSetPos(index, emptyMarkedOffset);
+                    fillGap(index, n);
+                    break;
+                }
             }
 
             index = (index + 1) & (n - 1);
@@ -771,11 +976,13 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
     public Set<ByteArrayWrapper> keySet() {
         Set<ByteArrayWrapper> ks = new HashSet<ByteArrayWrapper>();
-        int tabLen = table.length();
+        int tabLen = tableLength();
 
         for (int i = 0; i < tabLen; ++i) {
             long p =table.getPos(i);
             if (p== emptyMarkedOffset)
+                continue;
+            if (!isValidMarkedOffset(p))
                 continue;
             long pureOffset = getPureOffsetFromMarkedOffset(p);
             byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
@@ -860,6 +1067,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                     long p =table.getPos(i);
                     if (p== emptyMarkedOffset)
                         continue;
+                    if (!isValidMarkedOffset(p))
+                        continue;
                     long pureOffset = getPureOffsetFromMarkedOffset(p);
                     byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
                     ByteArrayWrapper aKey = getWrappedKeyFromKPD(kpd,p);
@@ -943,7 +1152,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
     }
 
-    protected abstract Table createTable(int cap);
+    protected abstract Table createTable(int cap) throws IOException;
 
 
     void reinitialize() {
@@ -978,7 +1187,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int count = table.length();
         for (int c = 0; c < count; ++c) {
             long p = table.getPos(c);
-            if (p!= emptyMarkedOffset) {
+            if ((p!= emptyMarkedOffset) && (isValidMarkedOffset(p))) {
                 TableItem ti = getTableItem(c);
                 export.add(ti);
             }
@@ -1010,7 +1219,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int count = table.length();
         for (int c = 0; c < count; ++c) {
             long p = table.getPos(c);
-            if (p!= emptyMarkedOffset) {
+            if ((p!= emptyMarkedOffset) && (isValueMarkedOffset(p))) {
                 TableItem ti = getTableItem(c);
                 System.out.println("[" + c +"] " +
                         ByteUtil.toHexString(ti.key.getData() ,0,4)+
@@ -1029,7 +1238,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int count = table.length();
         for (int c = 0; c < count; ++c) {
             long p = table.getPos(c);
-            if (p != emptyMarkedOffset) {
+            if ((p != emptyMarkedOffset) && (isValueMarkedOffset(p))) {
+                long pureOffset = getPureOffsetFromMarkedOffset(p);
                 baHeap.checkObjectByOfs(p);
             }
         }
@@ -1042,8 +1252,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int count = table.length();
         for (int c = 0; c < count; ++c) {
             long p = table.getPos(c);
-            if (p != emptyMarkedOffset) {
-                baHeap.remapByOfs(p);
+            if ((p != emptyMarkedOffset) && (isValueMarkedOffset(p))) {
+                long pureOffset = getPureOffsetFromMarkedOffset(p);
+                baHeap.remapByOfs(pureOffset);
             }
         }
         baHeap.endRemap();
@@ -1062,7 +1273,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         return fillGap(j,boundary);
     }
 
-    // This method will try to fill the empty slot j.
+    // This method will try to fill the empty slot j with an element down the hashtable.
+    // Then it will move the element at position i to the slot j, and set the position i to empty.
+    // Then it will trigger the same method recursively to fill the position i.
     // Returns true if the element used to fill the empty slot j was at an index equal or higher than
     // the one given by argument boundary.
     boolean fillGap(int j,int boundary) {
@@ -1081,6 +1294,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             long h = table.getPos(i);
             if (h == emptyMarkedOffset)
                 return false;
+             if (!isValidMarkedOffset(h)) {
+               continue;
+             }
             byte[] key;
             long pureOffset = getPureOffsetFromMarkedOffset(h);
             byte[] kpd =  baHeap.retrieveDataByOfs(pureOffset);
@@ -1101,7 +1317,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             }
 
             if (move) {
-                tableSetPos(j,table.getPos(i));
+                tableSetPos(j,h);
                 tableSetPos(i, emptyMarkedOffset);
                 crossedBoundary |=fillGap(i,boundary);
                 return crossedBoundary;
@@ -1118,14 +1334,16 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             for(int i = 0; i < tabLen; ++i) {
                 if (table.getPos(i)!= emptyMarkedOffset) {
                     long p =table.getPos(i);
-                    if (!isValueMarkedOffset(p)) { //*
-                        // This is not supported, because we should write the key and flag somehow that
-                        // this is not a data entry, but a key entry. TO DO
-                        throw new RuntimeException("null entries not supported");
+                    if (isValidMarkedOffset(p)) {
+                        if (!isValueMarkedOffset(p)) { //*
+                            // This is not supported, because we should write the key and flag somehow that
+                            // this is not a data entry, but a key entry. TO DO
+                            throw new RuntimeException("null entries not supported");
+                        }
+                        byte[] kpd = baHeap.retrieveDataByOfs(p);
+                        //s.writeObject(computeKey(data));
+                        s.writeObject(getDataFromKPD(kpd, p));
                     }
-                    byte[] kpd = baHeap.retrieveDataByOfs(p);
-                    //s.writeObject(computeKey(data));
-                    s.writeObject(getDataFromKPD(kpd,p));
                 }
             }
         }
@@ -1140,7 +1358,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         int tabLen = table.length();
         for (int i = 0; i < tabLen; ++i) {
             long p = table.getPos(i);
-            if (p != emptyMarkedOffset) {
+            if ((p != emptyMarkedOffset) && (isValueMarkedOffset(p))) {
                 count++;
             }
         }
@@ -1187,15 +1405,17 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                 count++;
                 // I need to recover the slot to see if it is in the
                 // right slot.
-                byte[] aKey;
-                long pureOffset = getPureOffsetFromMarkedOffset(p);
-                byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
-                aKey = getKeyFromKPD(kpd,p);
-                int pos = hashOfBA(aKey) & (table.length()-1);
-                if (pos<=i)
-                    acum +=(i-pos+1);
-                else {
-                    acum +=(table.length()-pos)+i;
+                if (isValidMarkedOffset(p)) {
+                    byte[] aKey;
+                    long pureOffset = getPureOffsetFromMarkedOffset(p);
+                    byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+                    aKey = getKeyFromKPD(kpd, p);
+                    int pos = hashOfBA(aKey) & (table.length() - 1);
+                    if (pos <= i)
+                        acum += (i - pos + 1);
+                    else {
+                        acum += (table.length() - pos) + i;
+                    }
                 }
             }
         }
@@ -1218,7 +1438,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                 int tabLen = table.length();
                 for (int i = 0; i < tabLen; ++i) {
                     long p =table.getPos(i);
-                    if (p!= emptyMarkedOffset) {
+                    if ((p!= emptyMarkedOffset) && (isValidMarkedOffset(p))) {
                         if (!isValueMarkedOffset(p)) { //*
                             // Does it make sense to accept a null? Probably not
                         } else {
@@ -1324,19 +1544,23 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     protected class Header  {
-        public int dbVersion;
+        public short magic;
+        public short dbVersion;
         public int totalSize;
         public int size ;
         public int threshold;
+        public int flags;
+        public byte tableSlotSize;
+        public long maxOffset;
     }
 
-    public Header loadHeaderFromDataSource(boolean includeVersion) throws IOException {
+    public Header loadHeaderFromDataSource() throws IOException {
         Header header = new Header();
         byte[] data= dataSource.get(headerKey);
         ByteArrayInputStream bin = new ByteArrayInputStream(data);
         DataInputStream hdin = new DataInputStream(bin);
         try {
-            readFromInputStream(includeVersion, header, hdin);
+            readFromInputStream( header, hdin);
         } finally {
             hdin.close();
         }
@@ -1350,32 +1574,48 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         BufferedInputStream hbin = new BufferedInputStream(hfin);
         DataInputStream hdin = new DataInputStream(hbin);
         try {
-            readFromInputStream(includeVersion, header, hdin);
+            readFromInputStream( header, hdin);
         } finally {
             hdin.close();
         }
         return header;
     }
 
-    private void readFromInputStream(boolean includeVersion, Header header, DataInputStream hdin) throws IOException {
-        if (includeVersion)
-            header.dbVersion = hdin.readInt();
+    private void readFromInputStream( Header header, DataInputStream hdin) throws IOException {
+        header.magic = hdin.readShort();
+        header.dbVersion = hdin.readShort();
         header.totalSize =  hdin.readInt();
         header.size = hdin.readInt();
         header.threshold = hdin.readInt();
+        header.flags   = hdin.readInt();
+        if (header.flags==-1)  {
+            header.flags = 0;
+            header.tableSlotSize = 5;
+            return;
+        }
+        header.tableSlotSize= hdin.readByte();
+        if (header.tableSlotSize<=0)
+            header.tableSlotSize = 5;
+        header.maxOffset = hdin.readLong();
     }
 
     public void loadFromDataSource(boolean map) throws IOException {
         System.out.println("Reading hash table header from DB");
-        Header header = loadHeaderFromDataSource(true);
+        Header header = loadHeaderFromDataSource();
         fillMapDataWithHeader(header);
-        loadTableFromFile(header);
+        if (!memoryMappedIndex)
+            loadTableFromFile(header);
+        else
+            mapTable(header);
     }
 
     public void loadFromFiles(boolean map) throws IOException {
         Header header = loadHeaderFromFile();
         fillMapDataWithHeader(header);
-        loadTableFromFile(header);
+        if (!memoryMappedIndex)
+            loadTableFromFile(header);
+        else
+            mapTable(header);
     }
 
     private Header loadHeaderFromFile() throws IOException {
@@ -1392,6 +1632,13 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         this.threshold = header.threshold;
         this.size = header.size;
         this.format.dbVersion = header.dbVersion;
+        this.maxOffset = header.maxOffset;
+        // to-do: read header.tableSlotSize
+        // to-do: read header.flags
+    }
+
+    void mapTable(Header header) throws IOException {
+        table = createTable(header.totalSize);
     }
 
     void loadTableFromFile(Header header) throws IOException {
@@ -1433,27 +1680,37 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     protected void saveToFile() throws IOException {
-        String fileName =  mapPath.toAbsolutePath().toString();
+        String fileName = mapPath.toAbsolutePath().toString();
         createAndWriteHeader(fileName);
-        if (tableLength()!=0) {
-            writeTable(fileName);
+        if (!memoryMappedIndex) {
+            if (tableLength() != 0) {
+                writeTable(fileName);
+            }
         }
     }
 
-    protected void saveToDataSource() throws IOException {
-        createAndWriteHeaderToDataSource();
+    protected void saveToDataSource(FailureTrack failureTrack) throws IOException {
 
+        // First we write the pages of the table. This allows to keep consistency
         // In the future the table will also be stored in the datasource, split in pages
-        if (tableLength()!=0) {
+        if ((!memoryMappedIndex) && (tableLength()!=0)) {
             String fileName =  mapPath.toAbsolutePath().toString();
             writeTable(fileName);
+        } else {
+            if (table!=null)
+                table.sync();
         }
+
+        if (FailureTrack.shouldFailNow(failureTrack))
+            return;
+        // Now we write the description, which may include maxOffset for consistency
+        createAndWriteHeaderToDataSource();
     }
 
-    public void save() throws IOException {
+    public void save(FailureTrack failureTrack) throws IOException {
         if (modified()) {
             if (dataSource!=null) {
-                saveToDataSource();
+                saveToDataSource(failureTrack);
             } else {
                 saveToFile();
             }
@@ -1461,16 +1718,21 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
         loaded = true;
         resized = false;
+    }
 
+    public void save() throws IOException {
+        save(null);
     }
 
     protected Header createHeader() {
         Header header = new Header();
-
-        header.dbVersion = format.dbVersion;
+        header.flags = (byte) CreationFlag.toBinary(format.creationFlags);
+        header.dbVersion = (short) format.dbVersion;
         header.totalSize = tableLength();
         header.size = size;
         header.threshold = threshold;
+        header.tableSlotSize = (byte) getElementSize();
+        header.maxOffset = maxOffset;
         return header;
     }
 
@@ -1535,10 +1797,14 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
     }
     private void writeHeaderToOutputStream(Header header, DataOutputStream hos) throws IOException {
-        hos.writeInt(header.dbVersion);
+        hos.writeShort(header.magic);
+        hos.writeShort(header.dbVersion);
         hos.writeInt(header.totalSize);
         hos.writeInt(header.size);
         hos.writeInt(header.threshold);
+        hos.writeInt(header.flags);
+        hos.writeByte(header.tableSlotSize);
+        hos.writeLong(header.maxOffset);
     }
 
 
