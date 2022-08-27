@@ -44,7 +44,8 @@ public class FlatDbDataSourceTest {
 
     static enum DatabaseConfig {
         withLog,
-        withMaxOffset
+        withMaxOffset,
+        withInternalFlushAfterPut
     }
     DatabaseConfig config;
 
@@ -56,7 +57,8 @@ public class FlatDbDataSourceTest {
     public static Collection<Object[]> data() throws IOException {
         return Arrays.asList(new Object[][]{
                 { "withLog",DatabaseConfig.withLog },
-                { "withMaxOffset",DatabaseConfig.withMaxOffset }
+                { "withMaxOffset",DatabaseConfig.withMaxOffset },
+                { "withInternalFlushAfterPut",DatabaseConfig.withInternalFlushAfterPut }
         });
     }
 
@@ -71,11 +73,21 @@ public class FlatDbDataSourceTest {
                         CreationFlag.atomicBatches,
                         CreationFlag.useDBForDescriptions);
 
-        if (config==DatabaseConfig.withLog) {
+        switch (config) {
+
+        case withLog: {
             someFlags.add(CreationFlag.useLogForBatchConsistency);
-        } else {
-            someFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
+            break;
         }
+        case withMaxOffset: {
+            someFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
+            break;
+        }
+        case withInternalFlushAfterPut: {
+            someFlags.add(CreationFlag.flushAfterPut);
+            break;
+        }
+    }
 
         return new FlatDbDataSource(1000,10_000,
                 tmpDbPath ,
@@ -89,7 +101,10 @@ public class FlatDbDataSourceTest {
     @Test
     public void testBatchUpdatingInterrupted() throws IOException {
         // We test a batch update that is interrupted by a power failure.
-        // the result should be that nothing gets written.
+        // the result should be that nothing gets written if the database
+        // has atomicBatch properties
+
+
         String tmpPath = getTmpDbPath();
         FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
         dataSource.init();
@@ -115,22 +130,30 @@ public class FlatDbDataSourceTest {
         // The key1/value1 must still ve there
         assertNotNull(dataSource2.get(key1));
         assertArrayEquals(dataSource2.get(key1),data1);
-        assertEquals(1, dataSource2.keys().size());
+        if (dbHasAtomicBatches()) {
+            assertEquals(1, dataSource2.keys().size());
 
-        // But the batch should not be there
-        for(Map.Entry<ByteArrayWrapper, byte[]> entry : batch.entrySet()) {
-            assertNull(dataSource2.get(entry.getKey().getData()));
+            // But the batch should not be there
+            for (Map.Entry<ByteArrayWrapper, byte[]> entry : batch.entrySet()) {
+                assertNull(dataSource2.get(entry.getKey().getData()));
+            }
+        } else {
+            // Just the items committed before it was interrupted.
+            assertEquals(51, dataSource2.keys().size());
         }
 
     }
 
+    boolean dbHasAtomicBatches() {
+        return (config==DatabaseConfig.withLog) || (config==DatabaseConfig.withMaxOffset);
+    }
+
     boolean strongConsistency() {
-        // The log system has a stringer consistency: you don't need to flush() the
+        // The log system has a stronger consistency: you don't need to flush() the
         // datasource to get persistence. Every updateBatch() is committed to disk,
         // same as LevelDB. Therefore this test will fail, because the opened
         // database will always have all the elements.
         return (config==DatabaseConfig.withLog);
-
     }
     @Test
     public void testBatchUpdatingInterrupted2() throws IOException {

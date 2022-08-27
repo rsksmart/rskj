@@ -573,6 +573,10 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                 baHeap.removeObjectByOfs(pureOffsetOld);
             }
             // this is not needed, because later we overwrite the same slot
+            // Also by not setting the element to empty, we allow asynchronous
+            // flushes (in the future) as long as writing to a position
+            // in the table is atomic (either by using a lock or by native word
+            // write)
             // tableSetPos(i, emptyMarkedOffset);
         } else
             this.size++;
@@ -898,8 +902,10 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                 if (sameKey) {
                     if (isValueMarkedOffset(p)) //*
                         baHeap.removeObjectByOfs(pureOffset);
-                    tableSetPos(index, emptyMarkedOffset);
-                    fillGap(index, n);
+                    // We don't fill the slot with empty to allow asynchronous
+                    // flushes in the future. We overwrite the entry.
+                    // tableSetPos(index, emptyMarkedOffset);
+                    emptySlotAndFillGap(index, n);
                     break;
                 }
             }
@@ -1232,18 +1238,24 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
 
     boolean removeItem(int j,int boundary) {
-        tableSetPos(j, emptyMarkedOffset);
         size--;
-        return fillGap(j,boundary);
+        return emptySlotAndFillGap(j,boundary);
     }
 
-    // This method will try to fill the empty slot j with an element down the hashtable.
-    // Then it will move the element at position i to the slot j, and set the position i to empty.
-    // Then it will trigger the same method recursively to fill the position i.
-    // Returns true if the element used to fill the empty slot j was at an index equal or higher than
-    // the one given by argument boundary.
-    boolean fillGap(int j,int boundary) {
+    /////////////////////////////////////////////////////////////////////////////////
+    // Warning: This method (emptySlotAndFillGap) is the most complex part of FlatDb.
+    // Don't change this method unless you know exactly why each sentence is there
+    /////////////////////////////////////////////////////////////////////////////////
+    // This method will try to fill the slot j with an element down the hashtable.
+    // This slot j will be overwritten (as if it were empty)
+    // Then it will move the element at position i to the slot j, and call itself
+    // recursively on i, without erasing j first.
+    // IF no element i is found, it will set the position i to empty.
+    // Returns true if the element used to fill the empty slot j was at an index
+    // equal or higher than the one given by argument boundary.
+    // Currently, if the table is 100% full, it will loop forever.
 
+    boolean emptySlotAndFillGap(int j, int boundary) {
         int i = j;
         boundary = boundary % table.length();
         boolean crossedBoundary = false;
@@ -1256,8 +1268,10 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             if (i==0)
                 wrapAroundZero = true;
             long h = table.getPos(i);
-            if (h == emptyMarkedOffset)
+            if (h == emptyMarkedOffset) {
+                tableSetPos(j, emptyMarkedOffset); // empty original slot
                 return false;
+            }
              if (!isValidMarkedOffset(h)) {
                continue;
              }
@@ -1282,8 +1296,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
 
             if (move) {
                 tableSetPos(j,h);
-                tableSetPos(i, emptyMarkedOffset);
-                crossedBoundary |=fillGap(i,boundary);
+                crossedBoundary |= emptySlotAndFillGap(i,boundary);
                 return crossedBoundary;
             }
         } while (true);

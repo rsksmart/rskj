@@ -64,9 +64,13 @@ public class KeyValueDataSourceTest {
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
                 {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
 
-                {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
-                {newLevelDbDataSource(tmpDir), LevelDbDataSource.class.getSimpleName(), false},
-                {newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), false},
+
+                // HashMapDB, LevelDB and RocksDB do nothing onf flush(), so we don't need to test these cases.
+                // These are equal to the ones with withFlush=false. These should be re-added here if
+                // something is implemented in their flush() codes.
+                //{new HashMapDB(), HashMapDB.class.getSimpleName(), false},
+                //{newLevelDbDataSource(tmpDir), LevelDbDataSource.class.getSimpleName(), false},
+                //{newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), false},
                 {newFlatDbDataSource(tmpDir),FlatDbDataSource.class.getSimpleName(), false},
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
                 {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}

@@ -91,7 +91,8 @@ public class FlatDbDataSource extends DataSourceWithHeap {
 
     public void flush() {
         super.flush();
-        descDataSource.flush();
+        if (descDataSource!=null)
+           descDataSource.flush();
     }
 
     public void powerFailure() {
