@@ -1,5 +1,6 @@
 package co.rsk.packedtables;
 
+import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.dbutils.FileMapUtil;
 import co.rsk.dbutils.ObjectIO;
 
@@ -14,23 +15,51 @@ public class UInt40Table implements Table {
     public BitSet modifiedPages = new BitSet();
     public int modifiedPageCount;
     int pageSize;
-
+    boolean align;
     byte table[];
+    int slotsPerPage;
+    int pages;
+    int cap;
 
-
-    public UInt40Table(int cap,int pageSize) {
-        table = new byte[cap*5];
+    public UInt40Table(int cap,int pageSize,boolean align) {
+        int size = (int) getTableSize(cap,pageSize, align);
+        table = new byte[size];
+        this.align = align;
         this.pageSize = pageSize;
+        this.cap = cap;
+        if (align) {
+            slotsPerPage = pageSize/5;
+            pages = (cap+slotsPerPage-1)/slotsPerPage;
+        }
+    }
+
+    static public long getTableSize(int cap,int pageSize, boolean align) {
+        if (align) {
+            int slotsPerPage = pageSize/5;
+            int pages = (cap+slotsPerPage-1)/slotsPerPage;
+            long size = pages*pageSize;
+            return size;
+        } else
+            return ((long)cap)*5;
     }
 
     @Override
     public long getPos(int i) {
-        return ObjectIO.getLong5(table,i*5);
+        int ofs;
+        if (!align)
+            ofs =i*5;
+        else
+            ofs = pageSize*(i/slotsPerPage)+(i%slotsPerPage);
+          return ObjectIO.getLong5(table,ofs);
     }
 
     @Override
     public void setPos(int i, long value) {
-        int ofs =  i*5;
+        int ofs;
+        if (!align)
+            ofs =i*5;
+        else
+            ofs = pageSize*(i/slotsPerPage)+(i%slotsPerPage);
         ObjectIO.putLong5(table,ofs,value);
 
         if (pageSize!=0) {
@@ -52,9 +81,8 @@ public class UInt40Table implements Table {
         if (isNull())
             return 0;
         else
-            return table.length/5;
+            return cap;
     }
-
 
     public boolean modified() {
         return (modifiedPageCount>0);
@@ -125,7 +153,7 @@ public class UInt40Table implements Table {
             fillWithZero();
             return;
         }
-        for(int i=0;i<table.length/5;i++){
+        for(int i=0;i<cap;i++){
             setPos(i,value);
         }
     }

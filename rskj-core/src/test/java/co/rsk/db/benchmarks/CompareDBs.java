@@ -20,7 +20,7 @@ public class CompareDBs extends Benchmark {
         writeBatchTest
     }
 
-    static Test test = Test.writeBatchTest;
+    static Test test = Test.readTest;
     boolean keyIsValueHash =true;
     static DbKind database = DbKind.FLAT_DB;
 
