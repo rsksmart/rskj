@@ -70,6 +70,7 @@ public enum ConsensusRule {
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
+    RSKIP252("rskip252"), // Transaction Gas Price Cap
     RSKIP271("rskip271"), // Peg Out Batching
     RSKIP284("rskip284"),
     RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty

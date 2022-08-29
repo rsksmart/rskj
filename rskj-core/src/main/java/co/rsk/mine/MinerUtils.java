@@ -18,24 +18,6 @@
 
 package co.rsk.mine;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
-import org.bouncycastle.util.Arrays;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
@@ -46,6 +28,24 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
+import co.rsk.validators.TxGasPriceCap;
+import org.bouncycastle.util.Arrays;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class MinerUtils {
 
@@ -170,7 +170,7 @@ public class MinerUtils {
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
@@ -188,10 +188,15 @@ public class MinerUtils {
                     expectedNonce = originalRepo.getNonce(txSender);
                 }
 
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
-
+                if (isLowGasPriced(minGasPrice, tx)) {
                     txsToRemove.add(tx);
+                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
+                    continue;
+                }
+
+                if (isRskip252Enabled && isHighGasPriced(tx, minGasPrice)) {
+                    txsToRemove.add(tx);
+                    logger.warn("Rejected tx={} because gas price cap was surpassed {}, removing tx from pending state.", hash, txSender);
                     continue;
                 }
 
@@ -206,11 +211,7 @@ public class MinerUtils {
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 logger.warn(String.format("Error when processing tx=%s", tx.getHash()), e);
-                if (txsToRemove != null) {
-                    txsToRemove.add(tx);
-                } else {
-                    logger.error("Can't remove invalid txs from pending state.");
-                }
+                txsToRemove.add(tx);
                 continue;
             }
 
@@ -220,5 +221,17 @@ public class MinerUtils {
         logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
+    }
+
+    private boolean isLowGasPriced(Coin minGasPrice, Transaction tx) {
+        if (tx instanceof RemascTransaction) {
+            return false;
+        }
+
+        return tx.getGasPrice().compareTo(minGasPrice) < 0;
+    }
+
+    private boolean isHighGasPriced(Transaction tx, Coin minGasPrice) {
+        return TxGasPriceCap.FOR_BLOCK.isSurpassed(tx, minGasPrice);
     }
 }

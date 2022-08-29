@@ -62,6 +62,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
+        validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
