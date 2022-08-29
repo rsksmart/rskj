@@ -18,6 +18,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -386,6 +387,85 @@ public class StorageRentDSLTests {
     @Test
     public void rentIsOnlyPaidOncePerBlockForTheSameNode() {
         throw new NotImplementedException("should be implemented");
+    }
+
+    /**
+     * Accumulates the maximum amount of rent until reaching the 3 years cap.
+     *
+     * It should:
+     * - pay the maximum rent cap
+     * */
+    @Test
+    public void maximumRent() throws FileNotFoundException, DslProcessorException {
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/maximum_rent.txt",
+                TimeUnit.DAYS.toMillis(2922) // 2922 days == 8 years
+        );
+
+        RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
+
+        TrieKeyMapper mapper = new TrieKeyMapper();
+
+        long beforeUpdatingTimestamp = world.getBlockByName("b01").getTimestamp();
+
+        RentedNode senderAccountState = new RentedNode(
+                mapper.getAccountKey(sender),
+                WRITE_OPERATION,
+                7,
+                beforeUpdatingTimestamp);
+        RentedNode contractAccountState = new RentedNode(
+                mapper.getAccountKey(contract),
+                WRITE_OPERATION,
+                3,
+                beforeUpdatingTimestamp);
+        RentedNode contractCode = new RentedNode(
+                mapper.getCodeKey(contract),
+                READ_OPERATION,
+                207,
+                beforeUpdatingTimestamp
+        );
+        RentedNode storageCellValue = new RentedNode(
+                mapper.getAccountStorageKey(contract, DataWord.ZERO),
+                WRITE_OPERATION,
+                1,
+                beforeUpdatingTimestamp
+        );
+        List<RentedNode> expectedRentedNodes = Arrays.asList(senderAccountState, contractAccountState,
+                contractCode, storageCellValue);
+
+        long updatedTimestamp = world.getBlockByName("b02").getTimestamp();
+        long expectedRent = senderAccountState.payableRent(updatedTimestamp) +
+                contractAccountState.payableRent(updatedTimestamp) +
+                contractCode.payableRent(updatedTimestamp) +
+                storageCellValue.payableRent(updatedTimestamp);
+
+        StorageRentResult result = world.getTransactionExecutor("tx02")
+                .getStorageRentResult();
+
+        expectedRentedNodes.forEach(n -> assertTrue(result.getRentedNodes().contains(n)));
+
+//        assertEquals(20000, expectedRent);
+        checkStorageRent(world, "tx02", expectedRent, 0,
+                4, 0, 0);
+
+        assertEquals(storageCellValue.payableRent(beforeUpdatingTimestamp + DURATION_CAP),
+                result.getRentedNodes().stream()
+                        .filter(r -> r.getKey().equals(storageCellValue.getKey()))
+                        .collect(Collectors.toList())
+                        .get(0)
+                        .payableRent(updatedTimestamp));
+        assertEquals(DataWord.valueOf(8), getStorageValueByBlockName(world, contract, "b01"));
+        assertEquals(DataWord.valueOf(7), getStorageValueByBlockName(world, contract, "b02"));
+
+        // todo(fedejinich) this should fail
+        assertEquals(storageCellValue.payableRent(beforeUpdatingTimestamp + DURATION_CAP - 1),
+                result.getRentedNodes().stream()
+                        .filter(r -> r.getKey().equals(storageCellValue.getKey()))
+                        .collect(Collectors.toList())
+                        .get(0)
+                        .payableRent(updatedTimestamp));
+        fail("it shouldn't reach here");
     }
 
     private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {

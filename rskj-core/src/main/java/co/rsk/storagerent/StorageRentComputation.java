@@ -39,6 +39,7 @@ public class StorageRentComputation {
     public static final long MISMATCH_PENALTY = 2500;
     private static final double RENTAL_RATE = (1 / Math.pow(2, 21));
     private static final long STORAGE_OVERHEAD = 128;
+    public static final long DURATION_CAP = TimeUnit.DAYS.toMillis(1095); // 3 years == 1095 days
 
     private StorageRentComputation() {}
 
@@ -74,9 +75,14 @@ public class StorageRentComputation {
         validPositiveValue(duration, "duration must be positive");
 
         long nodeSizeWithOverhead = nodeSize + STORAGE_OVERHEAD;
+        long duartionSeconds = TimeUnit.MILLISECONDS.toSeconds(duration);
+        long durationCapSeconds = TimeUnit.MILLISECONDS.toSeconds(DURATION_CAP);
 
         return (long) Math.floor(Double.valueOf(nodeSizeWithOverhead) *
-                Double.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)) * RENTAL_RATE);
+                Double.valueOf(duartionSeconds < durationCapSeconds ? duartionSeconds : durationCapSeconds) * RENTAL_RATE);
+
+//        return (long) Math.floor(Double.valueOf(nodeSizeWithOverhead) *
+//                Double.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)) * RENTAL_RATE);
     }
 
     /**
