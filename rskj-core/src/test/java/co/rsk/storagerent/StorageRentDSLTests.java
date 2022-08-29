@@ -82,7 +82,7 @@ public class StorageRentDSLTests {
 
         /**
          * Storage rent checks, each transaction is executed in a separate block to accumulate enough rent.
-         * 'paidRent' for tx04 is 15001 because contract-code node accumulates rent "faster" than the rest (due to its size)
+         * 'totalPaidRent' for tx04 is 15001 because contract-code node accumulates rent "faster" than the rest (due to its size)
          * */
 
         // balanceOf
@@ -458,7 +458,7 @@ public class StorageRentDSLTests {
         assertEquals(rentedNodesCount, storageRentResult.getRentedNodes().size());
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
-        assertEquals(paidRent, storageRentResult.paidRent());
+        assertEquals(paidRent, storageRentResult.totalPaidRent());
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
         // todo(fedejinich) add assert for getMismatchesRent()
         // todo(fedejinich) add assert for payableRent()

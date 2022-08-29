@@ -464,7 +464,7 @@ public class MutableRepositoryTrackedTest {
 
         transactionTrack.commit();
 
-        assertTrue(result.paidRent() > 0);
+        assertTrue(result.totalPaidRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(nodeAfterPayment, transactionTrack.fetchRentedNode(key, READ_OPERATION));

@@ -248,7 +248,7 @@ public class StorageRentManagerTest {
 
         transactionTrack.commit();
 
-        assertTrue(result.paidRent() > 0);
+        assertTrue(result.totalPaidRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, updatedTimestamp),
@@ -310,7 +310,7 @@ public class StorageRentManagerTest {
         transactionTrack.commit();
 
         // it shouldn't have updated the timestamp
-        assertTrue(result.paidRent() > 0);
+        assertTrue(result.totalPaidRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, firstBlockTimestamp), // no timestamp update
@@ -346,7 +346,7 @@ public class StorageRentManagerTest {
 
         assertTrue(remainingGasAfterPayingRent >= 0);
         assertEquals(expectedRemainingGas, remainingGasAfterPayingRent);
-        assertEquals(expectedPaidRent, storageRentResult.paidRent());
+        assertEquals(expectedPaidRent, storageRentResult.totalPaidRent());
         assertEquals(expectedPayableRent, storageRentResult.getPayableRent());
         assertEquals(expectedRollbacksRent, storageRentResult.getRollbacksRent());
         assertEquals(expectedRentedNodesCount, storageRentResult.getRentedNodes().size());
