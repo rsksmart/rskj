@@ -75,7 +75,6 @@ public class StorageRentManager {
         long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);
 
         // update rent timestamps
-        // should update timestamps ONLY if there's any payable rent or if node is not timestamped yet
         Set<RentedNode> nodesWithRent = rentedNodes.stream()
                 .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
                         rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
@@ -84,10 +83,10 @@ public class StorageRentManager {
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
         StorageRentResult result = new StorageRentResult(rentedNodes, rollbackNodes,
-                payableRent, rollbacksRent, gasAfterPayingRent, mismatchesCount);
+                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp);
 
         LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
-            result.paidRent(), result.getPayableRent(), result.getRollbacksRent());
+            result.totalPaidRent(), result.getPayableRent(), result.getRollbacksRent());
 
         return result;
     }
@@ -115,7 +114,7 @@ public class StorageRentManager {
         return merged;
     }
 
-    private static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
+    public static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
         Optional<Long> rent = rentedNodes.stream()
                 .map(r -> rentFunction.apply(r))
                 .reduce(GasCost::add);
