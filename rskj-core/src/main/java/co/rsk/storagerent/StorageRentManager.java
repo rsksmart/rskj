@@ -39,9 +39,7 @@ public class StorageRentManager {
     public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
                                         MutableRepositoryTracked blockTrack,
                                         MutableRepositoryTracked transactionTrack, int initialMismatchesCount) {
-        // todo(fedejinich) this step is unnecessary, i should request RentedNodes directly
         // get trie-nodes used within a transaction execution
-
         Map<ByteArrayWrapper, OperationType> storageRentKeys = mergeNodes(blockTrack.getStorageRentNodes(),
                 transactionTrack.getStorageRentNodes());
         Map<ByteArrayWrapper, OperationType> rollbackKeys = mergeNodes(blockTrack.getRollBackNodes(),
@@ -53,17 +51,17 @@ public class StorageRentManager {
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
 
-        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack, transactionTrack);
-        Set<RentedNode> rollbackRentedNodes = fetchRentedNodes(rollbackKeys, blockTrack, transactionTrack);
+        Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
+        Set<RentedNode> rollbackNodes = fetchRentedNodes(rollbackKeys, blockTrack);
 
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackKeys.size());
 
         // calculate rent
         long mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount() - initialMismatchesCount;
+
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-        long rollbacksRent = rentBy(rollbackRentedNodes,
-                rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
+        long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
         long rentToPay = payableRent + rollbacksRent + getMismatchesRent(mismatchesCount);
 
 
@@ -79,12 +77,13 @@ public class StorageRentManager {
         // update rent timestamps
         // should update timestamps ONLY if there's any payable rent or if node is not timestamped yet
         Set<RentedNode> nodesWithRent = rentedNodes.stream()
-                .filter(rentedNode -> shouldUpdateRentTimestamp(rentedNode, executionBlockTimestamp))
+                .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
+                        rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
                 .collect(Collectors.toSet());
 
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
-        StorageRentResult result = new StorageRentResult(rentedNodes, rollbackRentedNodes,
+        StorageRentResult result = new StorageRentResult(rentedNodes, rollbackNodes,
                 payableRent, rollbacksRent, gasAfterPayingRent, mismatchesCount);
 
         LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
@@ -99,8 +98,7 @@ public class StorageRentManager {
 
     @VisibleForTesting
     public static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
-                                                   MutableRepositoryTracked blockTrack,
-                                                   MutableRepositoryTracked transactionTrack) {
+                                                   MutableRepositoryTracked blockTrack) {
         return nodes.entrySet()
                 .stream()
                 .map(entry -> blockTrack.fetchRentedNode(entry.getKey(), entry.getValue()))
@@ -115,11 +113,6 @@ public class StorageRentManager {
         nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
 
         return merged;
-    }
-
-    private static boolean shouldUpdateRentTimestamp(RentedNode rentedNode, long executionBlockTimestamp) {
-        return rentedNode.payableRent(executionBlockTimestamp) > 0 ||
-                rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP;
     }
 
     private static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {

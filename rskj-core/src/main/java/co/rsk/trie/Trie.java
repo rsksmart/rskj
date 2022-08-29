@@ -971,7 +971,7 @@ public class Trie {
 
         // going up from the already updated/created/deleted key, updates the new left or right
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight,
-                this.valueLength, this.valueHash, childrenSize, this.lastRentPaidTimestamp);
+                this.valueLength, this.valueHash, childrenSize, isRentTimestampUpdate ? newRentTimestamp : this.lastRentPaidTimestamp);
     }
 
     private Trie split(TrieKeySlice commonPath) {

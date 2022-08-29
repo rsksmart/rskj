@@ -1,38 +1,85 @@
 package co.rsk.trie;
 
+import co.rsk.core.RskAddress;
+import org.ethereum.core.AccountState;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.TrieKeyMapper;
 import org.junit.Test;
 
-import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
 import static org.bouncycastle.util.encoders.Hex.decode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TrieUpdateRentTest {
 
+    /**
+     * The entire Trie is timestamped (even intermediate nodes)
+     * */
     @Test
     public void updateRentTimestampBasicTest() {
         Trie trie = buildTestTrie();
+        byte[] key = decode("0a008080");
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), 23);
+        List<Trie> nodePath = trie.getNodes(key);
 
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a00")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a80")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a0000")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a0080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a008000")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a008080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a8080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a808000")).getLastRentPaidTimestamp());
+        assertEquals(4, nodePath.size());
+        nodePath.stream().forEach(trieNode -> assertEquals(23, trieNode.getLastRentPaidTimestamp()));
 
-        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(decode("0a008080")), 20);
+        key = decode("0a008000");
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), 27);
+        nodePath = trie.getNodes(key);
 
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a00")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a80")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a0000")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a0080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a008000")).getLastRentPaidTimestamp());
-        assertEquals(20, trie.find(decode("0a008080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a8080")).getLastRentPaidTimestamp());
-        assertEquals(NO_RENT_TIMESTAMP, trie.find(decode("0a808000")).getLastRentPaidTimestamp());
+        assertEquals(4, nodePath.size());
+        nodePath.stream().forEach(trieNode -> assertEquals(27, trieNode.getLastRentPaidTimestamp()));
+
+        key = decode("0a808000");
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), 33);
+        nodePath = trie.getNodes(key);
+
+        assertEquals(4, nodePath.size());
+        nodePath.stream().forEach(trieNode -> assertEquals(33, trieNode.getLastRentPaidTimestamp()));
+
+        key = decode("0a0000");
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), 73);
+        nodePath = trie.getNodes(key);
+
+        assertEquals(3, nodePath.size());
+        nodePath.stream().forEach(trieNode -> assertEquals(73, trieNode.getLastRentPaidTimestamp()));
+    }
+
+    @Test
+    public void updateRentTimestampRskBasicTest() {
+        TrieKeyMapper mapper = new TrieKeyMapper();
+        Trie trie = new Trie();
+
+        RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
+        RskAddress contract = new RskAddress(HashUtil.calcNewAddr(addr1.getBytes(),
+                "1".getBytes(StandardCharsets.UTF_8)));
+
+        mapper.getAccountStoragePrefixKey(contract);
+
+        trie = trie.put(mapper.getAccountKey(addr1), new AccountState().getEncoded());
+        trie = trie.put(mapper.getAccountStoragePrefixKey(contract), new byte[] { 0x01 });
+        trie = trie.put(mapper.getCodeKey(contract), "somecode".getBytes(StandardCharsets.UTF_8));
+
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(mapper.getAccountKey(addr1)), 34);
+
+        List<Trie> nodesAccountKey = trie.getNodes(mapper.getAccountKey(addr1));
+        nodesAccountKey.forEach(n -> assertEquals(34, n.getLastRentPaidTimestamp()));
+
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(mapper.getAccountStoragePrefixKey(contract)), 35);
+
+        List<Trie> nodesAccountStoragePrefixKey = trie.getNodes(mapper.getAccountStoragePrefixKey(contract));
+        nodesAccountStoragePrefixKey.forEach(n -> assertEquals(35, n.getLastRentPaidTimestamp()));
+
+        trie = trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(mapper.getCodeKey(contract)), 36);
+
+        List<Trie> codeKey = trie.getNodes(mapper.getCodeKey(contract));
+        codeKey.forEach(n -> assertEquals(36, n.getLastRentPaidTimestamp()));
+        assertTrue(codeKey.stream().anyMatch(n -> n.getValue() == null));
     }
 
     /**
