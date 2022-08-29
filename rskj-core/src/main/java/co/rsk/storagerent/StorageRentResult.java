@@ -11,8 +11,6 @@ public class StorageRentResult {
     private final long gasAfterPayingRent;
     private final long mismatchesCount;
 
-    // todo(fedejinich) refactor this, calculate rents instead of having fixed values
-
     public StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long payableRent,
                              long rollbacksRent, long gasAfterPayingRent, long mismatchesCount) {
         this.rentedNodes = rentedNodes;
