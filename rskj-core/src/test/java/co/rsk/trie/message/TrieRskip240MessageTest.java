@@ -116,7 +116,7 @@ public class TrieRskip240MessageTest {
         assertEquals(trie, deserialized);
 
         // describing the proposed trie
-        assertTrue(!isRskip240Node(message));
+        assertTrue(isRskip240Node(message));
 
         assertTrue(!deserialized.getLeft().isEmpty());
         assertTrue(deserialized.getLeft().isEmbeddable());
@@ -169,7 +169,7 @@ public class TrieRskip240MessageTest {
         assertEquals(trie, deserialized);
 
         // describing the proposed trie
-        assertTrue(!isRskip240Node(message));
+        assertTrue(isRskip240Node(message));
 
         assertTrue(!deserialized.getLeft().isEmbeddable());
         Trie leftChild = deserialized.getLeft().getNode().get();
@@ -213,7 +213,7 @@ public class TrieRskip240MessageTest {
         assertEquals(trie, deserialized);
 
         // describing the proposed trie
-        assertTrue(!isRskip240Node(message));
+        assertTrue(isRskip240Node(message));
 
         assertTrue(deserialized.getLeft().isEmbeddable());
         Trie leftEmbeddedChild = deserialized.getLeft().getNode().get();
