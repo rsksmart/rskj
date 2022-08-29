@@ -36,7 +36,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.*;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
@@ -538,7 +537,7 @@ public class TransactionExecutor {
             gasLeftover = storageRentResult.getGasAfterPayingRent();
 
             logger.trace("Paid rent: {}. gas leftover: {}",
-                    storageRentResult.paidRent(), gasLeftover);
+                    storageRentResult.totalPaidRent(), gasLeftover);
         }
 
         transactionTrack.commit();
