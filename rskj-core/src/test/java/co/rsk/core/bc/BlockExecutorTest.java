@@ -638,7 +638,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeInvalidParallelBlock() {
+    public void executeInvalidParallelBlockDueToCollision() {
         if (!activeRskip144) {
             return;
         }

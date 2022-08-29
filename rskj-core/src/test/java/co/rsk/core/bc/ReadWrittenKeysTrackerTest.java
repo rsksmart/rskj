@@ -24,9 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
@@ -48,75 +46,118 @@ public class ReadWrittenKeysTrackerTest {
     }
 
     @Test
-    public void createATrackerShouldHaveEmptyMaps() {
-        assertEquals(0, tracker.getTemporalReadKeys().size());
-        assertEquals(0, tracker.getTemporalWrittenKeys().size());
+    public void createATrackerShouldHaveEmptyKeysForThisThread() {
+        assertEquals(0, tracker.getThisThreadReadKeys().size());
+        assertEquals(0, tracker.getThisThreadWrittenKeys().size());
     }
 
     @Test
-    public void addReadKeyToTheTrackerAndShouldBeInReadMap() {
+    public void createATrackerShouldHaveEmptyKeysForAllThreads() {
+        assertEquals(0, tracker.getReadKeysByThread().size());
+        assertEquals(0, tracker.getWrittenKeysByThread().size());
+    }
+
+    @Test
+    public void addReadKeyToTheTrackerAndShouldBeInReadMapForThisThread() {
         tracker.addNewReadKey(key1);
-        Set<ByteArrayWrapper> temporalReadKeys = tracker.getTemporalReadKeys();
+        Set<ByteArrayWrapper> temporalReadKeys = tracker.getThisThreadReadKeys();
         assertKeyWasAddedInMap(temporalReadKeys, key1);
     }
 
     @Test
-    public void addReadKeyToTheTrackerAndShouldntBeInWrittenMap() {
+    public void addReadKeyToTheTrackerAndShouldBeInReadKeysForAllThreads() {
         tracker.addNewReadKey(key1);
-        assertEquals(0, tracker.getTemporalWrittenKeys().size());
+        Map<Long, Set<ByteArrayWrapper>> readKeys = tracker.getReadKeysByThread();
+        Set<ByteArrayWrapper> readKeysByThisThread = readKeys.get(Thread.currentThread().getId());
+
+        assertEquals(1, readKeys.size());
+        assertEquals(1, readKeysByThisThread.size());
+        assertTrue(readKeysByThisThread.contains(key1));
     }
 
     @Test
-    public void addWrittenKeyToTheTrackerAndShouldBeInWrittenMap() {
+    public void addReadKeyToTheTrackerAndShouldNotBeInWrittenMapForThisThread() {
+        tracker.addNewReadKey(key1);
+        assertEquals(0, tracker.getThisThreadWrittenKeys().size());
+    }
+
+    @Test
+    public void addReadKeyToTheTrackerAndShouldNotBeInWrittenMapForAllThreads() {
+        tracker.addNewReadKey(key1);
+        assertEquals(0, tracker.getWrittenKeysByThread().size());
+    }
+
+    @Test
+    public void addWrittenKeyToTheTrackerAndShouldBeInWrittenMapForThisThread() {
         tracker.addNewWrittenKey(key1);
-        Set<ByteArrayWrapper> temporalWrittenKeys = tracker.getTemporalWrittenKeys();
+        Set<ByteArrayWrapper> temporalWrittenKeys = tracker.getThisThreadWrittenKeys();
         assertKeyWasAddedInMap(temporalWrittenKeys, key1);
     }
 
     @Test
-    public void addWrittenKeyToTheTrackerAndShouldntBeInReadMap() {
+    public void addWrittenKeyToTheTrackerAndShouldBeInWrittenMapForAllThreads() {
         tracker.addNewWrittenKey(key1);
-        assertEquals(0, tracker.getTemporalReadKeys().size());
+        Map<Long, Set<ByteArrayWrapper>> writtenKeys = tracker.getWrittenKeysByThread();
+
+        Set<ByteArrayWrapper> writtenKeysByThisThread = writtenKeys.get(Thread.currentThread().getId());
+        assertEquals(1, writtenKeys.size());
+        assertEquals(1, writtenKeysByThisThread.size());
+        assertTrue(writtenKeysByThisThread.contains(key1));
     }
 
     @Test
-    public void clearTrackerShouldEmptyTheMaps() {
+    public void addWrittenKeyToTheTrackerAndShouldNotBeInReadMapForThisThread() {
         tracker.addNewWrittenKey(key1);
-        tracker.addNewReadKey(key1);
+        assertEquals(0, tracker.getThisThreadReadKeys().size());
+    }
+
+    @Test
+    public void addWrittenKeyToTheTrackerAndShouldNotBeInReadMapForAllThreads() {
+        tracker.addNewWrittenKey(key1);
+        assertEquals(0, tracker.getReadKeysByThread().size());
+    }
+
+    @Test
+    public void clearTrackerShouldEmptyAllTheMaps() {
+        tracker.addNewWrittenKey(key1);
         tracker.addNewWrittenKey(key2);
+        tracker.addNewReadKey(key1);
         tracker.addNewReadKey(key2);
 
-        assertEquals(2, tracker.getTemporalReadKeys().size());
-        assertEquals(2, tracker.getTemporalWrittenKeys().size());
+        assertEquals(1, tracker.getWrittenKeysByThread().size());
+        assertEquals(2, tracker.getThisThreadWrittenKeys().size());
+        assertEquals(1, tracker.getReadKeysByThread().size());
+        assertEquals(2, tracker.getThisThreadReadKeys().size());
+
 
         tracker.clear();
 
-        assertEquals(0, tracker.getTemporalReadKeys().size());
-        assertEquals(0, tracker.getTemporalWrittenKeys().size());
+        assertEquals(0, tracker.getWrittenKeysByThread().size());
+        assertEquals(0, tracker.getThisThreadWrittenKeys().size());
+        assertEquals(0, tracker.getReadKeysByThread().size());
+        assertEquals(0, tracker.getThisThreadReadKeys().size());
     }
 
     @Test
     public void createADummyTrackerShouldHaveEmptyMaps() {
-        assertEquals(0, dummyTracker.getTemporalReadKeys().size());
-        assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
+        assertEquals(0, dummyTracker.getReadKeysByThread().size());
+        assertEquals(0, dummyTracker.getWrittenKeysByThread().size());
+        assertEquals(0, dummyTracker.getThisThreadReadKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadWrittenKeys().size());
     }
 
     @Test
     public void addReadKeyToTheDummyTrackerShouldDoNothing() {
         dummyTracker.addNewReadKey(key1);
-        assertEquals(0, dummyTracker.getTemporalReadKeys().size());
+        assertEquals(0, dummyTracker.getReadKeysByThread().size());
+        assertEquals(0, dummyTracker.getThisThreadReadKeys().size());
     }
 
     @Test
-    public void addReadKeyToTheTrackerShouldDoNothing() {
-        dummyTracker.addNewReadKey(key1);
-        assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
-    }
-
-    @Test
-    public void addWrittenKeyToTheDummyTrackerShouldDoNothing() {
+    public void addWrittenKeyToTheTrackerShouldDoNothing() {
         dummyTracker.addNewWrittenKey(key1);
-        assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadWrittenKeys().size());
+        assertEquals(0, dummyTracker.getWrittenKeysByThread().size());
     }
 
     @Test
@@ -126,149 +167,156 @@ public class ReadWrittenKeysTrackerTest {
         dummyTracker.addNewWrittenKey(key2);
         dummyTracker.addNewReadKey(key2);
 
-        assertEquals(0, dummyTracker.getTemporalReadKeys().size());
-        assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadReadKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadWrittenKeys().size());
 
         dummyTracker.clear();
 
-        assertEquals(0, dummyTracker.getTemporalReadKeys().size());
-        assertEquals(0, dummyTracker.getTemporalWrittenKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadReadKeys().size());
+        assertEquals(0, dummyTracker.getThisThreadWrittenKeys().size());
     }
 
     @Test
-    public void ifTwoThreadsWriteTheSameKeyCollideShouldBeTrue() {
+    public void ifTwoThreadsWriteKeysTheyShouldBeStored() {
         int nThreads = 2;
+
         ExecutorService service = Executors.newFixedThreadPool(nThreads);
-        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
+        CompletionService<ReadWrittenKeysHelper> completionService = new ExecutorCompletionService<>(service);
 
         for (int i = 0; i < nThreads; i++) {
-            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(key1), Collections.emptyList());
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singleton(key1), Collections.emptySet());
             completionService.submit(rwKeys);
         }
 
-        assertThereWasACollision(nThreads, service, completionService);
+        List<ReadWrittenKeysHelper> helpers = getTrackerHelperAfterCompletion(nThreads, completionService);
+
+        Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread = this.tracker.getWrittenKeysByThread();
+        assertEquals(nThreads, writtenKeysByThread.size());
+        Map<Long, Set<ByteArrayWrapper>> readKeysByThread = this.tracker.getReadKeysByThread();
+        assertEquals(0, readKeysByThread.size());
+        assertKeysAreAddedCorrectlyIntoTheTracker(helpers, writtenKeysByThread, readKeysByThread);
     }
 
     @Test
-    public void ifTwoThreadsReadAndWriteTheSameKeyShouldCollide() {
+    public void ifTwoThreadsReadAndWriteAKeyTheyShouldBeStored() {
         int nThreads = 2;
         ExecutorService service = Executors.newFixedThreadPool(nThreads);
-        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
-        List<ByteArrayWrapper> writtenKeys;
-        List<ByteArrayWrapper> readKeys;
+        CompletionService<ReadWrittenKeysHelper> completionService = new ExecutorCompletionService<>(service);
+        Set<ByteArrayWrapper> writtenKeys;
+        Set<ByteArrayWrapper> readKeys;
         for (int i = 0; i < nThreads; i++) {
-            if (i == 0) {
-                writtenKeys = Collections.singletonList(key1);
-                readKeys = Collections.emptyList();
-            } else {
-                writtenKeys = Collections.emptyList();
-                readKeys = Collections.singletonList(key1);
-            }
-
+            boolean isEven = i % 2 == 0;
+            writtenKeys = isEven? Collections.singleton(this.key1) : Collections.emptySet();
+            readKeys = isEven? Collections.emptySet() : Collections.singleton(this.key1);
             ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, writtenKeys, readKeys);
             completionService.submit(rwKeys);
         }
 
-        assertThereWasACollision(nThreads, service, completionService);
+        List<ReadWrittenKeysHelper> helpers = getTrackerHelperAfterCompletion(nThreads, completionService);
+
+        Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread = this.tracker.getWrittenKeysByThread();
+        assertEquals(1, writtenKeysByThread.size());
+        Map<Long, Set<ByteArrayWrapper>> readKeysByThread = this.tracker.getReadKeysByThread();
+        assertEquals(1, readKeysByThread.size());
+        assertKeysAreAddedCorrectlyIntoTheTracker(helpers, writtenKeysByThread, readKeysByThread);
     }
 
-    @Test
-    public void ifTwoThreadsWriteDifferentKeyCollideShouldBeFalse() {
-        int nThreads = 2;
-        ExecutorService service = Executors.newFixedThreadPool(nThreads);
-        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
-
-        for (int i = 0; i < nThreads; i++) {
-            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(i == 0? key1 : key2), Collections.emptyList());
-            completionService.submit(rwKeys);
-        }
-        assertThereWasNotACollision(nThreads, service, completionService);
-    }
-
-    @Test
-    public void allThreadIdsShouldBeStoredInTheReadKeysMap() {
-        int nThreads = 2;
-        ExecutorService service = Executors.newFixedThreadPool(nThreads);
-        CompletionService<Boolean> completionService = new ExecutorCompletionService<>(service);
-        boolean hasCollided = false;
-
-        ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.emptyList(), Collections.singletonList(key1));
-        completionService.submit(rwKeys);
-
-        try {
-            Future<Boolean> hasCollidedFuture = completionService.take();
-            hasCollided = hasCollidedFuture.get();
-        } catch (Exception e) {
-            fail();
-        }
-
-        Assert.assertFalse(hasCollided);
-        ReadWrittenKeysHelper rwKeys2 = new ReadWrittenKeysHelper(this.tracker, Collections.singletonList(key1), Collections.singletonList(key1));
-        completionService.submit(rwKeys2);
-
-        try {
-            Future<Boolean> hasCollidedFuture = completionService.take();
-            hasCollided = hasCollidedFuture.get();
-        } catch (Exception e) {
-            fail();
-        }
-
-        service.shutdown();
-        Assert.assertTrue(hasCollided);
-    }
-
-    private void assertThereWasNotACollision(int nThreads, ExecutorService service, CompletionService<Boolean> completionService) {
-        boolean hasCollided = hasCollided(nThreads, completionService);
-        assertFalse(hasCollided);
-        service.shutdown();
-    }
-
-    private void assertThereWasACollision(int nThreads, ExecutorService service, CompletionService<Boolean> completionService) {
-        boolean hasCollided = hasCollided(nThreads, completionService);
-        System.out.println(hasCollided);
-        assertTrue(hasCollided);
-        service.shutdown();
-    }
-
-    private boolean hasCollided(int nThreads, CompletionService<Boolean> completionService) {
-        boolean hasCollided = false;
+    private List<ReadWrittenKeysHelper> getTrackerHelperAfterCompletion(int nThreads, CompletionService<ReadWrittenKeysHelper> completionService) {
+        List<ReadWrittenKeysHelper> helpers = new ArrayList<>();
         for (int i = 0; i < nThreads; i++) {
             try {
-                Future<Boolean> hasCollidedFuture = completionService.take();
-                hasCollided |= hasCollidedFuture.get();
+                Future<ReadWrittenKeysHelper> helperFuture = completionService.take();
+                helpers.add(helperFuture.get());
             } catch (Exception e) {
                 fail();
             }
         }
-        return hasCollided;
+
+        return helpers;
+    }
+
+    @Test
+    public void ifTwoThreadsReadSomeKeysTheyShouldBeStored() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<ReadWrittenKeysHelper> completionService = new ExecutorCompletionService<>(service);
+        Set<ByteArrayWrapper> writtenKeys;
+        Set<ByteArrayWrapper> readKeys;
+        for (int i = 0; i < nThreads; i++) {
+            writtenKeys = Collections.emptySet();
+            readKeys = Collections.singleton(this.key1);
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, writtenKeys, readKeys);
+            completionService.submit(rwKeys);
+        }
+
+        List<ReadWrittenKeysHelper> helpers = getTrackerHelperAfterCompletion(nThreads, completionService);
+        Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread = this.tracker.getWrittenKeysByThread();
+        assertEquals(0, writtenKeysByThread.size());
+        Map<Long, Set<ByteArrayWrapper>> readKeysByThread = this.tracker.getReadKeysByThread();
+        assertEquals(2, readKeysByThread.size());
+        assertKeysAreAddedCorrectlyIntoTheTracker(helpers, writtenKeysByThread, readKeysByThread);
+    }
+
+    private void assertKeysAreAddedCorrectlyIntoTheTracker(List<ReadWrittenKeysHelper> helpers, Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread, Map<Long, Set<ByteArrayWrapper>> readKeysByThread) {
+        for (ReadWrittenKeysHelper h: helpers) {
+            if (h.getWrittenKeys().size() == 0) {
+                assertNull(writtenKeysByThread.get(h.getThreadId()));
+            } else {
+                Assert.assertEquals(h.getWrittenKeys().size(), writtenKeysByThread.get(h.getThreadId()).size());
+                Assert.assertTrue(h.getWrittenKeys().containsAll(writtenKeysByThread.get(h.getThreadId())));
+            }
+
+            if (h.getReadKeys().size() == 0) {
+                assertNull(readKeysByThread.get(h.getThreadId()));
+            } else {
+                Assert.assertEquals(h.getReadKeys().size(), readKeysByThread.get(h.getThreadId()).size());
+                Assert.assertTrue(h.getReadKeys().containsAll(readKeysByThread.get(h.getThreadId())));
+            }
+        }
     }
 
     private void assertKeyWasAddedInMap(Set<ByteArrayWrapper> map, ByteArrayWrapper key) {
         assertEquals(1, map.size());
         assertTrue(map.contains(key));
     }
-    private static class ReadWrittenKeysHelper implements Callable<Boolean> {
+    private static class ReadWrittenKeysHelper implements Callable<ReadWrittenKeysHelper> {
 
-        private final List<ByteArrayWrapper> readKeys;
-        private final List<ByteArrayWrapper> writtenKeys;
+        private final Set<ByteArrayWrapper> readKeys;
+        private final Set<ByteArrayWrapper> writtenKeys;
         private final IReadWrittenKeysTracker tracker;
+        private long threadId;
 
-        public ReadWrittenKeysHelper(IReadWrittenKeysTracker tracker, List<ByteArrayWrapper> writtenKeys, List<ByteArrayWrapper> readKeys) {
+        public ReadWrittenKeysHelper(IReadWrittenKeysTracker tracker, Set<ByteArrayWrapper> writtenKeys, Set<ByteArrayWrapper> readKeys) {
             this.tracker = tracker;
             this.readKeys = readKeys;
             this.writtenKeys = writtenKeys;
+            this.threadId = -1L;
         }
         //At first, it reads and then it writes.
-        public Boolean call() {
-            for (ByteArrayWrapper rk : readKeys) {
-                tracker.addNewReadKey(rk);
+        public ReadWrittenKeysHelper call() {
+
+            this.threadId = Thread.currentThread().getId();
+
+            for (ByteArrayWrapper rk : this.readKeys) {
+                this.tracker.addNewReadKey(rk);
             }
 
-            for (ByteArrayWrapper wk : writtenKeys) {
-                tracker.addNewWrittenKey(wk);
+            for (ByteArrayWrapper wk : this.writtenKeys) {
+                this.tracker.addNewWrittenKey(wk);
             }
+            return this;
+        }
 
-            return tracker.hasCollided();
+        public Set<ByteArrayWrapper> getReadKeys() {
+            return this.readKeys;
+        }
+
+        public Set<ByteArrayWrapper> getWrittenKeys() {
+            return this.writtenKeys;
+        }
+
+        public long getThreadId() {
+            return this.threadId;
         }
     }
 

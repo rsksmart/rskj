@@ -1,6 +1,5 @@
 package co.rsk.core;
 
-import co.rsk.core.bc.IReadWrittenKeysTracker;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
@@ -12,8 +11,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.LongAccumulator;
 
 public class TransactionListExecutor implements Callable<Boolean> {
 
@@ -21,7 +18,6 @@ public class TransactionListExecutor implements Callable<Boolean> {
 
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final List<Transaction> transactions;
-    private final IReadWrittenKeysTracker readWrittenKeysTracker;
     private final Block block;
     private final Repository track;
     private final boolean vmTrace;
@@ -33,15 +29,14 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Map<Integer, TransactionReceipt> receipts;
     private final Map<Keccak256, ProgramResult> transactionResults;
     private final ProgramTraceProcessor programTraceProcessor;
-    private final AtomicReference<Coin> accumulatedFees;
-    private final LongAccumulator accumulatedGas;
+    private Coin totalFees;
+    private long totalGas;
 
     private int i;
     private final boolean registerProgramResults;
 
     public TransactionListExecutor(
             List<Transaction> transactions,
-            IReadWrittenKeysTracker readWrittenKeysTracker,
             Block block,
             TransactionExecutorFactory transactionExecutorFactory,
             Repository track,
@@ -55,10 +50,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             Map<Keccak256, ProgramResult> transactionResults,
             boolean registerProgramResults,
             @Nullable ProgramTraceProcessor programTraceProcessor,
-            AtomicReference<Coin> accumulatedFees,
-            LongAccumulator accumulatedGas,
             int firstTxIndex) {
-        this.readWrittenKeysTracker = readWrittenKeysTracker;
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.track = track;
@@ -73,8 +65,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.registerProgramResults = registerProgramResults;
         this.transactionResults = transactionResults;
         this.programTraceProcessor = programTraceProcessor;
-        this.accumulatedFees = accumulatedFees;
-        this.accumulatedGas = accumulatedGas;
+        this.totalFees = Coin.ZERO;
+        this.totalGas = 0L;
         this.i = firstTxIndex;
     }
 
@@ -96,10 +88,6 @@ public class TransactionListExecutor implements Callable<Boolean> {
                     deletedAccounts
             );
             boolean transactionExecuted = txExecutor.executeTransaction();
-
-            if (readWrittenKeysTracker.hasCollided()) {
-                return false;
-            }
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (!discardInvalidTxs) {
@@ -155,9 +143,37 @@ public class TransactionListExecutor implements Callable<Boolean> {
 
             logger.trace("tx[{}] done", i);
         }
-        accumulatedGas.accumulate(totalGasUsed);
-        accumulatedFees.getAndAccumulate(totalPaidFees, Coin::add);
+        totalGas += totalGasUsed;
+        totalFees = totalFees.add(totalPaidFees);
 
         return true;
+    }
+
+    public Repository getRepository() {
+        return this.track;
+    }
+
+    public Set<DataWord> getDeletedAccounts() {
+        return new HashSet<>(this.deletedAccounts);
+    }
+
+    public Map<Integer, TransactionReceipt> getReceipts() {
+        return this.receipts;
+    }
+
+    public Map<Integer, Transaction> getExecutedTransactions() {
+        return this.executedTransactions;
+    }
+
+    public Map<Keccak256, ProgramResult> getTransactionResults() {
+        return this.transactionResults;
+    }
+
+    public Coin getTotalFees() {
+        return this.totalFees;
+    }
+
+    public long getTotalGas() {
+        return this.totalGas;
     }
 }
