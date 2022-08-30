@@ -2858,12 +2858,7 @@ public class BridgeTestIntegration {
 //        config.setBlockchainConfig(mockedConfig);
         blockFactory = new BlockFactory(config.getActivationConfig());
 
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
-                constants.getBridgeConstants(),
-                activationConfig);
-
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
         EVMAssembler assembler = new EVMAssembler();
         ProgramInvoke invoke = new ProgramInvokeMockImpl();
 
