@@ -27,23 +27,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ConfigFactory.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigLoaderTest {
 
     private static final ConfigValue NULL_VALUE = ConfigValueFactory.fromAnyRef(null);
@@ -152,9 +152,7 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", NULL_VALUE);
 
-        mockConfigFactory(defaultConfig, expectedConfig);
-
-        loader.getConfig();
+        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
     }
 
     @Test(expected = RskConfigurationException.class)
@@ -166,9 +164,7 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", EMPTY_OBJECT_VALUE);
 
-        mockConfigFactory(defaultConfig, expectedConfig);
-
-        loader.getConfig();
+        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
     }
 
     @Parameterized.Parameters
@@ -181,9 +177,7 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", EMPTY_LIST_VALUE);
 
-        mockConfigFactory(defaultConfig, expectedConfig);
-
-        loader.getConfig();
+        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
     }
 
     @Test
@@ -199,10 +193,8 @@ public class ConfigLoaderTest {
                     .withValue("blockchain.config.verify", TRUE_VALUE)
                     .withValue("expectedKey", expectedValue);
 
-            mockConfigFactory(defaultConfig, expectedConfig);
-
             try {
-                loader.getConfig();
+                loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
 
                 fail("Type mismatch problem is not detected");
             } catch (RskConfigurationException e) { /* ignore */ }
@@ -226,12 +218,15 @@ public class ConfigLoaderTest {
         assertThat(config.getString("database.dir"), is("/home/rsk/data"));
     }
 
-    private static void mockConfigFactory(Config defaultConfig, Config expectedConfig) {
-        mockStatic(ConfigFactory.class);
-        when(ConfigFactory.empty()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.systemProperties()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.systemEnvironment()).thenReturn(EMPTY_CONFIG);
-        when(ConfigFactory.load(anyString())).thenReturn(defaultConfig);
-        when(ConfigFactory.parseResourcesAnySyntax(anyString())).thenReturn(expectedConfig);
+    private static void loadConfigMocked(Config defaultConfig, Config expectedConfig, Supplier<Config> loader) {
+        try (MockedStatic<ConfigFactory> configFactoryMocked = mockStatic(ConfigFactory.class)) {
+            configFactoryMocked.when(ConfigFactory::empty).thenReturn(EMPTY_CONFIG);
+            configFactoryMocked.when(ConfigFactory::systemProperties).thenReturn(EMPTY_CONFIG);
+            configFactoryMocked.when(ConfigFactory::systemEnvironment).thenReturn(EMPTY_CONFIG);
+            configFactoryMocked.when(() -> ConfigFactory.load(anyString())).thenReturn(defaultConfig);
+            configFactoryMocked.when(() -> ConfigFactory.parseResourcesAnySyntax(anyString())).thenReturn(expectedConfig);
+
+            loader.get();
+        }
     }
 }

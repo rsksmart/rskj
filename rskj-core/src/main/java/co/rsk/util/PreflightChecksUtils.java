@@ -25,7 +25,7 @@ import java.util.Arrays;
 public class PreflightChecksUtils {
     private static final Logger logger = LoggerFactory.getLogger(PreflightChecksUtils.class);
 
-    private static final int[] SUPPORTED_JAVA_VERSIONS = {8, 11};
+    private static final int[] SUPPORTED_JAVA_VERSIONS = {8, 11, 17};
 
     private final RskContext rskContext;
 

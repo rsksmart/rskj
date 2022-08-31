@@ -31,7 +31,6 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
-import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -45,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -203,7 +203,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void doWorkInThread() throws Exception {
+    public void doWorkInThread() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -214,12 +214,7 @@ public class MinerManagerTest {
         thread.start();
         try {
 
-            Awaitility.await().timeout(Duration.FIVE_SECONDS).until(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return minerClient.isMining();
-                }
-            });
+            Awaitility.await().timeout(Duration.ofSeconds(5)).until(minerClient::isMining);
 
             Assert.assertTrue(minerClient.isMining());
         } finally {

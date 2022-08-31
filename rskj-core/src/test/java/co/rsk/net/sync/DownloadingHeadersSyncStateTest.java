@@ -30,7 +30,6 @@ import org.ethereum.validator.DependentBlockHeaderRule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
 import java.util.*;
 
@@ -123,7 +122,7 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        Whitebox.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
 
         when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.empty());
 
@@ -148,7 +147,7 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        Whitebox.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
 
         ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
         when(currentChunk.getCount()).thenReturn(2); // different from chunk size
@@ -179,7 +178,7 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         ChunksDownloadHelper chunksDownloadHelper = mock(ChunksDownloadHelper.class);
-        Whitebox.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
+        TestUtils.setInternalState(syncState, "chunksDownloadHelper", chunksDownloadHelper);
 
         ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
         when(currentChunk.getCount()).thenReturn(1);

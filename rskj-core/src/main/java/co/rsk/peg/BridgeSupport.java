@@ -426,6 +426,11 @@ public class BridgeSupport {
         }
     }
 
+    @VisibleForTesting
+    BtcBlockStoreWithCache getBtcBlockStore() {
+        return btcBlockStore;
+    }
+
     protected TxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 

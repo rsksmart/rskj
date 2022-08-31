@@ -1,10 +1,10 @@
 package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
+import org.ethereum.TestUtils;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -274,7 +274,7 @@ public class PeerScoringManagerTest {
         Assert.assertEquals("PunishmentTime value should remain the same after event is received while punished", scoring.getPunishmentTime(), initialPunishmentTime);
 
         // simulate node was punished earlier so enough time has passed for node to be forgiven
-        Whitebox.setInternalState(scoring, "timeLostGoodReputation", initialTimeLostGoodReputation - 2 * 60 * 1000);
+        TestUtils.setInternalState(scoring, "timeLostGoodReputation", initialTimeLostGoodReputation - 2 * 60 * 1000);
 
         manager.recordEvent(null, address, EventType.SUCCESSFUL_HANDSHAKE);
         Assert.assertTrue("Reputation should be good after enough time has passed", manager.hasGoodReputation(address));

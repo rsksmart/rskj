@@ -19,18 +19,11 @@
 
 package org.ethereum;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-
-import java.io.File;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -39,9 +32,13 @@ import org.ethereum.vm.DataWord;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.math.BigInteger;
+import java.util.*;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 
 public final class TestUtils {
 
@@ -54,7 +51,7 @@ public final class TestUtils {
     static Random aRandom;
 
     static public Random getRandom() {
-        if (aRandom==null)
+        if (aRandom == null)
             aRandom = new Random();
         return aRandom;
     }
@@ -66,10 +63,10 @@ public final class TestUtils {
     }
 
     public static BigInteger randomBigInteger(int maxSizeBytes) {
-        return new BigInteger(maxSizeBytes*8,getRandom());
+        return new BigInteger(maxSizeBytes * 8, getRandom());
     }
 
-    public static Coin randomCoin(int decimalZeros,int maxValue) {
+    public static Coin randomCoin(int decimalZeros, int maxValue) {
         return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
                 BigInteger.valueOf(getRandom().nextInt(maxValue))));
     }
@@ -86,7 +83,7 @@ public final class TestUtils {
         return new Keccak256(randomBytes(32));
     }
 
-    public static DB createMapDB(String testDBDir){
+    public static DB createMapDB(String testDBDir) {
 
         String blocksIndexFile = testDBDir + "/blocks/index";
         File dbFile = new File(blocksIndexFile);
@@ -101,7 +98,7 @@ public final class TestUtils {
         return db;
     }
 
-    public static List<Block> getRandomChain(BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length){
+    public static List<Block> getRandomChain(BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length) {
 
         List<Block> result = new ArrayList<>();
 
@@ -109,7 +106,7 @@ public final class TestUtils {
         long lastIndex = startNumber;
 
 
-        for (int i = 0; i < length; ++i){
+        for (int i = 0; i < length; ++i) {
 
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
@@ -155,7 +152,7 @@ public final class TestUtils {
         return result;
     }
 
-    public static<T extends Exception>  T assertThrows(Class<T> c, Runnable f) {
+    public static <T extends Exception> T assertThrows(Class<T> c, Runnable f) {
         Exception thrownException = null;
         try {
             f.run();
@@ -166,5 +163,51 @@ public final class TestUtils {
         assertNotNull(thrownException);
         assertEquals(thrownException.getClass(), c);
         return c.cast(thrownException);
+    }
+
+    public static <T, V> void setInternalState(T instance, String fieldName, V value) {
+        Field field = getPrivateField(instance, fieldName);
+        field.setAccessible(true);
+
+        try {
+            field.set(instance, value);
+        } catch (IllegalAccessException re) {
+            throw new WhiteboxException("Could not set private field", re);
+        }
+    }
+
+    public static <T> T getInternalState(Object instance, String fieldName) {
+        Field field = getPrivateField(instance, fieldName);
+        field.setAccessible(true);
+
+        try {
+            return (T) field.get(instance);
+        } catch (IllegalAccessException re) {
+            throw new WhiteboxException("Could not get private field", re);
+        }
+    }
+
+    private static Field getPrivateField(Object instance, String fieldName) {
+        Field field = FieldUtils.getAllFieldsList(instance.getClass())
+                .stream()
+                .filter(f -> f.getName().equals(fieldName))
+                .findFirst()
+                .orElse(null);
+
+        if (field == null) {
+            throw new WhiteboxException("Field not found in class");
+        }
+
+        return field;
+    }
+
+    private static class WhiteboxException extends RuntimeException {
+        public WhiteboxException(String message) {
+            super(message);
+        }
+
+        public WhiteboxException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

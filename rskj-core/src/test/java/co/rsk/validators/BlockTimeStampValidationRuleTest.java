@@ -30,20 +30,20 @@ import org.ethereum.core.BlockHeader;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 
 /**
  * Created by mario on 23/01/17.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({MessageSerializer.class, NetworkParameters.class})
+@RunWith(MockitoJUnitRunner.class)
 public class BlockTimeStampValidationRuleTest {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5 * 60;
@@ -69,8 +69,6 @@ public class BlockTimeStampValidationRuleTest {
         byte[] bitcoinMergedMiningHeader = new byte[0];
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
         BtcBlock btcBlock = mock(BtcBlock.class);
         MessageSerializer messageSerializer = mock(MessageSerializer.class);
@@ -101,8 +99,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L - 1000);
 
         assertTrue(validationRule.isValid(header));
@@ -115,8 +111,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L + validPeriod);
 
         assertTrue(validationRule.isValid(header));
@@ -129,8 +123,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         when(header.getTimestamp()).thenReturn(10_000L + 2*validPeriod);
 
         assertFalse(validationRule.isValid(header));
@@ -143,8 +135,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
@@ -161,8 +151,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);
@@ -179,8 +167,6 @@ public class BlockTimeStampValidationRuleTest {
 
         when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
         Block parent = mock(Block.class);
 
         when(header.getTimestamp()).thenReturn(10_000L);

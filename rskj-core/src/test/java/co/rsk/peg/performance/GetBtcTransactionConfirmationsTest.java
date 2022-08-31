@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.CallTransaction;
@@ -15,7 +16,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.*;
 import org.mockito.invocation.InvocationOnMock;
-import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -196,10 +196,10 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 (EnvironmentBuilder.Environment environment) -> {
                     if (!useCache) {
                         Bridge bridge = (Bridge) environment.getContract();
-                        BridgeSupport bridgeSupport = Whitebox.getInternalState(bridge, "bridgeSupport");
-                        Repository repository = Whitebox.getInternalState(bridgeSupport, "rskRepository");
+                        BridgeSupport bridgeSupport = TestUtils.getInternalState(bridge, "bridgeSupport");
+                        Repository repository = TestUtils.getInternalState(bridgeSupport, "rskRepository");
                         BtcBlockStore diskAccessRepositoryBlockStore = new DiskAccessRepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
-                        Whitebox.setInternalState(bridgeSupport, "btcBlockStore", diskAccessRepositoryBlockStore);
+                        TestUtils.setInternalState(bridgeSupport, "btcBlockStore", diskAccessRepositoryBlockStore);
                     }
                 }
         );
@@ -235,13 +235,13 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
         SolidityType input0Type = spy(getBtcTransactionConfirmationsFn.inputs[0].type);
         SolidityType input1Type = spy(getBtcTransactionConfirmationsFn.inputs[1].type);
-        SolidityType input3ElementType = spy((SolidityType) Whitebox.getInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType"));
+        SolidityType input3ElementType = spy((SolidityType) TestUtils.getInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType"));
         doAnswer(this::encodeBytes32OnMock).when(input0Type).encode(any());
         doAnswer(this::encodeBytes32OnMock).when(input1Type).encode(any());
         doAnswer(this::encodeBytes32OnMock).when(input3ElementType).encode(any());
         getBtcTransactionConfirmationsFn.inputs[0].type = input0Type;
         getBtcTransactionConfirmationsFn.inputs[1].type = input1Type;
-        Whitebox.setInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType", input3ElementType);
+        TestUtils.setInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType", input3ElementType);
 
         return (int executionIndex) ->
                 getBtcTransactionConfirmationsFn.encode(new Object[]{
