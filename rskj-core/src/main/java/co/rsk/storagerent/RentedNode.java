@@ -8,7 +8,7 @@ import org.ethereum.db.OperationType;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentComputation.*;
+import static co.rsk.storagerent.StorageRentUtil.*;
 
 /**
  * A RentedNode contains the relevant data of an involved node during transaction execution.
@@ -122,7 +122,6 @@ public class RentedNode {
                 rentDue(getNodeSize(), duration(executionBlockTimestamp)),
                 rentCap(),
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
-        // todo(fedejinich) is this still happening? to me we need to setup a threshold (or use payableRent())
 
         long payableRent = payableRent(executionBlockTimestamp);
         boolean alreadyPaysRent = rentedNodeSet.stream().map(RentedNode::getKey)

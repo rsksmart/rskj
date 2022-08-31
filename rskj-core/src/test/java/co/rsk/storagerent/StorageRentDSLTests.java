@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentComputation.*;
+import static co.rsk.storagerent.StorageRentUtil.*;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;

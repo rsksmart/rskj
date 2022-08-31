@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentComputation.MISMATCH_PENALTY;
+import static co.rsk.storagerent.StorageRentUtil.MISMATCH_PENALTY;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
