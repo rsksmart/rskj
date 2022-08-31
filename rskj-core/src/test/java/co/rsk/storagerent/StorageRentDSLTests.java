@@ -85,6 +85,9 @@ public class StorageRentDSLTests {
          * 'totalPaidRent' for tx04 is 15001 because contract-code node accumulates rent "faster" than the rest (due to its size)
          * */
 
+        // deploy erc20
+        checkStorageRent(world, "tx01", 22500, 0, 8, 0, 9);
+
         // balanceOf
         checkStorageRent(world,"tx02", 5000, 0, 4, 0, 0);
         checkStorageRent(world,"tx03", 7500, 0, 3, 0, 1);
@@ -462,22 +465,6 @@ public class StorageRentDSLTests {
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
         // todo(fedejinich) add assert for getMismatchesRent()
         // todo(fedejinich) add assert for payableRent()
-        nodesSizesPositive(storageRentResult.getRentedNodes());
-        nodesSizesPositive(storageRentResult.getRollbackNodes());
-    }
-
-    private void nodesSizesPositive(Set<RentedNode> nodes) {
-        boolean positiveSizes = nodes.stream()
-                .filter(r -> r.getRentTimestamp() != NO_RENT_TIMESTAMP)
-                .allMatch(r -> r.getNodeSize() > 0);
-
-        // if a node is not timestamped yet then its size is zero
-        boolean noTimestampNoSize = nodes.stream()
-                .filter(r -> r.getRentTimestamp() == NO_RENT_TIMESTAMP)
-                .allMatch(r -> r.getNodeSize() == 0);
-
-        assertTrue(positiveSizes);
-        assertTrue(noTimestampNoSize);
     }
 
     private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
