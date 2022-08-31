@@ -19,6 +19,8 @@
 
 package co.rsk.storagerent;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
 
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
@@ -32,7 +34,7 @@ public class StorageRentUtil {
     public static final long WRITE_THRESHOLD = 1000;
     public static final long RENT_CAP = 5000;
     public static final long MISMATCH_PENALTY = 2500;
-    private static final double RENTAL_RATE = (1 / Math.pow(2, 21));
+    private static final BigDecimal RENTAL_RATE = BigDecimal.ONE.divide(BigDecimal.valueOf(2).pow(21));
     private static final long STORAGE_OVERHEAD = 128;
 
     private StorageRentUtil() {}
@@ -68,10 +70,14 @@ public class StorageRentUtil {
         validPositiveValue(nodeSize, "node size must be positive");
         validPositiveValue(duration, "duration must be positive");
 
-        long nodeSizeWithOverhead = nodeSize + STORAGE_OVERHEAD;
+        BigDecimal nodeSizeWithOverhead = BigDecimal.valueOf(nodeSize + STORAGE_OVERHEAD);
+        BigDecimal durationSeconds = BigDecimal.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration));
 
-        return (long) Math.floor(Double.valueOf(nodeSizeWithOverhead) *
-                Double.valueOf(TimeUnit.MILLISECONDS.toSeconds(duration)) * RENTAL_RATE);
+        long rentDue = nodeSizeWithOverhead
+                .multiply(durationSeconds)
+                .multiply(RENTAL_RATE).longValue();
+
+        return rentDue;
     }
 
     /**
@@ -108,9 +114,10 @@ public class StorageRentUtil {
         }
 
         // partially advances the timestamp if rent due exceeds cap
-        long timePaid = (long) Math.floor(rentCap / (nodeSize * RENTAL_RATE));
+        BigDecimal timePaid = BigDecimal.valueOf(rentCap)
+                .divide(BigDecimal.valueOf(nodeSize).multiply(RENTAL_RATE), RoundingMode.FLOOR);
 
-        return lastPaidTimestamp + timePaid;
+        return lastPaidTimestamp + timePaid.longValue();
     }
 
     private static void validPositiveValue(long value, String s) {
