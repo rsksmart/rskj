@@ -2,20 +2,14 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.storagerent.RentedNode;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
-import static co.rsk.storagerent.StorageRentComputation.rentDue;
 import static org.ethereum.db.OperationType.READ_OPERATION;
-import static org.ethereum.db.OperationType.WRITE_OPERATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

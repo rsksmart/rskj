@@ -271,7 +271,7 @@ public class MutableTrieCache implements MutableTrie {
         this.cacheTimestamps.put(new ByteArrayWrapper(key), updatedTimestamp);
     }
 
-    @Override
+    @Override @VisibleForTesting
     public MutableTrie find(byte[] key) {
         // todo(fedejinich) I'm not using any cache
         return this.trie.find(key);

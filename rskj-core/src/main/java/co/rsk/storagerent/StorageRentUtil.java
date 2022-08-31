@@ -19,20 +19,15 @@
 
 package co.rsk.storagerent;
 
-
-// todo(fedejinich) this class can be moved into StorageRent
-
-import co.rsk.trie.Trie;
-
 import java.util.concurrent.TimeUnit;
 
-import static co.rsk.trie.Trie.*;
+import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
  * Rent computation util according to the RSKIP240
  * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
  */
-public class StorageRentComputation {
+public class StorageRentUtil {
     public static final long READ_THRESHOLD = 2500;
     public static final long WRITE_THRESHOLD = 1000;
     public static final long RENT_CAP = 5000;
@@ -40,7 +35,7 @@ public class StorageRentComputation {
     private static final double RENTAL_RATE = (1 / Math.pow(2, 21));
     private static final long STORAGE_OVERHEAD = 128;
 
-    private StorageRentComputation() {}
+    private StorageRentUtil() {}
 
     /**
      * Computes the amount of rent to be paid for trie reads/writes.
