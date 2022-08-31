@@ -23,17 +23,17 @@ import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static co.rsk.storagerent.StorageRentComputation.*;
+import static co.rsk.storagerent.StorageRentUtil.*;
 import static org.junit.Assert.*;
 
-public class StorageRentComputationTest {
+public class StorageRentUtilTest {
 
     private static final long ONE_MONTH = TimeUnit.DAYS.toMillis(30); // expressed in milliseconds
     public static final int NODE_SIZE = 100;
 
     @Test
     public void computeRent_computeReadBetweenThresholds() {
-        long rent = StorageRentComputation.computeRent(rentDue(NODE_SIZE, ONE_MONTH * 9),
+        long rent = StorageRentUtil.computeRent(rentDue(NODE_SIZE, ONE_MONTH * 9),
                 RENT_CAP, READ_THRESHOLD);
 
         assertTrue(READ_THRESHOLD < rent);
@@ -43,7 +43,7 @@ public class StorageRentComputationTest {
 
     @Test
     public void computeRent_computeReadBelowThreshold() {
-        long rent = StorageRentComputation.computeRent(rentDue(NODE_SIZE, ONE_MONTH * 8),
+        long rent = StorageRentUtil.computeRent(rentDue(NODE_SIZE, ONE_MONTH * 8),
                 RENT_CAP, READ_THRESHOLD);
 
         assertTrue(READ_THRESHOLD > rent);
@@ -52,7 +52,7 @@ public class StorageRentComputationTest {
 
     @Test
     public void computeRent_computeReadAboveCap() {
-        long rent = StorageRentComputation.computeRent(rentDue(NODE_SIZE, ONE_MONTH * (17 + 1)),
+        long rent = StorageRentUtil.computeRent(rentDue(NODE_SIZE, ONE_MONTH * (17 + 1)),
                 RENT_CAP, READ_THRESHOLD);
 
         assertEqualsDouble(RENT_CAP, rent);
@@ -63,25 +63,25 @@ public class StorageRentComputationTest {
         long notRelevant = 1;
         
         try {
-            StorageRentComputation.computeRent(rentDue(0, notRelevant), notRelevant, notRelevant);
+            StorageRentUtil.computeRent(rentDue(0, notRelevant), notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("node size must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(rentDue(notRelevant, 0), notRelevant, notRelevant);
+            StorageRentUtil.computeRent(rentDue(notRelevant, 0), notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("duration must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(rentDue(notRelevant, notRelevant), 0, notRelevant);
+            StorageRentUtil.computeRent(rentDue(notRelevant, notRelevant), 0, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("cap must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(rentDue(notRelevant, notRelevant), notRelevant, 0);
+            StorageRentUtil.computeRent(rentDue(notRelevant, notRelevant), notRelevant, 0);
         } catch (IllegalArgumentException e) {
             assertEquals("threshold must be positive", e.getMessage());
         }
@@ -89,7 +89,7 @@ public class StorageRentComputationTest {
 
     @Test
     public void computeNewTimestamp_withinRange() { // new timestamp, rent is paid
-        long newTimestamp = StorageRentComputation.computeNewTimestamp(NODE_SIZE, 2574, 1,
+        long newTimestamp = StorageRentUtil.computeNewTimestamp(NODE_SIZE, 2574, 1,
                 2, RENT_CAP, READ_THRESHOLD);
 
         assertEquals(2, newTimestamp);
@@ -97,7 +97,7 @@ public class StorageRentComputationTest {
 
     @Test
     public void computeNewTimestamp_belowThreshold() { // same timestamp, since it won't be paid
-        long newTimestamp = StorageRentComputation.computeNewTimestamp(NODE_SIZE, 0,1,
+        long newTimestamp = StorageRentUtil.computeNewTimestamp(NODE_SIZE, 0,1,
                 2, RENT_CAP, READ_THRESHOLD);
 
         assertEquals(1, newTimestamp);
@@ -111,7 +111,7 @@ public class StorageRentComputationTest {
         long partiallyAdvancedTimestamp = 1_519_978_057_600L; // Fri Mar 02 05:07:37 ART 2018
         long rentDue = rentDue(nodeSize, currentBlockTimestamp - lastPaidTimestamp);
 
-        long result = StorageRentComputation.computeNewTimestamp(nodeSize, rentDue, lastPaidTimestamp,
+        long result = StorageRentUtil.computeNewTimestamp(nodeSize, rentDue, lastPaidTimestamp,
                 currentBlockTimestamp, RENT_CAP, READ_THRESHOLD);
 
         assertEquals(partiallyAdvancedTimestamp, result);
@@ -124,42 +124,42 @@ public class StorageRentComputationTest {
         long notRelevant = 1;
 
         try {
-            StorageRentComputation.computeNewTimestamp(0, notRelevant, notRelevant, notRelevant,
+            StorageRentUtil.computeNewTimestamp(0, notRelevant, notRelevant, notRelevant,
                     notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("nodeSize must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeNewTimestamp(notRelevant, 0, notRelevant, notRelevant,
+            StorageRentUtil.computeNewTimestamp(notRelevant, 0, notRelevant, notRelevant,
                     notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("rentDue must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeNewTimestamp(notRelevant, notRelevant, 0, notRelevant,
+            StorageRentUtil.computeNewTimestamp(notRelevant, notRelevant, 0, notRelevant,
                     notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("lastPaidTime must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeNewTimestamp(notRelevant, notRelevant, notRelevant, 0,
+            StorageRentUtil.computeNewTimestamp(notRelevant, notRelevant, notRelevant, 0,
                     notRelevant, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("currentBlockTimestamp must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeNewTimestamp(notRelevant, notRelevant, notRelevant, notRelevant,
+            StorageRentUtil.computeNewTimestamp(notRelevant, notRelevant, notRelevant, notRelevant,
                     0, notRelevant);
         } catch (IllegalArgumentException e) {
             assertEquals("rentCap must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeNewTimestamp(notRelevant, notRelevant, notRelevant, notRelevant,
+            StorageRentUtil.computeNewTimestamp(notRelevant, notRelevant, notRelevant, notRelevant,
                     notRelevant, 0);
         } catch (IllegalArgumentException e) {
             assertEquals("rentThreshold must be positive", e.getMessage());

@@ -112,7 +112,7 @@ public class MutableTrieImpl implements MutableTrie {
         this.trie = this.trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), updatedTimestamp);
     }
 
-    @Override
+    @Override @VisibleForTesting
     public MutableTrie find(byte[] key) {
         return new MutableTrieImpl(this.trieStore, this.trie.find(key));
     }
