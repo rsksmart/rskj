@@ -5,6 +5,8 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -133,8 +135,9 @@ public class RentedNode {
 
     @VisibleForTesting
     public long feeByRent(long computedRent) {
-        // todo(fedejinich) should we use bigdecimal also here?
-        return (long) (computedRent * 0.25);
+        return BigDecimal.valueOf(computedRent)
+                .divide(BigDecimal.valueOf(4), RoundingMode.FLOOR)
+                .longValue();
     }
 
     @Override

@@ -371,7 +371,7 @@ public class StorageRentDSLTests {
     }
 
     /**
-     * A block with multiple transactions, each tx reads 5 non existing keys
+     * A block with multiple transactions, each tx reads 5 non-existing keys
      *
      * It should:
      * - each tx should pay for each failed attempt
