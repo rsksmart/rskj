@@ -164,11 +164,6 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
 
-        if(isStorageRentEnabled()) {
-            // this saves the previous count (since blockTrack is shared across all the executed transactions)
-            initialMismatchesCount = ((MutableRepositoryTracked) blockTrack).getMismatchesCount();
-        }
-
         if (localCall) {
             return true;
         }

@@ -284,6 +284,7 @@ public class BlockExecutor {
 
             // ensures that blockTrack only tracks trie-nodes ONLY from the current transaction
             blockTrack.clearTrackedNodes();
+            blockTrack.clearNonExistingKeys(); // tracks non-existing keys ONLY for the current tx
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,

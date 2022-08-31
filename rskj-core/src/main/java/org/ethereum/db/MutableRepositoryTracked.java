@@ -8,6 +8,7 @@ import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.program.Memory;
 
 import java.util.*;
 
@@ -26,8 +27,8 @@ public class MutableRepositoryTracked extends MutableRepository {
     private Map<ByteArrayWrapper, OperationType> rollbackNodes; // todo(fedejinich) this can be final
     // parent repository to commit tracked nodes
     private final MutableRepositoryTracked parentRepository;
-    // counter for reading non-existing keys
-    private int readMismatchesCount = 0;
+    // set containing keys that have been part of a read attempt but were not present in the trie
+    private final Set<ByteArrayWrapper> nonExistingKeys = new HashSet<>();
 
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
@@ -63,8 +64,12 @@ public class MutableRepositoryTracked extends MutableRepository {
         if(this.parentRepository != null) {
             this.parentRepository.mergeTrackedNodes(this.trackedNodes);
             this.parentRepository.addRollbackNodes(this.rollbackNodes);
-            this.parentRepository.sumReadMismatchesCount(this.readMismatchesCount);
+            this.parentRepository.addNonExistingKeys(this.nonExistingKeys);
         }
+    }
+
+    private void addNonExistingKeys(Set<ByteArrayWrapper> childNonExistingKeys) {
+        this.nonExistingKeys.addAll(childNonExistingKeys);
     }
 
     @Override
@@ -73,9 +78,10 @@ public class MutableRepositoryTracked extends MutableRepository {
 
         if(parentRepository != null) {
             this.parentRepository.addRollbackNodes(this.trackedNodes);
+            this.parentRepository.addNonExistingKeys(this.nonExistingKeys);
             this.trackedNodes.clear();
             this.rollbackNodes.clear();
-            this.readMismatchesCount = 0;
+            this.nonExistingKeys.clear();
         }
     }
 
@@ -119,10 +125,6 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     public Map<ByteArrayWrapper, OperationType> getStorageRentNodes() {
         return this.trackedNodes;
-    }
-
-    public int getMismatchesCount() {
-        return this.readMismatchesCount;
     }
 
     // Internal methods contains node tracking
@@ -183,12 +185,14 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     protected void trackNode(byte[] rawKeyToTrack, OperationType operationType, boolean nodeExistsInTrie) {
+        ByteArrayWrapper key = new ByteArrayWrapper(rawKeyToTrack);
+
         if(!nodeExistsInTrie) {
-            readMismatchesCount++;
+            this.nonExistingKeys.add(key);
             return;
         }
 
-        track(new ByteArrayWrapper(rawKeyToTrack), operationType, this.trackedNodes);
+        track(key, operationType, this.trackedNodes);
     }
 
     public static void track(ByteArrayWrapper keyToTrack, OperationType operationTypeToTrack, Map<ByteArrayWrapper, OperationType> trackedNodesMap) {
@@ -213,12 +217,16 @@ public class MutableRepositoryTracked extends MutableRepository {
         rollbackNodes.forEach((key, operationType) -> track(key, operationType, this.rollbackNodes));
     }
 
-    private void sumReadMismatchesCount(int childReadMismatchesCount) {
-        this.readMismatchesCount += childReadMismatchesCount;
-    }
-
     public void clearTrackedNodes() {
         this.trackedNodes = new HashMap<>();
         this.rollbackNodes = new HashMap<>();
+    }
+
+    public void clearNonExistingKeys() {
+        this.nonExistingKeys.clear();
+    }
+
+    public Set<ByteArrayWrapper> getNonExistingKeys() {
+        return this.nonExistingKeys;
     }
 }

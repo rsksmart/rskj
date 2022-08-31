@@ -86,14 +86,16 @@ public class StorageRentDSLTests {
          * */
 
         // deploy erc20
-        checkStorageRent(world, "tx01", 22500, 0, 8, 0, 9);
+//        checkStorageRent(world, "tx01", 22500, 0, 8, 0, 9);
+        checkStorageRent(world, "tx01", 12500, 0, 8, 0, 5);
 
         // balanceOf
         checkStorageRent(world,"tx02", 5000, 0, 4, 0, 0);
         checkStorageRent(world,"tx03", 7500, 0, 3, 0, 1);
 
         // transfer(senderAccountState, contractCode, balance1, balance2, storageRoot, ...)
-        checkStorageRent(world,"tx04", 10000, 0, 5, 0, 2);
+//        checkStorageRent(world,"tx04", 10000, 0, 5, 0, 2);
+        checkStorageRent(world,"tx04", 7500, 0, 5, 0, 1);
 
         // balanceOf
         checkStorageRent(world,"tx05", 5000, 0, 4, 0, 0);
@@ -116,7 +118,8 @@ public class StorageRentDSLTests {
         );
 
         // rollbackRent should be >0, we want to "penalize" failed access
-        checkStorageRent(world, "tx04",  15072, 70, 8, 3, 4);
+        checkStorageRent(world, "tx04",  10072, 70, 8, 3,
+                2);
     }
 
     /**
@@ -139,7 +142,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 3271, 770, 3, 6, 0);
+        checkStorageRent(world, "tx04", 5771, 770, 3, 6, 1);
     }
 
     /**
@@ -161,7 +164,7 @@ public class StorageRentDSLTests {
 
         // there are 3 rented nodes (senderAccountState, receiverAccountState, receiverContractCode),
         // the rest should be part of the reverted nodes
-        checkStorageRent(world, "tx04", 3271, 770, 3, 7, 0);
+        checkStorageRent(world, "tx04", 8271, 770, 3, 7, 2);
     }
 
     /**
@@ -178,7 +181,7 @@ public class StorageRentDSLTests {
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
             BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, aprox 25 days
         );
-        checkStorageRent(world, "tx04", 15002, 0, 8, 0, 4);
+        checkStorageRent(world, "tx04", 10002, 0, 8, 0, 2);
     }
 
     /**
@@ -355,7 +358,7 @@ public class StorageRentDSLTests {
         assertTrue(storageRentResult.getRentedNodes().contains(contractRentedNode));
         assertTrue(storageRentResult.getRentedNodes().contains(codeRentedNode));
 
-        assertEquals(12500, storageRentResult.getMismatchesRent());
+        assertEquals(2500, storageRentResult.getMismatchesRent());
 
         // payable rent is calculated with the most recent timestamp
         long mostRecentTimestamp = 58492500000l;
@@ -365,13 +368,13 @@ public class StorageRentDSLTests {
 
         // pays mismatches penalty
         checkStorageRent(world, "tx02",
-                rentedNodesRent + 5 * MISMATCH_PENALTY, 0,
-                3, 0, 5);
+                rentedNodesRent + 1 * MISMATCH_PENALTY, 0,
+                3, 0, 1);
         assertTrue(mostRecentTimestamp > beforeUpdatingTimestamp);
     }
 
     /**
-     * A block with multiple transactions, each tx reads 5 non existing keys
+     * A block with multiple transactions, each tx reads 5 non-existing keys
      *
      * It should:
      * - each tx should pay for each failed attempt

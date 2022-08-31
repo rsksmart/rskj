@@ -58,11 +58,11 @@ public class StorageRentManager {
                 rentedNodes.size(), rollbackKeys.size());
 
         // calculate rent
-        long mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount() - initialMismatchesCount;
+        long nonExistingCount = blockTrack.getNonExistingKeys().size() + transactionTrack.getNonExistingKeys().size();
 
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
         long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
-        long rentToPay = payableRent + rollbacksRent + getMismatchesRent(mismatchesCount);
+        long rentToPay = payableRent + rollbacksRent + getMismatchesRent(nonExistingCount);
 
 
         if(gasRemaining < rentToPay) {
@@ -83,7 +83,8 @@ public class StorageRentManager {
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
         StorageRentResult result = new StorageRentResult(rentedNodes, rollbackNodes,
-                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp);
+//                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp);
+                gasAfterPayingRent, nonExistingCount, executionBlockTimestamp);
 
         LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
             result.totalPaidRent(), result.getPayableRent(), result.getRollbacksRent());
