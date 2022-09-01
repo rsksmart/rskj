@@ -16,6 +16,8 @@ public class KeyValueDataSourceUtils {
     public static final String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     public static final String KEYVALUE_DATASOURCE = "KeyValueDataSource";
 
+    private KeyValueDataSourceUtils() { /* hidden */ }
+
     @Nonnull
     static public KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
         String name = datasourcePath.getFileName().toString();
