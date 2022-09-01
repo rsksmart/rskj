@@ -395,7 +395,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return transactionPool;
     }
 
-    private TxQuotaChecker getTxQuotaChecker() {
+    public TxQuotaChecker getTxQuotaChecker() {
+        checkIfNotClosed();
+
         if (this.txQuotaChecker == null) {
             this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis);
         }
@@ -539,7 +541,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return rsk;
     }
 
-    private GasPriceTracker getGasPriceTracker() {
+    public GasPriceTracker getGasPriceTracker() {
+        checkIfNotClosed();
+
         if (this.gasPriceTracker == null) {
             this.gasPriceTracker = GasPriceTracker.create(getBlockStore());
         }
