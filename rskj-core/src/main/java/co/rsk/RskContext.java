@@ -875,15 +875,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     public synchronized BlockChainFlusher getBlockChainFlusher() {
-        if (this.blockChainFlusher==null)
-        this.blockChainFlusher = new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore(),
-                getReceiptStore(),
-                getBlocksBloomStore(),
-                getStateRootsStore());
+        checkIfNotClosed();
+
+        if (this.blockChainFlusher == null) {
+            this.blockChainFlusher = new BlockChainFlusher(
+                    getRskSystemProperties().flushNumberOfBlocks(),
+                    getCompositeEthereumListener(),
+                    getTrieStore(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getBlocksBloomStore(),
+                    getStateRootsStore());
+        }
+
         return blockChainFlusher;
     }
 
