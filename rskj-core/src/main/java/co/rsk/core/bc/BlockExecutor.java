@@ -59,6 +59,7 @@ public class BlockExecutor {
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
+    private boolean remascEnabled;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
@@ -66,10 +67,12 @@ public class BlockExecutor {
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory) {
+            TransactionExecutorFactory transactionExecutorFactory,
+            boolean remascEnabled) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
+        this.remascEnabled = remascEnabled;
     }
 
     /**
@@ -388,7 +391,9 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(totalPaidFees, track);
+        if (this.isRemascEnabled()) {
+            addFeesToRemasc(totalPaidFees, track);
+        }
 
         loggingEndTxsExecutions();
 
@@ -546,7 +551,9 @@ public class BlockExecutor {
         totalPaidFees = totalPaidFees.add(txListExecutor.getTotalFees());
         totalGasUsed += txListExecutor.getTotalGas();
 
-        addFeesToRemasc(totalPaidFees, track);
+        if (this.isRemascEnabled()) {
+            addFeesToRemasc(totalPaidFees, track);
+        }
 
         loggingEndTxsExecutions();
         if (!vmTrace) {
@@ -573,6 +580,10 @@ public class BlockExecutor {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, remascFees);
         }
+    }
+
+    private boolean isRemascEnabled() {
+        return this.remascEnabled;
     }
 
     private BlockResult executeForMiningAfterRSKIP144(
@@ -685,7 +696,10 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(totalPaidFees, track);
+        if (this.isRemascEnabled()) {
+            addFeesToRemasc(totalPaidFees, track);
+        }
+
         loggingEndTxsExecutions();
 
         saveTrack(track);
