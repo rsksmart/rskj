@@ -20,10 +20,7 @@ package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
@@ -87,5 +84,33 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     public synchronized void clear() {
         this.readKeysByThread = new HashMap<>();
         this.writtenKeysByThread = new HashMap<>();
+    }
+
+    public boolean detectCollision() {
+        Set<Long> threads = new HashSet<>();
+        threads.addAll(readKeysByThread.keySet());
+        threads.addAll(writtenKeysByThread.keySet());
+
+        for (Long threadId : threads) {
+            Set<ByteArrayWrapper> baseReadKeys = readKeysByThread.getOrDefault(threadId, new HashSet<>());
+            Set<ByteArrayWrapper> baseWrittenKeys = writtenKeysByThread.getOrDefault(threadId, new HashSet<>());
+
+            for (Long threadId2 : threads) {
+                if (threadId.equals(threadId2)) {
+                    continue;
+                }
+
+                Set<ByteArrayWrapper> temporalReadKeys = readKeysByThread.getOrDefault(threadId2, new HashSet<>());
+                Set<ByteArrayWrapper> temporalWrittenKeys = writtenKeysByThread.getOrDefault(threadId2, new HashSet<>());
+
+                 boolean isDisjoint = Collections.disjoint(baseWrittenKeys, temporalWrittenKeys) && Collections.disjoint(baseWrittenKeys, temporalReadKeys)
+                    && Collections.disjoint(baseReadKeys, temporalWrittenKeys);
+
+                 if (!isDisjoint) {
+                     return true;
+                 }
+            }
+        }
+        return false;
     }
 }

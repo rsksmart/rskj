@@ -29,7 +29,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
@@ -495,7 +494,7 @@ public class BlockExecutor {
         }
 
         // Review collision
-        if (detectCollisions(aTracker)) {
+        if (aTracker.detectCollision()) {
             logger.warn("block: [{}] execution failed", block.getNumber());
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
@@ -566,51 +565,6 @@ public class BlockExecutor {
         profiler.stop(metric);
         logger.trace("End executeParallel.");
         return result;
-    }
-
-    private boolean detectCollisions(ReadWrittenKeysTracker tracker) {
-        Map<Long, Set<ByteArrayWrapper>> readKeysByThread = tracker.getReadKeysByThread();
-        Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread = tracker.getWrittenKeysByThread();
-
-        Set<ByteArrayWrapper> readKeys = new HashSet<>();
-        Set<ByteArrayWrapper> writtenKeys = new HashSet<>();
-        int readKeysSize = 0;
-        int writtenKeysSize = 0;
-
-        Set<Long> threads = new HashSet<>();
-        threads.addAll(readKeysByThread.keySet());
-        threads.addAll(writtenKeysByThread.keySet());
-
-        for (Long threadId : threads) {
-
-            Set<ByteArrayWrapper> temporalReadKeys = readKeysByThread.getOrDefault(threadId, new HashSet<>());
-            Set<ByteArrayWrapper> temporalWrittenKeys = writtenKeysByThread.getOrDefault(threadId, new HashSet<>());
-
-            if (readKeysSize == 0 && writtenKeysSize == 0) {
-                readKeys = temporalReadKeys;
-                readKeysSize = temporalReadKeys.size();
-                writtenKeys = temporalWrittenKeys;
-                writtenKeysSize = temporalWrittenKeys.size();
-                continue;
-            }
-
-            writtenKeys.removeAll(temporalReadKeys);
-            writtenKeys.removeAll(temporalWrittenKeys);
-            if (writtenKeys.size() != writtenKeysSize) {
-                return true;
-            }
-            writtenKeys.addAll(temporalWrittenKeys);
-            writtenKeysSize = writtenKeys.size();
-
-            readKeys.removeAll(temporalWrittenKeys);
-            if (readKeys.size() != readKeysSize) {
-                return true;
-            }
-            readKeys.addAll(temporalReadKeys);
-            readKeysSize = readKeys.size();
-
-        }
-        return false;
     }
 
     private void addFeesToRemasc(Coin remascFees, Repository track) {
