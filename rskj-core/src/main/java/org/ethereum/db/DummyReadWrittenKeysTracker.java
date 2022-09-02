@@ -48,6 +48,11 @@ public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     }
 
     @Override
+    public boolean detectCollision(){
+        return false;
+    }
+
+    @Override
     public void clear() {
         //Dummy tracker does not store added keys
     }

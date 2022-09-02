@@ -36,5 +36,7 @@ public interface IReadWrittenKeysTracker {
 
     void addNewWrittenKey(ByteArrayWrapper key);
 
+    boolean detectCollision();
+
     void clear();
 }

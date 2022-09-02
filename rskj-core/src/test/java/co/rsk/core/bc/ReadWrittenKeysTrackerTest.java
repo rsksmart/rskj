@@ -177,7 +177,7 @@ public class ReadWrittenKeysTrackerTest {
     }
 
     @Test
-    public void ifTwoThreadsWriteKeysTheyShouldBeStored() {
+    public void ifTwoThreadsWriteTheSameKeyShouldBeStored() {
         int nThreads = 2;
 
         ExecutorService service = Executors.newFixedThreadPool(nThreads);
@@ -195,6 +195,41 @@ public class ReadWrittenKeysTrackerTest {
         Map<Long, Set<ByteArrayWrapper>> readKeysByThread = this.tracker.getReadKeysByThread();
         assertEquals(0, readKeysByThread.size());
         assertKeysAreAddedCorrectlyIntoTheTracker(helpers, writtenKeysByThread, readKeysByThread);
+    }
+
+    @Test
+    public void ifTwoThreadsWriteTheSameKeyCollideShouldBeTrue() {
+        int nThreads = 2;
+
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<ReadWrittenKeysHelper> completionService = new ExecutorCompletionService<>(service);
+
+        for (int i = 0; i < nThreads; i++) {
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, Collections.singleton(key1), Collections.emptySet());
+            completionService.submit(rwKeys);
+        }
+
+        getTrackerHelperAfterCompletion(nThreads, completionService);
+        assertTrue(tracker.detectCollision());
+    }
+
+    @Test
+    public void ifTwoThreadsReadAndWriteTheSameKeyCollideShouldBeTrue() {
+        int nThreads = 2;
+        ExecutorService service = Executors.newFixedThreadPool(nThreads);
+        CompletionService<ReadWrittenKeysHelper> completionService = new ExecutorCompletionService<>(service);
+        Set<ByteArrayWrapper> writtenKeys;
+        Set<ByteArrayWrapper> readKeys;
+        for (int i = 0; i < nThreads; i++) {
+            boolean isEven = i % 2 == 0;
+            writtenKeys = isEven? Collections.singleton(this.key1) : Collections.emptySet();
+            readKeys = isEven? Collections.emptySet() : Collections.singleton(this.key1);
+            ReadWrittenKeysHelper rwKeys = new ReadWrittenKeysHelper(this.tracker, writtenKeys, readKeys);
+            completionService.submit(rwKeys);
+        }
+
+        getTrackerHelperAfterCompletion(nThreads, completionService);
+        assertTrue(tracker.detectCollision());
     }
 
     @Test
