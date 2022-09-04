@@ -140,7 +140,7 @@ public interface KeyValueDataSource extends DataSource {
         File dir = new File(databaseDir);
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
 
-        if (!databaseDirExists) {
+        if (!databaseDirExists || dir.list().length == 0) {
             KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
             return;
         }

@@ -4,9 +4,12 @@ import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +21,9 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class KeyValueDataSourceTest {
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private static final int CACHE_SIZE = 100;
 
@@ -124,6 +130,19 @@ public class KeyValueDataSourceTest {
         updatedValues.put(keyToNull, null);
 
         keyValueDataSource.updateBatch(updatedValues, Collections.emptySet());
+    }
+
+    @Test
+    public void testShouldValidateKindWithEmptyDbDirAndResetDbFalseSuccessfully() {
+        KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, tempFolder.getRoot().getPath(), false);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testShouldThrowErrorWhenValidatingDifferentKinds() throws IOException {
+        FileWriter fileWriter = new FileWriter(new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE));
+        fileWriter.write("keyvalue.datasource=ROCKS_DB\n");
+        fileWriter.close();
+        KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, tempFolder.getRoot().getPath(), false);
     }
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
