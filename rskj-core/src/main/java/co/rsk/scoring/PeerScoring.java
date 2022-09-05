@@ -98,7 +98,7 @@ public class PeerScoring {
                     break;
             }
 
-            logger.trace("New score for node {} after {} is {} ", evt, peerId, score);
+            // logger.trace("New score for node {} after {} is {} ", evt, peerId, score);
         } finally {
             rwlock.writeLock().unlock();
         }
