@@ -53,6 +53,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
+import co.rsk.util.NodeStopper;
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -1174,6 +1175,17 @@ class Web3ImplTest {
         String bnOrId = "991234";
 
         Assertions.assertThrows(org.ethereum.rpc.exception.RskJsonRpcRequestException.class, () -> web3.eth_getBlockByNumber(bnOrId, false));
+    }
+
+    @Test
+    void shutdownExitsWithZeroStatusCode() {
+        NodeStopper stopperMock = mock(NodeStopper.class);
+
+        Web3Impl web3 = createWeb3WithStopper(stopperMock);
+
+        web3.rsk_shutdown();
+
+        verify(stopperMock).stop(0);
     }
 
     @Test
@@ -2369,14 +2381,21 @@ class Web3ImplTest {
     private Web3Impl createWeb3() {
         return createWeb3(
                 Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, Web3Mocks.getMockNodeStopper()
+        );
+    }
+
+    private Web3Impl createWeb3WithStopper(NodeStopper stopper) {
+        return createWeb3(
+                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, stopper
         );
     }
 
     private Web3Impl createWeb3(Ethereum ethereum) {
         return createWeb3(
                 ethereum, Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache, Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2472,7 +2491,7 @@ class Web3ImplTest {
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         return createWeb3(
                 eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockStore(),
-                null, new SimpleConfigCapabilities(), receiptStore, signatureCache
+                null, new SimpleConfigCapabilities(), receiptStore, signatureCache, Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2495,7 +2514,8 @@ class Web3ImplTest {
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
                 blockStore, blockProcessor,
                 new SimpleConfigCapabilities(), receiptStore,
-                signatureCache
+                signatureCache,
+                Web3Mocks.getMockNodeStopper()
         );
     }
 
@@ -2508,7 +2528,8 @@ class Web3ImplTest {
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore,
-            SignatureCache signatureCache) {
+            SignatureCache signatureCache,
+            NodeStopper nodeStopper) {
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2530,7 +2551,7 @@ class Web3ImplTest {
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
-        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
+        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever, nodeStopper);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(

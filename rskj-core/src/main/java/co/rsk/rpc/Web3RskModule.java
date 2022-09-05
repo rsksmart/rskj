@@ -26,10 +26,6 @@ public interface Web3RskModule {
         return getRskModule().getRawTransactionReceiptByHash(transactionHash);
     }
 
-    default void rsk_shutdown() {
-        getRskModule().shutdown();
-    }
-
     default String[] rsk_getTransactionReceiptNodesByHash(String blockHash, String transactionHash) {
         return getRskModule().getTransactionReceiptNodesByHash(blockHash, transactionHash);
     }
@@ -40,6 +36,10 @@ public interface Web3RskModule {
 
     default String rsk_getRawBlockHeaderByNumber(String bnOrId) {
         return getRskModule().getRawBlockHeaderByNumber(bnOrId);
+    }
+
+    default void rsk_shutdown() {
+        getRskModule().shutdown();
     }
 
     RskModule getRskModule();
