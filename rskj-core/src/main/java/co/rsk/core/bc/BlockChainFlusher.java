@@ -87,8 +87,9 @@ public class BlockChainFlusher implements InternalService, Flusher {
 
     public synchronized void forceFlush() {
         flushAll();
-        nFlush =1; // postpone
+        nFlush = 1; // postpone
     }
+
     private synchronized void flush() {
         if (nFlush == 0) {
             flushAll();

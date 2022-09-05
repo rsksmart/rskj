@@ -22,13 +22,12 @@ import co.rsk.rpc.modules.rsk.RskModule;
 
 public interface Web3RskModule {
 
-    default String rsk_getRawTransactionReceiptByHash(String transactionHash)  {
+    default String rsk_getRawTransactionReceiptByHash(String transactionHash) {
         return getRskModule().getRawTransactionReceiptByHash(transactionHash);
     }
 
-    default String rsk_flush()  {
+    default void rsk_flush() {
         getRskModule().flush();
-        return "";
     }
 
     default String[] rsk_getTransactionReceiptNodesByHash(String blockHash, String transactionHash) {
