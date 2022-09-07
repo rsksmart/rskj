@@ -3037,11 +3037,6 @@ class BridgeStorageProviderTest {
             flyoverFederationRedeemScriptHash
         );
 
-        lenient().when(repository.getStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(flyoverFederationRedeemScriptHash)))
-        ).thenReturn(BridgeSerializationUtils.serializeFlyoverFederationInformation(flyoverFederationInformation));
-
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
 
