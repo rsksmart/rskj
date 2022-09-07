@@ -118,6 +118,9 @@ public class IndexedBlockStore implements BlockStore {
         return bestBlock;
     }
 
+    /**
+     * WARN: this method uses recursive lookup calls with depth defined by a user. Use it with caution.
+     */
     @Override
     public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
         Block branchBlock = getBlockByHash(branchBlockHash);
@@ -131,6 +134,9 @@ public class IndexedBlockStore implements BlockStore {
         return branchBlock.getHash().getBytes();
     }
 
+    /**
+     * WARN: this method uses recursive lookup calls with depth defined by a user. Use it with caution.
+     */
     @Override
     // This method is an optimized way to traverse a branch in search for a block at a given depth. Starting at a given
     // block (by hash) it tries to find the first block that is part of the best chain, when it finds one we now that
