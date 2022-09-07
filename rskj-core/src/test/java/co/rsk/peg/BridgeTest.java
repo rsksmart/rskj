@@ -1059,5 +1059,4 @@ public class BridgeTest {
         return new BlockGenerator().getGenesisBlock();
     }
 
-
 }
