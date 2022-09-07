@@ -4,7 +4,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.*;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -19,9 +18,6 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class KeyValueDataSourceTest {
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private static final int CACHE_SIZE = 100;
 
