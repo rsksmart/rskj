@@ -519,36 +519,6 @@ public class CliToolsTest {
     }
 
     @Test
-    public void dbMigrateThrowsExceptionBecauseMigratingToSameDb() throws IOException {
-        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
-
-        RskContext rskContext = mock(RskContext.class);
-        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
-
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
-        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
-        doReturn(true).when(rskSystemProperties).databaseReset();
-        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-
-        NodeStopper stopper = mock(NodeStopper.class);
-
-        DbMigrate dbMigrateCliTool = new DbMigrate();
-        dbMigrateCliTool.execute(new String[]{"leveldb"}, () -> rskContext, stopper);
-
-        String dbKindPropsFileLine = null;
-
-        if (dbKindPropsFile.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
-            reader.readLine();
-            reader.readLine();
-            dbKindPropsFileLine = reader.readLine();
-            reader.close();
-        }
-
-        Assert.assertNull(dbKindPropsFileLine);
-    }
-
-    @Test
     public void startBootstrap() throws Exception {
         // check thread setup
         Thread thread = new Thread(() -> {

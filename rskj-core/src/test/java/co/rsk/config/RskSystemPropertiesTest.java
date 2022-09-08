@@ -22,17 +22,10 @@ import co.rsk.cli.CliArgs;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,8 +40,6 @@ import static org.mockito.Mockito.mock;
  */
 public class RskSystemPropertiesTest {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
     private final TestSystemProperties config = new TestSystemProperties();
     @Mock
     private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
@@ -138,28 +129,5 @@ public class RskSystemPropertiesTest {
                 .collect(Collectors.toList());
 
         assertTrue(enabledModuleNames.stream().allMatch(k -> moduleNameEnabledMap.get(k).get(0).isEnabled()));
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void testDatabaseDirShouldThrowAnException() throws IOException {
-        File file = new File(tempFolder.getRoot(), "testing.txt");
-        FileWriter fileWriter = new FileWriter(file);
-        fileWriter.write("example");
-
-        ArgumentCaptor<String> configKeyCaptorForHasPath = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> configKeyCaptorForGetBoolean = ArgumentCaptor.forClass(String.class);
-
-        Config config = mock(Config.class);
-        doReturn(ConfigFactory.empty().root()).when(config).root();
-        doReturn(true).when(config).hasPath(configKeyCaptorForHasPath.capture());
-        doReturn(true).when(config).getBoolean(configKeyCaptorForGetBoolean.capture());
-        doReturn(file.getPath()).when(config).getString("database.dir");
-
-        ConfigLoader loader = mock(ConfigLoader.class);
-        doReturn(config).when(loader).getConfig();
-
-        RskSystemProperties sysProperties = new RskSystemProperties(loader);
-
-        sysProperties.databaseDir();
     }
 }

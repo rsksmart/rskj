@@ -303,16 +303,7 @@ public abstract class SystemProperties {
     }
 
     public String databaseDir() {
-        String dbDir = databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
-
-        File dir = new File(dbDir);
-
-        if (dir.exists() && !dir.isDirectory()) {
-            logger.error("{} should be a folder.", PROPERTY_BASE_PATH);
-            throw new IllegalStateException(String.format("%s should be a folder", PROPERTY_BASE_PATH));
-        }
-
-        return dbDir;
+        return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
 
     public void setDataBaseDir(String dataBaseDir) {

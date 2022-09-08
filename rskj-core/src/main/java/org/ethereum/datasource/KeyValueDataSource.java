@@ -138,6 +138,12 @@ public interface KeyValueDataSource extends DataSource {
 
     static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
         File dir = new File(databaseDir);
+
+        if (dir.exists() && !dir.isDirectory()) {
+            LoggerFactory.getLogger("KeyValueDataSource").error("database.dir should be a folder.");
+            throw new IllegalStateException(String.format("database.dir should be a folder"));
+        }
+
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
 
         if (!databaseDirExists || dir.list().length == 0) {

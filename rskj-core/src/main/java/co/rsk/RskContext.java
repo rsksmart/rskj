@@ -313,7 +313,13 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             if (rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()) {
                 FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
+
+                File file = new File(rskSystemProperties.databaseDir());
+
+                file.mkdir();
             }
+
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
 
             if (rskSystemProperties.importEnabled()) {
                 getBootstrapImporter().importData();
