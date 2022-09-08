@@ -106,8 +106,8 @@ class BridgeTest {
         Keccak256 rskTxHash = PegTestUtils.createHash3(7);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(
-            Optional.of(rskTxHash)
+        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash)).thenReturn(
+            rskTxHash.getBytes()
         );
 
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
@@ -127,8 +127,8 @@ class BridgeTest {
         Sha256Hash btcTxHash = PegTestUtils.createHash(17);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(
-            Optional.empty()
+        when(bridgeSupportMock.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash)).thenReturn(
+            ByteUtil.EMPTY_BYTE_ARRAY
         );
 
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);

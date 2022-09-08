@@ -1235,20 +1235,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public byte[] getPegoutCreationRskTxHashByBtcTxHash(Object[] args) {
         logger.trace("getPegoutCreationRskTxHashByBtcTxHash");
-        try {
-            byte[] hashBytes = (byte[])args[0];
-            Sha256Hash hash = Sha256Hash.wrap(hashBytes);
 
-            Optional<Keccak256> rskTxHash = this.bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(hash);
-            if (rskTxHash.isPresent()){
-                return rskTxHash.get().getBytes();
-            } else {
-                return ByteUtil.EMPTY_BYTE_ARRAY;
-            }
-        } catch (Exception e) {
-            logger.warn("Exception in getPegoutCreationRskTxHashByBtcTxHash", e);
-            return ByteUtil.EMPTY_BYTE_ARRAY;
-        }
+        byte[] btcTxHashInBytes = (byte[])args[0];
+        Sha256Hash btcTxHash = Sha256Hash.wrap(btcTxHashInBytes);
+
+        return this.bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
