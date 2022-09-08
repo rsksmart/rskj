@@ -25,8 +25,9 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.p2p.HelloMessage;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,7 +42,7 @@ import static org.ethereum.util.ByteUtil.byteArrayToInt;
 import static org.ethereum.util.ByteUtil.wrap;
 import static org.ethereum.util.RLP.*;
 import static org.ethereum.util.RlpTestData.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RLPTest {
 
@@ -598,9 +599,9 @@ public class RLPTest {
      *
      * Using assertEquals(String, String) instead of assertArrayEquals to see the actual content when the test fails.
      */
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testEncodeNull() {
-        encode(null);
+        Assertions.assertThrows(RuntimeException.class, () -> encode(null));
     }
 
     @Test
@@ -929,7 +930,7 @@ public class RLPTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void unsupportedLength() {
 
         int length = 56;

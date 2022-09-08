@@ -5,12 +5,12 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class ProgramInvokeImplTest {
 

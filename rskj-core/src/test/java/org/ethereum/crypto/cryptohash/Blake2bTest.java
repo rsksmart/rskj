@@ -1,8 +1,8 @@
 package org.ethereum.crypto.cryptohash;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
  * Created by bakaking on 25/10/2019.

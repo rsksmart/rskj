@@ -22,9 +22,9 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -39,7 +39,7 @@ public class BlockDifficultyRuleTest {
     private DifficultyCalculator difficultyCalculator;
     private BlockDifficultyRule rule;
 
-    @Before
+    @BeforeEach
     public void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
@@ -56,7 +56,7 @@ public class BlockDifficultyRuleTest {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(452);
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class BlockDifficultyRuleTest {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(999);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     private void whenBlockDifficulty(int difficulty) {

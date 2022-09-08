@@ -29,21 +29,20 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-@Ignore
+@Disabled
 public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
     private EnvironmentBuilder environmentBuilder;
 
-    @Before
+    @BeforeEach
     public void setFunctionAndBuilder() {
         function = new GetMultisigScriptHash(null).getFunction();
         environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -119,9 +118,9 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(byte[].class, decodedResult[0].getClass());
+                    Assertions.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexHash = ByteUtil.toHexString((byte[]) decodedResult[0]);
-                    Assert.assertEquals(expectedHashHex, hexHash);
+                    Assertions.assertEquals(expectedHashHex, hexHash);
                 }
         );
 

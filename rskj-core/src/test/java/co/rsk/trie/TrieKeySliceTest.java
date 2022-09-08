@@ -17,27 +17,28 @@
  */
 package co.rsk.trie;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 
 public class TrieKeySliceTest {
     @Test
     public void bytesToKey() {
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).encode()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).slice(2, 8).encode()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).slice(0, 6).encode()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).slice(1, 6).encode()
         );
@@ -49,8 +50,8 @@ public class TrieKeySliceTest {
         TrieKeySlice initialKey = TrieKeySlice.fromKey(new byte[]{(byte) 0xff});
         TrieKeySlice leftPaddedKey = initialKey.leftPad(paddedLength);
 
-        Assert.assertThat(leftPaddedKey.length(), is(initialKey.length() + paddedLength));
-        Assert.assertArrayEquals(
+        MatcherAssert.assertThat(leftPaddedKey.length(), is(initialKey.length() + paddedLength));
+        Assertions.assertArrayEquals(
             PathEncoder.encode(new byte[] {
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01

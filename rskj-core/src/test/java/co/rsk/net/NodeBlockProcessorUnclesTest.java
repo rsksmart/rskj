@@ -27,8 +27,8 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +48,8 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(null, block1);
 
-        Assert.assertEquals(1, blockChain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
+        Assertions.assertEquals(1, blockChain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
     }
 
     @Test
@@ -82,9 +82,9 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
-        Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
+        Assertions.assertEquals(2, blockChain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
+        Assertions.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
     @Test
@@ -115,10 +115,10 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
+        Assertions.assertEquals(2, blockChain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
 
-        Assert.assertEquals(0, sender.getGetBlockMessages().size());
+        Assertions.assertEquals(0, sender.getGetBlockMessages().size());
     }
 
     @Test
@@ -143,10 +143,10 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(0, blockChain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(genesis.getHash().getBytes(), blockChain.getBestBlockHash());
-        Assert.assertEquals(1, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
+        Assertions.assertEquals(0, blockChain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(genesis.getHash().getBytes(), blockChain.getBestBlockHash());
+        Assertions.assertEquals(1, sender.getGetBlockMessages().size());
+        Assertions.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {

@@ -20,8 +20,8 @@ package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.util.List;
@@ -45,8 +45,8 @@ public class NodeDistanceTableTest {
     public void creation() {
         Node localNode = new Node(Hex.decode(NODE_ID_1), HOST, PORT_1);
         NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
-        Assert.assertTrue(table != null);
-        Assert.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertTrue(table != null);
+        Assertions.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
     }
 
 
@@ -59,26 +59,26 @@ public class NodeDistanceTableTest {
         NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
 
         OperationResult result = table.addNode(node3);
-        Assert.assertTrue(result.isSuccess());
+        Assertions.assertTrue(result.isSuccess());
 
         result = table.addNode(node2);
-        Assert.assertTrue(result.isSuccess());
+        Assertions.assertTrue(result.isSuccess());
 
-        Assert.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
 
         result = table.addNode(node2);
-        Assert.assertTrue(result.isSuccess());
-        Assert.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertTrue(result.isSuccess());
+        Assertions.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
 
         NodeDistanceTable smallerTable = new NodeDistanceTable(KademliaOptions.BINS, 1, localNode);
 
         //If a bucket is full, the operations fails (returns false) and we get a candidate for eviction
         result = smallerTable.addNode(node3);
-        Assert.assertTrue(result.isSuccess());
+        Assertions.assertTrue(result.isSuccess());
         Node sameDistanceNode = new Node(Hex.decode("00"), HOST, PORT_3);
         result = smallerTable.addNode(sameDistanceNode);
-        Assert.assertFalse(result.isSuccess());
-        Assert.assertEquals(NODE_ID_3, result.getAffectedEntry().getNode().getHexId());
+        Assertions.assertFalse(result.isSuccess());
+        Assertions.assertEquals(NODE_ID_3, result.getAffectedEntry().getNode().getHexId());
     }
 
     @Test
@@ -90,27 +90,27 @@ public class NodeDistanceTableTest {
         NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
 
         OperationResult result = table.addNode(node2);
-        Assert.assertTrue(result.isSuccess());
+        Assertions.assertTrue(result.isSuccess());
 
-        Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
         //Try to remove a node that was never added
         result = table.removeNode(node3);
-        Assert.assertFalse(result.isSuccess());
-        Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertFalse(result.isSuccess());
+        Assertions.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
         //Add and remove node
         result = table.addNode(node3);
-        Assert.assertTrue(result.isSuccess());
-        Assert.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertTrue(result.isSuccess());
+        Assertions.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
         result = table.removeNode(node3);
-        Assert.assertTrue(result.isSuccess());
-        Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertTrue(result.isSuccess());
+        Assertions.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
         //Leave the table empty
         result = table.removeNode(node2);
-        Assert.assertTrue(result.isSuccess());
-        Assert.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
+        Assertions.assertTrue(result.isSuccess());
+        Assertions.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
     }
 
     @Test
@@ -121,13 +121,13 @@ public class NodeDistanceTableTest {
 
         NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
 
-        Assert.assertTrue(table.addNode(node1).isSuccess());
-        Assert.assertTrue(table.addNode(node2).isSuccess());
-        Assert.assertTrue(table.addNode(node3).isSuccess());
+        Assertions.assertTrue(table.addNode(node1).isSuccess());
+        Assertions.assertTrue(table.addNode(node2).isSuccess());
+        Assertions.assertTrue(table.addNode(node3).isSuccess());
 
         List<Node> sortedNodes = table.getClosestNodes(node2.getId());
 
-        Assert.assertEquals(3, sortedNodes.size());
+        Assertions.assertEquals(3, sortedNodes.size());
 
         DistanceCalculator calculator = new DistanceCalculator(KademliaOptions.BINS);
 
@@ -135,8 +135,8 @@ public class NodeDistanceTableTest {
         int d2 = calculator.calculateDistance(node2.getId(), sortedNodes.get(1).getId());
         int d3 = calculator.calculateDistance(node2.getId(), sortedNodes.get(2).getId());
 
-        Assert.assertTrue(d1 <= d2);
-        Assert.assertTrue(d2 <= d3);
+        Assertions.assertTrue(d1 <= d2);
+        Assertions.assertTrue(d2 <= d3);
     }
 
 }

@@ -28,8 +28,9 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 
 import java.math.BigInteger;
@@ -55,7 +56,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     private Block child;
     private Peer peer;
 
-    @Before
+    @BeforeEach
     public void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
@@ -75,7 +76,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
      * <p>
      * The downloaded state was invalid and does not connect to genesis.
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void onEnter_connectGenesis_genesisIsNotChildsParent() {
         List<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
@@ -92,7 +93,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         when(child.getNumber()).thenReturn(1L);
         when(genesis.isParentOf(child)).thenReturn(false);
 
-        target.onEnter();
+        Assertions.assertThrows(IllegalStateException.class, target::onEnter);
     }
 
     /**
@@ -100,7 +101,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
      * <p>
      * The downloaded state was invalid and does not connect to genesis.
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void onEnter_connectGenesis_difficultyDoesNotMatch() {
         List<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
@@ -125,7 +126,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         when(blockStore.getTotalDifficultyForHash(eq(childHash.getBytes())))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(101)));
 
-        target.onEnter();
+        Assertions.assertThrows(IllegalStateException.class, target::onEnter);
     }
 
     @Test

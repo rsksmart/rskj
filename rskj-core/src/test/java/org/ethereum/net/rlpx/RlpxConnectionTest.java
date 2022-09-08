@@ -22,13 +22,13 @@ package org.ethereum.net.rlpx;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.security.SecureRandom;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by devrandom on 2015-04-11.
@@ -44,7 +44,7 @@ public class RlpxConnectionTest {
     private PipedInputStream from;
     private PipedOutputStream fromOut;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         ECKey remoteKey = new ECKey();
         ECKey myKey = new ECKey();

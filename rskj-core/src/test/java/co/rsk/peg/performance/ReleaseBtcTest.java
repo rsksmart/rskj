@@ -30,14 +30,14 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
-@Ignore
+@Disabled
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
 
     @Test
@@ -46,7 +46,7 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("releaseBtc");
         releaseBtc_success(1000, stats);
         releaseBtc_refund(500, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void releaseBtc_success(int times, ExecutionStats stats) throws VMException {
@@ -85,9 +85,9 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                         ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                         sizeQueue = queue.getEntries().size();
                     } catch (IOException e) {
-                        Assert.fail();
+                        Assertions.fail();
                     }
-                    Assert.assertEquals(queueSizeOriginal + 1, sizeQueue);
+                    Assertions.assertEquals(queueSizeOriginal + 1, sizeQueue);
                 }
         );
     }
@@ -127,9 +127,9 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                             ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                             sizeQueue = queue.getEntries().size();
                         } catch (IOException e) {
-                            Assert.fail();
+                            Assertions.fail();
                         }
-                       Assert.assertEquals(queueSizeOriginal, sizeQueue);
+                       Assertions.assertEquals(queueSizeOriginal, sizeQueue);
                 }
         );
     }

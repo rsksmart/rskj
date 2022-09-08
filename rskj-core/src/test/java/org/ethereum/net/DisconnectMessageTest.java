@@ -23,12 +23,12 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.p2p.DisconnectMessage;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DisconnectMessageTest {
 
@@ -89,9 +89,9 @@ public class DisconnectMessageTest {
         try {
             DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
             disconnectMessage.toString(); //throws exception
-            assertTrue("Valid raw encoding for disconnectMessage", false);
+            assertTrue(false, "Valid raw encoding for disconnectMessage");
         } catch (RuntimeException e) {
-            assertTrue("Invalid raw encoding for disconnectMessage", true);
+            assertTrue(true, "Invalid raw encoding for disconnectMessage");
         }
     }
 
@@ -104,9 +104,9 @@ public class DisconnectMessageTest {
         try {
             DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
             disconnectMessage.toString(); //throws exception
-            assertTrue("Valid raw encoding for disconnectMessage", false);
+            assertTrue(false, "Valid raw encoding for disconnectMessage");
         } catch (RuntimeException e) {
-            assertTrue("Invalid raw encoding for disconnectMessage", true);
+            assertTrue(true, "Invalid raw encoding for disconnectMessage");
         }
     }
 }

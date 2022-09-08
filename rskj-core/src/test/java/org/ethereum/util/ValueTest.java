@@ -20,13 +20,13 @@
 package org.ethereum.util;
 
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ValueTest {
 
@@ -39,12 +39,12 @@ public class ValueTest {
         Value val1 = new Value("hello");
         Value val2 = new Value("world");
 
-        assertFalse("Expected values not to be equalBytes", cmp(val1, val2));
+        assertFalse(cmp(val1, val2), "Expected values not to be equalBytes");
 
         Value val3 = new Value("hello");
         Value val4 = new Value("hello");
 
-        assertTrue("Expected values to be equalBytes", cmp(val3, val4));
+        assertTrue(cmp(val3, val4), "Expected values to be equalBytes");
     }
 
     @Test

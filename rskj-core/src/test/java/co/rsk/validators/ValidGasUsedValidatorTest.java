@@ -20,9 +20,9 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -35,7 +35,7 @@ public class ValidGasUsedValidatorTest {
     private BlockHeader blockHeader;
     private Block block;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
@@ -49,7 +49,7 @@ public class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertTrue(gasUsedRule.isValid(block));
+        Assertions.assertTrue(gasUsedRule.isValid(block));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block));
     }
 
     @Test
@@ -69,6 +69,6 @@ public class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block));
     }
 }

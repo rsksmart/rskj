@@ -30,12 +30,12 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.time.Instant;
@@ -43,12 +43,12 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PendingFederationTest {
     private PendingFederation pendingFederation;
     private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
 
-    @Before
+    @BeforeEach
     public void createPendingFederation() {
         pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
     }
@@ -61,7 +61,7 @@ public class PendingFederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assert.assertTrue(exception);
+        Assertions.assertTrue(exception);
 
         exception = false;
         try {
@@ -69,33 +69,33 @@ public class PendingFederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assert.assertTrue(exception);
+        Assertions.assertTrue(exception);
     }
 
     @Test
     public void isComplete() {
-        Assert.assertTrue(pendingFederation.isComplete());
+        Assertions.assertTrue(pendingFederation.isComplete());
     }
 
     @Test
     public void isComplete_not() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200));
-        Assert.assertFalse(otherPendingFederation.isComplete());
+        Assertions.assertFalse(otherPendingFederation.isComplete());
     }
 
     @Test
     public void testEquals_basic() {
-        Assert.assertEquals(pendingFederation, pendingFederation);
+        Assertions.assertEquals(pendingFederation, pendingFederation);
 
-        Assert.assertNotEquals(null, pendingFederation);
-        Assert.assertNotEquals(pendingFederation, new Object());
-        Assert.assertNotEquals("something else", pendingFederation);
+        Assertions.assertNotEquals(null, pendingFederation);
+        Assertions.assertNotEquals(pendingFederation, new Object());
+        Assertions.assertNotEquals("something else", pendingFederation);
     }
 
     @Test
     public void testEquals_differentNumberOfMembers() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700));
-        Assert.assertNotEquals(pendingFederation, otherPendingFederation);
+        Assertions.assertNotEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
@@ -109,22 +109,22 @@ public class PendingFederationTest {
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(630))));
         PendingFederation yetOtherPendingFederation = new PendingFederation(members);
 
-        Assert.assertNotEquals(otherPendingFederation, yetOtherPendingFederation);
-        Assert.assertNotEquals(pendingFederation, otherPendingFederation);
-        Assert.assertNotEquals(pendingFederation, yetOtherPendingFederation);
+        Assertions.assertNotEquals(otherPendingFederation, yetOtherPendingFederation);
+        Assertions.assertNotEquals(pendingFederation, otherPendingFederation);
+        Assertions.assertNotEquals(pendingFederation, yetOtherPendingFederation);
     }
 
     @Test
     public void testEquals_same() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
-        Assert.assertEquals(pendingFederation, otherPendingFederation);
+        Assertions.assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
     public void testToString() {
-        Assert.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
+        Assertions.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
-        Assert.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
+        Assertions.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
     @Test
@@ -152,7 +152,7 @@ public class PendingFederationTest {
             bridgeConstants.getBtcParams()
         );
 
-        Assert.assertEquals(expectedFederation, builtFederation);
+        Assertions.assertEquals(expectedFederation, builtFederation);
     }
 
     @Test
@@ -180,7 +180,7 @@ public class PendingFederationTest {
             bridgeConstants.getBtcParams()
         );
 
-        Assert.assertEquals(expectedFederation, builtFederation);
+        Assertions.assertEquals(expectedFederation, builtFederation);
     }
 
     @Test
@@ -238,9 +238,9 @@ public class PendingFederationTest {
             activations
         );
 
-        Assert.assertEquals(expectedFederation, builtFederation);
+        Assertions.assertEquals(expectedFederation, builtFederation);
         if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-            Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
+            Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
         }
     }
 
@@ -258,10 +258,10 @@ public class PendingFederationTest {
                 null
             );
         } catch (Exception e) {
-            Assert.assertEquals("PendingFederation is incomplete", e.getMessage());
+            Assertions.assertEquals("PendingFederation is incomplete", e.getMessage());
             return;
         }
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
@@ -271,7 +271,7 @@ public class PendingFederationTest {
 
             Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[]{(byte) 0xaa}));
 
-            Assert.assertEquals(expectedHash, pendingFederation.getHash());
+            Assertions.assertEquals(expectedHash, pendingFederation.getHash());
         }
     }
 }

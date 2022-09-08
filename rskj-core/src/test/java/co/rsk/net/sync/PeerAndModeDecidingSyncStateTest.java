@@ -28,8 +28,8 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskMockFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -61,11 +61,11 @@ public class PeerAndModeDecidingSyncStateTest {
         when(peersInformation.getPeer(any())).thenReturn(bpStatus);
 
         for (int i = 0; i < 5; i++) {
-            Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
             syncState.newPeerStatus();
         }
 
-        Assert.assertTrue(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class PeerAndModeDecidingSyncStateTest {
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
 
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
@@ -125,12 +125,12 @@ public class PeerAndModeDecidingSyncStateTest {
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
                 syncConfiguration, blockchain, peerScoringManager);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
@@ -144,14 +144,14 @@ public class PeerAndModeDecidingSyncStateTest {
                 syncConfiguration, blockchain, peerScoringManager);
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
@@ -166,14 +166,14 @@ public class PeerAndModeDecidingSyncStateTest {
 
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test

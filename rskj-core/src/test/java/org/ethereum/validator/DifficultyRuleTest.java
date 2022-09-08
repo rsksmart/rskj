@@ -26,11 +26,11 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Angel J Lopez
@@ -41,7 +41,7 @@ public class DifficultyRuleTest {
     private final BlockFactory blockFactory = new BlockFactory(activationConfig);
     private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()));
 
-    @Ignore
+    @Disabled
     @Test // pass rule
     public void parentDifficultyLessHeaderDifficulty() {
         BlockHeader header = getHeader(10004);

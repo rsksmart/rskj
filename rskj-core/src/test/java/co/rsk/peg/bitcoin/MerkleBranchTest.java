@@ -22,8 +22,8 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,9 +40,9 @@ public class MerkleBranchTest {
             new MerkleBranch(
                     Collections.nCopies(256, Sha256Hash.of(Hex.decode("aa")))
                     , 0b111);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("number of hashes"));
+            Assertions.assertTrue(e.getMessage().contains("number of hashes"));
         }
     }
 
@@ -53,9 +53,9 @@ public class MerkleBranchTest {
                     Sha256Hash.of(Hex.decode("aa")),
                     Sha256Hash.of(Hex.decode("bb"))
             ), 0b111);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("significant bits"));
+            Assertions.assertTrue(e.getMessage().contains("significant bits"));
         }
     }
 
@@ -68,9 +68,9 @@ public class MerkleBranchTest {
                     Sha256Hash.of(Hex.decode("cc")),
                     Sha256Hash.of(Hex.decode("dd"))
             ), 0b000010000);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("significant bits"));
+            Assertions.assertTrue(e.getMessage().contains("significant bits"));
         }
     }
 
@@ -162,8 +162,8 @@ public class MerkleBranchTest {
 
         MerkleBranch merkleBranch = new MerkleBranch(hashes.stream().map(h -> Sha256Hash.wrap(h)).collect(Collectors.toList()), path);
 
-        Assert.assertEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
-        Assert.assertTrue(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
+        Assertions.assertEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
+        Assertions.assertTrue(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
     }
 
     private void assertBranchDoesntProve(List<byte[]> hashes, int path, byte[] txHash, byte[] expectedMerkleRoot) {
@@ -175,7 +175,7 @@ public class MerkleBranchTest {
 
         MerkleBranch merkleBranch = new MerkleBranch(hashes.stream().map(h -> Sha256Hash.wrap(h)).collect(Collectors.toList()), path);
 
-        Assert.assertNotEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
-        Assert.assertFalse(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
+        Assertions.assertNotEquals(Sha256Hash.wrap(expectedMerkleRoot), merkleBranch.reduceFrom(Sha256Hash.wrap(txHash)));
+        Assertions.assertFalse(merkleBranch.proves(Sha256Hash.wrap(txHash), mockBlock));
     }
 }

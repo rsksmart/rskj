@@ -24,15 +24,15 @@ import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Ignore
+@Disabled
 public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test
@@ -62,7 +62,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 ((environment, callResult) -> {
-                    Assert.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                    Assertions.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
                 }));
 
         BridgePerformanceTest.addStats(stats);
@@ -92,7 +92,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 ((environment, callResult) -> {
-                    Assert.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                    Assertions.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
                 })
         );
 

@@ -14,7 +14,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.math.BigInteger;
@@ -24,7 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
-@Ignore
+@Disabled
 public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
     private Sha256Hash blockHash;
     private Sha256Hash txHash;
@@ -33,7 +34,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private int expectedConfirmations;
 
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -59,7 +60,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         }
     }
 
-    @Before
+    @BeforeEach
     public void setRskipToTrue() throws VMException {
         warmUp();
     }
@@ -191,7 +192,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 stats,
                 (environment, executionResult) -> {
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
-                    Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
+                    Assertions.assertEquals(expectedConfirmations, numberOfConfirmations);
                 },
                 (EnvironmentBuilder.Environment environment) -> {
                     if (!useCache) {
@@ -298,7 +299,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
             // Build the merkle branch, and make sure calculations are sound
             MerkleBranch merkleBranch = buildMerkleBranch(merkleTree, numberOfTransactions, targetTxPosition);
-            Assert.assertEquals(merkleRoot, merkleBranch.reduceFrom(targetTx.getHash()));
+            Assertions.assertEquals(merkleRoot, merkleBranch.reduceFrom(targetTx.getHash()));
 
             // Parameters to the actual bridge method
             blockHash = blockWithTx.getHash();

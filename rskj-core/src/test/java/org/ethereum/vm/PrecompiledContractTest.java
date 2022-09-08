@@ -27,13 +27,13 @@ import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -112,7 +112,7 @@ public class PrecompiledContractTest {
         assertEquals(expected, ByteUtil.toHexString(result));
     }
 
-    @Test @Ignore("expected != result, inherited test")
+    @Test @Disabled("expected != result, inherited test")
     public void ecRecoverTest1() throws VMException {
 
         byte[] data = Hex.decode("18c547e4f7b0f325ad1e56f57e26c745b09a3e503d86e00e5255ff7f715d3d1c000000000000000000000000000000000000000000000000000000000000001c73b1693892219d736caba55bdb67216e485557ea6b6af75f37096c9aa6a5a75feeb940b1d03b21e36b0e47e79769f095fe2ab855bd91e3a38756b7d75a9c4549");
@@ -305,7 +305,7 @@ public class PrecompiledContractTest {
         );
     }
     @Test
-    @Ignore("blake2fTestVector8: This test takes a lot of time to be executed (up to 3 minutes)")
+    @Disabled("blake2fTestVector8: This test takes a lot of time to be executed (up to 3 minutes)")
     public void blake2fTestVector8() throws VMException {
         internalBlake2fTestVector(
                 "ffffffff48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001",

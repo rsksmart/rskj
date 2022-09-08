@@ -19,11 +19,11 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.NodeStopper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class NodeReferenceTest {

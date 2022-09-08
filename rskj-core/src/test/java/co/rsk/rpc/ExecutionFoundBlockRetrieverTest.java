@@ -28,9 +28,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class ExecutionFoundBlockRetrieverTest {
@@ -50,7 +50,7 @@ public class ExecutionFoundBlockRetrieverTest {
     private ExecutionBlockRetriever retriever;
     private final static int INVALID_PARAM_ERROR_CODE = -32602;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         blockchain = mock(BlockChainImpl.class);
         miningMainchainView = mock(MiningMainchainView.class);
@@ -223,7 +223,7 @@ public class ExecutionFoundBlockRetrieverTest {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("0x7B"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
     @Test
@@ -233,7 +233,7 @@ public class ExecutionFoundBlockRetrieverTest {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("123"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
     @Test
@@ -241,7 +241,7 @@ public class ExecutionFoundBlockRetrieverTest {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("0xzz"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
 
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
@@ -251,7 +251,7 @@ public class ExecutionFoundBlockRetrieverTest {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("zz"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
@@ -260,6 +260,6 @@ public class ExecutionFoundBlockRetrieverTest {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("other"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+        Assertions.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 }

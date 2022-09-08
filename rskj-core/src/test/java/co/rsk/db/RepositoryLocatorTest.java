@@ -23,12 +23,12 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +38,7 @@ public class RepositoryLocatorTest {
     private TrieStore trieStore;
     private RepositoryLocator target;
 
-    @Before
+    @BeforeEach
     public void setup() {
         stateRootHandler = mock(StateRootHandler.class);
         trieStore = mock(TrieStore.class);

@@ -30,14 +30,14 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 @Deprecated
-@Ignore
+@Disabled
 public class LockWhitelistTest extends BridgePerformanceTestCase {
     private LockWhitelist lockWhitelist;
 
@@ -47,7 +47,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     public void getLockWhitelistSize() throws VMException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistSize");
         executeTestCase((int executionIndex) -> Bridge.GET_LOCK_WHITELIST_SIZE.encode(), "getLockWhitelistSize", 200, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "getLockWhitelistAddress",
                 200,
                 stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "addLockWhitelistAddress",
                 200,
                 stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -87,7 +87,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "removeLockWhitelistAddress",
                 200,
                 stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "setLockWhitelistDisableBlockDelay",
                 200,
                 stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) throws VMException {

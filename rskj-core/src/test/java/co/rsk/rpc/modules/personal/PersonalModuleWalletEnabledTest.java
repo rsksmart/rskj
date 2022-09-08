@@ -6,9 +6,10 @@ import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -19,11 +20,10 @@ import static org.mockito.Mockito.*;
 
 public class PersonalModuleWalletEnabledTest {
 
-    @Test(expected = DecoderException.class)
+    @Test
     public void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
-
-        personalModuleWalletEnabled.importRawKey(null, "passphrase1");
+        Assertions.assertThrows(DecoderException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
     }
 
     @Test

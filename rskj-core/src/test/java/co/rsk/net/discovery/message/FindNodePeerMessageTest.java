@@ -4,8 +4,8 @@ import co.rsk.net.discovery.PeerDiscoveryException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -26,9 +26,9 @@ public class FindNodePeerMessageTest {
     public void parseInvalidMessageId() {
         try {
             createFindNodePeerMessageWithCheck("http://fake-uuid.com/run");
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(FindNodePeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(FindNodePeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -37,9 +37,9 @@ public class FindNodePeerMessageTest {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createFindNodePeerMessageWithCheck(uuidV1);
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(FindNodePeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(FindNodePeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -47,9 +47,9 @@ public class FindNodePeerMessageTest {
     public void parseValidMessageId() {
         try {
             FindNodePeerMessage message = createFindNodePeerMessageWithCheck(UUID.randomUUID().toString());
-            Assert.assertNotNull(message);
+            Assertions.assertNotNull(message);
         } catch (PeerDiscoveryException pde) {
-            Assert.fail(FindNodePeerMessage.class.getSimpleName() + "should've worked with valid messageId");
+            Assertions.fail(FindNodePeerMessage.class.getSimpleName() + "should've worked with valid messageId");
         }
     }
 

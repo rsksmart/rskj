@@ -38,10 +38,10 @@ package co.rsk.jsontestsuite;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -55,11 +55,11 @@ import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
  * @author Angel J Lopez
  * @since 02.24.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 
 public class LocalStateTest {
 
-    @Ignore // this method is mostly for hands-on convenient testing
+    @Disabled // this method is mostly for hands-on convenient testing
     public void stSingleTest() throws ParseException, IOException {
         String json = getJSON("stSystemOperationsTest");
         GitHubJSONTestSuite.runStateTest(json, "suicideSendEtherPostDeath");
@@ -389,7 +389,7 @@ public class LocalStateTest {
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
-    @Ignore
+    @Disabled
     // While RSK passes these tests, they have no "expect" clauses. Nothing is checked
     // after each test is finished. I suppose these tests serve only for checking
     // the performance of the VM. However there are no time contrains here, so
@@ -580,7 +580,7 @@ public class LocalStateTest {
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void stWalletTest() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
@@ -632,7 +632,7 @@ public class LocalStateTest {
 
     }
 
-    @Ignore
+    @Disabled
     //@Test // testing full suite
     public void testRandomStateGitHub() throws ParseException, IOException {
 

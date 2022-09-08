@@ -34,15 +34,15 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.net.client.Capability.RSK;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 public class HandshakeHandlerTest {
@@ -53,7 +53,7 @@ public class HandshakeHandlerTest {
     private EmbeddedChannel ch;
     private ChannelHandlerContext ctx;
 
-    @Before
+    @BeforeEach
     public void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();

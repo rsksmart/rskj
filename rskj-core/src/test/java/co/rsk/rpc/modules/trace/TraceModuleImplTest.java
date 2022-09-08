@@ -31,8 +31,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction("0x00");
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceBlock("0x0001020300010203000102030001020300010203000102030001020300010203");
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
@@ -78,23 +78,23 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(1, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(1, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNull(oresult.get("action").get("creationMethod"));
-        Assert.assertNotNull(oresult.get("action").get("init"));
-        Assert.assertNull(oresult.get("action").get("input"));
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNull(oresult.get("action").get("creationMethod"));
+        Assertions.assertNotNull(oresult.get("action").get("init"));
+        Assertions.assertNull(oresult.get("action").get("input"));
     }
 
     @Test
@@ -112,18 +112,18 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(1, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(1, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
     }
 
     @Test
@@ -168,9 +168,9 @@ public class TraceModuleImplTest {
         String transactionHash = "0x64cbd00a73bad9df13ee188931c84555a5662057e6381b3476bdc20ab3c09ef3";
         JsonNode result = traceModule.traceGet(transactionHash, Stream.of("0x0").collect(Collectors.toList()));
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(result.get("transactionHash").asText(), transactionHash);
-        Assert.assertEquals(result.get("action").get("from").asText(),"0xa0663f719962ec10bb57865532bef522059dfd96");
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(result.get("transactionHash").asText(), transactionHash);
+        Assertions.assertEquals(result.get("action").get("from").asText(),"0xa0663f719962ec10bb57865532bef522059dfd96");
     }
 
     private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -180,12 +180,12 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(0, aresult.size());
+        Assertions.assertEquals(0, aresult.size());
     }
 
     private static void retrieveNestedContractCreationBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -195,28 +195,28 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
-        Assert.assertEquals(4, result.size());
+        Assertions.assertEquals(4, result.size());
 
         for (int k = 0; k < 4; k++) {
-            Assert.assertTrue(result.get(k).isObject());
+            Assertions.assertTrue(result.get(k).isObject());
 
             ObjectNode oresult = (ObjectNode) result.get(k);
 
-            Assert.assertNotNull(oresult.get("type"));
-            Assert.assertEquals("\"create\"", oresult.get("type").toString());
+            Assertions.assertNotNull(oresult.get("type"));
+            Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
-            Assert.assertNotNull(oresult.get("action"));
+            Assertions.assertNotNull(oresult.get("action"));
 
             if (k > 0) {
-                Assert.assertNotNull(oresult.get("action").get("creationMethod"));
-                Assert.assertEquals("\"create\"", oresult.get("action").get("creationMethod").toString());
+                Assertions.assertNotNull(oresult.get("action").get("creationMethod"));
+                Assertions.assertEquals("\"create\"", oresult.get("action").get("creationMethod").toString());
             }
 
-            Assert.assertNotNull(oresult.get("action").get("init"));
-            Assert.assertNull(oresult.get("action").get("input"));
+            Assertions.assertNotNull(oresult.get("action").get("init"));
+            Assertions.assertNull(oresult.get("action").get("input"));
         }
     }
 
@@ -227,20 +227,20 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(4, aresult.size());
+        Assertions.assertEquals(4, aresult.size());
 
         for (int k = 0; k < 4; k++) {
-            Assert.assertTrue(aresult.get(k).isObject());
+            Assertions.assertTrue(aresult.get(k).isObject());
 
             ObjectNode oresult = (ObjectNode) aresult.get(k);
 
-            Assert.assertNotNull(oresult.get("type"));
-            Assert.assertEquals("\"create\"", oresult.get("type").toString());
+            Assertions.assertNotNull(oresult.get("type"));
+            Assertions.assertEquals("\"create\"", oresult.get("type").toString());
         }
     }
 
@@ -251,20 +251,20 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(4, aresult.size());
+        Assertions.assertEquals(4, aresult.size());
 
         for (int k = 0; k < 4; k++) {
-            Assert.assertTrue(result.get(k).isObject());
+            Assertions.assertTrue(result.get(k).isObject());
 
             ObjectNode oresult = (ObjectNode) result.get(k);
 
-            Assert.assertNotNull(oresult.get("type"));
-            Assert.assertEquals("\"call\"", oresult.get("type").toString());
+            Assertions.assertNotNull(oresult.get("type"));
+            Assertions.assertEquals("\"call\"", oresult.get("type").toString());
         }
     }
 
@@ -275,20 +275,20 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(3, aresult.size());
+        Assertions.assertEquals(3, aresult.size());
 
         for (int k = 0; k < 3; k++) {
-            Assert.assertTrue(result.get(k).isObject());
+            Assertions.assertTrue(result.get(k).isObject());
 
             ObjectNode oresult = (ObjectNode) result.get(k);
 
-            Assert.assertNotNull(oresult.get("error"));
-            Assert.assertEquals("\"Reverted\"", oresult.get("error").toString());
+            Assertions.assertNotNull(oresult.get("error"));
+            Assertions.assertEquals("\"Reverted\"", oresult.get("error").toString());
         }
     }
 
@@ -299,24 +299,24 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(2, aresult.size());
+        Assertions.assertEquals(2, aresult.size());
 
-        Assert.assertTrue(result.get(1).isObject());
+        Assertions.assertTrue(result.get(1).isObject());
 
         ObjectNode oresult = (ObjectNode) result.get(1);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"suicide\"", oresult.get("type").toString());
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNull(oresult.get("action").get("from"));
-        Assert.assertNotNull(oresult.get("action").get("address"));
-        Assert.assertNotNull(oresult.get("action").get("refundAddress"));
-        Assert.assertNotNull(oresult.get("action").get("balance"));
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"suicide\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNull(oresult.get("action").get("from"));
+        Assertions.assertNotNull(oresult.get("action").get("address"));
+        Assertions.assertNotNull(oresult.get("action").get("refundAddress"));
+        Assertions.assertNotNull(oresult.get("action").get("balance"));
     }
 
     private static void retrieveSuicideInvocationBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -326,24 +326,24 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceBlock(block == null ? blkname : block.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(2, aresult.size());
+        Assertions.assertEquals(2, aresult.size());
 
-        Assert.assertTrue(result.get(1).isObject());
+        Assertions.assertTrue(result.get(1).isObject());
 
         ObjectNode oresult = (ObjectNode) result.get(1);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"suicide\"", oresult.get("type").toString());
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNull(oresult.get("action").get("from"));
-        Assert.assertNotNull(oresult.get("action").get("address"));
-        Assert.assertNotNull(oresult.get("action").get("refundAddress"));
-        Assert.assertNotNull(oresult.get("action").get("balance"));
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"suicide\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNull(oresult.get("action").get("from"));
+        Assertions.assertNotNull(oresult.get("action").get("address"));
+        Assertions.assertNotNull(oresult.get("action").get("refundAddress"));
+        Assertions.assertNotNull(oresult.get("action").get("balance"));
     }
 
     private static void retrieveTraceFilterEmpty(World world, ReceiptStore receiptStore) throws Exception {
@@ -356,12 +356,12 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceFilter(traceFilterRequest);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(0, aresult.size());
+        Assertions.assertEquals(0, aresult.size());
     }
 
     private static void retrieveTraceFilter1Record(World world, ReceiptStore receiptStore) throws Exception {
@@ -373,22 +373,22 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceFilter(traceFilterRequest);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(1, aresult.size());
+        Assertions.assertEquals(1, aresult.size());
 
         ObjectNode oresult = (ObjectNode) result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("from"));
-        Assert.assertNotNull(oresult.get("action").get("init"));
-        Assert.assertNull(oresult.get("action").get("input"));
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("from"));
+        Assertions.assertNotNull(oresult.get("action").get("init"));
+        Assertions.assertNull(oresult.get("action").get("input"));
     }
 
     private static void retrieveTraceFilter3Records(World world, ReceiptStore receiptStore) throws Exception {
@@ -400,32 +400,32 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceFilter(traceFilterRequest);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(3, aresult.size());
+        Assertions.assertEquals(3, aresult.size());
 
         ObjectNode oresult = (ObjectNode) result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("from"));
-        Assert.assertNotNull(oresult.get("action").get("init"));
-        Assert.assertNull(oresult.get("action").get("input"));
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("from"));
+        Assertions.assertNotNull(oresult.get("action").get("init"));
+        Assertions.assertNull(oresult.get("action").get("input"));
 
         oresult = (ObjectNode) result.get(1);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
         oresult = (ObjectNode) result.get(2);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
     }
 
     private static void retrieveTraceFilterNext3RecordsAndOnly1Remains(World world, ReceiptStore receiptStore) throws Exception {
@@ -438,20 +438,20 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceFilter(traceFilterRequest);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(3, aresult.size());
+        Assertions.assertEquals(3, aresult.size());
 
         ObjectNode oresult = (ObjectNode) result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("creationMethod"));
     }
 
     private static void retrieveTraceFilterByAddress(World world, ReceiptStore receiptStore) throws Exception {
@@ -465,17 +465,17 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceFilter(traceFilterRequest);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(3, aresult.size());
+        Assertions.assertEquals(3, aresult.size());
 
         ObjectNode oresult = (ObjectNode) result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"create\"", oresult.get("type").toString());
     }
 
     @Test
@@ -493,18 +493,18 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(1, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(1, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"call\"", oresult.get("type").toString());
     }
 
     @Test
@@ -522,18 +522,18 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(1, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(1, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(0);
 
-        Assert.assertNotNull(oresult.get("type"));
-        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+        Assertions.assertNotNull(oresult.get("type"));
+        Assertions.assertEquals("\"call\"", oresult.get("type").toString());
     }
 
     @Test
@@ -548,8 +548,8 @@ public class TraceModuleImplTest {
         Account callAccount = world.getAccountByName("call");
         Account calledAccount = world.getAccountByName("called");
 
-        Assert.assertNotNull(callAccount);
-        Assert.assertNotNull(calledAccount);
+        Assertions.assertNotNull(callAccount);
+        Assertions.assertNotNull(calledAccount);
 
         Transaction transaction = world.getTransactionByName("tx01");
 
@@ -557,21 +557,21 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(2, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(2, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(1);
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("callType"));
-        Assert.assertEquals("\"call\"", oresult.get("action").get("callType").toString());
-        Assert.assertEquals("\"" + calledAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
-        Assert.assertEquals("\"" + callAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("callType"));
+        Assertions.assertEquals("\"call\"", oresult.get("action").get("callType").toString());
+        Assertions.assertEquals("\"" + calledAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
+        Assertions.assertEquals("\"" + callAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
     }
 
     @Test
@@ -586,8 +586,8 @@ public class TraceModuleImplTest {
         Account delegateCallAccount = world.getAccountByName("delegatecall");
         Account delegatedAccount = world.getAccountByName("delegated");
 
-        Assert.assertNotNull(delegateCallAccount);
-        Assert.assertNotNull(delegatedAccount);
+        Assertions.assertNotNull(delegateCallAccount);
+        Assertions.assertNotNull(delegatedAccount);
 
         Transaction transaction = world.getTransactionByName("tx01");
 
@@ -595,21 +595,21 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(2, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(2, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(1);
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("callType"));
-        Assert.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
-        Assert.assertEquals("\"" + delegatedAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
-        Assert.assertEquals("\"" + delegateCallAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("callType"));
+        Assertions.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
+        Assertions.assertEquals("\"" + delegatedAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
+        Assertions.assertEquals("\"" + delegateCallAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
     }
 
     @Test
@@ -627,19 +627,19 @@ public class TraceModuleImplTest {
 
         JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isArray());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
 
         ArrayNode aresult = (ArrayNode)result;
 
-        Assert.assertEquals(2, aresult.size());
-        Assert.assertTrue(result.get(0).isObject());
+        Assertions.assertEquals(2, aresult.size());
+        Assertions.assertTrue(result.get(0).isObject());
 
         ObjectNode oresult = (ObjectNode)result.get(1);
 
-        Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
-        Assert.assertEquals("\"create2\"", oresult.get("action").get("creationMethod").toString());
+        Assertions.assertNotNull(oresult.get("action"));
+        Assertions.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assertions.assertEquals("\"create2\"", oresult.get("action").get("creationMethod").toString());
     }
 
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {

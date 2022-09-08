@@ -22,10 +22,10 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.MapSnapshot;
 import org.ethereum.util.TempFileCreator;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,14 +33,13 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class CacheSnapshotHandlerTest {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    public Path folder;
 
     private Path cacheSnapshotPath;
     private MapSnapshot.Factory mapSnapshotFactory;
@@ -48,9 +47,11 @@ public class CacheSnapshotHandlerTest {
 
     private CacheSnapshotHandler cacheSnapshotHandler;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
-        File testFolder = folder.newFolder("test");
+        File testFolder = folder.resolve("test").toFile();
+        testFolder.mkdir();
+
         Path tempFilePath = testFolder.toPath().resolve("tmp");
 
         cacheSnapshotPath = testFolder.toPath().resolve("cache");
@@ -60,7 +61,7 @@ public class CacheSnapshotHandlerTest {
         tempFileCreator = mock(TempFileCreator.class);
         doAnswer(in -> {
             File file = tempFilePath.toFile();
-            assertTrue(file.createNewFile());
+            Assertions.assertTrue(file.createNewFile());
             return file;
         }).when(tempFileCreator).createTempFile(anyString(), anyString());
 
@@ -73,57 +74,57 @@ public class CacheSnapshotHandlerTest {
 
         cacheSnapshotHandler.load(cache);
 
-        assertTrue(cache.isEmpty());
+        Assertions.assertTrue(cache.isEmpty());
         verify(mapSnapshotFactory, never()).makeInputSnapshot(any());
     }
 
     @Test
     public void load_WhenCacheCorrupted_CacheShouldBeRenamed() throws IOException {
-        assertTrue(cacheSnapshotPath.toFile().createNewFile());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
 
         //noinspection unchecked
         Map<ByteArrayWrapper, byte[]> cache = (Map<ByteArrayWrapper, byte[]>) mock(Map.class);
 
         cacheSnapshotHandler.load(cache);
 
-        assertTrue(cacheSnapshotPath.resolveSibling(cacheSnapshotPath.getFileName() + ".err").toFile().exists());
+        Assertions.assertTrue(cacheSnapshotPath.resolveSibling(cacheSnapshotPath.getFileName() + ".err").toFile().exists());
         verify(cache, atLeastOnce()).clear();
         verify(cache, never()).put(any(), any());
     }
 
     @Test
     public void save_WhenEmptyMap_NothingShouldBeSavedAndExistingCacheShouldBeRemoved() throws IOException {
-        assertTrue(cacheSnapshotPath.toFile().createNewFile());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
 
         Map<ByteArrayWrapper, byte[]> cache = new HashMap<>();
 
         cacheSnapshotHandler.save(cache);
 
-        assertFalse(cacheSnapshotPath.toFile().exists());
+        Assertions.assertFalse(cacheSnapshotPath.toFile().exists());
         verify(tempFileCreator, never()).createTempFile(anyString(), anyString());
         verify(mapSnapshotFactory, never()).makeOutputSnapshot(any());
     }
 
     @Test
     public void save_WhenNonEmptyMap_MapShouldBeSavedAndExistingCacheShouldBeReplaced() throws IOException {
-        assertTrue(cacheSnapshotPath.toFile().createNewFile());
-        assertEquals(0, cacheSnapshotPath.toFile().length());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
+        Assertions.assertEquals(0, cacheSnapshotPath.toFile().length());
 
         Map<ByteArrayWrapper, byte[]> cache = new HashMap<>();
         cache.put(ByteUtil.wrap(new byte[] {1, 2, 3}), new byte[] {4, 5, 6});
 
         cacheSnapshotHandler.save(cache);
 
-        assertTrue(cacheSnapshotPath.toFile().exists());
-        assertTrue(cacheSnapshotPath.toFile().length() > 0);
+        Assertions.assertTrue(cacheSnapshotPath.toFile().exists());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().length() > 0);
         verify(tempFileCreator, atLeastOnce()).createTempFile(anyString(), anyString());
         verify(mapSnapshotFactory, atLeastOnce()).makeOutputSnapshot(any());
     }
 
     @Test
     public void save_MapCannotBeSaved_CacheFileShouldNotBeModified() throws IOException {
-        assertTrue(cacheSnapshotPath.toFile().createNewFile());
-        assertEquals(0, cacheSnapshotPath.toFile().length());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
+        Assertions.assertEquals(0, cacheSnapshotPath.toFile().length());
 
         MapSnapshot.Out outSnapshot = mock(MapSnapshot.Out.class);
         doThrow(new IOException()).when(outSnapshot).write(anyMap());
@@ -137,8 +138,8 @@ public class CacheSnapshotHandlerTest {
 
         cacheSnapshotHandler.save(cache);
 
-        assertTrue(cacheSnapshotPath.toFile().exists());
-        assertEquals(0, cacheSnapshotPath.toFile().length());
+        Assertions.assertTrue(cacheSnapshotPath.toFile().exists());
+        Assertions.assertEquals(0, cacheSnapshotPath.toFile().length());
         verify(tempFile, atLeastOnce()).deleteOnExit();
     }
 }

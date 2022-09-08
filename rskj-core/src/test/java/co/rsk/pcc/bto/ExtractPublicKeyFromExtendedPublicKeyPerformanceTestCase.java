@@ -29,13 +29,13 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
-@Ignore
+@Disabled
 public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
 
@@ -84,9 +84,9 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(byte[].class, decodedResult[0].getClass());
+                    Assertions.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexPublicKey = ByteUtil.toHexString((byte[]) decodedResult[0]);
-                    Assert.assertEquals(expectedHexPublicKey, hexPublicKey);
+                    Assertions.assertEquals(expectedHexPublicKey, hexPublicKey);
                 }
         );
 

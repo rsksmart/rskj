@@ -28,12 +28,12 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by SerAdmin on 9/26/2018.
@@ -379,7 +379,7 @@ public class MutableTrieCacheTest {
         // First put some strings in the base
 
         byte[] wrongKey = toBytes("BOB");
-        
+
         Uint24 valueLength = baseMutableTrie.getValueLength(wrongKey);
         assertEquals(Uint24.ZERO, valueLength);
 

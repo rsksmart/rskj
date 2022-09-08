@@ -19,7 +19,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -43,8 +43,8 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.LogInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -66,7 +66,7 @@ public class LogsNotificationEmitterTest {
     private ReceiptStore receiptStore;
     private BlockchainBranchComparator comparator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);

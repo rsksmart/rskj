@@ -23,8 +23,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.net.simples.SimplePeer;
 
@@ -40,7 +41,7 @@ public class MessageCounterTest {
         counter.increment(sender);
         counter.decrement(sender);
 
-        Assert.assertFalse(counter.hasCounter(sender));
+        Assertions.assertFalse(counter.hasCounter(sender));
 
     }
 
@@ -56,7 +57,7 @@ public class MessageCounterTest {
 
         counter.decrement(sender);
 
-        Assert.assertEquals(1, counter.getValue(sender));
+        Assertions.assertEquals(1, counter.getValue(sender));
     }
 
     @Test
@@ -93,16 +94,16 @@ public class MessageCounterTest {
         int changeCount = countConcurrency(queue);
 
         // assert we had more than a 100 proofs of concurrency
-        Assert.assertThat(changeCount, greaterThan(100));
+        MatcherAssert.assertThat(changeCount, greaterThan(100));
 
         // counter must be zero at this point
-        Assert.assertEquals(0, counter.getValue(sender));
+        Assertions.assertEquals(0, counter.getValue(sender));
     }
 
     /**
      * process the queue to count how many times we had a change in signal which means
      * that increment and decrement are been called concurrently
-     * 
+     *
      * ++++++++------+++++-----
      */
     private int countConcurrency(ConcurrentLinkedQueue<String> queue) {

@@ -23,8 +23,8 @@ import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -43,7 +43,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator, never()).isValid(any());
@@ -58,7 +58,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
@@ -78,7 +78,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
@@ -98,7 +98,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertTrue(actualResult);
+        Assertions.assertTrue(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());

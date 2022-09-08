@@ -27,8 +27,8 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
@@ -52,9 +52,9 @@ public class Web3ImplRpcTest {
 
         Map<String, String> result = web3.rpc_modules();
 
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertTrue(result.containsKey("eth"));
-        Assert.assertEquals("1.0", result.get("eth"));
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertTrue(result.containsKey("eth"));
+        Assertions.assertEquals("1.0", result.get("eth"));
     }
 }

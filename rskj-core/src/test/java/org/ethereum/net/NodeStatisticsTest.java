@@ -1,7 +1,7 @@
 package org.ethereum.net;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class NodeStatisticsTest {
 
@@ -9,7 +9,7 @@ public class NodeStatisticsTest {
     public void getSessionFairReputation_OK() {
         NodeStatistics nodeStatistics = new NodeStatistics();
 
-        Assert.assertEquals(0, nodeStatistics.getSessionFairReputation());
+        Assertions.assertEquals(0, nodeStatistics.getSessionFairReputation());
     }
 
 }

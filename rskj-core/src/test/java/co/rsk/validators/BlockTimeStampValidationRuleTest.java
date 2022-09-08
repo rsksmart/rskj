@@ -27,13 +27,13 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by mario on 23/01/17.
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BlockTimeStampValidationRuleTest {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5 * 60;
@@ -55,7 +55,7 @@ public class BlockTimeStampValidationRuleTest {
 
     private final NetworkParameters bitcoinNetworkParameters = mock(NetworkParameters.class);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         when(preRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(false);
         when(postRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(true);

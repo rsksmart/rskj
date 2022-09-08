@@ -11,10 +11,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.math.BigInteger;
 
@@ -22,10 +21,10 @@ import java.math.BigInteger;
  * @author Kelvin Isievwore
  * @since 20.03.22
  */
-@Ignore
+@Disabled
 public class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -66,7 +65,7 @@ public class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
             stats,
             (environment, executionResult) -> {
                 long totalAmount = new BigInteger(executionResult).longValueExact();
-                Assert.assertTrue(totalAmount > 0);
+                Assertions.assertTrue(totalAmount > 0);
             }
         );
     }
@@ -90,7 +89,7 @@ public class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
             stats,
             (environment, executionResult) -> {
                 long totalAmount = new BigInteger(executionResult).longValueExact();
-                Assert.assertTrue(totalAmount > 0);
+                Assertions.assertTrue(totalAmount > 0);
             }
         );
     }
@@ -109,7 +108,7 @@ public class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
             stats,
             (environment, executionResult) -> {
                 long totalAmount = new BigInteger(executionResult).longValueExact();
-                Assert.assertTrue(totalAmount > 0);
+                Assertions.assertTrue(totalAmount > 0);
             }
         );
     }

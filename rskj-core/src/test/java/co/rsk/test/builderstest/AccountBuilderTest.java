@@ -23,8 +23,8 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -34,8 +34,8 @@ public class AccountBuilderTest {
     public void createAccountWithNameAsSeed() {
         Account account = new AccountBuilder().name("acc1").build();
 
-        Assert.assertNotNull(account);
-        Assert.assertTrue(account.getEcKey().hasPrivKey());
+        Assertions.assertNotNull(account);
+        Assertions.assertTrue(account.getEcKey().hasPrivKey());
     }
 
     @Test
@@ -50,10 +50,10 @@ public class AccountBuilderTest {
                 .code(code)
                 .build();
 
-        Assert.assertNotNull(account);
-        Assert.assertTrue(account.getEcKey().hasPrivKey());
+        Assertions.assertNotNull(account);
+        Assertions.assertTrue(account.getEcKey().hasPrivKey());
         RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
-        Assert.assertEquals(balance, repository.getBalance(account.getAddress()));
-        Assert.assertArrayEquals(code, repository.getCode(account.getAddress()));
+        Assertions.assertEquals(balance, repository.getBalance(account.getAddress()));
+        Assertions.assertArrayEquals(code, repository.getCode(account.getAddress()));
     }
 }

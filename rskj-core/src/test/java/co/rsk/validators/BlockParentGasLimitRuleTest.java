@@ -21,9 +21,9 @@ package co.rsk.validators;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -37,7 +37,7 @@ public class BlockParentGasLimitRuleTest {
     private BlockHeader blockHeader;
     private BlockParentGasLimitRule rule;
 
-    @Before
+    @BeforeEach
     public void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
@@ -47,14 +47,14 @@ public class BlockParentGasLimitRuleTest {
         when(block.getHeader()).thenReturn(blockHeader);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void cantConstructRuleWithZeroGasLimitBoundDivisor() {
-        whenGasLimitBoundDivisor(0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> whenGasLimitBoundDivisor(0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void cantConstructRuleWithNegativeGasLimitBoundDivisor() {
-        whenGasLimitBoundDivisor(-1);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> whenGasLimitBoundDivisor(-1));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, 1000);
         whenGasLimit(blockHeader, 1000);
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, 1000);
         whenGasLimit(blockHeader, 900);
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, 1000);
         whenGasLimit(blockHeader, 1050);
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, 1000);
         whenGasLimit(blockHeader, 899);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class BlockParentGasLimitRuleTest {
         whenGasLimit(parentHeader, 1000);
         whenGasLimit(blockHeader, 1051);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     private void whenGasLimitBoundDivisor(int gasLimitBoundDivisor) {

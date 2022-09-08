@@ -22,11 +22,8 @@ import co.rsk.config.TestSystemProperties;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -35,12 +32,12 @@ import java.util.Collections;
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class LocalBlockTest {
     private ClassLoader loader = LocalBlockTest.class.getClassLoader();
     private static TestSystemProperties config = new TestSystemProperties();
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         config.setRemascEnabled(false);
     }
@@ -50,7 +47,7 @@ public class LocalBlockTest {
         GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runSingleTest() throws ParseException, IOException {
         config.setGenesisInfo("frontier.json");
@@ -60,91 +57,91 @@ public class LocalBlockTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCInvalidHeaderTest() throws ParseException, IOException {
         run("bcInvalidHeaderTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCInvalidRLPTest() throws ParseException, IOException {
         run("bcInvalidRLPTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCRPCAPITest() throws ParseException, IOException {
         run("bcRPC_API_Test");
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runBCUncleHeaderValidityTest() throws ParseException, IOException {
         run("bcUncleHeaderValiditiy");
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runBCUncleTest() throws ParseException, IOException {
         run("bcUncleTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCValidBlockTest() throws ParseException, IOException {
         config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest");
     }
 
-    @Ignore // after adding tx prefix to sign
+    @Disabled // after adding tx prefix to sign
     @Test
     public void runBCBlockGasLimitTest() throws ParseException, IOException {
         run("bcBlockGasLimitTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCForkBlockTest() throws ParseException, IOException {
         run("bcForkBlockTest");
     }
 
-    @Ignore // after adding tx prefix to sign
+    @Disabled // after adding tx prefix to sign
     @Test
     public void runBCForkUncleTest() throws ParseException, IOException {
         run("bcForkUncle");
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runBCForkStressTest() throws ParseException, IOException {
         run("bcForkStressTest");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void runBCStateTest() throws ParseException, IOException {
         run("bcStateTest");
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runBCGasPricerTest() throws ParseException, IOException {
         run("bcGasPricerTest");
     }
 
-    @Ignore // to fix after adding prefix to tx raw encode
+    @Disabled // to fix after adding prefix to tx raw encode
     @Test
     public void runBCTotalDifficultyTest() throws ParseException, IOException {
         run("bcTotalDifficultyTest");
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void runBCWalletTest() throws Exception, IOException {
         run("bcWalletTest");
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void runBCMultiChainTest() throws ParseException, IOException {
         run("bcMultiChainTest");

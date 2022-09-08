@@ -22,13 +22,13 @@ import com.typesafe.config.*;
 import com.typesafe.config.impl.ConfigImpl;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.SystemProperties;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Collections;
 import java.util.function.BiConsumer;
@@ -37,13 +37,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ConfigLoaderTest {
 
     private static final ConfigValue NULL_VALUE = ConfigValueFactory.fromAnyRef(null);
@@ -59,7 +59,7 @@ public class ConfigLoaderTest {
 
     private ConfigLoader loader;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         loader = new ConfigLoader(cliArgs);
     }
@@ -143,7 +143,7 @@ public class ConfigLoaderTest {
         assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(true));
     }
 
-    @Test(expected = RskConfigurationException.class)
+    @Test
     public void detectUnexpectedKeyProblem() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
@@ -152,10 +152,10 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", NULL_VALUE);
 
-        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
+        Assertions.assertThrows(RskConfigurationException.class, () -> loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig));
     }
 
-    @Test(expected = RskConfigurationException.class)
+    @Test
     public void detectExpectedScalarValueProblemInObject() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
@@ -164,11 +164,10 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", EMPTY_OBJECT_VALUE);
 
-        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
+        Assertions.assertThrows(RskConfigurationException.class, () -> loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig));
     }
 
-    @Parameterized.Parameters
-    @Test(expected = RskConfigurationException.class)
+    @Test
     public void detectExpectedScalarValueProblemInList() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
@@ -177,7 +176,7 @@ public class ConfigLoaderTest {
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", EMPTY_LIST_VALUE);
 
-        loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig);
+        Assertions.assertThrows(RskConfigurationException.class, () -> loadConfigMocked(defaultConfig, expectedConfig, loader::getConfig));
     }
 
     @Test

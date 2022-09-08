@@ -25,11 +25,11 @@ import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
+@Disabled
 public class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 
@@ -52,7 +52,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getPendingFederatorPublicKey", false,200, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
@@ -60,7 +60,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(fn,true,200, stats);
         executeTestCaseSection(fn,false,200, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {

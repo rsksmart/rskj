@@ -22,8 +22,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +37,7 @@ public class TransactionGatewayTest {
     private TransactionGateway gateway;
     private Transaction tx;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.channelManager = mock(ChannelManager.class);
         this.transactionPool = mock(TransactionPool.class);

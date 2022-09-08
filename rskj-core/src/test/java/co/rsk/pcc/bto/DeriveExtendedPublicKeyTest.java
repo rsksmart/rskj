@@ -23,16 +23,16 @@ import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
 public class DeriveExtendedPublicKeyTest {
     private DeriveExtendedPublicKey method;
 
-    @Before
+    @BeforeEach
     public void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
@@ -42,43 +42,43 @@ public class DeriveExtendedPublicKeyTest {
     @Test
     public void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
-        Assert.assertEquals("deriveExtendedPublicKey", fn.name);
+        Assertions.assertEquals("deriveExtendedPublicKey", fn.name);
 
-        Assert.assertEquals(2, fn.inputs.length);
-        Assert.assertEquals(SolidityType.getType("string").getName(), fn.inputs[0].type.getName());
-        Assert.assertEquals(SolidityType.getType("string").getName(), fn.inputs[1].type.getName());
+        Assertions.assertEquals(2, fn.inputs.length);
+        Assertions.assertEquals(SolidityType.getType("string").getName(), fn.inputs[0].type.getName());
+        Assertions.assertEquals(SolidityType.getType("string").getName(), fn.inputs[1].type.getName());
 
-        Assert.assertEquals(1, fn.outputs.length);
-        Assert.assertEquals(SolidityType.getType("string").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(1, fn.outputs.length);
+        Assertions.assertEquals(SolidityType.getType("string").getName(), fn.outputs[0].type.getName());
     }
 
     @Test
     public void shouldBeEnabled() {
-        Assert.assertTrue(method.isEnabled());
+        Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
     public void shouldAllowAnyTypeOfCall() {
-        Assert.assertFalse(method.onlyAllowsLocalCalls());
+        Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
     public void executes() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "tpubDCGMkPKredy7oh6zw8f4ExWFdTgQCrAHToF1ytny3gbVy9GkUNK2Nqh7NbKbh8dkd5VtjUiLJPkbEkeg29NVHwxYwzHJFt9SazGLZrrU4Y4",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                         "2/3/4"
                 }));
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "tpubDJ28nwFGUypUD6i8eGCQfMkwNGxzzabA5Mh7AcUdwm6ziFxCSWjy4HyhPXH5uU2ovdMMYLT9W3g3MrGo52TrprMvX8o1dzT2ZGz1pwCPTNv",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                         "0/0/0/0/0/0"
                 }));
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "tpubD8fY35uPCY1rUjMUZwhkGUFi33pwkffMEBaCsTSw1he2AbM6DMbPaRR2guvk5qTWDfE9ubFB5pzuUNnMtsqbCeKAAjfepSvEWyetyF9Q4fG",
                 method.execute(new Object[]{
                         "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -208,7 +208,7 @@ public class DeriveExtendedPublicKeyTest {
 
     @Test
     public void gasIsCorrect() {
-        Assert.assertEquals(107_000, method.getGas(new Object[]{
+        Assertions.assertEquals(107_000, method.getGas(new Object[]{
                 "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                 "2/3/4"
         }, new byte[]{}));
@@ -217,9 +217,9 @@ public class DeriveExtendedPublicKeyTest {
     private void assertFailsWithMessage(Runnable statement, String message) {
         try {
             statement.run();
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains(message));
+            Assertions.assertTrue(e.getMessage().contains(message));
         }
     }
 

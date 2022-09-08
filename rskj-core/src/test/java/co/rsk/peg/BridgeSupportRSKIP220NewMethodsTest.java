@@ -11,9 +11,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -38,7 +38,7 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     private BtcBlock btcBlock;
     private BridgeSupport bridgeSupport;
 
-    @Before
+    @BeforeEach
     public void setUpOnEachTest() throws BlockStoreException {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
@@ -76,14 +76,14 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     public void getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
         byte[] result = bridgeSupport.getBtcBlockchainBestBlockHeader();
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
     public void getBtcBlockchainBlockHeaderByHash() throws BlockStoreException, IOException {
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(hash);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
@@ -96,8 +96,8 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(unknownHash);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHeight(20);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
@@ -133,8 +133,8 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants,

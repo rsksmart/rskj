@@ -20,9 +20,9 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -34,7 +34,7 @@ public class ExtraDataRuleTests {
     private BlockHeader blockHeader;
     private Block block;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
@@ -47,7 +47,7 @@ public class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
@@ -65,6 +65,6 @@ public class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block));
     }
 }

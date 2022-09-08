@@ -1,7 +1,7 @@
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -22,37 +22,37 @@ public class IpUtilsTest {
     @Test
     public void parseIPv6() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
     public void parseIPv6NoPort() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_NO_PORT);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
     public void parseIPv6InvalidFormat() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_INVALID);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
     public void parseIPv4() {
         InetSocketAddress result = IpUtils.parseAddress(IPV4_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
     public void parseIPv4NoPort() {
         InetSocketAddress result = IpUtils.parseAddress(IPV4_NO_PORT);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
     public void parseHostnameWithPort() {
         InetSocketAddress result = IpUtils.parseAddress(HOSTNAME_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
@@ -64,7 +64,7 @@ public class IpUtilsTest {
         addresses.add(IPV4_WITH_PORT);
         addresses.add(IPV4_NO_PORT);
         List<InetSocketAddress> result = IpUtils.parseAddresses(addresses);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(2, result.size());
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(2, result.size());
     }
 }

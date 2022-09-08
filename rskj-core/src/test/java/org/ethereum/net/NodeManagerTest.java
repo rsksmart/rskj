@@ -24,9 +24,9 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
@@ -43,7 +43,7 @@ public class NodeManagerTest {
     private PeerExplorer peerExplorer;
     private SystemProperties config;
 
-    @Before
+    @BeforeEach
     public void initMocks(){
         peerExplorer = Mockito.mock(PeerExplorer.class);
         config = Mockito.mock(SystemProperties.class);
@@ -71,13 +71,13 @@ public class NodeManagerTest {
 
         List<NodeHandler> availableNodes = nodeManager.getNodes(nodesInUse);
 
-        Assert.assertEquals(1, availableNodes.size());
-        Assert.assertEquals(NODE_ID_2, availableNodes.get(0).getNode().getHexId());
+        Assertions.assertEquals(1, availableNodes.size());
+        Assertions.assertEquals(NODE_ID_2, availableNodes.get(0).getNode().getHexId());
 
         //With nodes in use
         nodesInUse.add(NODE_ID_2);
         availableNodes = nodeManager.getNodes(nodesInUse);
-        Assert.assertEquals(0, availableNodes.size());
+        Assertions.assertEquals(0, availableNodes.size());
 
     }
 
@@ -96,7 +96,7 @@ public class NodeManagerTest {
 
         List<NodeHandler> availableNodes = nodeManager.getNodes(nodesInUse);
 
-        Assert.assertEquals(0, availableNodes.size());
+        Assertions.assertEquals(0, availableNodes.size());
 
     }
 
@@ -118,7 +118,7 @@ public class NodeManagerTest {
 
         List<NodeHandler> availableNodes = nodeManager.getNodes(nodesInUse);
 
-        Assert.assertEquals(2, availableNodes.size());
+        Assertions.assertEquals(2, availableNodes.size());
     }
 
     @Test
@@ -135,7 +135,7 @@ public class NodeManagerTest {
             nodeManager.getNodeStatistics(node);
         }
         Map<String, NodeHandler> nodeHandlerMap = TestUtils.getInternalState(nodeManager, "nodeHandlerMap");
-        Assert.assertTrue(nodeHandlerMap.size() <= NodeManager.NODES_TRIM_THRESHOLD);
+        Assertions.assertTrue(nodeHandlerMap.size() <= NodeManager.NODES_TRIM_THRESHOLD);
     }
 
 }

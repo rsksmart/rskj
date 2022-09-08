@@ -19,8 +19,8 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -36,8 +36,8 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactions();
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isEmpty());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isEmpty());
     }
 
     @Test
@@ -45,11 +45,11 @@ public class TransactionSetTest {
         TransactionSet txset = new TransactionSet();
         Transaction transaction = createSampleTransaction();
 
-        Assert.assertFalse(txset.hasTransaction(transaction));
+        Assertions.assertFalse(txset.hasTransaction(transaction));
         List<Transaction> result = txset.getTransactions();
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isEmpty());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isEmpty());
     }
 
     @Test
@@ -62,9 +62,9 @@ public class TransactionSetTest {
         txset.addTransaction(transaction1);
         txset.addTransaction(transaction2);
 
-        Assert.assertTrue(txset.hasTransaction(transaction1));
-        Assert.assertTrue(txset.hasTransaction(transaction2));
-        Assert.assertFalse(txset.hasTransaction(transaction3));
+        Assertions.assertTrue(txset.hasTransaction(transaction1));
+        Assertions.assertTrue(txset.hasTransaction(transaction2));
+        Assertions.assertFalse(txset.hasTransaction(transaction3));
     }
 
     @Test
@@ -83,14 +83,14 @@ public class TransactionSetTest {
         txset.removeTransactionByHash(transaction2.getHash());
         txset.removeTransactionByHash(transaction3.getHash());
 
-        Assert.assertFalse(txset.hasTransaction(transaction1));
-        Assert.assertFalse(txset.hasTransaction(transaction2));
-        Assert.assertFalse(txset.hasTransaction(transaction3));
+        Assertions.assertFalse(txset.hasTransaction(transaction1));
+        Assertions.assertFalse(txset.hasTransaction(transaction2));
+        Assertions.assertFalse(txset.hasTransaction(transaction3));
 
-        Assert.assertTrue(txset.getTransactions().isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction1.getSender()).isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction2.getSender()).isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction3.getSender()).isEmpty());
+        Assertions.assertTrue(txset.getTransactions().isEmpty());
+        Assertions.assertTrue(txset.getTransactionsWithSender(transaction1.getSender()).isEmpty());
+        Assertions.assertTrue(txset.getTransactionsWithSender(transaction2.getSender()).isEmpty());
+        Assertions.assertTrue(txset.getTransactionsWithSender(transaction3.getSender()).isEmpty());
     }
 
     @Test
@@ -102,10 +102,10 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactions();
 
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(tx.getHash(), result.get(0).getHash());
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(tx.getHash(), result.get(0).getHash());
     }
 
     @Test
@@ -118,10 +118,10 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactions();
 
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 
     @Test
@@ -130,8 +130,8 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactionsWithSender(new RskAddress(new byte[20]));
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.isEmpty());
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isEmpty());
     }
 
     @Test
@@ -143,10 +143,10 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
 
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 
     @Test
@@ -159,9 +159,9 @@ public class TransactionSetTest {
 
         List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
 
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(transaction.getHash(), result.get(0).getHash());
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(transaction.getHash(), result.get(0).getHash());
     }
 }

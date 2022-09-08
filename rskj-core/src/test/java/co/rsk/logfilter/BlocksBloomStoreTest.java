@@ -3,8 +3,8 @@ package co.rsk.logfilter;
 import org.ethereum.core.Bloom;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
@@ -17,10 +17,10 @@ public class BlocksBloomStoreTest {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
-        Assert.assertEquals(0, blocksBloomStore.firstNumberInRange(0));
-        Assert.assertEquals(0, blocksBloomStore.firstNumberInRange(1));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks()));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks() * 2L - 1));
+        Assertions.assertEquals(0, blocksBloomStore.firstNumberInRange(0));
+        Assertions.assertEquals(0, blocksBloomStore.firstNumberInRange(1));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks()));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks() * 2L - 1));
     }
 
     @Test
@@ -28,10 +28,10 @@ public class BlocksBloomStoreTest {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(0));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(1));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() * 2L - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks()));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() * 2L - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks() * 2L - 1));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(0));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(1));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks() * 2L - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks()));
+        Assertions.assertEquals(blocksBloomStore.getNoBlocks() * 2L - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks() * 2L - 1));
     }
 
     @Test
@@ -39,17 +39,17 @@ public class BlocksBloomStoreTest {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
-        Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(0));
-        Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(1));
-        Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks() - 1));
-        Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
+        Assertions.assertNull(blocksBloomStore.getBlocksBloomByNumber(0));
+        Assertions.assertNull(blocksBloomStore.getBlocksBloomByNumber(1));
+        Assertions.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks() - 1));
+        Assertions.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
     }
 
     @Test
     public void hasBlockNumberZero() {
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
 
-        Assert.assertFalse(blocksBloomStore.hasBlockNumber(0));
+        Assertions.assertFalse(blocksBloomStore.hasBlockNumber(0));
 
         BlocksBloom blocksBloom = new BlocksBloom();
         Bloom bloom1 = new Bloom();
@@ -60,7 +60,7 @@ public class BlocksBloomStoreTest {
 
         blocksBloomStore.addBlocksBloom(blocksBloom);
 
-        Assert.assertTrue(blocksBloomStore.hasBlockNumber(0));
+        Assertions.assertTrue(blocksBloomStore.hasBlockNumber(0));
     }
 
     @Test
@@ -75,9 +75,9 @@ public class BlocksBloomStoreTest {
 
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, internalStore);
 
-        Assert.assertFalse(blocksBloomStore.hasBlockNumber(0));
-        Assert.assertTrue(blocksBloomStore.hasBlockNumber(64));
-        Assert.assertTrue(blocksBloomStore.hasBlockNumber(65));
+        Assertions.assertFalse(blocksBloomStore.hasBlockNumber(0));
+        Assertions.assertTrue(blocksBloomStore.hasBlockNumber(64));
+        Assertions.assertTrue(blocksBloomStore.hasBlockNumber(65));
     }
 
     @Test
@@ -100,9 +100,9 @@ public class BlocksBloomStoreTest {
 
         BlocksBloom actualBlocksBloom = blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks());
 
-        Assert.assertEquals(blocksBloom.fromBlock(), actualBlocksBloom.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), actualBlocksBloom.toBlock());
-        Assert.assertEquals(blocksBloom.getBloom(), actualBlocksBloom.getBloom());
+        Assertions.assertEquals(blocksBloom.fromBlock(), actualBlocksBloom.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), actualBlocksBloom.toBlock());
+        Assertions.assertEquals(blocksBloom.getBloom(), actualBlocksBloom.getBloom());
     }
 
     @Test
@@ -126,26 +126,26 @@ public class BlocksBloomStoreTest {
 
         BlocksBloom actualBlocksBloom = blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks());
 
-        Assert.assertEquals(blocksBloom.fromBlock(), actualBlocksBloom.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), actualBlocksBloom.toBlock());
-        Assert.assertEquals(blocksBloom.getBloom(), actualBlocksBloom.getBloom());
+        Assertions.assertEquals(blocksBloom.fromBlock(), actualBlocksBloom.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), actualBlocksBloom.toBlock());
+        Assertions.assertEquals(blocksBloom.getBloom(), actualBlocksBloom.getBloom());
 
-        Assert.assertNotNull(dataSource.get(BlocksBloomStore.longToKey(blocksBloomStore.getNoBlocks())));
+        Assertions.assertNotNull(dataSource.get(BlocksBloomStore.longToKey(blocksBloomStore.getNoBlocks())));
 
         BlocksBloom result = BlocksBloomEncoder.decode(dataSource.get(BlocksBloomStore.longToKey(blocksBloomStore.getNoBlocks())));
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), result.toBlock());
-        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), result.toBlock());
+        Assertions.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
 
         BlocksBloomStore blocksBloomStore2 = new BlocksBloomStore(64, 0, dataSource);
 
         BlocksBloom result2 = blocksBloomStore2.getBlocksBloomByNumber(blocksBloom.fromBlock());
 
-        Assert.assertNotNull(result2);
-        Assert.assertEquals(blocksBloom.fromBlock(), result2.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), result2.toBlock());
-        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result2.getBloom().getData());
+        Assertions.assertNotNull(result2);
+        Assertions.assertEquals(blocksBloom.fromBlock(), result2.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), result2.toBlock());
+        Assertions.assertArrayEquals(blocksBloom.getBloom().getData(), result2.getBloom().getData());
     }
 }

@@ -25,10 +25,10 @@ import co.rsk.trie.Trie;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,10 +36,10 @@ import org.bouncycastle.util.encoders.Hex;
 import java.math.BigInteger;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class BlockTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
@@ -89,7 +89,7 @@ public class BlockTest {
             byte[] encodedAccountState = accountState.getEncoded();
             byte[] accountKey = Hex.decode(key.toString());
             state = state.put(accountKey, encodedAccountState);
-            Assert.assertArrayEquals(encodedAccountState, state.get(accountKey));
+            Assertions.assertArrayEquals(encodedAccountState, state.get(accountKey));
         }
 
         logger.info("root: {}", state.getHash());

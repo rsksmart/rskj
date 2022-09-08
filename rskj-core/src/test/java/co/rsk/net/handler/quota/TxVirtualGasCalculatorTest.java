@@ -25,20 +25,19 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Optional;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
 public class TxVirtualGasCalculatorTest {
 
     private static final long BLOCK_MIN_GAS_PRICE = 59240;
@@ -46,65 +45,11 @@ public class TxVirtualGasCalculatorTest {
     private static final long BLOCK_GAS_LIMIT = 6800000;
     private static final long DEFAULT_NONCE = 100;
 
-    @Parameterized.Parameter(value = 0)
-    public String description;
+    // TODO:I check if this output is fine
 
-    @Parameterized.Parameter(value = 1)
-    public Transaction newTransaction;
-
-    @Parameterized.Parameter(value = 2)
-    public Transaction replacedTransaction;
-
-    @Parameterized.Parameter(value = 3)
-    public long accountNonce;
-
-    @Parameterized.Parameter(value = 4)
-    public double futureNonceFactor;
-
-    @Parameterized.Parameter(value = 5)
-    public double lowGasPriceFactor;
-
-    @Parameterized.Parameter(value = 6)
-    public double nonceFactor;
-
-    @Parameterized.Parameter(value = 7)
-    public double sizeFactor;
-
-    @Parameterized.Parameter(value = 8)
-    public double replacementFactor;
-
-    @Parameterized.Parameter(value = 9)
-    public double gasLimitFactor;
-
-    @Parameterized.Parameters(name = "{index}: expect {0} consumed virtual gas to be txGasLimit * {4} * {5} * {6} * {7} * {8} * {9}")
-    public static Collection<Object[]> data() {
-        long smallGasPrice = BLOCK_AVG_GAS_PRICE;
-        Transaction smallFactorsTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
-        long smallNonce = 0;
-        Transaction highNonceFactorTx = tx(smallNonce, 100_000, smallGasPrice, 1024);
-        Transaction highFutureNonceFactorTx = tx(DEFAULT_NONCE + 100, 100_000, smallGasPrice, 1024);
-        Transaction highSizeFactorTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 100_000);
-        Transaction highLowGasPriceFactorTx = tx(DEFAULT_NONCE, 100_000, BLOCK_MIN_GAS_PRICE, 1024);
-        Transaction highGasLimitFactorTx = tx(DEFAULT_NONCE, BLOCK_GAS_LIMIT, smallGasPrice, 1024);
-        Transaction highReplacementFactorTx = tx(DEFAULT_NONCE, 100_000, Double.valueOf(smallGasPrice * 1.1).longValue(), 1024);
-        Transaction highReplacementFactorTxReplaced = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
-        Transaction topFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, Double.valueOf(BLOCK_MIN_GAS_PRICE * 1.1).longValue(), 100_000);
-        Transaction topFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
-
-        return Arrays.asList(new Object[][]{
-                {"Small factor", smallFactorsTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824},
-                {"High nonce factor", highNonceFactorTx, null, smallNonce, 1, 1, 5, 1.04096, 1, 1.058824},
-                {"High future nonce factor", highFutureNonceFactorTx, null, DEFAULT_NONCE, 2, 1, 1.039604, 1.04096, 1, 1.058824},
-                {"High size factor", highSizeFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 5, 1, 1.058824},
-                {"High low gasPrice factor", highLowGasPriceFactorTx, null, DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824},
-                {"High gasLimit factor", highGasLimitFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5},
-                {"High replacement factor", highReplacementFactorTx, highReplacementFactorTxReplaced, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824},
-                {"Top factors", topFactorsTx, topFactorsTxReplaced, smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
-        });
-    }
-
-    @Test
-    public void calculate() {
+    @ParameterizedTest(name = "{index}: expect {0} consumed virtual gas to be txGasLimit * {4} * {5} * {6} * {7} * {8} * {9}")
+    @ArgumentsSource(TransactionArgumentsProvider.class)
+    public void calculate(String description, Transaction newTransaction, Transaction replacedTransaction, long accountNonce, double futureNonceFactor, double lowGasPriceFactor, double nonceFactor, double sizeFactor, double replacementFactor, double gasLimitFactor) {
         TxVirtualGasCalculator txVirtualGasCalculator = TxVirtualGasCalculator.createWithAllFactors(accountNonce, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, BLOCK_AVG_GAS_PRICE);
         double expected = newTransaction.getGasLimitAsInteger().longValue() * futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         double actual = txVirtualGasCalculator.calculate(newTransaction, replacedTransaction);
@@ -130,6 +75,36 @@ public class TxVirtualGasCalculatorTest {
         when(mockedTx.getSize()).thenReturn(size);
 
         return mockedTx;
+    }
+
+    private static class TransactionArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            long smallGasPrice = BLOCK_AVG_GAS_PRICE;
+            Transaction smallFactorsTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
+            long smallNonce = 0;
+            Transaction highNonceFactorTx = tx(smallNonce, 100_000, smallGasPrice, 1024);
+            Transaction highFutureNonceFactorTx = tx(DEFAULT_NONCE + 100, 100_000, smallGasPrice, 1024);
+            Transaction highSizeFactorTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 100_000);
+            Transaction highLowGasPriceFactorTx = tx(DEFAULT_NONCE, 100_000, BLOCK_MIN_GAS_PRICE, 1024);
+            Transaction highGasLimitFactorTx = tx(DEFAULT_NONCE, BLOCK_GAS_LIMIT, smallGasPrice, 1024);
+            Transaction highReplacementFactorTx = tx(DEFAULT_NONCE, 100_000, Double.valueOf(smallGasPrice * 1.1).longValue(), 1024);
+            Transaction highReplacementFactorTxReplaced = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
+            Transaction topFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, Double.valueOf(BLOCK_MIN_GAS_PRICE * 1.1).longValue(), 100_000);
+            Transaction topFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
+
+            return Stream.of(
+                    Arguments.of("Small factor", smallFactorsTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824),
+                    Arguments.of("High nonce factor", highNonceFactorTx, null, smallNonce, 1, 1, 5, 1.04096, 1, 1.058824),
+                    Arguments.of("High future nonce factor", highFutureNonceFactorTx, null, DEFAULT_NONCE, 2, 1, 1.039604, 1.04096, 1, 1.058824),
+                    Arguments.of("High size factor", highSizeFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 5, 1, 1.058824),
+                    Arguments.of("High low gasPrice factor", highLowGasPriceFactorTx, null, DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824),
+                    Arguments.of("High gasLimit factor", highGasLimitFactorTx, null, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5),
+                    Arguments.of("High replacement factor", highReplacementFactorTx, highReplacementFactorTxReplaced, DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824),
+                    Arguments.of("Top factors", topFactorsTx, topFactorsTxReplaced, smallNonce, 2, 3.999727, 5, 5, 1.90909, 5)
+            );
+        }
     }
 
 }

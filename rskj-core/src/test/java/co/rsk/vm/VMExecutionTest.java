@@ -32,16 +32,16 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +56,7 @@ public class VMExecutionTest {
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 
-    @Before
+    @BeforeEach
     public void setup() {
         invoke = new ProgramInvokeMockImpl();
         compiler = new BytecodeCompiler();
@@ -67,8 +67,8 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0xa0", 1);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(0xa0), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(0xa0), stack.peek());
     }
 
     @Test
@@ -76,8 +76,8 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 ADD", 3);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(3), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(3), stack.peek());
     }
 
     @Test
@@ -85,8 +85,8 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x03 PUSH1 0x02 MUL", 3);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(6), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(6), stack.peek());
     }
 
     @Test
@@ -94,16 +94,16 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 SUB", 3);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
     private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
         Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
     @Test
@@ -155,8 +155,8 @@ public class VMExecutionTest {
         Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
     @Test
@@ -281,8 +281,8 @@ public class VMExecutionTest {
         Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
     @Test
@@ -383,32 +383,32 @@ public class VMExecutionTest {
         Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testSAR3ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
-        executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations));
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testSHL1ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations));
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testSHR1ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations));
     }
 
     @Test
@@ -416,8 +416,8 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
     @Test
@@ -425,9 +425,9 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x00 DUPN", 3);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(2, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
-        Assert.assertEquals(DataWord.valueOf(1), stack.get(0));
+        Assertions.assertEquals(2, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.get(0));
     }
 
     @Test
@@ -435,11 +435,11 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x03 DUPN", 6);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(5, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(5, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
 
         for (int k = 0; k < 4; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+            Assertions.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test
@@ -447,21 +447,21 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x13 DUPN", 22);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(21, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(21, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
 
         for (int k = 0; k < 20; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+            Assertions.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
-    @Test(expected = Program.StackTooSmallException.class)
+    @Test
     public void dupnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21);
+        Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21));
     }
 
-    @Test(expected = Program.StackTooSmallException.class)
+    @Test
     public void dupnTooManyItemsWithOverflow() {
-        executeCode("PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff DUPN", 3);
+        Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff DUPN", 3));
     }
 
     @Test
@@ -472,10 +472,10 @@ public class VMExecutionTest {
         Program program = playCodeWithActivationConfig("PUSH1 0x01 PUSH1 0x00 DUPN", activations);
         ProgramResult result = program.getResult();
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
-        Assert.assertEquals("Invalid operation code: opcode[a8], tx[<null>]", result.getException().getMessage());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getException());
+        Assertions.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assertions.assertEquals("Invalid operation code: opcode[a8], tx[<null>]", result.getException().getMessage());
     }
 
     @Test
@@ -483,9 +483,9 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", 4);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(2, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
-        Assert.assertEquals(DataWord.valueOf(2), stack.get(0));
+        Assertions.assertEquals(2, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(DataWord.valueOf(2), stack.get(0));
     }
 
     @Test
@@ -493,11 +493,11 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x02 SWAPN", 6);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(4, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
-        Assert.assertEquals(DataWord.valueOf(4), stack.get(0));
-        Assert.assertEquals(DataWord.valueOf(2), stack.get(1));
-        Assert.assertEquals(DataWord.valueOf(3), stack.get(2));
+        Assertions.assertEquals(4, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(DataWord.valueOf(4), stack.get(0));
+        Assertions.assertEquals(DataWord.valueOf(2), stack.get(1));
+        Assertions.assertEquals(DataWord.valueOf(3), stack.get(2));
     }
 
     @Test
@@ -505,22 +505,23 @@ public class VMExecutionTest {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x12 SWAPN", 22);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(20, stack.size());
-        Assert.assertEquals(DataWord.valueOf(1), stack.peek());
-        Assert.assertEquals(DataWord.valueOf(20), stack.get(0));
+        Assertions.assertEquals(20, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(1), stack.peek());
+        Assertions.assertEquals(DataWord.valueOf(20), stack.get(0));
 
         for (int k = 1; k < 19; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+            Assertions.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
-    @Test(expected = Program.StackTooSmallException.class)
+    @Test
     public void swapnTooManyItemsWithOverflow() {
-        executeCode("PUSH1 0x01 PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff SWAPN", 4);
+        ;
+        Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff SWAPN", 4));
     }
 
-    @Test(expected = Program.StackTooSmallException.class)
+    @Test
     public void swapnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22);
+        Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22));
     }
 
 
@@ -532,10 +533,10 @@ public class VMExecutionTest {
         Program program = playCodeWithActivationConfig("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", activations);
         ProgramResult result = program.getResult();
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
-        Assert.assertEquals("Invalid operation code: opcode[a9], tx[<null>]", result.getException().getMessage());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getException());
+        Assertions.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assertions.assertEquals("Invalid operation code: opcode[a9], tx[<null>]", result.getException().getMessage());
     }
 
     @Test
@@ -544,8 +545,8 @@ public class VMExecutionTest {
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(42), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(42), stack.peek());
     }
 
     @Test
@@ -557,19 +558,19 @@ public class VMExecutionTest {
         Program program = playCodeWithActivationConfig("TXINDEX", activations);
         ProgramResult result = program.getResult();
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
-        Assert.assertEquals("Invalid operation code: opcode[aa], tx[<null>]", result.getException().getMessage());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getException());
+        Assertions.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assertions.assertEquals("Invalid operation code: opcode[aa], tx[<null>]", result.getException().getMessage());
     }
 
     @Test
     public void invalidJustAfterEndOfCode() {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
-            Assert.fail();
+            Assertions.fail();
         } catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3], tx[<null>]", ex.getMessage());
+            Assertions.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -577,9 +578,9 @@ public class VMExecutionTest {
     public void invalidJumpOutOfRange() {
         try {
             executeCode("PUSH1 0x05 JUMP", 2);
-            Assert.fail();
+            Assertions.fail();
         } catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5], tx[<null>]", ex.getMessage());
+            Assertions.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -587,9 +588,9 @@ public class VMExecutionTest {
     public void invalidNegativeJump() {
         try {
             executeCode("PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP", 2);
-            Assert.fail();
+            Assertions.fail();
         } catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1], tx[<null>]", ex.getMessage());
+            Assertions.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -597,9 +598,9 @@ public class VMExecutionTest {
     public void invalidTooFarJump() {
         try {
             executeCode("PUSH1 0xff JUMP", 2);
-            Assert.fail();
+            Assertions.fail();
         } catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255], tx[<null>]", ex.getMessage());
+            Assertions.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -610,12 +611,12 @@ public class VMExecutionTest {
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
-        Assert.assertNotNull(jumpdestSet);
-        Assert.assertEquals(4, jumpdestSet.size());
-        Assert.assertTrue(jumpdestSet.get(0));
-        Assert.assertFalse(jumpdestSet.get(1));
-        Assert.assertTrue(jumpdestSet.get(2));
-        Assert.assertTrue(jumpdestSet.get(3));
+        Assertions.assertNotNull(jumpdestSet);
+        Assertions.assertEquals(4, jumpdestSet.size());
+        Assertions.assertTrue(jumpdestSet.get(0));
+        Assertions.assertFalse(jumpdestSet.get(1));
+        Assertions.assertTrue(jumpdestSet.get(2));
+        Assertions.assertTrue(jumpdestSet.get(3));
     }
 
     @Test
@@ -625,12 +626,12 @@ public class VMExecutionTest {
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
-        Assert.assertNotNull(jumpdestSet);
-        Assert.assertEquals(4, jumpdestSet.size());
-        Assert.assertTrue(jumpdestSet.get(0));
-        Assert.assertFalse(jumpdestSet.get(1));
-        Assert.assertTrue(jumpdestSet.get(2));
-        Assert.assertTrue(jumpdestSet.get(3));
+        Assertions.assertNotNull(jumpdestSet);
+        Assertions.assertEquals(4, jumpdestSet.size());
+        Assertions.assertTrue(jumpdestSet.get(0));
+        Assertions.assertFalse(jumpdestSet.get(1));
+        Assertions.assertTrue(jumpdestSet.get(2));
+        Assertions.assertTrue(jumpdestSet.get(3));
     }
 
     @Test
@@ -671,10 +672,10 @@ public class VMExecutionTest {
     public void returnDataSizeBasicGasCost() {
         Program program = executeCode("0x3d", 1);
 
-        Assert.assertNotNull(program);
-        Assert.assertNotNull(program.getResult());
-        Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(2, program.getResult().getGasUsed());
+        Assertions.assertNotNull(program);
+        Assertions.assertNotNull(program.getResult());
+        Assertions.assertNull(program.getResult().getException());
+        Assertions.assertEquals(2, program.getResult().getGasUsed());
     }
 
     @Test
@@ -686,10 +687,10 @@ public class VMExecutionTest {
                 "0x3e",
         4);
 
-        Assert.assertNotNull(program);
-        Assert.assertNotNull(program.getResult());
-        Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(12, program.getResult().getGasUsed());
+        Assertions.assertNotNull(program);
+        Assertions.assertNotNull(program.getResult());
+        Assertions.assertNull(program.getResult().getException());
+        Assertions.assertEquals(12, program.getResult().getGasUsed());
     }
 
     @Test
@@ -701,10 +702,10 @@ public class VMExecutionTest {
                 "0x37",
         4);
 
-        Assert.assertNotNull(program);
-        Assert.assertNotNull(program.getResult());
-        Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(12, program.getResult().getGasUsed());
+        Assertions.assertNotNull(program);
+        Assertions.assertNotNull(program.getResult());
+        Assertions.assertNull(program.getResult().getException());
+        Assertions.assertEquals(12, program.getResult().getGasUsed());
     }
 
     @Test
@@ -724,16 +725,16 @@ public class VMExecutionTest {
 
     @Test
     public void chainIDIsCorrectOpcodeNumber(){
-        Assert.assertEquals(0x46, OpCodes.OP_CHAINID);
-        Assert.assertEquals(OpCode.CHAINID, OpCode.code((byte) 0x46));
+        Assertions.assertEquals(0x46, OpCodes.OP_CHAINID);
+        Assertions.assertEquals(OpCode.CHAINID, OpCode.code((byte) 0x46));
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testChainIDNotActivated(){
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP152)).thenReturn(false);
 
-        executeCHAINIDWithActivations(Constants.REGTEST_CHAIN_ID, activations);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCHAINIDWithActivations(Constants.REGTEST_CHAIN_ID, activations));
     }
 
     private void executeCHAINID(byte chainIDExpected) {
@@ -751,16 +752,16 @@ public class VMExecutionTest {
 
         Stack stack = program.getStack();
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(chainIDExpected), stack.peek());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(chainIDExpected), stack.peek());
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void selfBalanceFailsWithRSKIPNotActivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP151)).thenReturn(false);
 
-        executeCodeWithActivationConfig("SELFBALANCE", 1, activations);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCodeWithActivationConfig("SELFBALANCE", 1, activations));
     }
 
     @Test
@@ -779,9 +780,9 @@ public class VMExecutionTest {
 
         long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
 
-        Assert.assertEquals(selfBalanceGas, program.getResult().getGasUsed());
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(DataWord.valueOf(balanceValue), stack.peek());
+        Assertions.assertEquals(selfBalanceGas, program.getResult().getGasUsed());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(DataWord.valueOf(balanceValue), stack.peek());
     }
 
     @Test
@@ -802,16 +803,16 @@ public class VMExecutionTest {
                 " BALANCE", 2, activations);
         Stack stackBalance = programBalance.getStack();
 
-        Assert.assertEquals(1, stackSelfBalance.size());
+        Assertions.assertEquals(1, stackSelfBalance.size());
 
         DataWord selfBalance = stackSelfBalance.pop();
         DataWord balance = stackBalance.pop();
 
         long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
 
-        Assert.assertEquals(selfBalanceGas, programSelfBalance.getResult().getGasUsed());
-        Assert.assertEquals(selfBalance, DataWord.valueOf(balanceValue));
-        Assert.assertEquals(balance, selfBalance);
+        Assertions.assertEquals(selfBalanceGas, programSelfBalance.getResult().getGasUsed());
+        Assertions.assertEquals(selfBalance, DataWord.valueOf(balanceValue));
+        Assertions.assertEquals(balance, selfBalance);
     }
 
     @Test
@@ -847,11 +848,11 @@ public class VMExecutionTest {
         Program program = executeCode(codeToExecute, 7);
         Coin actualContractBalance = invoke.getRepository().getBalance(contractAddress);
         Stack stack = program.getStack();
-        Assert.assertEquals(1, stack.size());
+        Assertions.assertEquals(1, stack.size());
         String actualAddress = ByteUtil.toHexString(stack.pop().getLast20Bytes());
-        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
-        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
-        Assert.assertEquals(expectedContractBalance, actualContractBalance);
+        Assertions.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assertions.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assertions.assertEquals(expectedContractBalance, actualContractBalance);
     }
 
     private Program executeCode(String code, int nsteps) {

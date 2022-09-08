@@ -15,10 +15,10 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP124;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP132;
@@ -34,12 +34,12 @@ public class BridgeCostsTest {
     private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BridgeSupportFactory bridgeSupportFactory;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
     }
 
-    @Before
+    @BeforeEach
     public void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
@@ -67,7 +67,7 @@ public class BridgeCostsTest {
 
             byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
 
-            Assert.assertEquals(22000L + 2 * data.length, bridge.getGasForData(data));
+            Assertions.assertEquals(22000L + 2 * data.length, bridge.getGasForData(data));
         }
     }
 
@@ -91,7 +91,7 @@ public class BridgeCostsTest {
             if (numberOfHeaders > 1) {
                 cost += 1650L * (numberOfHeaders - 1);
             }
-            Assert.assertEquals(cost, bridge.getGasForData(data));
+            Assertions.assertEquals(cost, bridge.getGasForData(data));
         }
     }
 
@@ -116,7 +116,7 @@ public class BridgeCostsTest {
             if (numberOfHeaders > 1) {
                 cost += 3500L * (numberOfHeaders - 1);
             }
-            Assert.assertEquals(cost, bridge.getGasForData(data));
+            Assertions.assertEquals(cost, bridge.getGasForData(data));
         }
     }
 
@@ -146,7 +146,7 @@ public class BridgeCostsTest {
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
         bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
-        Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
+        Assertions.assertEquals(0, bridge.getGasForData(rskTx.getData()));
     }
 
     @Test
@@ -252,7 +252,7 @@ public class BridgeCostsTest {
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
         bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
-        Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
+        Assertions.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
     }
 
     private Block getGenesisBlock() {

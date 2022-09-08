@@ -22,8 +22,8 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -48,15 +48,15 @@ public class TransactionBuilderTest {
                 .nonce(2)
                 .build();
 
-        Assert.assertNotNull(tx);
-        Assert.assertArrayEquals(sender.getAddress().getBytes(), tx.getSender().getBytes());
-        Assert.assertArrayEquals(receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
-        Assert.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
-        Assert.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());
-        Assert.assertEquals(BigInteger.valueOf(2), new BigInteger(1, tx.getNonce()));
-        Assert.assertEquals(BigInteger.valueOf(21000), new BigInteger(1, tx.getGasLimit()));
-        Assert.assertNotNull(tx.getData());
-        Assert.assertEquals(0, tx.getData().length);
+        Assertions.assertNotNull(tx);
+        Assertions.assertArrayEquals(sender.getAddress().getBytes(), tx.getSender().getBytes());
+        Assertions.assertArrayEquals(receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
+        Assertions.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
+        Assertions.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());
+        Assertions.assertEquals(BigInteger.valueOf(2), new BigInteger(1, tx.getNonce()));
+        Assertions.assertEquals(BigInteger.valueOf(21000), new BigInteger(1, tx.getGasLimit()));
+        Assertions.assertNotNull(tx.getData());
+        Assertions.assertEquals(0, tx.getData().length);
     }
 
     @Test
@@ -67,6 +67,6 @@ public class TransactionBuilderTest {
 
         Set<String> hashesWithoutDuplicates = randomTxsHashes.stream().collect(Collectors.toSet());
 
-        Assert.assertEquals(randomTxsHashes.size(), hashesWithoutDuplicates.size());
+        Assertions.assertEquals(randomTxsHashes.size(), hashesWithoutDuplicates.size());
     }
 }

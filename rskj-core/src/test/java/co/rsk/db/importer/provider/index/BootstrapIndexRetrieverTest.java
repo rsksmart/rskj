@@ -5,8 +5,8 @@ import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataIndex;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -29,7 +29,7 @@ public class BootstrapIndexRetrieverTest {
                 mock(ObjectMapper.class)
         );
         List<BootstrapDataIndex> indices = bootstrapIndexRetriever.retrieve();
-        Assert.assertTrue(indices.isEmpty());
+        Assertions.assertTrue(indices.isEmpty());
     }
 
     @Test
@@ -50,6 +50,6 @@ public class BootstrapIndexRetrieverTest {
                 objectMapper
         );
         List<BootstrapDataIndex> indices = bootstrapIndexRetriever.retrieve();
-        Assert.assertTrue(indices.contains(bdi));
+        Assertions.assertTrue(indices.contains(bdi));
     }
 }

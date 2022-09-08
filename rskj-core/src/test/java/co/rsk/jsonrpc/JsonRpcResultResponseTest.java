@@ -18,23 +18,24 @@
 package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonRpcResultResponseTest {
 	private ObjectMapper serializer = new ObjectMapper();
 
 	@Test
 	public void serializeResponseWithResult() throws IOException {
-		
+
 		String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"result\":true}";
-		
+
 		JsonRpcResultResponse response = new JsonRpcResultResponse("48", new JsonRpcBooleanResult(true));
-		
-		assertThat(serializer.writeValueAsString(response), is(message));
+
+		MatcherAssert.assertThat(serializer.writeValueAsString(response), is(message));
 	}
 }

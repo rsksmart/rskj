@@ -5,9 +5,9 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -20,7 +20,7 @@ public class StatusResolverTest {
     private Genesis genesis;
     private BlockStore blockStore;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         genesis = mock(Genesis.class);
         blockStore = mock(BlockStore.class);
@@ -45,10 +45,10 @@ public class StatusResolverTest {
 
         Status status = target.currentStatus();
 
-        Assert.assertEquals(blockNumber, status.getBestBlockNumber());
-        Assert.assertEquals(hashBytes, status.getBestBlockHash());
-        Assert.assertEquals(hashBytes, status.getBestBlockParentHash());
-        Assert.assertEquals(totalDifficulty, status.getTotalDifficulty());
+        Assertions.assertEquals(blockNumber, status.getBestBlockNumber());
+        Assertions.assertEquals(hashBytes, status.getBestBlockHash());
+        Assertions.assertEquals(hashBytes, status.getBestBlockParentHash());
+        Assertions.assertEquals(totalDifficulty, status.getTotalDifficulty());
     }
 
 
@@ -65,10 +65,10 @@ public class StatusResolverTest {
 
         Status status = target.currentStatus();
 
-        Assert.assertEquals(0L, status.getBestBlockNumber());
-        Assert.assertEquals(genesisHash.getBytes(), status.getBestBlockHash());
-        Assert.assertEquals(parentHash.getBytes(), status.getBestBlockParentHash());
-        Assert.assertEquals(genesisDifficulty, status.getTotalDifficulty());
+        Assertions.assertEquals(0L, status.getBestBlockNumber());
+        Assertions.assertEquals(genesisHash.getBytes(), status.getBestBlockHash());
+        Assertions.assertEquals(parentHash.getBytes(), status.getBestBlockParentHash());
+        Assertions.assertEquals(genesisDifficulty, status.getTotalDifficulty());
 
     }
 }

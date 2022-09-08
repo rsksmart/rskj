@@ -29,7 +29,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class BlockEncodingTest {
 
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
-    @Test(expected = ArithmeticException.class)
+    @Test
     public void testBadBlockEncoding1() {
 
         List<Transaction> txs = new ArrayList<>();
@@ -86,11 +87,13 @@ public class BlockEncodingTest {
                 new byte[0]
         );
 
-        // Now decode, and re-encode
-        Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
         // must throw java.lang.ArithmeticException
-        parsedBlock.getGasLimit(); // forced parse
-
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            // Now decode, and re-encode
+            Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
+            // must throw java.lang.ArithmeticException
+            parsedBlock.getGasLimit(); // forced parse
+        });
     }
 
 }

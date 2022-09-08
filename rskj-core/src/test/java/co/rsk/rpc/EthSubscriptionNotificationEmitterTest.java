@@ -19,12 +19,12 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.subscribe.*;
 import io.netty.channel.Channel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class EthSubscriptionNotificationEmitterTest {
@@ -34,7 +34,7 @@ public class EthSubscriptionNotificationEmitterTest {
     private SyncNotificationEmitter sync;
     private EthSubscriptionNotificationEmitter emitter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         newHeads = mock(BlockHeaderNotificationEmitter.class);
         logs = mock(LogsNotificationEmitter.class);

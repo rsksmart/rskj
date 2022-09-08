@@ -18,10 +18,10 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
@@ -53,7 +53,7 @@ public class VMSpecificOpcodesPerformanceTest {
         return padZeroesLeft(Long.toHexString(loopCount), 4);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testCallsToExistentAccounts() {
         int gasCostPerCALLLoop = 755;
@@ -98,13 +98,13 @@ public class VMSpecificOpcodesPerformanceTest {
         //
         long gasUsed =program.getResult().getGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
-        Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
+        Assertions.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 
 
         printResults(stopWatch,gasCostPerCALLLoop);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testCallsToNonExistingContracts() {
         // IMPORTANT NODE
@@ -160,7 +160,7 @@ public class VMSpecificOpcodesPerformanceTest {
         //
         long gasUsed =program.getResult().getGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
-        Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
+        Assertions.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 
         printResults(stopWatch,gasCostPerCALLLoop);
     }
@@ -179,7 +179,7 @@ public class VMSpecificOpcodesPerformanceTest {
         String nsPerGasUnit = String.format("%.02f", CALLloopNanos *1.0/ gasCostPerCALLLoop);
         System.out.println("Time/gas for CALL lopp [ns]: " +nsPerGasUnit);
         // A block should take less than 400 msec to process
-        Assert.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
+        Assertions.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
@@ -212,7 +212,7 @@ public class VMSpecificOpcodesPerformanceTest {
         return new VM(vmConfig, precompiledContracts);
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();

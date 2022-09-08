@@ -28,9 +28,9 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@Ignore
+@Disabled
 public class ActiveFederationTest extends BridgePerformanceTestCase {
     public static List<FederationMember> getNRandomFederationMembers(int n) {
         List<FederationMember> result = new ArrayList<>();
@@ -82,7 +82,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false,500, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
@@ -90,7 +90,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {

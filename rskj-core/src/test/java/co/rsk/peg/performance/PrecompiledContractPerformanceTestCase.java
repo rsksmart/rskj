@@ -30,10 +30,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -105,20 +104,20 @@ public abstract class PrecompiledContractPerformanceTestCase {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.genesis();
     }
 
-    @AfterClass
+    @AfterAll
     public static void printStatsIfNotInSuite() throws Exception {
         if (!PrecompiledContractPerformanceTest.isRunning()) {
             PrecompiledContractPerformanceTest.printStats();
         }
     }
 
-    @Before
+    @BeforeEach
     public void setupCpuTime() {
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) {
@@ -130,12 +129,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
         thread.setThreadCpuTimeEnabled(true);
     }
 
-    @After
+    @AfterEach
     public void teardownCpuTime() {
         thread.setThreadCpuTimeEnabled(oldCpuTimeEnabled);
     }
 
-    @After
+    @AfterEach
     public void forceGC() {
         long sm = Runtime.getRuntime().freeMemory();
         VMPerformanceTest.forceGc();

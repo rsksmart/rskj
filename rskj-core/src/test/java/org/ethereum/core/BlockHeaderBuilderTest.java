@@ -28,20 +28,20 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private BlockHeaderBuilder blockHeaderBuilder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         blockHeaderBuilder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
     }

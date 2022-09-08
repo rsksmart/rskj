@@ -2,20 +2,20 @@ package org.ethereum.crypto.signature;
 
 import org.bitcoin.Secp256k1Context;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class Secp256k1ServiceNativeTest extends Secp256k1ServiceTest {
 
     private static final BigInteger BIG_NUMBER = new BigInteger(Hex.decode("3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4"));
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeMethod() {
         assumeTrue(Secp256k1Context.isEnabled());
     }

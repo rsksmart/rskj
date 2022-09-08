@@ -25,14 +25,14 @@ import co.rsk.peg.Federation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Random;
 
-@Ignore
+@Disabled
 public class RetiringFederationTest extends BridgePerformanceTestCase {
     private Federation retiringFederation;
 
@@ -70,7 +70,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false,500, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
@@ -78,7 +78,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {

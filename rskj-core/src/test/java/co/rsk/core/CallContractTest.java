@@ -28,8 +28,8 @@ import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -49,13 +49,13 @@ public class CallContractTest {
 
         ProgramResult result = callContract(world, account.getAddress(), new byte[0]);
 
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
 
         byte[] value = result.getHReturn();
 
-        Assert.assertNotNull(value);
-        Assert.assertEquals(32, value.length);
-        Assert.assertEquals(BigInteger.ONE, new BigInteger(1, value));
+        Assertions.assertNotNull(value);
+        Assertions.assertEquals(32, value.length);
+        Assertions.assertEquals(BigInteger.ONE, new BigInteger(1, value));
     }
 
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {

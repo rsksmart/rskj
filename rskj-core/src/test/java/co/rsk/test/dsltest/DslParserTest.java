@@ -20,8 +20,8 @@ package co.rsk.test.dsltest;
 
 import co.rsk.test.dsl.DslCommand;
 import co.rsk.test.dsl.DslParser;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -31,7 +31,7 @@ public class DslParserTest {
     public void getNoCommandFromEmptyString() {
         DslParser parser = new DslParser("");
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -40,13 +40,13 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg1", cmd.getArgument(0));
-        Assert.assertEquals("arg2", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg1", cmd.getArgument(0));
+        Assertions.assertEquals("arg2", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -55,13 +55,13 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg1", cmd.getArgument(0));
-        Assert.assertEquals("arg2", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg1", cmd.getArgument(0));
+        Assertions.assertEquals("arg2", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -70,13 +70,13 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg1", cmd.getArgument(0));
-        Assert.assertEquals("arg2", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg1", cmd.getArgument(0));
+        Assertions.assertEquals("arg2", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -85,13 +85,13 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg1", cmd.getArgument(0));
-        Assert.assertEquals("arg2", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg1", cmd.getArgument(0));
+        Assertions.assertEquals("arg2", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -100,13 +100,13 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg1", cmd.getArgument(0));
-        Assert.assertEquals("arg2", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg1", cmd.getArgument(0));
+        Assertions.assertEquals("arg2", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -115,11 +115,11 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do"));
-        Assert.assertEquals(0, cmd.getArity());
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do"));
+        Assertions.assertEquals(0, cmd.getArity());
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
@@ -128,20 +128,20 @@ public class DslParserTest {
 
         DslCommand cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do1"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg11", cmd.getArgument(0));
-        Assert.assertEquals("arg12", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do1"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg11", cmd.getArgument(0));
+        Assertions.assertEquals("arg12", cmd.getArgument(1));
 
         cmd = parser.nextCommand();
 
-        Assert.assertNotNull(cmd);
-        Assert.assertTrue(cmd.isCommand("do2"));
-        Assert.assertEquals(2, cmd.getArity());
-        Assert.assertEquals("arg21", cmd.getArgument(0));
-        Assert.assertEquals("arg22", cmd.getArgument(1));
+        Assertions.assertNotNull(cmd);
+        Assertions.assertTrue(cmd.isCommand("do2"));
+        Assertions.assertEquals(2, cmd.getArity());
+        Assertions.assertEquals("arg21", cmd.getArgument(0));
+        Assertions.assertEquals("arg22", cmd.getArgument(1));
 
-        Assert.assertNull(parser.nextCommand());
+        Assertions.assertNull(parser.nextCommand());
     }
 }

@@ -23,7 +23,7 @@ import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -195,6 +195,6 @@ public class LLLTest {
             lllCompilationError.printStackTrace();
         }
 
-        //Assert.assertEquals(0, ...);
+        //Assertions.assertEquals(0, ...);
     }
 }

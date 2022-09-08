@@ -22,16 +22,16 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +48,7 @@ public class ConstantsTest {
     private final ActivationConfig.ForBlock preRskip297Config = mock(ActivationConfig.ForBlock.class);
     private final ActivationConfig.ForBlock postRskip297Config = mock(ActivationConfig.ForBlock.class);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         when(preRskip297Config.isActive(eq(ConsensusRule.RSKIP297))).thenReturn(false);
         when(postRskip297Config.isActive(eq(ConsensusRule.RSKIP297))).thenReturn(true);

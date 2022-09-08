@@ -5,16 +5,16 @@ import co.rsk.peg.BridgeMethods;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.exception.VMException;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-@Ignore
+@Disabled
 public class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();

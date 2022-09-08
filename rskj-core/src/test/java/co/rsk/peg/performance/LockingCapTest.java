@@ -13,15 +13,15 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Ignore
+@Disabled
 public class LockingCapTest extends BridgePerformanceTestCase {
 
     private static final ECKey authorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("da6a5451bfd74829307ec6d4a8c55174d4859169f162a8ed8fcba8f7636e77cc"));
@@ -31,7 +31,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
 
     private ECKey sender;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -46,7 +46,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 "getLockingCap",
                 2000,
                 stats,
-                (environment, callResult) -> Assert.assertEquals(INITIAL_LOCKING_CAP, getCoinFromResult(callResult))
+                (environment, callResult) -> Assertions.assertEquals(INITIAL_LOCKING_CAP, getCoinFromResult(callResult))
         );
         BridgePerformanceTest.addStats(stats);
     }
@@ -66,7 +66,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, callResult) -> {
                     long currentLockingCap = ((Bridge)environment.getContract()).getLockingCap(null);
-                    Assert.assertEquals(newValue.get().longValue(), currentLockingCap);
+                    Assertions.assertEquals(newValue.get().longValue(), currentLockingCap);
                 }
         );
         BridgePerformanceTest.addStats(stats);
@@ -86,7 +86,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, callResult) -> {
                     Coin currentLockingCap = Coin.valueOf(((Bridge)environment.getContract()).getLockingCap(null));
-                    Assert.assertEquals(INITIAL_LOCKING_CAP, currentLockingCap);
+                    Assertions.assertEquals(INITIAL_LOCKING_CAP, currentLockingCap);
                 }
         );
         BridgePerformanceTest.addStats(stats);

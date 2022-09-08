@@ -20,11 +20,11 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.crypto.ECKey;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Created by android on 4/8/15.
@@ -34,7 +34,7 @@ public class EncryptionHandshakeTest {
     private ECKey remoteKey;
     private EncryptionHandshake initiator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         remoteKey = new ECKey();
         myKey = new ECKey();

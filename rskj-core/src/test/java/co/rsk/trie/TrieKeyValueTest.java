@@ -18,8 +18,8 @@
 
 package co.rsk.trie;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 11/01/2017.
@@ -29,8 +29,8 @@ public class TrieKeyValueTest {
     public void getNullForUnknownKey() {
         Trie trie = new Trie();
 
-        Assert.assertNull(trie.get(new byte[] { 0x01, 0x02, 0x03 }));
-        Assert.assertNull(trie.get("foo"));
+        Assertions.assertNull(trie.get(new byte[] { 0x01, 0x02, 0x03 }));
+        Assertions.assertNull(trie.get("foo"));
     }
 
     @Test
@@ -38,8 +38,8 @@ public class TrieKeyValueTest {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie.get("foo"));
     }
 
     @Test
@@ -47,21 +47,21 @@ public class TrieKeyValueTest {
         Trie trie = new Trie();
         Trie trie1 = trie.put("foo", "bar".getBytes());
         Trie trie2 = trie1.put("foo", "bar".getBytes());
-        Assert.assertNotNull(trie1.get("foo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie1.get("foo"));
-        Assert.assertNotNull(trie2.get("foo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie2.get("foo"));
-        Assert.assertSame(trie1, trie2);
+        Assertions.assertNotNull(trie1.get("foo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie1.get("foo"));
+        Assertions.assertNotNull(trie2.get("foo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie2.get("foo"));
+        Assertions.assertSame(trie1, trie2);
     }
     @Test
     public void putAndGetKeyValueTwiceWithDifferenteValues() {
         Trie trie = new Trie();
         Trie trie1 = trie.put("foo", "bar1".getBytes());
         Trie trie2 = trie1.put("foo", "bar2".getBytes());
-        Assert.assertNotNull(trie1.get("foo"));
-        Assert.assertArrayEquals("bar1".getBytes(), trie1.get("foo"));
-        Assert.assertNotNull(trie2.get("foo"));
-        Assert.assertArrayEquals("bar2".getBytes(), trie2.get("foo"));
+        Assertions.assertNotNull(trie1.get("foo"));
+        Assertions.assertArrayEquals("bar1".getBytes(), trie1.get("foo"));
+        Assertions.assertNotNull(trie2.get("foo"));
+        Assertions.assertArrayEquals("bar2".getBytes(), trie2.get("foo"));
     }
 
 
@@ -71,8 +71,8 @@ public class TrieKeyValueTest {
         byte[] value = TrieValueTest.makeValue(100);
 
         trie = trie.put("foo", value);
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals(value, trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals(value, trie.get("foo"));
     }
 
     @Test
@@ -80,7 +80,7 @@ public class TrieKeyValueTest {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes()).delete("foo");
-        Assert.assertNull(trie.get("foo"));
+        Assertions.assertNull(trie.get("foo"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class TrieKeyValueTest {
         Trie trie = new Trie();
 
         trie = trie.put("foo", TrieValueTest.makeValue(100)).delete("foo");
-        Assert.assertNull(trie.get("foo"));
+        Assertions.assertNull(trie.get("foo"));
     }
 
     @Test
@@ -96,8 +96,8 @@ public class TrieKeyValueTest {
         Trie trie = new Trie();
 
         trie = trie.put("", "bar".getBytes());
-        Assert.assertNotNull(trie.get(""));
-        Assert.assertArrayEquals("bar".getBytes(), trie.get(""));
+        Assertions.assertNotNull(trie.get(""));
+        Assertions.assertArrayEquals("bar".getBytes(), trie.get(""));
     }
 
     @Test
@@ -106,8 +106,8 @@ public class TrieKeyValueTest {
         byte[] value = TrieValueTest.makeValue(100);
 
         trie = trie.put("", value);
-        Assert.assertNotNull(trie.get(""));
-        Assert.assertArrayEquals(value, trie.get(""));
+        Assertions.assertNotNull(trie.get(""));
+        Assertions.assertArrayEquals(value, trie.get(""));
     }
 
     @Test
@@ -117,11 +117,11 @@ public class TrieKeyValueTest {
         trie = trie.put("foo", "bar".getBytes());
         trie = trie.put("bar", "foo".getBytes());
 
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie.get("foo"));
 
-        Assert.assertNotNull(trie.get("bar"));
-        Assert.assertArrayEquals("foo".getBytes(), trie.get("bar"));
+        Assertions.assertNotNull(trie.get("bar"));
+        Assertions.assertArrayEquals("foo".getBytes(), trie.get("bar"));
     }
 
     @Test
@@ -133,11 +133,11 @@ public class TrieKeyValueTest {
         trie = trie.put("foo", value1);
         trie = trie.put("bar", value2);
 
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals(value1, trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals(value1, trie.get("foo"));
 
-        Assert.assertNotNull(trie.get("bar"));
-        Assert.assertArrayEquals(value2, trie.get("bar"));
+        Assertions.assertNotNull(trie.get("bar"));
+        Assertions.assertArrayEquals(value2, trie.get("bar"));
     }
 
     @Test
@@ -147,11 +147,11 @@ public class TrieKeyValueTest {
         trie = trie.put("foo", "bar".getBytes());
         trie = trie.put("f", "42".getBytes());
 
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie.get("foo"));
 
-        Assert.assertNotNull(trie.get("f"));
-        Assert.assertArrayEquals("42".getBytes(), trie.get("f"));
+        Assertions.assertNotNull(trie.get("f"));
+        Assertions.assertArrayEquals("42".getBytes(), trie.get("f"));
     }
 
     @Test
@@ -163,11 +163,11 @@ public class TrieKeyValueTest {
         trie = trie.put("foo", value1);
         trie = trie.put("f", value2);
 
-        Assert.assertNotNull(trie.get("foo"));
-        Assert.assertArrayEquals(value1, trie.get("foo"));
+        Assertions.assertNotNull(trie.get("foo"));
+        Assertions.assertArrayEquals(value1, trie.get("foo"));
 
-        Assert.assertNotNull(trie.get("f"));
-        Assert.assertArrayEquals(value2, trie.get("f"));
+        Assertions.assertNotNull(trie.get("f"));
+        Assertions.assertArrayEquals(value2, trie.get("f"));
     }
 
     @Test
@@ -177,11 +177,11 @@ public class TrieKeyValueTest {
         trie = trie.put("f", "42".getBytes())
                 .put("fo", "bar".getBytes());
 
-        Assert.assertNotNull(trie.get("fo"));
-        Assert.assertArrayEquals("bar".getBytes(), trie.get("fo"));
+        Assertions.assertNotNull(trie.get("fo"));
+        Assertions.assertArrayEquals("bar".getBytes(), trie.get("fo"));
 
-        Assert.assertNotNull(trie.get("f"));
-        Assert.assertArrayEquals("42".getBytes(), trie.get("f"));
+        Assertions.assertNotNull(trie.get("f"));
+        Assertions.assertArrayEquals("42".getBytes(), trie.get("f"));
     }
 
     @Test
@@ -193,11 +193,11 @@ public class TrieKeyValueTest {
         trie = trie.put("f", value1)
                 .put("fo", value2);
 
-        Assert.assertNotNull(trie.get("fo"));
-        Assert.assertArrayEquals(value2, trie.get("fo"));
+        Assertions.assertNotNull(trie.get("fo"));
+        Assertions.assertArrayEquals(value2, trie.get("fo"));
 
-        Assert.assertNotNull(trie.get("f"));
-        Assert.assertArrayEquals(value1, trie.get("f"));
+        Assertions.assertNotNull(trie.get("f"));
+        Assertions.assertArrayEquals(value1, trie.get("f"));
     }
 
     @Test
@@ -211,7 +211,7 @@ public class TrieKeyValueTest {
             String key = k + "";
             byte[] expected = key.getBytes();
             byte[] value = trie.get(key);
-            Assert.assertArrayEquals(key, value, expected);
+            Assertions.assertArrayEquals(value, expected, key);
         }
     }
 
@@ -226,7 +226,7 @@ public class TrieKeyValueTest {
             String key = k + "";
             byte[] expected = TrieValueTest.makeValue(k + 100);
             byte[] value = trie.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -241,7 +241,7 @@ public class TrieKeyValueTest {
             String key = k + "";
             byte[] expected = key.getBytes();
             byte[] value = trie.get(key);
-            Assert.assertArrayEquals(key, value, expected);
+            Assertions.assertArrayEquals(value, expected, key);
         }
     }
 
@@ -256,7 +256,7 @@ public class TrieKeyValueTest {
             String key = k + "";
             byte[] expected = TrieValueTest.makeValue(k + 100);
             byte[] value = trie.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 }

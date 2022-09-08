@@ -22,10 +22,11 @@ package org.ethereum.util;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class HashUtilTest {
 
@@ -190,9 +191,9 @@ public class HashUtilTest {
         assertEquals(expectedResult, actualResult);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testToPrintableHash_NullPointerExceptionForNull() {
-        HashUtil.toPrintableHash(null);
+        Assertions.assertThrows(NullPointerException.class, () -> HashUtil.toPrintableHash(null));
     }
 
     private void runTestCalSaltAddr(String address, String saltString, String code, String expected){

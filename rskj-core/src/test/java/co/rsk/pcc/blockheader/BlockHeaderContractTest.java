@@ -50,9 +50,9 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +60,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,7 +94,7 @@ public class BlockHeaderContractTest {
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
@@ -426,26 +426,24 @@ public class BlockHeaderContractTest {
         executeAndAssertCoinbase(new BigInteger("3"), initialChainCoinbase);
     }
 
-    @Test(expected = VMException.class)
-    public void negativeBlockDepth() throws VMException {
+    @Test
+    public void negativeBlockDepth() {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
-        contract.execute(getCoinbaseFunction.encode(new BigInteger("-1")));
-
-        Assert.fail("Trying to access a block using a negative block depth should throw an exception");
+        Assertions.assertThrows(VMException.class, () -> contract.execute(getCoinbaseFunction.encode(new BigInteger("-1"))),
+                "Trying to access a block using a negative block depth should throw an exception");
     }
 
-    @Test(expected = VMException.class)
-    public void negativeUncleIndex() throws VMException {
+    @Test
+    public void negativeUncleIndex() {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
-        contract.execute(getUncleCoinbaseAddressFunction.encode(new BigInteger("1"), new BigInteger("-1")));
-
-        Assert.fail("Trying to access an uncle coinbase using a negative uncle index should throw an exception");
+        Assertions.assertThrows(VMException.class, () -> contract.execute(getUncleCoinbaseAddressFunction.encode(new BigInteger("1"), new BigInteger("-1")))
+                , "Trying to access an uncle coinbase using a negative uncle index should throw an exception");
     }
 
     private void executeAndAssertCoinbase(BigInteger blockDepth, String expectedCoinbase) throws VMException {
@@ -543,12 +541,12 @@ public class BlockHeaderContractTest {
 
     @Test
     public void hasNoDefaultMethod() {
-        Assert.assertFalse(contract.getDefaultMethod().isPresent());
+        Assertions.assertFalse(contract.getDefaultMethod().isPresent());
     }
 
     @Test
     public void hasNineMethods() {
-        Assert.assertEquals(9, contract.getMethods().size());
+        Assertions.assertEquals(9, contract.getMethods().size());
     }
 
     @Test
@@ -599,12 +597,12 @@ public class BlockHeaderContractTest {
     private void assertHasMethod(Class clazz, boolean withAccessor) {
         Optional<NativeMethod> method = contract.getMethods().stream()
                 .filter(m -> m.getClass() == clazz).findFirst();
-        Assert.assertTrue(method.isPresent());
-        Assert.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
+        Assertions.assertTrue(method.isPresent());
+        Assertions.assertEquals(executionEnvironment, method.get().getExecutionEnvironment());
         if (withAccessor) {
             Object accessor = TestUtils.getInternalState(method.get(), "blockAccessor");
-            Assert.assertNotNull(accessor);
-            Assert.assertEquals(BlockAccessor.class, accessor.getClass());
+            Assertions.assertNotNull(accessor);
+            Assertions.assertEquals(BlockAccessor.class, accessor.getClass());
         }
     }
 }

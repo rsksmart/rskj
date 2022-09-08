@@ -26,20 +26,19 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.mockito.Mockito.mock;
 
 public class GetMultisigScriptHashTest {
     private GetMultisigScriptHash method;
 
-    @Before
+    @BeforeEach
     public void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new GetMultisigScriptHash(executionEnvironment);
@@ -48,29 +47,29 @@ public class GetMultisigScriptHashTest {
     @Test
     public void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
-        Assert.assertEquals("getMultisigScriptHash", fn.name);
+        Assertions.assertEquals("getMultisigScriptHash", fn.name);
 
-        Assert.assertEquals(2, fn.inputs.length);
-        Assert.assertEquals(SolidityType.getType("int256").getName(), fn.inputs[0].type.getName());
-        Assert.assertEquals(SolidityType.getType("bytes[]").getName(), fn.inputs[1].type.getName());
+        Assertions.assertEquals(2, fn.inputs.length);
+        Assertions.assertEquals(SolidityType.getType("int256").getName(), fn.inputs[0].type.getName());
+        Assertions.assertEquals(SolidityType.getType("bytes[]").getName(), fn.inputs[1].type.getName());
 
-        Assert.assertEquals(1, fn.outputs.length);
-        Assert.assertEquals(SolidityType.getType("bytes").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(1, fn.outputs.length);
+        Assertions.assertEquals(SolidityType.getType("bytes").getName(), fn.outputs[0].type.getName());
     }
 
     @Test
     public void shouldBeEnabled() {
-        Assert.assertTrue(method.isEnabled());
+        Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
     public void shouldAllowAnyTypeOfCall() {
-        Assert.assertFalse(method.onlyAllowsLocalCalls());
+        Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
     public void executesWithAllCompressed() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
                         BigInteger.valueOf(8L),
@@ -96,7 +95,7 @@ public class GetMultisigScriptHashTest {
 
     @Test
     public void executesWithMixed() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
                         BigInteger.valueOf(8L),
@@ -227,22 +226,22 @@ public class GetMultisigScriptHashTest {
 
     @Test
     public void gasIsBaseIfLessThanOrEqualstoTwoKeysPassed() {
-        Assert.assertEquals(20_000L, method.getGas(new Object[]{
+        Assertions.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 null
         }, new byte[]{}));
-        Assert.assertEquals(20_000L, method.getGas(new Object[]{
+        Assertions.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                 }
         }, new byte[]{}));
-        Assert.assertEquals(20_000L, method.getGas(new Object[]{
+        Assertions.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                         Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7")
                 }
         }, new byte[]{}));
-        Assert.assertEquals(20_000L, method.getGas(new Object[]{
+        Assertions.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                         Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7"),
@@ -259,13 +258,13 @@ public class GetMultisigScriptHashTest {
             failed = true;
             exceptionHandler.accept(ex);
         }
-        Assert.assertTrue(failed);
+        Assertions.assertTrue(failed);
     }
 
     private void assertFails(Runnable runnable, String expectedMessage) {
         assertFails(runnable, (ex) -> {
-            Assert.assertEquals(NativeContractIllegalArgumentException.class, ex.getClass());
-            Assert.assertTrue(ex.getMessage().contains(expectedMessage));
+            Assertions.assertEquals(NativeContractIllegalArgumentException.class, ex.getClass());
+            Assertions.assertTrue(ex.getMessage().contains(expectedMessage));
         });
     }
 

@@ -10,16 +10,16 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class P2shP2wpkhBtcLockSenderTest {
 
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeConstants;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
@@ -28,14 +28,14 @@ public class P2shP2wpkhBtcLockSenderTest {
     @Test
     public void doesnt_parse_if_transaction_is_null() {
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(null));
+        Assertions.assertFalse(btcLockSender.tryParse(null));
     }
 
     @Test
     public void doesnt_parse_if_transaction_doesnt_have_witness() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         btcTx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         btcTx.setWitness(0, witness);
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         btcTx.setWitness(0, witness);
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -77,12 +77,12 @@ public class P2shP2wpkhBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertTrue(btcLockSender.tryParse(btcTx));
+        Assertions.assertTrue(btcLockSender.tryParse(btcTx));
 
         BtcECKey key = BtcECKey.fromPublicOnly(Hex.decode("02adeef95a8ffc5d1c4b1a480fd6d68e8b6cf14a65c903b147922150fbfbad91bc"));
-        Assert.assertEquals("2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", btcLockSender.getBTCAddress().toBase58());
-        Assert.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
-        Assert.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
+        Assertions.assertEquals("2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", btcLockSender.getBTCAddress().toBase58());
+        Assertions.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
+        Assertions.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -109,6 +109,6 @@ public class P2shP2wpkhBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 }

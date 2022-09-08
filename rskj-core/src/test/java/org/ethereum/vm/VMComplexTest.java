@@ -32,24 +32,24 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
  * @since 16.06.2014
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
@@ -58,7 +58,7 @@ public class VMComplexTest {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contract call recursive
     public void test1() {
 
@@ -131,7 +131,7 @@ public class VMComplexTest {
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contractB call contractA with data to storage
     public void test2() {
 
@@ -220,7 +220,7 @@ public class VMComplexTest {
         // TODO: check that the value pushed after exec is 1
     }
 
-    @Ignore
+    @Disabled
     @Test // contractB call contractA with return expectation
     public void test3() {
 
@@ -373,12 +373,12 @@ public class VMComplexTest {
     }
 
     @Test // CALL contract with too much gas
-    @Ignore
+    @Disabled
     public void test5() {
         // TODO CALL contract with gas > gasRemaining && gas > Long.MAX_VALUE
     }
 
-    @Ignore
+    @Disabled
     @Test // contractB call itself with code from contractA
     public void test6() {
         /**
@@ -457,7 +457,7 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost33
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contract call quadratic memory use
     public void test7() {
 
@@ -516,7 +516,7 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost31
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contract call quadratic memory use
     public void test8() {
 
@@ -575,7 +575,7 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost32
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contract call quadratic memory use
     public void test9() {
 
@@ -634,7 +634,7 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost32_zeroSize
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // contract call quadratic memory use
     public void test10() {
 

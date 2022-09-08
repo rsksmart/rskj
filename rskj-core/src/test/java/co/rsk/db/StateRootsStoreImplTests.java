@@ -22,10 +22,11 @@ import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class StateRootsStoreImplTests {
@@ -38,17 +39,17 @@ public class StateRootsStoreImplTests {
 
     private StateRootsStoreImpl stateRootsStore;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         dataSource = mock(KeyValueDataSource.class);
 
         stateRootsStore = new StateRootsStoreImpl(dataSource);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void newInstance_WhenPassNull_ThenThrowException() {
         //noinspection ConstantConditions
-        new StateRootsStoreImpl(null);
+        Assertions.assertThrows(NullPointerException.class, () -> new StateRootsStoreImpl(null));
     }
 
     @Test

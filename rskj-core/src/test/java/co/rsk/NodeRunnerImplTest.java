@@ -22,13 +22,13 @@ import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.ExecState;
 import org.ethereum.util.BuildInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class NodeRunnerImplTest {
@@ -36,7 +36,7 @@ public class NodeRunnerImplTest {
     private List<InternalService> internalServices;
     private NodeRunnerImpl runner;
 
-    @Before
+    @BeforeEach
     public void setup() {
         nodeContext = mock(NodeContext.class);
         internalServices = Arrays.asList(

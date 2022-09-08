@@ -24,7 +24,7 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -52,7 +52,7 @@ public class SimplePeer implements Peer {
             random.nextBytes(bytes);
             this.address = InetAddress.getByAddress(addressBytes);
         } catch (UnknownHostException e) {
-            Assert.fail("SimplePeer creation failed");
+            Assertions.fail("SimplePeer creation failed");
         }
     }
 
@@ -66,7 +66,7 @@ public class SimplePeer implements Peer {
             random.nextBytes(bytes);
             this.address = InetAddress.getByAddress(addressBytes);
         } catch (UnknownHostException e) {
-            Assert.fail("SimplePeer creation failed");
+            Assertions.fail("SimplePeer creation failed");
         }
     }
 

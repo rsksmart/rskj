@@ -23,8 +23,8 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
@@ -47,7 +47,7 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, null));
+        Assertions.assertFalse(pmgpv.isValid(header, null));
     }
 
     @Test
@@ -61,7 +61,7 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertTrue(pmgpv.isValid(header, null));
+        Assertions.assertTrue(pmgpv.isValid(header, null));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
 
     }
 
@@ -109,6 +109,6 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
     }
 }

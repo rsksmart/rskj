@@ -1,20 +1,19 @@
 package org.ethereum.net.server;
 
 import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.messages.Message;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.rlpx.MessageCodec;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import static junit.framework.TestCase.*;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.*;
 
 public class ChannelTest {
@@ -28,7 +27,7 @@ public class ChannelTest {
     private String remoteId;
     private Channel target;
 
-    @Before
+    @BeforeEach
     public void setup() {
         remoteId = "remoteId";
         messageQueue = mock(MessageQueue.class);
@@ -63,7 +62,7 @@ public class ChannelTest {
         target.setInetSocketAddress(inetSocketAddress);
         otherChannel.setInetSocketAddress(inetSocketAddress);
 
-        assertEquals(target, otherChannel);
+        Assertions.assertEquals(target, otherChannel);
     }
 
     @Test
@@ -89,7 +88,7 @@ public class ChannelTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 500);
 
         target.setInetSocketAddress(inetSocketAddress);
-        
-        assertEquals(inetAddress, target.getAddress());
+
+        Assertions.assertEquals(inetAddress, target.getAddress());
     }
 }

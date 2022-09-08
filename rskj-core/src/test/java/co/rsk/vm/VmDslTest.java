@@ -26,11 +26,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import javax.xml.crypto.Data;
 import java.io.FileNotFoundException;
 
 /**
@@ -48,30 +46,30 @@ public class VmDslTest {
 
         Block block = world.getBlockByName("b02");
 
-        Assert.assertNotNull(block);
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals(1, block.getTransactionsList().size());
 
         Transaction creationTransaction = world.getTransactionByName("tx01");
 
-        Assert.assertNotNull(creationTransaction);
+        Assertions.assertNotNull(creationTransaction);
 
         DataWord counterValue = world
                 .getRepositoryLocator()
                 .snapshotAt(block.getHeader())
                 .getStorageValue(creationTransaction.getContractAddress(), DataWord.ZERO);
 
-        Assert.assertNotNull(counterValue);
-        Assert.assertEquals(200, counterValue.intValue());
+        Assertions.assertNotNull(counterValue);
+        Assertions.assertEquals(200, counterValue.intValue());
 
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
 
-        Assert.assertNotNull(transactionReceipt);
+        Assertions.assertNotNull(transactionReceipt);
 
         byte[] status = transactionReceipt.getStatus();
 
-        Assert.assertNotNull(status);
-        Assert.assertEquals(1, status.length);
-        Assert.assertEquals(1, status[0]);
+        Assertions.assertNotNull(status);
+        Assertions.assertEquals(1, status.length);
+        Assertions.assertEquals(1, status[0]);
     }
 
     @Test
@@ -85,27 +83,27 @@ public class VmDslTest {
 
         Block block = world.getBlockByName("b02");
 
-        Assert.assertNotNull(block);
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals(1, block.getTransactionsList().size());
 
         Transaction creationTransaction = world.getTransactionByName("tx01");
 
-        Assert.assertNotNull(creationTransaction);
+        Assertions.assertNotNull(creationTransaction);
 
         DataWord counterValue = world
                 .getRepositoryLocator()
                 .snapshotAt(block.getHeader())
                 .getStorageValue(creationTransaction.getContractAddress(), DataWord.ZERO);
 
-        Assert.assertNull(counterValue);
+        Assertions.assertNull(counterValue);
 
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
 
-        Assert.assertNotNull(transactionReceipt);
+        Assertions.assertNotNull(transactionReceipt);
 
         byte[] status = transactionReceipt.getStatus();
 
-        Assert.assertNotNull(status);
-        Assert.assertEquals(0, status.length);
+        Assertions.assertNotNull(status);
+        Assertions.assertEquals(0, status.length);
     }
 }

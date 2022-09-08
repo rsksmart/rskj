@@ -28,14 +28,14 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.time.Clock;
 
 import static org.mockito.Mockito.spy;
@@ -45,8 +45,6 @@ import static org.mockito.Mockito.when;
  * Created by SerAdmin on 1/3/2018.
  */
 public class MainNetMinerTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
     private TestSystemProperties config;
     private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
@@ -56,7 +54,7 @@ public class MainNetMinerTest {
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
@@ -122,8 +120,8 @@ public class MainNetMinerTest {
 
             SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-            Assert.assertEquals("ERROR", result.getStatus());
-            Assert.assertNull(result.getBlockInfo());
+            Assertions.assertEquals("ERROR", result.getStatus());
+            Assertions.assertNull(result.getBlockInfo());
 
             Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
         } finally {
@@ -171,8 +169,8 @@ public class MainNetMinerTest {
         // Try to submit a block with invalid PoW, this should not eliminate the block from the cache
         SubmitBlockResult result1 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("ERROR", result1.getStatus());
-        Assert.assertNull(result1.getBlockInfo());
+        Assertions.assertEquals("ERROR", result1.getStatus());
+        Assertions.assertNull(result1.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
 
         // Now try to submit the same block, this should work fine since the block remains in the cache
@@ -183,15 +181,15 @@ public class MainNetMinerTest {
 
         SubmitBlockResult result2 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result2.getStatus());
-        Assert.assertNotNull(result2.getBlockInfo());
+        Assertions.assertEquals("OK", result2.getStatus());
+        Assertions.assertNotNull(result2.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
 
         // Finally, submit the same block again and validate that addNewMinedBlock is called again
         SubmitBlockResult result3 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result3.getStatus());
-        Assert.assertNotNull(result3.getBlockInfo());
+        Assertions.assertEquals("OK", result3.getStatus());
+        Assertions.assertNotNull(result3.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
         -------------------------------*/
         } finally {

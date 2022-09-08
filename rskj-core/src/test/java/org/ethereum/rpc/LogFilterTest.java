@@ -25,8 +25,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -38,8 +38,8 @@ public class LogFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
@@ -52,8 +52,8 @@ public class LogFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
@@ -73,8 +73,8 @@ public class LogFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
     }
 
     @Test
@@ -95,8 +95,8 @@ public class LogFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
     }
 
     @Test
@@ -117,7 +117,7 @@ public class LogFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
     }
 }

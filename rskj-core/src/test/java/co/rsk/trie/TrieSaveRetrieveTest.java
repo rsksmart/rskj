@@ -19,8 +19,8 @@
 package co.rsk.trie;
 
 import org.ethereum.datasource.HashMapDB;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 11/01/2017.
@@ -40,14 +40,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 0; k < 1000; k++) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -65,14 +65,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 0; k < 1000; k++) {
             String key = k + "";
             byte[] expectedValue = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expectedValue, value);
+            Assertions.assertArrayEquals(expectedValue, value);
         }
     }
 
@@ -90,14 +90,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 0; k < 1000; k++) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -115,14 +115,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 0; k < 1000; k++) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -140,14 +140,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 1000; k > 0; k--) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -165,14 +165,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 1000; k > 0; k--) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -190,14 +190,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 1000; k > 0; k--) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -215,14 +215,14 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
         for (int k = 1000; k > 0; k--) {
             String key = k + "";
             byte[] expected = trie.get(key);
             byte[] value = trie2.get(key);
-            Assert.assertArrayEquals(expected, value);
+            Assertions.assertArrayEquals(expected, value);
         }
     }
 
@@ -237,9 +237,9 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
+        Assertions.assertNotEquals(0, trie.trieSize());
         int embeddableNodes = 3;
-        Assert.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
+        Assertions.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
     }
 
     @Test
@@ -253,10 +253,10 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
+        Assertions.assertNotEquals(0, trie.trieSize());
         int embeddableNodes = 3;
         int longValues = 2;
-        Assert.assertEquals(trie.trieSize() - embeddableNodes + longValues, map.keys().size());
+        Assertions.assertEquals(trie.trieSize() - embeddableNodes + longValues, map.keys().size());
     }
 
     @Test
@@ -272,13 +272,13 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.trieSize(), trie2.trieSize());
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.trieSize(), trie2.trieSize());
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
-        Assert.assertArrayEquals(trie.get("foo"), trie2.get("foo"));
-        Assert.assertArrayEquals(trie.get("bar"), trie2.get("bar"));
-        Assert.assertArrayEquals(trie.get("answer"), trie2.get("answer"));
+        Assertions.assertArrayEquals(trie.get("foo"), trie2.get("foo"));
+        Assertions.assertArrayEquals(trie.get("bar"), trie2.get("bar"));
+        Assertions.assertArrayEquals(trie.get("answer"), trie2.get("answer"));
     }
 
     @Test
@@ -294,12 +294,12 @@ public class TrieSaveRetrieveTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        Assert.assertNotNull(trie2);
-        Assert.assertEquals(trie.trieSize(), trie2.trieSize());
-        Assert.assertEquals(trie.getHash(), trie2.getHash());
+        Assertions.assertNotNull(trie2);
+        Assertions.assertEquals(trie.trieSize(), trie2.trieSize());
+        Assertions.assertEquals(trie.getHash(), trie2.getHash());
 
-        Assert.assertArrayEquals(trie.get("foo"), trie2.get("foo"));
-        Assert.assertArrayEquals(trie.get("bar"), trie2.get("bar"));
-        Assert.assertArrayEquals(trie.get("answer"), trie2.get("answer"));
+        Assertions.assertArrayEquals(trie.get("foo"), trie2.get("foo"));
+        Assertions.assertArrayEquals(trie.get("bar"), trie2.get("bar"));
+        Assertions.assertArrayEquals(trie.get("answer"), trie2.get("answer"));
     }
 }

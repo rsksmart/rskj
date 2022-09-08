@@ -31,10 +31,11 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RskTestContext;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,22 +53,18 @@ import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class RskContextTest {
-
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     private File databaseDir;
     private RskSystemProperties testProperties;
     private InternalService internalService;
     private RskContext rskContext;
 
-    @Before
-    public void setUp() throws IOException {
-        databaseDir = this.temporaryFolder.newFolder("database");
+    @BeforeEach
+    public void setUp(@TempDir Path tempDir) throws IOException {
+        databaseDir = tempDir.resolve("database").toFile();
 
         testProperties = spy(new TestSystemProperties());
         doReturn(0).when(testProperties).getStatesCacheSize();
@@ -81,8 +78,8 @@ public class RskContextTest {
     @Test
     public void getCliArgsSmokeTest() {
         RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
-        assertThat(devnetContext.getCliArgs(), notNullValue());
-        assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
+        MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
+        MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
         devnetContext.close();
     }
 
@@ -92,10 +89,10 @@ public class RskContextTest {
 
         Path resolvedPath = rskContext.resolveCacheSnapshotPath(baseStorePath);
 
-        assertNotNull(resolvedPath);
+        Assertions.assertNotNull(resolvedPath);
 
         String pathSuffix = resolvedPath.toString().replace(baseStorePath.toString(), "");
-        assertEquals("/rskcache", pathSuffix);
+        Assertions.assertEquals("/rskcache", pathSuffix);
     }
 
     @Test
@@ -103,8 +100,8 @@ public class RskContextTest {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
         TrieStore trieStore = rskContext.getTrieStore();
-        assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
-        assertThat(Files.list(databaseDir.toPath()).count(), is(1L));
+        MatcherAssert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
+        MatcherAssert.assertThat(Files.list(databaseDir.toPath()).count(), is(1L));
     }
 
     @Test
@@ -112,15 +109,17 @@ public class RskContextTest {
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
+        databaseDir.mkdir();
+
         long preExistingEpochs = 4;
         for (int i = 0; i < preExistingEpochs; i++) {
             Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
         }
 
-        assertThat(Files.list(testDatabasesDirectory).count(), is(preExistingEpochs));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(preExistingEpochs));
         TrieStore trieStore = rskContext.getTrieStore();
-        assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
-        assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
+        MatcherAssert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
     }
 
     @Test
@@ -130,8 +129,8 @@ public class RskContextTest {
         doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         TrieStore trieStore = rskContext.getTrieStore();
-        assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
     }
 
     @Test
@@ -145,9 +144,9 @@ public class RskContextTest {
         rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
-        assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
-        assertThat(Files.list(testDatabasesDirectory).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
+        MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
     }
 
     @Test
@@ -155,6 +154,9 @@ public class RskContextTest {
         int numberOfEpochs = 3;
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(false).when(testProperties).databaseReset();
+
+        databaseDir.mkdir();
+
         doReturn(new GarbageCollectorConfig(true, 1000, numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         int initialEpoch = 3;
@@ -165,8 +167,8 @@ public class RskContextTest {
         rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
-        assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
-        assertThat(Files.list(testDatabasesDirectory).count(), is((long) numberOfEpochs));
+        MatcherAssert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        MatcherAssert.assertThat(Files.list(testDatabasesDirectory).count(), is((long) numberOfEpochs));
         int[] directorySuffixes = Files.list(testDatabasesDirectory)
                 .map(Path::getFileName)
                 .map(Path::toString)
@@ -174,7 +176,7 @@ public class RskContextTest {
                 .mapToInt(Integer::valueOf)
                 .sorted()
                 .toArray();
-        assertThat(directorySuffixes, is(IntStream.range(initialEpoch, initialEpoch + numberOfEpochs).toArray()));
+        MatcherAssert.assertThat(directorySuffixes, is(IntStream.range(initialEpoch, initialEpoch + numberOfEpochs).toArray()));
     }
 
     @Test
@@ -188,8 +190,8 @@ public class RskContextTest {
 
         rskContext.buildInternalServices();
 
-        assertNotNull(rskContext.getPeerScoringReporterService());
-        assertTrue(rskContext.getPeerScoringReporterService().initialized());
+        Assertions.assertNotNull(rskContext.getPeerScoringReporterService());
+        Assertions.assertTrue(rskContext.getPeerScoringReporterService().initialized());
     }
 
     @Test
@@ -211,27 +213,27 @@ public class RskContextTest {
         doReturn(1024).when(constants).getGasLimitBoundDivisor();
 
         NodeBlockProcessor nodeBlockProcessor = rskContext.getNodeBlockProcessor();
-        assertThat(nodeBlockProcessor, is(instanceOf(AsyncNodeBlockProcessor.class)));
+        MatcherAssert.assertThat(nodeBlockProcessor, is(instanceOf(AsyncNodeBlockProcessor.class)));
     }
 
     @Test
     public void doubleCloseShouldNotCrash() {
-        assertFalse(rskContext.isClosed());
+        Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.close();
-        assertTrue(rskContext.isClosed());
+        Assertions.assertTrue(rskContext.isClosed());
 
         rskContext.close();
-        assertTrue(rskContext.isClosed());
+        Assertions.assertTrue(rskContext.isClosed());
     }
 
     @Test
     public void closeShouldStopInternalService() throws Exception {
-        assertFalse(rskContext.isClosed());
+        Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.getNodeRunner().run();
         rskContext.close();
-        assertTrue(rskContext.isClosed());
+        Assertions.assertTrue(rskContext.isClosed());
         verify(internalService, times(1)).stop();
     }
 
@@ -253,9 +255,9 @@ public class RskContextTest {
             if ((Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !methodsToSkip.contains(method.getName())) {
                 try {
                     method.invoke(rskContext, new Object[method.getParameterCount()]);
-                    fail(method.getName() + " should throw an exception when called on closed context");
+                    Assertions.fail(method.getName() + " should throw an exception when called on closed context");
                 } catch (InvocationTargetException e) {
-                    assertEquals("RSK Context is closed and cannot be in use anymore", e.getTargetException().getMessage());
+                    Assertions.assertEquals("RSK Context is closed and cannot be in use anymore", e.getTargetException().getMessage());
                 }
             }
         }
@@ -263,20 +265,20 @@ public class RskContextTest {
 
     @Test
     public void shouldMakeNewContext() throws Exception {
-        assertFalse(rskContext.isClosed());
+        Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.getNodeRunner().run();
 
         rskContext.close();
-        assertTrue(rskContext.isClosed());
+        Assertions.assertTrue(rskContext.isClosed());
 
         rskContext = makeRskContext(); // make a brand new context
-        assertFalse(rskContext.isClosed());
+        Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.getNodeRunner().run();
 
         rskContext.close();
-        assertTrue(rskContext.isClosed());
+        Assertions.assertTrue(rskContext.isClosed());
     }
 
     private RskContext makeRskContext() {
@@ -294,12 +296,12 @@ public class RskContextTest {
             @Override
             public synchronized List<InternalService> buildInternalServices() {
                 // instantiate LevelDB instances which should be closed when the context is being closed
-                assertNotNull(getBlockStore());
-                assertNotNull(getTrieStore());
-                assertNotNull(getReceiptStore());
-                assertNotNull(getStateRootsStore());
-                assertNotNull(getBlockStore());
-                assertNotNull(getWallet());
+                Assertions.assertNotNull(getBlockStore());
+                Assertions.assertNotNull(getTrieStore());
+                Assertions.assertNotNull(getReceiptStore());
+                Assertions.assertNotNull(getStateRootsStore());
+                Assertions.assertNotNull(getBlockStore());
+                Assertions.assertNotNull(getWallet());
 
                 return Collections.singletonList(internalService);
             }

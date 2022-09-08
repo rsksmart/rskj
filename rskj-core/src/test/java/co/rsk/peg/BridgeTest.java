@@ -19,8 +19,9 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -31,7 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
@@ -43,7 +44,7 @@ public class BridgeTest {
     private Constants constants;
     private ActivationConfig activationConfig;
 
-    @Before
+    @BeforeEach
     public void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
@@ -655,8 +656,8 @@ public class BridgeTest {
         assertEquals(BigInteger.valueOf(0), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
     }
 
-    @Test(expected = VMException.class)
-    public void receiveHeader_bridgeSupport_Exception() throws VMException, IOException, BlockStoreException {
+    @Test
+    public void receiveHeader_bridgeSupport_Exception() throws IOException, BlockStoreException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -677,7 +678,7 @@ public class BridgeTest {
         Object[] parameters = new Object[]{block.bitcoinSerialize()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
-        bridge.execute(data);
+        Assertions.assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test

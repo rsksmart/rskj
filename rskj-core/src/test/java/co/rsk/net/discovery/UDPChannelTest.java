@@ -22,8 +22,8 @@ import co.rsk.net.discovery.message.PingPeerMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
@@ -43,7 +43,7 @@ public class UDPChannelTest {
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
         UDPChannel udpChannel = new UDPChannel(channel, peerExplorer);
 
-        Assert.assertNotNull(udpChannel);
+        Assertions.assertNotNull(udpChannel);
     }
 
     @Test

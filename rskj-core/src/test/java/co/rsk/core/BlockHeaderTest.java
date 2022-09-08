@@ -28,11 +28,14 @@ import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -41,10 +44,10 @@ import java.util.function.Consumer;
 
 import static java.lang.System.arraycopy;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BlockHeaderTest {
 
     @Test
@@ -61,7 +64,7 @@ public class BlockHeaderTest {
 
         byte[] hashForMergedMiningResult = header.getHashForMergedMining();
 
-        assertThat(hashForMergedMining, is(hashForMergedMiningResult));
+        MatcherAssert.assertThat(hashForMergedMining, is(hashForMergedMiningResult));
     }
 
     @Test
@@ -71,7 +74,7 @@ public class BlockHeaderTest {
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
 
-        assertNotEquals(hash.getBytes(), is(hashForMergedMining));
+        Assertions.assertNotEquals(hash.getBytes(), is(hashForMergedMining));
     }
 
     @Test
@@ -85,7 +88,7 @@ public class BlockHeaderTest {
 
         byte[] hashForMergedMining = header.getHashForMergedMining();
 
-        assertThat(expectedHash, is(hashForMergedMining));
+        MatcherAssert.assertThat(expectedHash, is(hashForMergedMining));
     }
 
     @Test
@@ -96,7 +99,7 @@ public class BlockHeaderTest {
         byte[] hash = header.getHash().getBytes();
         byte[] hashForMergedMining = header.getHashForMergedMining();
 
-        assertThat(hash, is(hashForMergedMining));
+        MatcherAssert.assertThat(hash, is(hashForMergedMining));
     }
 
 
@@ -108,7 +111,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(20));
+        MatcherAssert.assertThat(headerRLP.size(), is(20));
     }
 
     @Test
@@ -119,7 +122,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(17));
+        MatcherAssert.assertThat(headerRLP.size(), is(17));
     }
 
     @Test
@@ -129,7 +132,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
     }
 
     @Test
@@ -139,7 +142,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(16));
+        MatcherAssert.assertThat(headerRLP.size(), is(16));
     }
 
     @Test
@@ -149,7 +152,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(20));
+        MatcherAssert.assertThat(headerRLP.size(), is(20));
     }
 
     @Test
@@ -159,7 +162,7 @@ public class BlockHeaderTest {
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
-        assertThat(headerRLP.size(), is(17));
+        MatcherAssert.assertThat(headerRLP.size(), is(17));
     }
 
     @Test
@@ -174,7 +177,7 @@ public class BlockHeaderTest {
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
-        assertThat(forkDetectionData, is(header.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(forkDetectionData, is(header.getMiningForkDetectionData()));
     }
 
     @Test
@@ -182,7 +185,7 @@ public class BlockHeaderTest {
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        assertThat(header.getUmmRoot(), is(ummRoot));
+        MatcherAssert.assertThat(header.getUmmRoot(), is(ummRoot));
     }
 
     @Test
@@ -190,7 +193,7 @@ public class BlockHeaderTest {
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        assertThat(header.isUMMBlock(), is(true));
+        MatcherAssert.assertThat(header.isUMMBlock(), is(true));
     }
 
     @Test
@@ -198,7 +201,7 @@ public class BlockHeaderTest {
         byte[] ummRoot = null;
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        assertThat(header.isUMMBlock(), is(false));
+        MatcherAssert.assertThat(header.isUMMBlock(), is(false));
     }
 
     @Test
@@ -206,7 +209,7 @@ public class BlockHeaderTest {
         byte[] ummRoot = new byte[0];
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        assertThat(header.isUMMBlock(), is(false));
+        MatcherAssert.assertThat(header.isUMMBlock(), is(false));
     }
 
     @Test
@@ -224,7 +227,7 @@ public class BlockHeaderTest {
                 forkDetectionData
         );
 
-        assertThat(header.getHashForMergedMining(), is(newHashForMergedMining));
+        MatcherAssert.assertThat(header.getHashForMergedMining(), is(newHashForMergedMining));
     }
 
     @Test
@@ -236,29 +239,29 @@ public class BlockHeaderTest {
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
-        assertThat(header.getHashForMergedMining(), is(hashForMergedMining));
+        MatcherAssert.assertThat(header.getHashForMergedMining(), is(hashForMergedMining));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getHashForMergedMiningWhenUmmRootWithLengthUnder20() {
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        header.getHashForMergedMining();
+        Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getHashForMergedMiningWhenUmmRootWithLengthOver20() {
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        header.getHashForMergedMining();
+        Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
     }
 
     /**
      * This case is an error and should never happen in production
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
@@ -267,14 +270,14 @@ public class BlockHeaderTest {
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
-        header.getMiningForkDetectionData();
+        Assertions.assertThrows(IllegalStateException.class, header::getMiningForkDetectionData);
     }
 
     @Test
     public void getMiningForkDetectionDataNoDataMustBeIncluded() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
 
-        assertThat(new byte[0], is(header.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(new byte[0], is(header.getMiningForkDetectionData()));
     }
 
     @Test
@@ -316,9 +319,9 @@ public class BlockHeaderTest {
 
         stateModifiers.forEach(sm -> {
             sm.accept(header);
-            assertArrayEquals("Block header returned invalid hash after modification",
-                    HashUtil.keccak256(header.getEncoded()),
-                    header.getHash().getBytes());
+            assertArrayEquals(HashUtil.keccak256(header.getEncoded()),
+                    header.getHash().getBytes(),
+                    "Block header returned invalid hash after modification");
         });
     }
 

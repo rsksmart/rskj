@@ -31,8 +31,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskMockFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.time.Duration;
@@ -69,10 +69,10 @@ public class SyncProcessorTest {
                 mock(Genesis.class),
                 listener);
 
-        Assert.assertEquals(0, processor.getPeersCount());
-        Assert.assertEquals(0, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(0, processor.getPeersCount());
+        Assertions.assertEquals(0, processor.getNoAdvancedPeers());
 
-        Assert.assertTrue(processor.getKnownPeersNodeIDs().isEmpty());
+        Assertions.assertTrue(processor.getKnownPeersNodeIDs().isEmpty());
         verify(listener, never()).onLongSyncStarted();
         verify(listener, never()).onLongSyncDone();
     }
@@ -108,24 +108,24 @@ public class SyncProcessorTest {
                 mock(EthereumListener.class));
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getPeersCount());
-        Assert.assertEquals(1, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(1, processor.getPeersCount());
+        Assertions.assertEquals(1, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
-        Assert.assertFalse(ids.isEmpty());
-        Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
+        Assertions.assertFalse(ids.isEmpty());
+        Assertions.assertTrue(ids.contains(sender.getPeerNodeID()));
 
         List<Message> messages = sender.getMessages();
-        Assert.assertFalse(messages.isEmpty());
-        Assert.assertEquals(1, messages.size());
+        Assertions.assertFalse(messages.isEmpty());
+        Assertions.assertEquals(1, messages.size());
 
         Message message = messages.get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
-        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
+        Assertions.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -160,30 +160,30 @@ public class SyncProcessorTest {
                 mock(EthereumListener.class));
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getPeersCount());
-        Assert.assertEquals(1, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(1, processor.getPeersCount());
+        Assertions.assertEquals(1, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
-        Assert.assertFalse(ids.isEmpty());
-        Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
+        Assertions.assertFalse(ids.isEmpty());
+        Assertions.assertTrue(ids.contains(sender.getPeerNodeID()));
 
         List<Message> messages = sender.getMessages();
-        Assert.assertTrue(messages.isEmpty());
+        Assertions.assertTrue(messages.isEmpty());
 
         processor.onTimePassed(syncConfiguration.getTimeoutWaitingPeers().dividedBy(2));
-        Assert.assertTrue(messages.isEmpty());
+        Assertions.assertTrue(messages.isEmpty());
 
         processor.onTimePassed(syncConfiguration.getTimeoutWaitingPeers().dividedBy(2));
-        Assert.assertFalse(messages.isEmpty());
-        Assert.assertEquals(1, messages.size());
+        Assertions.assertFalse(messages.isEmpty());
+        Assertions.assertEquals(1, messages.size());
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
-        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
+        Assertions.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -217,19 +217,19 @@ public class SyncProcessorTest {
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getPeersCount());
-        Assert.assertEquals(0, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(1, processor.getPeersCount());
+        Assertions.assertEquals(0, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
-        Assert.assertFalse(ids.isEmpty());
-        Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertFalse(ids.isEmpty());
+        Assertions.assertTrue(ids.contains(sender.getPeerNodeID()));
+        Assertions.assertTrue(sender.getMessages().isEmpty());
 
         processor.onTimePassed(Duration.ofMinutes(1));
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
 
         processor.onTimePassed(Duration.ofMinutes(1));
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -268,19 +268,19 @@ public class SyncProcessorTest {
             when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         }
 
-        Assert.assertTrue(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
+        Assertions.assertTrue(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
         senders.forEach(s -> processor.processStatus(s, status));
-        Assert.assertTrue(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
+        Assertions.assertTrue(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
 
-        Assert.assertEquals(lessPeers, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(lessPeers, processor.getNoAdvancedPeers());
 
         Set<NodeID> knownPeersNodeIDs = processor.getKnownPeersNodeIDs();
-        Assert.assertTrue(senders.stream()
+        Assertions.assertTrue(senders.stream()
                 .map(SimplePeer::getPeerNodeID)
                 .allMatch(knownPeersNodeIDs::contains));
 
         SimplePeer lastSender = new SimplePeer();
-        Assert.assertFalse(processor.getKnownPeersNodeIDs().contains(lastSender.getPeerNodeID()));
+        Assertions.assertFalse(processor.getKnownPeersNodeIDs().contains(lastSender.getPeerNodeID()));
 
         processor.processStatus(lastSender, status);
 
@@ -288,9 +288,9 @@ public class SyncProcessorTest {
         senders.add(lastSender);
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
 
-        Assert.assertTrue(ids.contains(lastSender.getPeerNodeID()));
-        Assert.assertFalse(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
-        Assert.assertEquals(1, senders.stream()
+        Assertions.assertTrue(ids.contains(lastSender.getPeerNodeID()));
+        Assertions.assertFalse(senders.stream().map(SimplePeer::getMessages).allMatch(List::isEmpty));
+        Assertions.assertEquals(1, senders.stream()
                 .map(SimplePeer::getMessages)
                 .mapToInt(List::size)
                 .sum());
@@ -302,11 +302,11 @@ public class SyncProcessorTest {
                 .get()
                 .get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
-        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
+        Assertions.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -340,14 +340,14 @@ public class SyncProcessorTest {
 
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getPeersCount());
-        Assert.assertEquals(0, processor.getNoAdvancedPeers());
+        Assertions.assertEquals(1, processor.getPeersCount());
+        Assertions.assertEquals(0, processor.getNoAdvancedPeers());
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
 
         // is null when we're not syncing
-        Assert.assertEquals(0, processor.getExpectedResponses().size());
-        Assert.assertFalse(processor.isSyncing());
+        Assertions.assertEquals(0, processor.getExpectedResponses().size());
+        Assertions.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -371,16 +371,16 @@ public class SyncProcessorTest {
 
         processor.sendSkeletonRequest(sender, 0);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
         Message message = sender.getMessages().get(0);
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
         SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
-        Assert.assertNotEquals(0, request.getId());
-        Assert.assertEquals(0, request.getStartNumber());
+        Assertions.assertNotEquals(0, request.getId());
+        Assertions.assertEquals(0, request.getStartNumber());
 
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -407,19 +407,19 @@ public class SyncProcessorTest {
         processor.sendBlockHashRequest(sender, 100);
 
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
         Message message = sender.getMessages().get(0);
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHashRequestMessage request = (BlockHashRequestMessage) message;
 
-        Assert.assertNotEquals(0, request.getId());
-        Assert.assertEquals(100, request.getHeight());
+        Assertions.assertNotEquals(0, request.getId());
+        Assertions.assertEquals(100, request.getHeight());
 
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void processBlockHashResponseWithUnknownHash() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -434,7 +434,8 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class),
                 mock(EthereumListener.class));
-        processor.processStatus(sender, new Status(100, null));
+
+        Assertions.assertThrows(Exception.class, () -> processor.processStatus(sender, new Status(100, null)));
     }
 
     @Test
@@ -460,8 +461,8 @@ public class SyncProcessorTest {
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertEquals(0, sender.getMessages().size());
-        Assert.assertEquals(0, processor.getExpectedResponses().size());
+        Assertions.assertEquals(0, sender.getMessages().size());
+        Assertions.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -490,8 +491,8 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertEquals(0, sender.getMessages().size());
-        Assert.assertEquals(0, processor.getExpectedResponses().size());
+        Assertions.assertEquals(0, sender.getMessages().size());
+        Assertions.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -523,8 +524,8 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertEquals(0, sender.getMessages().size());
-        Assert.assertEquals(0, processor.getExpectedResponses().size());
+        Assertions.assertEquals(0, sender.getMessages().size());
+        Assertions.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -553,8 +554,8 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertEquals(0, sender.getMessages().size());
-        Assert.assertEquals(0, processor.getExpectedResponses().size());
+        Assertions.assertEquals(0, sender.getMessages().size());
+        Assertions.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -580,8 +581,8 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.processBodyResponse(sender, response);
-        Assert.assertTrue(sender.getMessages().isEmpty());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -590,12 +591,12 @@ public class SyncProcessorTest {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
-        Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(11, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -631,9 +632,9 @@ public class SyncProcessorTest {
 
         processor.processBodyResponse(sender, response);
 
-        Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assertions.assertEquals(11, blockchain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
+        Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -642,12 +643,12 @@ public class SyncProcessorTest {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
-        Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(11, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -690,10 +691,10 @@ public class SyncProcessorTest {
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
         // if an unexpected body arrives then stops syncing
-        Assert.assertFalse(processor.isSyncing());
+        Assertions.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -702,15 +703,15 @@ public class SyncProcessorTest {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Blockchain extended = BlockChainBuilder.copy(blockchain);
         extended.tryToConnect(block);
 
-        Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(11, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -746,10 +747,10 @@ public class SyncProcessorTest {
 
         processor.processBodyResponse(sender, response);
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
         // if an invalid body arrives then stops syncing
-        Assert.assertFalse(processor.isSyncing());
+        Assertions.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -768,7 +769,7 @@ public class SyncProcessorTest {
         Block genesis = blockchain.getBestBlock();
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         List<Transaction> txs = Collections.singletonList(
                 createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO)
@@ -795,13 +796,13 @@ public class SyncProcessorTest {
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
-        Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
+        Assertions.assertEquals(1, block.getTransactionsList().size());
 
-        Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(1, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -837,9 +838,9 @@ public class SyncProcessorTest {
 
         processor.processBodyResponse(sender, response);
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
+        Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -848,12 +849,12 @@ public class SyncProcessorTest {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
-        Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(11, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -874,9 +875,9 @@ public class SyncProcessorTest {
 
         processor.processBlockResponse(sender, response);
 
-        Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assertions.assertEquals(11, blockchain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
+        Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -906,7 +907,7 @@ public class SyncProcessorTest {
 
         processor.processStatus(sender, StatusUtils.fromBlockchain(advancedBlockchain));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
         List<Message> messages = sender.getMessages();
         BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage) messages.get(0);
         processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
@@ -914,28 +915,28 @@ public class SyncProcessorTest {
         long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1};
 
         for (int k = 0; k < expectedHeights.length; k++) {
-            Assert.assertEquals( k + 2, messages.size());
+            Assertions.assertEquals( k + 2, messages.size());
             Message message = messages.get(k + 1);
-            Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+            Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
             BlockHashRequestMessage request = (BlockHashRequestMessage)message;
             long requestId = request.getId();
-            Assert.assertEquals(expectedHeights[k], request.getHeight());
+            Assertions.assertEquals(expectedHeights[k], request.getHeight());
 
             Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
 
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
-        Assert.assertEquals(expectedHeights.length + 2, messages.size());
+        Assertions.assertEquals(expectedHeights.length + 2, messages.size());
 
         Message message = messages.get(messages.size() - 1);
 
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
         SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
-        Assert.assertEquals(0, request.getStartNumber());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(0, request.getStartNumber());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -973,28 +974,28 @@ public class SyncProcessorTest {
 
         long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30, 30 };
         for (int k = 0; k < binarySearchHeights.length; k++) {
-            Assert.assertEquals(k + 2, messages.size());
+            Assertions.assertEquals(k + 2, messages.size());
             Message message = messages.get(k + 1);
-            Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+            Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
             BlockHashRequestMessage request = (BlockHashRequestMessage)message;
             long requestId = request.getId();
-            Assert.assertEquals(binarySearchHeights[k], request.getHeight());
+            Assertions.assertEquals(binarySearchHeights[k], request.getHeight());
 
             Block block = advancedBlockchain.getBlockByNumber(binarySearchHeights[k]);
 
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
-        Assert.assertEquals(binarySearchHeights.length + 2, messages.size());
+        Assertions.assertEquals(binarySearchHeights.length + 2, messages.size());
 
         Message message = messages.get(messages.size() - 1);
 
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
         SkeletonRequestMessage request = (SkeletonRequestMessage)message;
 
-        Assert.assertEquals(30, request.getStartNumber());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(30, request.getStartNumber());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -1032,20 +1033,20 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
         Message message = sender.getMessages().get(0);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
-        Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
-        Assert.assertEquals(10, request.getCount());
+        Assertions.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
+        Assertions.assertEquals(10, request.getCount());
 
         DownloadingHeadersSyncState syncState = (DownloadingHeadersSyncState) processor.getSyncState();
         List<BlockIdentifier> skeleton = syncState.getSkeleton();
 
-        Assert.assertEquals(10, skeleton.size());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(10, skeleton.size());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -1073,9 +1074,9 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
-        Assert.assertFalse(processor.isSyncing());
-        Assert.assertTrue(sender.getMessages().isEmpty());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assertions.assertFalse(processor.isSyncing());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -1116,13 +1117,13 @@ public class SyncProcessorTest {
 
 
         Message message = sender.getMessages().get(0);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
-        Assert.assertEquals(5, request.getCount());
-        Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assertions.assertEquals(5, request.getCount());
+        Assertions.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
+        Assertions.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test

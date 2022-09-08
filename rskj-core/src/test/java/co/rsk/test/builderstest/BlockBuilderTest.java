@@ -21,8 +21,8 @@ package co.rsk.test.builderstest;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -40,10 +40,10 @@ public class BlockBuilderTest {
                 .parent(genesis)
                 .build();
 
-        Assert.assertNotNull(block);
-        Assert.assertEquals(1, block.getNumber());
-        // Assert.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) < 0);
-        Assert.assertEquals(genesis.getHash(), block.getParentHash());
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals(1, block.getNumber());
+        // Assertions.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) < 0);
+        Assertions.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
@@ -57,9 +57,9 @@ public class BlockBuilderTest {
                 .difficulty(1)
                 .build();
 
-        Assert.assertNotNull(block);
-        Assert.assertEquals(1, block.getNumber());
-        Assert.assertEquals(BigInteger.ONE, block.getDifficulty().asBigInteger());
-        Assert.assertEquals(genesis.getHash(), block.getParentHash());
+        Assertions.assertNotNull(block);
+        Assertions.assertEquals(1, block.getNumber());
+        Assertions.assertEquals(BigInteger.ONE, block.getDifficulty().asBigInteger());
+        Assertions.assertEquals(genesis.getHash(), block.getParentHash());
     }
 }

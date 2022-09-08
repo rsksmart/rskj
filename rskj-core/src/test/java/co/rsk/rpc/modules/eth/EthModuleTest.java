@@ -19,9 +19,9 @@
 package co.rsk.rpc.modules.eth;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,9 +45,10 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
@@ -276,7 +277,7 @@ public class EthModuleTest {
         );
 
         String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
-        Assert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
+        MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
     @Test

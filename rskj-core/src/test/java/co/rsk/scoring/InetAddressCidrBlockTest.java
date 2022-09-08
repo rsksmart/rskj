@@ -19,8 +19,8 @@
 package co.rsk.scoring;
 
 import org.ethereum.TestUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -39,22 +39,22 @@ public class InetAddressCidrBlockTest {
         InetAddressCidrBlock block4 = new InetAddressCidrBlock(address1, 8);
         InetAddressCidrBlock block5 = new InetAddressCidrBlock(address3, 8);
 
-        Assert.assertEquals(block1, block1);
-        Assert.assertEquals(block2, block2);
-        Assert.assertEquals(block3, block3);
-        Assert.assertEquals(block4, block4);
-        Assert.assertEquals(block5, block5);
+        Assertions.assertEquals(block1, block1);
+        Assertions.assertEquals(block2, block2);
+        Assertions.assertEquals(block3, block3);
+        Assertions.assertEquals(block4, block4);
+        Assertions.assertEquals(block5, block5);
 
-        Assert.assertEquals(block1, block4);
-        Assert.assertEquals(block4, block1);
+        Assertions.assertEquals(block1, block4);
+        Assertions.assertEquals(block4, block1);
 
-        Assert.assertNotEquals(block1, block2);
-        Assert.assertNotEquals(block1, block3);
-        Assert.assertNotEquals(block1, block5);
+        Assertions.assertNotEquals(block1, block2);
+        Assertions.assertNotEquals(block1, block3);
+        Assertions.assertNotEquals(block1, block5);
 
-        Assert.assertNotEquals(null, block1);
+        Assertions.assertNotEquals(null, block1);
 
-        Assert.assertEquals(block1.hashCode(), block4.hashCode());
+        Assertions.assertEquals(block1.hashCode(), block4.hashCode());
     }
 
     @Test
@@ -65,9 +65,9 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(anyAddress, 0);
 
-        Assert.assertTrue(mask.contains(firstAddress));
-        Assert.assertTrue(mask.contains(anyAddress));
-        Assert.assertTrue(mask.contains(lastAddress));
+        Assertions.assertTrue(mask.contains(firstAddress));
+        Assertions.assertTrue(mask.contains(anyAddress));
+        Assertions.assertTrue(mask.contains(lastAddress));
     }
 
     @Test
@@ -80,11 +80,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 8);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -97,11 +97,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 16);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -114,11 +114,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 24);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -129,9 +129,9 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(uniqueAddress, 32);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(uniqueAddress));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(uniqueAddress));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -149,9 +149,9 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(anyAddress, 0);
 
-        Assert.assertTrue(mask.contains(firstAddress));
-        Assert.assertTrue(mask.contains(anyAddress));
-        Assert.assertTrue(mask.contains(lastAddress));
+        Assertions.assertTrue(mask.contains(firstAddress));
+        Assertions.assertTrue(mask.contains(anyAddress));
+        Assertions.assertTrue(mask.contains(lastAddress));
     }
 
     @Test
@@ -164,11 +164,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 8);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -181,11 +181,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 16);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -198,11 +198,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 24);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -215,11 +215,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 32);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -232,11 +232,11 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(firstAddressIn, 64);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(firstAddressIn));
-        Assert.assertTrue(mask.contains(middleAddressIn));
-        Assert.assertTrue(mask.contains(lastAddressIn));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(firstAddressIn));
+        Assertions.assertTrue(mask.contains(middleAddressIn));
+        Assertions.assertTrue(mask.contains(lastAddressIn));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test
@@ -248,9 +248,9 @@ public class InetAddressCidrBlockTest {
 
         InetAddressCidrBlock mask = new InetAddressCidrBlock(uniqueAddress, 128);
 
-        Assert.assertFalse(mask.contains(previousAddressOut));
-        Assert.assertTrue(mask.contains(uniqueAddress));
-        Assert.assertFalse(mask.contains(nextAddressOut));
+        Assertions.assertFalse(mask.contains(previousAddressOut));
+        Assertions.assertTrue(mask.contains(uniqueAddress));
+        Assertions.assertFalse(mask.contains(nextAddressOut));
     }
 
     @Test

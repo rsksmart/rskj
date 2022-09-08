@@ -3,9 +3,9 @@ package co.rsk.util;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
@@ -21,18 +21,18 @@ public class RLPTest {
 
         byte[] result = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals((byte)0x80, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals((byte)0x80, result[0]);
     }
 
     @Test
     public void encodeNullByteArray() {
         byte[] result = RLP.encodeElement((byte[]) null);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals((byte)0x80, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals((byte)0x80, result[0]);
     }
 
     @Test
@@ -43,17 +43,17 @@ public class RLPTest {
 
             byte[] encoded = RLP.encodeElement(bytes);
 
-            Assert.assertNotNull(encoded);
-            Assert.assertEquals(1, encoded.length);
+            Assertions.assertNotNull(encoded);
+            Assertions.assertEquals(1, encoded.length);
 
             RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-            Assert.assertNotNull(element);
+            Assertions.assertNotNull(element);
 
             byte[] decoded = element.getRLPData();
 
-            Assert.assertNotNull(decoded);
-            Assert.assertArrayEquals(bytes, decoded);
+            Assertions.assertNotNull(decoded);
+            Assertions.assertArrayEquals(bytes, decoded);
         }
     }
 
@@ -65,18 +65,18 @@ public class RLPTest {
 
             byte[] encoded = RLP.encodeElement(bytes);
 
-            Assert.assertNotNull(encoded);
-            Assert.assertEquals(2, encoded.length);
-            Assert.assertEquals((byte)129, encoded[0]);
+            Assertions.assertNotNull(encoded);
+            Assertions.assertEquals(2, encoded.length);
+            Assertions.assertEquals((byte)129, encoded[0]);
 
             RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-            Assert.assertNotNull(element);
+            Assertions.assertNotNull(element);
 
             byte[] decoded = element.getRLPData();
 
-            Assert.assertNotNull(decoded);
-            Assert.assertArrayEquals(bytes, decoded);
+            Assertions.assertNotNull(decoded);
+            Assertions.assertArrayEquals(bytes, decoded);
         }
     }
 
@@ -88,18 +88,18 @@ public class RLPTest {
 
             byte[] encoded = RLP.encode(bytes);
 
-            Assert.assertNotNull(encoded);
-            Assert.assertEquals(2, encoded.length);
-            Assert.assertEquals((byte)129, encoded[0]);
+            Assertions.assertNotNull(encoded);
+            Assertions.assertEquals(2, encoded.length);
+            Assertions.assertEquals((byte)129, encoded[0]);
 
             RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-            Assert.assertNotNull(element);
+            Assertions.assertNotNull(element);
 
             byte[] decoded = element.getRLPData();
 
-            Assert.assertNotNull(decoded);
-            Assert.assertArrayEquals(bytes, decoded);
+            Assertions.assertNotNull(decoded);
+            Assertions.assertArrayEquals(bytes, decoded);
         }
     }
 
@@ -110,18 +110,18 @@ public class RLPTest {
 
             byte[] encoded = RLP.encodeElement(bytes);
 
-            Assert.assertNotNull(encoded);
-            Assert.assertEquals(1 + k, encoded.length);
-            Assert.assertEquals((byte)(128 + k), encoded[0]);
+            Assertions.assertNotNull(encoded);
+            Assertions.assertEquals(1 + k, encoded.length);
+            Assertions.assertEquals((byte)(128 + k), encoded[0]);
 
             RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-            Assert.assertNotNull(element);
+            Assertions.assertNotNull(element);
 
             byte[] decoded = element.getRLPData();
 
-            Assert.assertNotNull(decoded);
-            Assert.assertArrayEquals(bytes, decoded);
+            Assertions.assertNotNull(decoded);
+            Assertions.assertArrayEquals(bytes, decoded);
         }
     }
 
@@ -132,18 +132,18 @@ public class RLPTest {
 
             byte[] encoded = RLP.encode(bytes);
 
-            Assert.assertNotNull(encoded);
-            Assert.assertEquals(1 + k, encoded.length);
-            Assert.assertEquals((byte)(128 + k), encoded[0]);
+            Assertions.assertNotNull(encoded);
+            Assertions.assertEquals(1 + k, encoded.length);
+            Assertions.assertEquals((byte)(128 + k), encoded[0]);
 
             RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-            Assert.assertNotNull(element);
+            Assertions.assertNotNull(element);
 
             byte[] decoded = element.getRLPData();
 
-            Assert.assertNotNull(decoded);
-            Assert.assertArrayEquals(bytes, decoded);
+            Assertions.assertNotNull(decoded);
+            Assertions.assertArrayEquals(bytes, decoded);
         }
     }
 
@@ -153,19 +153,19 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(2 + 56, encoded.length);
-        Assert.assertEquals((byte)(183 + 1), encoded[0]);
-        Assert.assertEquals((byte)56, encoded[1]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(2 + 56, encoded.length);
+        Assertions.assertEquals((byte)(183 + 1), encoded[0]);
+        Assertions.assertEquals((byte)56, encoded[1]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -174,19 +174,19 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(2 + 56, encoded.length);
-        Assert.assertEquals((byte)(183 + 1), encoded[0]);
-        Assert.assertEquals((byte)56, encoded[1]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(2 + 56, encoded.length);
+        Assertions.assertEquals((byte)(183 + 1), encoded[0]);
+        Assertions.assertEquals((byte)56, encoded[1]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -195,20 +195,20 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(3 + 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 2), encoded[0]);
-        Assert.assertEquals((byte)1, encoded[1]);
-        Assert.assertEquals((byte)0, encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(3 + 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 2), encoded[0]);
+        Assertions.assertEquals((byte)1, encoded[1]);
+        Assertions.assertEquals((byte)0, encoded[2]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -217,20 +217,20 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(3 + 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 2), encoded[0]);
-        Assert.assertEquals((byte)1, encoded[1]);
-        Assert.assertEquals((byte)0, encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(3 + 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 2), encoded[0]);
+        Assertions.assertEquals((byte)1, encoded[1]);
+        Assertions.assertEquals((byte)0, encoded[2]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -239,20 +239,20 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(3 + 256 * 256 - 1, encoded.length);
-        Assert.assertEquals((byte)(183 + 2), encoded[0]);
-        Assert.assertEquals((byte)0xff, encoded[1]);
-        Assert.assertEquals((byte)0xff, encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(3 + 256 * 256 - 1, encoded.length);
+        Assertions.assertEquals((byte)(183 + 2), encoded[0]);
+        Assertions.assertEquals((byte)0xff, encoded[1]);
+        Assertions.assertEquals((byte)0xff, encoded[2]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -261,20 +261,20 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(3 + 256 * 256 - 1, encoded.length);
-        Assert.assertEquals((byte)(183 + 2), encoded[0]);
-        Assert.assertEquals((byte)0xff, encoded[1]);
-        Assert.assertEquals((byte)0xff, encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(3 + 256 * 256 - 1, encoded.length);
+        Assertions.assertEquals((byte)(183 + 2), encoded[0]);
+        Assertions.assertEquals((byte)0xff, encoded[1]);
+        Assertions.assertEquals((byte)0xff, encoded[2]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -283,21 +283,21 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(4 + 256 * 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 3), encoded[0]);
-        Assert.assertEquals((byte)0x01, encoded[1]);
-        Assert.assertEquals((byte)0x00, encoded[2]);
-        Assert.assertEquals((byte)0x00, encoded[3]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(4 + 256 * 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 3), encoded[0]);
+        Assertions.assertEquals((byte)0x01, encoded[1]);
+        Assertions.assertEquals((byte)0x00, encoded[2]);
+        Assertions.assertEquals((byte)0x00, encoded[3]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -306,21 +306,21 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(4 + 256 * 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 3), encoded[0]);
-        Assert.assertEquals((byte)0x01, encoded[1]);
-        Assert.assertEquals((byte)0x00, encoded[2]);
-        Assert.assertEquals((byte)0x00, encoded[3]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(4 + 256 * 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 3), encoded[0]);
+        Assertions.assertEquals((byte)0x01, encoded[1]);
+        Assertions.assertEquals((byte)0x00, encoded[2]);
+        Assertions.assertEquals((byte)0x00, encoded[3]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -329,21 +329,21 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
-        Assert.assertEquals((byte)(183 + 3), encoded[0]);
-        Assert.assertEquals((byte)0xff, encoded[1]);
-        Assert.assertEquals((byte)0xff, encoded[2]);
-        Assert.assertEquals((byte)0xff, encoded[3]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
+        Assertions.assertEquals((byte)(183 + 3), encoded[0]);
+        Assertions.assertEquals((byte)0xff, encoded[1]);
+        Assertions.assertEquals((byte)0xff, encoded[2]);
+        Assertions.assertEquals((byte)0xff, encoded[3]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -352,21 +352,21 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
-        Assert.assertEquals((byte)(183 + 3), encoded[0]);
-        Assert.assertEquals((byte)0xff, encoded[1]);
-        Assert.assertEquals((byte)0xff, encoded[2]);
-        Assert.assertEquals((byte)0xff, encoded[3]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
+        Assertions.assertEquals((byte)(183 + 3), encoded[0]);
+        Assertions.assertEquals((byte)0xff, encoded[1]);
+        Assertions.assertEquals((byte)0xff, encoded[2]);
+        Assertions.assertEquals((byte)0xff, encoded[3]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -375,22 +375,22 @@ public class RLPTest {
 
         byte[] encoded = RLP.encodeElement(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(5 + 256 * 256 * 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 4), encoded[0]);
-        Assert.assertEquals((byte)0x01, encoded[1]);
-        Assert.assertEquals((byte)0x00, encoded[2]);
-        Assert.assertEquals((byte)0x00, encoded[3]);
-        Assert.assertEquals((byte)0x00, encoded[4]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(5 + 256 * 256 * 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 4), encoded[0]);
+        Assertions.assertEquals((byte)0x01, encoded[1]);
+        Assertions.assertEquals((byte)0x00, encoded[2]);
+        Assertions.assertEquals((byte)0x00, encoded[3]);
+        Assertions.assertEquals((byte)0x00, encoded[4]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -399,22 +399,22 @@ public class RLPTest {
 
         byte[] encoded = RLP.encode(bytes);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(5 + 256 * 256 * 256, encoded.length);
-        Assert.assertEquals((byte)(183 + 4), encoded[0]);
-        Assert.assertEquals((byte)0x01, encoded[1]);
-        Assert.assertEquals((byte)0x00, encoded[2]);
-        Assert.assertEquals((byte)0x00, encoded[3]);
-        Assert.assertEquals((byte)0x00, encoded[4]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(5 + 256 * 256 * 256, encoded.length);
+        Assertions.assertEquals((byte)(183 + 4), encoded[0]);
+        Assertions.assertEquals((byte)0x01, encoded[1]);
+        Assertions.assertEquals((byte)0x00, encoded[2]);
+        Assertions.assertEquals((byte)0x00, encoded[3]);
+        Assertions.assertEquals((byte)0x00, encoded[4]);
 
         RLPElement element = RLP.decode2OneItem(encoded, 0);
 
-        Assert.assertNotNull(element);
+        Assertions.assertNotNull(element);
 
         byte[] decoded = element.getRLPData();
 
-        Assert.assertNotNull(decoded);
-        Assert.assertArrayEquals(bytes, decoded);
+        Assertions.assertNotNull(decoded);
+        Assertions.assertArrayEquals(bytes, decoded);
     }
 
     @Test
@@ -423,8 +423,8 @@ public class RLPTest {
             BigInteger value = BigInteger.valueOf(k);
             byte[] encoded = RLP.encodeBigInteger(value);
             BigInteger result = RLP.decodeBigInteger(encoded, 0);
-            Assert.assertNotNull(result);
-            Assert.assertEquals(value, result);
+            Assertions.assertNotNull(result);
+            Assertions.assertEquals(value, result);
         }
     }
 
@@ -432,19 +432,19 @@ public class RLPTest {
     public void encodeDecodeEmptyList() {
         byte[] encoded = RLP.encodeList();
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1, encoded.length);
-        Assert.assertEquals((byte)192, encoded[0]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1, encoded.length);
+        Assertions.assertEquals((byte)192, encoded[0]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(0, list2.size());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(0, list2.size());
     }
 
     @Test
@@ -455,21 +455,21 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(3, encoded.length);
-        Assert.assertEquals((byte)(192 + 2), encoded[0]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(3, encoded.length);
+        Assertions.assertEquals((byte)(192 + 2), encoded[0]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -480,21 +480,21 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 3 + 3, encoded.length);
-        Assert.assertEquals((byte)(192 + 3 + 3), encoded[0]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 3 + 3, encoded.length);
+        Assertions.assertEquals((byte)(192 + 3 + 3), encoded[0]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -505,21 +505,21 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 1 + 25 + 1 + 28, encoded.length);
-        Assert.assertEquals((byte)(192 + 55), encoded[0]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 1 + 25 + 1 + 28, encoded.length);
+        Assertions.assertEquals((byte)(192 + 55), encoded[0]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -530,22 +530,22 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 1 + 1 + 26 + 1 + 28, encoded.length);
-        Assert.assertEquals((byte)(247 + 1), encoded[0]);
-        Assert.assertEquals((byte)(56), encoded[1]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 1 + 1 + 26 + 1 + 28, encoded.length);
+        Assertions.assertEquals((byte)(247 + 1), encoded[0]);
+        Assertions.assertEquals((byte)(56), encoded[1]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -556,22 +556,22 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 1 + 2 + 125 + 2 + 126, encoded.length);
-        Assert.assertEquals((byte)(247 + 1), encoded[0]);
-        Assert.assertEquals((byte)(255), encoded[1]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 1 + 2 + 125 + 2 + 126, encoded.length);
+        Assertions.assertEquals((byte)(247 + 1), encoded[0]);
+        Assertions.assertEquals((byte)(255), encoded[1]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -582,23 +582,23 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 2 + 2 + 126 + 2 + 126, encoded.length);
-        Assert.assertEquals((byte)(247 + 2), encoded[0]);
-        Assert.assertEquals((byte)(1), encoded[1]);
-        Assert.assertEquals((byte)(0), encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 2 + 2 + 126 + 2 + 126, encoded.length);
+        Assertions.assertEquals((byte)(247 + 2), encoded[0]);
+        Assertions.assertEquals((byte)(1), encoded[1]);
+        Assertions.assertEquals((byte)(0), encoded[2]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -609,23 +609,23 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 2 + 3 + (128 * 256 - 3 - 1) + 3 + (128 * 256 - 3), encoded.length);
-        Assert.assertEquals((byte)(247 + 2), encoded[0]);
-        Assert.assertEquals((byte)(255), encoded[1]);
-        Assert.assertEquals((byte)(255), encoded[2]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 2 + 3 + (128 * 256 - 3 - 1) + 3 + (128 * 256 - 3), encoded.length);
+        Assertions.assertEquals((byte)(247 + 2), encoded[0]);
+        Assertions.assertEquals((byte)(255), encoded[1]);
+        Assertions.assertEquals((byte)(255), encoded[2]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -636,24 +636,24 @@ public class RLPTest {
         byte[] element2 = RLP.encodeElement(value2);
         byte[] encoded = RLP.encodeList(element1, element2);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertEquals(1 + 3 + 3 + (128 * 256 - 3) + 3 + (128 * 256 - 3), encoded.length);
-        Assert.assertEquals((byte)(247 + 3), encoded[0]);
-        Assert.assertEquals((byte)(1), encoded[1]);
-        Assert.assertEquals((byte)(0), encoded[2]);
-        Assert.assertEquals((byte)(0), encoded[3]);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertEquals(1 + 3 + 3 + (128 * 256 - 3) + 3 + (128 * 256 - 3), encoded.length);
+        Assertions.assertEquals((byte)(247 + 3), encoded[0]);
+        Assertions.assertEquals((byte)(1), encoded[1]);
+        Assertions.assertEquals((byte)(0), encoded[2]);
+        Assertions.assertEquals((byte)(0), encoded[3]);
 
         ArrayList<RLPElement> list = RLP.decode2(encoded);
 
-        Assert.assertNotNull(list);
-        Assert.assertEquals(1, list.size());
+        Assertions.assertNotNull(list);
+        Assertions.assertEquals(1, list.size());
 
         RLPList list2 = (RLPList) list.get(0);
 
-        Assert.assertNotNull(list2);
-        Assert.assertEquals(2, list2.size());
-        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
-        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+        Assertions.assertNotNull(list2);
+        Assertions.assertEquals(2, list2.size());
+        Assertions.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assertions.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
     @Test
@@ -662,10 +662,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -675,10 +675,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -688,10 +688,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -701,10 +701,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -716,10 +716,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -731,10 +731,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -744,10 +744,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -757,10 +757,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -773,10 +773,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -789,10 +789,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -806,10 +806,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -823,10 +823,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -836,10 +836,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -849,10 +849,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -862,10 +862,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -875,10 +875,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -888,10 +888,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -901,10 +901,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -914,10 +914,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -927,10 +927,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -940,10 +940,10 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -953,10 +953,10 @@ public class RLPTest {
 
         try {
             RLP.decode2(encoded);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+            Assertions.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
@@ -966,10 +966,10 @@ public class RLPTest {
             // Integer.MAX_VALUE
             byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x7f, (byte)0xff, (byte)0xff, (byte)0xff };
             RLP.decodeBigInteger(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+            Assertions.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
@@ -979,33 +979,33 @@ public class RLPTest {
             // Integer.MAX_VALUE + 1
             byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x80, (byte)0xff, (byte)0xff, (byte)0xff };
             RLP.decodeBigInteger(encoded, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
+            Assertions.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
         }
     }
 
     @Test
     public void encodeDecodeInteger() {
         for (int k = 0; k < 2048; k++) {
-            Assert.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
+            Assertions.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
         }
     }
 
     @Test
     public void encodeDecodeInteger128() {
-        Assert.assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
+        Assertions.assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
     }
 
     @Test
-    @Ignore
+    @Disabled
     // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
     public void encodeDecodeIntegerInList() {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
             byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-            Assert.assertEquals(k, RLP.decodeInt(bytes2, 0));
+            Assertions.assertEquals(k, RLP.decodeInt(bytes2, 0));
         }
     }
 
@@ -1014,7 +1014,7 @@ public class RLPTest {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
             byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-            Assert.assertEquals(k, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+            Assertions.assertEquals(k, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
         }
     }
 
@@ -1023,38 +1023,38 @@ public class RLPTest {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(0));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         // known issue, the byte array is null
-        Assert.assertNull(bytes2);
+        Assertions.assertNull(bytes2);
     }
 
     @Test
-    @Ignore
+    @Disabled
     // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
     public void encodeDecodeInteger128InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-        Assert.assertEquals(128, RLP.decodeInt(bytes2, 0));
+        Assertions.assertEquals(128, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
     public void encodeDecodeInteger128InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-        Assert.assertEquals(128, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+        Assertions.assertEquals(128, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 
     @Test
-    @Ignore
+    @Disabled
     // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
     public void encodeDecodeInteger238InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-        Assert.assertEquals(238, RLP.decodeInt(bytes2, 0));
+        Assertions.assertEquals(238, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
     public void encodeDecodeInteger238InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
-        Assert.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+        Assertions.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 }

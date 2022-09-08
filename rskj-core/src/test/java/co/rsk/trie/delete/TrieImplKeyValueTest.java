@@ -19,8 +19,8 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -39,8 +39,8 @@ public class TrieImplKeyValueTest {
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
-        Assert.assertNull(trie.get(oneKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assertions.assertNull(trie.get(oneKey));
     }
 
     @Test
@@ -53,8 +53,8 @@ public class TrieImplKeyValueTest {
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
-        Assert.assertNull(trie.get(zeroKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assertions.assertNull(trie.get(zeroKey));
     }
 
     @Test
@@ -67,8 +67,8 @@ public class TrieImplKeyValueTest {
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
-        Assert.assertNull(trie.get(zeroKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assertions.assertNull(trie.get(zeroKey));
     }
 
     @Test
@@ -81,8 +81,8 @@ public class TrieImplKeyValueTest {
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
-        Assert.assertNull(trie.get(oneKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assertions.assertNull(trie.get(oneKey));
     }
 
     @Test
@@ -107,11 +107,11 @@ public class TrieImplKeyValueTest {
         byte[] stateHash3 =trie.getHash().getBytes();
 
         byte[] zeroValue = trie.get(zeroKey);
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "zero".getBytes()));
-        Assert.assertNull(trie.get(oneKey));
-        Assert.assertFalse(Arrays.equals(stateHash0, stateHash1));
-        Assert.assertFalse(Arrays.equals(stateHash1, stateHash2));
-        Assert.assertTrue(Arrays.equals(stateHash1, stateHash3));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), "zero".getBytes()));
+        Assertions.assertNull(trie.get(oneKey));
+        Assertions.assertFalse(Arrays.equals(stateHash0, stateHash1));
+        Assertions.assertFalse(Arrays.equals(stateHash1, stateHash2));
+        Assertions.assertTrue(Arrays.equals(stateHash1, stateHash3));
 
         // Not check that setting null is equivalent to deleting
         // We re'add the one key
@@ -119,13 +119,13 @@ public class TrieImplKeyValueTest {
         trie = trie.delete(oneKey);
 
         byte[] stateHash4 =trie.getHash().getBytes();
-        Assert.assertTrue(Arrays.equals(stateHash3, stateHash4));
+        Assertions.assertTrue(Arrays.equals(stateHash3, stateHash4));
 
         // Re remove the key again
 
         trie = trie.put(oneKey,null);
 
         byte[] stateHash5 =trie.getHash().getBytes();
-        Assert.assertTrue(Arrays.equals(stateHash1, stateHash5));
+        Assertions.assertTrue(Arrays.equals(stateHash1, stateHash5));
     }
 }

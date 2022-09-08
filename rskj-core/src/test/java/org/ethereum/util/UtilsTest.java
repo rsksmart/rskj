@@ -20,16 +20,16 @@
 package org.ethereum.util;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author Roman Mandeleil
@@ -199,7 +199,7 @@ public class UtilsTest {
                 "0x10",
                 "0xA12"
         };
-        java.util.Arrays.stream(hexStrings).forEach(s -> Assert.assertTrue(s, Utils.isHexadecimalString(s)));
+        java.util.Arrays.stream(hexStrings).forEach(s -> Assertions.assertTrue(Utils.isHexadecimalString(s), s));
 
         String[] nonHexStrings = new String[] {
                 "hellothisisnotahex",
@@ -209,7 +209,7 @@ public class UtilsTest {
                 "0xab123z",
                 "0xnothing"
         };
-        java.util.Arrays.stream(nonHexStrings).forEach(s -> Assert.assertFalse(s, Utils.isHexadecimalString(s)));
+        java.util.Arrays.stream(nonHexStrings).forEach(s -> Assertions.assertFalse(Utils.isHexadecimalString(s), s));
     }
 
     @Test
@@ -222,7 +222,7 @@ public class UtilsTest {
                 "0",
                 "01"
         };
-        java.util.Arrays.stream(decStrings).forEach(s -> Assert.assertTrue(s, Utils.isDecimalString(s)));
+        java.util.Arrays.stream(decStrings).forEach(s -> Assertions.assertTrue(Utils.isDecimalString(s), s));
 
         String[] nonDecStrings = new String[] {
                 "hellothisisnotadec",
@@ -233,7 +233,7 @@ public class UtilsTest {
                 "0xabcd",
                 "0x123"
         };
-        java.util.Arrays.stream(nonDecStrings).forEach(s -> Assert.assertFalse(s, Utils.isDecimalString(s)));
+        java.util.Arrays.stream(nonDecStrings).forEach(s -> Assertions.assertFalse(Utils.isDecimalString(s), s));
     }
 
     @Test
@@ -249,13 +249,13 @@ public class UtilsTest {
         for (int i = 0; i < cases.length/2; i++) {
             String s = (String) cases[i*2];
             long expected = (long) cases[i*2+1];
-            Assert.assertEquals(expected, Utils.decimalStringToLong(s));
+            Assertions.assertEquals(expected, Utils.decimalStringToLong(s));
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void decimalStringToLongFail() {
-        Utils.decimalStringToLong("zzz");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.decimalStringToLong("zzz"));
     }
 
     @Test
@@ -271,30 +271,30 @@ public class UtilsTest {
         for (int i = 0; i < cases.length/2; i++) {
             String s = (String) cases[i*2];
             long expected = (long) cases[i*2+1];
-            Assert.assertEquals(expected, Utils.hexadecimalStringToLong(s));
+            Assertions.assertEquals(expected, Utils.hexadecimalStringToLong(s));
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void hexadecimalStringToLongFail() {
-        Utils.hexadecimalStringToLong("abcd");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.hexadecimalStringToLong("abcd"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void hexadecimalStringToLongFailBis() {
-        Utils.hexadecimalStringToLong("zzz");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.hexadecimalStringToLong("zzz"));
     }
 
     @Test
     public void significantBitCount() {
-        Assert.assertEquals(0, Utils.significantBitCount(0b0));
-        Assert.assertEquals(1, Utils.significantBitCount(0b1));
-        Assert.assertEquals(2, Utils.significantBitCount(0b10));
-        Assert.assertEquals(2, Utils.significantBitCount(0b11));
-        Assert.assertEquals(3, Utils.significantBitCount(0b111));
-        Assert.assertEquals(3, Utils.significantBitCount(0b100));
-        Assert.assertEquals(3, Utils.significantBitCount(0b101));
-        Assert.assertEquals(13, Utils.significantBitCount(0b1000111000101));
-        Assert.assertEquals(9, Utils.significantBitCount(0b000111000101));
+        Assertions.assertEquals(0, Utils.significantBitCount(0b0));
+        Assertions.assertEquals(1, Utils.significantBitCount(0b1));
+        Assertions.assertEquals(2, Utils.significantBitCount(0b10));
+        Assertions.assertEquals(2, Utils.significantBitCount(0b11));
+        Assertions.assertEquals(3, Utils.significantBitCount(0b111));
+        Assertions.assertEquals(3, Utils.significantBitCount(0b100));
+        Assertions.assertEquals(3, Utils.significantBitCount(0b101));
+        Assertions.assertEquals(13, Utils.significantBitCount(0b1000111000101));
+        Assertions.assertEquals(9, Utils.significantBitCount(0b000111000101));
     }
 }

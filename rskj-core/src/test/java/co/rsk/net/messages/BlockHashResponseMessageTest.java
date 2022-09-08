@@ -18,8 +18,8 @@
 
 package co.rsk.net.messages;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
@@ -35,9 +35,9 @@ public class BlockHashResponseMessageTest {
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 
-        Assert.assertEquals(id, message.getId());
-        Assert.assertArrayEquals(hash, message.getHash());
-        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(id, message.getId());
+        Assertions.assertArrayEquals(hash, message.getHash());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
     }
 
     @Test

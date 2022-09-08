@@ -22,9 +22,10 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ public class LockWhitelistTest {
     private LockWhitelist whitelist;
     private Address existingAddress;
 
-    @Before
+    @BeforeEach
     public void createWhitelist() {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         int existingPrivate = 300;
@@ -57,13 +58,13 @@ public class LockWhitelistTest {
 
     @Test
     public void getSize() {
-        Assert.assertEquals(4, whitelist.getSize().intValue());
+        Assertions.assertEquals(4, whitelist.getSize().intValue());
     }
 
     @Test
     public void getAddresses() {
-        Assert.assertNotSame(whitelist.getAddresses(), addresses);
-        Assert.assertThat(whitelist.getAddresses(), containsInAnyOrder(addresses.keySet().toArray()));
+        Assertions.assertNotSame(whitelist.getAddresses(), addresses);
+        MatcherAssert.assertThat(whitelist.getAddresses(), containsInAnyOrder(addresses.keySet().toArray()));
     }
 
     @Test
@@ -89,11 +90,11 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
 
         assertExistance(randomAddress, true);
 
-        Assert.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+        Assertions.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
     }
 
     @Test
@@ -105,11 +106,11 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
 
         assertExistance(randomAddress, true);
 
-        Assert.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+        Assertions.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
     }
 
     @Test
@@ -121,11 +122,11 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
 
         assertExistance(randomAddress, true);
 
-        Assert.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+        Assertions.assertFalse(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
     }
 
     @Test
@@ -135,28 +136,28 @@ public class LockWhitelistTest {
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
         );
 
-        Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
-        Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
+        Assertions.assertFalse(whitelist.isWhitelisted(randomAddress));
+        Assertions.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
 
-        Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
-        Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
+        Assertions.assertTrue(whitelist.isWhitelisted(randomAddress));
+        Assertions.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+        Assertions.assertFalse(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
     }
 
     @Test
     public void remove() {
-        Assert.assertTrue(whitelist.isWhitelisted(existingAddress));
-        Assert.assertTrue(whitelist.isWhitelisted(existingAddress.getHash160()));
+        Assertions.assertTrue(whitelist.isWhitelisted(existingAddress));
+        Assertions.assertTrue(whitelist.isWhitelisted(existingAddress.getHash160()));
 
-        Assert.assertTrue(whitelist.remove(existingAddress));
+        Assertions.assertTrue(whitelist.remove(existingAddress));
 
-        Assert.assertFalse(whitelist.isWhitelisted(existingAddress));
-        Assert.assertFalse(whitelist.isWhitelisted(existingAddress.getHash160()));
+        Assertions.assertFalse(whitelist.isWhitelisted(existingAddress));
+        Assertions.assertFalse(whitelist.isWhitelisted(existingAddress.getHash160()));
 
-        Assert.assertFalse(whitelist.remove(existingAddress));
+        Assertions.assertFalse(whitelist.remove(existingAddress));
     }
 
     @Test
@@ -167,7 +168,7 @@ public class LockWhitelistTest {
 
         assertExistance(existingAddress, false);
 
-        Assert.assertFalse(whitelist.remove(existingAddress));
+        Assertions.assertFalse(whitelist.remove(existingAddress));
     }
 
     @Test
@@ -179,7 +180,7 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new UnlimitedWhiteListEntry(randomAddress)));
 
         assertExistance(randomAddress, true);
 
@@ -198,11 +199,11 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.COIN)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.COIN)));
 
         assertExistance(randomAddress, true);
 
-        Assert.assertTrue(whitelist.get(randomAddress).canLock(Coin.COIN));
+        Assertions.assertTrue(whitelist.get(randomAddress).canLock(Coin.COIN));
     }
 
     @Test
@@ -215,11 +216,11 @@ public class LockWhitelistTest {
 
         assertExistance(randomAddress, false);
 
-        Assert.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
+        Assertions.assertTrue(whitelist.put(randomAddress, new OneOffWhiteListEntry(randomAddress, Coin.CENT)));
 
         assertExistance(randomAddress, true);
 
-        Assert.assertFalse(whitelist.get(randomAddress).canLock(Coin.COIN));
+        Assertions.assertFalse(whitelist.get(randomAddress).canLock(Coin.COIN));
     }
 
     @Test
@@ -232,11 +233,11 @@ public class LockWhitelistTest {
 
         OneOffWhiteListEntry entry = new OneOffWhiteListEntry(randomAddress, Coin.COIN);
 
-        Assert.assertTrue(entry.canLock(Coin.COIN));
+        Assertions.assertTrue(entry.canLock(Coin.COIN));
 
         entry.consume();
 
-        Assert.assertFalse(entry.canLock(Coin.COIN));
+        Assertions.assertFalse(entry.canLock(Coin.COIN));
     }
 
     @Test
@@ -249,7 +250,7 @@ public class LockWhitelistTest {
 
         UnlimitedWhiteListEntry entry = new UnlimitedWhiteListEntry(randomAddress);
 
-        Assert.assertTrue(entry.canLock(Coin.COIN));
+        Assertions.assertTrue(entry.canLock(Coin.COIN));
     }
 
     @Test
@@ -262,20 +263,20 @@ public class LockWhitelistTest {
 
         UnlimitedWhiteListEntry entry = new UnlimitedWhiteListEntry(randomAddress);
 
-        Assert.assertTrue(entry.canLock(Coin.COIN));
+        Assertions.assertTrue(entry.canLock(Coin.COIN));
 
         entry.consume();
 
-        Assert.assertTrue(entry.canLock(Coin.COIN));
+        Assertions.assertTrue(entry.canLock(Coin.COIN));
     }
 
     @Test
     public void getAllByType() {
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 addresses.values().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e-> e.address()).sorted().toArray(),
                 whitelist.getAll(OneOffWhiteListEntry.class).stream().map(e-> e.address()).toArray()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
                 addresses.values().stream().filter(e -> e.getClass() == UnlimitedWhiteListEntry.class).map(e-> e.address()).sorted().toArray(),
                 whitelist.getAll(UnlimitedWhiteListEntry.class).stream().map(e-> e.address()).toArray()
         );
@@ -283,11 +284,11 @@ public class LockWhitelistTest {
 
     @Test
     public void getAll() {
-        Assert.assertEquals(addresses.size(), whitelist.getAll().size());
+        Assertions.assertEquals(addresses.size(), whitelist.getAll().size());
     }
 
     private void assertExistance(Address address, boolean exists) {
-        Assert.assertEquals(exists, whitelist.isWhitelisted(address));
-        Assert.assertEquals(exists, whitelist.isWhitelisted(address.getHash160()));
+        Assertions.assertEquals(exists, whitelist.isWhitelisted(address));
+        Assertions.assertEquals(exists, whitelist.isWhitelisted(address.getHash160()));
     }
 }

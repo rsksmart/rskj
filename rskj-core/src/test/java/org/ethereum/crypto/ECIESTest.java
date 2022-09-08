@@ -20,8 +20,8 @@
 package org.ethereum.crypto;
 
 import org.ethereum.ConcatKDFBytesGenerator;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -42,9 +42,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.security.Security;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class ECIESTest {
     public static final int KEY_SIZE = 128;
@@ -58,7 +57,7 @@ public class ECIESTest {
         return curve.getG().multiply(d);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAll() {
         curve = new ECDomainParameters(IES_CURVE_PARAM.getCurve(), IES_CURVE_PARAM.getG(), IES_CURVE_PARAM.getN(), IES_CURVE_PARAM.getH());
     }

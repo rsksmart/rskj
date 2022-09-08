@@ -35,17 +35,17 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,7 +65,7 @@ public class BridgeEventLoggerLegacyImplTest {
     private BtcTransaction btcTxMock;
     private Keccak256 rskTxHash;
 
-    @Before
+    @BeforeEach
     public void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
@@ -94,18 +94,18 @@ public class BridgeEventLoggerLegacyImplTest {
         LogInfo logResult = eventLogs.get(0);
         List<DataWord> topics = Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC);
         for (int i = 0; i < topics.size(); i++) {
-            Assert.assertEquals(topics.get(i), logResult.getTopics().get(i));
+            Assertions.assertEquals(topics.get(i), logResult.getTopics().get(i));
         }
 
         // Assert log data
         byte[] encodedData = RLP.encodeElement(tx.getSender().getBytes());
-        Assert.assertArrayEquals(encodedData, logResult.getData());
+        Assertions.assertArrayEquals(encodedData, logResult.getData());
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        eventLogger.logUpdateCollections(any());
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(any()));
     }
 
     @Test
@@ -120,32 +120,32 @@ public class BridgeEventLoggerLegacyImplTest {
         eventLogger.logAddSignature(federatorPubKey, btcTxMock, rskTxHash.getBytes());
 
         // Assert log size
-        Assert.assertEquals(1, eventLogs.size());
+        Assertions.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assert.assertEquals(1, logResult.getTopics().size());
-        Assert.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, logResult.getTopics().get(0));
+        Assertions.assertEquals(1, logResult.getTopics().size());
+        Assertions.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, logResult.getTopics().get(0));
 
         // Assert log data
-        Assert.assertNotNull(logResult.getData());
+        Assertions.assertNotNull(logResult.getData());
         List<RLPElement> rlpData = RLP.decode2(logResult.getData());
-        Assert.assertEquals(1, rlpData.size());
+        Assertions.assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
-        Assert.assertEquals(3, dataList.size());
-        Assert.assertArrayEquals(btcTxMock.getHashAsString().getBytes(), dataList.get(0).getRLPData());
-        Assert.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
-        Assert.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
+        Assertions.assertEquals(3, dataList.size());
+        Assertions.assertArrayEquals(btcTxMock.getHashAsString().getBytes(), dataList.get(0).getRLPData());
+        Assertions.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
+        Assertions.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogAddSignatureAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        eventLogger.logAddSignature(new BtcECKey(), btcTxMock, rskTxHash.getBytes());
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(new BtcECKey(), btcTxMock, rskTxHash.getBytes()));
     }
 
     @Test
@@ -163,26 +163,26 @@ public class BridgeEventLoggerLegacyImplTest {
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assert.assertEquals(1, logResult.getTopics().size());
+        Assertions.assertEquals(1, logResult.getTopics().size());
         List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
         for (int i = 0; i < topics.size(); i++) {
-            Assert.assertEquals(topics.get(i), logResult.getTopics().get(i));
+            Assertions.assertEquals(topics.get(i), logResult.getTopics().get(i));
         }
 
         // Assert log data
         byte[] encodedData = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
-        Assert.assertArrayEquals(encodedData, logResult.getData());
+        Assertions.assertArrayEquals(encodedData, logResult.getData());
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogReleaseBtcAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        eventLogger.logReleaseBtc(btcTxMock, rskTxHash.getBytes());
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, rskTxHash.getBytes()));
     }
 
     @Test
@@ -225,105 +225,105 @@ public class BridgeEventLoggerLegacyImplTest {
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
 
         // Assert log size
-        Assert.assertEquals(1, eventLogs.size());
+        Assertions.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
 
         // Assert address that made the log
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assert.assertEquals(1, logResult.getTopics().size());
-        Assert.assertEquals(Bridge.COMMIT_FEDERATION_TOPIC, logResult.getTopics().get(0));
+        Assertions.assertEquals(1, logResult.getTopics().size());
+        Assertions.assertEquals(Bridge.COMMIT_FEDERATION_TOPIC, logResult.getTopics().get(0));
 
         // Assert log data
-        Assert.assertNotNull(logResult.getData());
+        Assertions.assertNotNull(logResult.getData());
         List<RLPElement> rlpData = RLP.decode2(logResult.getData());
-        Assert.assertEquals(1, rlpData.size());
+        Assertions.assertEquals(1, rlpData.size());
         RLPList dataList = (RLPList) rlpData.get(0);
-        Assert.assertEquals(3, dataList.size());
+        Assertions.assertEquals(3, dataList.size());
 
         // Assert old federation data
         RLPList oldFedData = (RLPList) dataList.get(0);
-        Assert.assertEquals(2, oldFedData.size());
-        Assert.assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
+        Assertions.assertEquals(2, oldFedData.size());
+        Assertions.assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
 
         RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
-        Assert.assertEquals(4, oldFedPubKeys.size());
+        Assertions.assertEquals(4, oldFedPubKeys.size());
         for (int i = 0; i < 4; i++) {
-            Assert.assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
+            Assertions.assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
         }
 
         // Assert new federation data
         RLPList newFedData = (RLPList) dataList.get(1);
-        Assert.assertEquals(2, newFedData.size());
-        Assert.assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
+        Assertions.assertEquals(2, newFedData.size());
+        Assertions.assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
 
         RLPList newFedPubKeys = (RLPList) newFedData.get(1);
-        Assert.assertEquals(3, newFedPubKeys.size());
+        Assertions.assertEquals(3, newFedPubKeys.size());
         for (int i = 0; i < 3; i++) {
-            Assert.assertEquals(newFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
+            Assertions.assertEquals(newFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
         }
 
         // Assert new federation activation block number
-        Assert.assertEquals(15L + constantsMock.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        Assertions.assertEquals(15L + constantsMock.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogCommitFederationAfterRskip146() {
         // Setup event logger
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class));
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogLockBtc() {
-        eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogPeginBtc() {
-        eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogReleaseBtcRequested() {
-        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTxMock, Coin.SATOSHI);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTxMock, Coin.SATOSHI));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogRejectedPegin() {
-        eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogUnrefundablePegin() {
-        eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
         byte[] btcDestinationAddress = "1234".getBytes();
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void testLogReleaseBtcRequestRejected() {
         String sender = "0x00000000000000000000000000000000000000";
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
-        eventLogger.logReleaseBtcRequestRejected(sender, amount, reason);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequestRejected(sender, amount, reason));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void logBatchPegoutCreated() {
-        eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>());
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>()));
     }
 
     /**********************************

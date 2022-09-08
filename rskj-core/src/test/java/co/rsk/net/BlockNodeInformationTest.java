@@ -19,8 +19,8 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
@@ -48,11 +48,11 @@ public class BlockNodeInformationTest {
             nodeInformation.addBlockToNode(hash1, nodeID1);
         }
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(300)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(300)).contains(nodeID1));
 
         // Add more blocks, exceeding MAX_NODES. All previous blocks should be evicted.
         // Except from block 10, which is being constantly accessed.
@@ -63,25 +63,25 @@ public class BlockNodeInformationTest {
             nodeInformation.getNodesByBlock(createBlockHash(10));
         }
 
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(1)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(700)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(1)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(700)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1900)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(10)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1900)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(10)).contains(nodeID1));
 
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(25)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(70)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(25)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(70)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1901)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1901)).contains(nodeID1));
     }
 
     @Test
     public void getIsEmptyIfNotPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
     }
 
     @Test
@@ -96,12 +96,12 @@ public class BlockNodeInformationTest {
         nodeInformation.addBlockToNode(hash1, nodeID1);
 
         Set<NodeID> nodes = nodeInformation.getNodesByBlock(hash1);
-        Assert.assertTrue(nodes.size() == 1);
-        Assert.assertTrue(nodes.contains(nodeID1));
-        Assert.assertFalse(nodes.contains(badNode));
+        Assertions.assertTrue(nodes.size() == 1);
+        Assertions.assertTrue(nodes.contains(nodeID1));
+        Assertions.assertFalse(nodes.contains(badNode));
 
         nodes = nodeInformation.getNodesByBlock(badHash);
-        Assert.assertTrue(nodes.size() == 0);
+        Assertions.assertTrue(nodes.size() == 0);
     }
 
     @Test
@@ -120,13 +120,13 @@ public class BlockNodeInformationTest {
         Set<NodeID> nodes1 = nodeInformation.getNodesByBlock(hash1);
         Set<NodeID> nodes2 = nodeInformation.getNodesByBlock(hash2);
 
-        Assert.assertTrue(nodes1.size() == 1);
-        Assert.assertTrue(nodes2.size() == 2);
+        Assertions.assertTrue(nodes1.size() == 1);
+        Assertions.assertTrue(nodes2.size() == 2);
 
 
-        Assert.assertTrue(nodes1.contains(nodeID1));
-        Assert.assertTrue(nodes2.contains(nodeID1));
-        Assert.assertTrue(nodes2.contains(nodeID2));
+        Assertions.assertTrue(nodes1.contains(nodeID1));
+        Assertions.assertTrue(nodes2.contains(nodeID1));
+        Assertions.assertTrue(nodes2.contains(nodeID2));
     }
 
 }

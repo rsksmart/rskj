@@ -21,8 +21,8 @@ package co.rsk.peg;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -36,15 +36,15 @@ public class ABICallSpecTest {
         });
 
         byte[][] arguments = spec.getArguments();
-        Assert.assertNotSame(arguments, TestUtils.getInternalState(spec, "arguments"));
-        Assert.assertTrue(Arrays.equals(Hex.decode("aabb"), arguments[0]));
-        Assert.assertTrue(Arrays.equals(Hex.decode("ccddee"), arguments[1]));
+        Assertions.assertNotSame(arguments, TestUtils.getInternalState(spec, "arguments"));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("aabb"), arguments[0]));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("ccddee"), arguments[1]));
     }
 
     @Test
     public void getFunction() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{});
-        Assert.assertEquals("a-function", spec.getFunction());
+        Assertions.assertEquals("a-function", spec.getFunction());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ABICallSpecTest {
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append(ByteUtil.toHexString("a-function".getBytes(StandardCharsets.UTF_8)));
         expectedBuilder.append("1122334455");
-        Assert.assertTrue(Arrays.equals(Hex.decode(expectedBuilder.toString()), spec.getEncoded()));
+        Assertions.assertTrue(Arrays.equals(Hex.decode(expectedBuilder.toString()), spec.getEncoded()));
     }
 
     @Test
@@ -86,10 +86,10 @@ public class ABICallSpecTest {
                 Hex.decode("ccddee")
         });
 
-        Assert.assertEquals(specA, specF);
-        Assert.assertNotEquals(specA, specB);
-        Assert.assertNotEquals(specA, specC);
-        Assert.assertNotEquals(specA, specD);
-        Assert.assertNotEquals(specA, specE);
+        Assertions.assertEquals(specA, specF);
+        Assertions.assertNotEquals(specA, specB);
+        Assertions.assertNotEquals(specA, specC);
+        Assertions.assertNotEquals(specA, specD);
+        Assertions.assertNotEquals(specA, specE);
     }
 }

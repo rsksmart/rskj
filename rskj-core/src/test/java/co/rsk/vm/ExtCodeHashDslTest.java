@@ -29,9 +29,9 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.util.Iterator;
@@ -45,7 +45,7 @@ public class ExtCodeHashDslTest {
     private World world;
     private WorldDslProcessor processor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(5))
@@ -66,10 +66,10 @@ public class ExtCodeHashDslTest {
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract( "b02", "tx01", 0);
-        Assert.assertNull(extcodehash);
+        Assertions.assertNull(extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract( "b05", "tx01", 0);
-        Assert.assertNull(extcodehash2);
+        Assertions.assertNull(extcodehash2);
     }
 
     @Test
@@ -79,10 +79,10 @@ public class ExtCodeHashDslTest {
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract( "b02", "tx01", 0);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b05", "tx01", 0);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
     }
 
 
@@ -93,10 +93,10 @@ public class ExtCodeHashDslTest {
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract("b02", "tx01", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b05", "tx03", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
     }
 
     @Test
@@ -106,13 +106,13 @@ public class ExtCodeHashDslTest {
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract("b03", "tx01", 1);
-        Assert.assertNull(extcodehash);
+        Assertions.assertNull(extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b04", "tx01", 1);
-        Assert.assertNull(extcodehash2);
+        Assertions.assertNull(extcodehash2);
 
         byte[] extcodehash3 = getExtCodeHashStateForBlockAndContract("b05", "tx01", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash3);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash3);
     }
 
     private byte[] getExtCodeHashStateForBlockAndContract(String targetBlock, String targetContract, int storageKey) {

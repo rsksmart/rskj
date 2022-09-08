@@ -21,8 +21,8 @@ package co.rsk.core.bc;
 import co.rsk.crypto.Keccak256;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -39,7 +39,7 @@ public class BlockHeaderValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator, never()).isValid(any());
@@ -53,7 +53,7 @@ public class BlockHeaderValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator).isValid(any());
@@ -69,7 +69,7 @@ public class BlockHeaderValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertTrue(actualResult);
+        Assertions.assertTrue(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator).isValid(any());

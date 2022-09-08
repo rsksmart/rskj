@@ -18,9 +18,9 @@
 
 package org.ethereum.rpc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 import java.math.BigInteger;
@@ -43,8 +43,9 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
@@ -121,7 +122,7 @@ public class Web3ImplLogsTest {
     //20965255 getValue()
     //371303c0 inc()
 
-    @Before
+    @BeforeEach
     public void setUp() {
         RskTestFactory factory = new RskTestFactory();
         blockChain = factory.getBlockchain();
@@ -859,24 +860,24 @@ public class Web3ImplLogsTest {
         assertEquals(0, logs.length);
     }
 
-    @Test(expected = RskJsonRpcRequestException.class)
-    public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithFromBlock() throws Exception {
+    @Test
+    public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithFromBlock() {
         addEventInContractCreation();
         FilterRequest fr = new FilterRequest();
         fr.setFromBlock("earliest");
         fr.setBlockHash(TRACKED_TEST_BLOCK_HASH);
 
-        web3.eth_getLogs(fr);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> web3.eth_getLogs(fr));
     }
 
-    @Test(expected = RskJsonRpcRequestException.class)
-    public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithToBlock() throws Exception {
+    @Test
+    public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithToBlock() {
         addEventInContractCreation();
         FilterRequest fr = new FilterRequest();
         fr.setToBlock("latest");
         fr.setBlockHash(TRACKED_TEST_BLOCK_HASH);
 
-        web3.eth_getLogs(fr);
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> web3.eth_getLogs(fr));
     }
 
     @Test

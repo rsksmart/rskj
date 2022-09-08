@@ -29,8 +29,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,8 +38,8 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -67,7 +67,7 @@ public class ChannelManagerImplTest {
     @Test
     public void blockAddressIsAvailable() throws UnknownHostException {
         ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
-        Assert.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
+        Assertions.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
     }
 
     @Test
@@ -95,7 +95,7 @@ public class ChannelManagerImplTest {
         channelManager.add(peer);
         channelManager.tryProcessNewPeers();
 
-        Assert.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
+        Assertions.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
     }
 
     @Test
@@ -120,8 +120,8 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
 
-        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
-        Assert.assertEquals(2, broadcastedTo.size());
+        Assertions.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assertions.assertEquals(2, broadcastedTo.size());
     }
 
     @Test
@@ -138,8 +138,8 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.singleton(sender.getNodeId()));
 
-        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
-        Assert.assertEquals(2, broadcastedNodeIDS.size());
+        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assertions.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
+        Assertions.assertEquals(2, broadcastedNodeIDS.size());
     }
 
     @Test
@@ -152,8 +152,8 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransaction(transaction, Collections.emptySet());
 
-        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
-        Assert.assertEquals(2, broadcastedTo.size());
+        Assertions.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assertions.assertEquals(2, broadcastedTo.size());
     }
 
     public Map<NodeID,Channel> peersForTests(int count) {

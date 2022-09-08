@@ -27,8 +27,8 @@ import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -43,7 +43,7 @@ public class BlockchainVMTest {
     @Test
     public void genesisTest() {
         Block genesis = new BlockGenerator().getGenesisBlock();
-        Assert.assertEquals(0, genesis.getNumber());
+        Assertions.assertEquals(0, genesis.getNumber());
     }
 
     private static final Coin faucetAmount = Coin.valueOf(1000000000L);
@@ -85,27 +85,27 @@ public class BlockchainVMTest {
         List<Transaction> txs = Collections.singletonList(t);
 
         Block block2 = blockGenerator.createChildBlock(block1, txs, blockchain.getBestBlock().getStateRoot());
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
+        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(
                 binfo.repository, binfo.repositoryLocator, binfo.blockchain);
 
         mh.completeBlock(block2, block1);
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
+        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
         RepositorySnapshot repository = binfo.repositoryLocator.snapshotAt(block2.getHeader());
 
-        Assert.assertEquals(blockchain.getBestBlock(), block2);
-        Assert.assertEquals(2, block2.getNumber());
+        Assertions.assertEquals(blockchain.getBestBlock(), block2);
+        Assertions.assertEquals(2, block2.getNumber());
 
         Coin srcAmount = faucetAmount.subtract(transferAmount);
         srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit));
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
                 srcAmount);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 repository.getBalance(new RskAddress(dstAddress)),
                 transferAmount);
     }

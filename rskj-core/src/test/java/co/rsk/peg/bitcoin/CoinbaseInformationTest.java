@@ -3,8 +3,8 @@ package co.rsk.peg.bitcoin;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class CoinbaseInformationTest {
 
@@ -15,6 +15,6 @@ public class CoinbaseInformationTest {
         CoinbaseInformation instance = new CoinbaseInformation(witnessRoot);
         Sha256Hash expectedHash = new Sha256Hash(Hex.decode("613cb22535df8d9443fe94b66d807cd60312f982e305e25e825b00e6f429799f"));
 
-        Assert.assertEquals(expectedHash, instance.getWitnessMerkleRoot());
+        Assertions.assertEquals(expectedHash, instance.getWitnessMerkleRoot());
     }
 }

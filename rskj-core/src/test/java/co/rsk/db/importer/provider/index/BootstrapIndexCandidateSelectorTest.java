@@ -4,25 +4,25 @@ import co.rsk.db.importer.BootstrapImportException;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataIndex;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
+class BootstrapIndexCandidateSelectorTest {
 
-public class BootstrapIndexCandidateSelectorTest {
-
-    @Test(expected= BootstrapImportException.class)
+    @Test
     public void getMaximumCommonHeightDataEmpty() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
-        indexMCH.getHeightData(indexes);
+
+        Assertions.assertThrows(BootstrapImportException.class, () -> indexMCH.getHeightData(indexes));
     }
 
-    @Test(expected=BootstrapImportException.class)
+    @Test
     public void getMaximumCommonHeightDataOneEntry() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
@@ -30,10 +30,11 @@ public class BootstrapIndexCandidateSelectorTest {
         ArrayList<BootstrapDataEntry> entries = new ArrayList<>();
         entries.add(new BootstrapDataEntry(1, "", "dbPath", "hash", new BootstrapDataSignature("r", "s")));
         indexes.add(new BootstrapDataIndex(entries));
-        indexMCH.getHeightData(indexes);
+
+        Assertions.assertThrows(BootstrapImportException.class, () -> indexMCH.getHeightData(indexes));
     }
 
-    @Test(expected=BootstrapImportException.class)
+    @Test
     public void getMaximumCommonHeightDataDuplicatedEntries() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
@@ -42,7 +43,8 @@ public class BootstrapIndexCandidateSelectorTest {
         entries.add(new BootstrapDataEntry(1, "", "dbPath", "hash", new BootstrapDataSignature("r", "s")));
         entries.add(new BootstrapDataEntry(1, "", "dbPath", "hash", new BootstrapDataSignature("r", "s")));
         indexes.add(new BootstrapDataIndex(entries));
-        indexMCH.getHeightData(indexes);
+
+        Assertions.assertThrows(BootstrapImportException.class, () -> indexMCH.getHeightData(indexes));
     }
 
     @Test
@@ -57,7 +59,7 @@ public class BootstrapIndexCandidateSelectorTest {
         indexes.add(new BootstrapDataIndex(entries));
         indexes.add(new BootstrapDataIndex(entries2));
         BootstrapIndexCandidateSelector.HeightCandidate heightCandidate = indexMCH.getHeightData(indexes);
-        assertEquals(1, heightCandidate.getHeight());
+        Assertions.assertEquals(1, heightCandidate.getHeight());
     }
 
     @Test
@@ -73,7 +75,7 @@ public class BootstrapIndexCandidateSelectorTest {
         indexes.add(new BootstrapDataIndex(entries));
         indexes.add(new BootstrapDataIndex(entries2));
         BootstrapIndexCandidateSelector.HeightCandidate heightCandidate = indexMCH.getHeightData(indexes);
-        assertEquals(1, heightCandidate.getHeight());
+        Assertions.assertEquals(1, heightCandidate.getHeight());
     }
 
 
@@ -99,6 +101,6 @@ public class BootstrapIndexCandidateSelectorTest {
         indexes.add(new BootstrapDataIndex(entries3));
 
         BootstrapIndexCandidateSelector.HeightCandidate heightCandidate = indexMCH.getHeightData(indexes);
-        assertEquals(heightCandidate.getHeight(), 2L);
+        Assertions.assertEquals(heightCandidate.getHeight(), 2L);
     }
 }

@@ -38,10 +38,10 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class BlockChainImplInvalidTest {
     private Blockchain blockChain;
     private RskContext objects;
 
-    @Before
+    @BeforeEach
     public void setup() {
         objects = new RskTestContext(new String[0]) {
             @Override
@@ -89,7 +89,7 @@ public class BlockChainImplInvalidTest {
         blockChain = objects.getBlockchain();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         objects.close();
     }
@@ -101,7 +101,7 @@ public class BlockChainImplInvalidTest {
 
         block1.getHeader().setTransactionsRoot(HashUtil.randomHash());
 
-        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
+        Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class BlockChainImplInvalidTest {
 
         TestUtils.setInternalState(block1.getHeader(), "unclesHash", HashUtil.randomHash());
 
-        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
+        Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class BlockChainImplInvalidTest {
         Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ONE)
                 .parent(genesis).build();
 
-        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
+        Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = Transaction
@@ -148,7 +148,7 @@ public class BlockChainImplInvalidTest {
         block = new BlockBuilder(null, null, null).transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(genesis).build();
 
-        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
+        Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
     }
 
 }

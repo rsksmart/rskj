@@ -21,10 +21,10 @@ package co.rsk.jsontestsuite;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ import java.util.*;
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class LocalVMTest {
     private Logger logger = LoggerFactory.getLogger("VM-Test");
     @Test
@@ -90,7 +90,7 @@ public class LocalVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 20M - possibly provide percentage indicator
+    @Disabled //FIXME - 20M - possibly provide percentage indicator
     @Test
     public void testvmInputLimitsLight() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -104,7 +104,7 @@ public class LocalVMTest {
         String json = getJSON("vmLogTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
-    @Ignore
+    @Disabled
     @Test // testing full suite
     public void testPerformance() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -127,7 +127,7 @@ public class LocalVMTest {
     }
 
     // This ignore and fixme is at Ethereum code
-    @Ignore
+    @Disabled
     @Test // testing full suite
     public void testvmSystemOperationsTest() throws ParseException {
         Set<String> excluded = new HashSet<>();

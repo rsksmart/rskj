@@ -21,8 +21,8 @@ package co.rsk.peg;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -40,8 +40,8 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ONE);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(1, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(1, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
@@ -53,8 +53,8 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(3, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(3, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
@@ -66,8 +66,8 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ALL);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(4, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
@@ -81,13 +81,13 @@ public class AddressBasedAuthorizerTest {
         for (long n = 100L; n <= 102L; n++) {
             Transaction mockedTx = mock(Transaction.class);
             when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
-            Assert.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
-            Assert.assertTrue(auth.isAuthorized(mockedTx));
+            Assertions.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
+            Assertions.assertTrue(auth.isAuthorized(mockedTx));
         }
 
-        Assert.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
+        Assertions.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
-        Assert.assertFalse(auth.isAuthorized(mockedTx));
+        Assertions.assertFalse(auth.isAuthorized(mockedTx));
     }
 }

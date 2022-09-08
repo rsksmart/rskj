@@ -3,13 +3,14 @@ package co.rsk.db.importer.provider;
 import co.rsk.db.importer.BootstrapImportException;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BootstrapDataVerifierTest {
 
@@ -44,7 +45,7 @@ public class BootstrapDataVerifierTest {
         assertEquals(2, bootstrapDataVerifier.verifyEntries(entries));
     }
 
-    @Test(expected = BootstrapImportException.class)
+    @Test
     public void doNotVerifyForDifferentHashes() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         HashMap<String, BootstrapDataEntry> entries = new HashMap<>();
@@ -68,7 +69,7 @@ public class BootstrapDataVerifierTest {
         entries.put(keys.get(1), new BootstrapDataEntry(1, "", "dbPath", hash2, new BootstrapDataSignature(r2, s2)));
         entries.put(keys.get(2), new BootstrapDataEntry(1, "", "dbPath", hash3, new BootstrapDataSignature(r3, s3)));
 
-        bootstrapDataVerifier.verifyEntries(entries);
+        Assertions.assertThrows(BootstrapImportException.class, () -> bootstrapDataVerifier.verifyEntries(entries));
     }
 
 

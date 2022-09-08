@@ -7,8 +7,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Collections;
@@ -17,7 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,7 +36,7 @@ public class GasPriceTrackerTest {
 
     private BlockStore blockStore;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         blockStore = mock(BlockStore.class);
         Block bestBlock = makeBlock(Coin.valueOf(DB_BLOCK_PRICE), BEST_BLOCK_TX_COUNT, i -> makeTx(Coin.valueOf(DB_TX_GAS_PRICE)));

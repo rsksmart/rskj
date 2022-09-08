@@ -25,8 +25,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,11 +46,11 @@ public class ReceiptStoreImplFallbackTest {
 
         TransactionInfo result = storeV2.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(42, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash, result.getBlockHash());
+        Assertions.assertEquals(42, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
     @Test
@@ -69,19 +69,19 @@ public class ReceiptStoreImplFallbackTest {
 
         TransactionInfo result1 = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash1).orElse(null);
 
-        Assert.assertNotNull(result1);
-        Assert.assertNotNull(result1.getBlockHash());
-        Assert.assertArrayEquals(blockHash1, result1.getBlockHash());
-        Assert.assertEquals(41, result1.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result1.getReceipt().getEncoded());
+        Assertions.assertNotNull(result1);
+        Assertions.assertNotNull(result1.getBlockHash());
+        Assertions.assertArrayEquals(blockHash1, result1.getBlockHash());
+        Assertions.assertEquals(41, result1.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result1.getReceipt().getEncoded());
 
         TransactionInfo result2 = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash2).orElse(null);
 
-        Assert.assertNotNull(result2);
-        Assert.assertNotNull(result2.getBlockHash());
-        Assert.assertArrayEquals(blockHash2, result2.getBlockHash());
-        Assert.assertEquals(42, result2.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result2.getReceipt().getEncoded());
+        Assertions.assertNotNull(result2);
+        Assertions.assertNotNull(result2.getBlockHash());
+        Assertions.assertArrayEquals(blockHash2, result2.getBlockHash());
+        Assertions.assertEquals(42, result2.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result2.getReceipt().getEncoded());
     }
 
     @Test
@@ -97,7 +97,7 @@ public class ReceiptStoreImplFallbackTest {
 
         TransactionInfo result = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     // from TransactionTest

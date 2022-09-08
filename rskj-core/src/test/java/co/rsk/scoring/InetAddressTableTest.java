@@ -1,7 +1,7 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -17,14 +17,14 @@ public class InetAddressTableTest {
     public void doesNotContainsNewIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
-        Assert.assertFalse(table.contains(generateIPAddressV4()));
+        Assertions.assertFalse(table.contains(generateIPAddressV4()));
     }
 
     @Test
     public void doesNotContainsNewIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
-        Assert.assertFalse(table.contains(generateIPAddressV6()));
+        Assertions.assertFalse(table.contains(generateIPAddressV6()));
     }
 
     @Test
@@ -33,7 +33,7 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV4();
 
         table.addAddress(address);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
     }
 
     @Test
@@ -44,7 +44,7 @@ public class InetAddressTableTest {
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 32);
 
         table.addAddressBlock(addressBlock);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
     }
 
     @Test
@@ -53,7 +53,7 @@ public class InetAddressTableTest {
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(generateIPAddressV4(), 32);
 
         table.addAddressBlock(addressBlock);
-        Assert.assertFalse(table.contains(generateIPAddressV4()));
+        Assertions.assertFalse(table.contains(generateIPAddressV4()));
     }
 
     @Test
@@ -62,9 +62,9 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV4();
 
         table.addAddress(address);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
         table.removeAddress(address);
-        Assert.assertFalse(table.contains(address));
+        Assertions.assertFalse(table.contains(address));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV6();
 
         table.addAddress(address);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
     }
 
     @Test
@@ -82,9 +82,9 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV6();
 
         table.addAddress(address);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
         table.removeAddress(address);
-        Assert.assertFalse(table.contains(address));
+        Assertions.assertFalse(table.contains(address));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class InetAddressTableTest {
 
         table.addAddress(address);
         table.addAddress(address);
-        Assert.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class InetAddressTableTest {
         InetAddress address = generateIPAddressV4();
 
         table.removeAddress(address);
-        Assert.assertFalse(table.contains(address));
+        Assertions.assertFalse(table.contains(address));
     }
 
     @Test
@@ -115,13 +115,13 @@ public class InetAddressTableTest {
 
         table.addAddressBlock(new InetAddressCidrBlock(address, 8));
 
-        Assert.assertTrue(table.contains(address));
-        Assert.assertTrue(table.contains(address2));
-        Assert.assertFalse(table.contains(address3));
+        Assertions.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address2));
+        Assertions.assertFalse(table.contains(address3));
 
         table.addAddress(address3);
 
-        Assert.assertTrue(table.contains(address3));
+        Assertions.assertTrue(table.contains(address3));
     }
 
     @Test
@@ -133,15 +133,15 @@ public class InetAddressTableTest {
 
         table.addAddressBlock(new InetAddressCidrBlock(address, 8));
 
-        Assert.assertTrue(table.contains(address));
-        Assert.assertTrue(table.contains(address2));
-        Assert.assertFalse(table.contains(address3));
+        Assertions.assertTrue(table.contains(address));
+        Assertions.assertTrue(table.contains(address2));
+        Assertions.assertFalse(table.contains(address3));
 
         table.removeAddressBlock(new InetAddressCidrBlock(address, 8));
 
-        Assert.assertFalse(table.contains(address));
-        Assert.assertFalse(table.contains(address2));
-        Assert.assertFalse(table.contains(address3));
+        Assertions.assertFalse(table.contains(address));
+        Assertions.assertFalse(table.contains(address2));
+        Assertions.assertFalse(table.contains(address3));
     }
 
     private static InetAddress generateIPAddressV4() throws UnknownHostException {

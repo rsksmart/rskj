@@ -24,8 +24,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -42,7 +42,7 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
@@ -116,6 +116,6 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertTrue(rule.isValid(b));
+        Assertions.assertTrue(rule.isValid(b));
     }
 }

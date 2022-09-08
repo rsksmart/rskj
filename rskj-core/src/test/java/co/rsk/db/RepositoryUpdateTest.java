@@ -5,8 +5,8 @@ import co.rsk.trie.Trie;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,10 +36,10 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getStorageBytes(address,DataWord.ONE);
 
-        Assert.assertNotNull(value);
-        Assert.assertEquals(1, value.length);
-        Assert.assertEquals(42, value[0]);
-        Assert.assertEquals(1, details.getStorageSize());
+        Assertions.assertNotNull(value);
+        Assertions.assertEquals(1, value.length);
+        Assertions.assertEquals(42, value[0]);
+        Assertions.assertEquals(1, details.getStorageSize());
     }
 
     @Test
@@ -55,8 +55,8 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
+        Assertions.assertNull(value);
+        Assertions.assertEquals(0, details.getStorageSize());
     }
     @Test
     public void putNullValueAsDeleteValue() {
@@ -71,8 +71,8 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
+        Assertions.assertNull(value);
+        Assertions.assertEquals(0, details.getStorageSize());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class RepositoryUpdateTest {
         Repository repo = new MutableRepository(new MutableTrieImpl(null, new Trie()));
         updateContractDetails(repo, address, details);
 
-        Assert.assertNotNull(repo.getTrie().getHash().getBytes());
+        Assertions.assertNotNull(repo.getTrie().getHash().getBytes());
     }
 
     private static void updateContractDetails(Repository repository, RskAddress addr, ContractDetailsImpl contractDetails) {

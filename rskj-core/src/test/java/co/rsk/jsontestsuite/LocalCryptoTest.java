@@ -23,9 +23,9 @@ import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.jsontestsuite.CryptoTestCase;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import java.util.HashMap;
  * @since 02.24.2016
  */
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class LocalCryptoTest {
 
 

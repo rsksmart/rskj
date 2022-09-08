@@ -21,12 +21,12 @@ package org.ethereum.net.rlpx;
 
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import static org.ethereum.crypto.ECKey.fromPrivate;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.bouncycastle.util.encoders.Hex.decode;
 
 /**
@@ -50,7 +50,7 @@ public class EIP8HandshakeTest {
     private EncryptionHandshake handshakerA;
     private EncryptionHandshake handshakerB;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         handshakerA = new EncryptionHandshake(keyB.getPubKeyPoint());
         handshakerB = new EncryptionHandshake(null, ephemeralKeyB, null, nonceB, false);

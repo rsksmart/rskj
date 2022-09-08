@@ -1,7 +1,7 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockHeader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;

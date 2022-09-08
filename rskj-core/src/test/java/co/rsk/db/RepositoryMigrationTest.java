@@ -8,8 +8,9 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -31,6 +32,6 @@ public class RepositoryMigrationTest {
         repository.updateAccountState(COW, accountState);
         repository.commit();
 
-        Assert.assertThat(repository.getAccountState(COW).getNonce(), is(accountNonce));
+        MatcherAssert.assertThat(repository.getAccountState(COW).getNonce(), is(accountNonce));
     }
 }

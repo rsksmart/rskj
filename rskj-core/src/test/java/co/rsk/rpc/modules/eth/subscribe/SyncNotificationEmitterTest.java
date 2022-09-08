@@ -26,12 +26,13 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.junit.Before;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +41,7 @@ public class SyncNotificationEmitterTest {
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
@@ -108,8 +109,8 @@ public class SyncNotificationEmitterTest {
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
 
-        assertThat(emitter.unsubscribe(new SubscriptionId()), is(false));
-        assertThat(emitter.unsubscribe(subscriptionId), is(true));
+        MatcherAssert.assertThat(emitter.unsubscribe(new SubscriptionId()), is(false));
+        MatcherAssert.assertThat(emitter.unsubscribe(subscriptionId), is(true));
     }
 
     @Test

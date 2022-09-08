@@ -1,8 +1,8 @@
 package co.rsk.net;
 
 import co.rsk.net.sync.SyncPeerStatus;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +15,7 @@ public class SyncPeerStatusTest {
     public void justCreatedIsNotExpired() {
         SyncPeerStatus status = new SyncPeerStatus();
 
-        Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
+        Assertions.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 
     @Test
@@ -24,7 +24,7 @@ public class SyncPeerStatusTest {
 
         TimeUnit.MILLISECONDS.sleep(1000);
 
-        Assert.assertTrue(status.isExpired(Duration.ofMillis(100)));
+        Assertions.assertTrue(status.isExpired(Duration.ofMillis(100)));
     }
 
     @Test
@@ -33,6 +33,6 @@ public class SyncPeerStatusTest {
 
         TimeUnit.MILLISECONDS.sleep(100);
 
-        Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
+        Assertions.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 }

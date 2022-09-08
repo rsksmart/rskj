@@ -1,8 +1,8 @@
 package org.ethereum.net.server;
 
 import co.rsk.net.messages.MessageType;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class StatsTest {
 
@@ -16,7 +16,7 @@ public class StatsTest {
         stats.update(20, MessageType.STATUS_MESSAGE);
         stats.update(30, MessageType.STATUS_MESSAGE);
 
-        Assert.assertTrue(score > stats.score(MessageType.STATUS_MESSAGE));
+        Assertions.assertTrue(score > stats.score(MessageType.STATUS_MESSAGE));
         score = stats.score(MessageType.STATUS_MESSAGE);
 
         int iters = 11500;
@@ -24,9 +24,9 @@ public class StatsTest {
             stats.update(1000 * i, MessageType.STATUS_MESSAGE);
         }
 
-        Assert.assertTrue(score < stats.score(MessageType.STATUS_MESSAGE));
-        Assert.assertTrue(Math.abs(stats.getMpm() - 60) < 5);
-        Assert.assertEquals((iters - 1) % 60, stats.getMinute());
+        Assertions.assertTrue(score < stats.score(MessageType.STATUS_MESSAGE));
+        Assertions.assertTrue(Math.abs(stats.getMpm() - 60) < 5);
+        Assertions.assertEquals((iters - 1) % 60, stats.getMinute());
 
         System.out.println(stats);
 
@@ -40,7 +40,7 @@ public class StatsTest {
         double old = stats.score(MessageType.STATUS_MESSAGE);
         double updated = stats.update(100, MessageType.STATUS_MESSAGE);
 
-        Assert.assertTrue(updated < old);
+        Assertions.assertTrue(updated < old);
     }
 
     @Test
@@ -51,7 +51,7 @@ public class StatsTest {
         double old = stats.score(MessageType.STATUS_MESSAGE);
         double updated = stats.update(1000, MessageType.STATUS_MESSAGE);
 
-        Assert.assertTrue(updated > old);
+        Assertions.assertTrue(updated > old);
     }
 
     @Test
@@ -65,7 +65,7 @@ public class StatsTest {
         stats.imported(true);
         double updated = stats.score(MessageType.STATUS_MESSAGE);
 
-        Assert.assertTrue(updated > old);
+        Assertions.assertTrue(updated > old);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class StatsTest {
         stats.imported(false);
         double updated = stats.score(MessageType.STATUS_MESSAGE);
 
-        Assert.assertTrue(updated < old);
+        Assertions.assertTrue(updated < old);
     }
 
     @Test
@@ -93,10 +93,10 @@ public class StatsTest {
         double v4 = stats.score(MessageType.STATUS_MESSAGE);
         double v5 = stats.score(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE);
 
-        Assert.assertTrue(v1 > v2);
-        Assert.assertTrue(v2 > v3);
-        Assert.assertTrue(v3 > v4);
-        Assert.assertTrue(v4 > v5);
+        Assertions.assertTrue(v1 > v2);
+        Assertions.assertTrue(v2 > v3);
+        Assertions.assertTrue(v3 > v4);
+        Assertions.assertTrue(v4 > v5);
 
     }
 }

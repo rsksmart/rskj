@@ -24,12 +24,13 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
@@ -42,14 +43,14 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
     private List<ECKey> rskPubKeys;
     private List<byte[]> rskAddresses;
 
-    @Before
+    @BeforeEach
     public void createFederation() {
         federation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
@@ -85,7 +86,7 @@ public class FederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assert.assertTrue(exception);
+        Assertions.assertTrue(exception);
 
         exception = false;
         try {
@@ -93,7 +94,7 @@ public class FederationTest {
         } catch (Exception e) {
             exception = true;
         }
-        Assert.assertTrue(exception);
+        Assertions.assertTrue(exception);
     }
 
     @Test
@@ -104,17 +105,17 @@ public class FederationTest {
                 calls.add(1);
                 int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
                 List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assert.assertEquals(4, numberOfSignaturesRequired);
-                Assert.assertEquals(6, publicKeys.size());
+                Assertions.assertEquals(4, numberOfSignaturesRequired);
+                Assertions.assertEquals(6, publicKeys.size());
                 for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
                             publicKeys.get(i).getPubKey());
                 }
                 return new Script(new byte[]{(byte) 0xaa});
             });
-            Assert.assertArrayEquals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa});
+            Assertions.assertArrayEquals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa});
             // Make sure the script creation happens only once
-            Assert.assertEquals(1, calls.size());
+            Assertions.assertEquals(1, calls.size());
         }
     }
 
@@ -126,17 +127,17 @@ public class FederationTest {
                 calls.add(0);
                 int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
                 List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assert.assertEquals(4, numberOfSignaturesRequired);
-                Assert.assertEquals(6, publicKeys.size());
+                Assertions.assertEquals(4, numberOfSignaturesRequired);
+                Assertions.assertEquals(6, publicKeys.size());
                 for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
                             publicKeys.get(i).getPubKey());
                 }
                 return new Script(new byte[]{(byte) 0xaa});
             });
-            Assert.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
+            Assertions.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
             // Make sure the script creation happens only once
-            Assert.assertEquals(1, calls.size());
+            Assertions.assertEquals(1, calls.size());
         }
     }
 
@@ -152,28 +153,28 @@ public class FederationTest {
                 calls.add(0);
                 int numberOfSignaturesRequired = invocationOnMock.<Integer>getArgument(0);
                 List<BtcECKey> publicKeys = invocationOnMock.getArgument(1);
-                Assert.assertEquals(4, numberOfSignaturesRequired);
-                Assert.assertEquals(6, publicKeys.size());
+                Assertions.assertEquals(4, numberOfSignaturesRequired);
+                Assertions.assertEquals(6, publicKeys.size());
                 for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                    Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    Assertions.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
                             publicKeys.get(i).getPubKey());
                 }
                 return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
             });
 
-            Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
+            Assertions.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
             // Make sure the address creation happens only once
-            Assert.assertEquals(1, calls.size());
+            Assertions.assertEquals(1, calls.size());
         }
     }
 
     @Test
     public void testEquals_basic() {
-        Assert.assertTrue(federation.equals(federation));
+        Assertions.assertTrue(federation.equals(federation));
 
-        Assert.assertNotEquals(null, federation);
-        Assert.assertNotEquals(federation, new Object());
-        Assert.assertNotEquals("something else", federation);
+        Assertions.assertNotEquals(null, federation);
+        Assertions.assertNotEquals(federation, new Object());
+        Assertions.assertNotEquals("something else", federation);
     }
 
     @Test
@@ -184,7 +185,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertNotEquals(federation, otherFederation);
+        Assertions.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -195,7 +196,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertNotEquals(federation, otherFederation);
+        Assertions.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -206,7 +207,7 @@ public class FederationTest {
                 1L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertThat(federation, is(not(otherFederation)));
+        MatcherAssert.assertThat(federation, is(not(otherFederation)));
     }
 
     @Test
@@ -217,7 +218,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
         );
-        Assert.assertNotEquals(federation, otherFederation);
+        Assertions.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -241,9 +242,9 @@ public class FederationTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertNotEquals(otherFederation, yetOtherFederation);
-        Assert.assertNotEquals(federation, otherFederation);
-        Assert.assertNotEquals(federation, yetOtherFederation);
+        Assertions.assertNotEquals(otherFederation, yetOtherFederation);
+        Assertions.assertNotEquals(federation, otherFederation);
+        Assertions.assertNotEquals(federation, yetOtherFederation);
     }
 
     @Test
@@ -254,45 +255,45 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertEquals(federation, otherFederation);
+        Assertions.assertEquals(federation, otherFederation);
     }
 
     @Test
     public void getBtcPublicKeyIndex() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
-            Assert.assertEquals(i, federation.getBtcPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
+            Assertions.assertEquals(i, federation.getBtcPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
         }
-        Assert.assertNull(federation.getBtcPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+        Assertions.assertNull(federation.getBtcPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
     }
 
     @Test
     public void hasBtcPublicKey() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
-            Assert.assertTrue(federation.hasBtcPublicKey(sortedPublicKeys.get(i)));
+            Assertions.assertTrue(federation.hasBtcPublicKey(sortedPublicKeys.get(i)));
         }
-        Assert.assertFalse(federation.hasBtcPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+        Assertions.assertFalse(federation.hasBtcPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
     }
 
     @Test
     public void hasMemberWithRskAddress() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
-            Assert.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
+            Assertions.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
         }
 
         byte[] nonFederateRskAddress = ECKey.fromPrivate(BigInteger.valueOf(1234)).getAddress();
-        Assert.assertFalse(federation.hasMemberWithRskAddress(nonFederateRskAddress));
+        Assertions.assertFalse(federation.hasMemberWithRskAddress(nonFederateRskAddress));
     }
 
     @Test
     public void testToString() {
-        Assert.assertEquals("4 of 6 signatures federation", federation.toString());
+        Assertions.assertEquals("4 of 6 signatures federation", federation.toString());
     }
 
     @Test
     public void isMember(){
         //Both valid params
         FederationMember federationMember = federation.getMembers().get(0);
-        Assert.assertTrue(federation.isMember(federationMember));
+        Assertions.assertTrue(federation.isMember(federationMember));
 
         byte[] b = new byte[20];
         new Random().nextBytes(b);
@@ -302,18 +303,18 @@ public class FederationTest {
 
         // Valid PubKey, invalid rskAddress
         FederationMember invalidRskPubKey = new FederationMember(federationMember.getBtcPublicKey(), invalidRskKey, federationMember.getMstPublicKey());
-        Assert.assertFalse(federation.isMember(invalidRskPubKey));
+        Assertions.assertFalse(federation.isMember(invalidRskPubKey));
 
         //Invalid PubKey, valid rskAddress
         FederationMember invalidBtcPubKey = new FederationMember(invalidBtcKey, federationMember.getRskPublicKey(), federationMember.getMstPublicKey());
-        Assert.assertFalse(federation.isMember(invalidBtcPubKey));
+        Assertions.assertFalse(federation.isMember(invalidBtcPubKey));
 
         //Valid btcKey & valid rskAddress, invalid mstKey
         FederationMember invalidMstPubKey = new FederationMember(federationMember.getBtcPublicKey(), federationMember.getRskPublicKey(), invalidRskKey);
-        Assert.assertFalse(federation.isMember(invalidMstPubKey));
+        Assertions.assertFalse(federation.isMember(invalidMstPubKey));
 
         //All invalid params
         FederationMember invalidPubKeys = new FederationMember(invalidBtcKey, invalidRskKey, invalidRskKey);
-        Assert.assertFalse(federation.isMember(invalidPubKeys));
+        Assertions.assertFalse(federation.isMember(invalidPubKeys));
     }
 }

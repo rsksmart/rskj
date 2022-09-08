@@ -35,13 +35,14 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
@@ -71,7 +72,7 @@ public class NestedContractsTest {
     /** ------------------------ **
      *  SETUP
      ** ------------------------ **/
-    @Before
+    @BeforeEach
     public void setup() {
         world = new World();
         processor = new WorldDslProcessor(world);
@@ -111,7 +112,7 @@ public class NestedContractsTest {
             ethModule.call(args, "latest");
             fail();
         } catch (RskJsonRpcRequestException e) {
-            assertThat(e.getMessage(), Matchers.containsString("Negative value"));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value"));
         }
 
         //Success Call -> 2 > 0

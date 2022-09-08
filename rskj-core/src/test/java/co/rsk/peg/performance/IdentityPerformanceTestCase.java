@@ -21,13 +21,13 @@ package co.rsk.peg.performance;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-@Ignore
+@Disabled
 public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
     public void identity() throws IOException, VMException {
@@ -38,7 +38,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
 
         doIdentity(environmentBuilder, stats, 2000);
 
-        Assert.assertTrue(IdentityPerformanceTest.addStats(stats));
+        Assertions.assertTrue(IdentityPerformanceTest.addStats(stats));
     }
 
     private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, VMException {

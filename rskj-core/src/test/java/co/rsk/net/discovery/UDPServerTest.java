@@ -28,16 +28,16 @@ import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -73,7 +73,7 @@ public class UDPServerTest {
         Channel channel = TestUtils.getInternalState(udpServer, "channel");
         udpServer.start();
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertNull(channel);
+        Assertions.assertNull(channel);
     }
 
     @Test

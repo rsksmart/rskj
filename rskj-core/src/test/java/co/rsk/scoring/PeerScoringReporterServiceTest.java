@@ -1,8 +1,8 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class PeerScoringReporterServiceTest {
     private TestPeerScoringReporterService peerScoringReporterService;
     private PeerScoringManager peerScoringManager;
 
-    @Before
+    @BeforeEach
     public void setup() {
         peerScoringManager = mock(PeerScoringManager.class);
         peerScoringReporterService = TestPeerScoringReporterService.withScheduler(3000L, peerScoringManager);
@@ -25,7 +25,7 @@ public class PeerScoringReporterServiceTest {
 
         peerScoringReporterService.stop();
 
-        Assert.assertFalse(peerScoringReporterService.isRunning());
+        Assertions.assertFalse(peerScoringReporterService.isRunning());
     }
 
     @Test
@@ -38,7 +38,7 @@ public class PeerScoringReporterServiceTest {
 
         peerScoringReporterService.start();
 
-        Assert.assertTrue(peerScoringReporterService.isRunning());
+        Assertions.assertTrue(peerScoringReporterService.isRunning());
     }
 
     @Test
@@ -47,6 +47,6 @@ public class PeerScoringReporterServiceTest {
 
         peerScoringReporterService.start();
 
-        Assert.assertFalse(peerScoringReporterService.isRunning());
+        Assertions.assertFalse(peerScoringReporterService.isRunning());
     }
 }

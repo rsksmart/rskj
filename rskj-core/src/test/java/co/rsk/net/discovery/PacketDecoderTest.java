@@ -21,8 +21,8 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -72,12 +72,12 @@ public class PacketDecoderTest {
     private void assertDecodedMessage(DiscoveryEvent event,
                                       InetSocketAddress sender,
                                       DiscoveryMessageType messageType) {
-        Assert.assertEquals(messageType, event.getMessage().getMessageType());
-        Assert.assertEquals(sender, event.getAddress());
-        Assert.assertNotNull(event.getMessage().getPacket());
-        Assert.assertNotNull(event.getMessage().getMdc());
-        Assert.assertNotNull(event.getMessage().getSignature());
-        Assert.assertNotNull(event.getMessage().getType());
-        Assert.assertNotNull(event.getMessage().getData());
+        Assertions.assertEquals(messageType, event.getMessage().getMessageType());
+        Assertions.assertEquals(sender, event.getAddress());
+        Assertions.assertNotNull(event.getMessage().getPacket());
+        Assertions.assertNotNull(event.getMessage().getMdc());
+        Assertions.assertNotNull(event.getMessage().getSignature());
+        Assertions.assertNotNull(event.getMessage().getType());
+        Assertions.assertNotNull(event.getMessage().getData());
     }
 }

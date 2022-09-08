@@ -1,6 +1,6 @@
 package org.ethereum.rpc;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -30,8 +30,8 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -60,7 +60,7 @@ public class Web3ImplUnitTest {
     private Web3Impl target;
     private Web3InformationRetriever retriever;
 
-    @Before
+    @BeforeEach
     public void setup() {
         blockchain = mock(Blockchain.class);
         Block firstBlock = mock(Block.class);

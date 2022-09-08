@@ -19,8 +19,8 @@
 package co.rsk.trie;
 
 import org.ethereum.crypto.Keccak256Helper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 11/01/2017.
@@ -32,14 +32,14 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(false);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(6, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(6, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(0, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(0, message[5]);
     }
 
     @Test
@@ -48,18 +48,18 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(false);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(10, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
-        Assert.assertEquals(1, message[6]);
-        Assert.assertEquals(2, message[7]);
-        Assert.assertEquals(3, message[8]);
-        Assert.assertEquals(4, message[9]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(10, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(0, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(0, message[5]);
+        Assertions.assertEquals(1, message[6]);
+        Assertions.assertEquals(2, message[7]);
+        Assertions.assertEquals(3, message[8]);
+        Assertions.assertEquals(4, message[9]);
     }
 
     @Test
@@ -68,19 +68,19 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(false);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(38, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(2, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(38, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(2, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(0, message[5]);
 
         byte[] valueHash = trie.getValueHash().getBytes();
 
         for (int k = 0; k < valueHash.length; k++) {
-            Assert.assertEquals(valueHash[k], message[k + 6]);
+            Assertions.assertEquals(valueHash[k], message[k + 6]);
         }
     }
 
@@ -90,22 +90,22 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(false);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(11, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(11, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(0, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
 
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(8, message[5]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(8, message[5]);
 
-        Assert.assertEquals(2, message[6]);
+        Assertions.assertEquals(2, message[6]);
 
-        Assert.assertEquals(1, message[7]);
-        Assert.assertEquals(2, message[8]);
-        Assert.assertEquals(3, message[9]);
-        Assert.assertEquals(4, message[10]);
+        Assertions.assertEquals(1, message[7]);
+        Assertions.assertEquals(2, message[8]);
+        Assertions.assertEquals(3, message[9]);
+        Assertions.assertEquals(4, message[10]);
     }
 
     @Test
@@ -115,15 +115,15 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(false);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(0, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(3, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(3, message[5]);
-        Assert.assertEquals(0, message[6]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(6 + 1 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(0, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(3, message[3]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(3, message[5]);
+        Assertions.assertEquals(0, message[6]);
     }
 
     @Test
@@ -132,14 +132,14 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(true);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(6, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(6, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(1, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(0, message[5]);
     }
 
     @Test
@@ -151,22 +151,22 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(true);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(42, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(1, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(42, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(1, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(1, message[4]);
+        Assertions.assertEquals(0, message[5]);
 
         for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+            Assertions.assertEquals(key[k], message[6 + k]);
 
-        Assert.assertEquals(1, message[34 + 4]);
-        Assert.assertEquals(2, message[34 + 5]);
-        Assert.assertEquals(3, message[34 + 6]);
-        Assert.assertEquals(4, message[34 + 7]);
+        Assertions.assertEquals(1, message[34 + 4]);
+        Assertions.assertEquals(2, message[34 + 5]);
+        Assertions.assertEquals(3, message[34 + 6]);
+        Assertions.assertEquals(4, message[34 + 7]);
     }
 
     @Test
@@ -178,22 +178,22 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(true);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(70, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(3, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(1, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(70, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(3, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(1, message[4]);
+        Assertions.assertEquals(0, message[5]);
 
         for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+            Assertions.assertEquals(key[k], message[6 + k]);
 
         byte[] valueHash = trie.getValueHash().getBytes();
 
         for (int k = 0; k < valueHash.length; k++) {
-            Assert.assertEquals(valueHash[k], message[k + 38]);
+            Assertions.assertEquals(valueHash[k], message[k + 38]);
         }
     }
 
@@ -206,22 +206,22 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(true);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(42, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(0, message[2]);
-        Assert.assertEquals(0, message[3]);
-        Assert.assertEquals(1, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(42, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(1, message[1]);
+        Assertions.assertEquals(0, message[2]);
+        Assertions.assertEquals(0, message[3]);
+        Assertions.assertEquals(1, message[4]);
+        Assertions.assertEquals(0, message[5]);
 
         for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+            Assertions.assertEquals(key[k], message[6 + k]);
 
-        Assert.assertEquals(1, message[34 + 4]);
-        Assert.assertEquals(2, message[34 + 5]);
-        Assert.assertEquals(3, message[34 + 6]);
-        Assert.assertEquals(4, message[34 + 7]);
+        Assertions.assertEquals(1, message[34 + 4]);
+        Assertions.assertEquals(2, message[34 + 5]);
+        Assertions.assertEquals(3, message[34 + 6]);
+        Assertions.assertEquals(4, message[34 + 7]);
     }
 
     @Test
@@ -232,11 +232,11 @@ public class TrieOrchidMessageTest {
 
         byte[] message = trie.toMessageOrchid(true);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
-        Assert.assertEquals(2, message[0]);
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(6 + 2 * Keccak256Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assertions.assertEquals(2, message[0]);
+        Assertions.assertEquals(1, message[1]);
+        Assertions.assertEquals(0, message[4]);
+        Assertions.assertEquals(0, message[5]);
     }
 }

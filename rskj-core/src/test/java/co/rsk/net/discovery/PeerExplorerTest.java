@@ -31,8 +31,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetAddress;
@@ -40,8 +40,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -92,14 +92,14 @@ public class PeerExplorerTest {
 
         Set<String> nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertTrue(nodesWithMessage.isEmpty());
+        Assertions.assertTrue(nodesWithMessage.isEmpty());
 
         peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true);
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
         nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertTrue(nodesWithMessage.isEmpty());
+        Assertions.assertTrue(nodesWithMessage.isEmpty());
     }
 
     @Test
@@ -122,8 +122,8 @@ public class PeerExplorerTest {
         Set<String> nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
         assertEquals(2, nodesWithMessage.size());
-        Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3307"));
-        Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3306"));
+        Assertions.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3307"));
+        Assertions.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3306"));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
 
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
@@ -173,7 +173,7 @@ public class PeerExplorerTest {
 
         peerExplorer.start(false);
 
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
@@ -231,7 +231,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 
@@ -285,7 +285,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 
@@ -314,10 +314,10 @@ public class PeerExplorerTest {
         NodeID expectedNewNodeId = incomingPongMessageChangedKey.getNodeId();
         NodeID actualNewNodeIdInConnections = peerExplorer.getNodes().get(0).getId();
         NodeID actualNewNodeIdInDistanceTable = distanceTable.getAllNodes().iterator().next().getId();
-        assertEquals("Just one node per host allowed on established connections", 1, peerExplorer.getNodes().size());
-        assertEquals("Remaining node on established connections should be the new host one", expectedNewNodeId, actualNewNodeIdInConnections);
-        assertEquals("Just one node per host allowed on distanceTable", 1, distanceTable.getAllNodes().size());
-        assertEquals("Remaining node on distanceTable should be the new host one", expectedNewNodeId, actualNewNodeIdInDistanceTable);
+        assertEquals(1, peerExplorer.getNodes().size(), "Just one node per host allowed on established connections");
+        assertEquals(expectedNewNodeId, actualNewNodeIdInConnections, "Remaining node on established connections should be the new host one");
+        assertEquals(1, distanceTable.getAllNodes().size(), "Just one node per host allowed on distanceTable");
+        assertEquals(expectedNewNodeId, actualNewNodeIdInDistanceTable, "Remaining node on distanceTable should be the new host one");
 
         peerExplorer.dispose();
     }
@@ -339,7 +339,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 
@@ -369,12 +369,12 @@ public class PeerExplorerTest {
         NodeID expectedNewNodeId = incomingPongMessageChangedKey.getNodeId();
         Optional<Node> actualOldNode = peerExplorer.getNodes().stream().filter(n -> n.getId().equals(expectedOldNodeId)).findFirst();
         Optional<Node> actualNewNode = peerExplorer.getNodes().stream().filter(n -> n.getId().equals(expectedNewNodeId)).findFirst();
-        assertEquals("Both old and new nodes for host should be present on established connections", 2, peerExplorer.getNodes().size());
-        assertTrue("Old node for host should be present on established connections", actualOldNode.isPresent());
-        assertTrue("New node for host should be present on established connections", actualNewNode.isPresent());
-        assertEquals("Both old and new nodes for host should be present on distanceTable", 2, distanceTable.getAllNodes().size());
-        assertTrue("Old node for host should be present on distanceTable", distanceTable.getAllNodes().contains(actualOldNode.get()));
-        assertTrue("New node for host should be present on distanceTable", distanceTable.getAllNodes().contains(actualNewNode.get()));
+        assertEquals(2, peerExplorer.getNodes().size(), "Both old and new nodes for host should be present on established connections");
+        assertTrue(actualOldNode.isPresent(), "Old node for host should be present on established connections");
+        assertTrue(actualNewNode.isPresent(), "New node for host should be present on established connections");
+        assertEquals(2, distanceTable.getAllNodes().size(), "Both old and new nodes for host should be present on distanceTable");
+        assertTrue(distanceTable.getAllNodes().contains(actualOldNode.get()), "Old node for host should be present on distanceTable");
+        assertTrue(distanceTable.getAllNodes().contains(actualNewNode.get()), "New node for host should be present on distanceTable");
 
         peerExplorer.dispose();
     }
@@ -448,7 +448,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 
@@ -478,8 +478,8 @@ public class PeerExplorerTest {
         assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
         assertEquals(2, neighborsPeerMessage.getNodes().size());
-        Assert.assertTrue(containsNodeId(NODE_ID_1, neighborsPeerMessage.getNodes()));
-        Assert.assertTrue(containsNodeId(NODE_ID_3, neighborsPeerMessage.getNodes()));
+        Assertions.assertTrue(containsNodeId(NODE_ID_1, neighborsPeerMessage.getNodes()));
+        Assertions.assertTrue(containsNodeId(NODE_ID_3, neighborsPeerMessage.getNodes()));
 
         peerExplorer.dispose();
     }
@@ -503,7 +503,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 
@@ -572,10 +572,10 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, neighborsEvent);
 
-        Assert.assertEquals("There should be one message in written events",
-                1, channel.getEventsWritten().size());
-        Assert.assertEquals("There should be one message in written events from non-banned address",
-                parseAddress(HOST_1), channel.getEventsWritten().get(0).getAddress().getAddress());
+        Assertions.assertEquals(1,
+                channel.getEventsWritten().size(), "There should be one message in written events");
+        Assertions.assertEquals(parseAddress(HOST_1),
+                channel.getEventsWritten().get(0).getAddress().getAddress(), "There should be one message in written events from non-banned address");
 
         peerExplorer.dispose();
     }
@@ -598,7 +598,7 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
-        Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+        Assertions.assertTrue(peerExplorer.getNodes().isEmpty());
 
         peerExplorer.start(false);
 

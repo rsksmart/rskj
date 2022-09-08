@@ -25,11 +25,11 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
+@Disabled
 public class GetFeePerKbTest extends BridgePerformanceTestCase {
     private Federation federation;
 
@@ -40,7 +40,7 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
         executeTestCaseSection(abiEncoder, "getFeePerKb", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFeePerKb", false,500, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws VMException {

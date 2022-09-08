@@ -21,12 +21,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import org.ethereum.core.Block;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EthSubscriptionNotificationTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);

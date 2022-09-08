@@ -24,8 +24,8 @@ import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetAddress;
@@ -43,7 +43,7 @@ public class CheckingBestHeaderSyncStateTest {
     private BlockHeaderValidationRule blockHeaderValidationRule;
     private CheckingBestHeaderSyncState state;
 
-    @Before
+    @BeforeEach
     public void setUp() throws UnknownHostException {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);

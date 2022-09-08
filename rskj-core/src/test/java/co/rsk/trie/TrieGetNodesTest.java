@@ -20,8 +20,8 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -34,8 +34,8 @@ public class TrieGetNodesTest {
     public void getNullForUnknownKey() {
         Trie trie = new Trie();
 
-        Assert.assertNull(trie.getNodes(new byte[] { 0x01, 0x02, 0x03 }));
-        Assert.assertNull(trie.getNodes("foo"));
+        Assertions.assertNull(trie.getNodes(new byte[] { 0x01, 0x02, 0x03 }));
+        Assertions.assertNull(trie.getNodes("foo"));
     }
 
     @Test
@@ -46,10 +46,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("foo");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals("bar".getBytes(), nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals("bar".getBytes(), nodes.get(0).getValue());
     }
 
     @Test
@@ -61,12 +61,12 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("foo");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(2, nodes.size());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(2, nodes.size());
 
-        Assert.assertArrayEquals("bar".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
-        Assert.assertNull(nodes.get(1).getValue());
+        Assertions.assertArrayEquals("bar".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
+        Assertions.assertNull(nodes.get(1).getValue());
     }
 
     @Test
@@ -77,10 +77,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie2.getNodes("foo");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals("bar2".getBytes(), nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals("bar2".getBytes(), nodes.get(0).getValue());
     }
 
     @Test
@@ -92,10 +92,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("foo");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals(value, nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals(value, nodes.get(0).getValue());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class TrieGetNodesTest {
 
         trie = trie.put("foo", "bar".getBytes()).delete("foo");
 
-        Assert.assertNull(trie.getNodes("foo"));
+        Assertions.assertNull(trie.getNodes("foo"));
     }
 
     @Test
@@ -113,7 +113,7 @@ public class TrieGetNodesTest {
 
         trie = trie.put("foo", TrieValueTest.makeValue(100)).delete("foo");
 
-        Assert.assertNull(trie.getNodes("foo"));
+        Assertions.assertNull(trie.getNodes("foo"));
     }
 
     @Test
@@ -124,10 +124,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals("bar".getBytes(), nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals("bar".getBytes(), nodes.get(0).getValue());
     }
 
     @Test
@@ -139,10 +139,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals(value, nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals(value, nodes.get(0).getValue());
     }
 
     @Test
@@ -156,11 +156,11 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("foo");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(2, nodes.size());
-        Assert.assertArrayEquals(value1, nodes.get(0).getValue());
-        Assert.assertNull(nodes.get(1).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(2, nodes.size());
+        Assertions.assertArrayEquals(value1, nodes.get(0).getValue());
+        Assertions.assertNull(nodes.get(1).getValue());
     }
 
     @Test
@@ -172,10 +172,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("f");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals("42".getBytes(), nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals("42".getBytes(), nodes.get(0).getValue());
     }
 
     @Test
@@ -189,10 +189,10 @@ public class TrieGetNodesTest {
 
         List<Trie> nodes = trie.getNodes("f");
 
-        Assert.assertNotNull(nodes);
-        Assert.assertFalse(nodes.isEmpty());
-        Assert.assertEquals(1, nodes.size());
-        Assert.assertArrayEquals(value2, nodes.get(0).getValue());
+        Assertions.assertNotNull(nodes);
+        Assertions.assertFalse(nodes.isEmpty());
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertArrayEquals(value2, nodes.get(0).getValue());
     }
 
     @Test
@@ -205,17 +205,17 @@ public class TrieGetNodesTest {
         for (int k = 0; k < 100; k++) {
             String key = k + "";
             List<Trie> nodes = trie.getNodes(key);
-            Assert.assertNotNull(nodes);
-            Assert.assertTrue(nodes.size() > 1);
-            Assert.assertArrayEquals((k + "").getBytes(), nodes.get(0).getValue());
+            Assertions.assertNotNull(nodes);
+            Assertions.assertTrue(nodes.size() > 1);
+            Assertions.assertArrayEquals((k + "").getBytes(), nodes.get(0).getValue());
 
-            Assert.assertTrue(find(nodes.get(0).toMessage(), (k + "").getBytes()));
+            Assertions.assertTrue(find(nodes.get(0).toMessage(), (k + "").getBytes()));
 
             for (int j = 1; j < nodes.size(); j++) {
                 Trie childNode = nodes.get(j - 1);
                 Trie node = nodes.get(j);
 
-                Assert.assertTrue(find(node.toMessage(), childNode.getHash().getBytes()) || find(node.toMessage(), childNode.toMessage()));
+                Assertions.assertTrue(find(node.toMessage(), childNode.getHash().getBytes()) || find(node.toMessage(), childNode.toMessage()));
             }
         }
     }
@@ -231,17 +231,17 @@ public class TrieGetNodesTest {
             String key = k + "";
             byte[] expected = TrieValueTest.makeValue(k + 100);
             List<Trie> nodes = trie.getNodes(key);
-            Assert.assertNotNull(nodes);
-            Assert.assertTrue(nodes.size() > 1);
-            Assert.assertArrayEquals(expected, nodes.get(0).getValue());
+            Assertions.assertNotNull(nodes);
+            Assertions.assertTrue(nodes.size() > 1);
+            Assertions.assertArrayEquals(expected, nodes.get(0).getValue());
 
-            Assert.assertTrue(find(nodes.get(0).toMessage(), Keccak256Helper.keccak256(expected)));
+            Assertions.assertTrue(find(nodes.get(0).toMessage(), Keccak256Helper.keccak256(expected)));
 
             for (int j = 1; j < nodes.size(); j++) {
                 Trie childNode = nodes.get(j - 1);
                 Trie node = nodes.get(j);
 
-                Assert.assertTrue(find(node.toMessage(), childNode.getHash().getBytes()) || find(node.toMessage(), childNode.toMessage()));
+                Assertions.assertTrue(find(node.toMessage(), childNode.getHash().getBytes()) || find(node.toMessage(), childNode.toMessage()));
             }
         }
     }

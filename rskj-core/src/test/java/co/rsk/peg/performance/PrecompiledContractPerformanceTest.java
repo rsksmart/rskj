@@ -19,8 +19,8 @@
 package co.rsk.peg.performance;
 
 import co.rsk.vm.VMPerformanceTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +30,12 @@ public class PrecompiledContractPerformanceTest {
     private static boolean running = false;
     private static Mean averageNanosecondsPerGasUnit;
 
-    @BeforeClass
+    @BeforeAll
     public static void setRunning() {
         running = true;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void estimateReferenceCost() {
         // Run VM tests and average
         averageNanosecondsPerGasUnit = new Mean();
@@ -55,7 +55,7 @@ public class PrecompiledContractPerformanceTest {
         ));
     }
 
-    @AfterClass
+    @AfterAll
     public static void printStats() {
         for (ExecutionStats stats : statsList) {
             System.out.println(stats.getPrintable());

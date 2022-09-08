@@ -22,8 +22,8 @@ package org.ethereum.jsontestsuite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.json.simple.parser.ParseException;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,19 +32,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
 public class GitHubRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
     private static HashMap<String , RLPTestCase> TEST_SUITE;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() throws ParseException, IOException {
         logger.info("    Initializing RLP tests...");
         String json = JSONReader.loadJSON("RLPTests/rlptest.json");
 
-        Assume.assumeFalse("Online test is not available", json.equals(""));
+        Assumptions.assumeFalse(json.equals(""), "Online test is not available");
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
@@ -61,7 +61,7 @@ public class GitHubRLPTest {
             logger.info("    " + key);
             RLPTestCase testCase = TEST_SUITE.get(key);
             testCase.doEncode();
-            Assert.assertEquals(testCase.getExpected(), testCase.getComputed());
+            Assertions.assertEquals(testCase.getExpected(), testCase.getComputed());
         }
     }
 
@@ -82,7 +82,7 @@ public class GitHubRLPTest {
 
             RLPTestCase testCase = TEST_SUITE.get(key);
             testCase.doDecode();
-            Assert.assertEquals(testCase.getExpected(), testCase.getComputed());
+            Assertions.assertEquals(testCase.getExpected(), testCase.getComputed());
         }
     }
 }

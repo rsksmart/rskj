@@ -33,19 +33,20 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Ignore
+@Disabled
 public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBestBlock;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -66,7 +67,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         test.teardownCpuTime();
     }
 
-    @Before
+    @BeforeEach
     public void warmup() throws VMException {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
@@ -147,9 +148,9 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
                     } catch (BlockStoreException e) {
-                        Assert.fail(e.getMessage());
+                        Assertions.fail(e.getMessage());
                     }
-                    Assert.assertEquals(expectedBestBlock.getHash(), bestBlockHash);
+                    Assertions.assertEquals(expectedBestBlock.getHash(), bestBlockHash);
                 }
         );
     }

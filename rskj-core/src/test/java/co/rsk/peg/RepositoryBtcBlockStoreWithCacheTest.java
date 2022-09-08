@@ -36,15 +36,15 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -201,8 +201,8 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         btcBlockStore.put(storedBlock1);
         Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
 
-        Assert.assertTrue(blockOptional.isPresent());
-        Assert.assertEquals(storedBlock1, blockOptional.get());
+        Assertions.assertTrue(blockOptional.isPresent());
+        Assertions.assertEquals(storedBlock1, blockOptional.get());
     }
 
     @Test
@@ -226,7 +226,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
 
-        Assert.assertFalse(blockOptional.isPresent());
+        Assertions.assertFalse(blockOptional.isPresent());
     }
 
     @Test
@@ -249,7 +249,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
 
-        Assert.assertFalse(blockOptional.isPresent());
+        Assertions.assertFalse(blockOptional.isPresent());
     }
 
     @Test
@@ -276,7 +276,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainHeight(1));
     }
 
-    @Test(expected = BlockStoreException.class)
+    @Test
     public void getStoredBlockAtMainChainHeight_heightGreaterThanChainHead() throws BlockStoreException {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
         BtcBlock genesis = networkParameters.getGenesisBlock();
@@ -287,10 +287,10 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         assertEquals(storedBlock1, btcBlockStore.getChainHead());
 
         // Search for a block in a height higher than current chain head, should fail
-        btcBlockStore.getStoredBlockAtMainChainHeight(3);
+        Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(3));
     }
 
-    @Test(expected = BlockStoreException.class)
+    @Test
     public void getStoredBlockAtMainChainHeight_postIris_heightLowerThanMaxDepth_limitInBtcHeightWhenBlockIndexActivates() throws BlockStoreException {
         Repository repository =  createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
@@ -320,10 +320,10 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         // Search for a block in a height lower than the max depth, should fail
         int maxDepth = btcHeightWhenBlockIndexActivates; // Since the chain height is above btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation
-        btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1);
+        Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1));
     }
 
-    @Test(expected = BlockStoreException.class)
+    @Test
     public void getStoredBlockAtMainChainHeight_postIris_heightLowerThanMaxDepth_limitInChainHeadMinusMaxDepthToSearch() throws BlockStoreException {
         Repository repository =  createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
@@ -353,7 +353,8 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         // Search for a block in a height lower than the max depth, should fail
         int maxDepth = blockHeight - maxDepthToSearchBlocksBelowIndexActivation; // Since the chain height is below btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation
-        btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1);
+
+        Assertions.assertThrows(BlockStoreException.class, () -> btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1));
     }
 
     @Test

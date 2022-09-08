@@ -2,8 +2,8 @@ package co.rsk.net.discovery.message;
 
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.ethereum.util.RLP;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -23,9 +23,9 @@ public class NeighborsPeerMessageTest {
     public void parseInvalidMessageId() {
         try {
             createNeighborsPeerMessageWithCheck("http://fake-uuid.com/run");
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(NeighborsPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(NeighborsPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -34,9 +34,9 @@ public class NeighborsPeerMessageTest {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createNeighborsPeerMessageWithCheck(uuidV1);
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(NeighborsPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(NeighborsPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -44,9 +44,9 @@ public class NeighborsPeerMessageTest {
     public void parseValidMessageId() {
         try {
             NeighborsPeerMessage message = createNeighborsPeerMessageWithCheck(UUID.randomUUID().toString());
-            Assert.assertNotNull(message);
+            Assertions.assertNotNull(message);
         } catch (PeerDiscoveryException pde) {
-            Assert.fail(NeighborsPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
+            Assertions.fail(NeighborsPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
         }
     }
 

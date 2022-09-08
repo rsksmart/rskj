@@ -19,8 +19,8 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,16 +33,16 @@ public class ModuleDescriptionTest {
     public void createWithInitialData() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
-        Assert.assertEquals("evm", description.getName());
-        Assert.assertEquals("1.0", description.getVersion());
+        Assertions.assertEquals("evm", description.getName());
+        Assertions.assertEquals("1.0", description.getVersion());
 
-        Assert.assertTrue(description.isEnabled());
+        Assertions.assertTrue(description.isEnabled());
 
-        Assert.assertNotNull(description.getEnabledMethods());
-        Assert.assertTrue(description.getEnabledMethods().isEmpty());
+        Assertions.assertNotNull(description.getEnabledMethods());
+        Assertions.assertTrue(description.getEnabledMethods().isEmpty());
 
-        Assert.assertNotNull(description.getDisabledMethods());
-        Assert.assertTrue(description.getDisabledMethods().isEmpty());
+        Assertions.assertNotNull(description.getDisabledMethods());
+        Assertions.assertTrue(description.getDisabledMethods().isEmpty());
     }
 
     @Test
@@ -57,52 +57,52 @@ public class ModuleDescriptionTest {
 
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
 
-        Assert.assertEquals("evm", description.getName());
-        Assert.assertEquals("1.0", description.getVersion());
+        Assertions.assertEquals("evm", description.getName());
+        Assertions.assertEquals("1.0", description.getVersion());
 
-        Assert.assertTrue(description.isEnabled());
+        Assertions.assertTrue(description.isEnabled());
 
-        Assert.assertNotNull(description.getEnabledMethods());
-        Assert.assertFalse(description.getEnabledMethods().isEmpty());
-        Assert.assertEquals(2, description.getEnabledMethods().size());
-        Assert.assertTrue(description.getEnabledMethods().contains("evm_snapshot"));
-        Assert.assertTrue(description.getEnabledMethods().contains("evm_revert"));
+        Assertions.assertNotNull(description.getEnabledMethods());
+        Assertions.assertFalse(description.getEnabledMethods().isEmpty());
+        Assertions.assertEquals(2, description.getEnabledMethods().size());
+        Assertions.assertTrue(description.getEnabledMethods().contains("evm_snapshot"));
+        Assertions.assertTrue(description.getEnabledMethods().contains("evm_revert"));
 
-        Assert.assertNotNull(description.getDisabledMethods());
-        Assert.assertFalse(description.getDisabledMethods().isEmpty());
-        Assert.assertEquals(2, description.getDisabledMethods().size());
-        Assert.assertTrue(description.getDisabledMethods().contains("evm_reset"));
-        Assert.assertTrue(description.getDisabledMethods().contains("evm_increaseTime"));
+        Assertions.assertNotNull(description.getDisabledMethods());
+        Assertions.assertFalse(description.getDisabledMethods().isEmpty());
+        Assertions.assertEquals(2, description.getDisabledMethods().size());
+        Assertions.assertTrue(description.getDisabledMethods().contains("evm_reset"));
+        Assertions.assertTrue(description.getDisabledMethods().contains("evm_increaseTime"));
     }
 
     @Test
     public void methodIsInModule() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
-        Assert.assertTrue(description.methodIsInModule("evm_snapshot"));
-        Assert.assertTrue(description.methodIsInModule("evm_do"));
+        Assertions.assertTrue(description.methodIsInModule("evm_snapshot"));
+        Assertions.assertTrue(description.methodIsInModule("evm_do"));
 
-        Assert.assertFalse(description.methodIsInModule("eth_getBlock"));
-        Assert.assertFalse(description.methodIsInModule("eth"));
-        Assert.assertFalse(description.methodIsInModule("evm"));
-        Assert.assertFalse(description.methodIsInModule("evm2"));
-        Assert.assertFalse(description.methodIsInModule("evmsnapshot"));
-        Assert.assertFalse(description.methodIsInModule(null));
+        Assertions.assertFalse(description.methodIsInModule("eth_getBlock"));
+        Assertions.assertFalse(description.methodIsInModule("eth"));
+        Assertions.assertFalse(description.methodIsInModule("evm"));
+        Assertions.assertFalse(description.methodIsInModule("evm2"));
+        Assertions.assertFalse(description.methodIsInModule("evmsnapshot"));
+        Assertions.assertFalse(description.methodIsInModule(null));
     }
 
     @Test
     public void methodIsEnabledWhenEmptyNameList() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
-        Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
-        Assert.assertTrue(description.methodIsEnable("evm_do"));
+        Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
+        Assertions.assertTrue(description.methodIsEnable("evm_do"));
 
-        Assert.assertFalse(description.methodIsEnable("eth_getBlock"));
-        Assert.assertFalse(description.methodIsEnable("eth"));
-        Assert.assertFalse(description.methodIsEnable("evm"));
-        Assert.assertFalse(description.methodIsEnable("evm2"));
-        Assert.assertFalse(description.methodIsEnable("evmsnapshot"));
-        Assert.assertFalse(description.methodIsEnable(null));
+        Assertions.assertFalse(description.methodIsEnable("eth_getBlock"));
+        Assertions.assertFalse(description.methodIsEnable("eth"));
+        Assertions.assertFalse(description.methodIsEnable("evm"));
+        Assertions.assertFalse(description.methodIsEnable("evm2"));
+        Assertions.assertFalse(description.methodIsEnable("evmsnapshot"));
+        Assertions.assertFalse(description.methodIsEnable(null));
     }
 
     @Test
@@ -113,19 +113,19 @@ public class ModuleDescriptionTest {
 
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, null);
 
-        Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
-        Assert.assertTrue(description.methodIsEnable("evm_revert"));
+        Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
+        Assertions.assertTrue(description.methodIsEnable("evm_revert"));
 
-        Assert.assertFalse(description.methodIsEnable("evm_do"));
-        Assert.assertFalse(description.methodIsEnable("evm_reset"));
-        Assert.assertFalse(description.methodIsEnable("evm_increaseTime"));
+        Assertions.assertFalse(description.methodIsEnable("evm_do"));
+        Assertions.assertFalse(description.methodIsEnable("evm_reset"));
+        Assertions.assertFalse(description.methodIsEnable("evm_increaseTime"));
 
-        Assert.assertFalse(description.methodIsEnable("eth_getBlock"));
-        Assert.assertFalse(description.methodIsEnable("eth"));
-        Assert.assertFalse(description.methodIsEnable("evm"));
-        Assert.assertFalse(description.methodIsEnable("evm2"));
-        Assert.assertFalse(description.methodIsEnable("evmsnapshot"));
-        Assert.assertFalse(description.methodIsEnable(null));
+        Assertions.assertFalse(description.methodIsEnable("eth_getBlock"));
+        Assertions.assertFalse(description.methodIsEnable("eth"));
+        Assertions.assertFalse(description.methodIsEnable("evm"));
+        Assertions.assertFalse(description.methodIsEnable("evm2"));
+        Assertions.assertFalse(description.methodIsEnable("evmsnapshot"));
+        Assertions.assertFalse(description.methodIsEnable(null));
     }
 
     @Test
@@ -136,19 +136,19 @@ public class ModuleDescriptionTest {
 
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, disabledMethods);
 
-        Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
-        Assert.assertTrue(description.methodIsEnable("evm_revert"));
-        Assert.assertTrue(description.methodIsEnable("evm_do"));
+        Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
+        Assertions.assertTrue(description.methodIsEnable("evm_revert"));
+        Assertions.assertTrue(description.methodIsEnable("evm_do"));
 
-        Assert.assertFalse(description.methodIsEnable("evm_reset"));
-        Assert.assertFalse(description.methodIsEnable("evm_increaseTime"));
+        Assertions.assertFalse(description.methodIsEnable("evm_reset"));
+        Assertions.assertFalse(description.methodIsEnable("evm_increaseTime"));
 
-        Assert.assertFalse(description.methodIsEnable("eth_getBlock"));
-        Assert.assertFalse(description.methodIsEnable("eth"));
-        Assert.assertFalse(description.methodIsEnable("evm"));
-        Assert.assertFalse(description.methodIsEnable("evm2"));
-        Assert.assertFalse(description.methodIsEnable("evmsnapshot"));
-        Assert.assertFalse(description.methodIsEnable(null));
+        Assertions.assertFalse(description.methodIsEnable("eth_getBlock"));
+        Assertions.assertFalse(description.methodIsEnable("eth"));
+        Assertions.assertFalse(description.methodIsEnable("evm"));
+        Assertions.assertFalse(description.methodIsEnable("evm2"));
+        Assertions.assertFalse(description.methodIsEnable("evmsnapshot"));
+        Assertions.assertFalse(description.methodIsEnable(null));
     }
 
     @Test
@@ -164,19 +164,19 @@ public class ModuleDescriptionTest {
 
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
 
-        Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
-        Assert.assertTrue(description.methodIsEnable("evm_revert"));
+        Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
+        Assertions.assertTrue(description.methodIsEnable("evm_revert"));
 
-        Assert.assertFalse(description.methodIsEnable("evm_do"));
-        Assert.assertFalse(description.methodIsEnable("evm_reset"));
-        Assert.assertFalse(description.methodIsEnable("evm_increaseTime"));
+        Assertions.assertFalse(description.methodIsEnable("evm_do"));
+        Assertions.assertFalse(description.methodIsEnable("evm_reset"));
+        Assertions.assertFalse(description.methodIsEnable("evm_increaseTime"));
 
-        Assert.assertFalse(description.methodIsEnable("eth_getBlock"));
-        Assert.assertFalse(description.methodIsEnable("eth"));
-        Assert.assertFalse(description.methodIsEnable("evm"));
-        Assert.assertFalse(description.methodIsEnable("evm2"));
-        Assert.assertFalse(description.methodIsEnable("evmsnapshot"));
-        Assert.assertFalse(description.methodIsEnable(null));
+        Assertions.assertFalse(description.methodIsEnable("eth_getBlock"));
+        Assertions.assertFalse(description.methodIsEnable("eth"));
+        Assertions.assertFalse(description.methodIsEnable("evm"));
+        Assertions.assertFalse(description.methodIsEnable("evm2"));
+        Assertions.assertFalse(description.methodIsEnable("evmsnapshot"));
+        Assertions.assertFalse(description.methodIsEnable(null));
     }
 
     @Test
@@ -184,31 +184,31 @@ public class ModuleDescriptionTest {
         TestSystemProperties config = new TestSystemProperties();
         List<ModuleDescription> modules = config.getRpcModules();
 
-        Assert.assertNotNull(modules);
-        Assert.assertFalse(modules.isEmpty());
-        Assert.assertEquals(2, modules.size());
+        Assertions.assertNotNull(modules);
+        Assertions.assertFalse(modules.isEmpty());
+        Assertions.assertEquals(2, modules.size());
 
         ModuleDescription moduleEth = modules.get(0);
 
-        Assert.assertEquals("eth", moduleEth.getName());
-        Assert.assertEquals("1.0", moduleEth.getVersion());
-        Assert.assertTrue(moduleEth.isEnabled());
-        Assert.assertNotNull(moduleEth.getEnabledMethods());
-        Assert.assertTrue(moduleEth.getEnabledMethods().isEmpty());
-        Assert.assertNotNull(moduleEth.getDisabledMethods());
-        Assert.assertTrue(moduleEth.getDisabledMethods().isEmpty());
+        Assertions.assertEquals("eth", moduleEth.getName());
+        Assertions.assertEquals("1.0", moduleEth.getVersion());
+        Assertions.assertTrue(moduleEth.isEnabled());
+        Assertions.assertNotNull(moduleEth.getEnabledMethods());
+        Assertions.assertTrue(moduleEth.getEnabledMethods().isEmpty());
+        Assertions.assertNotNull(moduleEth.getDisabledMethods());
+        Assertions.assertTrue(moduleEth.getDisabledMethods().isEmpty());
 
         ModuleDescription moduleEvm = modules.get(1);
 
-        Assert.assertEquals("evm", moduleEvm.getName());
-        Assert.assertEquals("1.1", moduleEvm.getVersion());
-        Assert.assertFalse(moduleEvm.isEnabled());
+        Assertions.assertEquals("evm", moduleEvm.getName());
+        Assertions.assertEquals("1.1", moduleEvm.getVersion());
+        Assertions.assertFalse(moduleEvm.isEnabled());
 
-        Assert.assertNotNull(moduleEvm.getEnabledMethods());
-        Assert.assertFalse(moduleEvm.getEnabledMethods().isEmpty());
-        Assert.assertEquals(2, moduleEvm.getEnabledMethods().size());
-        Assert.assertNotNull(moduleEvm.getDisabledMethods());
-        Assert.assertFalse(moduleEvm.getDisabledMethods().isEmpty());
-        Assert.assertEquals(2, moduleEvm.getDisabledMethods().size());
+        Assertions.assertNotNull(moduleEvm.getEnabledMethods());
+        Assertions.assertFalse(moduleEvm.getEnabledMethods().isEmpty());
+        Assertions.assertEquals(2, moduleEvm.getEnabledMethods().size());
+        Assertions.assertNotNull(moduleEvm.getDisabledMethods());
+        Assertions.assertFalse(moduleEvm.getDisabledMethods().isEmpty());
+        Assertions.assertEquals(2, moduleEvm.getDisabledMethods().size());
     }
 }

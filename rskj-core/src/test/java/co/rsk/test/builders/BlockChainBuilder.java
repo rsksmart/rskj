@@ -45,7 +45,7 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 
 import java.util.Collections;
@@ -295,7 +295,7 @@ public class BlockChainBuilder {
 
             for (Block block: blocks) {
                 block.seal();
-                Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
+                Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
             }
         }
 

@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FlyoverCompatibleBtcWalletWithStorageTest {
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
@@ -40,7 +40,7 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
     private List<Federation> federationList;
     private List<Federation> erpFederationList;
 
-    @Before
+    @BeforeEach
     public void setup() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
@@ -77,8 +77,8 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash());
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(federation.getRedeemScript(), redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(federation.getRedeemScript(), redeemData.redeemScript);
     }
 
     @Test
@@ -107,8 +107,8 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
 
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(flyoverFederationP2SH);
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
@@ -144,8 +144,8 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage
             .findRedeemDataFromScriptHash(flyoverFederationP2SH);
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
@@ -165,7 +165,7 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
             new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
 
-        Assert.assertNull(flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
+        Assertions.assertNull(flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
     }
 
     @Test
@@ -188,8 +188,8 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(flyoverScriptHash);
 
-        Assert.assertTrue(result.isPresent());
-        Assert.assertEquals(flyoverFederationInformation, result.get());
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(flyoverFederationInformation, result.get());
     }
 
     @Test
@@ -205,6 +205,6 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(new byte[1]);
 
-        Assert.assertEquals(Optional.empty(), result);
+        Assertions.assertEquals(Optional.empty(), result);
     }
 }

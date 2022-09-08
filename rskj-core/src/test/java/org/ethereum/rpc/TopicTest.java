@@ -18,8 +18,8 @@
 
 package org.ethereum.rpc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
@@ -34,19 +34,19 @@ public class TopicTest {
         Topic topicC = new Topic("0000000000000000000000000000000000000000000000000000000000000002");
         Topic topicD = new Topic("0x0000000000000000000000000000000000000000000000000000000000000003");
 
-        Assert.assertEquals(topicA, topicB);
-        Assert.assertNotEquals(topicA, topicC);
-        Assert.assertNotEquals(topicA, topicD);
+        Assertions.assertEquals(topicA, topicB);
+        Assertions.assertNotEquals(topicA, topicC);
+        Assertions.assertNotEquals(topicA, topicD);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidLongTopic() {
-        new Topic("000000000000000000000000000000000000000000000000000000000000000001");
+        Assertions.assertThrows(RuntimeException.class, () -> new Topic("000000000000000000000000000000000000000000000000000000000000000001"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidShortTopic() {
-        new Topic("0000000000000000000000000000000001006");
+        Assertions.assertThrows(RuntimeException.class, () -> new Topic("0000000000000000000000000000000001006"));
     }
 
     @Test
@@ -54,31 +54,31 @@ public class TopicTest {
         Topic topicA = new Topic("000000000000000000000000000000000000000000000000000000000000001");
         Topic topicB = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
 
-        Assert.assertEquals(topicA, topicB);
+        Assertions.assertEquals(topicA, topicB);
     }
 
-    @Test(expected = DecoderException.class)
+    @Test
     public void invalidHexTopic() {
-        new Topic("00000000000000000000000000000000000000000000000000000000000000X");
+        Assertions.assertThrows(DecoderException.class, () -> new Topic("00000000000000000000000000000000000000000000000000000000000000X"));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void invalidNullTopicBytes() {
-        new Topic((byte[]) null);
+        Assertions.assertThrows(NullPointerException.class, () -> new Topic((byte[]) null));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void invalidNullTopicString() {
-        new Topic((String) null);
+        Assertions.assertThrows(NullPointerException.class, () -> new Topic((String) null));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidShortTopicBytes() {
-        new Topic(new byte[31]);
+        Assertions.assertThrows(RuntimeException.class, () -> new Topic(new byte[31]));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidLongAddressBytes() {
-        new Topic(new byte[33]);
+        Assertions.assertThrows(RuntimeException.class, () -> new Topic(new byte[33]));
     }
 }

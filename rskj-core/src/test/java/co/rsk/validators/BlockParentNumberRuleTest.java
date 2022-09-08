@@ -20,9 +20,9 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,7 +34,7 @@ public class BlockParentNumberRuleTest {
     private BlockHeader blockHeader;
     private BlockParentNumberRule rule;
 
-    @Before
+    @BeforeEach
     public void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
@@ -50,7 +50,7 @@ public class BlockParentNumberRuleTest {
         whenBlockNumber(parentHeader, 451);
         whenBlockNumber(blockHeader, 452);
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class BlockParentNumberRuleTest {
         whenBlockNumber(parentHeader, 451);
         whenBlockNumber(blockHeader, 451);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class BlockParentNumberRuleTest {
         whenBlockNumber(parentHeader, 451);
         whenBlockNumber(blockHeader, 450);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class BlockParentNumberRuleTest {
         whenBlockNumber(parentHeader, 451);
         whenBlockNumber(blockHeader, 999);
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     private void whenBlockNumber(BlockHeader header, long number) {

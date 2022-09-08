@@ -19,8 +19,8 @@
 package co.rsk.remasc;
 
 import co.rsk.core.Coin;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 14/04/2017.
@@ -34,10 +34,10 @@ public class RemascStateTest {
 
         RemascState result = RemascState.create(bytes);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(Coin.ZERO, result.getRewardBalance());
-        Assert.assertEquals(Coin.ZERO, result.getBurnedBalance());
-        Assert.assertFalse(result.getBrokenSelectionRule());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(Coin.ZERO, result.getRewardBalance());
+        Assertions.assertEquals(Coin.ZERO, result.getBurnedBalance());
+        Assertions.assertFalse(result.getBrokenSelectionRule());
     }
 
     @Test
@@ -48,9 +48,9 @@ public class RemascStateTest {
 
         RemascState result = RemascState.create(bytes);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(Coin.valueOf(1), result.getRewardBalance());
-        Assert.assertEquals(Coin.valueOf(10), result.getBurnedBalance());
-        Assert.assertTrue(result.getBrokenSelectionRule());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(Coin.valueOf(1), result.getRewardBalance());
+        Assertions.assertEquals(Coin.valueOf(10), result.getBurnedBalance());
+        Assertions.assertTrue(result.getBrokenSelectionRule());
     }
 }

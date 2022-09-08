@@ -20,15 +20,15 @@
 package org.ethereum.vm;
 
 import org.ethereum.vm.program.Memory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
 import static java.lang.Math.ceil;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MemoryTest {
 

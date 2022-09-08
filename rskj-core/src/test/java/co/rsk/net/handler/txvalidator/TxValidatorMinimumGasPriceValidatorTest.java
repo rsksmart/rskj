@@ -20,8 +20,8 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class TxValidatorMinimumGasPriceValidatorTest {
@@ -39,9 +39,9 @@ public class TxValidatorMinimumGasPriceValidatorTest {
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
 
-        Assert.assertTrue(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -56,9 +56,9 @@ public class TxValidatorMinimumGasPriceValidatorTest {
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
-        Assert.assertFalse(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertFalse(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertFalse(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
     }
 
 }

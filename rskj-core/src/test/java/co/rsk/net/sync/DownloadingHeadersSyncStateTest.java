@@ -27,8 +27,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
@@ -52,7 +52,7 @@ public class DownloadingHeadersSyncStateTest {
 
         for (int i = 0; i < 10; i++) {
             syncState.newPeerStatus();
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
         }
     }
 
@@ -70,13 +70,13 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         syncState.newPeerStatus();
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
-        Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
     @Test
@@ -93,18 +93,18 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         syncState.newPeerStatus();
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         for (int i = 0; i < 10; i++) {
             syncState.messageSent();
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
             syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
         }
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
-        Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
     @Test

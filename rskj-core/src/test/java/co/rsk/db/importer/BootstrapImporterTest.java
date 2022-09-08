@@ -4,7 +4,7 @@ import co.rsk.db.importer.provider.BootstrapDataProvider;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

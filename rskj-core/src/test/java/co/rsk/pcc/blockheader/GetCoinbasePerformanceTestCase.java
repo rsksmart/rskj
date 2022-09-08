@@ -38,15 +38,15 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.LinkedList;
 
-@Ignore
+@Disabled
 public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
 
     @Test
@@ -85,9 +85,9 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(byte[].class, decodedResult[0].getClass());
+                    Assertions.assertEquals(byte[].class, decodedResult[0].getClass());
                     byte[] address = (byte[]) decodedResult[0];
-                    Assert.assertTrue(0== address.length || 20 == address.length);
+                    Assertions.assertTrue(0== address.length || 20 == address.length);
                 }
         );
     }

@@ -21,16 +21,16 @@ import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class PeginInformationTest {
 
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters networkParameters;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
@@ -68,11 +68,11 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(0, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
+        Assertions.assertEquals(0, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
     }
 
     @Test
@@ -120,13 +120,13 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(1, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
-        Assert.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
-        Assert.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
-        Assert.assertNotEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(1, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
+        Assertions.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
+        Assertions.assertNotEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
     }
 
     @Test
@@ -163,11 +163,11 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(1, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
-        Assert.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
-        Assert.assertNull(peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(TxSenderAddressType.UNKNOWN, peginInformation.getSenderBtcAddressType());
+        Assertions.assertEquals(1, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
+        Assertions.assertNull(peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(TxSenderAddressType.UNKNOWN, peginInformation.getSenderBtcAddressType());
     }
 
     @Test
@@ -214,12 +214,12 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(1, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
-        Assert.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(1, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
+        Assertions.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
     }
 
     @Test
@@ -256,14 +256,14 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(1, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
-        Assert.assertNull(peginInformation.getBtcRefundAddress());
-        Assert.assertNull(peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(TxSenderAddressType.UNKNOWN, peginInformation.getSenderBtcAddressType());
+        Assertions.assertEquals(1, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
+        Assertions.assertNull(peginInformation.getBtcRefundAddress());
+        Assertions.assertNull(peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(TxSenderAddressType.UNKNOWN, peginInformation.getSenderBtcAddressType());
     }
 
-    @Test(expected = PeginInstructionsException.class)
+    @Test
     public void parse_fromPeginInstructions_invalidProtocolVersion() throws PeginInstructionsException {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
@@ -301,10 +301,11 @@ public class PeginInformationTest {
             peginInstructionsProviderMock,
             activationsMock
         );
-        peginInformation.parse(btcTx);
+
+        Assertions.assertThrows(PeginInstructionsException.class, () -> peginInformation.parse(btcTx));
     }
 
-    @Test(expected = PeginInstructionsException.class)
+    @Test
     public void parse_withoutBtcLockSender_withoutPeginInstructions() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -326,7 +327,8 @@ public class PeginInformationTest {
             peginInstructionsProviderMock,
             activationsMock
         );
-        peginInformation.parse(btcTx);
+
+        Assertions.assertThrows(PeginInstructionsException.class, () -> peginInformation.parse(btcTx));
     }
 
     @Test
@@ -374,16 +376,16 @@ public class PeginInformationTest {
         peginInformation.parse(btcTx);
 
         // Assert
-        Assert.assertEquals(0, peginInformation.getProtocolVersion());
-        Assert.assertEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
-        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
-        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
-        Assert.assertNotEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
-        Assert.assertNotEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(0, peginInformation.getProtocolVersion());
+        Assertions.assertEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assertions.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assertions.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
+        Assertions.assertNotEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
+        Assertions.assertNotEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
     }
 
-    @Test(expected = PeginInstructionsException.class)
+    @Test
     public void parse_withoutBtcLockSender_withPeginInstructions_preIris() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
@@ -414,6 +416,7 @@ public class PeginInformationTest {
             peginInstructionsProviderMock,
             activationsMock
         );
-        peginInformation.parse(btcTx);
+
+        Assertions.assertThrows(PeginInstructionsException.class, () -> peginInformation.parse(btcTx));
     }
 }

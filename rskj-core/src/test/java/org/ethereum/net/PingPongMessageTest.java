@@ -23,9 +23,9 @@ import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.p2p.PingMessage;
 import org.ethereum.net.p2p.PongMessage;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PingPongMessageTest {
 

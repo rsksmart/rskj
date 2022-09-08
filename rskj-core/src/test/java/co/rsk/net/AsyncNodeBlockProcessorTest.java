@@ -32,8 +32,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,10 +64,10 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlock(sender, orphan);
 
-        Assert.assertEquals(1, processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size());
+        Assertions.assertEquals(1, processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size());
 
-        Assert.assertTrue(store.hasBlock(orphan));
-        Assert.assertEquals(1, store.size());
+        Assertions.assertTrue(store.hasBlock(orphan));
+        Assertions.assertEquals(1, store.size());
     }
 
     @Test
@@ -86,9 +87,9 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlock(sender, orphan);
 
-        Assert.assertNotEquals(1, processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size());
-        Assert.assertFalse(store.hasBlock(orphan));
-        Assert.assertEquals(0, store.size());
+        Assertions.assertNotEquals(1, processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size());
+        Assertions.assertFalse(store.hasBlock(orphan));
+        Assertions.assertEquals(0, store.size());
     }
 
     @Test
@@ -106,8 +107,8 @@ public class AsyncNodeBlockProcessorTest {
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        Assert.assertTrue(processor.isAdvancedBlock(advancedBlockNumber));
-        Assert.assertFalse(processor.isAdvancedBlock(advancedBlockNumber - 1));
+        Assertions.assertTrue(processor.isAdvancedBlock(advancedBlockNumber));
+        Assertions.assertFalse(processor.isAdvancedBlock(advancedBlockNumber - 1));
     }
 
     @Test
@@ -126,15 +127,16 @@ public class AsyncNodeBlockProcessorTest {
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        Assert.assertTrue(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored));
-        Assert.assertFalse(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored + 1));
+        Assertions.assertTrue(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored));
+        Assertions.assertFalse(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored + 1));
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processBlockAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBlockByNumber(0);
@@ -142,8 +144,8 @@ public class AsyncNodeBlockProcessorTest {
 
         final Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
-        Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
+        Assertions.assertEquals(11, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -155,21 +157,22 @@ public class AsyncNodeBlockProcessorTest {
         processor.start();
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
-        Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+        Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + block.getNumber() + " is invalid");
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
 
-        Assert.assertFalse(store.hasBlock(block));
-        Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
-        Assert.assertEquals(1, store.size());
+        Assertions.assertFalse(store.hasBlock(block));
+        Assertions.assertEquals(11, blockchain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
+        Assertions.assertEquals(1, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTenBlocksAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -191,13 +194,13 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(genesis.getHash());
         }
 
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(0, store.size());
 
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -207,13 +210,14 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processFutureBlocksAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -240,24 +244,25 @@ public class AsyncNodeBlockProcessorTest {
         Block blockToWait = null;
         for (Block b : blocks) {
             BlockProcessResult blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
-        
+
         if (blockToWait != null) {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTwoBlockListsAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -280,21 +285,21 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(genesis.getHash());
         }
 
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(0, store.size());
 
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -304,13 +309,14 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(20, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(20, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTwoBlockListsAddingToBlockchainWithFork() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -334,21 +340,21 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(genesis.getHash());
         }
 
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(0, store.size());
 
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
         }
         for (Block b : blocks2) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -358,8 +364,8 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(25, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(25, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
@@ -376,10 +382,11 @@ public class AsyncNodeBlockProcessorTest {
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        Assert.assertFalse(processor.hasBetterBlockToSync());
+        Assertions.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTenBlocksGenesisAtLastAddingToBlockchain() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -399,8 +406,8 @@ public class AsyncNodeBlockProcessorTest {
         Block blockToWait = null;
         for (Block b : blocks) {
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -415,12 +422,13 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTenBlocksInverseOrderAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -441,8 +449,8 @@ public class AsyncNodeBlockProcessorTest {
         for (int k = 0; k < 10; k++) {
             Block b = blocks.get(9 - k);
             blockProcessResult = processor.processBlock(null, b);
-            Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-            
+            Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
             if (blockProcessResult.isScheduledForProcessing()) {
                 blockToWait = b;
             }
@@ -457,13 +465,14 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processTenBlocksWithHoleAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -485,8 +494,8 @@ public class AsyncNodeBlockProcessorTest {
             if (k != 5) {
                 Block b = blocks.get(9 - k);
                 blockProcessResult = processor.processBlock(null, b);
-                Assert.assertFalse("Block #" + b.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-                
+                Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + b.getNumber() + " is invalid");
+
                 if (blockProcessResult.isScheduledForProcessing()) {
                     blockToWait = b;
                 }
@@ -497,11 +506,11 @@ public class AsyncNodeBlockProcessorTest {
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = genesis;
         }
-        
+
         Block block4 = blocks.get(4);
         blockProcessResult = processor.processBlock(null, block4);
-        Assert.assertFalse("Block #" + block4.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+        Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + block4.getNumber() + " is invalid");
+
         if (blockProcessResult.isScheduledForProcessing()) {
             blockToWait = blocks.get(4);
         }
@@ -510,13 +519,14 @@ public class AsyncNodeBlockProcessorTest {
             listener.waitForBlock(blockToWait.getHash());
         }
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test(timeout = WAIT_TIME)
+    @Test
+    @Timeout(WAIT_TIME)
     public void processBlockAddingToBlockchainUsingItsParent() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final BlockGenerator blockGenerator = new BlockGenerator();
@@ -528,9 +538,9 @@ public class AsyncNodeBlockProcessorTest {
         final Block parent = blockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
         final Block block = blockGenerator.createChildBlock(parent);
 
-        Assert.assertEquals(11, parent.getNumber());
-        Assert.assertEquals(12, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash().getBytes());
+        Assertions.assertEquals(11, parent.getNumber());
+        Assertions.assertEquals(12, block.getNumber());
+        Assertions.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash().getBytes());
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -542,28 +552,28 @@ public class AsyncNodeBlockProcessorTest {
         processor.start();
 
         BlockProcessResult blockProcessResult = processor.processBlock(null, block);
-        Assert.assertFalse("Block #" + block.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+        Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + block.getNumber() + " is invalid");
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(block.getHash());
         }
 
-        Assert.assertTrue(store.hasBlock(block));
-        Assert.assertNull(blockchain.getBlockByHash(block.getHash().getBytes()));
+        Assertions.assertTrue(store.hasBlock(block));
+        Assertions.assertNull(blockchain.getBlockByHash(block.getHash().getBytes()));
 
         blockProcessResult = processor.processBlock(null, parent);
-        Assert.assertFalse("Block #" + parent.getNumber() + " is invalid", blockProcessResult.isInvalidBlock());
-        
+        Assertions.assertFalse(blockProcessResult.isInvalidBlock(), "Block #" + parent.getNumber() + " is invalid");
+
         if (blockProcessResult.isScheduledForProcessing()) {
             listener.waitForBlock(parent.getHash());
         }
 
-        Assert.assertFalse(store.hasBlock(block));
-        Assert.assertFalse(store.hasBlock(parent));
+        Assertions.assertFalse(store.hasBlock(block));
+        Assertions.assertFalse(store.hasBlock(parent));
 
-        Assert.assertEquals(12, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
-        Assert.assertEquals(1, store.size());
+        Assertions.assertEquals(12, blockchain.getBestBlock().getNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
+        Assertions.assertEquals(1, store.size());
 
         processor.stopAndWait(WAIT_TIME);
     }
@@ -588,19 +598,19 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlock(sender, block);
 
-        Assert.assertEquals(1, processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size());
-        Assert.assertTrue(store.hasBlock(block));
-        Assert.assertEquals(1, sender.getMessages().size());
-        Assert.assertEquals(1, store.size());
+        Assertions.assertEquals(1, processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size());
+        Assertions.assertTrue(store.hasBlock(block));
+        Assertions.assertEquals(1, sender.getMessages().size());
+        Assertions.assertEquals(1, store.size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(MessageType.GET_BLOCK_MESSAGE, message.getMessageType());
 
         final GetBlockMessage gbMessage = (GetBlockMessage) message;
 
-        Assert.assertArrayEquals(block.getParentHash().getBytes(), gbMessage.getBlockHash());
+        Assertions.assertArrayEquals(block.getParentHash().getBytes(), gbMessage.getBlockHash());
     }
 
     @Test
@@ -622,16 +632,16 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assertions.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -649,13 +659,13 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -675,16 +685,16 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assertions.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -705,22 +715,22 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -738,13 +748,13 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -763,22 +773,22 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -799,23 +809,23 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assertions.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -834,18 +844,18 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBodyRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, message.getMessageType());
 
         final BodyResponseMessage bMessage = (BodyResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
-        Assert.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
-        Assert.assertEquals(block.getUncleList(), bMessage.getUncles());
+        Assertions.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
+        Assertions.assertEquals(block.getUncleList(), bMessage.getUncles());
     }
 
     @Test
@@ -863,13 +873,13 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertFalse(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -888,23 +898,23 @@ public class AsyncNodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assertions.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -922,7 +932,7 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlockHashRequest(sender, 100, 99999);
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -942,21 +952,21 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlockHeadersRequest(sender, 100, block.getHash().getBytes(), 20);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockHeadersResponseMessage response = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(100, response.getId());
-        Assert.assertNotNull(response.getBlockHeaders());
-        Assert.assertEquals(20, response.getBlockHeaders().size());
+        Assertions.assertEquals(100, response.getId());
+        Assertions.assertNotNull(response.getBlockHeaders());
+        Assertions.assertEquals(20, response.getBlockHeaders().size());
 
         for (int k = 0; k < 20; k++) {
-            Assert.assertEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
+            Assertions.assertEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
         }
     }
 
@@ -976,7 +986,7 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
@@ -996,16 +1006,16 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processSkeletonRequest(sender, 100, 5);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
 
         final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(100, bMessage.getId());
 
         Block genesis = blockchain.getBlockByNumber(0);
         Block bestBlock = blockchain.getBestBlock();
@@ -1033,16 +1043,16 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processSkeletonRequest(sender, 100, 5);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
 
         final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(100, bMessage.getId());
 
         final Block b1 = blockchain.getBlockByNumber(0);
         final Block b2 = blockchain.getBlockByNumber(skeletonStep);
@@ -1072,16 +1082,16 @@ public class AsyncNodeBlockProcessorTest {
 
         processor.processSkeletonRequest(sender, 100, skeletonStep + 5);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
 
         final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(100, bMessage.getId());
 
         final Block b1 = blockchain.getBlockByNumber(skeletonStep);
         final Block b2 = blockchain.getBlockByNumber(2 * skeletonStep);
@@ -1095,11 +1105,11 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     private static void assertBlockIdentifiers(BlockIdentifier[] expected, List<BlockIdentifier> actual) {
-        Assert.assertEquals(expected.length, actual.size());
+        Assertions.assertEquals(expected.length, actual.size());
 
         for (int i = 0; i < expected.length; i++) {
-            Assert.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
-            Assert.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
+            Assertions.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
+            Assertions.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
         }
     }
 
@@ -1146,8 +1156,8 @@ public class AsyncNodeBlockProcessorTest {
         processor.processBlock(sender, block);
         BlockProcessResult blockProcessResult = processor.processBlock(sender, sameBlock);
 
-        Assert.assertFalse(blockProcessResult.isScheduledForProcessing());
-        Assert.assertFalse(blockProcessResult.wasBlockAdded(block));
+        Assertions.assertFalse(blockProcessResult.isScheduledForProcessing());
+        Assertions.assertFalse(blockProcessResult.wasBlockAdded(block));
     }
 
     @Test
@@ -1168,8 +1178,8 @@ public class AsyncNodeBlockProcessorTest {
 
         BlockProcessResult blockProcessResult = processor.processBlock(sender, block);
 
-        Assert.assertFalse(blockProcessResult.isScheduledForProcessing());
-        Assert.assertFalse(blockProcessResult.wasBlockAdded(block));
-        Assert.assertTrue(blockProcessResult.isInvalidBlock());
+        Assertions.assertFalse(blockProcessResult.isScheduledForProcessing());
+        Assertions.assertFalse(blockProcessResult.wasBlockAdded(block));
+        Assertions.assertTrue(blockProcessResult.isInvalidBlock());
     }
 }

@@ -20,8 +20,8 @@
 package co.rsk.logfilter;
 
 import org.ethereum.core.Bloom;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
@@ -35,15 +35,15 @@ public class BlocksBloomEncoderTest {
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
-        Assert.assertNotNull(data);
+        Assertions.assertNotNull(data);
 
         BlocksBloom result = BlocksBloomEncoder.decode(data);
 
-        Assert.assertEquals(0, result.size());
+        Assertions.assertEquals(0, result.size());
 
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
 
-        Assert.assertArrayEquals(bytes, result.getBloom().getData());
+        Assertions.assertArrayEquals(bytes, result.getBloom().getData());
     }
 
     @Test
@@ -52,14 +52,14 @@ public class BlocksBloomEncoderTest {
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
-        Assert.assertNotNull(data);
+        Assertions.assertNotNull(data);
 
         BlocksBloom result = BlocksBloomEncoder.decode(data);
 
-        Assert.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), result.toBlock());
-        Assert.assertEquals(blocksBloom.size(), result.size());
-        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
+        Assertions.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), result.toBlock());
+        Assertions.assertEquals(blocksBloom.size(), result.size());
+        Assertions.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
     }
 
     @Test
@@ -70,13 +70,13 @@ public class BlocksBloomEncoderTest {
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
 
-        Assert.assertNotNull(data);
+        Assertions.assertNotNull(data);
 
         BlocksBloom result = BlocksBloomEncoder.decode(data);
 
-        Assert.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
-        Assert.assertEquals(blocksBloom.toBlock(), result.toBlock());
-        Assert.assertEquals(blocksBloom.size(), result.size());
-        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
+        Assertions.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
+        Assertions.assertEquals(blocksBloom.toBlock(), result.toBlock());
+        Assertions.assertEquals(blocksBloom.size(), result.size());
+        Assertions.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
     }
 }

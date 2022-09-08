@@ -24,8 +24,8 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.mockito.Mockito.*;
@@ -41,7 +41,7 @@ public class BlockChainFlusherTest {
 
     private EthereumListener listener;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.emitter = mock(CompositeEthereumListener.class);
         this.trieStore = mock(TrieStore.class);

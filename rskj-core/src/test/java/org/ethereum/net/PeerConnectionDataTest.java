@@ -22,13 +22,13 @@ package org.ethereum.net;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.p2p.PeerConnectionData;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PeerConnectionDataTest {
 

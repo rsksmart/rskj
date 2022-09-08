@@ -26,9 +26,9 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -51,7 +51,7 @@ public class HashRateCalculatorTest {
     private Block block;
     private BlockHeader blockHeader;
 
-    @Before
+    @BeforeEach
     public void init() {
         blockStore = Mockito.mock(BlockStore.class);
         block = Mockito.mock(Block.class);
@@ -89,7 +89,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
-        Assert.assertEquals(new BigInteger("+2"), hashRate);
+        Assertions.assertEquals(new BigInteger("+2"), hashRate);
     }
 
     @Test
@@ -108,7 +108,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
-        Assert.assertEquals(BigInteger.ZERO, hashRate);
+        Assertions.assertEquals(BigInteger.ZERO, hashRate);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
-        Assert.assertEquals(hashRate, BigInteger.ZERO);
+        Assertions.assertEquals(hashRate, BigInteger.ZERO);
     }
 
     @Test
@@ -143,7 +143,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
-        Assert.assertEquals(hashRate, new BigInteger("+4"));
+        Assertions.assertEquals(hashRate, new BigInteger("+4"));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
-        Assert.assertEquals(hashRate, BigInteger.ZERO);
+        Assertions.assertEquals(hashRate, BigInteger.ZERO);
     }
 
 }

@@ -21,8 +21,8 @@ package co.rsk.rpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.googlecode.jsonrpc4j.RequestInterceptor;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,21 +43,21 @@ public class JsonRpcMethodFilterTest {
 
         try {
             jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_reset"));
-            Assert.fail("evm_reset is enabled AND disabled, disabled take precedence");
+            Assertions.fail("evm_reset is enabled AND disabled, disabled take precedence");
         } catch (IOException ex) {
             // expected fail
         }
 
         try {
             jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_increaseTime"));
-            Assert.fail("evm_increaseTime is disabled");
+            Assertions.fail("evm_increaseTime is disabled");
         } catch (IOException ex) {
             // expected fail
         }
 
         try {
             jsonRpcMethodFilter.interceptRequest(getMethodInvocation("eth_getBlock"));
-            Assert.fail("The whole eth namespace is disabled");
+            Assertions.fail("The whole eth namespace is disabled");
         } catch (IOException ex) {
             // expected fail
         }

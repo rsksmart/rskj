@@ -6,16 +6,16 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class P2shMultisigBtcLockSenderTest {
 
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeConstants;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
@@ -24,15 +24,15 @@ public class P2shMultisigBtcLockSenderTest {
     @Test
     public void doesnt_parse_if_transaction_is_null() {
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(null));
+        Assertions.assertFalse(btcLockSender.tryParse(null));
     }
 
     @Test
     public void doesnt_parse_if_tx_doesnt_have_inputs() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
-        
+
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -41,7 +41,7 @@ public class P2shMultisigBtcLockSenderTest {
         btcTx.addInput(new TransactionInput(networkParameters, null, null));
 
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -50,7 +50,7 @@ public class P2shMultisigBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertTrue(btcLockSender.tryParse(btcTx));
+        Assertions.assertTrue(btcLockSender.tryParse(btcTx));
 
         byte[] redeemScript = Hex.decode(
                 "52210379e85ce9fe428abaf25783b00fd39490789a5da74c83ba79ee4af734c18e58b22103045c37a5a34ec12b5768dbe" +
@@ -60,10 +60,10 @@ public class P2shMultisigBtcLockSenderTest {
         byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
         Address btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
 
-        Assert.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", btcLockSender.getBTCAddress().toBase58());
-        Assert.assertEquals(btcAddress, btcLockSender.getBTCAddress());
-        Assert.assertEquals(TxSenderAddressType.P2SHMULTISIG, btcLockSender.getTxSenderAddressType());
-        Assert.assertNull(btcLockSender.getRskAddress());
+        Assertions.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", btcLockSender.getBTCAddress().toBase58());
+        Assertions.assertEquals(btcAddress, btcLockSender.getBTCAddress());
+        Assertions.assertEquals(TxSenderAddressType.P2SHMULTISIG, btcLockSender.getTxSenderAddressType());
+        Assertions.assertNull(btcLockSender.getRskAddress());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class P2shMultisigBtcLockSenderTest {
 
 
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class P2shMultisigBtcLockSenderTest {
 
 
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
@@ -92,6 +92,6 @@ public class P2shMultisigBtcLockSenderTest {
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
-        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+        Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 }

@@ -15,14 +15,14 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -44,7 +44,7 @@ public class TransactionExecutorTest {
     private int txIndex;
     private long gasUsedInTheBlock;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // paperwork: mock a whole nice transaction executor
         txIndex = 1;

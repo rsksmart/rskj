@@ -28,8 +28,8 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.ChannelManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.util.HashSet;
@@ -53,7 +53,7 @@ public class MessageVisitorTest {
     private BlockProcessor blockProcessor;
     private RskSystemProperties config;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         config = mock(RskSystemProperties.class);
         blockProcessor = mock(BlockProcessor.class);

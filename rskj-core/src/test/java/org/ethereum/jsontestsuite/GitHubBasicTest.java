@@ -24,23 +24,23 @@ import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
 public class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();

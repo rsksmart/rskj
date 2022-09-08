@@ -24,9 +24,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 public class HDWalletUtilsTest {
     private HDWalletUtils contract;
 
-    @Before
+    @BeforeEach
     public void createContract() {
         RskSystemProperties config = new TestSystemProperties();
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
@@ -47,12 +47,12 @@ public class HDWalletUtilsTest {
 
     @Test
     public void hasNoDefaultMethod() {
-        Assert.assertFalse(contract.getDefaultMethod().isPresent());
+        Assertions.assertFalse(contract.getDefaultMethod().isPresent());
     }
 
     @Test
     public void hasFourMethods() {
-        Assert.assertEquals(4, contract.getMethods().size());
+        Assertions.assertEquals(4, contract.getMethods().size());
     }
 
     @Test
@@ -78,6 +78,6 @@ public class HDWalletUtilsTest {
     private void assertHasMethod(Class clazz) {
         Optional<NativeMethod> method = contract.getMethods().stream()
                 .filter(m -> m.getClass() == clazz).findFirst();
-        Assert.assertTrue(method.isPresent());
+        Assertions.assertTrue(method.isPresent());
     }
 }

@@ -51,9 +51,9 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -64,7 +64,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TransactionTest {
 
@@ -91,7 +91,7 @@ public class TransactionTest {
         System.out.println(signature);
     }
 
-    @Ignore
+    @Disabled
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
 
@@ -139,7 +139,7 @@ public class TransactionTest {
         System.out.println(tx.toString());
     }
 
-    @Ignore
+    @Disabled
     @Test  /* achieve public key of the sender nonce: 01 */
     public void test3() throws Exception {
 
@@ -197,7 +197,7 @@ public class TransactionTest {
     byte[] testData = Hex.decode("");
     byte[] testInit = Hex.decode("");
 
-    @Ignore
+    @Disabled
     @Test
     public void testTransactionFromSignedRLP() throws Exception {
         Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
@@ -216,7 +216,7 @@ public class TransactionTest {
         assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().getS())));
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testTransactionFromUnsignedRLP() throws Exception {
         Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
@@ -237,7 +237,7 @@ public class TransactionTest {
         assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().getS())));
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testTransactionFromNew1() throws MissingPrivateKeyException {
         Transaction txNew = Transaction.builder()
@@ -268,7 +268,7 @@ public class TransactionTest {
         assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(txNew.getSignature().getS())));
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testTransactionFromNew2() throws MissingPrivateKeyException {
         byte[] privKeyBytes = Hex.decode("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4");
@@ -353,7 +353,7 @@ public class TransactionTest {
     }
 
 
-    @Ignore
+    @Disabled
     @Test
     public void encodeReceiptTest() {
 
@@ -512,7 +512,7 @@ public class TransactionTest {
         if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
     }
 
-    @Ignore // This test fails post EIP150
+    @Disabled // This test fails post EIP150
     @Test
     public void contractCreationTest() throws Exception {
         // Checks Homestead updates (1) & (3) from
@@ -649,20 +649,20 @@ public class TransactionTest {
         CallTransaction.Contract contract1 = new CallTransaction.Contract(abi);
         byte[] callData = contract1.getByName("multipleHomicide").encode();
 
-        Assert.assertNull(contract1.getConstructor());
-        Assert.assertNotNull(contract1.parseInvocation(callData));
-        Assert.assertNotNull(contract1.parseInvocation(callData).toString());
+        Assertions.assertNull(contract1.getConstructor());
+        Assertions.assertNotNull(contract1.parseInvocation(callData));
+        Assertions.assertNotNull(contract1.parseInvocation(callData).toString());
 
         try {
             contract1.parseInvocation(new byte[32]);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RuntimeException ex) {
         }
 
         try {
             contract1.parseInvocation(new byte[2]);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (RuntimeException ex) {
         }
@@ -671,7 +671,7 @@ public class TransactionTest {
         ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository, blockTxSignatureCache).getResult();
 
         // suicide of a single account should be counted only once
-        Assert.assertEquals(24000, programResult.getFutureRefund());
+        Assertions.assertEquals(24000, programResult.getFutureRefund());
     }
 
     @Test
@@ -735,9 +735,9 @@ public class TransactionTest {
 
         Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
         TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository, blockTxSignatureCache);
-        Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
-        Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
-        Assert.assertEquals(1, executor.getVMLogs().size());
+        Assertions.assertEquals(1, executor.getResult().getLogInfoList().size());
+        Assertions.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
+        Assertions.assertEquals(1, executor.getVMLogs().size());
     }
 
     @Test

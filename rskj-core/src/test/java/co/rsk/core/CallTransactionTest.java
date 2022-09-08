@@ -21,8 +21,8 @@ package co.rsk.core;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -34,15 +34,15 @@ public class CallTransactionTest {
     public void fromSignature() {
         CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
 
-        Assert.assertNotNull(func);
+        Assertions.assertNotNull(func);
 
-        Assert.assertNotNull(func.inputs);
-        Assert.assertEquals(1, func.inputs.length);
-        Assert.assertEquals("string", func.inputs[0].getType());
+        Assertions.assertNotNull(func.inputs);
+        Assertions.assertEquals(1, func.inputs.length);
+        Assertions.assertEquals("string", func.inputs[0].getType());
 
-        Assert.assertNotNull(func.outputs);
-        Assert.assertEquals(1, func.outputs.length);
-        Assert.assertEquals("int", func.outputs[0].getType());
+        Assertions.assertNotNull(func.outputs);
+        Assertions.assertEquals(1, func.outputs.length);
+        Assertions.assertEquals("int", func.outputs[0].getType());
     }
 
     @Test
@@ -51,10 +51,10 @@ public class CallTransactionTest {
 
         try {
             func.encode("first", "second");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (CallTransaction.CallTransactionException ex) {
-            Assert.assertTrue(ex.getMessage().startsWith("Too many arguments"));
+            Assertions.assertTrue(ex.getMessage().startsWith("Too many arguments"));
         }
     }
 
@@ -64,10 +64,10 @@ public class CallTransactionTest {
 
         try {
             func.encode(func.inputs, "first", "second");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (CallTransaction.CallTransactionException ex) {
-            Assert.assertTrue(ex.getMessage().startsWith("Too many arguments"));
+            Assertions.assertTrue(ex.getMessage().startsWith("Too many arguments"));
         }
     }
 
@@ -75,35 +75,35 @@ public class CallTransactionTest {
     public void intTypeGetCanonicalNameForInt() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertEquals("int256", type.getCanonicalName());
+        Assertions.assertEquals("int256", type.getCanonicalName());
     }
 
     @Test
     public void intTypeGetCanonicalNameForUInt() {
         CallTransaction.IntType type = new CallTransaction.IntType("uint");
 
-        Assert.assertEquals("uint256", type.getCanonicalName());
+        Assertions.assertEquals("uint256", type.getCanonicalName());
     }
 
     @Test
     public void intTypeEncodeHexadecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 16)), type.encode("0x01020304"));
+        Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 16)), type.encode("0x01020304"));
     }
 
     @Test
     public void intTypeEncodeHexadecimalStringWithoutPrefix() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("0102030b", 16)), type.encode("0102030b"));
+        Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("0102030b", 16)), type.encode("0102030b"));
     }
 
     @Test
     public void intTypeEncodeDecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)), type.encode("01020304"));
+        Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)), type.encode("01020304"));
     }
 
     @Test
@@ -115,7 +115,7 @@ public class CallTransactionTest {
                 // string
                 104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-        Assert.assertEquals("hello", type.decode(toDecode));
+        Assertions.assertEquals("hello", type.decode(toDecode));
     }
 
     @Test
@@ -126,6 +126,6 @@ public class CallTransactionTest {
         });
 
         String value = "0000000000000000000000000000000000000000000000000000000000000020";
-        Assert.assertEquals(new BigInteger("32"), event.decodeEventData(Hex.decode(value))[0]);
+        Assertions.assertEquals(new BigInteger("32"), event.decodeEventData(Hex.decode(value))[0]);
     }
 }

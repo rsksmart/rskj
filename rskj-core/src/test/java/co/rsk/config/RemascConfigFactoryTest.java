@@ -20,8 +20,8 @@ package co.rsk.config;
 
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by mario on 12/12/16.
@@ -33,65 +33,63 @@ public class RemascConfigFactoryTest {
     public void createRemascConfig() {
         RemascConfigFactory factory = new RemascConfigFactory(REMASC_FILE);
 
-        Assert.assertNotNull(factory);
+        Assertions.assertNotNull(factory);
 
         RemascConfig remascConfig = factory.createRemascConfig("devnet");
-        Assert.assertNotNull(remascConfig);
-        Assert.assertNotNull(remascConfig.getMaturity());
-        Assert.assertNotNull(remascConfig.getPublishersDivisor());
-        Assert.assertNotNull(remascConfig.getPunishmentDivisor());
-        Assert.assertNotNull(remascConfig.getRskLabsAddress());
-        Assert.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
-        Assert.assertNotNull(remascConfig.getRskLabsDivisor());
-        Assert.assertNotNull(remascConfig.getSyntheticSpan());
-        Assert.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig);
+        Assertions.assertNotNull(remascConfig.getMaturity());
+        Assertions.assertNotNull(remascConfig.getPublishersDivisor());
+        Assertions.assertNotNull(remascConfig.getPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig.getRskLabsAddress());
+        Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
+        Assertions.assertNotNull(remascConfig.getRskLabsDivisor());
+        Assertions.assertNotNull(remascConfig.getSyntheticSpan());
+        Assertions.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
 
 
         remascConfig = factory.createRemascConfig("regtest");
-        Assert.assertNotNull(remascConfig);
-        Assert.assertNotNull(remascConfig.getMaturity());
-        Assert.assertNotNull(remascConfig.getPublishersDivisor());
-        Assert.assertNotNull(remascConfig.getPunishmentDivisor());
-        Assert.assertNotNull(remascConfig.getRskLabsAddress());
-        Assert.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
-        Assert.assertNotNull(remascConfig.getRskLabsDivisor());
-        Assert.assertNotNull(remascConfig.getSyntheticSpan());
-        Assert.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig);
+        Assertions.assertNotNull(remascConfig.getMaturity());
+        Assertions.assertNotNull(remascConfig.getPublishersDivisor());
+        Assertions.assertNotNull(remascConfig.getPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig.getRskLabsAddress());
+        Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
+        Assertions.assertNotNull(remascConfig.getRskLabsDivisor());
+        Assertions.assertNotNull(remascConfig.getSyntheticSpan());
+        Assertions.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
 
         remascConfig = factory.createRemascConfig("main");
-        Assert.assertNotNull(remascConfig);
-        Assert.assertNotNull(remascConfig.getMaturity());
-        Assert.assertNotNull(remascConfig.getPublishersDivisor());
-        Assert.assertNotNull(remascConfig.getPunishmentDivisor());
-        Assert.assertNotNull(remascConfig.getRskLabsAddress());
-        Assert.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
-        Assert.assertNotNull(remascConfig.getRskLabsDivisor());
-        Assert.assertNotNull(remascConfig.getSyntheticSpan());
-        Assert.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig);
+        Assertions.assertNotNull(remascConfig.getMaturity());
+        Assertions.assertNotNull(remascConfig.getPublishersDivisor());
+        Assertions.assertNotNull(remascConfig.getPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig.getRskLabsAddress());
+        Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
+        Assertions.assertNotNull(remascConfig.getRskLabsDivisor());
+        Assertions.assertNotNull(remascConfig.getSyntheticSpan());
+        Assertions.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
 
         remascConfig = factory.createRemascConfig("testnet");
-        Assert.assertNotNull(remascConfig);
-        Assert.assertNotNull(remascConfig.getMaturity());
-        Assert.assertNotNull(remascConfig.getPublishersDivisor());
-        Assert.assertNotNull(remascConfig.getPunishmentDivisor());
-        Assert.assertNotNull(remascConfig.getRskLabsAddress());
-        Assert.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
-        Assert.assertNotNull(remascConfig.getRskLabsDivisor());
-        Assert.assertNotNull(remascConfig.getSyntheticSpan());
-        Assert.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig);
+        Assertions.assertNotNull(remascConfig.getMaturity());
+        Assertions.assertNotNull(remascConfig.getPublishersDivisor());
+        Assertions.assertNotNull(remascConfig.getPunishmentDivisor());
+        Assertions.assertNotNull(remascConfig.getRskLabsAddress());
+        Assertions.assertNotEquals(RskAddress.nullAddress(), remascConfig.getRskLabsAddress());
+        Assertions.assertNotNull(remascConfig.getRskLabsDivisor());
+        Assertions.assertNotNull(remascConfig.getSyntheticSpan());
+        Assertions.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
     }
 
-    @Test(expected = RemascException.class)
+    @Test
     public void createRemascConfigInvalidFile() {
         RemascConfigFactory factory = new RemascConfigFactory("NotAFile");
-        factory.createRemascConfig("testnet");
-        Assert.fail("This should FAIL");
+        Assertions.assertThrows(RemascException.class, () -> factory.createRemascConfig("testnet"));
     }
 
-    @Test(expected = RemascException.class)
+    @Test
     public void createRemascConfigInvalidConfig() {
         RemascConfigFactory factory = new RemascConfigFactory(REMASC_FILE);
-        factory.createRemascConfig("fakeNet");
-        Assert.fail("This should FAIL");
+        Assertions.assertThrows(RemascException.class, () -> factory.createRemascConfig("fakeNet"));
     }
 }

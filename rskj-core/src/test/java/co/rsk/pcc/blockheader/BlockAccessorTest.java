@@ -23,9 +23,9 @@ import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
@@ -41,7 +41,7 @@ public class BlockAccessorTest {
     private BlockAccessor blockAccessor;
     private ExecutionEnvironment executionEnvironment;
 
-    @Before
+    @BeforeEach
     public void createBlockAccessor() {
         blockAccessor = new BlockAccessor(MAXIMUM_BLOCK_DEPTH);
     }
@@ -50,15 +50,15 @@ public class BlockAccessorTest {
     public void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
-        Assert.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
-        Assert.assertFalse(blockAccessor.getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment).isPresent());
+        Assertions.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
+        Assertions.assertFalse(blockAccessor.getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment).isPresent());
     }
 
-    @Test(expected = NativeContractIllegalArgumentException.class)
-    public void getBlockWithNegativeDepth() throws NativeContractIllegalArgumentException {
+    @Test
+    public void getBlockWithNegativeDepth() {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
-        blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment);
+        Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment));
     }
 
     @Test
@@ -68,10 +68,10 @@ public class BlockAccessorTest {
         Optional<Block> genesis = blockAccessor.getBlock(ZERO_BLOCK_DEPTH, executionEnvironment);
         Optional<Block> firstBlock = blockAccessor.getBlock(ONE_BLOCK_DEPTH, executionEnvironment);
 
-        Assert.assertTrue(genesis.isPresent());
-        Assert.assertFalse(firstBlock.isPresent());
+        Assertions.assertTrue(genesis.isPresent());
+        Assertions.assertFalse(firstBlock.isPresent());
 
-        Assert.assertEquals(0, genesis.get().getNumber());
+        Assertions.assertEquals(0, genesis.get().getNumber());
     }
 
     @Test
@@ -80,8 +80,8 @@ public class BlockAccessorTest {
 
         for(short i = 0; i < 10; i++) {
             Optional<Block> block = blockAccessor.getBlock(i, executionEnvironment);
-            Assert.assertTrue(block.isPresent());
-            Assert.assertEquals(99 - i, block.get().getNumber());
+            Assertions.assertTrue(block.isPresent());
+            Assertions.assertEquals(99 - i, block.get().getNumber());
         }
     }
 }

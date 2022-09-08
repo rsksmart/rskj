@@ -27,8 +27,8 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -62,8 +62,8 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"chinchilla"},
                 helloFn.decodeResult(result.getHReturn()));
     }
@@ -80,8 +80,8 @@ public class ReversibleTransactionExecutorTest {
                 true
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"greet me"},
                 greeterFn.decodeResult(result.getHReturn()));
     }
@@ -110,7 +110,7 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertTrue(result.isRevert());
+        Assertions.assertTrue(result.isRevert());
     }
 
     @Test
@@ -137,8 +137,8 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result.getHReturn()));
 
@@ -153,8 +153,8 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result2.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result2.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result2.getHReturn()));
     }

@@ -6,8 +6,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ProgramResultTest {
 
@@ -30,8 +30,8 @@ public class ProgramResultTest {
             ""
         );
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getOriginHash());
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getParentHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getOriginHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getParentHash());
     }
 
     @Test
@@ -63,8 +63,8 @@ public class ProgramResultTest {
             ""
         );
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx2.getOriginHash());
-        Assert.assertArrayEquals(internalTx1.getHash().getBytes(), internalTx2.getParentHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx2.getOriginHash());
+        Assertions.assertArrayEquals(internalTx1.getHash().getBytes(), internalTx2.getParentHash());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ProgramResultTest {
         }
         InternalTransaction result = (InternalTransaction)internalTxN;
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
     }
 
     private Transaction getOriginTransaction() {

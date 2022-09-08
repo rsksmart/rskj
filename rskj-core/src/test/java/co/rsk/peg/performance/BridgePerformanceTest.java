@@ -18,12 +18,12 @@
 
 package co.rsk.peg.performance;
 
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.jupiter.api.Disabled;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+@Suite
+@SelectClasses({
         ReleaseBtcTest.class,
         UpdateCollectionsTest.class,
         ReceiveHeadersTest.class,
@@ -51,6 +51,6 @@ import org.junit.runners.Suite;
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
-@Ignore
+@Disabled
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
 }

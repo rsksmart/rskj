@@ -18,8 +18,8 @@
 
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -32,45 +32,45 @@ public class ListArrayUtilTest {
         List<Byte> result = ListArrayUtil.asByteList(array);
 
         for(int i = 0; i < array.length; i++) {
-            Assert.assertEquals(array[i], result.get(i).byteValue());
+            Assertions.assertEquals(array[i], result.get(i).byteValue());
         }
     }
 
     @Test
     public void testNullIsEmpty() {
-        Assert.assertTrue(ListArrayUtil.isEmpty(null));
+        Assertions.assertTrue(ListArrayUtil.isEmpty(null));
     }
 
     @Test
     public void testEmptyIsEmpty() {
-        Assert.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
+        Assertions.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
     }
 
     @Test
     public void testNotEmptyIsEmpty() {
-        Assert.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
+        Assertions.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
     }
 
     @Test
     public void testNullToEmpty() {
-        Assert.assertNotNull(ListArrayUtil.nullToEmpty(null));
+        Assertions.assertNotNull(ListArrayUtil.nullToEmpty(null));
     }
 
     @Test
     public void testNonNullToEmpty() {
         byte[] array = new byte[1];
-        Assert.assertSame(array, ListArrayUtil.nullToEmpty(array));
+        Assertions.assertSame(array, ListArrayUtil.nullToEmpty(array));
     }
 
     @Test
     public void testNullGetLength() {
-        Assert.assertEquals(0, ListArrayUtil.getLength(null));
+        Assertions.assertEquals(0, ListArrayUtil.getLength(null));
     }
 
     @Test
     public void testNonNullGetLength() {
         byte[] array = new byte[1];
-        Assert.assertEquals(1, ListArrayUtil.getLength(array));
+        Assertions.assertEquals(1, ListArrayUtil.getLength(array));
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals( 0, res);
+        Assertions.assertEquals( 0, res);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(5, res);
+        Assertions.assertEquals(5, res);
     }
 
     @Test
@@ -100,7 +100,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(2, res);
+        Assertions.assertEquals(2, res);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(3, res);
+        Assertions.assertEquals(3, res);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(0, res);
+        Assertions.assertEquals(0, res);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -160,7 +160,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -180,7 +180,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
@@ -190,7 +190,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(3, res);
+        Assertions.assertEquals(3, res);
     }
 
     @Test
@@ -200,7 +200,7 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(6, res);
+        Assertions.assertEquals(6, res);
     }
 
     @Test
@@ -210,6 +210,6 @@ public class ListArrayUtilTest {
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(6, res);
+        Assertions.assertEquals(6, res);
     }
 }

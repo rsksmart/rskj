@@ -1,13 +1,13 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class PeerScoringReputationSummaryTest {
 
     @Test
     public void equalsTest() {
-        Assert.assertEquals(new PeerScoringReputationSummary(0,0,0,0,
+        Assertions.assertEquals(new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,0), new PeerScoringReputationSummary(
@@ -19,7 +19,7 @@ public class PeerScoringReputationSummaryTest {
 
     @Test
     public void equalsNullTest() {
-        Assert.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
+        Assertions.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,0), null);
@@ -27,7 +27,7 @@ public class PeerScoringReputationSummaryTest {
 
     @Test
     public void equalsOtherClassTest() {
-        Assert.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
+        Assertions.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,0), this);
@@ -48,7 +48,7 @@ public class PeerScoringReputationSummaryTest {
                 0,0,0,0,
                 0,0,0,0,0)).hashCode();
 
-        Assert.assertEquals(oneSummaryHashcode, otherSummaryHashcode);
-        Assert.assertNotEquals(oneSummaryHashcode, anotherSummaryHashcode);
+        Assertions.assertEquals(oneSummaryHashcode, otherSummaryHashcode);
+        Assertions.assertNotEquals(oneSummaryHashcode, anotherSummaryHashcode);
     }
 }

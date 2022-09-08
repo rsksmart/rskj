@@ -19,11 +19,11 @@
 package co.rsk;
 
 import org.ethereum.util.RskTestContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class NodeRunnerSmokeTest {
     @Test

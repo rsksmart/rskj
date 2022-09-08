@@ -24,8 +24,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,6 +71,6 @@ public class PrecompiledContractAddressTests {
         RskAddress a;
         a = new RskAddress(addr);
         PrecompiledContracts.PrecompiledContract pc = pcList.getContractForAddress(activations, DataWord.valueOf(a.getBytes()));
-        Assert.assertEquals(className,pc.getClass().getSimpleName());
+        Assertions.assertEquals(className,pc.getClass().getSimpleName());
     }
 }

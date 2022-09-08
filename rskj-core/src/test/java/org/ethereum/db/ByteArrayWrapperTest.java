@@ -23,15 +23,15 @@ import org.ethereum.util.FastByteComparisons;
 
 import com.google.common.primitives.UnsignedBytes;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ByteArrayWrapperTest {
 
@@ -40,7 +40,7 @@ public class ByteArrayWrapperTest {
     static ByteArrayWrapper wrapper3;
     static ByteArrayWrapper wrapper4;
 
-    @BeforeClass
+    @BeforeAll
     public static void loadByteArrays() {
 
         String block = "f9072df8d3a077ef4fdaf389dca53236bcf7f72698e154eab2828f86fbc4fc6c"

@@ -21,9 +21,8 @@ package co.rsk.net.sync;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
-import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -40,7 +39,7 @@ public class DownloadingSkeletonSyncStateTest {
     private PeersInformation peersInformation;
     private Peer selectedPeer;
 
-    @Before
+    @BeforeEach
     public void setUp () throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);

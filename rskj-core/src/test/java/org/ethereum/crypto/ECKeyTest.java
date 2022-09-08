@@ -27,8 +27,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ECKeyTest {
     private static final Logger log = LoggerFactory.getLogger(ECKeyTest.class);
@@ -61,7 +61,7 @@ public class ECKeyTest {
 
     @Test
     public void testHashCode() {
-        Assert.assertEquals(1866897155, ECKey.fromPrivate(privateKey).hashCode());
+        Assertions.assertEquals(1866897155, ECKey.fromPrivate(privateKey).hashCode());
     }
 
     @Test
@@ -82,10 +82,9 @@ public class ECKeyTest {
         assertArrayEquals(pubKey, key.getPubKey());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPrivatePublicKeyBytesNoArg() {
-        new ECKey(null, null);
-        fail("Expecting an IllegalArgumentException for using only null-parameters");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new ECKey(null, null), "Expecting an IllegalArgumentException for using only null-parameters");
     }
 
     @Test
@@ -226,7 +225,7 @@ public class ECKeyTest {
     }
 
     @Test
-    public void decryptAECSIC(){
+    public void decryptAECSIC() {
         ECKey key = ECKey.fromPrivate(Hex.decode("abb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f"));
         byte[] payload = key.decryptAES(Hex.decode("84a727bc81fa4b13947dc9728b88fd08"));
         System.out.println(ByteUtil.toHexString(payload));

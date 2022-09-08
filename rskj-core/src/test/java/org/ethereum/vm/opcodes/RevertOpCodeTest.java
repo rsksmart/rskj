@@ -4,8 +4,8 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
@@ -49,10 +49,10 @@ public class RevertOpCodeTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getAccountByName("acc1"));
-        Assert.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
-        Assert.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
-        Assert.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
+        Assertions.assertNotNull(world.getAccountByName("acc1"));
+        Assertions.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
+        Assertions.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
+        Assertions.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
     }
 
     @Test
@@ -62,10 +62,10 @@ public class RevertOpCodeTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getAccountByName("acc1"));
-        Assert.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
-        Assert.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
-        Assert.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
+        Assertions.assertNotNull(world.getAccountByName("acc1"));
+        Assertions.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
+        Assertions.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
+        Assertions.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
     }
 
 }

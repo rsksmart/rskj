@@ -23,8 +23,8 @@ import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -44,7 +44,7 @@ public class RskWireProtocolTest {
     private Channel channel;
     private ChannelHandlerContext ctx;
 
-    @Before
+    @BeforeEach
     public void setup() {
         config = mock(RskSystemProperties.class);
         peerScoringManager = mock(PeerScoringManager.class);

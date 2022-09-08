@@ -8,16 +8,16 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
+@Disabled
 public class GetBtcBlockchainBestBlockHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -47,7 +47,7 @@ public class GetBtcBlockchainBestBlockHeaderTest extends BridgePerformanceTestCa
                 stats,
                 (environment, executionResult) -> {
                     BtcBlock btcBlock = byteArrayToBlockHeader(getByteFromResult(executionResult));
-                    Assert.assertEquals(btcBlock.getHash(), lastBlock.getHash());
+                    Assertions.assertEquals(btcBlock.getHash(), lastBlock.getHash());
                 }
         );
     }

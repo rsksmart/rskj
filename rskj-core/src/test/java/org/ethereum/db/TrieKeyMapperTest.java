@@ -19,9 +19,9 @@
 package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -30,7 +30,7 @@ public class TrieKeyMapperTest {
     private static final int BATCH_TEST = 500;
     private TrieKeyMapper trieKeyMapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         trieKeyMapper = spy(new TrieKeyMapper());
     }
@@ -51,7 +51,7 @@ public class TrieKeyMapperTest {
 
         byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
         verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
-        Assert.assertArrayEquals("Account key diff from diff calls.", accountKey, accountKeyCache);
+        Assertions.assertArrayEquals(accountKey, accountKeyCache, "Account key diff from diff calls.");
 
     }
 
@@ -68,7 +68,7 @@ public class TrieKeyMapperTest {
 
             byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
             verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
-            Assert.assertArrayEquals("Account key diff from diff calls.", accountKey, accountKeyCache);
+            Assertions.assertArrayEquals(accountKey, accountKeyCache, "Account key diff from diff calls.");
         }
 
         clearInvocations(this.trieKeyMapper);
@@ -77,7 +77,7 @@ public class TrieKeyMapperTest {
             RskAddress address = new RskAddress(addressPrefix + i);
             byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
             verify(this.trieKeyMapper, times(0)).mapRskAddressToKey(eq(address));
-            Assert.assertNotNull("Shouldnt return null value from cache.", accountKey);
+            Assertions.assertNotNull(accountKey, "Shouldnt return null value from cache.");
         }
 
     }

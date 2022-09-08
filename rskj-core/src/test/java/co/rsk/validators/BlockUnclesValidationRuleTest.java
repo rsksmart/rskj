@@ -8,8 +8,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class BlockUnclesValidationRuleTest {
         blockStore.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
         BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore,10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
-        Assert.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block));
     }
 
     @Test
@@ -57,6 +57,6 @@ public class BlockUnclesValidationRuleTest {
         blockStore.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
         BlockUnclesValidationRule rule = new BlockUnclesValidationRule(blockStore, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
-        Assert.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block));
     }
 }

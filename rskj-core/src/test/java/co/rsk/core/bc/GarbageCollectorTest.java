@@ -25,9 +25,9 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.mockito.Mockito.*;
@@ -41,7 +41,7 @@ public class GarbageCollectorTest {
     private EthereumListener listener;
     private RepositoryLocator repositoryLocator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         this.emitter = mock(CompositeEthereumListener.class);
         this.multiTrieStore = mock(MultiTrieStore.class);
@@ -55,7 +55,7 @@ public class GarbageCollectorTest {
         this.listener = argument.getValue();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         verify(emitter, times(0)).removeListener(listener);
         collector.stop();

@@ -3,8 +3,8 @@ package co.rsk.trie;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -18,7 +18,7 @@ public class TrieDeleteTest {
 
         trie = trie.delete("key".getBytes());
 
-        Assert.assertEquals(makeEmptyHash(), trie.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie.getHash());
     }
 
     @Test
@@ -30,7 +30,7 @@ public class TrieDeleteTest {
 
         Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -42,7 +42,7 @@ public class TrieDeleteTest {
 
         Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -55,7 +55,7 @@ public class TrieDeleteTest {
 
         Trie trie2 = new Trie().put("key2", "value2".getBytes());
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, TrieValueTest.makeValue(k + 100));
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -127,7 +127,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, TrieValueTest.makeValue(k + 200));
 
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k++)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -153,7 +153,7 @@ public class TrieDeleteTest {
         for (int k = 0; k < 200; k++)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -185,7 +185,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     @Test
@@ -217,7 +217,7 @@ public class TrieDeleteTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        Assert.assertEquals(makeEmptyHash(), trie1.getHash());
+        Assertions.assertEquals(makeEmptyHash(), trie1.getHash());
     }
 
     public static Keccak256 makeEmptyHash() {

@@ -25,13 +25,13 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class PendingTransactionsNotificationEmitterTest {
@@ -39,7 +39,7 @@ public class PendingTransactionsNotificationEmitterTest {
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);

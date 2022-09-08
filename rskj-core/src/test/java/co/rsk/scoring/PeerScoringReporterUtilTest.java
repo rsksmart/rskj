@@ -19,8 +19,8 @@
 package co.rsk.scoring;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +37,7 @@ public class PeerScoringReporterUtilTest {
         PeerScoringReputationSummary peerScoringReputationSummary =
                 PeerScoringReporterUtil.buildReputationSummary(peerScoringInformationList);
 
-        Assert.assertEquals(new PeerScoringReputationSummary(8, 32, 0,
+        Assertions.assertEquals(new PeerScoringReputationSummary(8, 32, 0,
                 0, 40, 24,
                 72, 8, 0,
                 0, 0, 0,
@@ -51,13 +51,13 @@ public class PeerScoringReporterUtilTest {
         String detailedStatusResult = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
         String summaryResultString =  PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
 
-        Assert.assertEquals("{\"count\":0,\"successfulHandshakes\":0,\"failedHandshakes\":0," +
+        Assertions.assertEquals("{\"count\":0,\"successfulHandshakes\":0,\"failedHandshakes\":0," +
                 "\"invalidHeader\":0,\"validBlocks\":0,\"invalidBlocks\":0,\"validTransactions\":0," +
                 "\"invalidTransactions\":0,\"invalidNetworks\":0,\"invalidMessages\":0," +
                 "\"repeatedMessages\":0,\"timeoutMessages\":0,\"unexpectedMessages\":0," +
                 "\"peersTotalScore\":0,\"punishments\":0,\"goodReputationCount\":0," +
                 "\"badReputationCount\":0}", summaryResultString);
-        Assert.assertEquals("[]", detailedStatusResult);
+        Assertions.assertEquals("[]", detailedStatusResult);
     }
 
     private List<PeerScoringInformation> badReputationPeers() {

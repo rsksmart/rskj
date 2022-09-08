@@ -33,18 +33,19 @@ import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class ProgramTest {
 
     static final int TOTAL_GAS = 10000;
@@ -62,7 +63,7 @@ public class ProgramTest {
     protected long gasCost;
     protected Program program;
 
-    @Before
+    @BeforeEach
     public void setup() {
         final ActivationConfig.ForBlock activations = getBlockchainConfig();
         precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
@@ -128,13 +129,10 @@ public class ProgramTest {
     }
 
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
-
-        program.callToPrecompiledAddress(msg, precompiledContract);
-
-        fail("It should throw a RE.");
+        Assertions.assertThrows(RuntimeException.class, () -> program.callToPrecompiledAddress(msg, precompiledContract));
     }
 
     @Test

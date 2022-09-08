@@ -22,12 +22,13 @@ package org.ethereum.vm;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DataWordTest {
 
@@ -310,13 +311,16 @@ public class DataWordTest {
         assertEquals(expected, result.toString());
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSignExtendException1() {
         byte k = -1;
 
         DataWord x = DataWord.ZERO;
 
-        x.signExtend(k); // should throw an exception
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            x.signExtend(k); // should throw an exception
+        });
+
     }
 
     @Test
@@ -329,13 +333,15 @@ public class DataWordTest {
         assertEquals(l, -1);
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSignExtendException2() {
         byte k = 32;
 
         DataWord x = DataWord.ZERO;
 
-        x.signExtend(k); // should throw an exception
+        Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
+            x.signExtend(k); // should throw an exception
+        });
     }
 
     @Test

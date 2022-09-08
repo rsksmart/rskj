@@ -19,8 +19,8 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -31,14 +31,14 @@ public class BlockMessageTest {
     @Test
     public void getMessageType() {
         BlockMessage message = new BlockMessage(null);
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
     }
 
     @Test
     public void getBlock() {
         Block block = mock(Block.class);
         BlockMessage message = new BlockMessage(block);
-        Assert.assertSame(block, message.getBlock());
+        Assertions.assertSame(block, message.getBlock());
     }
 
     @Test

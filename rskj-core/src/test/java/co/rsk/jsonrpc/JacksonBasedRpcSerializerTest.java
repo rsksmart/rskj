@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
@@ -16,7 +16,7 @@ public class JacksonBasedRpcSerializerTest {
 
 	private JacksonBasedRpcSerializer serializer;
 
-	@Before
+	@BeforeEach
 	public void init() {
 
 		serializer = new JacksonBasedRpcSerializer();
@@ -29,7 +29,7 @@ public class JacksonBasedRpcSerializerTest {
 		String messageInt = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": 64}";
 		RskJsonRpcRequest requestFromIntId = convertJson(messageInt);
 
-		Assert.assertEquals(new Integer(64), requestFromIntId.getId());
+		Assertions.assertEquals(new Integer(64), requestFromIntId.getId());
 	}
 
 	@Test
@@ -38,7 +38,7 @@ public class JacksonBasedRpcSerializerTest {
 		String messageStr = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": \"string\"}";
 		RskJsonRpcRequest requestFromStringId = convertJson(messageStr);
 
-		Assert.assertEquals("string", requestFromStringId.getId());
+		Assertions.assertEquals("string", requestFromStringId.getId());
 
 	}
 

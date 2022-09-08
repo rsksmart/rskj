@@ -20,8 +20,8 @@ package org.ethereum.net.p2p;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -30,7 +30,7 @@ public class P2pHandlerTest {
     private P2pHandler p2pHandler;
     private MessageQueue msgQueue;
 
-    @Before
+    @BeforeEach
     public void setup() {
         EthereumListener ethereumListener = mock(EthereumListener.class);
         msgQueue = mock(MessageQueue.class);

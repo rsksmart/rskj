@@ -25,10 +25,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,7 +35,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class StateTest {
@@ -46,14 +45,14 @@ public class StateTest {
     private static final Logger logger = LoggerFactory.getLogger("test");
 
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test
     public void testGenesisAccounts() {
         Trie trie = generateGenesisState();
         assertEquals(GENESIS_STATE_ROOT, trie.getHash());
     }
 
-    @Ignore
+    @Disabled
     @Test  // calc state after applying first tx on genesis
     public void test2() {
 

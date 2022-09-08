@@ -25,9 +25,9 @@ import co.rsk.peg.BridgeStorageProvider;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -36,7 +36,7 @@ import java.util.Random;
 // Everything related to locking that is not
 // registerBtcTransaction, which has its own
 // test case given its complexity
-@Ignore
+@Disabled
 public class LockTest extends BridgePerformanceTestCase {
     private Sha256Hash randomHashInMap;
 
@@ -47,7 +47,7 @@ public class LockTest extends BridgePerformanceTestCase {
         executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10), stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class LockTest extends BridgePerformanceTestCase {
         isBtcTxHashAlreadyProcessed_yes(100, stats);
         isBtcTxHashAlreadyProcessed_no(100, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void isBtcTxHashAlreadyProcessed_yes(int times, ExecutionStats stats) throws VMException {
@@ -78,7 +78,7 @@ public class LockTest extends BridgePerformanceTestCase {
         getBtcTxHashProcessedHeight_processed(100, stats);
         getBtcTxHashProcessedHeight_notProcessed(100, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void getBtcTxHashProcessedHeight_processed(int times, ExecutionStats stats) throws VMException {

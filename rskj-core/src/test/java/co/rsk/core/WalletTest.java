@@ -21,8 +21,8 @@ package co.rsk.core;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -36,8 +36,8 @@ public class WalletTest {
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertTrue(addresses.isEmpty());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertTrue(addresses.isEmpty());
     }
 
     @Test
@@ -46,22 +46,22 @@ public class WalletTest {
 
         byte[] address = wallet.addAccountWithSeed("seed");
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         byte[] calculatedAddress = ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
 
-        Assert.assertArrayEquals(calculatedAddress, address);
+        Assertions.assertArrayEquals(calculatedAddress, address);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(1, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(1, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address, addr);
     }
 
     @Test
@@ -70,23 +70,23 @@ public class WalletTest {
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(1, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(1, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address, addr);
 
         Account account = wallet.getAccount(new RskAddress(address), "passphrase");
 
-        Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress().getBytes());
+        Assertions.assertNotNull(account);
+        Assertions.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
@@ -94,31 +94,31 @@ public class WalletTest {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
-        Assert.assertNotNull(addr1);
+        Assertions.assertNotNull(addr1);
 
         byte[] address2 = wallet.addAccountWithSeed("seed");
-        Assert.assertNotNull(address2);
+        Assertions.assertNotNull(address2);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(2, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(2, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address2, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address2, addr);
 
         addr = addresses.get(1);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(addr1.getBytes(), addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(addr1.getBytes(), addr);
 
         Account account = wallet.getAccount(addr1, "passphrase");
 
-        Assert.assertNotNull(account);
-        Assert.assertEquals(addr1, account.getAddress());
+        Assertions.assertNotNull(account);
+        Assertions.assertEquals(addr1, account.getAddress());
     }
 
     @Test
@@ -126,38 +126,38 @@ public class WalletTest {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
-        Assert.assertNotNull(addr1);
+        Assertions.assertNotNull(addr1);
 
         byte[] address2 = wallet.addAccountWithSeed("seed");
-        Assert.assertNotNull(address2);
+        Assertions.assertNotNull(address2);
         byte[] address3 = wallet.addAccountWithSeed("seed2");
-        Assert.assertNotNull(address3);
+        Assertions.assertNotNull(address3);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(3, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(3, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address2, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address2, addr);
 
         addr = addresses.get(1);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address3, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address3, addr);
 
         addr = addresses.get(2);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(addr1.getBytes(), addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(addr1.getBytes(), addr);
 
         Account account = wallet.getAccount(addr1, "passphrase");
 
-        Assert.assertNotNull(account);
-        Assert.assertEquals(addr1, account.getAddress());
+        Assertions.assertNotNull(account);
+        Assertions.assertEquals(addr1, account.getAddress());
     }
 
     @Test
@@ -165,40 +165,40 @@ public class WalletTest {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
-        Assert.assertNotNull(addr1);
+        Assertions.assertNotNull(addr1);
 
         byte[] address2 = wallet.addAccountWithSeed("seed");
-        Assert.assertNotNull(address2);
+        Assertions.assertNotNull(address2);
         byte[] address3 = wallet.addAccountWithSeed("seed2");
-        Assert.assertNotNull(address3);
+        Assertions.assertNotNull(address3);
 
         wallet.unlockAccount(addr1, "passphrase", 10000);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(3, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(3, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address2, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address2, addr);
 
         addr = addresses.get(1);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address3, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address3, addr);
 
         addr = addresses.get(2);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(addr1.getBytes(), addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(addr1.getBytes(), addr);
 
         Account account = wallet.getAccount(addr1, "passphrase");
 
-        Assert.assertNotNull(account);
-        Assert.assertEquals(addr1, account.getAddress());
+        Assertions.assertNotNull(account);
+        Assertions.assertEquals(addr1, account.getAddress());
     }
 
     @Test
@@ -207,29 +207,29 @@ public class WalletTest {
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(1, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(1, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address, addr);
 
         Account account0 = wallet.getAccount(new RskAddress(address));
 
-        Assert.assertNull(account0);
+        Assertions.assertNull(account0);
 
-        Assert.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
+        Assertions.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
 
         Account account = wallet.getAccount(new RskAddress(address));
 
-        Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress().getBytes());
+        Assertions.assertNotNull(account);
+        Assertions.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
@@ -237,7 +237,7 @@ public class WalletTest {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
-        Assert.assertFalse(wallet.unlockAccount(addr, "passphrase"));
+        Assertions.assertFalse(wallet.unlockAccount(addr, "passphrase"));
     }
 
     @Test
@@ -246,20 +246,20 @@ public class WalletTest {
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
-        Assert.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
+        Assertions.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
 
         Account account = wallet.getAccount(new RskAddress(address));
 
-        Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress().getBytes());
+        Assertions.assertNotNull(account);
+        Assertions.assertArrayEquals(address, account.getAddress().getBytes());
 
-        Assert.assertTrue(wallet.lockAccount(new RskAddress(address)));
+        Assertions.assertTrue(wallet.lockAccount(new RskAddress(address)));
 
         Account account2 = wallet.getAccount(new RskAddress(address));
 
-        Assert.assertNull(account2);
+        Assertions.assertNull(account2);
     }
 
     @Test
@@ -267,7 +267,7 @@ public class WalletTest {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
-        Assert.assertFalse(wallet.lockAccount(addr));
+        Assertions.assertFalse(wallet.lockAccount(addr));
     }
 
     @Test
@@ -276,13 +276,13 @@ public class WalletTest {
 
         byte[] address = wallet.addAccount().getBytes();
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         Account account = wallet.getAccount(new RskAddress(address));
 
-        Assert.assertNotNull(account);
+        Assertions.assertNotNull(account);
 
-        Assert.assertArrayEquals(address, account.getAddress().getBytes());
+        Assertions.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
@@ -292,7 +292,7 @@ public class WalletTest {
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
         Account account = wallet.getAccount(addr);
 
-        Assert.assertNull(account);
+        Assertions.assertNull(account);
     }
 
     @Test
@@ -302,21 +302,21 @@ public class WalletTest {
 
         byte[] address = wallet.addAccountWithPrivateKey(privateKeyBytes);
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         byte[] calculatedAddress = ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
 
-        Assert.assertArrayEquals(calculatedAddress, address);
+        Assertions.assertArrayEquals(calculatedAddress, address);
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
-        Assert.assertNotNull(addresses);
-        Assert.assertFalse(addresses.isEmpty());
-        Assert.assertEquals(1, addresses.size());
+        Assertions.assertNotNull(addresses);
+        Assertions.assertFalse(addresses.isEmpty());
+        Assertions.assertEquals(1, addresses.size());
 
         byte[] addr = addresses.get(0);
 
-        Assert.assertNotNull(addr);
-        Assert.assertArrayEquals(address, addr);
+        Assertions.assertNotNull(addr);
+        Assertions.assertArrayEquals(address, addr);
     }
 }

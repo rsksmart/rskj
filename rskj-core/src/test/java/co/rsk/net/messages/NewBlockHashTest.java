@@ -19,8 +19,8 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class NewBlockHashTest {
     @Test
@@ -28,7 +28,7 @@ public class NewBlockHashTest {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
-        Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, message.getMessageType());
+        Assertions.assertArrayEquals(hash, message.getBlockHash());
+        Assertions.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, message.getMessageType());
     }
 }

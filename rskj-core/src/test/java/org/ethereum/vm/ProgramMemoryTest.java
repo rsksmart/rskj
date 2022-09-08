@@ -25,14 +25,14 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 public class ProgramMemoryTest {
@@ -40,7 +40,7 @@ public class ProgramMemoryTest {
     ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
     Program program;
 
-    @Before
+    @BeforeEach
     public void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
 
@@ -57,13 +57,13 @@ public class ProgramMemoryTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testMemorySave() {
         fail("Not yet implemented");
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void testMemoryLoad() {
         fail("Not yet implemented");
     }
@@ -350,7 +350,7 @@ public class ProgramMemoryTest {
         assertEquals(32, program.getMemSize());
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testInitialInsert() {
 

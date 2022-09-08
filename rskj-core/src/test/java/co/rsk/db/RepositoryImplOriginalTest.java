@@ -35,10 +35,11 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -47,14 +48,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Roman Mandeleil
  * @since 17.11.2014
  * Modified by ajlopez on 03/04/2017, to use RepositoryImpl
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class RepositoryImplOriginalTest {
 
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -670,7 +671,7 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(ByteUtil.toHexString(HashUtil.EMPTY_TRIE_HASH), ByteUtil.toHexString(repository.getRoot()));
+        Assertions.assertEquals(ByteUtil.toHexString(HashUtil.EMPTY_TRIE_HASH), ByteUtil.toHexString(repository.getRoot()));
     }
 
     @Test
@@ -739,8 +740,8 @@ public class RepositoryImplOriginalTest {
         // Since track2 is rolled back, nothing changes in repo
         track2.rollback();
 
-        assertThat(repository.getStorageValue(COW, cowKey1), is(cowVal0));
-        assertThat(repository.getStorageValue(HORSE, horseKey1), is(horseVal0));
+        MatcherAssert.assertThat(repository.getStorageValue(COW, cowKey1), is(cowVal0));
+        MatcherAssert.assertThat(repository.getStorageValue(HORSE, horseKey1), is(horseVal0));
     }
 
     private boolean running = true;
@@ -760,7 +761,7 @@ public class RepositoryImplOriginalTest {
         track2.commit();
         // Changes commited to repository
 
-        assertThat(repository.getStorageValue(COW, cowKey2), is(cowVal0));
+        MatcherAssert.assertThat(repository.getStorageValue(COW, cowKey2), is(cowVal0));
 
         final CountDownLatch failSema = new CountDownLatch(1);
         // First create the 10 snapshots. The snapshots should not be created while the

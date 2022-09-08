@@ -32,15 +32,15 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 public class BlockchainLoaderTest {
@@ -66,22 +66,22 @@ public class BlockchainLoaderTest {
         }
         int testAccountsSize = 3;
         int genesisAccountKeysSize = enabledPCCs + testAccountsSize; // PCCs + test accounts in blockchain_loader_genesis.json
-        Assert.assertEquals(genesisAccountKeysSize, repository.getAccountsKeys().size());
+        Assertions.assertEquals(genesisAccountKeysSize, repository.getAccountsKeys().size());
 
         RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
-        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));
-        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(daba01));
+        Assertions.assertEquals(Coin.valueOf(2000), repository.getBalance(daba01));
+        Assertions.assertEquals(BigInteger.valueOf(24), repository.getNonce(daba01));
 
         RskAddress daba02 = new RskAddress("dabadabadabadabadabadabadabadabadaba0002");
-        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(daba02));
-        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(daba02));
+        Assertions.assertEquals(Coin.valueOf(1000), repository.getBalance(daba02));
+        Assertions.assertEquals(BigInteger.ZERO, repository.getNonce(daba02));
 
         RskAddress address = new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051");
-        Assert.assertEquals(Coin.valueOf(10), repository.getBalance(address));
-        Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(address));
-        Assert.assertEquals(DataWord.ONE, repository.getStorageValue(address, DataWord.ZERO));
-        Assert.assertEquals(DataWord.valueOf(3), repository.getStorageValue(address, DataWord.ONE));
-        Assert.assertEquals(274, Objects.requireNonNull(repository.getCode(address)).length);
+        Assertions.assertEquals(Coin.valueOf(10), repository.getBalance(address));
+        Assertions.assertEquals(BigInteger.valueOf(25), repository.getNonce(address));
+        Assertions.assertEquals(DataWord.ONE, repository.getStorageValue(address, DataWord.ZERO));
+        Assertions.assertEquals(DataWord.valueOf(3), repository.getStorageValue(address, DataWord.ONE));
+        Assertions.assertEquals(274, Objects.requireNonNull(repository.getCode(address)).length);
     }
 
     @Test

@@ -32,23 +32,20 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This tests are based on the org.ethereum.db.RepositoryTest.java
  * It's main goal is to add more coverage.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class RepositoryTest {
 
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -58,7 +55,7 @@ public class RepositoryTest {
     private MutableTrieImpl mutableTrie;
     private TrieStore trieStore;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         trieStore = new TrieStoreImpl(new HashMapDB());
         mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
@@ -382,7 +379,7 @@ public class RepositoryTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(ByteUtil.toHexString(HashUtil.EMPTY_TRIE_HASH), ByteUtil.toHexString(repository.getRoot()));
+        Assertions.assertEquals(ByteUtil.toHexString(HashUtil.EMPTY_TRIE_HASH), ByteUtil.toHexString(repository.getRoot()));
     }
 
     @Test

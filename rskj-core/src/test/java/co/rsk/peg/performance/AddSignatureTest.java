@@ -32,16 +32,16 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@Ignore
+@Disabled
 public class AddSignatureTest extends BridgePerformanceTestCase {
     private BtcTransaction releaseTx;
     private Keccak256 rskTxHash;
@@ -62,7 +62,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         addSignature_nonFullySigned(100, stats);
         addSignature_fullySigned(100, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void addSignature_nonFullySigned(int times, ExecutionStats stats) throws VMException {

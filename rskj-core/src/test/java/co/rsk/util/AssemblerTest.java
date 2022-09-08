@@ -1,12 +1,10 @@
 package co.rsk.util;
 
 import co.rsk.asm.EVMAssembler;
-import org.junit.Assert;
-import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
 /**
  * Created by SerAdmin on 3/20/2018.
@@ -31,7 +29,7 @@ public class AssemblerTest {
                 2,  // Offset label
                 87}; // JUMPI
 
-        Assert.assertArrayEquals(code,compilerCode);
+        Assertions.assertArrayEquals(code,compilerCode);
 
     }
 }

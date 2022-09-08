@@ -2,14 +2,14 @@ package co.rsk.cli.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
 
 public class MigratorTest {
 
@@ -34,16 +34,16 @@ public class MigratorTest {
 
         String migratedConfiguration = Migrator.migrateConfiguration(initialConfiguration, migrationProperties);
         Config config = ConfigFactory.parseString(migratedConfiguration);
-        assertThat(config.hasPath("inline.config.name"), is(false));
-        assertThat(config.getString("inline.config.new.name"), is("value"));
-        assertThat(config.hasPath("flat.config"), is(false));
-        assertThat(config.hasPath("flat_config"), is(true));
-        assertThat(config.getString("flat_config"), is("0.0.0.0"));
-        assertThat(config.hasPath("nested.nested.config"), is(false));
-        assertThat(config.getInt("nested.nested.new.config"), is(13));
-        assertThat(config.hasPath("unknown.config"), is(false));
-        assertThat(config.getString("another.config"), is("don't change"));
-        assertThat(config.getString("new.key"), is("new value"));
-        assertThat(config.getInt("other.new.key"), is(12));
+        MatcherAssert.assertThat(config.hasPath("inline.config.name"), is(false));
+        MatcherAssert.assertThat(config.getString("inline.config.new.name"), is("value"));
+        MatcherAssert.assertThat(config.hasPath("flat.config"), is(false));
+        MatcherAssert.assertThat(config.hasPath("flat_config"), is(true));
+        MatcherAssert.assertThat(config.getString("flat_config"), is("0.0.0.0"));
+        MatcherAssert.assertThat(config.hasPath("nested.nested.config"), is(false));
+        MatcherAssert.assertThat(config.getInt("nested.nested.new.config"), is(13));
+        MatcherAssert.assertThat(config.hasPath("unknown.config"), is(false));
+        MatcherAssert.assertThat(config.getString("another.config"), is("don't change"));
+        MatcherAssert.assertThat(config.getString("new.key"), is("new value"));
+        MatcherAssert.assertThat(config.getInt("other.new.key"), is(12));
     }
 }

@@ -37,9 +37,9 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
 import static co.rsk.peg.PegTestUtils.createRandomP2PKHBtcAddress;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
@@ -68,7 +68,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
-    @Before
+    @BeforeEach
     public void setUpOnEachTest() {
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -204,7 +204,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -346,7 +346,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -504,7 +504,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -787,7 +787,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
             assertEquals(1, releaseTxs.size());
             BtcTransaction releaseTx = releaseTxs.get(0);
-            Assert.assertEquals(1, releaseTx.getOutputs().size());
+            Assertions.assertEquals(1, releaseTx.getOutputs().size());
 
             Coin amountSent = BridgeUtils.getAmountSentToAddresses(activations,
                 bridgeConstants.getBtcParams(),
@@ -809,41 +809,41 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             Coin estimatedFee = amountSent.divide(10);
             Coin estimatedAmountToRefund = amountSent.minus(estimatedFee);
 
-            Assert.assertTrue("Pegout value should be bigger than the estimated amount to refund(" + estimatedAmountToRefund + ") and " +
-                "smaller than the amount sent(" + amountSent + ")", amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
-                amountToRefund.isLessThan(amountSent)
+            Assertions.assertTrue(amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
+                amountToRefund.isLessThan(amountSent), "Pegout value should be bigger than the estimated amount to refund(" + estimatedAmountToRefund + ") and " +
+                "smaller than the amount sent(" + amountSent + ")"
             );
         }
 
         return result;
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
-        sendFundsToAnyAddress(
-            bridgeConstantsRegtest,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                return tx;
-            }
-        );
+    @Test
+    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_regtest() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsRegtest,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    return tx;
+                }
+        ));
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
-        sendFundsToAnyAddress(
-            bridgeConstantsMainnet,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                return tx;
-            }
-        );
+    @Test
+    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_mainnet() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsMainnet,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    return tx;
+                }
+        ));
     }
 
     @Test
@@ -1192,23 +1192,23 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_regtest() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        sendFundsToAnyAddress(
-            bridgeConstantsRegtest,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+    @Test
+    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_regtest() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsRegtest,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                tx.addOutput(valueToSend, activeFederationAddress);
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(valueToSend, activeFederationAddress);
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                return tx;
-            }
-        );
+                    return tx;
+                }
+        ));
     }
 
     @Test
@@ -1236,23 +1236,23 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_mainnet() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        sendFundsToAnyAddress(
-            bridgeConstantsMainnet,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+    @Test
+    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_mainnet() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsMainnet,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                tx.addOutput(valueToSend, activeFederationAddress);
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(valueToSend, activeFederationAddress);
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                return tx;
-            }
-        );
+                    return tx;
+                }
+        ));
     }
 
     @Test
@@ -1288,7 +1288,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
@@ -1300,7 +1300,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueBelowMinimum
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
             , result.longValue());
     }
@@ -1373,7 +1373,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             minimumPegInTxValue
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             co.rsk.core.Coin.fromBitcoin(minimumPegInTxValue).asBigInteger()
             , result);
     }
@@ -1388,7 +1388,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueOverMinimum
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             co.rsk.core.Coin.fromBitcoin(valueOverMinimum).asBigInteger()
             , result);
     }
@@ -1403,7 +1403,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1415,7 +1415,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
@@ -1427,7 +1427,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
     }
 
     @Test
@@ -1438,7 +1438,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
@@ -1449,7 +1449,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
@@ -1465,7 +1465,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.FIFTY_COINS.div(2)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.FIFTY_COINS.div(2)).asBigInteger(), result);
     }
 
     @Test
@@ -1481,7 +1481,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1497,7 +1497,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1512,7 +1512,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1528,7 +1528,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1545,7 +1545,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2, 0)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2, 0)).asBigInteger(), result);
     }
 
     @Test
@@ -1561,7 +1561,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
 
     @Test
@@ -1698,7 +1698,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
@@ -1891,7 +1891,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -2084,7 +2084,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -2124,7 +2124,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2263,7 +2263,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2429,7 +2429,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2601,7 +2601,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2657,7 +2657,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value()), result);
     }
 
     @Test
@@ -2702,7 +2702,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value()), result);
     }
 
     @Test
@@ -2752,7 +2752,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
     }
 
     @Test
@@ -2816,7 +2816,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value()), result);
     }
 
     @Test
@@ -2899,7 +2899,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()), result);
     }
 
     @Test
@@ -2984,7 +2984,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
     }
 
     @Test
@@ -3075,7 +3075,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
 
         // Update repository
         bridgeSupport.save();
@@ -3092,7 +3092,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
     }
 
     @Test
@@ -3175,24 +3175,24 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
         co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(Coin.COIN)),
             postCallLbcAddressBalance
         );
 
         bridgeSupport.save();
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
             provider.isFlyoverDerivationHashUsed(
                 tx.getHash(),
                 bridgeSupport.getFlyoverDerivationHash(PegTestUtils.createHash3(0), btcAddress, btcAddress, lbcAddress)
             )
         );
-        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
 
         // Trying to register the same transaction again fails
         result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -3207,7 +3207,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
     }
 
     @Test
@@ -3250,7 +3250,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         FlyoverFederationInformation obtainedFlyoverFedInfo =
             bridgeSupport.createFlyoverFederationInformation(derivationHash);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             expectedFlyoverFederationInformation.getFlyoverFederationAddress(bridgeConstantsRegtest.getBtcParams()),
             obtainedFlyoverFedInfo.getFlyoverFederationAddress(bridgeConstantsRegtest.getBtcParams())
         );
@@ -3308,7 +3308,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
         Wallet obtainedWallet = bridgeSupport.getFlyoverWallet(btcContext, utxoList, Collections.singletonList(flyoverFederationInformation));
 
-        Assert.assertEquals(Coin.COIN, obtainedWallet.getBalance());
+        Assertions.assertEquals(Coin.COIN, obtainedWallet.getBalance());
     }
 
     @Test
@@ -3344,7 +3344,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             new RskAddress(lbcAddress)
         );
 
-        Assert.assertArrayEquals(HashUtil.keccak256(result), flyoverDerivationHash.getBytes());
+        Assertions.assertArrayEquals(HashUtil.keccak256(result), flyoverDerivationHash.getBytes());
     }
 
     @Test
@@ -3378,19 +3378,19 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         UTXO utxo = new UTXO(utxoHash, 0, Coin.COIN.multiply(2), 0, false, new Script(new byte[]{}));
         utxos.add(utxo);
 
-        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         bridgeSupport.saveFlyoverActiveFederationDataInStorage(btcTxHash, derivationHash, flyoverFederationInformation, utxos);
 
         bridgeSupport.save();
 
-        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         assertEquals(utxo, provider.getNewFederationBtcUTXOs().get(0));
-        Assert.assertTrue(provider.isFlyoverDerivationHashUsed(btcTxHash, derivationHash));
+        Assertions.assertTrue(provider.isFlyoverDerivationHashUsed(btcTxHash, derivationHash));
         Optional<FlyoverFederationInformation> optionalFlyoverFederationInformation = provider.getFlyoverFederationInformation(flyoverScriptHash);
-        Assert.assertTrue(optionalFlyoverFederationInformation.isPresent());
+        Assertions.assertTrue(optionalFlyoverFederationInformation.isPresent());
         FlyoverFederationInformation obtainedFlyoverFederationInformation = optionalFlyoverFederationInformation.get();
-        Assert.assertEquals(flyoverFederationInformation.getDerivationHash(), obtainedFlyoverFederationInformation.getDerivationHash());
-        Assert.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
+        Assertions.assertEquals(flyoverFederationInformation.getDerivationHash(), obtainedFlyoverFederationInformation.getDerivationHash());
+        Assertions.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
     }
 
     private Address getFlyoverFederationAddress() {

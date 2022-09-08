@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class RskErrorResolverTest {
 
     private RskErrorResolver rskErrorResolver;
 
-    @Before
+    @BeforeEach
     public void setup() {
         rskErrorResolver = new RskErrorResolver();
     }
@@ -46,10 +46,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals(message, result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals(message, result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -64,10 +64,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32603, result.code);
-        Assert.assertEquals("Internal server error, probably due to invalid parameter type", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32603, result.code);
+        Assertions.assertEquals("Internal server error, probably due to invalid parameter type", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -84,10 +84,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32602, result.code);
-        Assert.assertEquals("Invalid parameters", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32602, result.code);
+        Assertions.assertEquals("Invalid parameters", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -104,10 +104,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32602, result.code);
-        Assert.assertEquals("Invalid parameters", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32602, result.code);
+        Assertions.assertEquals("Invalid parameters", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -124,10 +124,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32602, result.code);
-        Assert.assertEquals("Invalid parameters", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32602, result.code);
+        Assertions.assertEquals("Invalid parameters", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -152,10 +152,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32602, result.code);
-        Assert.assertEquals("Unrecognized field \"propertyName\" (2 known properties: [\"propertyId.1\", \"propertyId.2\"])", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32602, result.code);
+        Assertions.assertEquals("Unrecognized field \"propertyName\" (2 known properties: [\"propertyId.1\", \"propertyId.2\"])", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -174,10 +174,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32602, result.code);
-        Assert.assertEquals("Unrecognized field \"propertyName\" (0 known properties: [])", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32602, result.code);
+        Assertions.assertEquals("Unrecognized field \"propertyName\" (0 known properties: [])", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -192,10 +192,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(-32603, result.code);
-        Assert.assertEquals("Internal server error", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(-32603, result.code);
+        Assertions.assertEquals("Internal server error", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -212,10 +212,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("invalid argument 0: json: cannot unmarshal string into value of input", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals("invalid argument 0: json: cannot unmarshal string into value of input", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -232,10 +232,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("the method mockMethod does not exist/is not available", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals("the method mockMethod does not exist/is not available", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -252,10 +252,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("the method mockMethod does not exist/is not available", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals("the method mockMethod does not exist/is not available", result.message);
+        Assertions.assertNull(result.data);
     }
 
     @Test
@@ -273,10 +273,10 @@ public class RskErrorResolverTest {
         JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
 
         // Then
-        Assert.assertNotNull(result);
-        Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("invalid argument 0: hex string has length 9, want 40 for RSK address", result.message);
-        Assert.assertNull(result.data);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(code, (Integer) result.code);
+        Assertions.assertEquals("invalid argument 0: hex string has length 9, want 40 for RSK address", result.message);
+        Assertions.assertNull(result.data);
     }
 
     public void mockMethod() { }

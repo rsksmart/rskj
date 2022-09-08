@@ -22,8 +22,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.Bloom;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
@@ -38,15 +38,15 @@ public class AddressesTopicsFilterTest {
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
 
-        Assert.assertTrue(filter.matchesContractAddress(address));
-        Assert.assertFalse(filter.matchesContractAddress(RskAddress.nullAddress()));
+        Assertions.assertTrue(filter.matchesContractAddress(address));
+        Assertions.assertFalse(filter.matchesContractAddress(RskAddress.nullAddress()));
     }
 
     @Test
     public void matchEmptyBloomWithAllFilter() {
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], null);
 
-        Assert.assertTrue(filter.matchBloom(new Bloom()));
+        Assertions.assertTrue(filter.matchBloom(new Bloom()));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class AddressesTopicsFilterTest {
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
 
-        Assert.assertFalse(filter.matchBloom(new Bloom()));
+        Assertions.assertFalse(filter.matchBloom(new Bloom()));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AddressesTopicsFilterTest {
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
 
-        Assert.assertFalse(filter.matchBloom(new Bloom()));
+        Assertions.assertFalse(filter.matchBloom(new Bloom()));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class AddressesTopicsFilterTest {
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
 
-        Assert.assertTrue(filter.matchBloom(getAllBloom()));
+        Assertions.assertTrue(filter.matchBloom(getAllBloom()));
     }
 
     @Test
@@ -84,7 +84,7 @@ public class AddressesTopicsFilterTest {
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
 
-        Assert.assertTrue(filter.matchBloom(getAllBloom()));
+        Assertions.assertTrue(filter.matchBloom(getAllBloom()));
     }
 
     private static Topic createTopic() {

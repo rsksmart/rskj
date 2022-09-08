@@ -18,8 +18,8 @@
 
 package co.rsk.trie;
 
-import org.junit.Test;
-import org.junit.Assert;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Created by ajlopez on 07/02/2017.
@@ -29,10 +29,10 @@ public class PathEncoderTest {
     public void encodeNullBinaryPath() {
         try {
             PathEncoder.encode(null);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception ex) {
-            Assert.assertTrue(ex instanceof IllegalArgumentException);
+            Assertions.assertTrue(ex instanceof IllegalArgumentException);
         }
     }
 
@@ -42,8 +42,8 @@ public class PathEncoderTest {
 
         byte[] encoded = PathEncoder.encode(path);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x60 }, encoded);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertArrayEquals(new byte[] { 0x60 }, encoded);
     }
 
     @Test
@@ -52,8 +52,8 @@ public class PathEncoderTest {
 
         byte[] encoded = PathEncoder.encode(path);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d }, encoded);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertArrayEquals(new byte[] { 0x6d }, encoded);
     }
 
     @Test
@@ -62,8 +62,8 @@ public class PathEncoderTest {
 
         byte[] encoded = PathEncoder.encode(path);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d, (byte)0x80 }, encoded);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertArrayEquals(new byte[] { 0x6d, (byte)0x80 }, encoded);
     }
 
     @Test
@@ -72,18 +72,18 @@ public class PathEncoderTest {
 
         byte[] encoded = PathEncoder.encode(path);
 
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d, 0x50 }, encoded);
+        Assertions.assertNotNull(encoded);
+        Assertions.assertArrayEquals(new byte[] { 0x6d, 0x50 }, encoded);
     }
 
     @Test
     public void decodeNullBinaryPath() {
         try {
             PathEncoder.decode(null, 0);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (Exception ex) {
-            Assert.assertTrue(ex instanceof IllegalArgumentException);
+            Assertions.assertTrue(ex instanceof IllegalArgumentException);
         }
     }
 
@@ -93,8 +93,8 @@ public class PathEncoderTest {
 
         byte[] path = PathEncoder.decode(encoded, 3);
 
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01 }, path);
+        Assertions.assertNotNull(path);
+        Assertions.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01 }, path);
     }
 
     @Test
@@ -103,8 +103,8 @@ public class PathEncoderTest {
 
         byte[] path = PathEncoder.decode(encoded, 8);
 
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 }, path);
+        Assertions.assertNotNull(path);
+        Assertions.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 }, path);
     }
 
     @Test
@@ -113,8 +113,8 @@ public class PathEncoderTest {
 
         byte[] path = PathEncoder.decode(encoded, 9);
 
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01 }, path);
+        Assertions.assertNotNull(path);
+        Assertions.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01 }, path);
     }
 
     @Test
@@ -123,7 +123,7 @@ public class PathEncoderTest {
 
         byte[] path = PathEncoder.decode(encoded, 12);
 
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01 }, path);
+        Assertions.assertNotNull(path);
+        Assertions.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01 }, path);
     }
 }

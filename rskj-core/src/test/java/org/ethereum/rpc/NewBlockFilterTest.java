@@ -20,8 +20,8 @@ package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -33,8 +33,8 @@ public class NewBlockFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
@@ -46,9 +46,9 @@ public class NewBlockFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("0x" + block.getHash(), result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals("0x" + block.getHash(), result[0]);
     }
 
     @Test
@@ -62,9 +62,9 @@ public class NewBlockFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
-        Assert.assertEquals("0x" + block1.getHash(), result[0]);
-        Assert.assertEquals("0x" + block2.getHash(), result[1]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
+        Assertions.assertEquals("0x" + block1.getHash(), result[0]);
+        Assertions.assertEquals("0x" + block2.getHash(), result[1]);
     }
 }

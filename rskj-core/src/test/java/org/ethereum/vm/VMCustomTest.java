@@ -31,23 +31,24 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 public class VMCustomTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
@@ -57,7 +58,7 @@ public class VMCustomTest {
     private ProgramInvokeMockImpl invoke;
     private Program program;
 
-    @Before
+    @BeforeEach
     public void setup() {
         RskAddress ownerAddress = new RskAddress("77045E71A7A2C50903D88E564CD72FAB11E82051");
         byte[] msgData = Hex.decode("00000000000000000000000000000000000000000000000000000000000000A1" +
@@ -156,13 +157,13 @@ public class VMCustomTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = RuntimeException.class) // CALLDATALOAD OP mal
+    @Test // CALLDATALOAD OP mal
     public void testCALLDATALOAD_6() {
 
         VM vm = getSubject();
         program = getProgram("35");
         try {
-            vm.step(program);
+            Assertions.assertThrows(RuntimeException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -252,7 +253,7 @@ public class VMCustomTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // CALLDATACOPY OP mal
+    @Test // CALLDATACOPY OP mal
     public void testCALLDATACOPY_6() {
 
         VM vm = getSubject();
@@ -261,13 +262,15 @@ public class VMCustomTest {
         try {
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
-    @Test(expected = OutOfGasException.class) // CALLDATACOPY OP mal
+    @Test // CALLDATACOPY OP mal
     public void testCALLDATACOPY_7() {
 
         VM vm = getSubject();
@@ -277,7 +280,7 @@ public class VMCustomTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(OutOfGasException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -385,7 +388,7 @@ public class VMCustomTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SHA3 OP mal
+    @Test // SHA3 OP mal
     public void testSHA3_3() {
 
         VM vm = getSubject();
@@ -395,7 +398,7 @@ public class VMCustomTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -480,7 +483,7 @@ public class VMCustomTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // GAS OP
     public void testGAS_1() {
 
@@ -507,7 +510,7 @@ public class VMCustomTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = Program.IllegalOperationException.class) // INVALID OP
+    @Test // INVALID OP
     public void testINVALID_1() {
 
         VM vm = getSubject();
@@ -516,7 +519,7 @@ public class VMCustomTest {
 
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
             DataWord item1 = program.stackPop();

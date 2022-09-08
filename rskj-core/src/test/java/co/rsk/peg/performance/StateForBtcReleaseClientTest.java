@@ -28,15 +28,15 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-@Ignore
+@Disabled
 public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
     @Test
     public void getStateForBtcReleaseClient() throws VMException {
@@ -52,7 +52,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 stats
         );
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private BridgeStorageProviderInitializer getInitializer() {

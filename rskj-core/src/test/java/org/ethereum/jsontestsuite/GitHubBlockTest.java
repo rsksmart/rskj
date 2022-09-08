@@ -21,22 +21,22 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.io.IOException;
 import java.util.Collections;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
 public class GitHubBlockTest {
 
     //SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "0895e096ca9de6ba745bad238cb579964bd90cea";
 
-    @Ignore // test for conveniently running a single test
+    @Disabled // test for conveniently running a single test
     @Test
     public void runSingleTest() throws ParseException, IOException {
         TestSystemProperties config = new TestSystemProperties();
@@ -89,7 +89,7 @@ public class GitHubBlockTest {
         run("bcUncleTest", true, true);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void runBCValidBlockTest() throws ParseException, IOException {
         TestSystemProperties config = new TestSystemProperties();
@@ -117,7 +117,7 @@ public class GitHubBlockTest {
         run("bcForkStressTest", true, true);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void runBCStateTest() throws ParseException, IOException {
         run("bcStateTest", true, true);

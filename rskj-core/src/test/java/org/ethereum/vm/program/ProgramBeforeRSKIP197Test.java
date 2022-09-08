@@ -19,10 +19,10 @@ package org.ethereum.vm.program;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,7 +34,6 @@ public class ProgramBeforeRSKIP197Test extends ProgramTest {
     public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         try {
             super.testCallToPrecompiledAddress_throwRuntimeException();
-            fail();
         } catch (RuntimeException e) {
             assertTrue(program.getStack().empty());
         }

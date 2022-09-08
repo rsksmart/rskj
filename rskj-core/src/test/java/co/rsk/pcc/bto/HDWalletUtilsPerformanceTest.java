@@ -19,17 +19,17 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.peg.performance.PrecompiledContractPerformanceTest;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.jupiter.api.Disabled;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+@Suite
+@SelectClasses({
         ToBase58CheckPerformanceTestCase.class,
         DeriveExtendedPublicKeyPerformanceTestCase.class,
         ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase.class,
         GetMultisigScriptHashPerformanceTestCase.class
 })
-@Ignore
+@Disabled
 public class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
 }

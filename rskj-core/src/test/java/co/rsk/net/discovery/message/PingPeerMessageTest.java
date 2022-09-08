@@ -2,8 +2,8 @@ package co.rsk.net.discovery.message;
 
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.ethereum.util.RLP;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -24,9 +24,9 @@ public class PingPeerMessageTest {
     public void parseInvalidMessageId() {
         try {
             createPingPeerMessageWithCheck("http://fake-uuid.com/run");
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -35,9 +35,9 @@ public class PingPeerMessageTest {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createPingPeerMessageWithCheck(uuidV1);
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
@@ -45,9 +45,9 @@ public class PingPeerMessageTest {
     public void parseValidMessageId() {
         try {
             PingPeerMessage message = createPingPeerMessageWithCheck(UUID.randomUUID().toString());
-            Assert.assertNotNull(message);
+            Assertions.assertNotNull(message);
         } catch (PeerDiscoveryException pde) {
-            Assert.fail(PingPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
+            Assertions.fail(PingPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
         }
     }
 

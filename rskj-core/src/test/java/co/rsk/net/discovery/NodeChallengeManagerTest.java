@@ -24,8 +24,8 @@ import co.rsk.scoring.PeerScoringManager;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -71,14 +71,14 @@ public class NodeChallengeManagerTest {
         NodeChallengeManager manager = new NodeChallengeManager();
         NodeChallenge challenge = manager.startChallenge(node2, node3, peerExplorer);
 
-        Assert.assertNotNull(challenge);
-        Assert.assertEquals(challenge.getChallengedNode(), node2);
-        Assert.assertEquals(challenge.getChallenger(), node3);
+        Assertions.assertNotNull(challenge);
+        Assertions.assertEquals(challenge.getChallengedNode(), node2);
+        Assertions.assertEquals(challenge.getChallenger(), node3);
 
         NodeChallenge anotherChallenge = manager.removeChallenge(UUID.randomUUID().toString());
-        Assert.assertNull(anotherChallenge);
+        Assertions.assertNull(anotherChallenge);
 
         anotherChallenge = manager.removeChallenge(challenge.getChallengeId());
-        Assert.assertEquals(challenge, anotherChallenge);
+        Assertions.assertEquals(challenge, anotherChallenge);
     }
 }

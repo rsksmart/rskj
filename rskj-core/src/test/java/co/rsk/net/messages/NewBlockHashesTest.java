@@ -21,8 +21,8 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.util.LinkedList;
@@ -39,7 +39,7 @@ public class NewBlockHashesTest {
         blockIdentifierList.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
-        Assert.assertEquals(MessageType.NEW_BLOCK_HASHES, message.getMessageType());
+        Assertions.assertEquals(MessageType.NEW_BLOCK_HASHES, message.getMessageType());
     }
 
     @Test
@@ -50,9 +50,9 @@ public class NewBlockHashesTest {
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifierList);
         List<BlockIdentifier> identifiers = message.getBlockIdentifiers();
-        Assert.assertEquals(1, identifiers.size());
-        Assert.assertEquals(blockIdentifierList.get(0).getNumber(), identifiers.get(0).getNumber());
-        Assert.assertArrayEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
+        Assertions.assertEquals(1, identifiers.size());
+        Assertions.assertEquals(blockIdentifierList.get(0).getNumber(), identifiers.get(0).getNumber());
+        Assertions.assertArrayEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
     }
 
     @Test

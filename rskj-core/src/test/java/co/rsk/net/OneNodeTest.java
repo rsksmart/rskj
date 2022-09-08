@@ -23,8 +23,8 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +48,8 @@ public class OneNodeTest {
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class OneNodeTest {
         for (Block block : reverse)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

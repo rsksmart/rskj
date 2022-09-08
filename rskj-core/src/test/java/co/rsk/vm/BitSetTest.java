@@ -18,8 +18,8 @@
 
 package co.rsk.vm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 29/04/2017.
@@ -29,20 +29,20 @@ public class BitSetTest {
     public void createEmptyBitSet() {
         BitSet set = new BitSet(17);
 
-        Assert.assertEquals(17, set.size());
+        Assertions.assertEquals(17, set.size());
 
         for (int k = 0; k < set.size(); k++)
-            Assert.assertFalse(set.get(k));
+            Assertions.assertFalse(set.get(k));
     }
 
     @Test
     public void createEmptyBitSetBorderCaseSizeDivisibleByEight() {
         BitSet set = new BitSet(16);
 
-        Assert.assertEquals(16, set.size());
+        Assertions.assertEquals(16, set.size());
 
         for (int k = 0; k < set.size(); k++)
-            Assert.assertFalse(set.get(k));
+            Assertions.assertFalse(set.get(k));
     }
 
     @Test
@@ -52,13 +52,13 @@ public class BitSetTest {
         set.set(0);
         set.set(15);
 
-        Assert.assertEquals(16, set.size());
+        Assertions.assertEquals(16, set.size());
 
         for (int k = 1; k < set.size() - 1; k++)
-            Assert.assertFalse(set.get(k));
+            Assertions.assertFalse(set.get(k));
 
-        Assert.assertTrue(set.get(0));
-        Assert.assertTrue(set.get(15));
+        Assertions.assertTrue(set.get(0));
+        Assertions.assertTrue(set.get(15));
     }
 
     @Test
@@ -68,10 +68,10 @@ public class BitSetTest {
         for (int k = 0; k < set.size(); k++)
             set.set(k);
 
-        Assert.assertEquals(17, set.size());
+        Assertions.assertEquals(17, set.size());
 
         for (int k = 0; k < set.size(); k++)
-            Assert.assertTrue(set.get(k));
+            Assertions.assertTrue(set.get(k));
     }
 
     @Test
@@ -80,10 +80,10 @@ public class BitSetTest {
 
         try {
             new BitSet(-17);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ex) {
-            Assert.assertEquals("Negative size: -17", ex.getMessage());
+            Assertions.assertEquals("Negative size: -17", ex.getMessage());
         }
     }
 
@@ -93,10 +93,10 @@ public class BitSetTest {
 
         try {
             set.get(-1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ex) {
-            Assert.assertEquals("Index: -1, Size: 17", ex.getMessage());
+            Assertions.assertEquals("Index: -1, Size: 17", ex.getMessage());
         }
     }
 
@@ -106,10 +106,10 @@ public class BitSetTest {
 
         try {
             set.get(17);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ex) {
-            Assert.assertEquals("Index: 17, Size: 17", ex.getMessage());
+            Assertions.assertEquals("Index: 17, Size: 17", ex.getMessage());
         }
     }
 
@@ -119,10 +119,10 @@ public class BitSetTest {
 
         try {
             set.set(-1);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ex) {
-            Assert.assertEquals("Index: -1, Size: 17", ex.getMessage());
+            Assertions.assertEquals("Index: -1, Size: 17", ex.getMessage());
         }
     }
 
@@ -132,10 +132,10 @@ public class BitSetTest {
 
         try {
             set.set(17);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IndexOutOfBoundsException ex) {
-            Assert.assertEquals("Index: 17, Size: 17", ex.getMessage());
+            Assertions.assertEquals("Index: 17, Size: 17", ex.getMessage());
         }
     }
 }

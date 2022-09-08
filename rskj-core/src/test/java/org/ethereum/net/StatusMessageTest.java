@@ -22,11 +22,11 @@ package org.ethereum.net;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StatusMessageTest {
 

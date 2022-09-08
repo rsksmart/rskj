@@ -7,8 +7,8 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 29/09/2020.
@@ -28,10 +28,10 @@ public class BlocksBloomServiceTest {
         blocksBloomService.processNewBlock(4);
         blocksBloomService.processNewBlock(6);
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(1, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(1, dataSource.keys().size());
 
-        Assert.assertNotNull(dataSource.get(longToKey(0)));
+        Assertions.assertNotNull(dataSource.get(longToKey(0)));
     }
 
     @Test
@@ -50,10 +50,10 @@ public class BlocksBloomServiceTest {
         emitter.onBlock(blockchain.getBlockByNumber(6), null);
         blocksBloomService.stop();
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(1, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(1, dataSource.keys().size());
 
-        Assert.assertNotNull(dataSource.get(longToKey(0)));
+        Assertions.assertNotNull(dataSource.get(longToKey(0)));
     }
 
     @Test
@@ -73,11 +73,11 @@ public class BlocksBloomServiceTest {
         emitter.onBlock(blockchain.getBlockByNumber(9), null);
         blocksBloomService.stop();
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(2, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(2, dataSource.keys().size());
 
-        Assert.assertNotNull(dataSource.get(longToKey(0)));
-        Assert.assertNotNull(dataSource.get(longToKey(4)));
+        Assertions.assertNotNull(dataSource.get(longToKey(0)));
+        Assertions.assertNotNull(dataSource.get(longToKey(4)));
     }
 
     @Test
@@ -95,11 +95,11 @@ public class BlocksBloomServiceTest {
         emitter.onBlock(blockchain.getBlockByNumber(9), null);
         blocksBloomService.stop();
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(1, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(1, dataSource.keys().size());
 
-        Assert.assertNull(dataSource.get(longToKey(0)));
-        Assert.assertNotNull(dataSource.get(longToKey(4)));
+        Assertions.assertNull(dataSource.get(longToKey(0)));
+        Assertions.assertNotNull(dataSource.get(longToKey(4)));
     }
 
     private static byte[] longToKey(long value) {

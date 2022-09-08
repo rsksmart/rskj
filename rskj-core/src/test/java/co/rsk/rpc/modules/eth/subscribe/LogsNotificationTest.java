@@ -19,7 +19,7 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -34,8 +34,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
@@ -50,7 +50,7 @@ public class LogsNotificationTest {
     private Transaction transaction;
     private LogInfo logInfo;
 
-    @Before
+    @BeforeEach
     public void createLogNotification() {
         block = mock(Block.class);
         transaction = mock(Transaction.class);

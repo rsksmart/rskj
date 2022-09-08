@@ -26,33 +26,26 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +64,7 @@ public class BridgeEventLoggerImplTest {
     BtcTransaction btcTxMock;
     BtcTransaction btcTx;
 
-    @Before
+    @BeforeEach
     public void setup() {
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
@@ -142,24 +135,24 @@ public class BridgeEventLoggerImplTest {
         eventLogger.logPeginBtc(rskAddress, mockedTx, amount, protocolVersion);
 
         // Assert log size
-        Assert.assertEquals(1, eventLogs.size());
+        Assertions.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
         CallTransaction.Function event = BridgeEvents.PEGIN_BTC.getEvent();
 
         // Assert address that made the log
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assert.assertEquals(3, logResult.getTopics().size());
+        Assertions.assertEquals(3, logResult.getTopics().size());
         byte[][] topics = event.encodeEventTopics(rskAddress.toString(), mockedTx.getHash().getBytes());
         for (int i=0; i<topics.length; i++) {
-            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+            Assertions.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
         }
 
         // Assert log data
         byte[] encodedData = event.encodeEventData(amount.getValue(), protocolVersion);
-        Assert.assertArrayEquals(encodedData, logResult.getData());
+        Assertions.assertArrayEquals(encodedData, logResult.getData());
     }
 
     @Test
@@ -292,27 +285,27 @@ public class BridgeEventLoggerImplTest {
 
         eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
 
-        Assert.assertEquals(1, eventLogs.size());
+        Assertions.assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
 
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
 
         // Assert address that made the log
         LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+        Assertions.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
-        Assert.assertEquals(2, result.getTopics().size());
+        Assertions.assertEquals(2, result.getTopics().size());
         CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
 
         byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
 
         for (int i=0; i<topics.length; i++) {
-            Assert.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+            Assertions.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
         }
 
         // Assert log data
-        Assert.assertArrayEquals(event.encodeEventData(RejectedPeginReason.PEGIN_CAP_SURPASSED.getValue()), result.getData());
+        Assertions.assertArrayEquals(event.encodeEventData(RejectedPeginReason.PEGIN_CAP_SURPASSED.getValue()), result.getData());
     }
 
     @Test
@@ -327,27 +320,27 @@ public class BridgeEventLoggerImplTest {
 
         eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
 
-        Assert.assertEquals(1, eventLogs.size());
+        Assertions.assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
 
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+        Assertions.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
 
         // Assert address that made the log
         LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+        Assertions.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
-        Assert.assertEquals(2, result.getTopics().size());
+        Assertions.assertEquals(2, result.getTopics().size());
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
 
         byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
 
         for (int i=0; i<topics.length; i++) {
-            Assert.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+            Assertions.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
         }
 
         // Assert log data
-        Assert.assertArrayEquals(event.encodeEventData(UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER.getValue()), result.getData());
+        Assertions.assertArrayEquals(event.encodeEventData(UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER.getValue()), result.getData());
     }
 
 

@@ -19,13 +19,14 @@
 package co.rsk.core;
 
 import org.ethereum.util.RLP;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class BlockDifficultyTest {
     @Test
@@ -59,10 +60,10 @@ public class BlockDifficultyTest {
         assertThat(difficulty, nullValue());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void bytesNegativeDifficultyFails() {
         BigInteger negativeValue = BigInteger.valueOf(-1532098739382974L);
-        RLP.parseBlockDifficulty(negativeValue.toByteArray());
+        Assertions.assertThrows(RuntimeException.class, () -> RLP.parseBlockDifficulty(negativeValue.toByteArray()));
     }
 
     @Test

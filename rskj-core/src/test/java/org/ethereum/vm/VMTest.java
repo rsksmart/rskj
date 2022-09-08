@@ -40,10 +40,8 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -56,26 +54,19 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@RunWith(Parameterized.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class VMTest {
-
-    @Parameterized.Parameters
-    public static Collection<Object> params() {
-        return Arrays.asList(new Object[]{true, false});
-    }
+@TestMethodOrder(MethodOrderer.MethodName.class)
+public abstract class VMTest {
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
     private VM vm;
-    private final boolean isLogEnabled;
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
@@ -84,12 +75,7 @@ public class VMTest {
 
     private static MockedStatic<LoggerFactory> loggerFactoryMocked;
 
-    public VMTest(boolean isLogEnabled) {
-        this.isLogEnabled = isLogEnabled;
-    }
-
-    @Before
-    public void setup() {
+    protected void setUp(boolean isLogEnabled) {
         Logger logger = mock(Logger.class);
         when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
 
@@ -100,7 +86,7 @@ public class VMTest {
         invoke = new ProgramInvokeMockImpl();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         loggerFactoryMocked.close();
     }
@@ -165,13 +151,13 @@ public class VMTest {
         ), createTransaction(0));
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
-        Assert.assertEquals(
-                "faulty program with bigger gas limit than gas available should use all the gas in a block",
-                program.getResult().getGasUsed(), invoke.getGas()
+        Assertions.assertEquals(
+                program.getResult().getGasUsed(),
+                invoke.getGas(), "faulty program with bigger gas limit than gas available should use all the gas in a block"
         );
     }
 
-    @Test(expected = Program.OutOfGasException.class)
+    @Test
     public void testLOGWithDataCostBiggerThanPreviousGasSize() {
 
         // The test wants to try to set dataCost to something between
@@ -195,7 +181,7 @@ public class VMTest {
         ));
         program.fullTrace();
         try {
-            vm.steps(program, Long.MAX_VALUE);
+            Assertions.assertThrows(Program.OutOfGasException.class, () -> vm.steps(program, Long.MAX_VALUE));
         } finally {
             invoke.setGasLimit(100000);
         }
@@ -222,11 +208,11 @@ public class VMTest {
 
     // This test should throw an exception because we are reading from the RETURNDATABUFFER
     // in a non-existent position. This results in an error according to EIP 211
-    @Test(expected = RuntimeException.class)
+    @Test
     public void returnDataBufferAfterCallToNonExistentContract() {
         byte[] expected = new byte[32];
         Arrays.fill(expected, (byte) 0);
-        doCallToNonExistentContractAndReturnValue(expected, true);
+        Assertions.assertThrows(RuntimeException.class, () -> doCallToNonExistentContractAndReturnValue(expected, true));
     }
 
     @Test
@@ -469,12 +455,12 @@ public class VMTest {
 
         // i should expected 32 bytes to store the value
         // and then 32 to copy the value in return data copy.
-        assertEquals("good program has 64 mem", 64, goodProgram.getMemSize());
-        assertEquals("bad program has 64 mem", 64, badProgram.getMemSize());
+        assertEquals(64, goodProgram.getMemSize(), "good program has 64 mem");
+        assertEquals(64, badProgram.getMemSize(), "bad program has 64 mem");
         // bad program is trying to put a word of memory on the last byte of memory,
         // but should not be successful. we should not charge for gas that was not used!
-        assertEquals("good program uses 3 more gas than the bad one",
-                goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
+        assertEquals(goodProgram.getResult().getGasUsed(),
+                badProgram.getResult().getGasUsed() + 3, "good program uses 3 more gas than the bad one");
     }
 
     @Test
@@ -517,10 +503,10 @@ public class VMTest {
         vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
-                good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
-        Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
-                bad.getMemSize() + 32);
+        Assertions.assertEquals(good.getResult().getGasUsed(),
+                bad.getResult().getGasUsed() + GasCost.MEMORY, "good program will asign a new word of memory, so will charge 3 more");
+        Assertions.assertEquals(good.getMemSize(), bad.getMemSize() + 32,
+                "good program will have more memory, as it paid for it");
     }
 
     @Test
@@ -605,12 +591,12 @@ public class VMTest {
         vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
-        Assert.assertEquals(good.getMemSize(), bad.getMemSize());
+        Assertions.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
+        Assertions.assertEquals(good.getMemSize(), bad.getMemSize());
     }
 
 
-    @Test(expected = EmptyStackException.class)
+    @Test
     public void testSTATICCALLWithStatusOneFailsWithOldCode() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x00" +
@@ -623,7 +609,7 @@ public class VMTest {
 
         program.fullTrace();
 
-        vm.steps(program, Long.MAX_VALUE);
+        Assertions.assertThrows(EmptyStackException.class, () -> vm.steps(program, Long.MAX_VALUE));
     }
 
     @Test
@@ -1106,14 +1092,14 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = RuntimeException.class)  // AND OP mal data
+    @Test  // AND OP mal data
     public void testAND_3() {
-
         program = getProgram("60C016");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(RuntimeException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1145,17 +1131,12 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = RuntimeException.class)  // OR OP mal data
+    @Test  // OR OP mal data
     public void testOR_3() {
-
         program = getProgram("60C017");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(RuntimeException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // XOR OP
@@ -1185,17 +1166,12 @@ public class VMTest {
     }
 
 
-    @Test(expected = RuntimeException.class)  // XOR OP mal data
+    @Test  // XOR OP mal data
     public void testXOR_3() {
-
         program = getProgram("60C018");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(RuntimeException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // BYTE OP
@@ -1238,14 +1214,15 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class)  // BYTE OP mal data
+    @Test  // BYTE OP mal data
     public void testBYTE_4() {
 
         program = getProgram("65AABBCCDDEE3A1A");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1275,14 +1252,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // ISZERO OP mal data
+    @Test  // ISZERO OP mal data
     public void testISZERO_3() {
-
         program = getProgram("15");
         try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1327,14 +1303,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // EQ OP mal data
+    @Test  // EQ OP mal data
     public void testEQ_4() {
 
         program = getProgram("622A3B4C14");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1379,14 +1354,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // GT OP mal data
+    @Test  // GT OP mal data
     public void testGT_4() {
 
         program = getProgram("622A3B4C11");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1435,18 +1409,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // SGT OP mal
+    @Test  // SGT OP mal
     public void testSGT_4() {
-
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "13");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // LT OP
@@ -1488,17 +1457,12 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // LT OP mal data
+    @Test  // LT OP mal data
     public void testLT_4() {
-
         program = getProgram("622A3B4C10");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // SLT OP
@@ -1544,18 +1508,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // SLT OP mal
+    @Test  // SLT OP mal
     public void testSLT_4() {
-
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "12");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // NOT OP
@@ -1583,16 +1542,13 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class)  // BNOT OP
+    @Test  // BNOT OP
     public void testBNOT_4() {
-
         program = getProgram("1a");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+
+        assertTrue(program.isStopped());
     }
 
     @Test  // NOT OP test from real failure
@@ -1637,7 +1593,7 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // POP OP mal data
+    @Test  // POP OP mal data
     public void testPOP_3() {
 
         program = getProgram("61000060016200000250505050");
@@ -1648,7 +1604,7 @@ public class VMTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1684,17 +1640,17 @@ public class VMTest {
         assertEquals(expectedLen, program.getStack().toArray().length);
         assertEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
         for (int i = 0; i < expectedLen - 2; i++) {
-            assertNotEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
+            Assertions.assertNotEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
         }
         assertEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // DUPN OP mal data
+    @Test  // DUPN OP mal data
     public void testDUPN_2() {
 
         program = getProgram("80");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1735,13 +1691,13 @@ public class VMTest {
         assertEquals(top, ByteUtil.toHexString(program.stackPop().getData()));
     }
 
-    @Test(expected = StackTooSmallException.class)  // SWAPN OP mal data
+    @Test  // SWAPN OP mal data
     public void testSWAPN_2() {
 
         program = getProgram("90");
 
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -1934,13 +1890,13 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getMemory()));
     }
 
-    @Test(expected = StackTooSmallException.class) // MSTORE OP
+    @Test // MSTORE OP
     public void testMSTORE_5() {
 
         program = getProgram("61123452");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2067,7 +2023,7 @@ public class VMTest {
             outputStream.write(tail);
         } catch (IOException e) {
             e.printStackTrace();
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         }
 
         byte code[] = outputStream.toByteArray();
@@ -2075,7 +2031,7 @@ public class VMTest {
         program = getProgram(code);
         // no negative values allowed. Currently values over 127 are limited
         // in the future exeversion and scriptversion can be made of size int.
-        Assert.assertEquals(program.getExeVersion(), 127);
+        Assertions.assertEquals(program.getExeVersion(), 127);
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
                 "0000000000000000000000000000000000000000000000000000000000001234";
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000012";
@@ -2090,21 +2046,19 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testInvalidOpcodes_1() {
-
         program = getProgram("A5");
 
-        vm.step(program);
-
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
     }
 
-    @Test(expected = StackTooSmallException.class) // MLOAD OP mal data
+    @Test // MLOAD OP mal data
     public void testMLOAD_6() {
 
         program = getProgram("51");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2151,13 +2105,13 @@ public class VMTest {
         assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()));
     }
 
-    @Test(expected = StackTooSmallException.class) // MSTORE8 OP mal
+    @Test // MSTORE8 OP mal
     public void testMSTORE8_4() {
 
         program = getProgram("602253");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2201,13 +2155,13 @@ public class VMTest {
         assertEquals(s_expected_val, ByteUtil.toHexString(val.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SSTORE OP
+    @Test // SSTORE OP
     public void testSSTORE_3() {
 
         program = getProgram("602255");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2258,12 +2212,12 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SLOAD OP
+    @Test // SLOAD OP
     public void testSLOAD_4() {
 
         program = getProgram("56");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2297,34 +2251,24 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
+    @Test // JUMP OP mal data
     public void testJUMP_1() {
-
         program = getProgram("60AA60BB600E5660CC60DD60EE5B60FF");
-        String s_expected = "00000000000000000000000000000000000000000000000000000000000000FF";
 
         vm.step(program);
         vm.step(program);
         vm.step(program);
-        vm.step(program);
-        vm.step(program);
-
-        assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
+    @Test // JUMP OP mal data
     public void testJUMP_2() {
-
         program = getProgram("600C600C905660CC60DD60EE60FF");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        vm.step(program);
+        vm.step(program);
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // JUMPI OP
@@ -2363,19 +2307,19 @@ public class VMTest {
         assertEquals(s_expected_2, ByteUtil.toHexString(item2.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // JUMPI OP mal
+    @Test // JUMPI OP mal
     public void testJUMPI_3() {
 
         program = getProgram("600157");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMPI OP mal
+    @Test // JUMPI OP mal
     public void testJUMPI_4() {
 
         program = getProgram("60016022909057");
@@ -2384,31 +2328,21 @@ public class VMTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
+    @Test // JUMP OP mal data
     public void testJUMPDEST_1() {
-
         program = getProgram("602360085660015b600255");
 
-        String s_expected_key = "0000000000000000000000000000000000000000000000000000000000000002";
-        String s_expected_val = "0000000000000000000000000000000000000000000000000000000000000023";
-
         vm.step(program);
         vm.step(program);
-        vm.step(program);
-        vm.step(program);
-        vm.step(program);
-
-        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
-        DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
-
-        assertTrue(program.isStopped());
-        assertEquals(s_expected_val, ByteUtil.toHexString(val.getData()).toUpperCase());
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> {
+            vm.step(program);
+        });
     }
 
     @Test // JUMPDEST OP for JUMPI
@@ -2476,13 +2410,15 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // ADD OP mal
+    @Test // ADD OP mal
     public void testADD_4() {
 
         program = getProgram("61123401");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2533,12 +2469,14 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // ADDMOD OP mal
+    @Test // ADDMOD OP mal
     public void testADDMOD_4() {
         program = getProgram("61123408");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2584,13 +2522,15 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MUL OP mal
+    @Test // MUL OP mal
     public void testMUL_4() {
 
         program = getProgram("600102");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2638,12 +2578,14 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MULMOD OP mal
+    @Test // MULMOD OP mal
     public void testMULMOD_4() {
         program = getProgram("600109");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2721,13 +2663,15 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // DIV OP
+    @Test // DIV OP
     public void testDIV_6() {
 
         program = getProgram("600704");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2777,14 +2721,16 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SDIV OP mal
+    @Test // SDIV OP mal
     public void testSDIV_4() {
 
         program = getProgram("60FF05");
 
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2832,13 +2778,15 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SUB OP mal
+    @Test // SUB OP mal
     public void testSUB_4() {
 
         program = getProgram("639999666603");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -2945,14 +2893,14 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // EXP OP mal
+    @Test // EXP OP mal
     public void testEXP_4() {
-
-
         program = getProgram("621234560a");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3032,7 +2980,7 @@ public class VMTest {
         assertTrue(program.isStopped());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // CODECOPY OP
     public void testCODECOPY_1() {
         program = getProgram("60036007600039123456");
@@ -3048,7 +2996,7 @@ public class VMTest {
         assertEquals(6, gas);
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // CODECOPY OP
     public void testCODECOPY_2() {
         program = getProgram("605E60076000396000605f556014600054601e60205463abcddcba6040545b51602001" +
@@ -3069,7 +3017,7 @@ public class VMTest {
         assertEquals(10, gas);
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // CODECOPY OP
     public void testCODECOPY_3() {
         // cost for that:
@@ -3089,7 +3037,7 @@ public class VMTest {
         assertEquals(10, program.getResult().getGasUsed());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled //TODO #POC9
     @Test // CODECOPY OP
     public void testCODECOPY_4() {
         program = getProgram("605E60076000396000605f556014600054601e60205463abcddcba6040545b51602001600a5254" +
@@ -3126,16 +3074,18 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // CODECOPY OP mal
+    @Test // CODECOPY OP mal
     public void testCODECOPY_6() {
         program = getProgram("605E6007396000605f556014600054601e60205463abcddcba604054" +
                 "5b51602001600a5254516040016014525451606001601e5254516080016028525460a" +
                 "052546016604860003960166000f26000603f556103e756600054600053602002351234");
 
         try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3215,15 +3165,17 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // EXTCODECOPY OP mal
+    @Test // EXTCODECOPY OP mal
     public void testEXTCODECOPY_5() {
         program = getProgram("605E600773471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C");
 
         try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3244,7 +3196,7 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Ignore // todo: test is not testing EXTCODESIZE
+    @Disabled // todo: test is not testing EXTCODESIZE
     @Test // EXTCODESIZE OP
     public void testEXTCODESIZE_1() {
         // Push address on the stack and perform EXTCODECOPY
@@ -3301,16 +3253,18 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MOD OP mal
+    @Test // MOD OP mal
     public void testMOD_4() {
 
 
         program = getProgram("600406");
 
         try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3361,13 +3315,15 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SMOD OP mal
+    @Test // SMOD OP mal
     public void testSMOD_4() {
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
                 "07");
         try {
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3407,12 +3363,12 @@ public class VMTest {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testScriptVersion0() {
 
         program = getProgram("FC");
         try {
-            vm.step(program);
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3421,21 +3377,20 @@ public class VMTest {
     // Testing FC code with scriptVersion ==0.
     // The header is valid
     // Should produce invalidop exception
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testScriptVersion1() {
         program = getProgram("FC000000" + //header
                 "FC");
         try {
             // Only one step needs to be exeecuted because header is not.
-            vm.step(program);
-
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
     // Under scriptVersion == 1, opHEADER in a program is still an invalid code.
 
-    @Test(expected = Program.IllegalOperationException.class)
+    @Test
     public void testScriptVersion2() {
 
         program = getProgram(
@@ -3444,8 +3399,7 @@ public class VMTest {
         );
         try {
             // Only one step needs to be exaecuted because header is not.
-            vm.step(program);
-
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3685,6 +3639,23 @@ public class VMTest {
  * 23) CALL:
  * <p>
  * <p>
+ * <p>
+ * <p>
+ * contract creation (gas usage)
+ * -----------------------------
+ * G_TRANSACTION =                                (500)
+ * 60016000546006601160003960066000f261778e600054 (115)
+ * PUSH1    6001 (1)
+ * PUSH1    6000 (1)
+ * MSTORE   54   (1 + 1)
+ * PUSH1    6006 (1)
+ * PUSH1    6011 (1)
+ * PUSH1    6000 (1)
+ * CODECOPY 39   (1)
+ * PUSH1    6006 (1)
+ * PUSH1    6000 (1)
+ * RETURN   f2   (1)
+ * 61778e600054
  * <p>
  * <p>
  * contract creation (gas usage)

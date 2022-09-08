@@ -22,8 +22,8 @@ import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -43,7 +43,7 @@ public class TxsMinGasPriceValidatorTest {
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assert.assertTrue(tmgpv.isValid(block));
+        Assertions.assertTrue(tmgpv.isValid(block));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class TxsMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assert.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assert.assertTrue(tmgpv.isValid(block));
+        Assertions.assertTrue(tmgpv.isValid(block));
     }
 
     @Test
@@ -75,7 +75,7 @@ public class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assert.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block));
     }
 
     @Test
@@ -87,7 +87,7 @@ public class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assert.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block));
     }
 
     private List<Transaction> buildTxList(int validTxNbr, int invalidTxNbr, Coin blockGasPrice) {

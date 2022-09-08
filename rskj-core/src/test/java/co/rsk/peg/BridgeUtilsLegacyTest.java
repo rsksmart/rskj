@@ -1,10 +1,6 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -13,9 +9,9 @@ import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -29,44 +25,44 @@ public class BridgeUtilsLegacyTest {
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
 
-    @Before
+    @BeforeEach
     public void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
-    public void deserializeBtcAddressWithVersionLegacy_after_rskip284() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_after_rskip284() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            new byte[]{1}
-        );
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                bridgeConstantsRegtest.getBtcParams(),
+                activations,
+                new byte[]{1}
+        ));
     }
 
-    @Test(expected = BridgeIllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_null_bytes() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_null_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            null
-        );
+        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                bridgeConstantsRegtest.getBtcParams(),
+                activations,
+                null
+        ));
     }
 
-    @Test(expected = BridgeIllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_empty_bytes() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_empty_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            new byte[]{}
-        );
+        Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                bridgeConstantsRegtest.getBtcParams(),
+                activations,
+                new byte[]{}
+        ));
     }
 
     @Test
@@ -83,56 +79,59 @@ public class BridgeUtilsLegacyTest {
             addressBytes
         );
 
-        Assert.assertEquals(111, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
+        Assertions.assertEquals(111, address.getVersion());
+        Assertions.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assertions.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet_wrong_network() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        NetworkParameters btcParams = bridgeConstantsMainnet.getBtcParams();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "c4"; // Testnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
         // Should give an invalid version number given the way it's converting from bytes[] to int
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet_wrong_network() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "c4"; // Testnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
+        NetworkParameters btcParams = bridgeConstantsMainnet.getBtcParams();
         // Should give an invalid version number given the way it's converting from bytes[] to int
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
     }
 
     @Test
@@ -149,24 +148,25 @@ public class BridgeUtilsLegacyTest {
             addressBytes
         );
 
-        Assert.assertEquals(0, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("16zJJhTZWB1txoisGjEmhtHQam4sikpTd2", address.toBase58());
+        Assertions.assertEquals(0, address.getVersion());
+        Assertions.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assertions.assertEquals("16zJJhTZWB1txoisGjEmhtHQam4sikpTd2", address.toBase58());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "00"; // Mainnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
     }
 
     @Test
@@ -183,28 +183,29 @@ public class BridgeUtilsLegacyTest {
             addressBytes
         );
 
-        Assert.assertEquals(5, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
+        Assertions.assertEquals(5, address.getVersion());
+        Assertions.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assertions.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
 
-        Assert.assertEquals(5, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
+//        Assertions.assertEquals(5, address.getVersion());
+//        Assertions.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+//        Assertions.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
     }
 
     @Test
@@ -223,25 +224,26 @@ public class BridgeUtilsLegacyTest {
             addressBytes
         );
 
-        Assert.assertEquals(111, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
+        Assertions.assertEquals(111, address.getVersion());
+        Assertions.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assertions.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void deserializeBtcAddressWithVersionLegacy_invalid_address_hash() throws BridgeIllegalArgumentException {
+    @Test
+    public void deserializeBtcAddressWithVersionLegacy_invalid_address_hash() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
         // Should fail when trying to copy the address hash
-        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
-        );
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+                btcParams,
+                activations,
+                addressBytes
+        ));
     }
 
     private void testGetAmountSentToAddress(
@@ -255,7 +257,7 @@ public class BridgeUtilsLegacyTest {
         // Add output to a random btc address to test that only output sent to the given address
         // are being taken into account
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(constants.getBtcParams()));
-        Assert.assertEquals(
+        Assertions.assertEquals(
             expectedValue,
             BridgeUtilsLegacy.getAmountSentToAddress(
                 activations,
@@ -303,7 +305,7 @@ public class BridgeUtilsLegacyTest {
         testGetAmountSentToAddress(bridgeConstantsMainnet, btcTransactionProvider, Coin.ZERO);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void getAmountSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
@@ -312,7 +314,8 @@ public class BridgeUtilsLegacyTest {
             btcTx.addOutput(Coin.ZERO, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
-        testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, null);
+
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, null));
     }
 
     private void testGetUTXOsSentToAddress(
@@ -334,11 +337,11 @@ public class BridgeUtilsLegacyTest {
         );
 
         List<UTXO> expectedUTXOs = expectedResult.apply(btcTx);
-        Assert.assertArrayEquals(expectedUTXOs.toArray(), foundUTXOs.toArray());
+        Assertions.assertArrayEquals(expectedUTXOs.toArray(), foundUTXOs.toArray());
 
         Coin amount = foundUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         Coin expectedAmount = expectedUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
-        Assert.assertEquals(amount, expectedAmount);
+        Assertions.assertEquals(amount, expectedAmount);
     }
 
     @Test
@@ -429,7 +432,7 @@ public class BridgeUtilsLegacyTest {
         );
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void getUTXOsSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -439,11 +442,12 @@ public class BridgeUtilsLegacyTest {
             btcTx.addOutput(Coin.COIN, btcAddress);
             return new SimpleBtcTransaction(btcTx, btcAddress);
         };
-        testGetUTXOsSentToAddress(
-            bridgeConstantsRegtest,
-            btcTransactionProvider,
-            null
-        );
+
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> testGetUTXOsSentToAddress(
+                bridgeConstantsRegtest,
+                btcTransactionProvider,
+                null
+        ));
     }
 
     @Test
@@ -465,10 +469,10 @@ public class BridgeUtilsLegacyTest {
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .02;
 
-        Assert.assertTrue(difference < tolerance && difference > -tolerance);
+        Assertions.assertTrue(difference < tolerance && difference > -tolerance);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test
     public void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -480,10 +484,10 @@ public class BridgeUtilsLegacyTest {
             bridgeConstantsRegtest.getBtcParams()
         );
 
-        BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
@@ -495,7 +499,7 @@ public class BridgeUtilsLegacyTest {
             bridgeConstantsRegtest.getBtcParams()
         );
 
-        BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0));
     }
 
     private class SimpleBtcTransaction {

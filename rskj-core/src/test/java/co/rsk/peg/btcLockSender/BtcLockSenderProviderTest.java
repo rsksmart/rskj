@@ -9,13 +9,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BtcLockSenderProviderTest {
 
@@ -49,9 +49,9 @@ public class BtcLockSenderProviderTest {
         assertTrue(result.isPresent());
         BtcLockSender btcLockSender = result.get();
 
-        Assert.assertEquals(TxSenderAddressType.P2PKH, btcLockSender.getTxSenderAddressType());
-        Assert.assertEquals(senderAddress, btcLockSender.getRskAddress());
-        Assert.assertEquals("mpgJ8n2NUf23NHcJs59LgEqQ4yCv7MYGU6", btcLockSender.getBTCAddress().toBase58());
+        Assertions.assertEquals(TxSenderAddressType.P2PKH, btcLockSender.getTxSenderAddressType());
+        Assertions.assertEquals(senderAddress, btcLockSender.getRskAddress());
+        Assertions.assertEquals("mpgJ8n2NUf23NHcJs59LgEqQ4yCv7MYGU6", btcLockSender.getBTCAddress().toBase58());
     }
 
     @Test
@@ -68,8 +68,8 @@ public class BtcLockSenderProviderTest {
         BtcECKey key = BtcECKey.fromPublicOnly(Hex.decode("02e87cd90f3cb0d64eeba797fbb8f8ceaadc09e0128afbaefb0ee9535875ea3954"));
         byte[] scriptHash = Hex.decode("bf79dcd97426a127d4ed39385fa58feeb7272387");
         // "2NAhf36HTnrkKAx6RddHAdgJwPsqEgngUwe"
-        Assert.assertEquals(new Address(tx.getParams(), tx.getParams().getP2SHHeader(), scriptHash), btcLockSender.getBTCAddress());
-        Assert.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
-        Assert.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
+        Assertions.assertEquals(new Address(tx.getParams(), tx.getParams().getP2SHHeader(), scriptHash), btcLockSender.getBTCAddress());
+        Assertions.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
+        Assertions.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
     }
 }

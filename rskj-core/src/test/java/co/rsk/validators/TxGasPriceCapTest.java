@@ -21,8 +21,8 @@ package co.rsk.validators;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,7 +38,7 @@ public class TxGasPriceCapTest {
         for (TxGasPriceCap cap : TxGasPriceCap.values()) {
             Transaction tx = mock(Transaction.class);
             when(tx.getGasPrice()).thenReturn(Coin.valueOf(txGasPrice));
-            Assert.assertFalse(cap + " should have not been surpassed", cap.isSurpassed(tx, minGasPrice));
+            Assertions.assertFalse(cap.isSurpassed(tx, minGasPrice), cap + " should have not been surpassed");
         }
     }
 
@@ -51,7 +51,7 @@ public class TxGasPriceCapTest {
         for (TxGasPriceCap cap : TxGasPriceCap.values()) {
             RemascTransaction tx = mock(RemascTransaction.class);
             when(tx.getGasPrice()).thenReturn(Coin.valueOf(txGasPrice));
-            Assert.assertFalse(cap + " should have not been surpassed", cap.isSurpassed(tx, minGasPrice));
+            Assertions.assertFalse(cap.isSurpassed(tx, minGasPrice), cap + " should have not been surpassed");
         }
     }
 
@@ -64,7 +64,7 @@ public class TxGasPriceCapTest {
             Transaction tx = mock(Transaction.class);
             long capPrice = minGasPrice.multiply(cap.timesMinGasPrice).asBigInteger().longValue();
             when(tx.getGasPrice()).thenReturn(Coin.valueOf(capPrice - 1));
-            Assert.assertFalse(cap + " should have not been surpassed", cap.isSurpassed(tx, minGasPrice));
+            Assertions.assertFalse(cap.isSurpassed(tx, minGasPrice), cap + " should have not been surpassed");
         }
     }
 
@@ -77,7 +77,7 @@ public class TxGasPriceCapTest {
             Transaction tx = mock(Transaction.class);
             long capPrice = minGasPrice.multiply(cap.timesMinGasPrice).asBigInteger().longValue();
             when(tx.getGasPrice()).thenReturn(Coin.valueOf(capPrice));
-            Assert.assertFalse(cap + " should have not been surpassed", cap.isSurpassed(tx, minGasPrice));
+            Assertions.assertFalse(cap.isSurpassed(tx, minGasPrice), cap + " should have not been surpassed");
         }
     }
 
@@ -90,7 +90,7 @@ public class TxGasPriceCapTest {
             Transaction tx = mock(Transaction.class);
             long capPrice = minGasPrice.multiply(cap.timesMinGasPrice).asBigInteger().longValue();
             when(tx.getGasPrice()).thenReturn(Coin.valueOf(capPrice + 1));
-            Assert.assertTrue(cap + " should have been surpassed", cap.isSurpassed(tx, minGasPrice));
+            Assertions.assertTrue(cap.isSurpassed(tx, minGasPrice), cap + " should have been surpassed");
         }
     }
 }

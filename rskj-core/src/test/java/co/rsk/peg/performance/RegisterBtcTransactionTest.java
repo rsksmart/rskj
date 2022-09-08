@@ -29,14 +29,14 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
 
-@Ignore
+@Disabled
 public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcBlock blockWithTx;
     private int blockWithTxHeight;
@@ -53,7 +53,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         registerBtcTransaction_notEnoughConfirmations(100, stats);
         registerBtcTransaction_peg_in_to_any_address(100, stats);
         registerBtcTransaction_peg_in_to_any_address_exceed_locking_cap(20, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) throws VMException {
@@ -141,11 +141,11 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                     try {
                         BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
-                        Assert.assertTrue(height.isPresent());
+                        Assertions.assertTrue(height.isPresent());
 
-                        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+                        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
                     } catch (IOException e) {
-                        Assert.fail();
+                        Assertions.fail();
                     }
                 }
         );
@@ -174,11 +174,11 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         BridgeStorageProvider provider = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
 
                         Optional<Long> height = provider.getHeightIfBtcTxhashIsAlreadyProcessed(txToLock.getHash());
-                        Assert.assertTrue(height.isPresent());
+                        Assertions.assertTrue(height.isPresent());
 
-                        Assert.assertTrue(provider.getReleaseTransactionSet().getEntries().size() > 0);
+                        Assertions.assertTrue(provider.getReleaseTransactionSet().getEntries().size() > 0);
                     } catch (IOException e) {
-                        Assert.fail();
+                        Assertions.fail();
                     }
                 }
         );

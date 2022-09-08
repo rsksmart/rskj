@@ -48,14 +48,14 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -84,7 +84,7 @@ public class RemascProcessMinerFeesTest {
     private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() {
         config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
@@ -97,7 +97,7 @@ public class RemascProcessMinerFeesTest {
         accountsAddressesUpToD.add(coinbaseD.getBytes());
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
         stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
@@ -992,7 +992,7 @@ public class RemascProcessMinerFeesTest {
 
         for(Map.Entry<byte[], Coin> entry : otherAccountsBalance.entrySet()) {
             Coin actualBalance = RemascTestRunner.getAccountBalance(repository, entry.getKey());
-            assertEquals("Failed for: " + ByteUtil.toHexString(entry.getKey()), entry.getValue(), actualBalance);
+            assertEquals(entry.getValue(), actualBalance, "Failed for: " + ByteUtil.toHexString(entry.getKey()));
         }
     }
 

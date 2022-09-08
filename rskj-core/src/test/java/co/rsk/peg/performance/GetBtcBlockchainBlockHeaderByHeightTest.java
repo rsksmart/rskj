@@ -10,19 +10,18 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.math.BigInteger;
 
-@Ignore
+@Disabled
 public class GetBtcBlockchainBlockHeaderByHeightTest extends BridgePerformanceTestCase {
     private BtcBlock expectedBlock;
     private int height;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -52,7 +51,7 @@ public class GetBtcBlockchainBlockHeaderByHeightTest extends BridgePerformanceTe
                 stats,
                 (environment, executionResult) -> {
                     BtcBlock btcBlock = byteArrayToBlockHeader(getByteFromResult(executionResult));
-                    Assert.assertEquals(btcBlock.getHash(), expectedBlock.getHash());
+                    Assertions.assertEquals(btcBlock.getHash(), expectedBlock.getHash());
                 }
         );
     }

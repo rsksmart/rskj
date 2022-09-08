@@ -28,8 +28,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -51,7 +51,7 @@ public class DownloadingBodiesSyncStateTest {
     private BlockSyncService blockSyncService;
     private Peer peer;
 
-    @Before
+    @BeforeEach
     public void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);

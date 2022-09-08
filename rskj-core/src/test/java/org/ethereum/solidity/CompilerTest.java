@@ -22,9 +22,9 @@ package org.ethereum.solidity;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.solidity.compiler.CompilationResult;
 import org.ethereum.solidity.compiler.SolidityCompiler;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.io.IOException;
 public class CompilerTest {
 
     @Test
-    @Ignore
+    @Disabled
     public void simpleTest() throws IOException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
@@ -66,7 +66,7 @@ public class CompilerTest {
         if (cmeta != null)
             System.out.println(cmeta.bin);
         else
-            Assert.fail();
+            Assertions.fail();
     }
 
     public static void main(String[] args) throws Exception {

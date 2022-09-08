@@ -8,8 +8,8 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.util.TransactionReceiptUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
@@ -32,6 +32,6 @@ public class Blake2bEipExampleTest {
 
         TransactionReceipt tx02Receipt = world.getTransactionReceiptByName("tx02");
 
-        Assert.assertEquals(1, TransactionReceiptUtil.getEventCount(tx02Receipt, "ResultOk", null));
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(tx02Receipt, "ResultOk", null));
     }
 }

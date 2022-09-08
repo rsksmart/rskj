@@ -15,17 +15,17 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Ignore
+@Disabled
 public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction btcTx;
     private int blockWithTxHeight;
@@ -34,7 +34,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
     private PartialMerkleTree pmt;
     private Coin totalAmount;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -85,7 +85,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
                 stats,
                 (environment, executionResult) -> {
                     long totalAmount = new BigInteger(executionResult).longValueExact();
-                    Assert.assertTrue(totalAmount > 0);
+                    Assertions.assertTrue(totalAmount > 0);
                 }
         );
     }
@@ -111,7 +111,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
                 stats,
                 (environment, executionResult) -> {
                     long errorResult = new BigInteger(executionResult).longValueExact();
-                    Assert.assertEquals(surpassesLockinCapError, errorResult);
+                    Assertions.assertEquals(surpassesLockinCapError, errorResult);
                 }
         );
     }

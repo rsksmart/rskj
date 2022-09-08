@@ -28,8 +28,9 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -49,14 +50,14 @@ public class RepositoryImplTest {
         Repository repository = createRepository();
         BigInteger nonce = repository.getNonce(randomAccountAddress());
 
-        Assert.assertEquals(BigInteger.ZERO, nonce);
+        Assertions.assertEquals(BigInteger.ZERO, nonce);
     }
 
     @Test
     public void hasEmptyHashAsRootWhenCreated() {
         Repository repository = createRepository();
 
-        Assert.assertArrayEquals(emptyHash.getBytes(), repository.getRoot());
+        Assertions.assertArrayEquals(emptyHash.getBytes(), repository.getRoot());
     }
 
     @Test
@@ -65,11 +66,11 @@ public class RepositoryImplTest {
 
         AccountState accState = repository.createAccount(randomAccountAddress());
 
-        Assert.assertNotNull(accState);
-        Assert.assertEquals(BigInteger.ZERO, accState.getNonce());
-        Assert.assertEquals(BigInteger.ZERO, accState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accState);
+        Assertions.assertEquals(BigInteger.ZERO, accState.getNonce());
+        Assertions.assertEquals(BigInteger.ZERO, accState.getBalance().asBigInteger());
 
-        Assert.assertFalse(Arrays.equals(emptyHash.getBytes(), repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(emptyHash.getBytes(), repository.getRoot()));
     }
 
     @Test
@@ -86,9 +87,9 @@ public class RepositoryImplTest {
         repository.updateAccountState(accAddress, accState);
 
         AccountState newAccState = repository.getAccountState(accAddress);
-        Assert.assertNotNull(newAccState);
-        Assert.assertEquals(BigInteger.ONE, newAccState.getNonce());
-        Assert.assertEquals(BigInteger.ONE, newAccState.getBalance().asBigInteger());
+        Assertions.assertNotNull(newAccState);
+        Assertions.assertEquals(BigInteger.ONE, newAccState.getNonce());
+        Assertions.assertEquals(BigInteger.ONE, newAccState.getBalance().asBigInteger());
     }
 
     @Test
@@ -99,7 +100,7 @@ public class RepositoryImplTest {
 
         repository.increaseNonce(accAddress);
 
-        Assert.assertEquals(BigInteger.ONE, repository.getNonce(accAddress));
+        Assertions.assertEquals(BigInteger.ONE, repository.getNonce(accAddress));
     }
 
     @Test
@@ -111,7 +112,7 @@ public class RepositoryImplTest {
         repository.createAccount(accAddress);
         repository.increaseNonce(accAddress);
 
-        Assert.assertEquals(BigInteger.ONE, repository.getNonce(accAddress));
+        Assertions.assertEquals(BigInteger.ONE, repository.getNonce(accAddress));
     }
 
     @Test
@@ -124,7 +125,7 @@ public class RepositoryImplTest {
         repository.increaseNonce(accAddress);
         repository.increaseNonce(accAddress);
 
-        Assert.assertEquals(2, repository.getNonce(accAddress).longValue());
+        Assertions.assertEquals(2, repository.getNonce(accAddress).longValue());
     }
 
     @Test
@@ -133,9 +134,9 @@ public class RepositoryImplTest {
 
         Repository repository = createRepository();
 
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assertions.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
-        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
+        Assertions.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
 
     @Test
@@ -145,9 +146,9 @@ public class RepositoryImplTest {
         Repository repository = createRepository();
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assertions.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
-        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
+        Assertions.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
 
     @Test
@@ -157,17 +158,17 @@ public class RepositoryImplTest {
         Repository repository = createRepository();
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
-        Assert.assertEquals(2, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger().longValue());
+        Assertions.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assertions.assertEquals(2, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger().longValue());
 
-        Assert.assertEquals(2, repository.getBalance(accAddress).asBigInteger().longValue());
+        Assertions.assertEquals(2, repository.getBalance(accAddress).asBigInteger().longValue());
     }
 
     @Test
     public void isExistReturnsFalseForUnknownAccount() {
         Repository repository = createRepository();
 
-        Assert.assertFalse(repository.isExist(randomAccountAddress()));
+        Assertions.assertFalse(repository.isExist(randomAccountAddress()));
     }
 
     @Test
@@ -178,7 +179,7 @@ public class RepositoryImplTest {
 
         repository.createAccount(accAddress);
 
-        Assert.assertTrue(repository.isExist(accAddress));
+        Assertions.assertTrue(repository.isExist(accAddress));
     }
 
     @Test
@@ -187,8 +188,8 @@ public class RepositoryImplTest {
 
         byte[] code = repository.getCode(randomAccountAddress());
 
-        Assert.assertNotNull(code);
-        Assert.assertEquals(0, code.length);
+        Assertions.assertNotNull(code);
+        Assertions.assertEquals(0, code.length);
     }
 
     @Test
@@ -203,7 +204,7 @@ public class RepositoryImplTest {
 
         // From now on null represents no code, because the code node is not even
         // created
-        Assert.assertNull(code);
+        Assertions.assertNull(code);
 
     }
 
@@ -220,8 +221,8 @@ public class RepositoryImplTest {
 
         byte[] code = repository.getCode(accAddress);
 
-        Assert.assertNotNull(code);
-        Assert.assertArrayEquals(accCode, code);
+        Assertions.assertNotNull(code);
+        Assertions.assertArrayEquals(accCode, code);
     }
 
     @Test
@@ -235,8 +236,8 @@ public class RepositoryImplTest {
 
         AccountState accState = repository.getAccountState(accAddress);
 
-        Assert.assertNotNull(accState);
-        Assert.assertTrue(accState.isHibernated());
+        Assertions.assertNotNull(accState);
+        Assertions.assertTrue(accState.isHibernated());
     }
 
     @Test
@@ -253,8 +254,8 @@ public class RepositoryImplTest {
 
         byte[] code = repository.getCode(accAddress);
 
-        Assert.assertNotNull(code);
-        Assert.assertEquals(0, code.length);
+        Assertions.assertNotNull(code);
+        Assertions.assertEquals(0, code.length);
     }
 
     @Test
@@ -263,7 +264,7 @@ public class RepositoryImplTest {
 
         Repository track = repository.startTracking();
 
-        Assert.assertNotNull(track);
+        Assertions.assertNotNull(track);
     }
 
     @Test
@@ -273,11 +274,11 @@ public class RepositoryImplTest {
 
         Repository track = repository.startTracking();
 
-        Assert.assertNotNull(track);
+        Assertions.assertNotNull(track);
         track.createAccount(accAddress);
         track.commit();
 
-        Assert.assertTrue(repository.isExist(accAddress));
+        Assertions.assertTrue(repository.isExist(accAddress));
     }
 
     @Test
@@ -287,11 +288,11 @@ public class RepositoryImplTest {
 
         Repository track = repository.startTracking();
 
-        Assert.assertNotNull(track);
+        Assertions.assertNotNull(track);
         track.createAccount(accAddress);
         track.rollback();
 
-        Assert.assertFalse(repository.isExist(accAddress));
+        Assertions.assertFalse(repository.isExist(accAddress));
     }
 
     @Test
@@ -303,7 +304,7 @@ public class RepositoryImplTest {
         repository.createAccount(accAddress);
         DataWord value = repository.getStorageValue(accAddress, DataWord.ONE);
 
-        Assert.assertNull(value);
+        Assertions.assertNull(value);
     }
 
     @Test
@@ -320,7 +321,7 @@ public class RepositoryImplTest {
         // so the returned value was null.
         // This semantic has changed. If you modify a repository, you modify
         // a repository. The previous semantics were really really weird.
-        Assert.assertEquals(DataWord.ONE,value);
+        Assertions.assertEquals(DataWord.ONE,value);
     }
 
     @Test
@@ -333,8 +334,8 @@ public class RepositoryImplTest {
 
         DataWord value = repository.getStorageValue(accAddress, DataWord.ONE);
 
-        Assert.assertNotNull(value);
-        Assert.assertEquals(DataWord.ONE, value);
+        Assertions.assertNotNull(value);
+        Assertions.assertEquals(DataWord.ONE, value);
     }
 
     @Test
@@ -350,8 +351,8 @@ public class RepositoryImplTest {
 
         DataWord value = repository.getStorageValue(accAddress, DataWord.ONE);
 
-        Assert.assertNotNull(value);
-        Assert.assertEquals(DataWord.ONE, value);
+        Assertions.assertNotNull(value);
+        Assertions.assertEquals(DataWord.ONE, value);
     }
 
     @Test
@@ -362,7 +363,7 @@ public class RepositoryImplTest {
 
         byte[] bytes = repository.getStorageBytes(accAddress, DataWord.ONE);
 
-        Assert.assertNull(bytes);
+        Assertions.assertNull(bytes);
     }
 
     @Test
@@ -378,8 +379,8 @@ public class RepositoryImplTest {
 
         byte[] savedBytes = repository.getStorageBytes(accAddress, DataWord.ONE);
 
-        Assert.assertNotNull(savedBytes);
-        Assert.assertArrayEquals(bytes, savedBytes);
+        Assertions.assertNotNull(savedBytes);
+        Assertions.assertArrayEquals(bytes, savedBytes);
     }
 
     @Test
@@ -389,8 +390,8 @@ public class RepositoryImplTest {
 
         Set<RskAddress> keys = repository.getAccountsKeys();
 
-        Assert.assertNotNull(keys);
-        Assert.assertTrue(keys.isEmpty());
+        Assertions.assertNotNull(keys);
+        Assertions.assertTrue(keys.isEmpty());
     }
 
     @Test
@@ -404,11 +405,11 @@ public class RepositoryImplTest {
         repository.createAccount(accAddress2);
 
         Set<RskAddress> keys = repository.getAccountsKeys();
-        Assert.assertNotNull(keys);
-        Assert.assertFalse(keys.isEmpty());
-        Assert.assertEquals(2, keys.size());
-        Assert.assertTrue(keys.contains(accAddress1));
-        Assert.assertTrue(keys.contains(accAddress2));
+        Assertions.assertNotNull(keys);
+        Assertions.assertFalse(keys.isEmpty());
+        Assertions.assertEquals(2, keys.size());
+        Assertions.assertTrue(keys.contains(accAddress1));
+        Assertions.assertTrue(keys.contains(accAddress2));
     }
 
     @Test
@@ -420,8 +421,8 @@ public class RepositoryImplTest {
         repository.setupContract(rskAddress);
         repository.saveCode(rskAddress, TestUtils.randomBytes(32));
 
-        Assert.assertThat(repository.isContract(rskAddress), is(true));
-        Assert.assertThat(repository.isContract(TestUtils.randomAddress()), is(false));
+        MatcherAssert.assertThat(repository.isContract(rskAddress), is(true));
+        MatcherAssert.assertThat(repository.isContract(TestUtils.randomAddress()), is(false));
     }
 
     private static RskAddress randomAccountAddress() {

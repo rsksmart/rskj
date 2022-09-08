@@ -19,11 +19,11 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class AutoMinerClientTest {
@@ -31,7 +31,7 @@ public class AutoMinerClientTest {
     private AutoMinerClient autoMinerClient;
     private MinerServer minerServer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         minerServer = mock(MinerServer.class);
         autoMinerClient = new AutoMinerClient(minerServer);

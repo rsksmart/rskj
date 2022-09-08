@@ -13,7 +13,7 @@ import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Objects;

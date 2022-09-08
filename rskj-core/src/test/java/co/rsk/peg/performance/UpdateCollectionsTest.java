@@ -38,9 +38,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.SortedMap;
 
-@Ignore
+@Disabled
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     private int minUTXOs = 1;
@@ -99,7 +99,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxCentOutput = 100;
         updateCollections_confirmTxs(stats, 300);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         maxCentOutput = 100;
         updateCollections_confirmTxs(stats, 300);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, VMException {
@@ -156,7 +156,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
             Helper.getRandomHeightProvider(10), stats,
             (environment, executionResult) -> {
                 try {
-                    Assert.assertTrue(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
+                    Assertions.assertTrue(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -221,9 +221,9 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
             stats,
             (environment, executionResult) -> {
                 try {
-                    Assert.assertFalse(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
+                    Assertions.assertFalse(providerArrayWrapper[0].getReleaseRequestQueue().getEntries().isEmpty());
                 } catch (IOException e) {
-                    Assert.fail(e.getMessage());
+                    Assertions.fail(e.getMessage());
                 }
             }
         );

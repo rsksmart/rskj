@@ -19,8 +19,8 @@
 package co.rsk.trie;
 
 import org.ethereum.crypto.Keccak256Helper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 04/12/2017.
@@ -30,9 +30,9 @@ public class TrieValueTest {
     public void noLongValueInEmptyTrie() {
         Trie trie = new Trie();
 
-        Assert.assertFalse(trie.hasLongValue());
-        Assert.assertNull(trie.getValueHash());
-        Assert.assertNull(trie.getValue());
+        Assertions.assertFalse(trie.hasLongValue());
+        Assertions.assertNull(trie.getValueHash());
+        Assertions.assertNull(trie.getValue());
     }
 
     @Test
@@ -42,10 +42,10 @@ public class TrieValueTest {
         Trie trie = new Trie().put(key, value);
         byte[] valueHash = Keccak256Helper.keccak256(value);
 
-        Assert.assertFalse(trie.hasLongValue());
-        Assert.assertArrayEquals(trie.getValueHash().getBytes(), valueHash);
-        Assert.assertEquals(value.length, trie.getValueLength().intValue());
-        Assert.assertArrayEquals(value, trie.getValue());
+        Assertions.assertFalse(trie.hasLongValue());
+        Assertions.assertArrayEquals(trie.getValueHash().getBytes(), valueHash);
+        Assertions.assertEquals(value.length, trie.getValueLength().intValue());
+        Assertions.assertArrayEquals(value, trie.getValue());
     }
 
     @Test
@@ -58,10 +58,10 @@ public class TrieValueTest {
         byte[] key = new byte[] { 0x04, 0x05 };
         Trie trie = new Trie().put(key, value);
 
-        Assert.assertFalse(trie.hasLongValue());
-        Assert.assertNotNull(trie.getValueHash());
-        Assert.assertEquals(value.length, trie.getValueLength().intValue());
-        Assert.assertArrayEquals(value, trie.getValue());
+        Assertions.assertFalse(trie.hasLongValue());
+        Assertions.assertNotNull(trie.getValueHash());
+        Assertions.assertEquals(value.length, trie.getValueLength().intValue());
+        Assertions.assertArrayEquals(value, trie.getValue());
     }
 
     @Test
@@ -74,10 +74,10 @@ public class TrieValueTest {
         byte[] key = new byte[] { 0x04, 0x05 };
         Trie trie = new Trie().put(key, value);
 
-        Assert.assertTrue(trie.hasLongValue());
-        Assert.assertNotNull(trie.getValueHash());
-        Assert.assertEquals(32, trie.getValueHash().getBytes().length);
-        Assert.assertArrayEquals(value, trie.getValue());
+        Assertions.assertTrue(trie.hasLongValue());
+        Assertions.assertNotNull(trie.getValueHash());
+        Assertions.assertEquals(32, trie.getValueHash().getBytes().length);
+        Assertions.assertArrayEquals(value, trie.getValue());
     }
 
     public static byte[] makeValue(int length) {

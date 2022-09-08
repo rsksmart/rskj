@@ -2,8 +2,8 @@ package co.rsk.cli;
 
 import co.rsk.config.NodeCliFlags;
 import co.rsk.config.NodeCliOptions;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class CliArgsTest {
 
@@ -16,19 +16,20 @@ public class CliArgsTest {
                 NodeCliFlags.class
         ).parse(args);
 
-        Assert.assertEquals(cliArgs.getFlags().size(), 1);
-        Assert.assertEquals(cliArgs.getParamValueMap().size(), 1);
-        Assert.assertEquals(cliArgs.getParamValueMap().get("database.dir"), "/home/rsk/data");
-        Assert.assertEquals(cliArgs.getFlags().iterator().next().getName(), "regtest");
+        Assertions.assertEquals(cliArgs.getFlags().size(), 1);
+        Assertions.assertEquals(cliArgs.getParamValueMap().size(), 1);
+        Assertions.assertEquals(cliArgs.getParamValueMap().get("database.dir"), "/home/rsk/data");
+        Assertions.assertEquals(cliArgs.getFlags().iterator().next().getName(), "regtest");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void parseArgsIncorrectlyWithBadXArg() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir"};
-
-        new CliArgs.Parser<>(
+        CliArgs.Parser<NodeCliOptions, NodeCliFlags> parser = new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class
-        ).parse(args);
+        );
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> parser.parse(args));
     }
 }

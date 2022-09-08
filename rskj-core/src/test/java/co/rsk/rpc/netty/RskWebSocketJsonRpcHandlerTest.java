@@ -28,13 +28,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class RskWebSocketJsonRpcHandlerTest {
@@ -46,7 +46,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     private EthSubscriptionNotificationEmitter emitter;
     private JsonRpcSerializer serializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
@@ -101,9 +101,9 @@ public class RskWebSocketJsonRpcHandlerTest {
 
     @Test
     public void handlerDeserializesAndHandlesRequest() throws Exception {
-    	
+
     	String json = "{\"jsonrpc\":\"2.0\",\"id\":\"teste\",\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
-    	
+
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())

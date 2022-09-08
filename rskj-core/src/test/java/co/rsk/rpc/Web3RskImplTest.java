@@ -27,13 +27,13 @@ import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class Web3RskImplTest {

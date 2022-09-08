@@ -26,8 +26,10 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +38,9 @@ import java.security.SignatureException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Ignore
+@Disabled
 public abstract class Secp256k1ServiceTest {
 
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1ServiceTest.class);
@@ -146,14 +148,14 @@ public abstract class Secp256k1ServiceTest {
             this.getSecp256k1().signatureToKey(messageHash, ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), v));
             fail();
         } catch (SignatureException e) {
-            assertThat(e.getMessage(), containsString("Header byte out of range"));
+            MatcherAssert.assertThat(e.getMessage(), containsString("Header byte out of range"));
         }
         try {
             byte v = (byte) 26;
             this.getSecp256k1().signatureToKey(messageHash, ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), v));
             fail();
         } catch (SignatureException e) {
-            assertThat(e.getMessage(), containsString("Header byte out of range"));
+            MatcherAssert.assertThat(e.getMessage(), containsString("Header byte out of range"));
         }
     }
 
@@ -206,14 +208,13 @@ public abstract class Secp256k1ServiceTest {
         assertArrayEquals(pubKey, key.getPubKey());
     }
 
-    @Test(expected = SignatureException.class)
-    public void testSignatureToKey_fixed_values_garbage() throws SignatureException {
+    @Test
+    public void testSignatureToKey_fixed_values_garbage()  {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
         byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
-        ECKey key = this.getSecp256k1().signatureToKey(messageHash, signature);
-        assertNull(key);
+        Assertions.assertThrows(SignatureException.class, () -> this.getSecp256k1().signatureToKey(messageHash, signature));
     }
 
     @Test
@@ -239,22 +240,22 @@ public abstract class Secp256k1ServiceTest {
         try {
             this.getSecp256k1().recoverFromSignature(invalidRecId, ECDSASignature.fromComponents(validBytes, validBytes), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("recId must be positive"));}
+        }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("recId must be positive"));}
 
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(invalidBigInt, validBigInt), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("r must be positive"));}
+        }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("r must be positive"));}
 
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, invalidBigInt), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("s must be positive"));}
+        }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("s must be positive"));}
 
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, validBigInt), invalidNullBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("messageHash must not be null"));}
+        }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("messageHash must not be null"));}
 
     }
 

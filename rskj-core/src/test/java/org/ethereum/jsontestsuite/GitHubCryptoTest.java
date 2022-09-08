@@ -22,17 +22,17 @@ package org.ethereum.jsontestsuite;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
 public class GitHubCryptoTest {
 
 

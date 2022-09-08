@@ -11,17 +11,17 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
+@Disabled
 public class GetBtcBlockchainParentBlockHeaderByHashTest extends BridgePerformanceTestCase {
     private BtcBlock expectedBlock;
     private Sha256Hash originalBlockHash;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -51,7 +51,7 @@ public class GetBtcBlockchainParentBlockHeaderByHashTest extends BridgePerforman
                 stats,
                 (environment, executionResult) -> {
                     BtcBlock btcBlock = byteArrayToBlockHeader(getByteFromResult(executionResult));
-                    Assert.assertEquals(expectedBlock.getHash(), btcBlock.getHash());
+                    Assertions.assertEquals(expectedBlock.getHash(), btcBlock.getHash());
                 }
         );
     }

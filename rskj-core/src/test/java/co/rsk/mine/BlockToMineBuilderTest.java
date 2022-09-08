@@ -36,12 +36,12 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,12 +50,12 @@ import java.util.function.Consumer;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class BlockToMineBuilderTest {
 
     private BlockToMineBuilder blockBuilder;
@@ -63,7 +63,7 @@ public class BlockToMineBuilderTest {
     private BlockExecutor blockExecutor;
     private ActivationConfig activationConfig;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         validationRules = mock(BlockValidationRule.class);
 
@@ -152,6 +152,7 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
+        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
 
         BlockResult expectedResult = mock(BlockResult.class);
         ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -175,6 +176,7 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(true);
+        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
 
         BlockResult expectedResult = mock(BlockResult.class);
         ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);

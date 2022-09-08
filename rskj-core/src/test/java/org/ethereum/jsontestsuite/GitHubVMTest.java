@@ -20,10 +20,10 @@
 package org.ethereum.jsontestsuite;
 
 import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,8 +32,8 @@ import java.util.Set;
 
 import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
 public class GitHubVMTest {
 
     //SHACOMMIT of tested commit, ethereum/tests.git
@@ -82,7 +82,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore  //FIXME - 60M - need new fast downloader
+    @Disabled  //FIXME - 60M - need new fast downloader
     @Test
     public void testvmInputLimitsTest1FromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -90,7 +90,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 50M - need to handle large filesizes
+    @Disabled //FIXME - 50M - need to handle large filesizes
     @Test
     public void testvmInputLimitsTest2FromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -98,7 +98,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 20M - possibly provide percentage indicator
+    @Disabled //FIXME - 20M - possibly provide percentage indicator
     @Test
     public void testvmInputLimitsLightTestFromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -134,7 +134,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore // // FIXME: as soon as possible
+    @Disabled // // FIXME: as soon as possible
     @Test // testing full suite
     public void testvmSystemOperationsTestGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();

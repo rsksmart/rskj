@@ -19,8 +19,8 @@
 
 package co.rsk.rpc.modules.debug;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,10 +40,10 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(3, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertTrue(options.getDisabledFields().contains("memory"));
-        Assert.assertTrue(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(3, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertTrue(options.getDisabledFields().contains("stack"));
     }
 
     @Test
@@ -58,10 +58,10 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertFalse(options.getDisabledFields().contains("storage"));
-        Assert.assertFalse(options.getDisabledFields().contains("memory"));
-        Assert.assertFalse(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertFalse(options.getDisabledFields().contains("storage"));
+        Assertions.assertFalse(options.getDisabledFields().contains("memory"));
+        Assertions.assertFalse(options.getDisabledFields().contains("stack"));
     }
 
     @Test
@@ -76,10 +76,10 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertFalse(options.getDisabledFields().contains("memory"));
-        Assert.assertTrue(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(2, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertFalse(options.getDisabledFields().contains("memory"));
+        Assertions.assertTrue(options.getDisabledFields().contains("stack"));
     }
 
     @Test
@@ -88,8 +88,8 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(null);
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertEquals(0, options.getUnsupportedOptions().size());
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertEquals(0, options.getUnsupportedOptions().size());
     }
 
     @Test
@@ -98,8 +98,8 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(Collections.emptyMap());
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertEquals(0, options.getUnsupportedOptions().size());
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertEquals(0, options.getUnsupportedOptions().size());
     }
 
     @Test
@@ -113,9 +113,9 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getUnsupportedOptions().size());
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
+        Assertions.assertEquals(2, options.getUnsupportedOptions().size());
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
     }
 
     @Test
@@ -131,13 +131,13 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertEquals(2, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
 
-        Assert.assertEquals(2, options.getUnsupportedOptions().size());
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
+        Assertions.assertEquals(2, options.getUnsupportedOptions().size());
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
     }
 
 }

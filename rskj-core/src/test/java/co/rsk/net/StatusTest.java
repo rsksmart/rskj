@@ -2,8 +2,8 @@ package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -17,11 +17,11 @@ public class StatusTest {
 
         Status status = new Status(42, hash);
 
-        Assert.assertEquals(42, status.getBestBlockNumber());
-        Assert.assertNotNull(status.getBestBlockHash());
-        Assert.assertArrayEquals(hash, status.getBestBlockHash());
-        Assert.assertNull(status.getBestBlockParentHash());
-        Assert.assertNull(status.getTotalDifficulty());
+        Assertions.assertEquals(42, status.getBestBlockNumber());
+        Assertions.assertNotNull(status.getBestBlockHash());
+        Assertions.assertArrayEquals(hash, status.getBestBlockHash());
+        Assertions.assertNull(status.getBestBlockParentHash());
+        Assertions.assertNull(status.getTotalDifficulty());
     }
 
     @Test
@@ -31,12 +31,12 @@ public class StatusTest {
 
         Status status = new Status(42, hash, parentHash, new BlockDifficulty(BigInteger.TEN));
 
-        Assert.assertEquals(42, status.getBestBlockNumber());
-        Assert.assertNotNull(status.getBestBlockHash());
-        Assert.assertArrayEquals(hash, status.getBestBlockHash());
-        Assert.assertNotNull(status.getBestBlockParentHash());
-        Assert.assertArrayEquals(parentHash, status.getBestBlockParentHash());
-        Assert.assertNotNull(status.getTotalDifficulty());
-        Assert.assertEquals(new BlockDifficulty(BigInteger.TEN), status.getTotalDifficulty());
+        Assertions.assertEquals(42, status.getBestBlockNumber());
+        Assertions.assertNotNull(status.getBestBlockHash());
+        Assertions.assertArrayEquals(hash, status.getBestBlockHash());
+        Assertions.assertNotNull(status.getBestBlockParentHash());
+        Assertions.assertArrayEquals(parentHash, status.getBestBlockParentHash());
+        Assertions.assertNotNull(status.getTotalDifficulty());
+        Assertions.assertEquals(new BlockDifficulty(BigInteger.TEN), status.getTotalDifficulty());
     }
 }

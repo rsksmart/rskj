@@ -24,9 +24,9 @@ import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 public class ToBase58CheckTest {
     private ToBase58Check method;
 
-    @Before
+    @BeforeEach
     public void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new ToBase58Check(executionEnvironment);
@@ -44,29 +44,29 @@ public class ToBase58CheckTest {
     @Test
     public void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
-        Assert.assertEquals("toBase58Check", fn.name);
+        Assertions.assertEquals("toBase58Check", fn.name);
 
-        Assert.assertEquals(2, fn.inputs.length);
-        Assert.assertEquals(SolidityType.getType("bytes").getName(), fn.inputs[0].type.getName());
-        Assert.assertEquals(SolidityType.getType("int256").getName(), fn.inputs[1].type.getName());
+        Assertions.assertEquals(2, fn.inputs.length);
+        Assertions.assertEquals(SolidityType.getType("bytes").getName(), fn.inputs[0].type.getName());
+        Assertions.assertEquals(SolidityType.getType("int256").getName(), fn.inputs[1].type.getName());
 
-        Assert.assertEquals(1, fn.outputs.length);
-        Assert.assertEquals(SolidityType.getType("string").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(1, fn.outputs.length);
+        Assertions.assertEquals(SolidityType.getType("string").getName(), fn.outputs[0].type.getName());
     }
 
     @Test
     public void shouldBeEnabled() {
-        Assert.assertTrue(method.isEnabled());
+        Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
     public void shouldAllowAnyTypeOfCall() {
-        Assert.assertFalse(method.onlyAllowsLocalCalls());
+        Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
     public void executes() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "mgivuh9jErcGdRr81cJ3A7YfgbJV7WNyZV",
                 method.execute(new Object[]{
                         Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
@@ -81,9 +81,9 @@ public class ToBase58CheckTest {
                     Hex.decode("aabbcc"),
                     BigInteger.valueOf(111L)
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid hash160"));
         }
     }
 
@@ -94,9 +94,9 @@ public class ToBase58CheckTest {
                     Hex.decode("aabbcc"),
                     BigInteger.valueOf(111L)
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid hash160"));
         }
     }
 
@@ -107,24 +107,24 @@ public class ToBase58CheckTest {
                     Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
                     BigInteger.valueOf(-1L)
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+            Assertions.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
         }
         try {
             method.execute(new Object[]{
                     Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
                     BigInteger.valueOf(256L)
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+            Assertions.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
         }
     }
 
     @Test
     public void gasIsCorrect() {
-        Assert.assertEquals(13_000, method.getGas(new Object[]{
+        Assertions.assertEquals(13_000, method.getGas(new Object[]{
                 Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
                 BigInteger.valueOf(111L)
         }, new byte[]{}));

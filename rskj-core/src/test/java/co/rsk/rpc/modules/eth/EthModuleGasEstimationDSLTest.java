@@ -36,7 +36,7 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EthModuleGasEstimationDSLTest {
 

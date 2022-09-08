@@ -1,8 +1,8 @@
 package co.rsk.net.messages;
 
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -15,10 +15,10 @@ public class BlockHeadersRequestMessageTest {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
-        Assert.assertEquals(1, message.getId());
-        Assert.assertArrayEquals(hash, message.getHash());
-        Assert.assertEquals(100, message.getCount());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(1, message.getId());
+        Assertions.assertArrayEquals(hash, message.getHash());
+        Assertions.assertEquals(100, message.getCount());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
     }
 
     @Test

@@ -10,19 +10,19 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-@Ignore
+@Disabled
 public class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTestCase {
 
     private Sha256Hash witnessRoot;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
@@ -48,7 +48,7 @@ public class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerform
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (environment, callResult) -> Assert.assertTrue((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
+                (environment, callResult) -> Assertions.assertTrue((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
     }
 
     private void hasBtcBlockCoinbaseTransactionInformation_unsuccess(int times, ExecutionStats stats) throws VMException {
@@ -63,7 +63,7 @@ public class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerform
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                (environment, callResult) -> Assert.assertFalse((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
+                (environment, callResult) -> Assertions.assertFalse((boolean) Bridge.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.decodeResult(callResult)[0]));
     }
 
     private ABIEncoder getABIEncoder(Sha256Hash blockHash) {

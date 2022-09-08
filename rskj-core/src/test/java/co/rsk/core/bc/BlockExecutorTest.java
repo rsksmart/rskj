@@ -50,17 +50,15 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -78,7 +76,7 @@ public class BlockExecutorTest {
     private TrieStore trieStore;
     private RepositorySnapshot repository;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         RskTestFactory objects = new RskTestFactory(CONFIG);
         blockchain = objects.getBlockchain();
@@ -94,11 +92,11 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertTrue(result.getTransactionReceipts().isEmpty());
-        Assert.assertArrayEquals(repository.getRoot(), parent.getStateRoot());
-        Assert.assertArrayEquals(repository.getRoot(), result.getFinalState().getHash().getBytes());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getTransactionReceipts());
+        Assertions.assertTrue(result.getTransactionReceipts().isEmpty());
+        Assertions.assertArrayEquals(repository.getRoot(), parent.getStateRoot());
+        Assertions.assertArrayEquals(repository.getRoot(), result.getFinalState().getHash().getBytes());
     }
 
     @Test
@@ -112,40 +110,40 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
-        Assert.assertEquals(1, result.getTransactionReceipts().size());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getTransactionReceipts());
+        Assertions.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assertions.assertEquals(1, result.getTransactionReceipts().size());
 
-        assertNull(executor.getProgramResult(tx.getHash()));
+        Assertions.assertNull(executor.getProgramResult(tx.getHash()));
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
-        Assert.assertEquals(tx, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assertions.assertEquals(tx, receipt.getTransaction());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assertions.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
+        Assertions.assertEquals(21000, result.getGasUsed());
+        Assertions.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+        Assertions.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
         byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+        Assertions.assertEquals(256, calculatedLogsBloom.length);
+        Assertions.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
         AccountState accountState = repository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = new MutableRepository(trieStore,
                 trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -159,41 +157,41 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
-        Assert.assertEquals(1, result.getTransactionReceipts().size());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getTransactionReceipts());
+        Assertions.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assertions.assertEquals(1, result.getTransactionReceipts().size());
 
-        Assert.assertNotNull(executor.getProgramResult(tx.getHash()));
+        Assertions.assertNotNull(executor.getProgramResult(tx.getHash()));
         executor.setRegisterProgramResults(false);
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
-        Assert.assertEquals(tx, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assertions.assertEquals(tx, receipt.getTransaction());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assertions.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
+        Assertions.assertEquals(21000, result.getGasUsed());
+        Assertions.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+        Assertions.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
         byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+        Assertions.assertEquals(256, calculatedLogsBloom.length);
+        Assertions.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
         AccountState accountState = repository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = new MutableRepository(trieStore,
                 trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -207,41 +205,41 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
 
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
-        Assert.assertEquals(2, result.getTransactionReceipts().size());
+        Assertions.assertNotNull(result.getTransactionReceipts());
+        Assertions.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assertions.assertEquals(2, result.getTransactionReceipts().size());
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
-        Assert.assertEquals(tx1, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assertions.assertEquals(tx1, receipt.getTransaction());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assertions.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assertions.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         receipt = result.getTransactionReceipts().get(1);
-        Assert.assertEquals(tx2, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assertions.assertEquals(tx2, receipt.getTransaction());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assertions.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assertions.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
-        Assert.assertEquals(42000, result.getGasUsed());
-        Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
+        Assertions.assertEquals(42000, result.getGasUsed());
+        Assertions.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
         //here is the problem: in the prior code repository root would never be overwritten by childs
         //while the new code does overwrite the root.
         //Which semantic is correct ? I don't know
 
-        Assert.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
+        Assertions.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
 
         byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+        Assertions.assertEquals(256, calculatedLogsBloom.length);
+        Assertions.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
         AccountState accountState = repository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
@@ -250,8 +248,8 @@ public class BlockExecutorTest {
 
         accountState = finalRepository.getAccountState(account);
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -264,7 +262,7 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, parent.getHeader());
 
-        assertEquals(Optional.empty(), trieStore.retrieve(block.getStateRoot()));
+        Assertions.assertEquals(Optional.empty(), trieStore.retrieve(block.getStateRoot()));
     }
 
     @Test
@@ -277,9 +275,9 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false, false, true);
 
-        assertEquals(trieStore.retrieve(block.getStateRoot()), Optional.of(result.getFinalState()));
+        Assertions.assertEquals(trieStore.retrieve(block.getStateRoot()), Optional.of(result.getFinalState()));
     }
-    
+
     @Test
     public void executeAndFillBlockWithOneTransaction() {
         TestObjects objects = generateBlockWithOneTransaction();
@@ -291,13 +289,13 @@ public class BlockExecutorTest {
         executor.executeAndFill(block, parent.getHeader());
 
         byte[] calculatedReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
-        Assert.assertArrayEquals(calculatedReceiptsRoot, block.getReceiptsRoot());
-        Assert.assertArrayEquals(result.getFinalState().getHash().getBytes(), block.getStateRoot());
-        Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
-        Assert.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
-        Assert.assertArrayEquals(BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()), block.getLogBloom());
+        Assertions.assertArrayEquals(calculatedReceiptsRoot, block.getReceiptsRoot());
+        Assertions.assertArrayEquals(result.getFinalState().getHash().getBytes(), block.getStateRoot());
+        Assertions.assertEquals(result.getGasUsed(), block.getGasUsed());
+        Assertions.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
+        Assertions.assertArrayEquals(BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()), block.getLogBloom());
 
-        Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
+        Assertions.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
@@ -313,7 +311,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
@@ -353,14 +351,14 @@ public class BlockExecutorTest {
         executor.executeAndFill(block, genesis.getHeader());
 
         // Check tx2 was excluded
-        Assert.assertEquals(1, block.getTransactionsList().size());
-        Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(
+        Assertions.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertEquals(tx, block.getTransactionsList().get(0));
+        Assertions.assertArrayEquals(
                 calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
                 block.getTxTrieRoot()
         );
 
-        Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
+        Assertions.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
@@ -376,7 +374,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
@@ -415,7 +413,7 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, genesis.getHeader(), false);
 
-        Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assertions.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
 
     @Test
@@ -437,7 +435,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
 
-        Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
+        Assertions.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
     }
 
     @Test
@@ -459,7 +457,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
 
-        Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
+        Assertions.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
     }
 
     @Test
@@ -469,7 +467,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
 
-        Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -482,7 +480,7 @@ public class BlockExecutorTest {
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte) ((stateRoot[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -495,7 +493,7 @@ public class BlockExecutorTest {
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte) ((receiptsRoot[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -507,7 +505,7 @@ public class BlockExecutorTest {
 
         block.getHeader().setGasUsed(0);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -519,7 +517,7 @@ public class BlockExecutorTest {
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
@@ -532,7 +530,7 @@ public class BlockExecutorTest {
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
 
-        Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
+        Assertions.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     private static TestObjects generateBlockWithOneTransaction() {
@@ -546,7 +544,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
@@ -624,7 +622,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         Block bestBlock = blockchain.getBestBlock();
         bestBlock.setStateRoot(repository.getRoot());
@@ -676,16 +674,16 @@ public class BlockExecutorTest {
     //////////////////////////////////////////////
     // Testing strange Txs
     /////////////////////////////////////////////
-    @Test(expected = RuntimeException.class)
+    @Test
     public void executeBlocksWithOneStrangeTransactions1() {
         // will fail to create an address that is not 20 bytes long
-        executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0));
+        Assertions.assertThrows(RuntimeException.class, () -> executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0)));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void executeBlocksWithOneStrangeTransactions2() {
         // will fail to create an address that is not 20 bytes long
-        executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
+        Assertions.assertThrows(RuntimeException.class, () -> executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1)));
     }
 
     @Test
@@ -713,7 +711,7 @@ public class BlockExecutorTest {
         validatorBuilder.addBlockTxsFieldsValidationRule();
         BlockValidatorImpl validator = validatorBuilder.build();
 
-        Assert.assertEquals(validator.isValid(block), !mustFailValidation);
+        Assertions.assertEquals(validator.isValid(block), !mustFailValidation);
         if (mustFailValidation) {
             // If it fails validation, is it important if it fails or not execution? I don't think so.
             return;
@@ -721,42 +719,42 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
         if (mustFailExecution) {
-            Assert.assertEquals(result, BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT);
+            Assertions.assertEquals(result, BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT);
             return;
         }
 
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
-        Assert.assertEquals(1, result.getTransactionReceipts().size());
+        Assertions.assertNotNull(result.getTransactionReceipts());
+        Assertions.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assertions.assertEquals(1, result.getTransactionReceipts().size());
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
-        Assert.assertEquals(tx, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assertions.assertEquals(tx, receipt.getTransaction());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assertions.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
 
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
+        Assertions.assertEquals(21000, result.getGasUsed());
+        Assertions.assertEquals(Coin.valueOf(21000), result.getPaidFees());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+        Assertions.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
         byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+        Assertions.assertEquals(256, calculatedLogsBloom.length);
+        Assertions.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
         AccountState accountState = repository.getAccountState(account.getAddress());
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
         Repository finalRepository = new MutableRepository(trieStore,
                 trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assertions.assertNotNull(accountState);
+        Assertions.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
@@ -769,7 +767,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assertions.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 

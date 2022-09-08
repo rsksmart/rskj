@@ -21,31 +21,31 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import org.bitcoin.Secp256k1Context;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class Secp256k1Test {
 
     private MockedStatic<Secp256k1Context> secp256k1ContextMocked;
 
-    @Before
+    @BeforeEach
     public void init() {
         // Lets assume we have the ability to run Native Library.
         secp256k1ContextMocked = mockStatic(Secp256k1Context.class);
         secp256k1ContextMocked.when(Secp256k1Context::isEnabled).thenReturn(Boolean.TRUE);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         secp256k1ContextMocked.close();
     }

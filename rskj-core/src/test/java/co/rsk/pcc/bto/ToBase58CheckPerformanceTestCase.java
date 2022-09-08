@@ -25,13 +25,13 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
-@Ignore
+@Disabled
 public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private static final int MIN_ADDRESS_LENGTH = 26;
     private static final int MAX_ADDRESS_LENGTH = 35;
@@ -80,10 +80,10 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(String.class, decodedResult[0].getClass());
+                    Assertions.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
-                    Assert.assertTrue(MIN_ADDRESS_LENGTH <= address.length());
-                    Assert.assertTrue(MAX_ADDRESS_LENGTH >= address.length());
+                    Assertions.assertTrue(MIN_ADDRESS_LENGTH <= address.length());
+                    Assertions.assertTrue(MAX_ADDRESS_LENGTH >= address.length());
                 }
         );
 

@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
@@ -36,7 +36,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private List<Federation> federationList;
     private List<Federation> erpFederationList;
 
-    @Before
+    @BeforeEach
     public void setup() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
@@ -72,7 +72,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
                 federationList,
                 flyoverFederationInformation);
 
-        Assert.assertNull(flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
+        Assertions.assertNull(flyoverCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash()));
     }
 
@@ -98,8 +98,8 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             federation.getRedeemScript(), Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
             Sha256Hash.wrap(flyoverFederationInformation.getDerivationHash().getBytes())
         );
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 }

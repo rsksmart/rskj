@@ -34,8 +34,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -52,7 +52,7 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getAccountByName("acc1"));
+        Assertions.assertNotNull(world.getAccountByName("acc1"));
     }
 
     @Test
@@ -62,10 +62,10 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getAccountByName("acc1"));
-        Assert.assertNotNull(world.getAccountByName("acc2"));
-        Assert.assertNotNull(world.getTransactionByName("tx01"));
-        Assert.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getAccountByName("acc1"));
+        Assertions.assertNotNull(world.getAccountByName("acc2"));
+        Assertions.assertNotNull(world.getTransactionByName("tx01"));
+        Assertions.assertNotNull(world.getBlockByName("b01"));
     }
 
     @Test
@@ -77,16 +77,16 @@ public class DslFilesTest {
 
         Transaction transaction = world.getTransactionByName("tx01");
 
-        Assert.assertNotNull(transaction);
+        Assertions.assertNotNull(transaction);
 
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
 
-        Assert.assertNotNull(txinfo);
+        Assertions.assertNotNull(txinfo);
         BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
 
-        Assert.assertNotEquals(BigInteger.ZERO, gasUsed);
+        Assertions.assertNotEquals(BigInteger.ZERO, gasUsed);
         // According to TestRPC and geth, the gas used is 0x010c2d
-        Assert.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
+        Assertions.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
     }
 
     @Test
@@ -100,10 +100,10 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
-        Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b02b").getHash().getBytes()));
+        Assertions.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
+        Assertions.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
+        Assertions.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
+        Assertions.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b02b").getHash().getBytes()));
 
         Block top1 = world.getBlockByName("b01");
         Block top2 = world.getBlockByName("b02b");
@@ -124,35 +124,35 @@ public class DslFilesTest {
 
         // Sender account in branch 1
         // Null means no code
-        Assert.assertNull(repo1.getCode(addr1));
-        Assert.assertFalse(repo1.isContract(addr1));
+        Assertions.assertNull(repo1.getCode(addr1));
+        Assertions.assertFalse(repo1.isContract(addr1));
 
 
         // "Creator" Contract account in branch 1
         // This contract has storage.
-        Assert.assertTrue(repo1.isContract(addr2));
+        Assertions.assertTrue(repo1.isContract(addr2));
 
-        Assert.assertNotNull(repo1.getCode(addr2));
-        Assert.assertNotEquals(0, repo1.getCode(addr2).length);
+        Assertions.assertNotNull(repo1.getCode(addr2));
+        Assertions.assertNotEquals(0, repo1.getCode(addr2).length);
 
         // Subcontract account in branch 1.
-        Assert.assertNotNull(repo1.getCode(addr3));
-        Assert.assertNotEquals(0, repo1.getCode(addr3).length);
+        Assertions.assertNotNull(repo1.getCode(addr3));
+        Assertions.assertNotEquals(0, repo1.getCode(addr3).length);
 
         // Sender account in branch 2
-        Assert.assertNull(repo2.getCode(addr1));
-        Assert.assertFalse(repo2.isContract(addr1));
+        Assertions.assertNull(repo2.getCode(addr1));
+        Assertions.assertFalse(repo2.isContract(addr1));
 
         // "Creator" Contract account in branch 2
         // This contract has no childs?
-        Assert.assertTrue(repo2.isContract(addr2));
-        Assert.assertNotNull(repo2.getCode(addr2));
-        Assert.assertNotEquals(0, repo2.getCode(addr2).length);
+        Assertions.assertTrue(repo2.isContract(addr2));
+        Assertions.assertNotNull(repo2.getCode(addr2));
+        Assertions.assertNotEquals(0, repo2.getCode(addr2).length);
 
         // Subcontract account in branch 2
-        Assert.assertTrue(repo2.isContract(addr3));
-        Assert.assertNotNull(repo2.getCode(addr3));
-        Assert.assertNotEquals(0, repo2.getCode(addr3).length);
+        Assertions.assertTrue(repo2.isContract(addr3));
+        Assertions.assertNotNull(repo2.getCode(addr3));
+        Assertions.assertNotEquals(0, repo2.getCode(addr3).length);
     }
 
     @Test
@@ -162,7 +162,7 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertEquals(Coin.valueOf(100L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
+        Assertions.assertEquals(Coin.valueOf(100L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
     }
 
     /**
@@ -180,7 +180,7 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertEquals(Coin.valueOf(0L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
+        Assertions.assertEquals(Coin.valueOf(0L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
     }
 
     @Test
@@ -240,11 +240,11 @@ public class DslFilesTest {
 
         // the transaction receipt should have three logs
         BlockChainStatus status = world.getBlockChain().getStatus();
-        Assert.assertEquals(1, status.getBestBlockNumber());
+        Assertions.assertEquals(1, status.getBestBlockNumber());
 
         Block block = status.getBestBlock();
 
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        Assertions.assertEquals(1, block.getTransactionsList().size());
         byte[] txhash = block.getTransactionsList().get(0).getHash().getBytes();
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(txhash);
 
@@ -252,28 +252,28 @@ public class DslFilesTest {
         // Counter constructor
         // Counter getValue
         // Creator constructor
-        Assert.assertEquals(3, txinfo.getReceipt().getLogInfoList().size());
+        Assertions.assertEquals(3, txinfo.getReceipt().getLogInfoList().size());
 
         // only one topic in each event
-        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(0).getTopics().size());
-        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(1).getTopics().size());
-        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(2).getTopics().size());
+        Assertions.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(0).getTopics().size());
+        Assertions.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(1).getTopics().size());
+        Assertions.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(2).getTopics().size());
 
         // the topics are different
         DataWord topic1 = txinfo.getReceipt().getLogInfoList().get(0).getTopics().get(0);
         DataWord topic2 = txinfo.getReceipt().getLogInfoList().get(1).getTopics().get(0);
         DataWord topic3 = txinfo.getReceipt().getLogInfoList().get(2).getTopics().get(0);
 
-        Assert.assertNotEquals(topic1, topic2);
-        Assert.assertNotEquals(topic1, topic3);
-        Assert.assertNotEquals(topic2, topic3);
+        Assertions.assertNotEquals(topic1, topic2);
+        Assertions.assertNotEquals(topic1, topic3);
+        Assertions.assertNotEquals(topic2, topic3);
 
         // only the third log was directly produced by the created contract
         byte[] contractAddress = txinfo.getReceipt().getTransaction().getContractAddress().getBytes();
 
-        Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
-        Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));
-        Assert.assertTrue(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(2).getAddress()));
+        Assertions.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
+        Assertions.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));
+        Assertions.assertTrue(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(2).getAddress()));
     }
 
     @Test
@@ -291,9 +291,9 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -303,9 +303,9 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("c01"));
-        Assert.assertEquals(1, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("c01"));
+        Assertions.assertEquals(1, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -315,9 +315,9 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -327,11 +327,11 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("u01"));
-        Assert.assertNotNull(world.getBlockByName("u02"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("u01"));
+        Assertions.assertNotNull(world.getBlockByName("u02"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -341,12 +341,12 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("u01"));
-        Assert.assertNotNull(world.getBlockByName("u02"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertNotNull(world.getBlockByName("c02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("u01"));
+        Assertions.assertNotNull(world.getBlockByName("u02"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertNotNull(world.getBlockByName("c02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -356,12 +356,12 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("u01"));
-        Assert.assertNotNull(world.getBlockByName("u02"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertNotNull(world.getBlockByName("c02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("u01"));
+        Assertions.assertNotNull(world.getBlockByName("u02"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertNotNull(world.getBlockByName("c02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -371,12 +371,12 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("u01"));
-        Assert.assertNotNull(world.getBlockByName("u02"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertNotNull(world.getBlockByName("c02"));
-        Assert.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("u01"));
+        Assertions.assertNotNull(world.getBlockByName("u02"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertNotNull(world.getBlockByName("c02"));
+        Assertions.assertEquals(2, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -386,15 +386,15 @@ public class DslFilesTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        Assert.assertNotNull(world.getBlockByName("b01"));
-        Assert.assertNotNull(world.getBlockByName("u01"));
-        Assert.assertNotNull(world.getBlockByName("u02"));
-        Assert.assertNotNull(world.getBlockByName("u03"));
-        Assert.assertNotNull(world.getBlockByName("u04"));
-        Assert.assertNotNull(world.getBlockByName("b02"));
-        Assert.assertNotNull(world.getBlockByName("c02"));
-        Assert.assertNotNull(world.getBlockByName("c03"));
-        Assert.assertEquals(3, world.getBlockChain().getStatus().getBestBlock().getNumber());
+        Assertions.assertNotNull(world.getBlockByName("b01"));
+        Assertions.assertNotNull(world.getBlockByName("u01"));
+        Assertions.assertNotNull(world.getBlockByName("u02"));
+        Assertions.assertNotNull(world.getBlockByName("u03"));
+        Assertions.assertNotNull(world.getBlockByName("u04"));
+        Assertions.assertNotNull(world.getBlockByName("b02"));
+        Assertions.assertNotNull(world.getBlockByName("c02"));
+        Assertions.assertNotNull(world.getBlockByName("c03"));
+        Assertions.assertEquals(3, world.getBlockChain().getStatus().getBestBlock().getNumber());
     }
 
     @Test
@@ -406,15 +406,15 @@ public class DslFilesTest {
 
         Transaction transaction = world.getTransactionByName("callSecondCreator");
 
-        Assert.assertNotNull(transaction);
+        Assertions.assertNotNull(transaction);
 
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
 
-        Assert.assertNotNull(txinfo);
+        Assertions.assertNotNull(txinfo);
         long gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed()).longValue();
-        
-        Assert.assertEquals(200000, gasUsed);
-        Assert.assertFalse("Address should not exist", world.getRepository().isExist(new RskAddress("0xa943B74640c466Fc700AF929Cabacb1aC6CC8895")));
+
+        Assertions.assertEquals(200000, gasUsed);
+        Assertions.assertFalse(world.getRepository().isExist(new RskAddress("0xa943B74640c466Fc700AF929Cabacb1aC6CC8895")), "Address should not exist");
     }
 
     @Test
@@ -426,16 +426,16 @@ public class DslFilesTest {
 
         Transaction transaction = world.getTransactionByName("callCodeSizeChecker");
 
-        Assert.assertNotNull(transaction);
+        Assertions.assertNotNull(transaction);
 
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
 
-        Assert.assertNotNull(txinfo);
+        Assertions.assertNotNull(txinfo);
         long gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed()).longValue();
 
         // Gas consumed SHOULD NOT be all there is available
-        Assert.assertNotEquals(200000, gasUsed);
-        Assert.assertFalse("Transaction should be reverted", txinfo.getReceipt().isSuccessful());
+        Assertions.assertNotEquals(200000, gasUsed);
+        Assertions.assertFalse(txinfo.getReceipt().isSuccessful(), "Transaction should be reverted");
     }
 
 
@@ -447,8 +447,8 @@ public class DslFilesTest {
         processor.processCommands(parser);
 
         //But the tx is now on the tx pool
-        Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
-        Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
+        Assertions.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
+        Assertions.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
     }
 
     @Test
@@ -459,7 +459,7 @@ public class DslFilesTest {
         processor.processCommands(parser);
 
         //The tx is NOT in the tx pool
-        Assert.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
+        Assertions.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
     }
 
     @Test
@@ -470,7 +470,7 @@ public class DslFilesTest {
         processor.processCommands(parser);
 
         //The tx is NOT in the tx pool
-        Assert.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
+        Assertions.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
     }
 
     @Test
@@ -481,9 +481,9 @@ public class DslFilesTest {
         processor.processCommands(parser);
 
         //The transaction that was on the discarded block is on the tx pool
-        Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
-        Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
-        Assert.assertEquals(world.getAccountByName("acc1").getAddress(), world.getTransactionPool().getPendingTransactions().get(0).getSender());
+        Assertions.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
+        Assertions.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
+        Assertions.assertEquals(world.getAccountByName("acc1").getAddress(), world.getTransactionPool().getPendingTransactions().get(0).getSender());
     }
 
     private static Coin getBalance(World world, String address) {

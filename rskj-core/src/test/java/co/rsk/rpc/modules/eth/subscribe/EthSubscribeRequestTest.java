@@ -28,7 +28,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.ethereum.rpc.Topic;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 
@@ -155,12 +156,12 @@ public class EthSubscribeRequestTest {
         assertThat(logsParams.getTopics()[1], hasItemInArray(logTopic2));
     }
 
-    @Test(expected = JsonMappingException.class)
-    public void allowOnlyASingleConfiguration() throws IOException {
+    @Test
+    public void allowOnlyASingleConfiguration() {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {}, {}]}";
-        serializer.deserializeRequest(
+        Assertions.assertThrows(JsonMappingException.class, () -> serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
-        );
+        ));
     }
 
     private <T extends EthSubscribeParams> T validateParams(RskJsonRpcRequest request, Class<T> paramsClass) {
@@ -170,12 +171,10 @@ public class EthSubscribeRequestTest {
         assertThat(params, instanceOf(paramsClass));
         return paramsClass.cast(params);
     }
-    
-    @Test(expected = IllegalArgumentException.class)
+
+    @Test
     public void subscribe_withWrongParameter_thenThrowException() {
-    	
-    	new EthSubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_UNSUBSCRIBE, "test", null);
-    	
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new EthSubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_UNSUBSCRIBE, "test", null));
     }
-    
+
 }

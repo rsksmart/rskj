@@ -42,8 +42,9 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -55,7 +56,7 @@ import java.util.stream.Collectors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -133,7 +134,7 @@ public class BridgeSerializationUtilsTest {
         } catch (RuntimeException e) {
             thrown = true;
         }
-        Assert.assertTrue(thrown);
+        Assertions.assertTrue(thrown);
     }
 
     @Test
@@ -176,7 +177,7 @@ public class BridgeSerializationUtilsTest {
 
         String expected = expectedBuilder.toString();
 
-        Assert.assertEquals(expected, ByteUtil.toHexString(result));
+        Assertions.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -201,16 +202,16 @@ public class BridgeSerializationUtilsTest {
 
         Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
-        Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
-        Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
-        Assert.assertEquals(6, deserializedFederation.getBtcPublicKeys().size());
-        Assert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
+        Assertions.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
+        Assertions.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
+        Assertions.assertEquals(6, deserializedFederation.getBtcPublicKeys().size());
+        MatcherAssert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
 
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getBtcPublicKeys().get(i).getPubKey()));
+            Assertions.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
 
-        Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
+        Assertions.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
     }
 
     @Test
@@ -227,11 +228,11 @@ public class BridgeSerializationUtilsTest {
         try {
             BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
+            Assertions.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
         }
 
-        Assert.assertTrue(thrown);
+        Assertions.assertTrue(thrown);
     }
 
     @Test
@@ -273,17 +274,17 @@ public class BridgeSerializationUtilsTest {
 
         RLPList serializedList = (RLPList) RLP.decode2(serializedFederation).get(0);
 
-        Assert.assertEquals(3, serializedList.size());
+        Assertions.assertEquals(3, serializedList.size());
 
         RLPList memberList = (RLPList) serializedList.get(2);
 
-        Assert.assertEquals(NUM_MEMBERS, memberList.size());
+        Assertions.assertEquals(NUM_MEMBERS, memberList.size());
 
         for (int i = 0; i < NUM_MEMBERS; i++) {
             RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
-            Assert.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
+            Assertions.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
             for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
-                Assert.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
+                Assertions.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
             }
 
         }
@@ -295,9 +296,9 @@ public class BridgeSerializationUtilsTest {
 
         try {
             BridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-            Assert.fail();
+            Assertions.fail();
         } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid serialized Federation"));
         }
     }
 
@@ -311,9 +312,9 @@ public class BridgeSerializationUtilsTest {
 
         try {
             BridgeSerializationUtils.deserializeFederation(serialized, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-            Assert.fail();
+            Assertions.fail();
         } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
         }
     }
 
@@ -334,7 +335,7 @@ public class BridgeSerializationUtilsTest {
             PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
                     serializedTestPendingFederation);
 
-            Assert.assertEquals(testPendingFederation, deserializedTestPendingFederation);
+            Assertions.assertEquals(testPendingFederation, deserializedTestPendingFederation);
         }
     }
 
@@ -355,13 +356,13 @@ public class BridgeSerializationUtilsTest {
 
         RLPList memberList = (RLPList) RLP.decode2(serializedPendingFederation).get(0);
 
-        Assert.assertEquals(NUM_MEMBERS, memberList.size());
+        Assertions.assertEquals(NUM_MEMBERS, memberList.size());
 
         for (int i = 0; i < NUM_MEMBERS; i++) {
             RLPList memberKeys = (RLPList) RLP.decode2(memberList.get(i).getRLPData()).get(0);
-            Assert.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
+            Assertions.assertEquals(EXPECTED_NUM_KEYS, memberKeys.size());
             for (int j = 0; j < EXPECTED_NUM_KEYS; j++) {
-                Assert.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
+                Assertions.assertEquals(EXPECTED_PUBLICKEY_SIZE, memberKeys.get(j).getRLPData().length);
             }
 
         }
@@ -375,9 +376,9 @@ public class BridgeSerializationUtilsTest {
 
         try {
             BridgeSerializationUtils.deserializePendingFederation(serialized);
-            Assert.fail();
+            Assertions.fail();
         } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid serialized FederationMember"));
         }
     }
 
@@ -413,7 +414,7 @@ public class BridgeSerializationUtilsTest {
         });
 
         String expected = expectedBuilder.toString();
-        Assert.assertEquals(expected, ByteUtil.toHexString(result));
+        Assertions.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -434,9 +435,9 @@ public class BridgeSerializationUtilsTest {
 
         PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
 
-        Assert.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
+        Assertions.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
+            Assertions.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
     }
 
@@ -494,7 +495,7 @@ public class BridgeSerializationUtilsTest {
         expectedBuilder.append("ea");
         expectedBuilder.append("94" + createAddress("ca").toString() + "94" + createAddress("fa").toString());
 
-        Assert.assertEquals(expectedBuilder.toString(), hexResult);
+        Assertions.assertEquals(expectedBuilder.toString(), hexResult);
     }
 
     @Test
@@ -502,9 +503,9 @@ public class BridgeSerializationUtilsTest {
         AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
         ABICallElection election;
         election = BridgeSerializationUtils.deserializeElection(null, authorizer);
-        Assert.assertEquals(0, election.getVotes().size());
+        Assertions.assertEquals(0, election.getVotes().size());
         election = BridgeSerializationUtils.deserializeElection(new byte[]{}, authorizer);
-        Assert.assertEquals(0, election.getVotes().size());
+        Assertions.assertEquals(0, election.getVotes().size());
     }
 
     @Test
@@ -544,7 +545,7 @@ public class BridgeSerializationUtilsTest {
         specsVotersToProcess.put(secondSpec, secondVoters);
         specsVotersToProcess.put(thirdSpec, thirdVoters);
 
-        Assert.assertNotEquals(0, thirdVoters.get(0).getBytes().length);
+        Assertions.assertNotEquals(0, thirdVoters.get(0).getBytes().length);
 
         ABICallElection electionToProcess = new ABICallElection(authorizer, specsVotersToProcess);
 
@@ -552,39 +553,39 @@ public class BridgeSerializationUtilsTest {
 
         ABICallElection election = BridgeSerializationUtils.deserializeElection(data, authorizer);
 
-        Assert.assertEquals(3, election.getVotes().size());
+        Assertions.assertEquals(3, election.getVotes().size());
         List<RskAddress> voters;
         ABICallSpec spec;
 
         spec = new ABICallSpec("funct", new byte[][]{});
-        Assert.assertTrue(election.getVotes().containsKey(spec));
+        Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
                 createAddress("aa"),
                 createAddress("bbccdd")
         );
 
-        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
-        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
+        Assertions.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assertions.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
 
         spec = new ABICallSpec("other-funct", new byte[][]{
                 Hex.decode("1122"),
                 Hex.decode("334455")
         });
-        Assert.assertTrue(election.getVotes().containsKey(spec));
+        Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
                 createAddress("55"),
                 createAddress("66"),
                 createAddress("77")
         );
 
-        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
-        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
-        Assert.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
+        Assertions.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assertions.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
+        Assertions.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
 
         spec = new ABICallSpec("random-funct", new byte[][]{
                 Hex.decode("aabb")
         });
-        Assert.assertTrue(election.getVotes().containsKey(spec));
+        Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
                 createAddress("1111"),
                 createAddress("3333"),
@@ -592,11 +593,11 @@ public class BridgeSerializationUtilsTest {
                 createAddress("77")
         );
 
-        Assert.assertEquals(4, election.getVotes().get(spec).size());
-        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
-        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
-        Assert.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
-        Assert.assertArrayEquals(voters.get(3).getBytes(), election.getVotes().get(spec).get(3).getBytes());
+        Assertions.assertEquals(4, election.getVotes().get(spec).size());
+        Assertions.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assertions.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
+        Assertions.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
+        Assertions.assertArrayEquals(voters.get(3).getBytes(), election.getVotes().get(spec).get(3).getBytes());
     }
 
     @Test
@@ -609,11 +610,11 @@ public class BridgeSerializationUtilsTest {
         try {
             BridgeSerializationUtils.deserializeElection(data, mockedAuthorizer);
         } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("expected an even number of entries, but odd given"));
+            Assertions.assertTrue(e.getMessage().contains("expected an even number of entries, but odd given"));
             return;
         }
 
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
@@ -628,11 +629,11 @@ public class BridgeSerializationUtilsTest {
         try {
             BridgeSerializationUtils.deserializeElection(data, authorizer);
         } catch (RuntimeException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid serialized ABICallSpec"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid serialized ABICallSpec"));
             return;
         }
 
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
@@ -667,7 +668,7 @@ public class BridgeSerializationUtilsTest {
         });
         expectedBuilder.append("80");
         String expected = expectedBuilder.toString();
-        Assert.assertEquals(expected, ByteUtil.toHexString(result));
+        Assertions.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -694,12 +695,12 @@ public class BridgeSerializationUtilsTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
-        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
+        MatcherAssert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
+        MatcherAssert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
         Set<Coin> deserializedCoins = deserializedLockWhitelist.getLeft().values().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
-        Assert.assertThat(deserializedCoins, hasSize(1));
-        Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
-        Assert.assertThat(deserializedLockWhitelist.getRight(), is(42));
+        MatcherAssert.assertThat(deserializedCoins, hasSize(1));
+        MatcherAssert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
+        MatcherAssert.assertThat(deserializedLockWhitelist.getRight(), is(42));
     }
 
     @Test
@@ -709,14 +710,14 @@ public class BridgeSerializationUtilsTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertNull(deserializedLockWhitelist);
+        Assertions.assertNull(deserializedLockWhitelist);
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 new byte[]{},
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertNull(deserializedLockWhitelist2);
+        Assertions.assertNull(deserializedLockWhitelist2);
     }
 
     @Test
@@ -735,10 +736,10 @@ public class BridgeSerializationUtilsTest {
 
         List<Address> originalAddresses = originalLockWhitelist.getAddresses();
         List<Address> deserializedAddresses = new ArrayList(deserializedLockWhitelist.getLeft().keySet());
-        Assert.assertThat(originalAddresses, hasSize(1));
-        Assert.assertThat(deserializedAddresses, hasSize(1));
-        Assert.assertThat(originalAddresses, is(deserializedAddresses));
-        Assert.assertThat(
+        MatcherAssert.assertThat(originalAddresses, hasSize(1));
+        MatcherAssert.assertThat(deserializedAddresses, hasSize(1));
+        MatcherAssert.assertThat(originalAddresses, is(deserializedAddresses));
+        MatcherAssert.assertThat(
                 ((OneOffWhiteListEntry)originalLockWhitelist.get(originalAddresses.get(0))).maxTransferValue(),
                 is((deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
     }
@@ -772,7 +773,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
         Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(result, networkParms);
-        Assert.assertThat(federation, is(deserializedFederation));
+        MatcherAssert.assertThat(federation, is(deserializedFederation));
     }
 
     @Test
@@ -862,7 +863,7 @@ public class BridgeSerializationUtilsTest {
         } catch (RuntimeException e) {
             return;
         }
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
@@ -934,8 +935,8 @@ public class BridgeSerializationUtilsTest {
         assertEquals(expectedEntries, entries);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void deserializeTransactionSet_nonEmpty_withTxHash_fails() throws Exception {
+    @Test
+    public void deserializeTransactionSet_nonEmpty_withTxHash_fails() {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
@@ -952,12 +953,11 @@ public class BridgeSerializationUtilsTest {
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
         byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(rtc);
 
-        BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params);
-
+        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void deserializeTransactionSet_nonEmpty_withoutTxHash_fails() throws Exception {
+    @Test
+    public void deserializeTransactionSet_nonEmpty_withoutTxHash_fails() {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
@@ -974,7 +974,7 @@ public class BridgeSerializationUtilsTest {
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
         byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSet(rtc);
 
-        BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params, true);
+        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params, true));
     }
 
     @Test
@@ -987,36 +987,36 @@ public class BridgeSerializationUtilsTest {
         } catch (RuntimeException e) {
             return;
         }
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
     public void serializeDeserializeCoin() {
         byte[] serialized1 = BridgeSerializationUtils.serializeCoin(Coin.COIN);
-        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized1),
+        MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized1),
                 is(Coin.COIN));
         byte[] serialized2 = BridgeSerializationUtils.serializeCoin(Coin.valueOf(Long.MAX_VALUE));
-        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized2),
+        MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized2),
                 is(Coin.valueOf(Long.MAX_VALUE)));
         byte[] serialized3 = BridgeSerializationUtils.serializeCoin(Coin.ZERO);
-        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized3),
+        MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized3),
                 is(Coin.ZERO));
-        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(null),
+        MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(null),
                 nullValue());
-        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
+        MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
                 nullValue());
     }
 
     @Test
     public void serializeInteger() {
-        Assert.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(123), 0));
-        Assert.assertEquals(BigInteger.valueOf(1200), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(1200), 0));
+        Assertions.assertEquals(BigInteger.valueOf(123), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(123), 0));
+        Assertions.assertEquals(BigInteger.valueOf(1200), RLP.decodeBigInteger(BridgeSerializationUtils.serializeInteger(1200), 0));
     }
 
     @Test
     public void deserializeInteger() {
-        Assert.assertEquals(123, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
-        Assert.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
+        Assertions.assertEquals(123, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
+        Assertions.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
     }
 
     @Test
@@ -1026,7 +1026,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializeSha256Hash(originalHash);
 
-        Assert.assertArrayEquals(encodedHash, result);
+        Assertions.assertArrayEquals(encodedHash, result);
     }
 
     @Test
@@ -1035,13 +1035,13 @@ public class BridgeSerializationUtilsTest {
         byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
 
         Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
-        Assert.assertEquals(originalHash, result);
+        Assertions.assertEquals(originalHash, result);
     }
 
     @Test
     public void deserializeSha256Hash_nullValue() {
         Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
@@ -1050,7 +1050,7 @@ public class BridgeSerializationUtilsTest {
         byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
 
         Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
-        Assert.assertEquals(originalHash, result);
+        Assertions.assertEquals(originalHash, result);
     }
 
     @Test
@@ -1059,7 +1059,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] actualData = BridgeSerializationUtils.serializeScript(expectedScript);
 
-        Assert.assertEquals(expectedScript, new Script(((RLPList) RLP.decode2(actualData).get(0)).get(0).getRLPData()));
+        Assertions.assertEquals(expectedScript, new Script(((RLPList) RLP.decode2(actualData).get(0)).get(0).getRLPData()));
     }
 
     @Test
@@ -1069,7 +1069,7 @@ public class BridgeSerializationUtilsTest {
 
         Script actualScript = BridgeSerializationUtils.deserializeScript(data);
 
-        Assert.assertEquals(expectedScript, actualScript);
+        Assertions.assertEquals(expectedScript, actualScript);
     }
 
     @Test
@@ -1079,7 +1079,7 @@ public class BridgeSerializationUtilsTest {
             new byte[]{}
         );
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
@@ -1089,18 +1089,18 @@ public class BridgeSerializationUtilsTest {
             null
         );
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void deserializeFlyoverFederationInformation_one_data() {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        BridgeSerializationUtils.deserializeFlyoverFederationInformation(
-            RLP.encodeList(rlpElements),
-            new byte[]{(byte)0x23}
-        );
+        Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(
+                RLP.encodeList(rlpElements),
+                new byte[]{(byte)0x23}
+        ));
     }
 
     @Test
@@ -1114,20 +1114,20 @@ public class BridgeSerializationUtilsTest {
             new byte[]{(byte)0x23}
         );
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(
             Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes(),
             result.getDerivationHash().getBytes()
         );
-        Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationRedeemScriptHash());
-        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFlyoverFederationRedeemScriptHash());
+        Assertions.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationRedeemScriptHash());
+        Assertions.assertArrayEquals(new byte[]{(byte)0x23}, result.getFlyoverFederationRedeemScriptHash());
     }
 
     @Test
     public void serializeFlyoverFederationInformation_no_data() {
         byte[] result = BridgeSerializationUtils.serializeFlyoverFederationInformation(null);
 
-        Assert.assertEquals(0, result.length);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
@@ -1144,15 +1144,15 @@ public class BridgeSerializationUtilsTest {
             flyoverFederationRedeemScriptHash
         );
 
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
             flyoverFederationInformation.getDerivationHash().getBytes(),
             result.getDerivationHash().getBytes()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
             flyoverFederationInformation.getFederationRedeemScriptHash(),
             result.getFederationRedeemScriptHash()
         );
-        Assert.assertArrayEquals(
+        Assertions.assertArrayEquals(
             flyoverFederationInformation.getFlyoverFederationRedeemScriptHash(),
             result.getFlyoverFederationRedeemScriptHash()
         );
@@ -1160,7 +1160,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeCoinbaseInformation_dataIsNull_returnsNull() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
+        Assertions.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
     }
 
     @Test
@@ -1172,9 +1172,9 @@ public class BridgeSerializationUtilsTest {
 
         try {
             BridgeSerializationUtils.deserializeCoinbaseInformation(data);
-            Assert.fail("Runtime exception should be thrown!");
+            Assertions.fail("Runtime exception should be thrown!");
         } catch (RuntimeException e) {
-            Assert.assertEquals("Invalid serialized coinbase information, expected 1 value but got 3", e.getMessage());
+            Assertions.assertEquals("Invalid serialized coinbase information, expected 1 value but got 3", e.getMessage());
         }
     }
 
@@ -1186,7 +1186,7 @@ public class BridgeSerializationUtilsTest {
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessRoot);
         byte[] serializedCoinbaseInformation = BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation);
 
-        Assert.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
+        Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
     private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
@@ -1240,13 +1240,13 @@ public class BridgeSerializationUtilsTest {
                 activations
             );
 
-            Assert.assertEquals(testFederation, deserializedTestFederation);
-            Assert.assertEquals(testErpFederation, deserializedTestErpFederation);
-            Assert.assertNotEquals(testFederation, deserializedTestErpFederation);
-            Assert.assertNotEquals(testErpFederation, deserializedTestFederation);
+            Assertions.assertEquals(testFederation, deserializedTestFederation);
+            Assertions.assertEquals(testErpFederation, deserializedTestErpFederation);
+            Assertions.assertNotEquals(testFederation, deserializedTestErpFederation);
+            Assertions.assertNotEquals(testErpFederation, deserializedTestFederation);
 
             if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-                Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
+                Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
             }
         }
     }

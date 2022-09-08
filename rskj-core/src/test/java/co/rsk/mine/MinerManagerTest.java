@@ -39,14 +39,13 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -65,7 +64,7 @@ public class MinerManagerTest {
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
@@ -79,20 +78,20 @@ public class MinerManagerTest {
 
     @Test
     public void refreshWorkRunOnce() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
 
-        Assert.assertNotNull(refreshWork);
+        Assertions.assertNotNull(refreshWork);
         try {
             minerServer.buildBlockToMine(false);
             refreshWork.run();
-            Assert.assertTrue(minerClient.mineBlock());
+            Assertions.assertTrue(minerClient.mineBlock());
 
-            Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
         } finally {
             refreshWork.cancel();
         }
@@ -100,19 +99,19 @@ public class MinerManagerTest {
 
     @Test
     public void refreshWorkRunTwice() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
 
-        Assert.assertNotNull(refreshWork);
+        Assertions.assertNotNull(refreshWork);
         try {
             minerServer.buildBlockToMine( false);
             refreshWork.run();
 
-            Assert.assertTrue(minerClient.mineBlock());
+            Assertions.assertTrue(minerClient.mineBlock());
 
             // miningMainchainView new best block update is done by a listener on miner server.
             // This test does not have that listener so add the new best block manually.
@@ -120,9 +119,9 @@ public class MinerManagerTest {
 
             minerServer.buildBlockToMine( false);
             refreshWork.run();
-            Assert.assertTrue(minerClient.mineBlock());
+            Assertions.assertTrue(minerClient.mineBlock());
 
-            Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(2, blockchain.getBestBlock().getNumber());
         } finally {
             refreshWork.cancel();
         }
@@ -130,7 +129,7 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlockTwiceReusingTheSameWork() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
@@ -139,30 +138,30 @@ public class MinerManagerTest {
 
         MinerWork minerWork = minerServer.getWork();
 
-        Assert.assertNotNull(minerWork);
+        Assertions.assertNotNull(minerWork);
 
-        Assert.assertTrue(minerClient.mineBlock());
+        Assertions.assertTrue(minerClient.mineBlock());
 
         Block bestBlock = blockchain.getBestBlock();
 
-        Assert.assertNotNull(bestBlock);
-        Assert.assertEquals(1, bestBlock.getNumber());
+        Assertions.assertNotNull(bestBlock);
+        Assertions.assertEquals(1, bestBlock.getNumber());
 
         // reuse the same work
-        Assert.assertNotNull(minerServer.getWork());
+        Assertions.assertNotNull(minerServer.getWork());
 
-        Assert.assertTrue(minerClient.mineBlock());
+        Assertions.assertTrue(minerClient.mineBlock());
 
         List<Block> blocks = blockchain.getBlocksByNumber(1);
 
-        Assert.assertNotNull(blocks);
-        Assert.assertEquals(2, blocks.size());
-        Assert.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
+        Assertions.assertNotNull(blocks);
+        Assertions.assertEquals(2, blocks.size());
+        Assertions.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
     }
 
     @Test
     public void mineBlockWhileSyncingBlocks() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         NodeBlockProcessor nodeBlockProcessor = mock(NodeBlockProcessor.class);
         when(nodeBlockProcessor.hasBetterBlockToSync()).thenReturn(true);
@@ -171,14 +170,14 @@ public class MinerManagerTest {
 
         minerServer.buildBlockToMine( false);
 
-        Assert.assertFalse(minerClient.mineBlock());
+        Assertions.assertFalse(minerClient.mineBlock());
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
     }
 
     @Test
     public void doWork() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
@@ -186,12 +185,12 @@ public class MinerManagerTest {
         minerServer.buildBlockToMine( false);
         minerClient.doWork();
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
     @Test
     public void doWorkEvenWithoutMinerServer() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(null);
@@ -199,12 +198,12 @@ public class MinerManagerTest {
         minerServer.buildBlockToMine(false);
         minerClient.doWork();
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
     }
 
     @Test
     public void doWorkInThread() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
@@ -216,7 +215,7 @@ public class MinerManagerTest {
 
             Awaitility.await().timeout(Duration.ofSeconds(5)).until(minerClient::isMining);
 
-            Assert.assertTrue(minerClient.isMining());
+            Assertions.assertTrue(minerClient.isMining());
         } finally {
             thread.interrupt(); // enought ?
             minerClient.stop();
@@ -225,7 +224,7 @@ public class MinerManagerTest {
 
     @Test
     public void mineBlock() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerManager manager = new MinerManager();
 
@@ -234,27 +233,27 @@ public class MinerManagerTest {
 
         manager.mineBlock(minerClient, minerServer);
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-        Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
         SnapshotManager snapshotManager = new SnapshotManager(blockchain, blockStore, transactionPool, minerServer);
         snapshotManager.resetSnapshots();
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         manager.mineBlock(minerClient, minerServer);
         // miningMainchainView new best block update is done by a listener on miner server.
         // This test does not have that listener so add the new best block manually.
         miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
         manager.mineBlock(minerClient, minerServer);
-        Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots();
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
         manager.mineBlock(minerClient, minerServer);
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {

@@ -1,7 +1,7 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -12,27 +12,27 @@ import java.net.UnknownHostException;
 public class InetAddressUtilsTest {
     @Test
     public void hasMask() {
-        Assert.assertFalse(InetAddressUtils.hasMask(null));
-        Assert.assertFalse(InetAddressUtils.hasMask("/"));
-        Assert.assertFalse(InetAddressUtils.hasMask("1234/"));
-        Assert.assertFalse(InetAddressUtils.hasMask("/1234"));
-        Assert.assertFalse(InetAddressUtils.hasMask("1234/1234/1234"));
-        Assert.assertFalse(InetAddressUtils.hasMask("1234//1234"));
+        Assertions.assertFalse(InetAddressUtils.hasMask(null));
+        Assertions.assertFalse(InetAddressUtils.hasMask("/"));
+        Assertions.assertFalse(InetAddressUtils.hasMask("1234/"));
+        Assertions.assertFalse(InetAddressUtils.hasMask("/1234"));
+        Assertions.assertFalse(InetAddressUtils.hasMask("1234/1234/1234"));
+        Assertions.assertFalse(InetAddressUtils.hasMask("1234//1234"));
 
-        Assert.assertTrue(InetAddressUtils.hasMask("1234/1234"));
+        Assertions.assertTrue(InetAddressUtils.hasMask("1234/1234"));
     }
 
     @Test
     public void getAddressFromIPV4() throws InvalidInetAddressException {
         InetAddress address = InetAddressUtils.getAddressForBan("192.168.56.1");
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         byte[] bytes = address.getAddress();
 
-        Assert.assertNotNull(bytes);
-        Assert.assertEquals(4, bytes.length);
-        Assert.assertArrayEquals(new byte[] { (byte)192, (byte)168, (byte)56, (byte)1}, bytes);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertEquals(4, bytes.length);
+        Assertions.assertArrayEquals(new byte[] { (byte)192, (byte)168, (byte)56, (byte)1}, bytes);
     }
 
     @Test
@@ -40,23 +40,23 @@ public class InetAddressUtilsTest {
         InetAddress address = InetAddressUtils.getAddressForBan("fe80::498a:7f0e:e63d:6b98");
         InetAddress expected = InetAddress.getByName("fe80::498a:7f0e:e63d:6b98");
 
-        Assert.assertNotNull(address);
+        Assertions.assertNotNull(address);
 
         byte[] bytes = address.getAddress();
 
-        Assert.assertNotNull(bytes);
-        Assert.assertEquals(16, bytes.length);
-        Assert.assertArrayEquals(expected.getAddress(), bytes);
+        Assertions.assertNotNull(bytes);
+        Assertions.assertEquals(16, bytes.length);
+        Assertions.assertArrayEquals(expected.getAddress(), bytes);
     }
 
     @Test
     public void getAddressFromNull() {
         try {
             InetAddressUtils.getAddressForBan(null);
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("null address", ex.getMessage());
+            Assertions.assertEquals("null address", ex.getMessage());
         }
     }
 
@@ -64,10 +64,10 @@ public class InetAddressUtilsTest {
     public void getAddressFromEmptyString() {
         try {
             InetAddressUtils.getAddressForBan("");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("empty address", ex.getMessage());
+            Assertions.assertEquals("empty address", ex.getMessage());
         }
     }
 
@@ -75,10 +75,10 @@ public class InetAddressUtilsTest {
     public void getAddressFromBlankString() {
         try {
             InetAddressUtils.getAddressForBan("   ");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("empty address", ex.getMessage());
+            Assertions.assertEquals("empty address", ex.getMessage());
         }
     }
 
@@ -86,10 +86,10 @@ public class InetAddressUtilsTest {
     public void getLocalAddress() {
         try {
             InetAddressUtils.getAddressForBan("127.0.0.1");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("local address: '127.0.0.1'", ex.getMessage());
+            Assertions.assertEquals("local address: '127.0.0.1'", ex.getMessage());
         }
     }
 
@@ -97,10 +97,10 @@ public class InetAddressUtilsTest {
     public void getLocalHost() {
         try {
             InetAddressUtils.getAddressForBan("localhost");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("local address: 'localhost'", ex.getMessage());
+            Assertions.assertEquals("local address: 'localhost'", ex.getMessage());
         }
     }
 
@@ -108,10 +108,10 @@ public class InetAddressUtilsTest {
     public void getAnyLocalAddress() {
         try {
             InetAddressUtils.getAddressForBan("0.0.0.0");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressException ex) {
-            Assert.assertEquals("local address: '0.0.0.0'", ex.getMessage());
+            Assertions.assertEquals("local address: '0.0.0.0'", ex.getMessage());
         }
     }
 
@@ -119,19 +119,19 @@ public class InetAddressUtilsTest {
     public void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
         InetAddressCidrBlock result = InetAddressUtils.parse("192.162.12.0/24");
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(InetAddress.getByName("192.162.12.0").getAddress(), result.getBytes());
-        Assert.assertEquals((byte)0x00, result.getMask());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(InetAddress.getByName("192.162.12.0").getAddress(), result.getBytes());
+        Assertions.assertEquals((byte)0x00, result.getMask());
     }
 
     @Test
     public void parseAddressBlockWithNonNumericBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/a");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
-            Assert.assertEquals("Invalid mask", ex.getMessage());
+            Assertions.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
@@ -139,10 +139,10 @@ public class InetAddressUtilsTest {
     public void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException, InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/-10");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
-            Assert.assertEquals("Invalid mask", ex.getMessage());
+            Assertions.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
@@ -150,10 +150,10 @@ public class InetAddressUtilsTest {
     public void parseAddressBlockWithZeroBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/0");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
-            Assert.assertEquals("Invalid mask", ex.getMessage());
+            Assertions.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
@@ -161,10 +161,10 @@ public class InetAddressUtilsTest {
     public void parseAddressBlockWithTooBigNumberOfBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/1000");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (InvalidInetAddressBlockException ex) {
-            Assert.assertEquals("Invalid mask", ex.getMessage());
+            Assertions.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 }

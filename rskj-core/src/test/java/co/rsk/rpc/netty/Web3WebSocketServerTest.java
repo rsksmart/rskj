@@ -18,9 +18,9 @@
 package co.rsk.rpc.netty;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.ethereum.rpc.Web3;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -69,7 +69,7 @@ public class Web3WebSocketServerTest {
 
     private ExecutorService wsExecutor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         wsExecutor = Executors.newSingleThreadExecutor();
     }
@@ -89,7 +89,7 @@ public class Web3WebSocketServerTest {
         smokeTest(getJsonRpcBigMessage(), "/");
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         wsExecutor.shutdown();
     }

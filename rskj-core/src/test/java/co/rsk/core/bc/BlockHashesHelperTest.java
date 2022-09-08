@@ -31,7 +31,8 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.core.TransactionReceipt;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -39,9 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 
@@ -88,7 +89,7 @@ public class BlockHashesHelperTest {
     }
 
 
-    @Test(expected = BlockHashesHelperException.class)
+    @Test
     public void calculateReceiptsTrieRootForException() {
         World world = new World();
 
@@ -105,7 +106,8 @@ public class BlockHashesHelperTest {
         ReceiptStore receiptStore = mock(ReceiptStore.class);
 
         Keccak256 hashTx = tx.getHash();
-        List<Trie> trie = BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, hashTx);
+
+        Assertions.assertThrows(BlockHashesHelperException.class, () -> BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, hashTx));
     }
 
     @Test

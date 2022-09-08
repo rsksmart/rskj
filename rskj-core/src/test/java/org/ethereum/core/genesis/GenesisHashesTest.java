@@ -22,10 +22,10 @@ import co.rsk.RskContext;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Genesis;
 import org.ethereum.util.RskTestContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class GenesisHashesTest {
     @Test

@@ -25,8 +25,8 @@ import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.net.InetAddress;
@@ -34,7 +34,7 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class DownloadingBackwardsHeadersSyncStateTest {
@@ -44,7 +44,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     private BlockStore blockStore;
     private Peer selectedPeer;
 
-    @Before
+    @BeforeEach
     public void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);

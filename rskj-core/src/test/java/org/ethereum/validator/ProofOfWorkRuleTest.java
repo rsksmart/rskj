@@ -26,7 +26,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
-import co.rsk.mine.ParameterizedNetworkUpgradeTest;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.Constants;
@@ -34,10 +33,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.ethereum.util.ByteUtil;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
@@ -46,22 +43,19 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
+public abstract class ProofOfWorkRuleTest {
 
-    private final ActivationConfig activationConfig;
-    private final Constants networkConstants;
+    private ActivationConfig activationConfig;
+    private Constants networkConstants;
     private ProofOfWorkRule rule;
     private BlockFactory blockFactory;
 
-    public ProofOfWorkRuleTest(TestSystemProperties config) {
-        super(config);
+    protected void setUp(TestSystemProperties config) {
         this.rule = new ProofOfWorkRule(config).setFallbackMiningEnabled(false);
         this.activationConfig = config.getActivationConfig();
         this.networkConstants = config.getNetworkConstants();
@@ -72,11 +66,12 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     public void test_1() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
-        assertTrue(rule.isValid(b));
+        Assertions.assertTrue(rule.isValid(b));
     }
 
-    @Ignore
-    @Test // invalid block
+    @Disabled
+    // invalid block
+    @Test
     public void test_2() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
@@ -84,7 +79,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         // TODO improve, the mutated block header could be still valid
         mergeMiningHeader[0]++;
         b.setBitcoinMergedMiningHeader(mergeMiningHeader);
-        assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     // This test must be moved to the appropiate place
@@ -99,12 +94,13 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();
-        Assert.assertTrue(Arrays.equals(encoded,encoded2));
-        Assert.assertTrue(Arrays.equals(lastField,lastField2));
+        Assertions.assertTrue(Arrays.equals(encoded,encoded2));
+        Assertions.assertTrue(Arrays.equals(lastField,lastField2));
     }
 
-    @Ignore
-    @Test // stress test
+    @Disabled
+    // stress test
+    @Test
     public void test_3() {
         int iterCnt = 1_000_000;
 
@@ -127,7 +123,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), new byte[100]);
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
@@ -140,7 +136,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
@@ -171,7 +167,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
         Block newBlock1 = new BlockMiner(config).mineBlock(newBlock, bitcoinMergedMiningCoinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
-        assertTrue(rule.isValid(newBlock1));
+        Assertions.assertTrue(rule.isValid(newBlock1));
     }
 
     @Test
@@ -207,7 +203,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
         Block block = new BlockMiner(config).mineBlock(newBlock, coinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
-        assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block));
     }
 
     private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
