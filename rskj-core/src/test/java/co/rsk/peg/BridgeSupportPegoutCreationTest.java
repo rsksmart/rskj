@@ -1,24 +1,18 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.test.builders.BridgeSupportBuilder;
-import org.apache.commons.lang3.RandomUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.Optional;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,84 +28,57 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(false);
 
-        Sha256Hash btcTxHash = PegTestUtils.createHash(RandomUtils.nextInt());
-        Keccak256 rskTxHash = PegTestUtils.createHash3(RandomUtils.nextInt());
-
-        BridgeConstants bridgeConstants = this.bridgeConstantsRegtest;
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(Optional.of(rskTxHash));
-        Repository repository = createRepository();
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        Block executionBlock = Mockito.mock(Block.class);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(15);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withProvider(provider)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
-            .withBtcBlockStoreFactory(mockFactory)
-            .withExecutionBlock(executionBlock)
-            .withRepository(repository)
             .build();
 
-        Optional<Keccak256> pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
+        byte[] pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
 
-        assertFalse(pegoutRskTxHash.isPresent());
+        assertEquals(ByteUtil.EMPTY_BYTE_ARRAY, pegoutRskTxHash);
     }
 
     @Test
     public void getPegoutCreationRskTxHashByBtcTxHash_ok_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
-        Sha256Hash btcTxHash = PegTestUtils.createHash(RandomUtils.nextInt());
-        Keccak256 rskTxHash = PegTestUtils.createHash3(RandomUtils.nextInt());
+        Sha256Hash btcTxHash = PegTestUtils.createHash(3);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(6);
 
-        BridgeConstants bridgeConstants = this.bridgeConstantsRegtest;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash)).thenReturn(Optional.of(rskTxHash));
-        Repository repository = createRepository();
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        Block executionBlock = Mockito.mock(Block.class);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
-            .withBtcBlockStoreFactory(mockFactory)
-            .withExecutionBlock(executionBlock)
-            .withRepository(repository)
             .build();
 
-        Optional<Keccak256> pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
+        byte[] pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
 
-        assertTrue(pegoutRskTxHash.isPresent());
-        assertEquals(rskTxHash, pegoutRskTxHash.get());
+        assertArrayEquals(rskTxHash.getBytes(), pegoutRskTxHash);
     }
 
     @Test
     public void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
-        Sha256Hash btcTxHash = PegTestUtils.createHash(RandomUtils.nextInt());
+        Sha256Hash btcTxHash = PegTestUtils.createHash(9);
 
-        BridgeConstants bridgeConstants = this.bridgeConstantsRegtest;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getPegoutCreationRskTxHashByBtcTxHash(any())).thenReturn(Optional.empty());
-        Repository repository = createRepository();
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        Block executionBlock = Mockito.mock(Block.class);
+        when(provider.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash)).thenReturn(Optional.empty());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
-            .withBtcBlockStoreFactory(mockFactory)
-            .withExecutionBlock(executionBlock)
-            .withRepository(repository)
             .build();
 
-        Optional<Keccak256> pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
+        byte[] pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
 
-        assertFalse(pegoutRskTxHash.isPresent());
+        assertEquals(ByteUtil.EMPTY_BYTE_ARRAY, pegoutRskTxHash);
     }
 
     @Test
@@ -119,54 +86,38 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         Sha256Hash btcTxHash = Sha256Hash.ZERO_HASH;
-        Keccak256 rskTxHash = PegTestUtils.createHash3(RandomUtils.nextInt());
+        Keccak256 rskTxHash = PegTestUtils.createHash3(5);
 
-        BridgeConstants bridgeConstants = this.bridgeConstantsRegtest;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash)).thenReturn(Optional.of(rskTxHash));
-        Repository repository = createRepository();
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        Block executionBlock = Mockito.mock(Block.class);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
-            .withBtcBlockStoreFactory(mockFactory)
-            .withExecutionBlock(executionBlock)
-            .withRepository(repository)
             .build();
 
-        Optional<Keccak256> pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
+        byte[] pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(btcTxHash);
 
-        assertTrue(pegoutRskTxHash.isPresent());
-        assertEquals(rskTxHash, pegoutRskTxHash.get());
+        assertArrayEquals(rskTxHash.getBytes(), pegoutRskTxHash);
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_btc_tx_hash_is_null_after_RSKIP298_activation() {
+    public void getPegoutCreationRskTxHashByBtcTxHash_by_is_null_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
-        BridgeConstants bridgeConstants = this.bridgeConstantsRegtest;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         when(provider.getPegoutCreationRskTxHashByBtcTxHash(isNull())).thenReturn(Optional.empty());
 
-        Repository repository = createRepository();
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        Block executionBlock = Mockito.mock(Block.class);
-
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
-            .withBtcBlockStoreFactory(mockFactory)
-            .withExecutionBlock(executionBlock)
-            .withRepository(repository)
             .build();
 
-        Optional<Keccak256> pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(null);
+        byte[] pegoutRskTxHash = bridgeSupport.getPegoutCreationRskTxHashByBtcTxHash(null);
 
-        assertFalse(pegoutRskTxHash.isPresent());
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, pegoutRskTxHash);
     }
 }
