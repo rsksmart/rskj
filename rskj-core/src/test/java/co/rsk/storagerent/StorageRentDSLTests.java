@@ -18,6 +18,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
-import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
 
@@ -322,73 +322,83 @@ public class StorageRentDSLTests {
     }
 
     /**
-     * A single transaction reads 5 non-existing keys
+     * A block with multiple transactions, each tx reads 5 non-existing keys
      *
      * It should:
-     * - pay for each failed attempt
+     * - each tx should pay for each failed attempt
+     * - only the first tx (tx02) should update rent
+     * - the rest of the tx shouldn't update any timestamp,
+     * (but they should pay rent for reading non-existing keys)
      * */
     @Test
-    public void fixedPenaltyForReadingNonExistingKeys_singleTx() throws FileNotFoundException, DslProcessorException {
+    public void fixedPenaltyForReadingNonExistingKeys_multipleTx() throws FileNotFoundException, DslProcessorException {
         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-        long blockCount = 974_875;
+        long blockCount = 674_075;
         World world = processedWorldWithCustomTimeBetweenBlocks(
-                "dsl/storagerent/mismatches.txt",
+                "dsl/storagerent/mismatches_multiple_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
 
         RskAddress sender = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
         RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad");
 
-        StorageRentResult storageRentResult = world.getTransactionExecutor("tx02").getStorageRentResult();
+        long b01Timestamp = world.getBlockByName("b01").getTimestamp();
+        long b02Timestamp = world.getBlockByName("b02").getTimestamp();
 
-        long beforeUpdatingTimestamp = 29246250000l;
-        RentedNode senderRentedNode = new RentedNode(trieKeyMapper.getAccountKey(sender),
-                WRITE_OPERATION, 7, beforeUpdatingTimestamp);
-        RentedNode contractRentedNode = new RentedNode(trieKeyMapper.getAccountKey(contract),
-                WRITE_OPERATION, 3, beforeUpdatingTimestamp);
-        RentedNode codeRentedNode = new RentedNode(trieKeyMapper.getCodeKey(contract),
-                READ_OPERATION, 347, beforeUpdatingTimestamp);
+        Arrays.asList("tx02", "tx03", "tx04", "tx05").forEach(txName -> {
+            if("tx02".equals(txName)) {
+                // the first tx updates the timestamp (b01)
+                assertEquals("tx02", txName);
+                checkMultipleTxPenalty(trieKeyMapper, world, sender, contract, txName,
+                        b01Timestamp, b02Timestamp, 7144);
+            } else {
+                // the rest should pay rent with the latest timestamp (b02)
+                // this only happens if none of those txs is exceeding the RENT_CAP
+                checkMultipleTxPenalty(trieKeyMapper, world, sender, contract, txName,
+                        b02Timestamp, b02Timestamp, 0); // this proves that rent is only paid once
+            }
+        });
+    }
 
-        assertTrue(storageRentResult.getRentedNodes().contains(senderRentedNode));
-        // todo(fedejinich) WRITE_OPERATION because transfers 0 from sender to contract, this is not intended.
-        //  What's the cause of this ZERO tx?
-        assertTrue(storageRentResult.getRentedNodes().contains(contractRentedNode));
-        assertTrue(storageRentResult.getRentedNodes().contains(codeRentedNode));
+    private void checkMultipleTxPenalty(TrieKeyMapper trieKeyMapper, World world, RskAddress sender, RskAddress contract,
+                                        String txName, long initialTimestamp, long finalTimestamp, int expectedRentedNodesRent) {
+        StorageRentResult storageRentResult = world.getTransactionExecutor(txName).getStorageRentResult();
+
+        RentedNode senderAccountState = new RentedNode(trieKeyMapper.getAccountKey(sender),
+                WRITE_OPERATION, 7, initialTimestamp);
+        RentedNode contractAccountState = new RentedNode(trieKeyMapper.getAccountKey(contract),
+                WRITE_OPERATION, 3, initialTimestamp);
+        RentedNode code = new RentedNode(trieKeyMapper.getCodeKey(contract),
+                READ_OPERATION, 347, initialTimestamp);
+
+        assertTrue(storageRentResult.getRentedNodes().contains(senderAccountState));
+        assertTrue(storageRentResult.getRentedNodes().contains(contractAccountState));
+        assertTrue(storageRentResult.getRentedNodes().contains(code));
 
         assertEquals(12500, storageRentResult.getMismatchesRent());
 
         // payable rent is calculated with the most recent timestamp
-        long mostRecentTimestamp = 58492500000l;
-        long rentedNodesRent = senderRentedNode.payableRent(mostRecentTimestamp) +
-                contractRentedNode.payableRent(mostRecentTimestamp) +
-                codeRentedNode.payableRent(mostRecentTimestamp);
+        long rentedNodesRent = senderAccountState.payableRent(finalTimestamp) +
+                contractAccountState.payableRent(finalTimestamp) +
+                code.payableRent(finalTimestamp);
+
+        // the first tx to reach a node pays rent
+        assertEquals(expectedRentedNodesRent, rentedNodesRent);
 
         // pays mismatches penalty
-        checkStorageRent(world, "tx02",
+        checkStorageRent(world, txName,
                 rentedNodesRent + 5 * MISMATCH_PENALTY, 0,
                 3, 0, 5);
-        assertTrue(mostRecentTimestamp > beforeUpdatingTimestamp);
-    }
-
-    /**
-     * A block with multiple transactions, each tx reads 5 non-existing keys
-     *
-     * It should:
-     * - each tx should pay for each failed attempt
-     * */
-    @Test
-    public void fixedPenaltyForReadingNonExistingKeys_multipleTx() {
-        throw new NotImplementedException("should be implemented");
     }
 
     @Test
-    public void fixedPenaltyForReadingNonExistingKeys_nestedTx() {
-        throw new NotImplementedException("should be implemented");
-    }
-
-    @Test
-    public void rentIsOnlyPaidOncePerBlockForTheSameNode() {
-        throw new NotImplementedException("should be implemented");
+    public void fixedPenaltyForReadingNonExistingKeys_nestedTx() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 674_075;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/mismatches_nested_tx.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+        checkStorageRent(world,"tx04",41327,0,6,0,11);
     }
 
     private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {

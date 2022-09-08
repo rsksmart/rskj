@@ -64,7 +64,6 @@ public class StorageRentManager {
         long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
         long rentToPay = payableRent + rollbacksRent + getMismatchesRent(mismatchesCount);
 
-
         if(gasRemaining < rentToPay) {
             // todo(fedejinich) this is not the right way to throw an OOG
             throw new Program.OutOfGasException("not enough gasRemaining to pay storage rent. " +
