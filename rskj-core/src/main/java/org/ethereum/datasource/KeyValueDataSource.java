@@ -34,6 +34,7 @@ import java.util.*;
 public interface KeyValueDataSource extends DataSource {
     String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
+    String KEYVALUE_DATASOURCE = "KeyValueDataSource";
 
     @Nullable
     byte[] get(byte[] key);
@@ -129,7 +130,7 @@ public interface KeyValueDataSource extends DataSource {
             try (FileWriter writer = new FileWriter(file)) {
                 props.store(writer, "Generated dbKind. In order to follow selected db.");
 
-                LoggerFactory.getLogger("KeyValueDataSource").info("Generated dbKind.properties file.");
+                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).info("Generated dbKind.properties file.");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -140,8 +141,8 @@ public interface KeyValueDataSource extends DataSource {
         File dir = new File(databaseDir);
 
         if (dir.exists() && !dir.isDirectory()) {
-            LoggerFactory.getLogger("KeyValueDataSource").error("database.dir should be a folder.");
-            throw new IllegalStateException(String.format("database.dir should be a folder"));
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("database.dir should be a folder.");
+            throw new IllegalStateException("database.dir should be a folder");
         }
 
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
@@ -157,7 +158,7 @@ public interface KeyValueDataSource extends DataSource {
             if (databaseReset) {
                 KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
             } else {
-                LoggerFactory.getLogger("KeyValueDataSource").warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
+                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
                 throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
             }
         }
