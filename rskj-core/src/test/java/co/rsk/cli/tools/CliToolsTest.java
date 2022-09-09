@@ -43,10 +43,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.*;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -471,6 +468,84 @@ public class CliToolsTest {
         Assert.assertTrue(data.contains("New highest block number stored in db: -1"));
 
         verify(stopper).stop(0);
+    }
+
+    @Test
+    public void dbMigrate() throws IOException {
+        File nodeIdPropsFile = new File(tempFolder.getRoot(), "nodeId.properties");
+        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
+
+        if (nodeIdPropsFile.createNewFile()) {
+            FileWriter myWriter = new FileWriter(nodeIdPropsFile);
+            myWriter.write("nodeId=testing");
+            myWriter.close();
+        }
+
+        new File(tempFolder.getRoot(), "blocks").mkdir();
+
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(true).when(rskSystemProperties).databaseReset();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        DbMigrate dbMigrateCliTool = new DbMigrate();
+        dbMigrateCliTool.execute(new String[]{"rocksdb"}, () -> rskContext, stopper);
+
+        String nodeIdPropsFileLine = null;
+
+        if (nodeIdPropsFile.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(nodeIdPropsFile));
+            nodeIdPropsFileLine = reader.readLine();
+            reader.close();
+        }
+
+        String dbKindPropsFileLine = null;
+
+        if (dbKindPropsFile.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
+            reader.readLine();
+            reader.readLine();
+            dbKindPropsFileLine = reader.readLine();
+            reader.close();
+        }
+
+        Assert.assertEquals(nodeIdPropsFileLine, "nodeId=testing");
+        Assert.assertEquals(dbKindPropsFileLine, "keyvalue.datasource=ROCKS_DB");
+    }
+
+    @Test
+    public void dbMigrateThrowsExceptionBecauseMigratingToSameDb() throws IOException {
+        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
+
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(true).when(rskSystemProperties).databaseReset();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        DbMigrate dbMigrateCliTool = new DbMigrate();
+        dbMigrateCliTool.execute(new String[]{"leveldb"}, () -> rskContext, stopper);
+
+        String dbKindPropsFileLine = null;
+
+        if (dbKindPropsFile.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
+            reader.readLine();
+            reader.readLine();
+            dbKindPropsFileLine = reader.readLine();
+            reader.close();
+        }
+
+        Assert.assertNull(dbKindPropsFileLine);
     }
 
     @Test
