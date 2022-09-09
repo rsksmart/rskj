@@ -3436,23 +3436,23 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = PegTestUtils.createHash(3);
-        Keccak256 keccak256 = PegTestUtils.createHash3(9);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(3);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(9);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
         when(
             repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
                 storageKeyForPegoutCreationIndex
             )
-        ).thenReturn(BridgeSerializationUtils.serializeKeccak256(keccak256));
+        ).thenReturn(BridgeSerializationUtils.serializeKeccak256(rskTxHash));
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
-            hash
+            btcTxHash
         );
         assertTrue(pegoutCreationEntry.isPresent());
 
-        assertEquals(keccak256, pegoutCreationEntry.get());
+        assertEquals(rskTxHash, pegoutCreationEntry.get());
 
         verify(repository, times(1)).getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
@@ -3491,18 +3491,18 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        Sha256Hash sha256Hash = PegTestUtils.createHash(15);
-        Keccak256 keccak256 = PegTestUtils.createHash3(8);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(15);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(8);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + sha256Hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(sha256Hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, never()).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
     }
 
@@ -3517,18 +3517,18 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash sha256Hash = PegTestUtils.createHash(14);
-        Keccak256 keccak256 = PegTestUtils.createHash3(7);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(14);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(7);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + sha256Hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(sha256Hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
     }
 
@@ -3543,22 +3543,22 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = PegTestUtils.createHash(8);
-        Keccak256 keccak256 = null;
+        Sha256Hash btcTxHash = PegTestUtils.createHash(8);
+        Keccak256 rskTxHash = null;
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, never()).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
-            hash
+            btcTxHash
         );
         assertFalse(pegoutCreationEntry.isPresent());
     }
@@ -3572,22 +3572,22 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        Sha256Hash hash = PegTestUtils.createHash(6);
-        Keccak256 keccak256 = PegTestUtils.createHash3(12);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(6);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(12);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, never()).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
-            hash
+            btcTxHash
         );
         assertFalse(pegoutCreationEntry.isPresent());
     }
@@ -3603,26 +3603,26 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = PegTestUtils.createHash(17);
-        Keccak256 keccak256 = PegTestUtils.createHash3(4);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(17);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(4);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
-            hash
+            btcTxHash
         );
         assertTrue(pegoutCreationEntry.isPresent());
 
-        assertEquals(keccak256, pegoutCreationEntry.get());
+        assertEquals(rskTxHash, pegoutCreationEntry.get());
     }
 
     @Test
@@ -3636,26 +3636,26 @@ class BridgeStorageProviderTest {
             config.getNetworkConstants().getBridgeConstants(), activations
         );
 
-        Sha256Hash hash = PegTestUtils.createHash(5);
-        Keccak256 keccak256 = PegTestUtils.createHash3(4);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(5);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(4);
 
-        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + hash);
+        DataWord storageKeyForPegoutCreationIndex = DataWord.fromLongString("pegoutCreationIndex-" + btcTxHash);
 
-        provider.setPegoutCreationEntry(new PegoutCreationEntry(hash, keccak256));
+        provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(keccak256)
+            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
         );
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(
-            hash
+            btcTxHash
         );
         assertTrue(pegoutCreationEntry.isPresent());
 
-        assertEquals(keccak256, pegoutCreationEntry.get());
+        assertEquals(rskTxHash, pegoutCreationEntry.get());
     }
 
     @Test

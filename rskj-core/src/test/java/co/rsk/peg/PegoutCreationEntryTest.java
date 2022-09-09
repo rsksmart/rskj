@@ -14,28 +14,33 @@ public class PegoutCreationEntryTest {
 
     @Test
     public void testGetPegoutCreationEntryBtcTxHash() {
-        Sha256Hash sha256Hash = PegTestUtils.createHash(3);
-        Keccak256 keccak256 = PegTestUtils.createHash3(5);
-        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(sha256Hash, keccak256);
-        assertEquals(sha256Hash, pegoutCreationEntry.getBtcTxHash());
+        Sha256Hash btcTxHash = PegTestUtils.createHash(3);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(5);
+
+        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(btcTxHash, rskTxHash);
+
+        assertEquals(btcTxHash, pegoutCreationEntry.getBtcTxHash());
         assertNotNull(pegoutCreationEntry.getBtcTxHash());
     }
 
     @Test
     public void testGetPegoutCreationEntryRskTxHash() {
-        Sha256Hash sha256Hash = PegTestUtils.createHash(5);
-        Keccak256 keccak256 = PegTestUtils.createHash3(3);
-        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(sha256Hash, keccak256);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(5);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(3);
+
+        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(btcTxHash, rskTxHash);
+
         assertNotNull(pegoutCreationEntry.getRskTxHash());
-        assertEquals(keccak256, pegoutCreationEntry.getRskTxHash());
+        assertEquals(rskTxHash, pegoutCreationEntry.getRskTxHash());
     }
 
     @Test
     public void testTestEquals() {
-        Sha256Hash sha256Hash = PegTestUtils.createHash(8);
-        Keccak256 keccak256 = PegTestUtils.createHash3(13);
-        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(sha256Hash, keccak256);
-        PegoutCreationEntry pegoutCreationEntryWithSameValues = new PegoutCreationEntry(sha256Hash, keccak256);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(8);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(13);
+
+        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(btcTxHash, rskTxHash);
+        PegoutCreationEntry pegoutCreationEntryWithSameValues = new PegoutCreationEntry(btcTxHash, rskTxHash);
 
         assertEquals(pegoutCreationEntry, pegoutCreationEntryWithSameValues);
 
@@ -49,12 +54,12 @@ public class PegoutCreationEntryTest {
 
     @Test
     public void testTestHashCode() {
-        Sha256Hash sha256Hash = PegTestUtils.createHash(13); // hashcode = 0
-        Keccak256 keccak256 = new Keccak256(
+        Sha256Hash btcTxHash = PegTestUtils.createHash(13); // hashcode = 0
+        Keccak256 rskTxHash = new Keccak256(
             Keccak256Helper.keccak256(ByteUtil.toHexString("rsk".getBytes()))
         ); // hashcode = -1150029211
 
-        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(sha256Hash, keccak256);
+        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(btcTxHash, rskTxHash);
 
         int hashCodeExpected = -1150029211;
         assertEquals(hashCodeExpected, pegoutCreationEntry.hashCode());
@@ -62,9 +67,10 @@ public class PegoutCreationEntryTest {
 
     @Test
     public void testTestToString() {
-        Sha256Hash sha256Hash = PegTestUtils.createHash(3);
-        Keccak256 keccak256 = PegTestUtils.createHash3(10);
-        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(sha256Hash, keccak256);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(3);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(10);
+
+        PegoutCreationEntry pegoutCreationEntry = new PegoutCreationEntry(btcTxHash, rskTxHash);
 
         String expectedResult = "PegoutCreationEntry{btcTxHash=0300000000000000000000000000000000000000000000000000000000000000, rskTxHash=0a00000000000000000000000000000000000000000000000000000000000000}";
         assertEquals(expectedResult, pegoutCreationEntry.toString());
