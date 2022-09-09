@@ -35,12 +35,7 @@
         }
       ],
       "result": {
-        "name": "result",
-        "value": [
-          {
-            "$ref": "#/components/schemas/LogExampleResult"
-          }
-        ]
+        "$ref": "#/components/schemas/LogExampleResult"
       }
     }
   ]
