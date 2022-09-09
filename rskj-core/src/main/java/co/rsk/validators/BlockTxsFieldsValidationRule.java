@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,12 @@ import java.util.List;
 public class BlockTxsFieldsValidationRule implements BlockParentDependantValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
+    private final SignatureCache signatureCache;
+    
+    public BlockTxsFieldsValidationRule(SignatureCache signatureCache) {
+        this.signatureCache = signatureCache;
+    }
+
     @Override
     public boolean isValid(Block block, Block parent) {
         if (block == null) {
@@ -41,7 +48,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
         List<Transaction> txs = block.getTransactionsList();
         for (Transaction tx : txs) {
             try {
-                tx.verify();
+                tx.verify(signatureCache);
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
                 return false;

@@ -208,11 +208,11 @@ public class Transaction {
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
-    public void verify() {
-        validate();
+    public void verify(SignatureCache signatureCache) {
+        validate(signatureCache);
     }
 
-    private void validate() {
+    private void validate(SignatureCache signatureCache) {
         if (getNonce().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Nonce is not valid");
         }
@@ -235,7 +235,8 @@ public class Transaction {
             if (BigIntegers.asUnsignedByteArray(signature.getS()).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
             }
-            if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
+            RskAddress senderAddress = getSender(signatureCache);
+            if (senderAddress.getBytes() != null && senderAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new RuntimeException("Sender is not valid");
             }
         }
@@ -371,11 +372,18 @@ public class Transaction {
         return key;
     }
 
+    /**
+     * Returns sender's Address
+     * <p>
+     * Usage of this method should be avoided in favor of getSender(SignatureCache signatureCache)
+     * as it tries to get the data from the cache first, improving performance.
+     *
+     * @return RskAddress the sender's Address
+     */
     public synchronized RskAddress getSender() {
         if (sender != null) {
             return sender;
         }
-
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
