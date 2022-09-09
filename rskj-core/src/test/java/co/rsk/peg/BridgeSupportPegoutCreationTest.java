@@ -31,7 +31,6 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
         Sha256Hash btcTxHash = PegTestUtils.createHash(15);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .build();
 
@@ -52,7 +51,6 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .build();
 
@@ -72,7 +70,6 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .build();
 
@@ -93,7 +90,6 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .build();
 
@@ -103,7 +99,7 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_by_is_null_after_RSKIP298_activation() {
+    public void getPegoutCreationRskTxHashByBtcTxHash_btcTxHash_is_null_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -112,7 +108,6 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withProvider(provider)
-            .withBridgeConstants(bridgeConstantsRegtest)
             .withActivations(activations)
             .build();
 
