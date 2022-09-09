@@ -1,0 +1,73 @@
+{
+  "ReputationSummary": {
+    "title": "reputation summary",
+    "type": "object",
+    "description": "Object defining an aggregated reputation summary",
+    "properties": {
+      "count": {
+        "title": "count",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "successfulHandshakes": {
+        "title": "successfulHandshakes",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "failedHandshakes": {
+        "title": "failedHandshakes",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidHeader": {
+        "title": "invalidHeader",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidBlocks": {
+        "title": "invalidBlocks",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "validTransactions": {
+        "title": "validTransactions",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidTransactions": {
+        "title": "invalidTransactions",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidNetworks": {
+        "title": "invalidNetworks",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "invalidMessages": {
+        "title": "invalidMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "repeatedMessages": {
+        "title": "repeatedMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "timeoutMessages": {
+        "title": "timeoutMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "unexpectedMessages": {
+        "title": "unexpectedMessages",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "peersTotalScore": {
+        "title": "peersTotalScore",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "punishments": {
+        "title": "punishments",
+        "$ref": "#/components/schemas/IntegerDec"
+      },
+      "goodReputation": {
+        "title": "goodReputation",
+        "type": "boolean"
+      },
+      "badReputationCount": {
+        "title": "badReputationCount",
+        "$ref": "#/components/schemas/IntegerDec"
+      }
+    }
+  }
+}

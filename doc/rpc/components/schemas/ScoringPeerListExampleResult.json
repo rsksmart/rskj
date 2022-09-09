@@ -1,0 +1,27 @@
+{
+  "ScoringPeerListExampleResult": {
+    "name": "Current peers scoring",
+    "value": [
+      {
+        "successfulHandshakes": 1,
+        "failedHandshakes": 0,
+        "invalidNetworks": 0,
+        "repeatedMessages": 1,
+        "validBlocks": 0,
+        "validTransactions": 0,
+        "invalidBlocks": 0,
+        "invalidTransactions": 0,
+        "invalidMessages": 0,
+        "timeoutMessages": 0,
+        "unexpectedMessages": 0,
+        "invalidHeader": 0,
+        "score": 0,
+        "punishments": 0,
+        "goodReputation": true,
+        "punishedUntil": 0,
+        "id": "b8f94fad1160652ddbadae837ce544e4d47b53c2cdcf7a397e3426465ce649c5056c9acf36cf8d869176b58ed7eefe2257334b9be8c895fce3109a40ee06d86e",
+        "type": "node"
+      }
+    ]
+  }
+}

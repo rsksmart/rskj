@@ -1,0 +1,26 @@
+{
+  "name": "sco_peerList",
+  "summary": "Returns the collected peer scoring information",
+  "description": "Returns the collected peer scoring information",
+  "params": [],
+  "result": {
+    "name": "Peers scoring",
+    "schema": {
+      "title": "peersScoring",
+      "type": "array",
+      "description": "Array of scoring for every connected peer, or an empty array if no peers.",
+      "items": {
+        "$ref": "#/components/schemas/PeerScoring"
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "params": [],
+      "result": {
+        "$ref": "#/components/schemas/ScoringPeerListExampleResult"
+      }
+    }
+  ]
+}

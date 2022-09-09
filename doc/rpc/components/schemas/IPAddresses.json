@@ -1,0 +1,10 @@
+{
+  "IPAddresses": {
+    "title": "IP addresses",
+    "type": "array",
+    "description": "List of IP addresses or blocks",
+    "items": {
+      "$ref": "#/components/schemas/IPAddress"
+    }
+  }
+}
