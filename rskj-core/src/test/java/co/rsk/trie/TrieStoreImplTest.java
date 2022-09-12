@@ -31,19 +31,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 /**
  * Created by ajlopez on 08/01/2017.
  */
-public class TrieStoreImplTest {
+class TrieStoreImplTest {
 
     private HashMapDB map;
     private TrieStoreImpl store;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         this.map = spy(new HashMapDB());
         this.store = new TrieStoreImpl(map);
     }
 
     @Test
-    public void saveTrieNode() {
+    void saveTrieNode() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
@@ -54,7 +54,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveAndRetrieveTrieNodeWith32BytesKey() {
+    void saveAndRetrieveTrieNodeWith32BytesKey() {
         Trie trie = new Trie(store).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
@@ -71,7 +71,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveAndRetrieveTrieNodeWith33BytesValue() {
+    void saveAndRetrieveTrieNodeWith33BytesValue() {
         byte[] key = Keccak256Helper.keccak256("foo".getBytes());
         byte[] value = new byte[33];
 
@@ -93,7 +93,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrie() {
+    void saveFullTrie() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
@@ -104,7 +104,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieWithLongValue() {
+    void saveFullTrieWithLongValue() {
         Trie trie = new Trie(store).put("foo", TrieValueTest.makeValue(100));
 
         store.save(trie);
@@ -116,7 +116,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieWithTwoLongValues() {
+    void saveFullTrieWithTwoLongValues() {
         Trie trie = new Trie(store)
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
@@ -130,7 +130,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieTwice() {
+    void saveFullTrieTwice() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
@@ -147,7 +147,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
+    void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
@@ -169,7 +169,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieUpdateAndSaveAgain() {
+    void saveFullTrieUpdateAndSaveAgain() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
@@ -187,12 +187,12 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void retrieveTrieNotFound() {
+    void retrieveTrieNotFound() {
         Assertions.assertFalse(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }).isPresent());
     }
 
     @Test
-    public void retrieveTrieByHashEmbedded() {
+    void retrieveTrieByHashEmbedded() {
         Trie trie = new Trie(store)
                 .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
@@ -210,7 +210,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void retrieveTrieByHashNotEmbedded() {
+    void retrieveTrieByHashNotEmbedded() {
         Trie trie = new Trie(store)
                 .put("baaaaaaaaaaaaaaaaaaaaar", "foooooooooooooooooooooo".getBytes())
                 .put("foooooooooooooooooooooo", "baaaaaaaaaaaaaaaaaaaaar".getBytes());
@@ -228,7 +228,7 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void retrieveTrieWithLongValuesByHash() {
+    void retrieveTrieWithLongValuesByHash() {
         Trie trie = new Trie(store)
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("foo", TrieValueTest.makeValue(200));

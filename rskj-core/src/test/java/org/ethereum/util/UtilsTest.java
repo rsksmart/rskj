@@ -35,10 +35,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Roman Mandeleil
  * @since 17.05.14
  */
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void testGetValueShortString1() {
+    void testGetValueShortString1() {
 
         String expected = "123·(10^24)";
         String result = Utils.getValueShortString(new BigInteger("123456789123445654363653463"));
@@ -47,7 +47,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetValueShortString2() {
+    void testGetValueShortString2() {
 
         String expected = "123·(10^3)";
         String result = Utils.getValueShortString(new BigInteger("123456"));
@@ -56,7 +56,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetValueShortString3() {
+    void testGetValueShortString3() {
 
         String expected = "1·(10^3)";
         String result = Utils.getValueShortString(new BigInteger("1234"));
@@ -65,7 +65,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetValueShortString4() {
+    void testGetValueShortString4() {
 
         String expected = "123·(10^0)";
         String result = Utils.getValueShortString(new BigInteger("123"));
@@ -74,7 +74,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetValueShortString5() {
+    void testGetValueShortString5() {
 
         byte[] decimal = Hex.decode("3913517ebd3c0c65000000");
         String expected = "69·(10^24)";
@@ -84,12 +84,12 @@ public class UtilsTest {
     }
 
     @Test
-    public void testAddressStringToBytes() {
+    void testAddressStringToBytes() {
         // valid address
         String HexStr = "6c386a4b26f73c802f34673f7248bb118f97424a";
         byte[] expected = Hex.decode(HexStr);
         byte[] result = Utils.addressStringToBytes(HexStr);
-        assertEquals(Arrays.areEqual(expected, result), true);
+        assertEquals(true, Arrays.areEqual(expected, result));
 
         // invalid address, we removed the last char so it cannot decode
         HexStr = "6c386a4b26f73c802f34673f7248bb118f97424";
@@ -111,7 +111,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void TestValidateArrayWithOffset() {
+    void TestValidateArrayWithOffset() {
         byte[] data = new byte[10];
         // Valid indices
         Utils.validateArrayAllegedSize(data, 1, 0);
@@ -155,14 +155,14 @@ public class UtilsTest {
     }
 
     @Test
-    public void TestSafeCopyOfRangeWithValidArrays() {
-        Utils.safeCopyOfRange(new byte[2], 0, 1);
-        Utils.safeCopyOfRange(new byte[100], 97, 3);
-        Utils.safeCopyOfRange(new byte[0], 0, 0);
+    void TestSafeCopyOfRangeWithValidArrays() {
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[2], 0, 1));
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[100], 97, 3));
+        Assertions.assertDoesNotThrow(() -> Utils.safeCopyOfRange(new byte[0], 0, 0));
     }
 
     @Test
-    public void TestSafeCopyOfRangeWithInvalidArrays() {
+    void TestSafeCopyOfRangeWithInvalidArrays() {
         try {
             Utils.safeCopyOfRange(new byte[2], 1, 2);
             fail("should have failed");
@@ -190,7 +190,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void isHexadecimalString() {
+    void isHexadecimalString() {
         String[] hexStrings = new String[] {
                 "0x1",
                 "0xaaa",
@@ -213,7 +213,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void isDecimalString() {
+    void isDecimalString() {
         String[] decStrings = new String[] {
                 "1",
                 "123",
@@ -237,7 +237,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void decimalStringToLong() {
+    void decimalStringToLong() {
         Object[] cases = new Object[] {
                 "1", 1L,
                 "123", 123L,
@@ -254,12 +254,12 @@ public class UtilsTest {
     }
 
     @Test
-    public void decimalStringToLongFail() {
+    void decimalStringToLongFail() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.decimalStringToLong("zzz"));
     }
 
     @Test
-    public void hexadecimalStringToLong() {
+    void hexadecimalStringToLong() {
         Object[] cases = new Object[] {
                 "0x1", 1L,
                 "0xaaa", 2730L,
@@ -276,17 +276,17 @@ public class UtilsTest {
     }
 
     @Test
-    public void hexadecimalStringToLongFail() {
+    void hexadecimalStringToLongFail() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.hexadecimalStringToLong("abcd"));
     }
 
     @Test
-    public void hexadecimalStringToLongFailBis() {
+    void hexadecimalStringToLongFailBis() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Utils.hexadecimalStringToLong("zzz"));
     }
 
     @Test
-    public void significantBitCount() {
+    void significantBitCount() {
         Assertions.assertEquals(0, Utils.significantBitCount(0b0));
         Assertions.assertEquals(1, Utils.significantBitCount(0b1));
         Assertions.assertEquals(2, Utils.significantBitCount(0b10));

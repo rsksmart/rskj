@@ -46,10 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 
-public class BlockHashesHelperTest {
+class BlockHashesHelperTest {
 
     @Test
-    public void calculateReceiptsTrieRootForOK() {
+    void calculateReceiptsTrieRootForOK() {
         World world = new World();
 
         // Creation of transactions
@@ -84,13 +84,13 @@ public class BlockHashesHelperTest {
         List<Trie> trie = BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, tx1.getHash());
 
         assertNotNull(trie);
-        assertEquals(trie.size(), 2);
+        assertEquals(2, trie.size());
 
     }
 
 
     @Test
-    public void calculateReceiptsTrieRootForException() {
+    void calculateReceiptsTrieRootForException() {
         World world = new World();
 
         // Creation of transactions
@@ -111,7 +111,7 @@ public class BlockHashesHelperTest {
     }
 
     @Test
-    public void calculateReceiptsTrieRootForDifferentTxHash() {
+    void calculateReceiptsTrieRootForDifferentTxHash() {
         World world = new World();
 
         // Creation of transactions

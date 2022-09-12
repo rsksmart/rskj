@@ -33,7 +33,7 @@ import java.util.Comparator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ByteArrayWrapperTest {
+class ByteArrayWrapperTest {
 
     static ByteArrayWrapper wrapper1;
     static ByteArrayWrapper wrapper2;
@@ -41,7 +41,7 @@ public class ByteArrayWrapperTest {
     static ByteArrayWrapper wrapper4;
 
     @BeforeAll
-    public static void loadByteArrays() {
+     static void loadByteArrays() {
 
         String block = "f9072df8d3a077ef4fdaf389dca53236bcf7f72698e154eab2828f86fbc4fc6c"
                 + "d9225d285c89a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0"
@@ -114,24 +114,25 @@ public class ByteArrayWrapperTest {
     }
 
     @Test
-    public void testEqualsObject() {
-        assertTrue(wrapper1.equals(wrapper2));
-        assertFalse(wrapper1.equals(wrapper3));
-        assertFalse(wrapper1.equals(wrapper4));
-        assertFalse(wrapper1.equals(null));
-        assertFalse(wrapper2.equals(wrapper3));
+    void testEqualsObject() {
+        assertEquals(wrapper1, wrapper2);
+        assertNotEquals(wrapper1, wrapper3);
+        assertNotEquals(wrapper1, wrapper4);
+        assertNotEquals(null, wrapper1);
+        assertNotEquals(wrapper2, wrapper3);
     }
 
     @Test
-    public void testCompareTo() {
-        assertTrue(wrapper1.compareTo(wrapper2) == 0);
+    void testCompareTo() {
+        assertEquals(0, wrapper1.compareTo(wrapper2));
         assertTrue(wrapper1.compareTo(wrapper3) > 1);
         assertTrue(wrapper1.compareTo(wrapper4) > 1);
         assertTrue(wrapper2.compareTo(wrapper3) > 1);
     }
 
     @Test
-    public void testEqualsPerformance() {
+    @SuppressWarnings("squid:S2699")
+    void testEqualsPerformance() {
         boolean testEnabled = false;
 
         if (testEnabled) {

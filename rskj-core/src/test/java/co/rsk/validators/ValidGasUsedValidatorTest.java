@@ -30,20 +30,20 @@ import java.math.BigInteger;
 /**
  * Created by martin.medina on 07/02/17.
  */
-public class ValidGasUsedValidatorTest {
+class ValidGasUsedValidatorTest {
 
     private BlockHeader blockHeader;
     private Block block;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
     }
 
     @Test
-    public void blockWithValidGasUsed() {
+    void blockWithValidGasUsed() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(20L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
@@ -53,7 +53,7 @@ public class ValidGasUsedValidatorTest {
     }
 
     @Test
-    public void blockWithInvalidGasUsedBiggerThanGasLimit() {
+    void blockWithInvalidGasUsedBiggerThanGasLimit() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
@@ -63,7 +63,7 @@ public class ValidGasUsedValidatorTest {
     }
 
     @Test
-    public void blockWithInvalidGasUsedLessThanZero() {
+    void blockWithInvalidGasUsedLessThanZero() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(-120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 

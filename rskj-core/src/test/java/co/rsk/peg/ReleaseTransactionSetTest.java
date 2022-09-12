@@ -34,13 +34,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ReleaseTransactionSetTest {
+class ReleaseTransactionSetTest {
     private Set<ReleaseTransactionSet.Entry> setEntries;
     private ReleaseTransactionSet set;
     private final TestSystemProperties config = new TestSystemProperties();
 
     @BeforeEach
-    public void createSet() {
+    void createSet() {
         setEntries = new HashSet<>(Arrays.asList(
             new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L),
             new ReleaseTransactionSet.Entry(createTransaction(5, Coin.COIN), 100L),
@@ -52,7 +52,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void entryEquals() {
+    void entryEquals() {
         ReleaseTransactionSet.Entry e1 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
         ReleaseTransactionSet.Entry e2 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
         ReleaseTransactionSet.Entry e3 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(149)), 14L);
@@ -71,7 +71,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void entryGetters() {
+    void entryGetters() {
         ReleaseTransactionSet.Entry entry = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
         Assertions.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getTransaction());
@@ -79,7 +79,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void entryComparators() {
+    void entryComparators() {
         ReleaseTransactionSet.Entry e1 = new ReleaseTransactionSet.Entry(mockTxSerialize("aa"), 7L);
         ReleaseTransactionSet.Entry e2 = new ReleaseTransactionSet.Entry(mockTxSerialize("aa"), 7L);
         ReleaseTransactionSet.Entry e3 = new ReleaseTransactionSet.Entry(mockTxSerialize("aa"), 8L);
@@ -93,7 +93,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void entriesCopy() {
+    void entriesCopy() {
         Assertions.assertNotSame(setEntries, set.getEntries());
         Assertions.assertEquals(setEntries, set.getEntries());
 
@@ -122,14 +122,14 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void add_nonExisting() {
+    void add_nonExisting() {
         Assertions.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
         set.add(createTransaction(123, Coin.COIN.multiply(3)), 34L);
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
     }
 
     @Test
-    public void add_existing() {
+    void add_existing() {
         Assertions.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
         Assertions.assertEquals(1, set.getEntries().stream().filter(e -> e.getTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
         set.add(createTransaction(2, Coin.valueOf(150)), 23L);
@@ -139,14 +139,14 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void sliceWithConfirmations_withLimit_none() {
+    void sliceWithConfirmations_withLimit_none() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(9L, 5, Optional.of(1));
         Assertions.assertEquals(0, result.size());
         Assertions.assertEquals(setEntries, set.getEntries());
     }
 
     @Test
-    public void sliceWithConfirmations_withLimit_singleMatch() {
+    void sliceWithConfirmations_withLimit_singleMatch() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(10L, 5, Optional.of(2));
         Assertions.assertEquals(1, result.size());
         setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
@@ -154,7 +154,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void sliceWithConfirmations_withLimit_multipleMatch() {
+    void sliceWithConfirmations_withLimit_multipleMatch() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(15L, 5, Optional.of(2));
         Assertions.assertEquals(2, result.size());
         Iterator<ReleaseTransactionSet.Entry> resultIterator = result.iterator();
@@ -169,14 +169,14 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void sliceWithConfirmations_noLimit_none() {
+    void sliceWithConfirmations_noLimit_none() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(9L, 5, Optional.empty());
         Assertions.assertEquals(0, result.size());
         Assertions.assertEquals(setEntries, set.getEntries());
     }
 
     @Test
-    public void sliceWithConfirmations_noLimit_singleMatch() {
+    void sliceWithConfirmations_noLimit_singleMatch() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(10L, 5, Optional.empty());
         Assertions.assertEquals(1, result.size());
         setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
@@ -184,7 +184,7 @@ public class ReleaseTransactionSetTest {
     }
 
     @Test
-    public void sliceWithConfirmations_noLimit_multipleMatch() {
+    void sliceWithConfirmations_noLimit_multipleMatch() {
         Set<ReleaseTransactionSet.Entry> result = set.sliceWithConfirmations(15L, 5, Optional.empty());
         Assertions.assertEquals(3, result.size());
         Iterator<ReleaseTransactionSet.Entry> resultIterator = result.iterator();

@@ -8,9 +8,9 @@ import java.net.URISyntaxException;
 /**
  * Created by ajlopez on 06/10/2017.
  */
-public class OriginValidatorTest {
+class OriginValidatorTest {
     @Test
-    public void noOrigin() throws URISyntaxException {
+    void noOrigin() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -21,7 +21,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void noOriginWithSpaces() throws URISyntaxException {
+    void noOriginWithSpaces() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("  ");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -32,7 +32,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void nullOrigin() throws URISyntaxException {
+    void nullOrigin() throws URISyntaxException {
         OriginValidator validator = new OriginValidator(null);
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -43,7 +43,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void allOriginsUsingWildcard() throws URISyntaxException {
+    void allOriginsUsingWildcard() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("*");
 
         Assertions.assertTrue(validator.isValidOrigin("http://localhost"));
@@ -54,7 +54,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void allowLocalhost() throws URISyntaxException {
+    void allowLocalhost() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("http://localhost");
 
         Assertions.assertTrue(validator.isValidOrigin("http://localhost"));
@@ -65,28 +65,28 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void invalidRefererWithDifferentProtocol() throws URISyntaxException {
+    void invalidRefererWithDifferentProtocol() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("http://localhost");
 
         Assertions.assertFalse(validator.isValidReferer("https://localhost/index.html"));
     }
 
     @Test
-    public void invalidRefererWithDifferentHost() throws URISyntaxException {
+    void invalidRefererWithDifferentHost() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("http://localhost");
 
         Assertions.assertFalse(validator.isValidReferer("http://rsk.co/index.html"));
     }
 
     @Test
-    public void invalidRefererWithDifferentPort() throws URISyntaxException {
+    void invalidRefererWithDifferentPort() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("http://localhost");
 
         Assertions.assertFalse(validator.isValidReferer("http://localhost:3000/index.html"));
     }
 
     @Test
-    public void allowDomain() throws URISyntaxException {
+    void allowDomain() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("https://rsk.co");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -97,7 +97,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void allowTwoDomains() throws URISyntaxException {
+    void allowTwoDomains() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("https://rsk.co https://rsk.com.ar");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -110,7 +110,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void invalidUriInCreation() {
+    void invalidUriInCreation() {
         OriginValidator validator = new OriginValidator("//");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -123,7 +123,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void noReferer() throws URISyntaxException {
+    void noReferer() throws URISyntaxException {
         OriginValidator validator = new OriginValidator("");
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));
@@ -136,7 +136,7 @@ public class OriginValidatorTest {
     }
 
     @Test
-    public void defaultValidator() throws URISyntaxException {
+    void defaultValidator() throws URISyntaxException {
         OriginValidator validator = new OriginValidator();
 
         Assertions.assertFalse(validator.isValidOrigin("http://localhost"));

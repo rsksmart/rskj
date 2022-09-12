@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class MultiTrieStoreTest {
+class MultiTrieStoreTest {
     @Test
-    public void oldestEpochNameIsntNegative() {
+    void oldestEpochNameIsntNegative() {
         TrieStoreFactory storeFactory = mock(TrieStoreFactory.class);
         new MultiTrieStore(3, 3, storeFactory, null);
 
@@ -36,7 +36,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void openLastThreeEpochsStores() {
+    void openLastThreeEpochsStores() {
         TrieStoreFactory storeFactory = mock(TrieStoreFactory.class);
         new MultiTrieStore(49, 3, storeFactory, null);
 
@@ -47,7 +47,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void callsSaveOnlyOnNewestStore() {
+    void callsSaveOnlyOnNewestStore() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -66,7 +66,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void callsFlushOnAllStores() {
+    void callsFlushOnAllStores() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -84,7 +84,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void callsDisposeOnAllStores() {
+    void callsDisposeOnAllStores() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -111,7 +111,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void retrievesFromNewestStoreWithValue() {
+    void retrievesFromNewestStoreWithValue() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -134,7 +134,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void retrievesValueFromNewestStoreWithValue() {
+    void retrievesValueFromNewestStoreWithValue() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -157,7 +157,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void openStore3OnEpoch0Collection() {
+    void openStore3OnEpoch0Collection() {
         MultiTrieStore.OnEpochDispose disposer = mock(MultiTrieStore.OnEpochDispose.class);
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
@@ -180,7 +180,7 @@ public class MultiTrieStoreTest {
     }
 
     @Test
-    public void performsStoreRotationOnCollect() {
+    void performsStoreRotationOnCollect() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);

@@ -42,13 +42,13 @@ import java.util.Set;
  * @since 02.24.2016
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class LocalRLPTest {
+class LocalRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
     private static HashMap<String , RLPTestCase> TEST_SUITE;
 
     @BeforeAll
-    public static void init() throws ParseException, IOException {
+     static void init() throws ParseException, IOException {
         logger.info("    Initializing RLP tests...");
         String json = getJSON("rlptest");
 
@@ -62,7 +62,7 @@ public class LocalRLPTest {
     }
 
     @Test
-    public void rlpEncodeTest() throws Exception {
+    void rlpEncodeTest() throws Exception {
         logger.info("    Testing RLP encoding...");
 
         for (String key : TEST_SUITE.keySet()) {
@@ -74,7 +74,7 @@ public class LocalRLPTest {
     }
 
     @Test
-    public void rlpDecodeTest() throws Exception {
+    void rlpDecodeTest() throws Exception {
         logger.info("    Testing RLP decoding...");
 
         Set<String> excluded = new HashSet<>();

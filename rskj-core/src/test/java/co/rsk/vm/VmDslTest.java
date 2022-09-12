@@ -34,9 +34,9 @@ import java.io.FileNotFoundException;
 /**
  * Created by ajlopez on 15/04/2020.
  */
-public class VmDslTest {
+class VmDslTest {
     @Test
-    public void invokeRecursiveContractsUsing400Levels() throws FileNotFoundException, DslProcessorException {
+    void invokeRecursiveContractsUsing400Levels() throws FileNotFoundException, DslProcessorException {
         System.gc();
         DslParser parser = DslParser.fromResource("dsl/recursive01.txt");
         World world = new World();
@@ -73,7 +73,7 @@ public class VmDslTest {
     }
 
     @Test
-    public void invokeRecursiveContractsUsing401Levels() throws FileNotFoundException, DslProcessorException {
+    void invokeRecursiveContractsUsing401Levels() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/recursive02.txt");
         World world = new World();
 

@@ -35,9 +35,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 8/7/2016.
  */
-public class WorldDslProcessorTest {
+class WorldDslProcessorTest {
     @Test
-    public void createProcessorWithWorld() {
+    void createProcessorWithWorld() {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -46,7 +46,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockChainCommandWithOneChildBlock() throws DslProcessorException {
+    void processBlockChainCommandWithOneChildBlock() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -64,7 +64,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockChainCommandWithTwoChildBlocks() throws DslProcessorException {
+    void processBlockChainCommandWithTwoChildBlocks() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -89,7 +89,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockChainCommandWithTwoChildBlocksSkippingMultilineComments() throws DslProcessorException {
+    void processBlockChainCommandWithTwoChildBlocksSkippingMultilineComments() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -114,7 +114,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockConnectCommand() throws DslProcessorException {
+    void processBlockConnectCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -132,7 +132,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockConnectCommandWithTwoBlocks() throws DslProcessorException {
+    void processBlockConnectCommandWithTwoBlocks() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -151,7 +151,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAssertBestCommand() throws DslProcessorException {
+    void processAssertBestCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -170,7 +170,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void failedAssertBestCommand() {
+    void failedAssertBestCommand() {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -187,7 +187,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockConnectCommandWithTwoBlocksInFork() throws DslProcessorException {
+    void processBlockConnectCommandWithTwoBlocksInFork() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -207,7 +207,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAssertConnectWithBlockWithoutParent() throws DslProcessorException {
+    void processAssertConnectWithBlockWithoutParent() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -222,7 +222,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAssertConnectWithImportedBestBlock() throws DslProcessorException {
+    void processAssertConnectWithImportedBestBlock() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -237,7 +237,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAssertConnectWithImportedNotBestBlock() throws DslProcessorException {
+    void processAssertConnectWithImportedNotBestBlock() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -253,7 +253,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAssertBalance() throws DslProcessorException {
+    void processAssertBalance() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -267,7 +267,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAccountNewCommand() throws DslProcessorException {
+    void processAccountNewCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -283,7 +283,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAccountNewCommandWithBalance() throws DslProcessorException {
+    void processAccountNewCommandWithBalance() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -300,7 +300,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAccountNewCommandWithBalanceAndCode() throws DslProcessorException {
+    void processAccountNewCommandWithBalanceAndCode() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -322,7 +322,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processAccountNewCommandWithBalanceAndCodeWithOtherAccountAddress() throws DslProcessorException {
+    void processAccountNewCommandWithBalanceAndCodeWithOtherAccountAddress() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -355,7 +355,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void raiseIfUnknownCommand() {
+    void raiseIfUnknownCommand() {
         WorldDslProcessor processor = new WorldDslProcessor(new World());
 
         try {
@@ -368,7 +368,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockBuildCommand() throws DslProcessorException {
+    void processBlockBuildCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -383,7 +383,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockBuildCommandWithUncles() throws DslProcessorException {
+    void processBlockBuildCommandWithUncles() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -404,7 +404,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processTransactionBuildCommand() throws DslProcessorException {
+    void processTransactionBuildCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -431,7 +431,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processTransactionWithDataBuildCommand() throws DslProcessorException {
+    void processTransactionWithDataBuildCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -458,7 +458,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processTransactionWithGasAndGasPriceBuildCommand() throws DslProcessorException {
+    void processTransactionWithGasAndGasPriceBuildCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -487,7 +487,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processTransactionWithNonceBuildCommand() throws DslProcessorException {
+    void processTransactionWithNonceBuildCommand() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -515,7 +515,7 @@ public class WorldDslProcessorTest {
     }
 
     @Test
-    public void processBlockBuildCommandWithTransactions() throws DslProcessorException {
+    void processBlockBuildCommandWithTransactions() throws DslProcessorException {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);

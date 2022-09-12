@@ -37,10 +37,10 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class RemascRskAddressActivationTest {
+class RemascRskAddressActivationTest {
 
     @Test
-    public void testActivation() {
+    void testActivation() {
         final RskAddress rskLabsAddress = new RskAddress("14d3065c8Eb89895f4df12450EC6b130049F8034");
         final RskAddress rskLabsAddressRskip218 = new RskAddress("dcb12179ba4697350f66224c959bdd9c282818df");
 
@@ -67,7 +67,7 @@ public class RemascRskAddressActivationTest {
         RskAddress actualAddress = remasc.getRskLabsAddress();
 
         Assertions.assertEquals(rskLabsAddress, actualAddress);
-        Assertions.assertEquals(blockMock.getNumber(), 1L);
+        Assertions.assertEquals(1L, blockMock.getNumber());
         Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddress();
 
@@ -76,7 +76,7 @@ public class RemascRskAddressActivationTest {
         actualAddress = remasc.getRskLabsAddress();
 
         Assertions.assertEquals(rskLabsAddressRskip218, actualAddress);
-        Assertions.assertEquals(blockMock.getNumber(), 2L);
+        Assertions.assertEquals(2L, blockMock.getNumber());
         Assertions.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddressRskip218();
     }

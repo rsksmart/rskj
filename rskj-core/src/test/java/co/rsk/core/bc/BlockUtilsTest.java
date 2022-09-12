@@ -35,9 +35,9 @@ import java.util.Set;
 /**
  * Created by ajlopez on 19/08/2016.
  */
-public class BlockUtilsTest {
+class BlockUtilsTest {
     @Test
-    public void blockInSomeBlockChain() {
+    void blockInSomeBlockChain() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
@@ -61,7 +61,7 @@ public class BlockUtilsTest {
     }
 
     @Test
-    public void unknowAncestorsHashes() {
+    void unknowAncestorsHashes() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         NetBlockStore store = new NetBlockStore();
 
@@ -108,7 +108,7 @@ public class BlockUtilsTest {
     }
 
     @Test
-    public void unknowAncestorsHashesUsingUncles() {
+    void unknowAncestorsHashesUsingUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         Genesis genesis = (Genesis) blockChain.getBestBlock();
@@ -168,7 +168,7 @@ public class BlockUtilsTest {
     }
 
     @Test
-    public void tooMuchProcessTime() {
+    void tooMuchProcessTime() {
         Assertions.assertFalse(BlockUtils.tooMuchProcessTime(0));
         Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1000));
         Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));

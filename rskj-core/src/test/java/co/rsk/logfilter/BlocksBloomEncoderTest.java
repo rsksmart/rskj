@@ -28,9 +28,9 @@ import java.util.Random;
 /**
  * Created by ajlopez on 19/02/2020.
  */
-public class BlocksBloomEncoderTest {
+class BlocksBloomEncoderTest {
     @Test
-    public void encodeDecodeEmptyBlocksBloom() {
+    void encodeDecodeEmptyBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
@@ -47,7 +47,7 @@ public class BlocksBloomEncoderTest {
     }
 
     @Test
-    public void encodeDecodeBlocksBloom() {
+    void encodeDecodeBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom(0, 100, new Bloom());
 
         byte[] data = BlocksBloomEncoder.encode(blocksBloom);
@@ -63,7 +63,7 @@ public class BlocksBloomEncoderTest {
     }
 
     @Test
-    public void encodeDecodeBlocksBloomWithData() {
+    void encodeDecodeBlocksBloomWithData() {
         byte[] bloomData = new byte[Bloom.BLOOM_BYTES];
         (new Random()).nextBytes(bloomData);
         BlocksBloom blocksBloom = new BlocksBloom(100, 2000, new Bloom(bloomData));

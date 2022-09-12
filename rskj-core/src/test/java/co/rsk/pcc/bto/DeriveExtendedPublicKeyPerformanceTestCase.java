@@ -38,13 +38,13 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 @Disabled
-public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private static final int MAX_CHILD = (2 << 30) - 1;
 
     private CallTransaction.Function function;
 
     @Test
-    public void deriveExtendedPublicKey() throws VMException {
+    void deriveExtendedPublicKey() throws VMException {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {

@@ -16,7 +16,7 @@ import java.net.InetSocketAddress;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.*;
 
-public class ChannelTest {
+class ChannelTest {
 
     private MessageQueue messageQueue;
     private MessageCodec messageCodec;
@@ -28,7 +28,7 @@ public class ChannelTest {
     private Channel target;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         remoteId = "remoteId";
         messageQueue = mock(MessageQueue.class);
         messageCodec = mock(MessageCodec.class);
@@ -48,7 +48,7 @@ public class ChannelTest {
 
 
     @Test
-    public void equals_true() {
+    void equals_true() {
         InetSocketAddress inetSocketAddress = mock(InetSocketAddress.class);
         Channel otherChannel = new Channel(
                 messageQueue,
@@ -66,7 +66,7 @@ public class ChannelTest {
     }
 
     @Test
-    public void equals_false() {
+    void equals_false() {
         InetSocketAddress inetSocketAddress = mock(InetSocketAddress.class);
         Channel otherChannel = new Channel(
                 messageQueue,
@@ -83,7 +83,7 @@ public class ChannelTest {
     }
 
     @Test
-    public void equals_getInetAddress() {
+    void equals_getInetAddress() {
         InetAddress inetAddress = InetAddress.getLoopbackAddress();
         InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, 500);
 

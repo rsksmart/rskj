@@ -28,7 +28,7 @@ import org.mockito.Mockito;
 /**
  * Created by mario on 09/09/2016.
  */
-public class RskCustomCacheTest {
+class RskCustomCacheTest {
 
     private static Long TIME_TO_LIVE = 2000L;
     private static Long WAIT_PERIOD = 1000L;
@@ -38,12 +38,12 @@ public class RskCustomCacheTest {
 
 
     @Test
-    public void createBlockHeaderCache() {
+    void createBlockHeaderCache() {
         Assertions.assertNotNull(new RskCustomCache(TIME_TO_LIVE));
     }
 
     @Test
-    public void addElement() {
+    void addElement() {
         RskCustomCache cache = new RskCustomCache(TIME_TO_LIVE);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
@@ -54,7 +54,7 @@ public class RskCustomCacheTest {
     }
 
     @Test
-    public void getElement() {
+    void getElement() {
         RskCustomCache cache = new RskCustomCache(TIME_TO_LIVE);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
@@ -65,8 +65,9 @@ public class RskCustomCacheTest {
     }
 
     @Test
-    @Disabled
-    public void elementExpiration() throws InterruptedException{
+    @Disabled("???")
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void elementExpiration() throws InterruptedException{
         RskCustomCache cache = new RskCustomCache(800L);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);

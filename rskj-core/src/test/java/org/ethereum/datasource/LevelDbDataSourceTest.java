@@ -31,13 +31,13 @@ import java.util.*;
 import static org.ethereum.TestUtils.randomBytes;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LevelDbDataSourceTest {
+class LevelDbDataSourceTest {
 
     @TempDir
     public Path databaseDir;
 
     @Test
-    public void testBatchUpdating() throws IOException {
+    void testBatchUpdating() throws IOException {
         Path traceFilePath = databaseDir.resolve(UUID.randomUUID().toString());
         traceFilePath.toFile().mkdir();
 
@@ -62,7 +62,7 @@ public class LevelDbDataSourceTest {
     }
 
     @Test
-    public void testPutting() throws IOException {
+    void testPutting() throws IOException {
         Path traceFilePath = databaseDir.resolve(UUID.randomUUID().toString());
         traceFilePath.toFile().mkdir();
 

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class TxValidatorMaximumGasPriceValidatorTest {
+class TxValidatorMaximumGasPriceValidatorTest {
 
     private static final long BEST_BLOCK_NUMBER = 100L;
 
@@ -54,7 +54,7 @@ public class TxValidatorMaximumGasPriceValidatorTest {
     private TxValidatorMaximumGasPriceValidator validator;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         lenient().when(block.getMinimumGasPrice()).thenReturn(MIN_GAS_PRICE);
 
@@ -62,7 +62,7 @@ public class TxValidatorMaximumGasPriceValidatorTest {
     }
 
     @Test
-    public void validate_whenRskip252DisabledThenTxValidRegardlessGasPrice() {
+    void validate_whenRskip252DisabledThenTxValidRegardlessGasPrice() {
         when(activationConfig.isActive(ConsensusRule.RSKIP252, BEST_BLOCK_NUMBER)).thenReturn(false);
 
         Transaction txLessGasPriceThanCap = Mockito.mock(Transaction.class);
@@ -77,7 +77,7 @@ public class TxValidatorMaximumGasPriceValidatorTest {
     }
 
     @Test
-    public void validate_whenRskip252EnabledThenTxWithMoreGasPriceThanCapInvalid() {
+    void validate_whenRskip252EnabledThenTxWithMoreGasPriceThanCapInvalid() {
         when(activationConfig.isActive(ConsensusRule.RSKIP252, BEST_BLOCK_NUMBER)).thenReturn(true);
 
         Transaction txLessGasPriceThanCap = Mockito.mock(Transaction.class);

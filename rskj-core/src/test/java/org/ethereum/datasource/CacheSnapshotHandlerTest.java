@@ -36,7 +36,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-public class CacheSnapshotHandlerTest {
+class CacheSnapshotHandlerTest {
 
     @TempDir
     public Path folder;
@@ -48,7 +48,7 @@ public class CacheSnapshotHandlerTest {
     private CacheSnapshotHandler cacheSnapshotHandler;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         File testFolder = folder.resolve("test").toFile();
         testFolder.mkdir();
 
@@ -69,7 +69,7 @@ public class CacheSnapshotHandlerTest {
     }
 
     @Test
-    public void load_WhenNoCache_MapShouldBeEmpty() {
+    void load_WhenNoCache_MapShouldBeEmpty() {
         Map<ByteArrayWrapper, byte[]> cache = new HashMap<>();
 
         cacheSnapshotHandler.load(cache);
@@ -79,7 +79,7 @@ public class CacheSnapshotHandlerTest {
     }
 
     @Test
-    public void load_WhenCacheCorrupted_CacheShouldBeRenamed() throws IOException {
+    void load_WhenCacheCorrupted_CacheShouldBeRenamed() throws IOException {
         Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
 
         //noinspection unchecked
@@ -93,7 +93,7 @@ public class CacheSnapshotHandlerTest {
     }
 
     @Test
-    public void save_WhenEmptyMap_NothingShouldBeSavedAndExistingCacheShouldBeRemoved() throws IOException {
+    void save_WhenEmptyMap_NothingShouldBeSavedAndExistingCacheShouldBeRemoved() throws IOException {
         Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
 
         Map<ByteArrayWrapper, byte[]> cache = new HashMap<>();
@@ -106,7 +106,7 @@ public class CacheSnapshotHandlerTest {
     }
 
     @Test
-    public void save_WhenNonEmptyMap_MapShouldBeSavedAndExistingCacheShouldBeReplaced() throws IOException {
+    void save_WhenNonEmptyMap_MapShouldBeSavedAndExistingCacheShouldBeReplaced() throws IOException {
         Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
         Assertions.assertEquals(0, cacheSnapshotPath.toFile().length());
 
@@ -122,7 +122,7 @@ public class CacheSnapshotHandlerTest {
     }
 
     @Test
-    public void save_MapCannotBeSaved_CacheFileShouldNotBeModified() throws IOException {
+    void save_MapCannotBeSaved_CacheFileShouldNotBeModified() throws IOException {
         Assertions.assertTrue(cacheSnapshotPath.toFile().createNewFile());
         Assertions.assertEquals(0, cacheSnapshotPath.toFile().length());
 

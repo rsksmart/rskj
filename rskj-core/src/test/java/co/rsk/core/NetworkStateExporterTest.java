@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by oscar on 13/01/2017.
  */
-public class NetworkStateExporterTest {
+class NetworkStateExporterTest {
     static String jsonFileName = "networkStateExporterTest.json";
     private MutableRepository repository;
     private NetworkStateExporter nse;
@@ -62,7 +62,7 @@ public class NetworkStateExporterTest {
     private Block block;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
@@ -82,19 +82,19 @@ public class NetworkStateExporterTest {
     }
 
     @AfterAll
-    public static void cleanup(){
+    static void cleanup(){
         FileUtils.deleteQuietly(new File(jsonFileName));
     }
 
     @Test
-    public void testEmptyRepo() throws Exception {
+    void testEmptyRepo() throws Exception {
         Map result = writeAndReadJson("",true,true);
 
         Assertions.assertEquals(0, result.keySet().size());
     }
 
     @Test
-    public void testNoContracts() throws Exception {
+    void testNoContracts() throws Exception {
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -146,7 +146,7 @@ public class NetworkStateExporterTest {
     }
 
     @Test
-    public void testContracts() throws Exception {
+    void testContracts() throws Exception {
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -186,7 +186,7 @@ public class NetworkStateExporterTest {
     }
 
     @Test
-    public void testSingleAccount() throws Exception {
+    void testSingleAccount() throws Exception {
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);

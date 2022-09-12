@@ -37,17 +37,17 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class NetBlockStoreTest {
+class NetBlockStoreTest {
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void getUnknownBlockAsNull() {
+    void getUnknownBlockAsNull() {
         NetBlockStore store = new NetBlockStore();
         Assertions.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
     }
 
     @Test
-    public void minimalAndMaximumHeightInEmptyStore() {
+    void minimalAndMaximumHeightInEmptyStore() {
         NetBlockStore store = new NetBlockStore();
 
         Assertions.assertEquals(0, store.minimalHeight());
@@ -55,7 +55,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveAndGetBlockByHash() {
+    void saveAndGetBlockByHash() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getGenesisBlock();
 
@@ -67,7 +67,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveRemoveAndGetBlockByHash() {
+    void saveRemoveAndGetBlockByHash() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getBlock(1);
 
@@ -85,7 +85,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveRemoveAndGetBlockByHashWithUncles() {
+    void saveRemoveAndGetBlockByHashWithUncles() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
@@ -110,7 +110,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveTwoBlocksRemoveOne() {
+    void saveTwoBlocksRemoveOne() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
@@ -151,7 +151,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveAndGetBlocksByNumber() {
+    void saveAndGetBlocksByNumber() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -171,7 +171,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void releaseRange() {
+    void releaseRange() {
         NetBlockStore store = new NetBlockStore();
         final BlockGenerator generator = new BlockGenerator();
         Block genesis = generator.getGenesisBlock();
@@ -192,7 +192,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveAndGetBlocksByParentHash() {
+    void saveAndGetBlocksByParentHash() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -210,7 +210,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void getNoBlocksByNumber() {
+    void getNoBlocksByNumber() {
         NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = store.getBlocksByNumber(42);
@@ -220,7 +220,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void saveHeader() {
+    void saveHeader() {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
@@ -234,7 +234,7 @@ public class NetBlockStoreTest {
     }
 
     @Test
-    public void removeHeader() {
+    void removeHeader() {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])

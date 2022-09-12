@@ -28,14 +28,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class NativeMethodTest {
+class NativeMethodTest {
     private ExecutionEnvironment executionEnvironment;
     private CallTransaction.Function function;
     private NativeMethod method;
     private NativeMethod.WithArguments withArguments;
 
     @BeforeEach
-    public void createMethodAndArguments() {
+    void createMethodAndArguments() {
         executionEnvironment = mock(ExecutionEnvironment.class);
         function = mock(CallTransaction.Function.class);
         method = new NativeMethod(executionEnvironment) {
@@ -63,39 +63,39 @@ public class NativeMethodTest {
     }
 
     @Test
-    public void executionEnvironmentGetter() {
+    void executionEnvironmentGetter() {
         Assertions.assertEquals(executionEnvironment, method.getExecutionEnvironment());
     }
 
     @Test
-    public void getGasWithNullData() {
+    void getGasWithNullData() {
         Assertions.assertEquals(0L, method.getGas(null, null));
     }
 
     @Test
-    public void getGasWithNonNullData() {
+    void getGasWithNonNullData() {
         Assertions.assertEquals(6L, method.getGas(null, Hex.decode("aabbcc")));
         Assertions.assertEquals(10L, method.getGas(null, Hex.decode("aabbccddee")));
     }
 
     @Test
-    public void getName() {
+    void getName() {
         function.name = "a-method-name";
         Assertions.assertEquals("a-method-name", method.getName());
     }
 
     @Test
-    public void withArgumentsGetsMethod() {
+    void withArgumentsGetsMethod() {
         Assertions.assertEquals(method, withArguments.getMethod());
     }
 
     @Test
-    public void withArgumentsGetsGas() {
+    void withArgumentsGetsGas() {
         Assertions.assertEquals(6L, withArguments.getGas());
     }
 
     @Test
-    public void withArgumentsExecutesMethod() throws NativeContractIllegalArgumentException {
+    void withArgumentsExecutesMethod() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals("execution-result", withArguments.execute());
     }
 }

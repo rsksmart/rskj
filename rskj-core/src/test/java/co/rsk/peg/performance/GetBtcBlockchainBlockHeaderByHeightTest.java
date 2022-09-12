@@ -17,18 +17,18 @@ import org.junit.jupiter.api.BeforeAll;
 import java.math.BigInteger;
 
 @Disabled
-public class GetBtcBlockchainBlockHeaderByHeightTest extends BridgePerformanceTestCase {
+class GetBtcBlockchainBlockHeaderByHeightTest extends BridgePerformanceTestCase {
     private BtcBlock expectedBlock;
     private int height;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHeightTest() throws VMException {
+    void getBtcBlockchainBlockHeaderByHeightTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockHeaderByHeight");
         getBtcBlockchainBlockHeaderByHeightTest_success(1000, stats);
         BridgePerformanceTest.addStats(stats);

@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * It's main goal is to add more coverage.
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class RepositoryTest {
+class RepositoryTest {
 
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -56,14 +56,14 @@ public class RepositoryTest {
     private TrieStore trieStore;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         trieStore = new TrieStoreImpl(new HashMapDB());
         mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
     }
 
     @Test
-    public void testStorageRoot() {
+    void testStorageRoot() {
         repository.createAccount(COW);
         repository.setupContract(COW);
         byte[] stateRoot1 = repository.getStorageStateRoot(COW);
@@ -98,7 +98,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test4() {
+    void test4() {
         Repository track = repository.startTracking();
 
         byte[] cowKey = Hex.decode("A1A2A3");
@@ -116,7 +116,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test9() {
+    void test9() {
         Repository track = repository.startTracking();
 
         DataWord cowKey = DataWord.valueOf(Hex.decode("A1A2A3"));
@@ -138,7 +138,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test10() {
+    void test10() {
         Repository track = repository.startTracking();
 
         DataWord cowKey = DataWord.valueOf(Hex.decode("A1A2A3"));
@@ -160,7 +160,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test16() {
+    void test16() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
 
@@ -212,7 +212,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test16_2() {
+    void test16_2() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowKey2 = "key-c-2".getBytes();
         byte[] cowValue2 = "val-c-2".getBytes();
@@ -266,7 +266,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test16_3() {
+    void test16_3() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowKey2 = "key-c-2".getBytes();
         byte[] cowValue2 = "val-c-2".getBytes();
@@ -309,7 +309,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test16_4() {
+    void test16_4() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
         byte[] cowKey2 = "key-c-2".getBytes();
@@ -337,7 +337,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test16_5() {
+    void test16_5() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowKey2 = "key-c-2".getBytes();
         byte[] cowValue2 = "val-c-2".getBytes();
@@ -362,7 +362,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test17() {
+    void test17() {
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
 
@@ -383,7 +383,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void test19() {
+    void test19() {
         Repository track = repository.startTracking();
 
         DataWord cowKey1 = DataWord.valueFromHex("c1");
@@ -414,7 +414,7 @@ public class RepositoryTest {
     }
 
     @Test // testing for snapshot
-    public void testMultiThread() throws InterruptedException {
+    void testMultiThread() throws InterruptedException {
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
         final byte[] cowVal0 = Hex.decode("c0a0");
@@ -477,7 +477,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void testCode() {
+    void testCode() {
         Repository track = repository.startTracking();
         byte[] codeLongerThan32bytes = "this-is-code-because-I-say-it-man".getBytes();
         assertTrue(codeLongerThan32bytes.length>32);
@@ -512,7 +512,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void testGetCodeHash() {
+    void testGetCodeHash() {
         RskAddress addressNotAdded = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5A");
         Repository track = repository.startTracking();
 
@@ -543,11 +543,11 @@ public class RepositoryTest {
 
         //Code hash of non-existing account
         Keccak256 hashOfNonExistingAccount = repository.getCodeHashNonStandard(addressNotAdded);
-        assertTrue(hashOfNonExistingAccount.equals(Keccak256.ZERO_HASH));
+        assertEquals(Keccak256.ZERO_HASH, hashOfNonExistingAccount);
     }
 
     @Test
-    public void testCreateAccount_IgnoreExistingBalance() {
+    void testCreateAccount_IgnoreExistingBalance() {
         Repository track = repository.startTracking();
         Coin tenCoins = Coin.valueOf(10L);
 
@@ -565,7 +565,7 @@ public class RepositoryTest {
     }
 
     @Test
-    public void testCreateAccount_PreserveExistingBalance() {
+    void testCreateAccount_PreserveExistingBalance() {
         Repository track = repository.startTracking();
         Coin tenCoins = Coin.valueOf(10L);
 

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
+class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
@@ -37,7 +37,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     private List<Federation> erpFederationList;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -63,7 +63,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_null_destination_federation() {
+    void findRedeemDataFromScriptHash_null_destination_federation() {
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(null, new byte[0], new byte[0]);
         FlyoverCompatibleBtcWalletWithSingleScript flyoverCompatibleBtcWalletWithSingleScript =
@@ -77,7 +77,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_flyoverInformation() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation() {
         byte[] flyoverScriptHash = new byte[]{(byte)0x22};
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
@@ -103,7 +103,7 @@ public class FlyoverCompatibleBtcWallextWithSingleScriptTest {
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_and_erp_federation() {
         byte[] flyoverScriptHash = new byte[]{(byte)0x22};
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(

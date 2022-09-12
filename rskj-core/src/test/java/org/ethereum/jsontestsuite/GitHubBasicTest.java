@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @Disabled
-public class GitHubBasicTest {
+class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
@@ -50,7 +50,7 @@ public class GitHubBasicTest {
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
     @Test
-    public void runDifficultyTest() throws IOException, ParseException {
+    void runDifficultyTest() throws IOException {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
@@ -69,7 +69,7 @@ public class GitHubBasicTest {
     }
 
     @Test
-    public void runDifficultyFrontierTest() throws IOException, ParseException {
+    void runDifficultyFrontierTest() throws IOException {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
@@ -89,7 +89,7 @@ public class GitHubBasicTest {
     }
 
     @Test
-    public void runDifficultyHomesteadTest() throws IOException, ParseException {
+    void runDifficultyHomesteadTest() throws IOException {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 

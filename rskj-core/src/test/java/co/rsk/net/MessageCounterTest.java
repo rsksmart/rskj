@@ -29,10 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import co.rsk.net.simples.SimplePeer;
 
-public class MessageCounterTest {
+class MessageCounterTest {
 
     @Test
-    public void decrement_toBelowOne_thenRemoveKey() {
+    void decrement_toBelowOne_thenRemoveKey() {
 
         SimplePeer sender = new SimplePeer(new NodeID(new byte[] { 1 }));
 
@@ -46,7 +46,7 @@ public class MessageCounterTest {
     }
 
     @Test
-    public void decrement() {
+    void decrement() {
 
         SimplePeer sender = new SimplePeer(new NodeID(new byte[] { 1 }));
 
@@ -61,7 +61,7 @@ public class MessageCounterTest {
     }
 
     @Test
-    public void givenConcurrentCalls_then_expectCorrectCount() throws InterruptedException {
+    void givenConcurrentCalls_then_expectCorrectCount() throws InterruptedException {
 
         /**
          *  this queue will be added with a '+' when the counter is incremented

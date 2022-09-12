@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 14/04/2017.
  */
-public class RemascStateTest {
+class RemascStateTest {
     @Test
-    public void serializeAndDeserializeWithNoValues() {
+    void serializeAndDeserializeWithNoValues() {
         RemascState state = new RemascState(Coin.ZERO, Coin.ZERO, false);
 
         byte[] bytes = state.getEncoded();
@@ -41,7 +41,7 @@ public class RemascStateTest {
     }
 
     @Test
-    public void serializeAndDeserializeWithSomeValues() {
+    void serializeAndDeserializeWithSomeValues() {
         RemascState state = new RemascState(Coin.valueOf(1), Coin.valueOf(10), true);
 
         byte[] bytes = state.getEncoded();

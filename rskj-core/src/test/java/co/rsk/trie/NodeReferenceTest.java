@@ -26,10 +26,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class NodeReferenceTest {
+class NodeReferenceTest {
 
     @Test
-    public void testGetNode_lazyNodeIsNotNull_returnsOptionalOfLazyNode() {
+    void testGetNode_lazyNodeIsNotNull_returnsOptionalOfLazyNode() {
         // Given
         Trie lazyNodeMock = mock(Trie.class);
 
@@ -44,7 +44,7 @@ public class NodeReferenceTest {
     }
 
     @Test
-    public void testGetNode_lazyNodeIsNullAndLazyHashIsNull_returnsOptionalEmpty() {
+    void testGetNode_lazyNodeIsNullAndLazyHashIsNull_returnsOptionalEmpty() {
         // Given
         NodeReference nodeReference = new NodeReference(null, null, null);
 
@@ -56,7 +56,7 @@ public class NodeReferenceTest {
     }
 
     @Test
-    public void testGetNode_lazyNodeIsNullLazyHashIsNotNullAndTrieStoreCanRetrieveNode_returnsNode() {
+    void testGetNode_lazyNodeIsNullLazyHashIsNotNullAndTrieStoreCanRetrieveNode_returnsNode() {
         // Given
         Keccak256 lazyHashMock = mock(Keccak256.class);
         byte[] bytesMock = new byte[0];
@@ -81,7 +81,7 @@ public class NodeReferenceTest {
     }
 
     @Test
-    public void testGetNode_brokenDatabase_stopMethodIsCalled() {
+    void testGetNode_brokenDatabase_stopMethodIsCalled() {
         // Given
         Keccak256 lazyHashMock = mock(Keccak256.class);
         byte[] bytesMock = new byte[0];

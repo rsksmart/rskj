@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 20/01/2019.
  */
-public class BlocksBloomTest {
+class BlocksBloomTest {
 
     @Test
-    public void createBlocksBloom() {
+    void createBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
 
         Assertions.assertEquals(0, blocksBloom.size());
@@ -21,7 +21,7 @@ public class BlocksBloomTest {
     }
 
     @Test
-    public void addBlockToBlocksBloom() {
+    void addBlockToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
         bytes[0] = 0x01;
@@ -39,7 +39,7 @@ public class BlocksBloomTest {
     }
 
     @Test
-    public void addBlockZeroToBlocksBloom() {
+    void addBlockZeroToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
         bytes[0] = 0x01;
@@ -55,7 +55,7 @@ public class BlocksBloomTest {
     }
 
     @Test
-    public void addTwoBlocksToBlocksBloom() {
+    void addTwoBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -78,7 +78,7 @@ public class BlocksBloomTest {
     }
 
     @Test
-    public void addTwoNonConsecutiveBlocksToBlocksBloom() {
+    void addTwoNonConsecutiveBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -88,16 +88,14 @@ public class BlocksBloomTest {
         Bloom bloom1 = new Bloom(bytes1);
         Bloom bloom2 = new Bloom(bytes2);
 
-        Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> {
-            blocksBloom.addBlockBloom(1, bloom1);
-            blocksBloom.addBlockBloom(3, bloom2);
-        });
+        blocksBloom.addBlockBloom(1, bloom1);
+        Exception exception = Assertions.assertThrows(UnsupportedOperationException.class, () -> blocksBloom.addBlockBloom(3, bloom2));
 
         Assertions.assertEquals("Block out of sequence", exception.getMessage());
     }
 
     @Test
-    public void matchesBloom() {
+    void matchesBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
 
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
@@ -120,7 +118,7 @@ public class BlocksBloomTest {
     }
 
     @Test
-    public void doesNotMatchBloom() {
+    void doesNotMatchBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
 
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];

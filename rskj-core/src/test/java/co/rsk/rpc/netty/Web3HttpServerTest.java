@@ -25,49 +25,49 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class Web3HttpServerTest {
+class Web3HttpServerTest {
 
     public static final String APPLICATION_JSON = "application/json";
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    public void smokeTestUsingJsonContentType() throws Exception {
+    void smokeTestUsingJsonContentType() throws Exception {
         smokeTest(APPLICATION_JSON);
     }
 
     @Test @Disabled("fix okhttp problem with charset/gzip")
-    public void smokeTestUsingJsonWithCharsetContentType() throws Exception {
+    void smokeTestUsingJsonWithCharsetContentType() throws Exception {
         smokeTest("application/json; charset: utf-8");
     }
 
     @Test @Disabled("fix okhttp problem with charset/gzip")
-    public void smokeTestUsingJsonRpcWithCharsetContentType() throws Exception {
+    void smokeTestUsingJsonRpcWithCharsetContentType() throws Exception {
         smokeTest("application/json-rpc; charset: utf-8");
     }
 
     @Test
-    public void smokeTestUsingJsonRpcContentType() throws Exception {
+    void smokeTestUsingJsonRpcContentType() throws Exception {
         smokeTest("application/json-rpc");
     }
 
     @Test
-    public void smokeTestUsingInvalidContentType() {
+    void smokeTestUsingInvalidContentType() {
         Assertions.assertThrows(IOException.class, () -> smokeTest("text/plain"));
     }
 
     @Test
-    public void smokeTestUsingValidHost() throws Exception {
+    void smokeTestUsingValidHost() throws Exception {
         smokeTest(APPLICATION_JSON, "localhost");
     }
 
     @Test
-    public void smokeTestUsingInvalidHost() {
+    void smokeTestUsingInvalidHost() {
         Assertions.assertThrows(IOException.class, () -> smokeTest(APPLICATION_JSON, "evil.com"));
     }
 
     @Test
-    public void smokeTestUsingValidHostAndHostName() throws Exception {
+    void smokeTestUsingValidHostAndHostName() throws Exception {
         String domain = "www.google.com";
         List<String> rpcHost = new ArrayList<>();
         rpcHost.add(domain);
@@ -75,7 +75,7 @@ public class Web3HttpServerTest {
     }
 
     @Test
-    public void smokeTestUsingWildcardHostAndHostName() throws Exception {
+    void smokeTestUsingWildcardHostAndHostName() throws Exception {
         String domain = "www.google.com";
         List<String> rpcHost = new ArrayList<>();
         rpcHost.add("*");
@@ -83,13 +83,13 @@ public class Web3HttpServerTest {
     }
 
     @Test
-    public void smokeTestUsingInvalidHostAndHostName() throws Exception {
+    void smokeTestUsingInvalidHostAndHostName() throws Exception {
         InetAddress google = InetAddress.getByName("www.google.com");
         Assertions.assertThrows(IOException.class, () -> smokeTest(APPLICATION_JSON, "this is a wrong host", google, new ArrayList<>()));
     }
 
     @Test
-    public void smokeTestUsingValidHostIpAndHostName() throws Exception {
+    void smokeTestUsingValidHostIpAndHostName() throws Exception {
         InetAddress google = InetAddress.getByName("www.google.com");
         smokeTest(APPLICATION_JSON, "127.0.0.0", google, new ArrayList<>());
     }

@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PingPongMessageTest {
+class PingPongMessageTest {
 
     /* PING_MESSAGE & PONG_MESSAGE */
 
     @Test /* PingMessage */
-    public void testPing() {
+    void testPing() {
 
         PingMessage pingMessage = new PingMessage();
         System.out.println(pingMessage);
@@ -43,7 +43,7 @@ public class PingPongMessageTest {
     }
 
     @Test /* PongMessage */
-    public void testPong() {
+    void testPong() {
 
         PongMessage pongMessage = new PongMessage();
         System.out.println(pongMessage);

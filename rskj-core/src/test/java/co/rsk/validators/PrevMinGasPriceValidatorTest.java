@@ -30,14 +30,14 @@ import org.mockito.Mockito;
 /**
  * Created by mario on 26/12/16.
  */
-public class PrevMinGasPriceValidatorTest {
+class PrevMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
     private static final Coin PARENT_BLOCK_MGP = Coin.valueOf(1000L);
     private static final byte[] PARENT_HASH = TestUtils.randomBytes(32);
 
     @Test
-    public void noParentBlock() {
+    void noParentBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -51,7 +51,7 @@ public class PrevMinGasPriceValidatorTest {
     }
 
     @Test
-    public void genesisBlock() {
+    void genesisBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -65,7 +65,7 @@ public class PrevMinGasPriceValidatorTest {
     }
 
     @Test
-    public void noMinGasPrice() {
+    void noMinGasPrice() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -80,7 +80,7 @@ public class PrevMinGasPriceValidatorTest {
     }
 
     @Test
-    public void outOfValidMGPRangeBlock() {
+    void outOfValidMGPRangeBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -97,7 +97,7 @@ public class PrevMinGasPriceValidatorTest {
     }
 
     @Test
-    public void validMGPInNewBlock() {
+    void validMGPInNewBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);

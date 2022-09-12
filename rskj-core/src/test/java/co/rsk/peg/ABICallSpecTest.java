@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class ABICallSpecTest {
+class ABICallSpecTest {
     @Test
-    public void argumentsIsCopy() {
+    void argumentsIsCopy() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
                 Hex.decode("aabb"),
                 Hex.decode("ccddee")
@@ -42,13 +42,13 @@ public class ABICallSpecTest {
     }
 
     @Test
-    public void getFunction() {
+    void getFunction() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{});
         Assertions.assertEquals("a-function", spec.getFunction());
     }
 
     @Test
-    public void getEncoded() {
+    void getEncoded() {
         ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
                 Hex.decode("1122"),
                 Hex.decode("334455"),
@@ -61,7 +61,7 @@ public class ABICallSpecTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         ABICallSpec specA = new ABICallSpec("function-a", new byte[][]{
                 Hex.decode("aabb"),
                 Hex.decode("ccddee")

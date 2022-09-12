@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-public class ExtCodeHashTest {
+class ExtCodeHashTest {
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private ActivationConfig.ForBlock activationConfig;
     private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
@@ -47,46 +47,46 @@ public class ExtCodeHashTest {
     private final Transaction transaction = createTransaction();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         activationConfig = mock(ActivationConfig.ForBlock.class);
         when(activationConfig.isActive(RSKIP140)).thenReturn(true);
     }
 
     @Test
-    public void testDoEXTCODEHASHWithHardForkDeactivated() {
+    void testDoEXTCODEHASHWithHardForkDeactivated() {
         when(activationConfig.isActive(RSKIP140)).thenReturn(false);
         Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 0,
                 null));
     }
 
     @Test
-    public void testDoEXTCODEHASHToContractAndGetTheCodeHash() {
+    void testDoEXTCODEHASHToContractAndGetTheCodeHash() {
         byte[] resultCode = invoke.getRepository().getCode(invoke.getContractAddress());
         executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 403,
                 Keccak256Helper.keccak256(resultCode));
     }
 
     @Test
-    public void testDoEXTCODEHASHToAccountAndGetEmptyHash() {
+    void testDoEXTCODEHASHToAccountAndGetEmptyHash() {
         executeExtCodeHash("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826", 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
 
     }
 
     @Test
-    public void testDoEXTCODEHASHToNonExistentAccountAndGetZero() {
+    void testDoEXTCODEHASHToNonExistentAccountAndGetZero() {
         executeExtCodeHash("0x1111111111222222222233333333334444444444", 403,
                 ByteUtil.intToBytes(0));
     }
 
     @Test
-    public void testDoEXTCODEHASHToPrecompiledContractAndGetEmptyHash() {
+    void testDoEXTCODEHASHToPrecompiledContractAndGetEmptyHash() {
         executeExtCodeHash("0x"+precompiledContracts.BRIDGE_ADDR.toHexString(), 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     }
 
     @Test
-    public void testDoEXTCODEHASHWithoutArguments() {
+    void testDoEXTCODEHASHWithoutArguments() {
         int gasExpected = 1000000;
 
         String stringCode = " EXTCODEHASH";

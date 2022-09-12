@@ -31,10 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mikhail Kalinin
  * @since 15.10.2015
  */
-public class BIUtilTest {
+class BIUtilTest {
 
     @Test
-    public void testIsIn20PercentRange() {
+    void testIsIn20PercentRange() {
 
         assertTrue(isIn20PercentRange(BigInteger.valueOf(20000), BigInteger.valueOf(24000)));
 
@@ -56,7 +56,7 @@ public class BIUtilTest {
     }
 
     @Test // test isIn20PercentRange
-    public void test1() {
+    void test1() {
         assertFalse(isIn20PercentRange(BigInteger.ONE, BigInteger.valueOf(5)));
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.ONE));
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.valueOf(6)));

@@ -28,9 +28,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 19/04/2017.
  */
-public class ModuleDescriptionTest {
+class ModuleDescriptionTest {
     @Test
-    public void createWithInitialData() {
+    void createWithInitialData() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
         Assertions.assertEquals("evm", description.getName());
@@ -46,7 +46,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void createWithEnabledAndDisabledMethods() {
+    void createWithEnabledAndDisabledMethods() {
         List<String> enabledMethods = new ArrayList<>();
         enabledMethods.add("evm_snapshot");
         enabledMethods.add("evm_revert");
@@ -76,7 +76,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void methodIsInModule() {
+    void methodIsInModule() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
         Assertions.assertTrue(description.methodIsInModule("evm_snapshot"));
@@ -91,7 +91,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void methodIsEnabledWhenEmptyNameList() {
+    void methodIsEnabledWhenEmptyNameList() {
         ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, null);
 
         Assertions.assertTrue(description.methodIsEnable("evm_snapshot"));
@@ -106,7 +106,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void methodIsEnabledWhenEnabledNameList() {
+    void methodIsEnabledWhenEnabledNameList() {
         List<String> enabledMethods = new ArrayList<>();
         enabledMethods.add("evm_snapshot");
         enabledMethods.add("evm_revert");
@@ -129,7 +129,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void methodIsEnabledWhenDisabledNameList() {
+    void methodIsEnabledWhenDisabledNameList() {
         List<String> disabledMethods = new ArrayList<>();
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
@@ -152,7 +152,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void methodIsEnabledWhenEnabledAndDisabledNameLists() {
+    void methodIsEnabledWhenEnabledAndDisabledNameLists() {
         List<String> enabledMethods = new ArrayList<>();
         enabledMethods.add("evm_snapshot");
         enabledMethods.add("evm_revert");
@@ -180,7 +180,7 @@ public class ModuleDescriptionTest {
     }
 
     @Test
-    public void getModulesFromTestNewRskSystemProperties() {
+    void getModulesFromTestNewRskSystemProperties() {
         TestSystemProperties config = new TestSystemProperties();
         List<ModuleDescription> modules = config.getRpcModules();
 

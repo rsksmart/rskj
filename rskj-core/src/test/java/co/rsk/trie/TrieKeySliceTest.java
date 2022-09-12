@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 
-public class TrieKeySliceTest {
+class TrieKeySliceTest {
     @Test
-    public void bytesToKey() {
+    void bytesToKey() {
         Assertions.assertArrayEquals(
                 PathEncoder.encode(new byte[] { 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00 }),
                 TrieKeySlice.fromKey(new byte[]{(byte) 0xaa}).encode()
@@ -45,7 +45,7 @@ public class TrieKeySliceTest {
     }
 
     @Test
-    public void leftPad() {
+    void leftPad() {
         int paddedLength = 8;
         TrieKeySlice initialKey = TrieKeySlice.fromKey(new byte[]{(byte) 0xff});
         TrieKeySlice leftPaddedKey = initialKey.leftPad(paddedLength);

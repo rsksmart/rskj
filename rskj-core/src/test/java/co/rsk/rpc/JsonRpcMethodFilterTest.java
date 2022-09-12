@@ -30,12 +30,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JsonRpcMethodFilterTest {
+class JsonRpcMethodFilterTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
 
     @Test
-    public void checkModuleNames() throws Throwable {
+    void checkModuleNames() throws Throwable {
         RequestInterceptor jsonRpcMethodFilter = new JsonRpcMethodFilter(getModules());
 
         jsonRpcMethodFilter.interceptRequest(getMethodInvocation("evm_snapshot"));

@@ -27,11 +27,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ProgramBeforeRSKIP197Test extends ProgramTest {
+class ProgramBeforeRSKIP197Test extends ProgramTest {
 
     @Override()
     @Test
-    public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
+    void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         try {
             super.testCallToPrecompiledAddress_throwRuntimeException();
         } catch (RuntimeException e) {
@@ -41,7 +41,7 @@ public class ProgramBeforeRSKIP197Test extends ProgramTest {
 
     @Override
     @Test
-    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
+    void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
         try {
             super.testCallToPrecompiledAddress_throwPrecompiledConstractException();
             fail();

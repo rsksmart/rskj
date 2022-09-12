@@ -29,9 +29,9 @@ import java.math.BigInteger;
 
 import static org.mockito.Mockito.*;
 
-public class StatusMessageTest {
+class StatusMessageTest {
     @Test
-    public void createWithBestBlockNumberAndHash() {
+    void createWithBestBlockNumberAndHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block = blockGenerator.createChildBlock(genesis);
@@ -48,7 +48,7 @@ public class StatusMessageTest {
     }
 
     @Test
-    public void createWithCompleteArguments() {
+    void createWithCompleteArguments() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block = blockGenerator.createChildBlock(genesis);
@@ -67,7 +67,7 @@ public class StatusMessageTest {
     }
 
     @Test
-    public void createWithGenesisBestBlockNumberAndHash() {
+    void createWithGenesisBestBlockNumberAndHash() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Status status = new Status(genesis.getNumber(), genesis.getHash().getBytes());
 
@@ -80,7 +80,7 @@ public class StatusMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         StatusMessage message = new StatusMessage(mock(Status.class));
 
         MessageVisitor visitor = mock(MessageVisitor.class);

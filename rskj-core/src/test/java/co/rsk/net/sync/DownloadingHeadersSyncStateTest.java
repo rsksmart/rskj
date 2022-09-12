@@ -35,9 +35,9 @@ import java.util.*;
 
 import static org.mockito.Mockito.*;
 
-public class DownloadingHeadersSyncStateTest {
+class DownloadingHeadersSyncStateTest {
     @Test
-    public void itIgnoresNewPeerInformation() {
+    void itIgnoresNewPeerInformation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         Map<Peer, List<BlockIdentifier>> skeletons = Collections.singletonMap(null, null);
@@ -57,7 +57,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void itTimeoutsWhenWaitingForRequest() {
+    void itTimeoutsWhenWaitingForRequest() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SyncState syncState = new DownloadingHeadersSyncState(
@@ -80,7 +80,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void itDoesntTimeoutWhenSendingMessages() {
+    void itDoesntTimeoutWhenSendingMessages() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
@@ -108,7 +108,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenNoCurrentChunkThenSyncIssue() {
+    void newBlockHeadersWhenNoCurrentChunkThenSyncIssue() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
@@ -133,7 +133,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenUnexpectedChunkSizeThenInvalidMessage() {
+    void newBlockHeadersWhenUnexpectedChunkSizeThenInvalidMessage() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
@@ -164,7 +164,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenUnexpectedHeaderThenInvalidMessage() {
+    void newBlockHeadersWhenUnexpectedHeaderThenInvalidMessage() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);

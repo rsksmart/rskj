@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
  * @author kelvin.isievwore
  */
 
-public class BridgeEventLoggerLegacyImplTest {
+class BridgeEventLoggerLegacyImplTest {
 
     private ActivationConfig.ForBlock activations;
     private List<LogInfo> eventLogs;
@@ -66,7 +66,7 @@ public class BridgeEventLoggerLegacyImplTest {
     private Keccak256 rskTxHash;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
@@ -76,7 +76,7 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogUpdateCollectionsBeforeRskip146() {
+    void testLogUpdateCollectionsBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Setup Rsk transaction
@@ -103,13 +103,14 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogUpdateCollectionsAfterRskip146() {
+    void testLogUpdateCollectionsAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(any()));
+        Transaction anyTx = any();
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUpdateCollections(anyTx));
     }
 
     @Test
-    public void testLogAddSignatureBeforeRskip146() {
+    void testLogAddSignatureBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Setup logAddSignature params
@@ -143,13 +144,15 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogAddSignatureAfterRskip146() {
+    void testLogAddSignatureAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(new BtcECKey(), btcTxMock, rskTxHash.getBytes()));
+        BtcECKey federatorPublicKey = new BtcECKey();
+        byte[] bytes = rskTxHash.getBytes();
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logAddSignature(federatorPublicKey, btcTxMock, bytes));
     }
 
     @Test
-    public void testLogReleaseBtcBeforeRskip146() {
+    void testLogReleaseBtcBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Act
@@ -178,15 +181,16 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogReleaseBtcAfterRskip146() {
+    void testLogReleaseBtcAfterRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         // Act
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, rskTxHash.getBytes()));
+        byte[] bytes = rskTxHash.getBytes();
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtc(btcTxMock, bytes));
     }
 
     @Test
-    public void testLogCommitFederationBeforeRskip146() {
+    void testLogCommitFederationBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         // Setup parameters for test method call
@@ -270,7 +274,7 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogCommitFederationAfterRskip146() {
+    void testLogCommitFederationAfterRskip146() {
         // Setup event logger
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -279,32 +283,33 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogLockBtc() {
+    void testLogLockBtc() {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI));
     }
 
     @Test
-    public void testLogPeginBtc() {
+    void testLogPeginBtc() {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1));
     }
 
     @Test
-    public void testLogReleaseBtcRequested() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTxMock, Coin.SATOSHI));
+    void testLogReleaseBtcRequested() {
+        byte[] bytes = rskTxHash.getBytes();
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequested(bytes, btcTxMock, Coin.SATOSHI));
     }
 
     @Test
-    public void testLogRejectedPegin() {
+    void testLogRejectedPegin() {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED));
     }
 
     @Test
-    public void testLogUnrefundablePegin() {
+    void testLogUnrefundablePegin() {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER));
     }
 
     @Test
-    public void testLogReleaseBtcRequestReceived() {
+    void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
         byte[] btcDestinationAddress = "1234".getBytes();
         Coin amount = Coin.COIN;
@@ -313,7 +318,7 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void testLogReleaseBtcRequestRejected() {
+    void testLogReleaseBtcRequestRejected() {
         String sender = "0x00000000000000000000000000000000000000";
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
@@ -322,8 +327,9 @@ public class BridgeEventLoggerLegacyImplTest {
     }
 
     @Test
-    public void logBatchPegoutCreated() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>()));
+    void logBatchPegoutCreated() {
+        ArrayList<Keccak256> rskTxHashes = new ArrayList<>();
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock, rskTxHashes));
     }
 
     /**********************************

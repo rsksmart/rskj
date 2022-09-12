@@ -26,14 +26,14 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * Created by mario on 21/02/17.
  */
-public class DistanceCalculatorTest {
+class DistanceCalculatorTest {
 
     private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
 private static final String NODE_ID_2 = "01";
 
 
     @Test
-    public void distance() {
+    void distance() {
         DistanceCalculator calculator = new DistanceCalculator(256);
 
         Node node1 = new Node(Hex.decode(NODE_ID_1), "190.0.0.128", 8080);

@@ -25,11 +25,11 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class JsonRpcInternalErrorTest {
+class JsonRpcInternalErrorTest {
     private ObjectMapper serializer = new ObjectMapper();
 
     @Test
-    public void serializeInternalError() throws IOException {
+    void serializeInternalError() throws IOException {
         String message = "{\"code\":-32603,\"message\":\"Internal error.\"}";
         assertThat(
                 serializer.writeValueAsString(

@@ -41,17 +41,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ForkDetectionDataRuleTest {
+class ForkDetectionDataRuleTest {
 
     private ActivationConfig activationConfig;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         activationConfig = mock(ActivationConfig.class);
     }
 
     @Test
-    public void validForBlocksBeforeRskip110UsingMethodThatReceivesBlockAsParameter() {
+    void validForBlocksBeforeRskip110UsingMethodThatReceivesBlockAsParameter() {
         long blockNumber = 4242;
         ForkDetectionDataRule rule = new ForkDetectionDataRule(
                 activationConfig,
@@ -70,7 +70,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForBlocksBeforeRskip110() {
+    void validForBlocksBeforeRskip110() {
         long blockNumber = 4242;
         ForkDetectionDataRule rule = new ForkDetectionDataRule(
                 activationConfig,
@@ -86,7 +86,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveButForkDetectionData() {
+    void invalidForRskip110ActiveButForkDetectionData() {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -105,7 +105,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForRskip110ActiveButNoForkDetectionDataBecauseNoEnoughBlocksToCalculateIt() {
+    void validForRskip110ActiveButNoForkDetectionDataBecauseNoEnoughBlocksToCalculateIt() {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -124,7 +124,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveAndForkDetectionDataButMissingBlocksForCalculation() {
+    void invalidForRskip110ActiveAndForkDetectionDataButMissingBlocksForCalculation() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -152,7 +152,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForRskip110ActiveAndForkDetectionData() {
+    void validForRskip110ActiveAndForkDetectionData() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -187,7 +187,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveAndForkDetectionDataBecauseDataDoesNotMatch() {
+    void invalidForRskip110ActiveAndForkDetectionDataBecauseDataDoesNotMatch() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 

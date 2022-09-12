@@ -55,7 +55,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
-public class RskContextTest {
+class RskContextTest {
 
     private File databaseDir;
     private RskSystemProperties testProperties;
@@ -63,7 +63,7 @@ public class RskContextTest {
     private RskContext rskContext;
 
     @BeforeEach
-    public void setUp(@TempDir Path tempDir) throws IOException {
+    void setUp(@TempDir Path tempDir) throws IOException {
         databaseDir = tempDir.resolve("database").toFile();
 
         testProperties = spy(new TestSystemProperties());
@@ -76,7 +76,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void getCliArgsSmokeTest() {
+    void getCliArgsSmokeTest() {
         RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
         MatcherAssert.assertThat(devnetContext.getCliArgs(), notNullValue());
         MatcherAssert.assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
@@ -84,7 +84,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldResolveCacheSnapshotPath() {
+    void shouldResolveCacheSnapshotPath() {
         Path baseStorePath = Paths.get("./db");
 
         Path resolvedPath = rskContext.resolveCacheSnapshotPath(baseStorePath);
@@ -96,7 +96,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildSimpleTrieStore() throws IOException {
+    void shouldBuildSimpleTrieStore() throws IOException {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
         TrieStore trieStore = rskContext.getTrieStore();
@@ -105,7 +105,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildSimpleTrieStoreCleaningUpMultiTrieStore() throws IOException {
+    void shouldBuildSimpleTrieStoreCleaningUpMultiTrieStore() throws IOException {
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
@@ -123,7 +123,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildMultiTrieStore() throws IOException {
+    void shouldBuildMultiTrieStore() throws IOException {
         long numberOfEpochs = 3;
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
@@ -134,7 +134,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildMultiTrieStoreMigratingSingleTrieStore() throws IOException {
+    void shouldBuildMultiTrieStoreMigratingSingleTrieStore() throws IOException {
         rskContext.close();
 
         long numberOfEpochs = 3;
@@ -150,7 +150,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildMultiTrieStoreFromExistingDirectories() throws IOException {
+    void shouldBuildMultiTrieStoreFromExistingDirectories() throws IOException {
         int numberOfEpochs = 3;
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(false).when(testProperties).databaseReset();
@@ -180,7 +180,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void buildInternalServicesWithPeerScoringSummaryService() {
+    void buildInternalServicesWithPeerScoringSummaryService() {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
         doReturn(1).when(testProperties).getNumOfAccountSlots();
         doReturn(1L).when(testProperties).getPeerScoringSummaryTime();
@@ -195,7 +195,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldBuildAsyncNodeBlockProcessor() {
+    void shouldBuildAsyncNodeBlockProcessor() {
         doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
 
         doReturn(1).when(testProperties).getNumOfAccountSlots();
@@ -217,7 +217,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void doubleCloseShouldNotCrash() {
+    void doubleCloseShouldNotCrash() {
         Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.close();
@@ -228,7 +228,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void closeShouldStopInternalService() throws Exception {
+    void closeShouldStopInternalService() throws Exception {
         Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.getNodeRunner().run();
@@ -238,7 +238,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
+    void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
         RskContext rskContext = new RskContext(new String[0]);
 
         rskContext.close();
@@ -264,7 +264,7 @@ public class RskContextTest {
     }
 
     @Test
-    public void shouldMakeNewContext() throws Exception {
+    void shouldMakeNewContext() throws Exception {
         Assertions.assertFalse(rskContext.isClosed());
 
         rskContext.getNodeRunner().run();

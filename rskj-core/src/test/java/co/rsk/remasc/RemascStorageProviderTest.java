@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by usuario on 13/04/2017.
  */
-public class RemascStorageProviderTest {
+class RemascStorageProviderTest {
 
     private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
     private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
@@ -95,7 +95,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void getDefautRewardBalance() {
+    void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -105,7 +105,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setAndGetRewardBalance() {
+    void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -117,7 +117,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetRewardBalance() throws IOException {
+    void setSaveRetrieveAndGetRewardBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -133,7 +133,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void getDefautBurnedBalance() {
+    void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -143,7 +143,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setAndGetBurnedBalance() {
+    void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -155,7 +155,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetBurnedBalance() throws IOException {
+    void setSaveRetrieveAndGetBurnedBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -171,7 +171,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void getDefaultBrokenSelectionRule() {
+    void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -181,7 +181,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setAndGetBrokenSelectionRule() {
+    void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -193,7 +193,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
+    void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -209,7 +209,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
         long minerFee = 21000;
@@ -231,7 +231,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
         long minerFee = 21000;
         long txValue = 10000;
 
@@ -256,7 +256,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void alwaysPaysBeforeRFS() throws IOException {
+    void alwaysPaysBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -278,7 +278,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void alwaysPaysFedBeforeRFS() throws IOException {
+    void alwaysPaysFedBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -303,7 +303,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -329,7 +329,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -352,7 +352,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -380,7 +380,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -405,7 +405,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
+    void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);

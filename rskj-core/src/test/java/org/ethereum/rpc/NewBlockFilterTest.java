@@ -26,9 +26,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 17/01/2018.
  */
-public class NewBlockFilterTest {
+class NewBlockFilterTest {
     @Test
-    public void noEvents() {
+    void noEvents() {
         NewBlockFilter filter = new NewBlockFilter();
 
         Object[] result = filter.getEvents();
@@ -38,7 +38,7 @@ public class NewBlockFilterTest {
     }
 
     @Test
-    public void oneBlockAndEvent() {
+    void oneBlockAndEvent() {
         NewBlockFilter filter = new NewBlockFilter();
         Block block = new BlockGenerator().getBlock(1);
 
@@ -52,7 +52,7 @@ public class NewBlockFilterTest {
     }
 
     @Test
-    public void twoBlocksAndEvents() {
+    void twoBlocksAndEvents() {
         NewBlockFilter filter = new NewBlockFilter();
         Block block1 = new BlockGenerator().getBlock(1);
         Block block2 = new BlockGenerator().getBlock(2);

@@ -27,9 +27,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class GenesisHashesTest {
+class GenesisHashesTest {
     @Test
-    public void mainnetHashTest() {
+    void mainnetHashTest() {
         RskContext rskContext = new RskTestContext(new String[0]);
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
@@ -39,7 +39,7 @@ public class GenesisHashesTest {
     }
 
     @Test
-    public void testnetHashTest() {
+    void testnetHashTest() {
         RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();

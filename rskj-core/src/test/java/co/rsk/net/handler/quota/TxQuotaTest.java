@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TxQuotaTest {
+class TxQuotaTest {
 
     private static final long MAX_GAS_PER_SECOND = Math.round(6_800_000 * 0.9);
     private static final long MAX_QUOTA = MAX_GAS_PER_SECOND * 2000;
@@ -38,12 +38,12 @@ public class TxQuotaTest {
     private TimeProvider timeProvider;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         timeProvider = mock(TimeProvider.class);
     }
 
     @Test
-    public void acceptVirtualGasConsumption() {
+    void acceptVirtualGasConsumption() {
         Transaction tx = mock(Transaction.class);
         Keccak256 txHash = TestUtils.randomHash();
         when(tx.getHash()).thenReturn(txHash);
@@ -58,7 +58,7 @@ public class TxQuotaTest {
     }
 
     @Test
-    public void forceVirtualGasSubtraction() {
+    void forceVirtualGasSubtraction() {
         Transaction tx = mock(Transaction.class);
         Keccak256 txHash = TestUtils.randomHash();
         when(tx.getHash()).thenReturn(txHash);
@@ -73,7 +73,7 @@ public class TxQuotaTest {
     }
 
     @Test
-    public void refresh() {
+    void refresh() {
         long currentTime = System.currentTimeMillis();
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime);
 

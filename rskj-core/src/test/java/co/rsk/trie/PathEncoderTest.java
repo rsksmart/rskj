@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Assertions;
 /**
  * Created by ajlopez on 07/02/2017.
  */
-public class PathEncoderTest {
+class PathEncoderTest {
     @Test
-    public void encodeNullBinaryPath() {
+    void encodeNullBinaryPath() {
         try {
             PathEncoder.encode(null);
             Assertions.fail();
@@ -37,7 +37,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void encodeBinaryPath() {
+    void encodeBinaryPath() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01 };
 
         byte[] encoded = PathEncoder.encode(path);
@@ -47,7 +47,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void encodeBinaryPathOneByte() {
+    void encodeBinaryPathOneByte() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 };
 
         byte[] encoded = PathEncoder.encode(path);
@@ -57,7 +57,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void encodeBinaryPathNineBits() {
+    void encodeBinaryPathNineBits() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01 };
 
         byte[] encoded = PathEncoder.encode(path);
@@ -67,7 +67,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void encodeBinaryPathOneAndHalfByte() {
+    void encodeBinaryPathOneAndHalfByte() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01 };
 
         byte[] encoded = PathEncoder.encode(path);
@@ -77,7 +77,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeNullBinaryPath() {
+    void decodeNullBinaryPath() {
         try {
             PathEncoder.decode(null, 0);
             Assertions.fail();
@@ -88,7 +88,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeBinaryPath() {
+    void decodeBinaryPath() {
         byte[] encoded = new byte[] { 0x60 };
 
         byte[] path = PathEncoder.decode(encoded, 3);
@@ -98,7 +98,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeBinaryPathOneByte() {
+    void decodeBinaryPathOneByte() {
         byte[] encoded = new byte[] { 0x6d };
 
         byte[] path = PathEncoder.decode(encoded, 8);
@@ -108,7 +108,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeBinaryPathNineBits() {
+    void decodeBinaryPathNineBits() {
         byte[] encoded = new byte[] { 0x6d, (byte)0x80 };
 
         byte[] path = PathEncoder.decode(encoded, 9);
@@ -118,7 +118,7 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeBinaryPathOneAndHalfByte() {
+    void decodeBinaryPathOneAndHalfByte() {
         byte[] encoded = new byte[] { 0x6d, 0x50 };
 
         byte[] path = PathEncoder.decode(encoded, 12);

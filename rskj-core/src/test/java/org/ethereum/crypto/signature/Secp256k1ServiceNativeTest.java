@@ -11,12 +11,12 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class Secp256k1ServiceNativeTest extends Secp256k1ServiceTest {
+class Secp256k1ServiceNativeTest extends Secp256k1ServiceTest {
 
     private static final BigInteger BIG_NUMBER = new BigInteger(Hex.decode("3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4"));
 
     @BeforeAll
-    public static void beforeMethod() {
+     static void beforeMethod() {
         assumeTrue(Secp256k1Context.isEnabled());
     }
 
@@ -25,7 +25,7 @@ public class Secp256k1ServiceNativeTest extends Secp256k1ServiceTest {
     }
 
     @Test
-    public void testConcatenate() {
+    void testConcatenate() {
         concatenateAssert(BigInteger.ZERO, BigInteger.ZERO);
         concatenateAssert(BigInteger.ZERO, BigInteger.ONE);
         concatenateAssert(BigInteger.ZERO, BigInteger.TEN);

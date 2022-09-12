@@ -9,17 +9,17 @@ import org.junit.jupiter.api.Test;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Web3HttpStatusCodeProviderTest {
+class Web3HttpStatusCodeProviderTest {
 
     private HttpStatusCodeProvider httpStatusCodeProvider;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         httpStatusCodeProvider = new Web3HttpStatusCodeProvider();
     }
 
     @Test
-    public void getHttpStatusCodeReturnsExpectedHttpStatusCodes() {
+    void getHttpStatusCodeReturnsExpectedHttpStatusCodes() {
         assertThatOkHttpStatusIsReturnedWhenExpected(httpStatusCodeProvider);
         assertThatBadRequestHttpStatusIsReturnedWhenExpected(httpStatusCodeProvider);
     }
@@ -45,7 +45,7 @@ public class Web3HttpStatusCodeProviderTest {
     }
 
     @Test
-    public void getJsonRpcCodeThrowsUnsupportedOperationException() {
+    void getJsonRpcCodeThrowsUnsupportedOperationException() {
         Assertions.assertThrows(UnsupportedOperationException.class, () -> httpStatusCodeProvider.getJsonRpcCode(INVALID_REQUEST.code));
     }
 }

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 
-public class JacksonBasedRpcSerializerTest {
+class JacksonBasedRpcSerializerTest {
 
 	private JacksonBasedRpcSerializer serializer;
 
@@ -24,7 +24,7 @@ public class JacksonBasedRpcSerializerTest {
 	}
 
 	@Test
-	public void testIntegerId_then_convertSuccessfully() throws IOException {
+	void testIntegerId_then_convertSuccessfully() throws IOException {
 
 		String messageInt = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": 64}";
 		RskJsonRpcRequest requestFromIntId = convertJson(messageInt);
@@ -33,7 +33,7 @@ public class JacksonBasedRpcSerializerTest {
 	}
 
 	@Test
-	public void testStringId_then_convertSuccessfully() throws IOException {
+	void testStringId_then_convertSuccessfully() throws IOException {
 
 		String messageStr = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": \"string\"}";
 		RskJsonRpcRequest requestFromStringId = convertJson(messageStr);

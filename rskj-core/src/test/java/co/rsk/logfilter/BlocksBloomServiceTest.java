@@ -13,9 +13,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 29/09/2020.
  */
-public class BlocksBloomServiceTest {
+class BlocksBloomServiceTest {
     @Test
-    public void processFirstRange() {
+    void processFirstRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -35,7 +35,7 @@ public class BlocksBloomServiceTest {
     }
 
     @Test
-    public void processFirstRangeUsingEmitter() {
+    void processFirstRangeUsingEmitter() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -57,7 +57,7 @@ public class BlocksBloomServiceTest {
     }
 
     @Test
-    public void processFirstAndSecondRangeUsingEmitter() {
+    void processFirstAndSecondRangeUsingEmitter() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 10, false, false);
@@ -81,7 +81,7 @@ public class BlocksBloomServiceTest {
     }
 
     @Test
-    public void processOnlySecondRangeUsingEmitter() {
+    void processOnlySecondRangeUsingEmitter() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 10, false, false);

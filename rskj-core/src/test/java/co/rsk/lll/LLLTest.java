@@ -23,6 +23,7 @@ import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import java.nio.file.Paths;
 /**
  * Created by Sergio on 24/10/2016.
  */
-public class LLLTest {
+class LLLTest {
 
     void showCode(byte[] code) {
         System.out.println("code: " + ByteUtil.toHexString(code));
@@ -87,13 +88,15 @@ public class LLLTest {
         System.out.println("Current dir:" + current);
     }
     @Test
-    public void DissasembleThisPlease() {
+    void DissasembleThisPlease() {
         String dis =EVMDissasembler.getDissasemble(Hex.decode("600060006000600060026002600803036002600306600260020460046004600402026002600201010101013360c85a03f1"));
+        Assertions.assertNotNull(dis);
         System.out.println(dis);
     }
 
     @Test
-    public void lllcompileTest() {
+    @SuppressWarnings("squid:S5961")
+    void lllcompileTest() {
 
         try {
 

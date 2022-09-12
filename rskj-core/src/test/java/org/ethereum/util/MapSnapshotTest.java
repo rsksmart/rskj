@@ -30,10 +30,10 @@ import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
-public class MapSnapshotTest {
+class MapSnapshotTest {
 
     @Test
-    public void readSnapshot_WhenRead_PopulateMap() throws IOException {
+    void readSnapshot_WhenRead_PopulateMap() throws IOException {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
 
@@ -55,7 +55,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenMismatchedChecksums_ThrowError() {
+    void readSnapshot_WhenMismatchedChecksums_ThrowError() {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
 
@@ -79,7 +79,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenNull_ThrowError() {
+    void readSnapshot_WhenNull_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {});
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
 
@@ -90,7 +90,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenEmptyStream_ThrowError() {
+    void readSnapshot_WhenEmptyStream_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {});
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
 
@@ -98,7 +98,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenInvalidCount_ThrowError() {
+    void readSnapshot_WhenInvalidCount_ThrowError() {
         InputStream inputStream = makeInputStream(out -> out.writeInt(0));
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         try {
@@ -110,7 +110,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenInvalidKeySize_ThrowError() {
+    void readSnapshot_WhenInvalidKeySize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(-1);
@@ -125,7 +125,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenInvalidKeyLength_ThrowError() {
+    void readSnapshot_WhenInvalidKeyLength_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -136,7 +136,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenInvalidValueSize_ThrowError() {
+    void readSnapshot_WhenInvalidValueSize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -153,7 +153,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void readSnapshot_WhenInvalidValueLength_ThrowError() {
+    void readSnapshot_WhenInvalidValueLength_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -165,7 +165,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void closeInputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
+    void closeInputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
         InputStream inputStream = mock(InputStream.class);
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
 
@@ -175,7 +175,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void writeSnapshot_WhenWrite_ShouldPopulateOutputStream() throws IOException {
+    void writeSnapshot_WhenWrite_ShouldPopulateOutputStream() throws IOException {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
         Map<ByteArrayWrapper, byte[]> outMap = new HashMap<>();
@@ -202,7 +202,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void closeOutputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
+    void closeOutputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
         OutputStream outputStream = mock(OutputStream.class);
         MapSnapshot.Out outSnapshot = new MapSnapshot.Out(outputStream);
 
@@ -212,7 +212,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void writeAndReadSnapshot_WhenReadWritten_ShouldMatch() throws IOException {
+    void writeAndReadSnapshot_WhenReadWritten_ShouldMatch() throws IOException {
         Map<ByteArrayWrapper, byte[]> outMap = new HashMap<>();
         outMap.put(ByteUtil.wrap(new byte[0]), new byte[0]); // empty-byte keys and values are allowed
         for (int i = 0; i < 10; i++) {

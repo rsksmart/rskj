@@ -31,14 +31,14 @@ import java.util.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ABICallElectionTest {
+class ABICallElectionTest {
     private ABICallSpec spec_fna, spec_fnb;
     private ABICallElection election;
     private AddressBasedAuthorizer authorizer;
     private Map<ABICallSpec, List<RskAddress>> votes;
 
     @BeforeEach
-    public void createVotesAuthorizerAndElection() {
+    void createVotesAuthorizerAndElection() {
         authorizer = new AddressBasedAuthorizer(Arrays.asList(
                 createMockKeyForAddress("aa"),
                 createMockKeyForAddress("bb"),
@@ -67,24 +67,24 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void emptyVotesConstructor() {
+    void emptyVotesConstructor() {
         ABICallElection electionBis = new ABICallElection(authorizer);
         Assertions.assertEquals(0, electionBis.getVotes().size());
     }
 
     @Test
-    public void getVotes() {
+    void getVotes() {
         Assertions.assertSame(votes, election.getVotes());
     }
 
     @Test
-    public void clear() {
+    void clear() {
         election.clear();
         Assertions.assertEquals(0, election.getVotes().size());
     }
 
     @Test
-    public void vote_unauthorized() {
+    void vote_unauthorized() {
         ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{});
         Assertions.assertFalse(election.vote(spec_fnc, createVoter("112233")));
         Assertions.assertEquals(2, election.getVotes().size());
@@ -94,7 +94,7 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void vote_alreadyVoted() {
+    void vote_alreadyVoted() {
         Assertions.assertFalse(election.vote(spec_fnb, createVoter("aa")));
         Assertions.assertFalse(election.vote(spec_fnb, createVoter("bb")));
         Assertions.assertEquals(2, election.getVotes().size());
@@ -103,7 +103,7 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void vote_newFn() {
+    void vote_newFn() {
         ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{ Hex.decode("44") });
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("dd")));
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("ee")));
@@ -114,7 +114,7 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void vote_existingFn() {
+    void vote_existingFn() {
         Assertions.assertTrue(election.vote(spec_fna, createVoter("cc")));
         Assertions.assertTrue(election.vote(spec_fna, createVoter("dd")));
         Assertions.assertEquals(2, election.getVotes().size());
@@ -125,7 +125,7 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void getWinnerAndClearWinners_existingFn() {
+    void getWinnerAndClearWinners_existingFn() {
         Assertions.assertNull(election.getWinner());
         Assertions.assertTrue(election.vote(spec_fnb, createVoter("ee")));
         Assertions.assertEquals(spec_fnb, election.getWinner());
@@ -138,7 +138,7 @@ public class ABICallElectionTest {
     }
 
     @Test
-    public void getWinnerAndClearWinners_newFn() {
+    void getWinnerAndClearWinners_newFn() {
         ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{ Hex.decode("44") });
         Assertions.assertNull(election.getWinner());
         Assertions.assertTrue(election.vote(spec_fnc, createVoter("ee")));

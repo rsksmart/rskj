@@ -25,38 +25,38 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class TrieKeyMapperTest {
+class TrieKeyMapperTest {
 
     private static final int BATCH_TEST = 500;
     private TrieKeyMapper trieKeyMapper;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         trieKeyMapper = spy(new TrieKeyMapper());
     }
 
     @Test
-    public void getAccountKey_new() {
+    void getAccountKey_new() {
         RskAddress address = new RskAddress("1000000000000000000000000000000000000000");
         this.trieKeyMapper.getAccountKey(address);
-        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(address);
     }
 
     @Test
-    public void getAccountKey_fromCache() {
+    void getAccountKey_fromCache() {
         RskAddress address = new RskAddress("1000000000000000000000000000000000000001");
 
         byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
-        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(address);
 
         byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
-        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+        verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(address);
         Assertions.assertArrayEquals(accountKey, accountKeyCache, "Account key diff from diff calls.");
 
     }
 
     @Test
-    public void getAccountKey_fromCache_multipleKeys() {
+    void getAccountKey_fromCache_multipleKeys() {
         String addressPrefix = "1000000000000000000000000000000000000";
 
         int offset = 100;
@@ -64,10 +64,10 @@ public class TrieKeyMapperTest {
 
             RskAddress address = new RskAddress(addressPrefix + i);
             byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
-            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(address);
 
             byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
-            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(address);
             Assertions.assertArrayEquals(accountKey, accountKeyCache, "Account key diff from diff calls.");
         }
 
@@ -76,7 +76,7 @@ public class TrieKeyMapperTest {
         for (int i = offset; i < BATCH_TEST + offset; i++) {
             RskAddress address = new RskAddress(addressPrefix + i);
             byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
-            verify(this.trieKeyMapper, times(0)).mapRskAddressToKey(eq(address));
+            verify(this.trieKeyMapper, times(0)).mapRskAddressToKey(address);
             Assertions.assertNotNull(accountKey, "Shouldnt return null value from cache.");
         }
 

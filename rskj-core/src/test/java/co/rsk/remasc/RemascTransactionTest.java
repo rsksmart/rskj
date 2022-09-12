@@ -21,10 +21,10 @@ package co.rsk.remasc;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class RemascTransactionTest {
+class RemascTransactionTest {
 
     @Test
-    public void serializationTest() throws Exception{
+    void serializationTest() throws Exception{
         RemascTransaction tx = new RemascTransaction(10);
         byte[] encoded = tx.getEncoded();
         RemascTransaction tx2 = new RemascTransaction(encoded);

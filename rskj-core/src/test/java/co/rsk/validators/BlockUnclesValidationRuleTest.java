@@ -18,10 +18,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 18/08/2017.
  */
-public class BlockUnclesValidationRuleTest {
+class BlockUnclesValidationRuleTest {
 
     @Test
-    public void rejectBlockWithSiblingUncle() {
+    void rejectBlockWithSiblingUncle() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -41,7 +41,7 @@ public class BlockUnclesValidationRuleTest {
     }
 
     @Test
-    public void rejectBlockWithUncleHavingHigherNumber() {
+    void rejectBlockWithUncleHavingHigherNumber() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 

@@ -27,9 +27,9 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockRequestMessageTest {
+class BlockRequestMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
@@ -39,7 +39,7 @@ public class BlockRequestMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 

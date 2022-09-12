@@ -27,10 +27,10 @@ import java.util.Arrays;
 /**
  * Created by martin.medina on 11/01/2017.
  */
-public class TrieHashTest {
+class TrieHashTest {
 
     @Test
-    public void removeOrNeverInsertShouldBringSameHash() {
+    void removeOrNeverInsertShouldBringSameHash() {
         Trie trie1 = new Trie().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
                 .put("roosevilt", "42".getBytes())
@@ -46,7 +46,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
@@ -62,7 +62,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -83,7 +83,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
@@ -102,7 +102,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -126,7 +126,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndTwoSonsShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevalt0oosevalt", "424344".getBytes())
@@ -145,7 +145,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndTwoSonsShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -169,7 +169,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void sonWithSiblingAndOnlyOneGrandsonShouldBringSameHashBaseCase() {
+    void sonWithSiblingAndOnlyOneGrandsonShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie()
                 .put("roosevalt", "4243".getBytes())
                 .put("rooseval_", "424344".getBytes())

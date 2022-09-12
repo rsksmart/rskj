@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHashRequestMessageTest {
+class BlockHashRequestMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
@@ -36,7 +36,7 @@ public class BlockHashRequestMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);

@@ -25,12 +25,12 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 20/04/2017.
  */
-public class CorsConfigurationTest {
+class CorsConfigurationTest {
 
     public static final String EXPECTED_CORS_CONFIG = "*.rsk.co";
 
     @Test
-    public void hasNoHeaderIfHeaderIsNull() {
+    void hasNoHeaderIfHeaderIsNull() {
         CorsConfiguration config = new CorsConfiguration(null);
 
         Assertions.assertNull(config.getHeader());
@@ -38,7 +38,7 @@ public class CorsConfigurationTest {
     }
 
     @Test
-    public void hasNoHeaderIfHeaderIsEmpty() {
+    void hasNoHeaderIfHeaderIsEmpty() {
         CorsConfiguration config = new CorsConfiguration("");
 
         Assertions.assertEquals("", config.getHeader());
@@ -46,7 +46,7 @@ public class CorsConfigurationTest {
     }
 
     @Test
-    public void hasHeaderFromTestConfig() {
+    void hasHeaderFromTestConfig() {
         CorsConfiguration config = new CorsConfiguration(new TestSystemProperties().corsDomains());
 
         Assertions.assertNotNull(config.getHeader());
@@ -55,7 +55,7 @@ public class CorsConfigurationTest {
     }
 
     @Test
-    public void raisedIfHeaderContainsCarriageReturn() {
+    void raisedIfHeaderContainsCarriageReturn() {
         try {
             new CorsConfiguration("host1\rhost2");
             Assertions.fail();
@@ -66,7 +66,7 @@ public class CorsConfigurationTest {
     }
 
     @Test
-    public void raisedIfHeaderContainsNewLine() {
+    void raisedIfHeaderContainsNewLine() {
         try {
             new CorsConfiguration("host1\nhost2");
             Assertions.fail();

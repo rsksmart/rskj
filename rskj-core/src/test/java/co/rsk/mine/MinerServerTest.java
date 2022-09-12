@@ -161,7 +161,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
+    void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
@@ -203,7 +203,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlockTwoTags() {
+    void submitBitcoinBlockTwoTags() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -247,7 +247,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlock() {
+    void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -277,7 +277,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
+    void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -310,7 +310,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
+    void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -350,7 +350,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
+    void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -382,7 +382,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
+    void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -420,7 +420,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void workWithNoTransactionsZeroFees() {
+    void workWithNoTransactionsZeroFees() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -439,7 +439,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void initialWorkTurnsNotifyFlagOn() {
+    void initialWorkTurnsNotifyFlagOn() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -458,7 +458,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void secondWorkWithNoChangesTurnsNotifyFlagOff() {
+    void secondWorkWithNoChangesTurnsNotifyFlagOff() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -481,7 +481,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void gasUnitInDollarsIsInitializedOkAtConstructor() {
+    void gasUnitInDollarsIsInitializedOkAtConstructor() {
         Block block1 = mock(Block.class);
         when(block1.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(10)));
         when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
@@ -529,7 +529,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void secondBuildBlockToMineTurnsNotifyFlagOff() {
+    void secondBuildBlockToMineTurnsNotifyFlagOff() {
         Ethereum ethereum = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -554,7 +554,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitTwoBitcoinBlocksAtSameTimeWithoutRateLimit() {
+    void submitTwoBitcoinBlocksAtSameTimeWithoutRateLimit() {
         Ethereum ethereum = mock(EthereumImpl.class);
         when(ethereum.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -579,7 +579,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void submitTwoBitcoinBlocksAtSameTimeWithRateLimit() {
+    void submitTwoBitcoinBlocksAtSameTimeWithRateLimit() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -610,7 +610,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void extraDataNotInitializedWithClientData() {
+    void extraDataNotInitializedWithClientData() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -638,7 +638,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void extraDataWithClientData() {
+    void extraDataWithClientData() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -672,7 +672,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void extraDataWithClientDataMoreThan32Bytes() {
+    void extraDataWithClientDataMoreThan32Bytes() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -713,7 +713,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void onBestBlockBuildBlockToMine() {
+    void onBestBlockBuildBlockToMine() {
 
         // prepare for miner server
         Ethereum ethereum = mock(EthereumImpl.class);
@@ -748,7 +748,7 @@ public abstract class MinerServerTest {
     }
 
     @Test
-    public void onNewTxBuildBlockToMine() throws InterruptedException {
+    void onNewTxBuildBlockToMine() throws InterruptedException {
 
         // prepare for miner server
         Ethereum ethereum = spy(new EthereumImpl(null, null, compositeEthereumListener, standardBlockchain, Mockito.mock(GasPriceTracker.class)) );

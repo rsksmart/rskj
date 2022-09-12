@@ -14,17 +14,17 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @Disabled
-public class GetBtcBlockchainBestBlockHeaderTest extends BridgePerformanceTestCase {
+class GetBtcBlockchainBestBlockHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getBtcBlockchainBestBlockHeaderTest() throws VMException {
+    void getBtcBlockchainBestBlockHeaderTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBestBlockHeader");
         getBtcBlockchainBestBlockHeaderTest_success(1000, stats);
         BridgePerformanceTest.addStats(stats);

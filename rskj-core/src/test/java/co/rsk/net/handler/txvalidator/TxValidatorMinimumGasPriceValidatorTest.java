@@ -24,10 +24,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class TxValidatorMinimumGasPriceValidatorTest {
+class TxValidatorMinimumGasPriceValidatorTest {
 
     @Test
-    public void validMinimumGasPrice() {
+    void validMinimumGasPrice() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
@@ -45,7 +45,7 @@ public class TxValidatorMinimumGasPriceValidatorTest {
     }
 
     @Test
-    public void invalidMinimumGasPrice() {
+    void invalidMinimumGasPrice() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);

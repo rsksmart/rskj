@@ -27,7 +27,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
@@ -39,12 +38,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class BlockTest {
+class BlockTest {
 
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void testParseRemascTransaction() {
+    void testParseRemascTransaction() {
         List<Transaction> txs = new ArrayList<>();
 
         Transaction txNotToRemasc = Transaction.builder()
@@ -103,7 +102,7 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHasSealesBlockHeader() {
+    void sealedBlockHasSealesBlockHeader() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
@@ -112,7 +111,7 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockSetStateRoot() {
+    void sealedBlockSetStateRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
@@ -127,217 +126,160 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockSetTransactionList() {
+    void sealedBlockSetTransactionList() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.setTransactionsList(Collections.emptyList());
-            Assertions.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assertions.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
-        }
+        List<Transaction> transactionsList = Collections.emptyList();
+        Exception ex = Assertions.assertThrows(SealedBlockException.class, () -> block.setTransactionsList(transactionsList));
+        Assertions.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockSetBitcoinMergedMiningCoinbaseTransaction() {
+    void sealedBlockSetBitcoinMergedMiningCoinbaseTransaction() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
-        }
+        Exception ex = Assertions.assertThrows(SealedBlockException.class, () -> block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]));
+        Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockSetBitcoinMergedMiningHeader() {
+    void sealedBlockSetBitcoinMergedMiningHeader() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.setBitcoinMergedMiningHeader(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
-        }
+        Exception ex = Assertions.assertThrows(SealedBlockException.class, () -> block.setBitcoinMergedMiningHeader(new byte[32]));
+        Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockSetBitcoinMergedMiningMerkleProof() {
+    void sealedBlockSetBitcoinMergedMiningMerkleProof() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.setBitcoinMergedMiningMerkleProof(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
-        }
+        Exception ex = Assertions.assertThrows(SealedBlockException.class, () -> block.setBitcoinMergedMiningMerkleProof(new byte[32]));
+        Assertions.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetStateRoot() {
+    void sealedBlockHeaderSetStateRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setStateRoot(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter state root", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setStateRoot(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter state root", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetReceiptsRoot() {
+    void sealedBlockHeaderSetReceiptsRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setReceiptsRoot(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter receipts root", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setReceiptsRoot(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter receipts root", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetTransactionsRoot() {
+    void sealedBlockHeaderSetTransactionsRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setTransactionsRoot(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter transactions root", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setTransactionsRoot(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter transactions root", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetDifficulty() {
+    void sealedBlockHeaderSetDifficulty() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setDifficulty(RLP.parseBlockDifficulty(new byte[32]));
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter difficulty", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        BlockDifficulty difficulty = RLP.parseBlockDifficulty(new byte[32]);
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setDifficulty(difficulty));
+        Assertions.assertEquals("Sealed block header: trying to alter difficulty", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetPaidFees() {
+    void sealedBlockHeaderSetPaidFees() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setPaidFees(Coin.valueOf(10L));
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter paid fees", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Coin paidFees = Coin.valueOf(10L);
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setPaidFees(paidFees));
+        Assertions.assertEquals("Sealed block header: trying to alter paid fees", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetGasUsed() {
+    void sealedBlockHeaderSetGasUsed() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setGasUsed(10);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter gas used", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setGasUsed(10));
+        Assertions.assertEquals("Sealed block header: trying to alter gas used", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetLogsBloom() {
+    void sealedBlockHeaderSetLogsBloom() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setLogsBloom(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setLogsBloom(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetBitcoinMergedMiningHeader() {
+    void sealedBlockHeaderSetBitcoinMergedMiningHeader() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setBitcoinMergedMiningHeader(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining header", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setBitcoinMergedMiningHeader(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining header", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetBitcoinMergedMiningMerkleProof() {
+    void sealedBlockHeaderSetBitcoinMergedMiningMerkleProof() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setBitcoinMergedMiningMerkleProof(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining merkle proof", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setBitcoinMergedMiningMerkleProof(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining merkle proof", ex.getMessage());
     }
 
     @Test
-    public void sealedBlockHeaderSetBitcoinMergedMiningCoinbaseTransaction() {
+    void sealedBlockHeaderSetBitcoinMergedMiningCoinbaseTransaction() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
         block.seal();
 
-        try {
-            block.getHeader().setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
-            Assertions.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
-        }
+        BlockHeader header = block.getHeader();
+        Exception ex = Assertions.assertThrows(SealedBlockHeaderException.class, () -> header.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]));
+        Assertions.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
     }
 
     @Test
-    public void checkTxTrieShouldBeDifferentForDifferentBlock() {
+    void checkTxTrieShouldBeDifferentForDifferentBlock() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createBlock(10, 1);
         Block block2 = blockGenerator.createBlock(10, 2);
@@ -347,7 +289,7 @@ public class BlockTest {
     }
 
     @Test
-    public void checkTxTrieShouldBeEqualForHeaderAndBody() {
+    void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
         byte[] trieHash = block.getTxTrieRoot();
         byte[] trieListHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), true);
@@ -355,7 +297,7 @@ public class BlockTest {
     }
 
     @Test
-    public void createBlockFromHeader() {
+    void createBlockFromHeader() {
         Block block = new BlockGenerator().createBlock(10, 0);
         BlockHeader header = block.getHeader();
 

@@ -4,10 +4,10 @@ import co.rsk.net.messages.MessageType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class StatsTest {
+class StatsTest {
 
     @Test
-    public void TestGeneralPerformance() {
+    void TestGeneralPerformance() {
         Stats stats = new Stats();
 
         double score = stats.score(MessageType.STATUS_MESSAGE);
@@ -33,7 +33,7 @@ public class StatsTest {
     }
 
     @Test
-    public void TestHighFrequency() {
+    void TestHighFrequency() {
         Stats stats = new Stats();
         stats.setAvg(500);
 
@@ -44,7 +44,7 @@ public class StatsTest {
     }
 
     @Test
-    public void TestLowFrequency() {
+    void TestLowFrequency() {
         Stats stats = new Stats();
         stats.setAvg(500);;
 
@@ -55,7 +55,7 @@ public class StatsTest {
     }
 
     @Test
-    public void TestImportedBest() {
+    void TestImportedBest() {
         Stats stats = new Stats();
         stats.setAvg(500);
         stats.setImportedBest(20);
@@ -69,7 +69,7 @@ public class StatsTest {
     }
 
     @Test
-    public void TestImportedNotBest() {
+    void TestImportedNotBest() {
         Stats stats = new Stats();
         stats.setAvg(500);
         stats.setImportedBest(20);
@@ -83,7 +83,7 @@ public class StatsTest {
     }
 
     @Test
-    public void TestMessageTypes() {
+    void TestMessageTypes() {
         Stats stats = new Stats();
         stats.setAvg(500);
 

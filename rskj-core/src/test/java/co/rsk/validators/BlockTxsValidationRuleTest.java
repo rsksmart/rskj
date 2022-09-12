@@ -36,14 +36,14 @@ import java.util.Arrays;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockTxsValidationRuleTest {
+class BlockTxsValidationRuleTest {
 
     private BlockTxsValidationRule rule;
     private RepositorySnapshot repositorySnapshot;
     private Block parent;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         parent = mock(Block.class);
         BlockHeader parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
@@ -56,7 +56,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void validNonceSame() {
+    void validNonceSame() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
@@ -66,7 +66,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void invalidNonceLower() {
+    void invalidNonceLower() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
@@ -76,7 +76,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void invalidNonceHigher() {
+    void invalidNonceHigher() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
@@ -86,7 +86,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void validTransactionsWithSameNonceAndDifferentSenders() {
+    void validTransactionsWithSameNonceAndDifferentSenders() {
         RskAddress sender1 = TestUtils.randomAddress();
         initialNonce(sender1, 64);
         RskAddress sender2 = TestUtils.randomAddress();
@@ -98,7 +98,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void validConsecutiveTransactionsFromSameSender() {
+    void validConsecutiveTransactionsFromSameSender() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
@@ -108,7 +108,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void invalidTransactionsFromSameSenderWithSkippedNonce() {
+    void invalidTransactionsFromSameSenderWithSkippedNonce() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
@@ -118,7 +118,7 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void invalidTransactionsWithSameNonceAndSameSender() {
+    void invalidTransactionsWithSameNonceAndSameSender() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 

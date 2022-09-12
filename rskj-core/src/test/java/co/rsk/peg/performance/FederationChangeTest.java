@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Disabled
-public class FederationChangeTest extends BridgePerformanceTestCase {
+class FederationChangeTest extends BridgePerformanceTestCase {
     // regtest constants
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
             "auth-a",
@@ -54,7 +54,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     private BtcECKey votedFederatorPublicKey;
 
     @Test
-    public void createFederation() throws VMException {
+    void createFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("createFederation");
         createFederation_noWinner(200, stats);
         createFederation_winner(200, stats);
@@ -86,7 +86,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void addFederatorPublicKey() throws VMException {
+    void addFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("addFederatorPublicKey");
         addFederatorPublicKey_noWinner(200, stats);
         addFederatorPublicKey_winner(200, stats);
@@ -121,7 +121,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void commitFederation() throws VMException {
+    void commitFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("commitFederation");
         commitFederation_noWinner(200, stats);
         commitFederation_winner(200, stats);
@@ -153,7 +153,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void rollbackFederation() throws VMException {
+    void rollbackFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("rollbackFederation");
         rollbackFederation_noWinner(200, stats);
         rollbackFederation_winner(200, stats);

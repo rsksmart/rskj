@@ -31,9 +31,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 17/01/2018.
  */
-public class LogFilterTest {
+class LogFilterTest {
     @Test
-    public void noEvents() {
+    void noEvents() {
         LogFilter filter = new LogFilter(null, null, false, false);
 
         Object[] result = filter.getEvents();
@@ -43,7 +43,7 @@ public class LogFilterTest {
     }
 
     @Test
-    public void noEventsAfterEmptyBlock() {
+    void noEventsAfterEmptyBlock() {
         LogFilter filter = new LogFilter(null, null, false, false);
 
         Block block = new BlockGenerator().getBlock(1);
@@ -57,7 +57,7 @@ public class LogFilterTest {
     }
 
     @Test
-    public void eventAfterBlockWithEvent() {
+    void eventAfterBlockWithEvent() {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
@@ -78,7 +78,7 @@ public class LogFilterTest {
     }
 
     @Test
-    public void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
+    void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
@@ -100,7 +100,7 @@ public class LogFilterTest {
     }
 
     @Test
-    public void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
+    void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();

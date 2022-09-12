@@ -40,7 +40,7 @@ import static org.mockito.Mockito.spy;
 /**
  * Created by ajlopez on 9/3/2017.
  */
-public class TwoAsyncNodeUsingSyncProcessorTest {
+class TwoAsyncNodeUsingSyncProcessorTest {
 
     private static Block getGenesis() {
         final World world = new World();
@@ -49,7 +49,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainAndSynchronize() {
+    void buildBlockchainAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -74,7 +74,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainAndSynchronize400Blocks() {
+    void buildBlockchainAndSynchronize400Blocks() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -99,7 +99,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainWithUnclesAndSynchronize() {
+    void buildBlockchainWithUnclesAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -126,7 +126,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainPartialAndSynchronize() {
+    void buildBlockchainPartialAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -173,7 +173,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void sendNewBlock() throws InterruptedException {
+    void sendNewBlock() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -198,7 +198,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void stopSyncingAfter5SkeletonChunks() {
+    void stopSyncingAfter5SkeletonChunks() {
         int longSyncLimit = SyncConfiguration.IMMEDIATE_FOR_TESTING.getLongSyncLimit();
         int fiveChunksSize = 960;
         int b1Size = 30;
@@ -240,7 +240,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void syncInMultipleStepsWithLongBlockchain() {
+    void syncInMultipleStepsWithLongBlockchain() {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain b1 = builder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);

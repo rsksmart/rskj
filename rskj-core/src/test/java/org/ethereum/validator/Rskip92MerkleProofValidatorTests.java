@@ -12,12 +12,12 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Rskip92MerkleProofValidatorTests {
+class Rskip92MerkleProofValidatorTests {
 
     private static final int MAX_MERKLE_PROOF_SIZE = 960;
 
     @Test
-    public void isValid_PassValidHashes_ShouldReturnTrue() {
+    void isValid_PassValidHashes_ShouldReturnTrue() {
         List<byte[]> hashList = makeHashList();
         byte[] pmtSerialized = join(hashList);
         Sha256Hash coinbaseHash = Sha256Hash.wrap(hashList.get(0));
@@ -30,7 +30,7 @@ public class Rskip92MerkleProofValidatorTests {
     }
 
     @Test
-    public void isValid_PassInvalidCoinbaseHash_ShouldReturnFalse() {
+    void isValid_PassInvalidCoinbaseHash_ShouldReturnFalse() {
         List<byte[]> hashList = makeHashList();
         byte[] pmtSerialized = join(hashList);
         Sha256Hash coinbaseHash = Sha256Hash.wrap(hashList.get(0));
@@ -43,7 +43,7 @@ public class Rskip92MerkleProofValidatorTests {
     }
 
     @Test
-    public void isValid_PassInvalidRootHash_ShouldReturnFalse() {
+    void isValid_PassInvalidRootHash_ShouldReturnFalse() {
         List<byte[]> hashList = makeHashList();
         byte[] pmtSerialized = join(hashList);
         Sha256Hash coinbaseHash = Sha256Hash.wrap(hashList.get(0));
@@ -56,42 +56,42 @@ public class Rskip92MerkleProofValidatorTests {
     }
 
     @Test
-    public void createInstance_PassNullProofAndRskip180Enabled_ShouldThrowIllegalArgumentError() {
+    void createInstance_PassNullProofAndRskip180Enabled_ShouldThrowIllegalArgumentError() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Rskip92MerkleProofValidator(null, true));
     }
 
     @Test
-    public void createInstance_PassNullProofAndRskip180Disabled_ShouldThrowNullPointerError() {
+    void createInstance_PassNullProofAndRskip180Disabled_ShouldThrowNullPointerError() {
         Assertions.assertThrows(NullPointerException.class, () -> new Rskip92MerkleProofValidator(null, false));
     }
 
     @Test
-    public void createInstance_PassLargeProofAndRskip180Enabled_ShouldThrowError() {
+    void createInstance_PassLargeProofAndRskip180Enabled_ShouldThrowError() {
         byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + 1];
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Rskip92MerkleProofValidator(pmtSerialized, true));
     }
 
     @Test
-    public void createInstance_PassLargeMalformedProofAndRskip180Disabled_ShouldThrowError() {
+    void createInstance_PassLargeMalformedProofAndRskip180Disabled_ShouldThrowError() {
         byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + 1];
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Rskip92MerkleProofValidator(pmtSerialized, false));
     }
 
     @Test
-    public void createInstance_PassLargeProofAndRskip180Disabled_ShouldNotThrowError() {
+    void createInstance_PassLargeProofAndRskip180Disabled_ShouldNotThrowError() {
         byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + Sha256Hash.LENGTH];
         Rskip92MerkleProofValidator instance = new Rskip92MerkleProofValidator(pmtSerialized, false);
         assertNotNull(instance);
     }
 
     @Test
-    public void createInstance_PassMalformedProofAndRskip180Enabled_ShouldThrowError() {
+    void createInstance_PassMalformedProofAndRskip180Enabled_ShouldThrowError() {
         byte[] pmtSerialized = new byte[Sha256Hash.LENGTH + 1];
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Rskip92MerkleProofValidator(pmtSerialized, true));
     }
 
     @Test
-    public void createInstance_PassMalformedProofAndRskip180Disabled_ShouldThrowError() {
+    void createInstance_PassMalformedProofAndRskip180Disabled_ShouldThrowError() {
         byte[] pmtSerialized = new byte[Sha256Hash.LENGTH + 1];
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Rskip92MerkleProofValidator(pmtSerialized, false));
     }

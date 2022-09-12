@@ -38,35 +38,35 @@ public class ParentGasLimitRuleTest {
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test // pass rule
-    public void parentGasLimitLessThanGasLimit() {
+    void parentGasLimitLessThanGasLimit() {
         BlockHeader header = getHeader(10000);
         BlockHeader parent = getHeader(9999);
         assertTrue(rule.validate(header, parent));
     }
 
     @Test // no pass rule
-    public void parentGasLimitTooLessThanGasLimit() {
+    void parentGasLimitTooLessThanGasLimit() {
         BlockHeader header = getHeader(100);
         BlockHeader parent = getHeader(9);
         assertFalse(rule.validate(header, parent));
     }
 
     @Test // pass rule
-    public void parentGasLimitGreaterThanGasLimit() {
+    void parentGasLimitGreaterThanGasLimit() {
         BlockHeader header = getHeader(10000);
         BlockHeader parent = getHeader(10001);
         assertTrue(rule.validate(header, parent));
     }
 
     @Test // no pass rule
-    public void parentGasLimitTooGreaterThanGasLimit() {
+    void parentGasLimitTooGreaterThanGasLimit() {
         BlockHeader header = getHeader(9);
         BlockHeader parent = getHeader(100);
         assertFalse(rule.validate(header, parent));
     }
 
     @Test // no pass rule
-    public void parentGasLimitOfBy1Tests() {
+    void parentGasLimitOfBy1Tests() {
         BlockHeader parent = getHeader(2049);
         BlockHeader headerGGood = getHeader(2051);
         BlockHeader headerGBad = getHeader(2052);
@@ -80,7 +80,7 @@ public class ParentGasLimitRuleTest {
 
 
     // Used also by GasLimitCalculatorTest
-    public BlockHeader getHeader(long gasLimitValue) {
+    BlockHeader getHeader(long gasLimitValue) {
         return getHeader(blockFactory, gasLimitValue);
     }
 

@@ -26,10 +26,10 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
-public class TxValidatorNonceRangeValidatorTest {
+class TxValidatorNonceRangeValidatorTest {
 
     @Test
-    public void oneSlotRange() {
+    void oneSlotRange() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
@@ -47,7 +47,7 @@ public class TxValidatorNonceRangeValidatorTest {
     }
 
     @Test
-    public void fiveSlotsRange() {
+    void fiveSlotsRange() {
         Transaction[] txs = new Transaction[7];
         for (int i = 0; i < 7; i++) {
             txs[i] = Mockito.mock(Transaction.class);
@@ -68,12 +68,12 @@ public class TxValidatorNonceRangeValidatorTest {
     }
 
     @Test
-    public void illegalAccountSlotsValue_Zero() {
+    void illegalAccountSlotsValue_Zero() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TxValidatorNonceRangeValidator(0));
     }
 
     @Test
-    public void illegalAccountSlotsValue_Negative() {
+    void illegalAccountSlotsValue_Negative() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new TxValidatorNonceRangeValidator(-1));
     }
 }

@@ -18,18 +18,18 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 @Disabled
-public class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTestCase {
+class HasBtcBlockCoinbaseTransactionInformationTest extends BridgePerformanceTestCase {
 
     private Sha256Hash witnessRoot;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void hasBtcBlockCoinbaseTransactionInformation() throws VMException {
+    void hasBtcBlockCoinbaseTransactionInformation() throws VMException {
         ExecutionStats stats = new ExecutionStats("hasBtcBlockCoinbaseTransactionInformation");
         hasBtcBlockCoinbaseTransactionInformation_success(5000, stats);
         hasBtcBlockCoinbaseTransactionInformation_unsuccess(5000, stats);

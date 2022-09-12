@@ -20,7 +20,7 @@ package co.rsk.mine;
 
 import org.junit.jupiter.api.BeforeEach;
 
-public class MinerServerOrchidTest extends MinerServerTest {
+class MinerServerOrchidTest extends MinerServerTest {
 
     @BeforeEach
     void beforeEach() {

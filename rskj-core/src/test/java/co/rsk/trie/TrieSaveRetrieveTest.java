@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 11/01/2017.
  */
-public class TrieSaveRetrieveTest {
+class TrieSaveRetrieveTest {
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyValues() {
+    void updateSaveRetrieveAndGetOneThousandKeyValues() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -52,7 +52,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyLongValues() {
+    void updateSaveRetrieveAndGetOneThousandKeyLongValues() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -77,7 +77,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyValuesUsingBinaryTree() {
+    void updateSaveRetrieveAndGetOneThousandKeyValuesUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -102,7 +102,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyLongValuesUsingBinaryTree() {
+    void updateSaveRetrieveAndGetOneThousandKeyLongValuesUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -127,7 +127,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrder() {
+    void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrder() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -152,7 +152,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrder() {
+    void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrder() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -177,7 +177,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrderUsingBinaryTree() {
+    void updateSaveRetrieveAndGetOneThousandKeyValuesInverseOrderUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -202,7 +202,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrderUsingBinaryTree() {
+    void updateSaveRetrieveAndGetOneThousandKeyLongValuesInverseOrderUsingBinaryTree() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -227,7 +227,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void saveTrieWithKeyValues() {
+    void saveTrieWithKeyValues() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -243,7 +243,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void saveTrieWithKeyLongValues() {
+    void saveTrieWithKeyLongValues() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -260,7 +260,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void retrieveTrieUsingHash() {
+    void retrieveTrieUsingHash() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
@@ -282,7 +282,7 @@ public class TrieSaveRetrieveTest {
     }
 
     @Test
-    public void retrieveTrieWithLongValuesUsingHash() {
+    void retrieveTrieWithLongValuesUsingHash() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 

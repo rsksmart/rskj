@@ -16,7 +16,7 @@ import java.util.zip.ZipInputStream;
 
 import static org.hamcrest.core.Is.is;
 
-public class VMUtilsTest {
+class VMUtilsTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
 
@@ -24,7 +24,7 @@ public class VMUtilsTest {
     private Path tempDir;
 
     @Test
-    public void savePlainProgramTraceFile() throws Exception {
+    void savePlainProgramTraceFile() throws Exception {
         DetailedProgramTrace mockTrace = new DetailedProgramTrace(config.getVmConfig(), null);
         String mockTxHash = "1234";
 
@@ -40,7 +40,7 @@ public class VMUtilsTest {
     }
 
     @Test
-    public void saveZippedProgramTraceFile() throws Exception {
+    void saveZippedProgramTraceFile() throws Exception {
         Path traceFilePath = tempDir.resolve(UUID.randomUUID().toString());
         traceFilePath.toFile().mkdir();
 

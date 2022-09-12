@@ -26,10 +26,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TraceOptionsTest {
+class TraceOptionsTest {
 
     @Test
-    public void testTraceOptions_allFieldsSetAsDisabled_disabledFieldsShouldReturnAllFields() {
+    void testTraceOptions_allFieldsSetAsDisabled_disabledFieldsShouldReturnAllFields() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorage", "true");
@@ -47,7 +47,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_anyFieldsSetAsDisabled_disabledFieldsShouldReturnEmptySet() {
+    void testTraceOptions_anyFieldsSetAsDisabled_disabledFieldsShouldReturnEmptySet() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorages", "false");
@@ -65,7 +65,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_someFieldsSetAsDisabled_disabledFieldsShouldReturnDisabledOnes() {
+    void testTraceOptions_someFieldsSetAsDisabled_disabledFieldsShouldReturnDisabledOnes() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorage", "true");
@@ -83,7 +83,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_nullTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
+    void testTraceOptions_nullTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
         // When
         TraceOptions options = new TraceOptions(null);
 
@@ -93,7 +93,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_emptyTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
+    void testTraceOptions_emptyTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
         // When
         TraceOptions options = new TraceOptions(Collections.emptyMap());
 
@@ -103,7 +103,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_unsupportedOptionsGiven_unsupportedOptionsShouldReturnAllOfThem() {
+    void testTraceOptions_unsupportedOptionsGiven_unsupportedOptionsShouldReturnAllOfThem() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("unsupportedOption.1", "1");
@@ -119,7 +119,7 @@ public class TraceOptionsTest {
     }
 
     @Test
-    public void testTraceOptions_mixOfSupportedAndUnsupportedOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnOK() {
+    void testTraceOptions_mixOfSupportedAndUnsupportedOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnOK() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableMemory", "true");

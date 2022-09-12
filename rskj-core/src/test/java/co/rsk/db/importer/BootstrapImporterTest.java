@@ -15,10 +15,10 @@ import java.nio.file.Paths;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class BootstrapImporterTest {
+class BootstrapImporterTest {
 
     @Test
-    public void importData() throws IOException, URISyntaxException {
+    void importData() throws IOException, URISyntaxException {
         BlockStore blockStore = mock(BlockStore.class);
         when(blockStore.getMaxNumber()).thenReturn(0L);
         when(blockStore.isEmpty()).thenReturn(false);

@@ -28,9 +28,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 8/6/2016.
  */
-public class DslCommandTest {
+class DslCommandTest {
     @Test
-    public void createCommandWithVerbAndTwoArguments() {
+    void createCommandWithVerbAndTwoArguments() {
         List<String> args = new ArrayList<>();
         args.add("arg1");
         args.add("arg2");
@@ -45,7 +45,7 @@ public class DslCommandTest {
     }
 
     @Test
-    public void createCommandWithVerbAndNoArguments() {
+    void createCommandWithVerbAndNoArguments() {
         DslCommand cmd = new DslCommand("verb");
 
         Assertions.assertTrue(cmd.isCommand("verb"));

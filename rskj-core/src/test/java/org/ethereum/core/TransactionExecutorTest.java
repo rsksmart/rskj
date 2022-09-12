@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class TransactionExecutorTest {
+class TransactionExecutorTest {
 
     private static final int MAX_CACHE_SIZE = 900;
     private ActivationConfig activationConfig;
@@ -45,7 +45,7 @@ public class TransactionExecutorTest {
     private long gasUsedInTheBlock;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         // paperwork: mock a whole nice transaction executor
         txIndex = 1;
         gasUsedInTheBlock = 0;
@@ -66,7 +66,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void testInitHandlesFreeTransactionsOK() {
+    void testInitHandlesFreeTransactionsOK() {
 
         BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Transaction transaction = mock(Transaction.class);
@@ -99,7 +99,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void txInBlockIsExecutedAndShouldBeAddedInCache(){
+    void txInBlockIsExecutedAndShouldBeAddedInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -123,7 +123,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void TwoTxsAreInBlockAndThemShouldBeContainedInCache() {
+    void TwoTxsAreInBlockAndThemShouldBeContainedInCache() {
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -157,7 +157,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void InvalidTxsIsInBlockAndShouldntBeInCache(){
+    void InvalidTxsIsInBlockAndShouldntBeInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -190,7 +190,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void remascTxIsReceivedAndShouldntBeInCache(){
+    void remascTxIsReceivedAndShouldntBeInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -223,7 +223,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void txInBlockIsReceivedAndShouldBeUsedInTxExecutorInsteadOfComputeSender(){
+    void txInBlockIsReceivedAndShouldBeUsedInTxExecutorInsteadOfComputeSender(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -249,7 +249,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
+    void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);

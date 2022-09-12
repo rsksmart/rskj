@@ -34,7 +34,7 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AsyncNodeBlockProcessorUnclesTest {
+class AsyncNodeBlockProcessorUnclesTest {
 
     private static final long WAIT_TIME = 60_000L;
 
@@ -44,7 +44,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
     private AsyncNodeBlockProcessorListener listener;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blockChainBuilder = new BlockChainBuilder();
         blockChain = blockChainBuilder.build();
         listener = new AsyncNodeBlockProcessorListener();
@@ -53,13 +53,13 @@ public class AsyncNodeBlockProcessorUnclesTest {
     }
 
     @AfterEach
-    public void tearDown() throws InterruptedException {
+    void tearDown() throws InterruptedException {
         processor.stopAndWait(WAIT_TIME);
     }
 
     @Test
     @Timeout(WAIT_TIME)
-    public void addBlockWithoutUncles() throws InterruptedException {
+    void addBlockWithoutUncles() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
@@ -75,7 +75,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void addBlockWithTwoKnownUncles() throws InterruptedException {
+    void addBlockWithTwoKnownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 
         Block genesis = blockChain.getBestBlock();
@@ -111,7 +111,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void addBlockWithTwoUnknownUncles() throws InterruptedException {
+    void addBlockWithTwoUnknownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 
         Block genesis = blockChain.getBestBlock();
@@ -145,7 +145,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws InterruptedException {
+    void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();

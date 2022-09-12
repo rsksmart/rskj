@@ -30,7 +30,7 @@ import java.net.UnknownHostException;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
-public class DownloadingSkeletonSyncStateTest {
+class DownloadingSkeletonSyncStateTest {
 
     // TODO Test other logic
 
@@ -40,7 +40,7 @@ public class DownloadingSkeletonSyncStateTest {
     private Peer selectedPeer;
 
     @BeforeEach
-    public void setUp () throws UnknownHostException {
+    void setUp () throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         peersInformation = mock(PeersInformation.class);
@@ -51,7 +51,7 @@ public class DownloadingSkeletonSyncStateTest {
     }
 
     @Test
-    public void onMessageTimeOut() {
+    void onMessageTimeOut() {
         DownloadingSkeletonSyncState target = new DownloadingSkeletonSyncState(
                 syncConfiguration,
                 syncEventsHandler,

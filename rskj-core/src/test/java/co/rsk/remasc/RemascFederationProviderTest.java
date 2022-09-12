@@ -12,15 +12,15 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 14/11/2017.
  */
-public class RemascFederationProviderTest {
+class RemascFederationProviderTest {
     @Test
-    public void getDefaultFederationSize() {
+    void getDefaultFederationSize() {
         RemascFederationProvider provider = getRemascFederationProvider();
         Assertions.assertEquals(3, provider.getFederationSize());
     }
 
     @Test
-    public void getFederatorAddress() {
+    void getFederatorAddress() {
         RemascFederationProvider provider = getRemascFederationProvider();
 
         byte[] address = provider.getFederatorAddress(0).getBytes();

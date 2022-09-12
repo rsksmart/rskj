@@ -33,10 +33,10 @@ import java.util.stream.Stream;
 import static org.bouncycastle.util.encoders.Hex.decode;
 import static org.hamcrest.Matchers.*;
 
-public class TrieIteratorTest {
+class TrieIteratorTest {
 
     @Test
-    public void testIterationElement() {
+    void testIterationElement() {
         byte[] expandedKey = new byte[]{0,1,1,0,1,1,0,0,0,1};
 
         IterationElement ie = new IterationElement(
@@ -49,7 +49,7 @@ public class TrieIteratorTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(TrieArgumentsProvider.class)
-    public void testIterator(Iterator<IterationElement> iterator, byte[] expectedValues) {
+    void testIterator(Iterator<IterationElement> iterator, byte[] expectedValues) {
         int nodeCount = 0;
         while (iterator.hasNext()) {
             byte[] value = iterator.next().getNode().getValue();

@@ -9,12 +9,12 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ProgramResultTest {
+class ProgramResultTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void add_internal_tx_one_level_Ok() {
+    void add_internal_tx_one_level_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
         InternalTransaction internalTx = programResult.addInternalTransaction(
@@ -35,7 +35,7 @@ public class ProgramResultTest {
     }
 
     @Test
-    public void add_interenal_tx_two_levels_Ok() {
+    void add_interenal_tx_two_levels_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
         InternalTransaction internalTx1 = programResult.addInternalTransaction(
@@ -68,7 +68,7 @@ public class ProgramResultTest {
     }
 
     @Test
-    public void add_interenal_tx_many_levels_Ok() {
+    void add_interenal_tx_many_levels_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
 

@@ -26,9 +26,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 13/04/2017.
  */
-public class SiblingTest {
+class SiblingTest {
     @Test
-    public void siblingSerializeWithGenesis() {
+    void siblingSerializeWithGenesis() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
         Sibling sibling = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
@@ -50,7 +50,7 @@ public class SiblingTest {
     }
 
     @Test
-    public void siblingSerializeWithBlock() {
+    void siblingSerializeWithBlock() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block = blockGenerator.createChildBlock(genesis);

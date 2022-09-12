@@ -29,9 +29,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 15/09/2016.
  */
-public class WalletTest {
+class WalletTest {
     @Test
-    public void getEmptyAccountList() {
+    void getEmptyAccountList() {
         Wallet wallet = WalletFactory.createWallet();
 
         List<byte[]> addresses = wallet.getAccountAddresses();
@@ -41,7 +41,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithSeed() {
+    void addAccountWithSeed() {
         Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccountWithSeed("seed");
@@ -65,7 +65,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithPassphrase() {
+    void addAccountWithPassphrase() {
         Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
@@ -90,7 +90,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithPassphraseAndWithSeed() {
+    void addAccountWithPassphraseAndWithSeed() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
@@ -122,7 +122,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithPassphraseAndTwoAccountsWithSeed() {
+    void addAccountWithPassphraseAndTwoAccountsWithSeed() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
@@ -161,7 +161,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAndUnlockAccountWithPassphraseAndTwoAccountsWithSeed() {
+    void addAndUnlockAccountWithPassphraseAndTwoAccountsWithSeed() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr1 = wallet.addAccount("passphrase");
@@ -202,7 +202,7 @@ public class WalletTest {
     }
 
     @Test
-    public void unlockAccountWithPassphrase() {
+    void unlockAccountWithPassphrase() {
         Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
@@ -233,7 +233,7 @@ public class WalletTest {
     }
 
     @Test
-    public void unlockNonexistentAccount() {
+    void unlockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
@@ -241,7 +241,7 @@ public class WalletTest {
     }
 
     @Test
-    public void lockAccount() {
+    void lockAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase").getBytes();
@@ -263,7 +263,7 @@ public class WalletTest {
     }
 
     @Test
-    public void lockNonexistentAccount() {
+    void lockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
@@ -271,7 +271,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithRandomPrivateKey() {
+    void addAccountWithRandomPrivateKey() {
         Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount().getBytes();
@@ -286,7 +286,7 @@ public class WalletTest {
     }
 
     @Test
-    public void getUnknownAccount() {
+    void getUnknownAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
         RskAddress addr = new RskAddress("0x0000000000000000000000000000000000000023");
@@ -296,7 +296,7 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithPrivateKey() {
+    void addAccountWithPrivateKey() {
         Wallet wallet = WalletFactory.createWallet();
         byte[] privateKeyBytes = Keccak256Helper.keccak256("seed".getBytes());
 

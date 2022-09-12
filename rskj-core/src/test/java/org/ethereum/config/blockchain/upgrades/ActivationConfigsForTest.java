@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@SuppressWarnings({"squid:S2187"}) // used from another class
 public class ActivationConfigsForTest {
 
     private static final ActivationConfig REGTEST = read("config/regtest");

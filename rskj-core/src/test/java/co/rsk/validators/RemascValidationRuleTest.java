@@ -35,10 +35,10 @@ import java.util.List;
 /**
  * Created by mario on 30/12/16.
  */
-public class RemascValidationRuleTest {
+class RemascValidationRuleTest {
 
     @Test
-    public void noTxInTheBlock() {
+    void noTxInTheBlock() {
         Block b = Mockito.mock(Block.class);
         RemascValidationRule rule = new RemascValidationRule();
 
@@ -46,7 +46,7 @@ public class RemascValidationRuleTest {
     }
 
     @Test
-    public void noRemascTxInTheBlock() {
+    void noRemascTxInTheBlock() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
@@ -70,7 +70,7 @@ public class RemascValidationRuleTest {
     }
 
     @Test
-    public void remascTxIsNotTheLastOne() {
+    void remascTxIsNotTheLastOne() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
@@ -95,7 +95,7 @@ public class RemascValidationRuleTest {
     }
 
     @Test
-    public void remascTxInBlock() {
+    void remascTxInBlock() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();

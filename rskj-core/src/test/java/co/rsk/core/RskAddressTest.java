@@ -23,9 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class RskAddressTest {
+class RskAddressTest {
     @Test
-    public void testEquals() {
+    void testEquals() {
         RskAddress senderA = new RskAddress("0000000000000000000000000000000001000006");
         RskAddress senderB = new RskAddress("0000000000000000000000000000000001000006");
         RskAddress senderC = new RskAddress("0000000000000000000000000000000001000008");
@@ -39,7 +39,7 @@ public class RskAddressTest {
     }
 
     @Test
-    public void zeroAddress() {
+    void zeroAddress() {
         RskAddress senderA = new RskAddress("0000000000000000000000000000000000000000");
         RskAddress senderB = new RskAddress("0x0000000000000000000000000000000000000000");
         RskAddress senderC = new RskAddress(new byte[20]);
@@ -50,17 +50,17 @@ public class RskAddressTest {
     }
 
     @Test
-    public void nullAddress() {
-        Assertions.assertArrayEquals(RskAddress.nullAddress().getBytes(), new byte[0]);
+    void nullAddress() {
+        Assertions.assertArrayEquals(new byte[0], RskAddress.nullAddress().getBytes());
     }
 
     @Test
-    public void jsonString_nullAddress() {
+    void jsonString_nullAddress() {
         Assertions.assertNull(RskAddress.nullAddress().toJsonString());
     }
 
     @Test
-    public void jsonString_otherAddress() {
+    void jsonString_otherAddress() {
         String address = "0x0000000000000000000000000000000000000001";
         RskAddress rskAddress = new RskAddress(address);
 
@@ -68,42 +68,42 @@ public class RskAddressTest {
     }
 
     @Test
-    public void invalidLongAddress() {
+    void invalidLongAddress() {
         Assertions.assertThrows(RuntimeException.class, () -> new RskAddress("00000000000000000000000000000000010000060"));
     }
 
     @Test
-    public void invalidShortAddress() {
+    void invalidShortAddress() {
         Assertions.assertThrows(RuntimeException.class, () -> new RskAddress("0000000000000000000000000000000001006"));
     }
 
     @Test
-    public void oddLengthAddressPaddedWithOneZero() {
-        new RskAddress("000000000000000000000000000000000100006");
+    void oddLengthAddressPaddedWithOneZero() {
+        Assertions.assertDoesNotThrow(() -> new RskAddress("000000000000000000000000000000000100006"));
     }
 
     @Test
-    public void invalidHexAddress() {
+    void invalidHexAddress() {
         Assertions.assertThrows(DecoderException.class, () -> new RskAddress("000000000000000000000000000000000100000X"));
     }
 
     @Test
-    public void invalidNullAddressBytes() {
+    void invalidNullAddressBytes() {
         Assertions.assertThrows(NullPointerException.class, () -> new RskAddress((byte[]) null));
     }
 
     @Test
-    public void invalidNullAddressString() {
+    void invalidNullAddressString() {
         Assertions.assertThrows(NullPointerException.class, () -> new RskAddress((String) null));
     }
 
     @Test
-    public void invalidShortAddressBytes() {
+    void invalidShortAddressBytes() {
         Assertions.assertThrows(RuntimeException.class, () -> new RskAddress(new byte[19]));
     }
 
     @Test
-    public void invalidLongAddressBytes() {
+    void invalidLongAddressBytes() {
         Assertions.assertThrows(RuntimeException.class, () -> new RskAddress(new byte[21]));
     }
 }

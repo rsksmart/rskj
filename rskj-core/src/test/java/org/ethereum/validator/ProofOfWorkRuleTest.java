@@ -63,16 +63,16 @@ public abstract class ProofOfWorkRuleTest {
     }
 
     @Test
-    public void test_1() {
+    void test_1() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         Assertions.assertTrue(rule.isValid(b));
     }
 
-    @Disabled
+    @Disabled("TODO improve, the mutated block header could be still valid")
     // invalid block
     @Test
-    public void test_2() {
+    void test_2() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] mergeMiningHeader = b.getBitcoinMergedMiningHeader();
@@ -84,7 +84,7 @@ public abstract class ProofOfWorkRuleTest {
 
     // This test must be moved to the appropiate place
     @Test
-    public void test_RLPEncoding() {
+    void test_RLPEncoding() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
@@ -98,10 +98,10 @@ public abstract class ProofOfWorkRuleTest {
         Assertions.assertTrue(Arrays.equals(lastField,lastField2));
     }
 
-    @Disabled
-    // stress test
+    @Disabled("stress test")
     @Test
-    public void test_3() {
+    @SuppressWarnings("squid:S2699")
+    void test_3() {
         int iterCnt = 1_000_000;
 
         // mined block
@@ -113,11 +113,13 @@ public abstract class ProofOfWorkRuleTest {
 
         long total = System.currentTimeMillis() - start;
 
-        System.out.println(String.format("Time: total = %d ms, per block = %.2f ms", total, (double) total / iterCnt));
+        Assertions.assertTrue(total > 0);
+
+        System.out.printf("Time: total = %d ms, per block = %.2f ms%n", total, (double) total / iterCnt);
     }
 
     @Test
-    public void test_noRSKTagInCoinbaseTransaction() {
+    void test_noRSKTagInCoinbaseTransaction() {
         BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
 
         // mined block
@@ -127,7 +129,7 @@ public abstract class ProofOfWorkRuleTest {
     }
 
     @Test
-    public void test_RSKTagInCoinbaseTransactionTooFar() {
+    void test_RSKTagInCoinbaseTransactionTooFar() {
         /* This test is about a rsk block, with a compressed coinbase that leaves more than 64 bytes before the start of the RSK tag. */
         BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
         byte[] prefix = new byte[1000];
@@ -140,7 +142,7 @@ public abstract class ProofOfWorkRuleTest {
     }
 
     @Test
-    public void bytesAfterMergedMiningHashAreLessThan128() {
+    void bytesAfterMergedMiningHashAreLessThan128() {
         RskSystemProperties props = new TestSystemProperties() {
             @Override
             public ActivationConfig getActivationConfig() {
@@ -171,7 +173,7 @@ public abstract class ProofOfWorkRuleTest {
     }
 
     @Test
-    public void bytesAfterMergedMiningHashAreMoreThan128() {
+    void bytesAfterMergedMiningHashAreMoreThan128() {
         // This test shows that a Mining Pools can not add more than 2 outputs with 36 bytes each,
         // otherwise solutions will not be taken as valid.
 

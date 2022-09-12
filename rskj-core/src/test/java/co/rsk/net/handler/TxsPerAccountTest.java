@@ -13,9 +13,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 20/06/2017.
  */
-public class TxsPerAccountTest {
+class TxsPerAccountTest {
     @Test
-    public void containsNoTransactions() {
+    void containsNoTransactions() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Assertions.assertNotNull(txspa.getTransactions());
@@ -23,21 +23,21 @@ public class TxsPerAccountTest {
     }
 
     @Test
-    public void nextNonceIsNull() {
+    void nextNonceIsNull() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Assertions.assertNull(txspa.getNextNonce());
     }
 
     @Test
-    public void doesNotCointainNonce() {
+    void doesNotCointainNonce() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Assertions.assertFalse(txspa.containsNonce(BigInteger.ONE));
     }
 
     @Test
-    public void containsNonce() {
+    void containsNonce() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Transaction tx =  buildTransaction(1);
@@ -48,7 +48,7 @@ public class TxsPerAccountTest {
     }
 
     @Test
-    public void retrieveTransactionsReadyToBeSend() {
+    void retrieveTransactionsReadyToBeSend() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Transaction tx =  buildTransaction(1);
@@ -67,7 +67,7 @@ public class TxsPerAccountTest {
     }
 
     @Test
-    public void retrieveTransactionsReadyToBeSendTwoNonces() {
+    void retrieveTransactionsReadyToBeSendTwoNonces() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Transaction tx =  buildTransaction(1);
@@ -89,7 +89,7 @@ public class TxsPerAccountTest {
     }
 
     @Test
-    public void retrieveTransactionsReadyToBeSendAndRemoveNonce() {
+    void retrieveTransactionsReadyToBeSendAndRemoveNonce() {
         TxsPerAccount txspa = new TxsPerAccount();
 
         Transaction tx =  buildTransaction(1);

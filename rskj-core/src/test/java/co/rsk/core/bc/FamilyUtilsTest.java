@@ -39,13 +39,13 @@ import java.util.Set;
 /**
  * Created by ajlopez on 12/08/2016.
  */
-public class FamilyUtilsTest {
+class FamilyUtilsTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void getFamilyGetParent() {
+    void getFamilyGetParent() {
         BlockStore store = createBlockStore();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -65,7 +65,7 @@ public class FamilyUtilsTest {
     }
 
     @Test
-    public void getEmptyFamilyForGenesis() {
+    void getEmptyFamilyForGenesis() {
         BlockStore store = createBlockStore();
 
         Block genesis = new BlockGenerator().getGenesisBlock();
@@ -79,7 +79,7 @@ public class FamilyUtilsTest {
     }
 
     @Test
-    public void getFamilyGetAncestorsUpToLevel() {
+    void getFamilyGetAncestorsUpToLevel() {
         BlockStore store = createBlockStore();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -106,7 +106,8 @@ public class FamilyUtilsTest {
     }
 
     @Test
-    public void getFamilyGetAncestorsWithUncles() {
+    @SuppressWarnings("squid:S5961")
+    void getFamilyGetAncestorsWithUncles() {
         BlockStore store = createBlockStore();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -168,7 +169,7 @@ public class FamilyUtilsTest {
     }
 
     @Test
-    public void getUnclesHeaders() {
+    void getUnclesHeaders() {
         BlockStore store = createBlockStore();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -211,7 +212,7 @@ public class FamilyUtilsTest {
     }
 
     @Test
-    public void getUncles() {
+    void getUncles() {
         BlockStore store = createBlockStore();
 
         BlockGenerator blockGenerator = new BlockGenerator();

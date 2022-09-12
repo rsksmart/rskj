@@ -34,19 +34,19 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-public class TxValidatorIntrinsicGasLimitValidatorTest {
+class TxValidatorIntrinsicGasLimitValidatorTest {
 
     private Constants constants;
     private ActivationConfig activationConfig;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
     @Test
-    public void validIntrinsicGasPrice() {
+    void validIntrinsicGasPrice() {
         Transaction tx1 = Transaction
                 .builder()
                 .nonce(BigInteger.ZERO)
@@ -103,7 +103,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
     }
 
     @Test
-    public void invalidIntrinsicGasPrice() {
+    void invalidIntrinsicGasPrice() {
         Transaction tx1 = Transaction
                 .builder()
                 .nonce(BigInteger.ZERO)

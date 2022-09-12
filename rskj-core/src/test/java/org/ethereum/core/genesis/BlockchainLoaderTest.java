@@ -43,10 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
-public class BlockchainLoaderTest {
+class BlockchainLoaderTest {
 
     @Test
-    public void testLoadBlockchainEmptyBlockchain() {
+    void testLoadBlockchainEmptyBlockchain() {
         RskTestFactory objects = new RskTestFactory() {
             @Override
             protected GenesisLoader buildGenesisLoader() {
@@ -85,7 +85,7 @@ public class BlockchainLoaderTest {
     }
 
     @Test
-    public void testLoadBlockchainWithInconsistentBlock() {
+    void testLoadBlockchainWithInconsistentBlock() {
         RskTestFactory objects = new RskTestFactory() {
             @Override
             protected synchronized RepositoryLocator buildRepositoryLocator() {

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.jsontestsuite.CryptoTestCase;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer;
@@ -36,11 +37,11 @@ import java.util.HashMap;
  */
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class LocalCryptoTest {
+class LocalCryptoTest {
 
 
     @Test
-    public void testAllInCryptoSute() throws ParseException, IOException {
+    void testAllInCryptoSute() throws ParseException, IOException {
 
         String json = getJSON("crypto");
 
@@ -55,7 +56,7 @@ public class LocalCryptoTest {
         for (String key : testSuite.keySet()){
 
             System.out.println("executing: " + key);
-            testSuite.get(key).execute();
+            Assertions.assertDoesNotThrow(() -> testSuite.get(key).execute());
 
         }
     }

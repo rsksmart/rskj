@@ -44,7 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class ErpFederationTest {
+class ErpFederationTest {
     private ErpFederation federation;
     private ActivationConfig.ForBlock activations;
 
@@ -67,7 +67,7 @@ public class ErpFederationTest {
     private static final long ACTIVATION_DELAY_VALUE = 5063;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -75,17 +75,17 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getErpPubKeys() {
+    void getErpPubKeys() {
         Assertions.assertEquals(ERP_KEYS, federation.getErpPubKeys());
     }
 
     @Test
-    public void getActivationDelay() {
+    void getActivationDelay() {
         Assertions.assertEquals(ACTIVATION_DELAY_VALUE, federation.getActivationDelay());
     }
 
     @Test
-    public void getRedeemScript_before_RSKIP293() {
+    void getRedeemScript_before_RSKIP293() {
         Script redeemScript = federation.getRedeemScript();
         validateErpRedeemScript(
             redeemScript,
@@ -95,7 +95,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_after_RSKIP293() {
+    void getRedeemScript_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         federation = createDefaultErpFederation();
         Script redeemScript = federation.getRedeemScript();
@@ -108,7 +108,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_changes_after_RSKIP293() {
+    void getRedeemScript_changes_after_RSKIP293() {
         Script preRskip293RedeemScript = federation.getRedeemScript();
 
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -119,7 +119,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getP2SHScript() {
+    void getP2SHScript() {
         Script p2shs = federation.getP2SHScript();
         String expectedProgram = "a914867df89b0837b2fd86eb98751d14b6cef52d342487";
 
@@ -132,7 +132,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getAddress() {
+    void getAddress() {
         String fedAddress = federation.getAddress().toBase58();
         String expectedAddress = "2N5WMScfkbBVWMByrGw6GZDFF3m4tb3qqP8";
 
@@ -140,12 +140,12 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getErpPubKeys_compressed_public_keys() {
+    void getErpPubKeys_compressed_public_keys() {
         Assertions.assertEquals(ERP_KEYS, federation.getErpPubKeys());
     }
 
     @Test
-    public void getErpPubKeys_uncompressed_public_keys() {
+    void getErpPubKeys_uncompressed_public_keys() {
         // Public keys used for creating federation, but uncompressed format now
         List<BtcECKey> uncompressedErpKeys = ERP_KEYS
             .stream()
@@ -167,7 +167,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getErpRedeemScript_compareOtherImplementation() throws IOException {
+    void getErpRedeemScript_compareOtherImplementation() throws IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         byte[] rawRedeemScripts;
@@ -197,32 +197,35 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void createErpFederation_testnet_constants_before_RSKIP293() {
+    void createErpFederation_testnet_constants_before_RSKIP293() {
         createErpFederation(BridgeTestNetConstants.getInstance(), false);
     }
 
     @Test
-    public void createErpFederation_testnet_constants_after_RSKIP293() {
+    void createErpFederation_testnet_constants_after_RSKIP293() {
         createErpFederation(BridgeTestNetConstants.getInstance(), true);
     }
 
     @Test
-    public void createErpFederation_mainnet_constants_before_RSKIP293() {
+    void createErpFederation_mainnet_constants_before_RSKIP293() {
         createErpFederation(BridgeMainNetConstants.getInstance(), false);
     }
 
     @Test
-    public void createErpFederation_mainnet_constants_after_RSKIP293() {
+    void createErpFederation_mainnet_constants_after_RSKIP293() {
         createErpFederation(BridgeMainNetConstants.getInstance(), true);
     }
 
     @Test
-    public void createInvalidErpFederation_negativeCsvValue() {
+    void createInvalidErpFederation_negativeCsvValue() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                federationMembersFromPks,
+                creationTime,
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                btcParams,
                 ERP_KEYS,
                 -100L,
                 activations
@@ -230,12 +233,15 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void createInvalidErpFederation_csvValueNegative() {
+    void createInvalidErpFederation_csvValueNegative() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                federationMembersFromPks,
+                creationTime,
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                btcParams,
                 ERP_KEYS,
                 -100,
                 activations
@@ -243,7 +249,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void createInvalidErpFederation_csvValueZero() {
+    void createInvalidErpFederation_csvValueZero() {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
@@ -259,12 +265,15 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void createInvalidErpFederation_csvValueAboveMax() {
+    void createInvalidErpFederation_csvValueAboveMax() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                federationMembersFromPks,
+                creationTime,
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                btcParams,
                 ERP_KEYS,
                 ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
                 activations
@@ -272,7 +281,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_before_RSKIP_284_testnet() {
+    void getRedeemScript_before_RSKIP_284_testnet() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
@@ -290,7 +299,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_before_RSKIP_284_mainnet() {
+    void getRedeemScript_before_RSKIP_284_mainnet() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
@@ -313,7 +322,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_after_RSKIP_284_testnet() {
+    void getRedeemScript_after_RSKIP_284_testnet() {
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(DEFAULT_FED_KEYS),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -333,7 +342,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void getRedeemScript_after_RSKIP_284_mainnet() {
+    void getRedeemScript_after_RSKIP_284_mainnet() {
         Federation erpFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersWithBtcKeys(DEFAULT_FED_KEYS),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -353,7 +362,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_basic() {
+    void testEquals_basic() {
         Assertions.assertEquals(federation, federation);
 
         Assertions.assertNotEquals(null, federation);
@@ -362,7 +371,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_same() {
+    void testEquals_same() {
         Federation otherFederation = new ErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
@@ -377,7 +386,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentNumberOfMembers() {
+    void testEquals_differentNumberOfMembers() {
         Federation otherFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
             federation.getCreationTime(),
@@ -392,7 +401,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentCreationTime() {
+    void testEquals_differentCreationTime() {
         Federation otherFederation = new ErpFederation(
             federation.getMembers(),
             Instant.now(),
@@ -407,7 +416,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentCreationBlockNumber() {
+    void testEquals_differentCreationBlockNumber() {
         Federation otherFederation = new ErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
@@ -422,7 +431,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentNetworkParameters() {
+    void testEquals_differentNetworkParameters() {
         Federation otherFederation = new ErpFederation(
             federation.getMembers(),
             federation.getCreationTime(),
@@ -437,7 +446,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentMembers() {
+    void testEquals_differentMembers() {
         Federation otherFederation = new ErpFederation(
             FederationTestUtils.getFederationMembersFromPks(101, 201, 301),
             federation.getCreationTime(),
@@ -452,7 +461,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void testEquals_differentRedeemScript() {
+    void testEquals_differentRedeemScript() {
         ActivationConfig.ForBlock activationsPre = mock(ActivationConfig.ForBlock.class);
         when(activationsPre.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
@@ -511,7 +520,7 @@ public class ErpFederationTest {
 
     @Disabled("Can't recreate the hardcoded redeem script since the needed CSV value is above the max. Keeping the test ignored as testimonial")
     @Test
-    public void createErpFedWithSameRedeemScriptAsHardcodedOne_after_RSKIP293_fails() {
+    void createErpFedWithSameRedeemScriptAsHardcodedOne_after_RSKIP293_fails() {
         // We can't test the same condition before RSKIP293 since the serialization used by bj-thin
         // prior to RSKIP293 enforces the CSV value to be encoded using 2 bytes.
         // The hardcoded script has a 3 byte long CSV value
@@ -548,7 +557,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_can_spend() {
+    void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_can_spend() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // The CSV value defined in BridgeTestnetConstants,
@@ -564,14 +573,15 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_cant_spend() {
+    void spendFromErpFed_before_RSKIP293_testnet_using_erp_multisig_cant_spend() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // Should fail due to the wrong encoding of the CSV value
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
+        NetworkParameters btcParams = constants.getBtcParams();
         Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
-                constants.getBtcParams(),
+                btcParams,
                 300,
                 false,
                 true
@@ -579,7 +589,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_testnet_using_standard_multisig() {
+    void spendFromErpFed_before_RSKIP293_testnet_using_standard_multisig() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
@@ -592,7 +602,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_can_spend() {
+    void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_can_spend() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // The CSV value defined in BridgeMainnetConstants,
@@ -607,14 +617,15 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_cant_spend() {
+    void spendFromErpFed_before_RSKIP293_mainnet_using_erp_multisig_cant_spend() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // Should fail due to the wrong encoding of the CSV value
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
+        NetworkParameters btcParams = constants.getBtcParams();
         Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
-                constants.getBtcParams(),
+                btcParams,
                 300,
                 false,
                 true
@@ -622,7 +633,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_before_RSKIP293_mainnet_using_standard_multisig() {
+    void spendFromErpFed_before_RSKIP293_mainnet_using_standard_multisig() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // Should validate since it's not executing the path of the script with the CSV value
@@ -635,7 +646,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_after_RSKIP293_testnet_using_erp_multisig() {
+    void spendFromErpFed_after_RSKIP293_testnet_using_erp_multisig() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
@@ -648,7 +659,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_after_RSKIP293_testnet_using_standard_multisig() {
+    void spendFromErpFed_after_RSKIP293_testnet_using_standard_multisig() {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
@@ -660,7 +671,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_after_RSKIP293_mainnet_using_erp_multisig() {
+    void spendFromErpFed_after_RSKIP293_mainnet_using_erp_multisig() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         // Post RSKIP293 activation it should encode the CSV value correctly
@@ -673,7 +684,7 @@ public class ErpFederationTest {
     }
 
     @Test
-    public void spendFromErpFed_after_RSKIP293_mainnet_using_standard_multisig() {
+    void spendFromErpFed_after_RSKIP293_mainnet_using_standard_multisig() {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(

@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 29/04/2017.
  */
-public class BitSetTest {
+class BitSetTest {
     @Test
-    public void createEmptyBitSet() {
+    void createEmptyBitSet() {
         BitSet set = new BitSet(17);
 
         Assertions.assertEquals(17, set.size());
@@ -36,7 +36,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void createEmptyBitSetBorderCaseSizeDivisibleByEight() {
+    void createEmptyBitSetBorderCaseSizeDivisibleByEight() {
         BitSet set = new BitSet(16);
 
         Assertions.assertEquals(16, set.size());
@@ -46,7 +46,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void setBorderBits() {
+    void setBorderBits() {
         BitSet set = new BitSet(16);
 
         set.set(0);
@@ -62,7 +62,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void fillBits() {
+    void fillBits() {
         BitSet set = new BitSet(17);
 
         for (int k = 0; k < set.size(); k++)
@@ -75,7 +75,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void exceptionIfCreatedWithNegativeSize() {
+    void exceptionIfCreatedWithNegativeSize() {
 
 
         try {
@@ -88,7 +88,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void exceptionIfGetWithNegativePosition() {
+    void exceptionIfGetWithNegativePosition() {
         BitSet set = new BitSet(17);
 
         try {
@@ -101,7 +101,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void exceptionIfGetWithOutOfBoundPosition() {
+    void exceptionIfGetWithOutOfBoundPosition() {
         BitSet set = new BitSet(17);
 
         try {
@@ -114,7 +114,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void exceptionIfSetWithNegativePosition() {
+    void exceptionIfSetWithNegativePosition() {
         BitSet set = new BitSet(17);
 
         try {
@@ -127,7 +127,7 @@ public class BitSetTest {
     }
 
     @Test
-    public void exceptionIfSetWithOutOfBoundPosition() {
+    void exceptionIfSetWithOutOfBoundPosition() {
         BitSet set = new BitSet(17);
 
         try {

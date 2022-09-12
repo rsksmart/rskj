@@ -53,7 +53,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 04/08/2016.
  */
-public class BlockValidatorTest {
+class BlockValidatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
@@ -61,7 +61,7 @@ public class BlockValidatorTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void validEmptyUnclesHash() {
+    void validEmptyUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -74,7 +74,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUnclesHash() {
+    void invalidUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -88,7 +88,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void getBlockOneAncestorSet() {
+    void getBlockOneAncestorSet() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -102,7 +102,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void getThreeAncestorSet() {
+    void getThreeAncestorSet() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -131,7 +131,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void getUsedUncles() {
+    void getUsedUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -176,7 +176,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleTransactionsRoot() {
+    void invalidUncleTransactionsRoot() {
         Block block = new BlockGenerator().createBlock(2, 10);
 
         block.getHeader().setTransactionsRoot(new byte[]{0x01});
@@ -189,7 +189,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void validUncles() {
+    void validUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -219,7 +219,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidSiblingUncles() {
+    void invalidSiblingUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -246,7 +246,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUnclesUncleIncludedMultipeTimes () {
+    void invalidUnclesUncleIncludedMultipeTimes () {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -271,7 +271,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidPOWUncles() {
+    void invalidPOWUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -299,7 +299,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleIsAncestor() {
+    void invalidUncleIsAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -324,7 +324,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleHasNoSavedParent() {
+    void invalidUncleHasNoSavedParent() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -347,7 +347,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleHasNoCommonAncestor() {
+    void invalidUncleHasNoCommonAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -384,7 +384,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleHasParentThatIsNotAncestor() {
+    void invalidUncleHasParentThatIsNotAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -416,7 +416,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidUncleAlreadyUsed() {
+    void invalidUncleAlreadyUsed() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -454,7 +454,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void tooManyUncles() {
+    void tooManyUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -493,7 +493,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void processBlockWithInvalidMGPTxs() {
+    void processBlockWithInvalidMGPTxs() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -529,7 +529,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void processBlockWithInvalidPrevMGP() {
+    void processBlockWithInvalidPrevMGP() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -552,7 +552,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void processValidMGPBlock() {
+    void processValidMGPBlock() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -590,7 +590,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void noRemascTx() {
+    void noRemascTx() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -623,7 +623,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void remascTxNotInLastPosition() {
+    void remascTxNotInLastPosition() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -653,7 +653,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void remascTx() {
+    void remascTx() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -680,7 +680,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void blockInTheFuture() {
+    void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         byte[] bitcoinMergedMiningHeader = new byte[0];
@@ -743,7 +743,7 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
+    void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 

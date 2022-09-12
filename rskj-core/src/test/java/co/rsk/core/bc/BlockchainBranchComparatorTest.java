@@ -37,13 +37,13 @@ import java.util.List;
 /**
  * Created by ajlopez on 09/08/2016.
  */
-public class BlockchainBranchComparatorTest {
+class BlockchainBranchComparatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void calculateParentChild() {
+    void calculateParentChild() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -64,7 +64,7 @@ public class BlockchainBranchComparatorTest {
     }
 
     @Test
-    public void calculateForkLengthTwo() {
+    void calculateForkLengthTwo() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -94,7 +94,7 @@ public class BlockchainBranchComparatorTest {
     }
 
     @Test
-    public void calculateForkLengthTwoOldThreeNew() {
+    void calculateForkLengthTwoOldThreeNew() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -125,7 +125,7 @@ public class BlockchainBranchComparatorTest {
     }
 
     @Test
-    public void calculateForkLengthThreeOldTwoNew() {
+    void calculateForkLengthThreeOldTwoNew() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();

@@ -41,13 +41,13 @@ import java.util.HashMap;
 import java.util.List;
 
 @Disabled
-public class ReceiveHeadersTest extends BridgePerformanceTestCase {
+class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBestBlock;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -68,7 +68,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @BeforeEach
-    public void warmup() throws VMException {
+    void warmup() throws VMException {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
         doReceiveHeaders("warmup", 100, 1, 0);
@@ -77,12 +77,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersSingleBlock() throws VMException {
+    void receiveHeadersSingleBlock() throws VMException {
         BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
     }
 
     @Test
-    public void receiveHeadersInterpolation() throws VMException {
+    void receiveHeadersInterpolation() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
 
         stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
@@ -92,7 +92,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersIncremental() throws VMException {
+    void receiveHeadersIncremental() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
@@ -103,7 +103,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersWithForking() throws VMException {
+    void receiveHeadersWithForking() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {

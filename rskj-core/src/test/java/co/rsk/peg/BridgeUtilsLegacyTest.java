@@ -19,32 +19,33 @@ import java.util.function.Function;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BridgeUtilsLegacyTest {
+class BridgeUtilsLegacyTest {
 
     private ActivationConfig.ForBlock activations;
     private BridgeConstants bridgeConstantsRegtest;
     private BridgeConstants bridgeConstantsMainnet;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
         bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_after_rskip284() {
+    void deserializeBtcAddressWithVersionLegacy_after_rskip284() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
+        NetworkParameters btcParams = bridgeConstantsRegtest.getBtcParams();
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-                bridgeConstantsRegtest.getBtcParams(),
+                btcParams,
                 activations,
                 new byte[]{1}
         ));
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_null_bytes() {
+    void deserializeBtcAddressWithVersionLegacy_null_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
@@ -55,7 +56,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_empty_bytes() {
+    void deserializeBtcAddressWithVersionLegacy_empty_bytes() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         Assertions.assertThrows(BridgeIllegalArgumentException.class, () -> BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
@@ -66,7 +67,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
@@ -85,7 +86,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet_wrong_network() {
+    void deserializeBtcAddressWithVersionLegacy_p2pkh_testnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
@@ -101,7 +102,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet() {
+    void deserializeBtcAddressWithVersionLegacy_p2sh_testnet() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "c4"; // Testnet script hash
@@ -118,7 +119,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_testnet_wrong_network() {
+    void deserializeBtcAddressWithVersionLegacy_p2sh_testnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "c4"; // Testnet script hash
@@ -135,7 +136,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "00"; // Mainnet pubkey hash
@@ -154,7 +155,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet_wrong_network() {
+    void deserializeBtcAddressWithVersionLegacy_p2pkh_mainnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "00"; // Mainnet pubkey hash
@@ -170,7 +171,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "05"; // Mainnet script hash
@@ -189,7 +190,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet_wrong_network() {
+    void deserializeBtcAddressWithVersionLegacy_p2sh_mainnet_wrong_network() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "05"; // Mainnet script hash
@@ -209,7 +210,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_with_extra_bytes() throws BridgeIllegalArgumentException {
+    void deserializeBtcAddressWithVersionLegacy_with_extra_bytes() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
@@ -230,7 +231,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void deserializeBtcAddressWithVersionLegacy_invalid_address_hash() {
+    void deserializeBtcAddressWithVersionLegacy_invalid_address_hash() {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
@@ -269,7 +270,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_ok() {
+    void getAmountSentToAddress_ok() {
         Coin expectedResult = Coin.COIN.multiply(2);
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
@@ -283,7 +284,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_no_outputs() {
+    void getAmountSentToAddress_no_outputs() {
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
             Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -294,7 +295,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_zero_amount() {
+    void getAmountSentToAddress_zero_amount() {
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
             Address btcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
@@ -306,7 +307,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_after_RSKIP293() {
+    void getAmountSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
             BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
@@ -345,7 +346,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getUTXOsSentToAddress_one_utxo_sent_to_given_address() {
+    void getUTXOsSentToAddress_one_utxo_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
             expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
@@ -371,7 +372,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getUTXOsSentToAddress_no_utxos_to_given_address() {
+    void getUTXOsSentToAddress_no_utxos_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
             return expectedUTXOs;
@@ -394,7 +395,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
+    void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
         Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
             List<UTXO> expectedUTXOs = new ArrayList<>();
             expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 6, Coin.COIN));
@@ -433,7 +434,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getUTXOsSentToAddress_after_RSKIP293() {
+    void getUTXOsSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
@@ -451,7 +452,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void calculatePegoutTxSize_before_rskip_271() {
+    void calculatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -473,7 +474,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void calculatePegoutTxSize_after_rskip_271() {
+    void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
@@ -488,7 +489,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+    void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);

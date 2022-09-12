@@ -36,9 +36,9 @@ import java.io.IOException;
 /**
  * Created by ajlopez on 16/04/2017.
  */
-public class BridgeStateTest {
+class BridgeStateTest {
     @Test
-    public void recreateFromEmptyStorageProvider() throws IOException {
+    void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));

@@ -26,9 +26,9 @@ import java.util.Arrays;
 /**
  * Created by ajlopez on 25/01/2017.
  */
-public class BytecodeCompilerTest {
+class BytecodeCompilerTest {
     @Test
-    public void compileSimpleOpcode() {
+    void compileSimpleOpcode() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD");
@@ -39,7 +39,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileSimpleOpcodeWithSpaces() {
+    void compileSimpleOpcodeWithSpaces() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile(" ADD ");
@@ -50,7 +50,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileTwoOpcodes() {
+    void compileTwoOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD SUB");
@@ -62,7 +62,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileFourOpcodes() {
+    void compileFourOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD MUL SUB DIV");
@@ -76,7 +76,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileHexadecimalValueOneByte() {
+    void compileHexadecimalValueOneByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("0x01");
@@ -87,7 +87,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileHexadecimalValueTwoByte() {
+    void compileHexadecimalValueTwoByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("0x0102");
@@ -99,7 +99,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileSimpleOpcodeInLowerCase() {
+    void compileSimpleOpcodeInLowerCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("add");
@@ -110,7 +110,7 @@ public class BytecodeCompilerTest {
     }
 
     @Test
-    public void compileSimpleOpcodeInMixedCase() {
+    void compileSimpleOpcodeInMixedCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("Add");

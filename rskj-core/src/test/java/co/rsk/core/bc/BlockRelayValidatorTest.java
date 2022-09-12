@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockRelayValidatorTest {
+class BlockRelayValidatorTest {
 
     private final BlockStore blockStore = mock(BlockStore.class);
     private final BlockHeaderParentDependantValidationRule blockParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
@@ -37,7 +37,7 @@ public class BlockRelayValidatorTest {
     private final BlockRelayValidatorImpl blockRelayValidator = new BlockRelayValidatorImpl(blockStore, blockParentValidator, blockValidator);
 
     @Test
-    public void genesisCheck() {
+    void genesisCheck() {
         Block block = mock(Block.class);
         when(block.isGenesis()).thenReturn(true);
 
@@ -51,7 +51,7 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void blockValidatorCheck() {
+    void blockValidatorCheck() {
         Block block = mock(Block.class);
 
         when(blockValidator.isValid(any())).thenReturn(false);
@@ -66,7 +66,7 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void blockParentValidatorCheck() {
+    void blockParentValidatorCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
         Block parentBlock = mock(Block.class);
@@ -86,7 +86,7 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void allValidatorsCheck() {
+    void allValidatorsCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
         Block parentBlock = mock(Block.class);

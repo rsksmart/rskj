@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.
  */
-public class PrecompiledContractAddressTests {
+class PrecompiledContractAddressTests {
 
     public static final String ECRECOVER_ADDR = "0000000000000000000000000000000000000001";
     public static final String SHA256_ADDR = "0000000000000000000000000000000000000002";
@@ -48,7 +48,7 @@ public class PrecompiledContractAddressTests {
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void testGetPrecompile() {
+    void testGetPrecompile() {
         PrecompiledContracts pcList = new PrecompiledContracts(config, null);
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");

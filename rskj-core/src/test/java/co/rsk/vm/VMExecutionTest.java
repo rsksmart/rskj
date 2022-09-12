@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by ajlopez on 25/01/2017.
  */
-public class VMExecutionTest {
+class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
@@ -57,13 +57,13 @@ public class VMExecutionTest {
     private BytecodeCompiler compiler;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         invoke = new ProgramInvokeMockImpl();
         compiler = new BytecodeCompiler();
     }
 
     @Test
-    public void testPush1() {
+    void testPush1() {
         Program program = executeCode("PUSH1 0xa0", 1);
         Stack stack = program.getStack();
 
@@ -72,7 +72,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testAdd() {
+    void testAdd() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 ADD", 3);
         Stack stack = program.getStack();
 
@@ -81,7 +81,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testMul() {
+    void testMul() {
         Program program = executeCode("PUSH1 0x03 PUSH1 0x02 MUL", 3);
         Stack stack = program.getStack();
 
@@ -90,7 +90,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSub() {
+    void testSub() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 SUB", 3);
         Stack stack = program.getStack();
 
@@ -107,7 +107,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL1() {
+    void testSHL1() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -119,7 +119,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL2() {
+    void testSHL2() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -131,7 +131,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL3() {
+    void testSHL3() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -143,7 +143,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL4() {
+    void testSHL4() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -160,7 +160,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL5() {
+    void testSHL5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -172,7 +172,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL6() {
+    void testSHL6() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -184,7 +184,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHL7() {
+    void testSHL7() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -196,7 +196,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR1() {
+    void testSHR1() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -208,7 +208,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR2() {
+    void testSHR2() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -220,7 +220,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR3() {
+    void testSHR3() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -232,7 +232,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR4() {
+    void testSHR4() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -245,7 +245,7 @@ public class VMExecutionTest {
 
 
     @Test
-    public void testSHR5() {
+    void testSHR5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -257,7 +257,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR6() {
+    void testSHR6() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -269,7 +269,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR7() {
+    void testSHR7() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -286,7 +286,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR1() {
+    void testSAR1() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -299,7 +299,7 @@ public class VMExecutionTest {
 
 
     @Test
-    public void testSAR2() {
+    void testSAR2() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -311,7 +311,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR3() {
+    void testSAR3() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -323,7 +323,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR4() {
+    void testSAR4() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -335,7 +335,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR5() {
+    void testSAR5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -347,7 +347,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR6() {
+    void testSAR6() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -359,7 +359,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR7() {
+    void testSAR7() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -371,7 +371,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSAR8() {
+    void testSAR8() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
@@ -389,14 +389,14 @@ public class VMExecutionTest {
 
 
     @Test
-    public void testSAR3ShouldFailOnOldVersion() {
+    void testSAR3ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
         Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations));
     }
 
     @Test
-    public void testSHL1ShouldFailOnOldVersion() {
+    void testSHL1ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
@@ -404,7 +404,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testSHR1ShouldFailOnOldVersion() {
+    void testSHR1ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
@@ -412,7 +412,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void testJumpSkippingInvalidJump() {
+    void testJumpSkippingInvalidJump() {
         Program program = executeCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4);
         Stack stack = program.getStack();
 
@@ -421,7 +421,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void dupnFirstItem() {
+    void dupnFirstItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x00 DUPN", 3);
         Stack stack = program.getStack();
 
@@ -431,7 +431,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void dupnFourthItem() {
+    void dupnFourthItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x03 DUPN", 6);
         Stack stack = program.getStack();
 
@@ -443,7 +443,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void dupnTwentiethItem() {
+    void dupnTwentiethItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x13 DUPN", 22);
         Stack stack = program.getStack();
 
@@ -455,17 +455,17 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void dupnTwentiethItemWithoutEnoughItems() {
+    void dupnTwentiethItemWithoutEnoughItems() {
         Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21));
     }
 
     @Test
-    public void dupnTooManyItemsWithOverflow() {
+    void dupnTooManyItemsWithOverflow() {
         Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff DUPN", 3));
     }
 
     @Test
-    public void dupnAsInvalidOpcodeWhenDeactivated() {
+    void dupnAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP191)).thenReturn(true);
 
@@ -479,7 +479,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void swapnSecondItem() {
+    void swapnSecondItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", 4);
         Stack stack = program.getStack();
 
@@ -489,7 +489,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void swapnFourthItem() {
+    void swapnFourthItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x02 SWAPN", 6);
         Stack stack = program.getStack();
 
@@ -501,7 +501,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void swapnTwentiethItem() {
+    void swapnTwentiethItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x12 SWAPN", 22);
         Stack stack = program.getStack();
 
@@ -514,19 +514,19 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void swapnTooManyItemsWithOverflow() {
+    void swapnTooManyItemsWithOverflow() {
         ;
         Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff SWAPN", 4));
     }
 
     @Test
-    public void swapnTwentiethItemWithoutEnoughItems() {
+    void swapnTwentiethItemWithoutEnoughItems() {
         Assertions.assertThrows(Program.StackTooSmallException.class, () -> executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22));
     }
 
 
     @Test
-    public void swapnAsInvalidOpcodeWhenDeactivated() {
+    void swapnAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP191)).thenReturn(true);
 
@@ -540,7 +540,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void txIndexExecution() {
+    void txIndexExecution() {
         invoke.setTransactionIndex(DataWord.valueOf(42));
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
@@ -550,7 +550,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void txIndexAsInvalidOpcodeWhenDeactivated() {
+    void txIndexAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP191)).thenReturn(true);
 
@@ -565,7 +565,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void invalidJustAfterEndOfCode() {
+    void invalidJustAfterEndOfCode() {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
             Assertions.fail();
@@ -575,7 +575,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void invalidJumpOutOfRange() {
+    void invalidJumpOutOfRange() {
         try {
             executeCode("PUSH1 0x05 JUMP", 2);
             Assertions.fail();
@@ -585,7 +585,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void invalidNegativeJump() {
+    void invalidNegativeJump() {
         try {
             executeCode("PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP", 2);
             Assertions.fail();
@@ -595,7 +595,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void invalidTooFarJump() {
+    void invalidTooFarJump() {
         try {
             executeCode("PUSH1 0xff JUMP", 2);
             Assertions.fail();
@@ -605,7 +605,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void dupnArgumentIsNotJumpdest() {
+    void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
 
@@ -620,7 +620,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void swapnArgumentIsNotJumpdest() {
+    void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
 
@@ -635,7 +635,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void thePathOfFifteenThousandJumps() {
+    void thePathOfFifteenThousandJumps() {
         byte[] bytecode = new byte[15000 * 6 + 3];
 
         int k = 0;
@@ -669,7 +669,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void returnDataSizeBasicGasCost() {
+    void returnDataSizeBasicGasCost() {
         Program program = executeCode("0x3d", 1);
 
         Assertions.assertNotNull(program);
@@ -679,7 +679,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void returnDataCopyBasicGasCost() {
+    void returnDataCopyBasicGasCost() {
         Program program = executeCode(
                 // push some values for RETURNDATACOPY
                 "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
@@ -694,7 +694,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void callDataCopyBasicGasCost() {
+    void callDataCopyBasicGasCost() {
         Program program = executeCode(
                 // push some values for CALLDATACOPY
                 "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
@@ -709,28 +709,28 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void chainIDMainnet(){
+    void chainIDMainnet(){
         executeCHAINID(Constants.MAINNET_CHAIN_ID);
     }
 
     @Test
-    public void chainIDTestnet(){
+    void chainIDTestnet(){
         executeCHAINID(Constants.TESTNET_CHAIN_ID);
     }
 
     @Test
-    public void chainIDRegtest(){
+    void chainIDRegtest(){
         executeCHAINID(Constants.REGTEST_CHAIN_ID);
     }
 
     @Test
-    public void chainIDIsCorrectOpcodeNumber(){
+    void chainIDIsCorrectOpcodeNumber(){
         Assertions.assertEquals(0x46, OpCodes.OP_CHAINID);
         Assertions.assertEquals(OpCode.CHAINID, OpCode.code((byte) 0x46));
     }
 
     @Test
-    public void testChainIDNotActivated(){
+    void testChainIDNotActivated(){
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP152)).thenReturn(false);
 
@@ -757,7 +757,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void selfBalanceFailsWithRSKIPNotActivated() {
+    void selfBalanceFailsWithRSKIPNotActivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP151)).thenReturn(false);
 
@@ -765,7 +765,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void selfBalanceRunsCorrectly() {
+    void selfBalanceRunsCorrectly() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP151)).thenReturn(true);
 
@@ -786,7 +786,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void selfBalanceIsSameAsBalance() {
+    void selfBalanceIsSameAsBalance() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP151)).thenReturn(true);
 
@@ -816,7 +816,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void createContractAndPreserveContractAddressBalance() {
+    void createContractAndPreserveContractAddressBalance() {
         /**
          *  CREATE call with expected address that has non-zero balance
          */

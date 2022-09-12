@@ -10,25 +10,25 @@ import java.util.Random;
 /**
  * Created by ajlopez on 10/07/2017.
  */
-public class InetAddressTableTest {
+class InetAddressTableTest {
     private static Random random = new Random();
 
     @Test
-    public void doesNotContainsNewIPV4Address() throws UnknownHostException {
+    void doesNotContainsNewIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
         Assertions.assertFalse(table.contains(generateIPAddressV4()));
     }
 
     @Test
-    public void doesNotContainsNewIPV6Address() throws UnknownHostException {
+    void doesNotContainsNewIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
         Assertions.assertFalse(table.contains(generateIPAddressV6()));
     }
 
     @Test
-    public void addIPV4Address() throws UnknownHostException {
+    void addIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
 
@@ -37,7 +37,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void containExactAddressForMask32() throws UnknownHostException {
+    void containExactAddressForMask32() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
 
         InetAddressTable table = new InetAddressTable();
@@ -48,7 +48,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void doesNotContainRandomAddressForMask32() throws UnknownHostException {
+    void doesNotContainRandomAddressForMask32() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(generateIPAddressV4(), 32);
 
@@ -57,7 +57,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addAndRemoveIPV4Address() throws UnknownHostException {
+    void addAndRemoveIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
 
@@ -68,7 +68,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addIPV6Address() throws UnknownHostException {
+    void addIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV6();
 
@@ -77,7 +77,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addAndRemoveIPV6Address() throws UnknownHostException {
+    void addAndRemoveIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV6();
 
@@ -88,7 +88,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addAddressTwice() throws UnknownHostException {
+    void addAddressTwice() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
 
@@ -98,7 +98,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void removeUnknownAddress() throws UnknownHostException {
+    void removeUnknownAddress() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
 
@@ -107,7 +107,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addAddressMask() throws UnknownHostException {
+    void addAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = InetAddress.getByName("192.168.0.100");
         InetAddress address2 = InetAddress.getByName("192.122.122.122");
@@ -125,7 +125,7 @@ public class InetAddressTableTest {
     }
 
     @Test
-    public void addAndRemoveAddressMask() throws UnknownHostException {
+    void addAndRemoveAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = InetAddress.getByName("192.168.0.100");
         InetAddress address2 = InetAddress.getByName("192.122.122.122");

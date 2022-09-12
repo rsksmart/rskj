@@ -43,14 +43,14 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 29/08/2017.
  */
-public class SyncProcessorTest {
+class SyncProcessorTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     @Test
-    public void noPeers() {
+    void noPeers() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -78,7 +78,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processStatusWithAdvancedPeers() {
+    void processStatusWithAdvancedPeers() {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -129,7 +129,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
+    void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -187,7 +187,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
+    void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
@@ -233,7 +233,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void syncWithAdvancedStatusAnd5Peers() {
+    void syncWithAdvancedStatusAnd5Peers() {
         final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
@@ -310,7 +310,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processStatusWithPeerWithSameDifficulty() {
+    void processStatusWithPeerWithSameDifficulty() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -351,7 +351,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void sendSkeletonRequest() {
+    void sendSkeletonRequest() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -384,7 +384,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void sendBlockHashRequest() {
+    void sendBlockHashRequest() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -420,7 +420,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockHashResponseWithUnknownHash() {
+    void processBlockHashResponseWithUnknownHash() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
@@ -439,7 +439,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersResponseWithEmptyList() {
+    void processBlockHeadersResponseWithEmptyList() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -466,7 +466,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersResponseRejectsNonSolicitedMessages() {
+    void processBlockHeadersResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -496,7 +496,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
+    void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         Blockchain otherBlockchain = new BlockChainBuilder().ofSize(10, true);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -529,7 +529,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersResponseWithOneExistingHeader() {
+    void processBlockHeadersResponseWithOneExistingHeader() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -559,7 +559,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBodyResponseRejectsNonSolicitedMessages() {
+    void processBodyResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
@@ -586,7 +586,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBodyResponseAddsToBlockchain() {
+    void processBodyResponseAddsToBlockchain() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -638,7 +638,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void doesntProcessInvalidBodyResponse() {
+    void doesntProcessInvalidBodyResponse() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -698,7 +698,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void doesntProcessUnexpectedBodyResponse() {
+    void doesntProcessUnexpectedBodyResponse() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
@@ -754,7 +754,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBodyResponseWithTransactionAddsToBlockchain() {
+    void processBodyResponseWithTransactionAddsToBlockchain() {
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
 
@@ -844,7 +844,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processBlockResponseAddsToBlockchain() {
+    void processBlockResponseAddsToBlockchain() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -881,7 +881,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
+    void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
         Blockchain advancedBlockchain = new BlockChainBuilder().ofSize(100);
@@ -940,7 +940,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
+    void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(30);
         org.ethereum.db.BlockStore blockStore = builder.getBlockStore();
@@ -999,7 +999,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processSkeletonResponseWithTenBlockIdentifiers() {
+    void processSkeletonResponseWithTenBlockIdentifiers() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -1050,7 +1050,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processSkeletonResponseWithoutBlockIdentifiers() {
+    void processSkeletonResponseWithoutBlockIdentifiers() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
@@ -1080,7 +1080,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processSkeletonResponseWithConnectionPoint() {
+    void processSkeletonResponseWithConnectionPoint() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(25);
 
         final NetBlockStore store = new NetBlockStore();
@@ -1127,7 +1127,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void syncEventsSentToListener() {
+    void syncEventsSentToListener() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimplePeer peer = new SimplePeer(new byte[] { 0x01 });
@@ -1159,7 +1159,7 @@ public class SyncProcessorTest {
         SyncPeerStatus peerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         doReturn(status).when(peerStatus).getStatus();
-        doReturn(peerStatus).when(peersInformation).getPeer(eq(peer));
+        doReturn(peerStatus).when(peersInformation).getPeer(peer);
 
         processor.getSyncState().newPeerStatus();
         verify(listener).onLongSyncStarted();

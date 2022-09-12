@@ -37,9 +37,9 @@ import java.math.BigInteger;
 import java.util.*;
 
 @Disabled
-public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
+class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
     @Test
-    public void getStateForBtcReleaseClient() throws VMException {
+    void getStateForBtcReleaseClient() throws VMException {
         ExecutionStats stats = new ExecutionStats("getStateForBtcReleaseClient");
 
         executeAndAverage(

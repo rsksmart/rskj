@@ -13,35 +13,35 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PeginInstructionsVersion1Test {
+class PeginInstructionsVersion1Test {
     private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
 
     @Test
-    public void validateDataLength_invalidLengthTooLarge() {
+    void validateDataLength_invalidLengthTooLarge() {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
         Assertions.assertThrows(PeginInstructionsParseException.class, () -> peginInstructionsVersion1.validateDataLength(new byte[50]));
     }
 
     @Test
-    public void getProtocolVersion() {
+    void getProtocolVersion() {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
         Assertions.assertEquals(1, peginInstructionsVersion1.getProtocolVersion());
     }
 
     @Test
-    public void getRskDestinationAddress_noData() {
+    void getRskDestinationAddress_noData() {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
         Assertions.assertNull(peginInstructionsVersion1.getRskDestinationAddress());
     }
 
     @Test
-    public void parse_invalidDataLength() {
+    void parse_invalidDataLength() {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
         Assertions.assertThrows(PeginInstructionsParseException.class, () -> peginInstructionsVersion1.parse(new byte[30]));
     }
 
     @Test
-    public void parseAdditionalData_noBtcRefundAddress() throws PeginInstructionsException {
+    void parseAdditionalData_noBtcRefundAddress() throws PeginInstructionsException {
         // Arrange
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
 
@@ -55,7 +55,7 @@ public class PeginInstructionsVersion1Test {
     }
 
     @Test
-    public void parseAdditionalData_p2pkhTypeAddress() throws PeginInstructionsException {
+    void parseAdditionalData_p2pkhTypeAddress() throws PeginInstructionsException {
         // Arrange
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(params);
@@ -77,7 +77,7 @@ public class PeginInstructionsVersion1Test {
     }
 
     @Test
-    public void parseAdditionalData_p2shMultisigAddress() throws PeginInstructionsException {
+    void parseAdditionalData_p2shMultisigAddress() throws PeginInstructionsException {
         // Arrange
         Script p2shScript = ScriptBuilder.createP2SHOutputScript(
             2,
@@ -102,7 +102,7 @@ public class PeginInstructionsVersion1Test {
     }
 
     @Test
-    public void parseAdditionalData_invalidAddressType() {
+    void parseAdditionalData_invalidAddressType() {
         // Arrange
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(params);

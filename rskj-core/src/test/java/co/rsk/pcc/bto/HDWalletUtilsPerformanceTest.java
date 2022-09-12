@@ -30,6 +30,7 @@ import org.junit.platform.suite.api.Suite;
         ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase.class,
         GetMultisigScriptHashPerformanceTestCase.class
 })
-@Disabled
-public class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
+@Disabled("manual performance tests")
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
 }

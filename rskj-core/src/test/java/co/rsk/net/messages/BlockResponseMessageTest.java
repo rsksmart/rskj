@@ -28,9 +28,9 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockResponseMessageTest {
+class BlockResponseMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         Block block = new BlockGenerator().getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
@@ -40,7 +40,7 @@ public class BlockResponseMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         Block block = new BlockGenerator().getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 

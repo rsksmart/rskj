@@ -52,11 +52,11 @@ import java.util.Random;
 /**
  * Created by ajlopez on 12/07/2017.
  */
-public class Web3ImplScoringTest {
+class Web3ImplScoringTest {
     private static Random random = new Random();
 
     @Test
-    public void addBannedAddressUsingIPV4() throws UnknownHostException {
+    void addBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateNonLocalIPAddressV4();
@@ -69,7 +69,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressWithInvalidMask() {
+    void addBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -80,7 +80,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void removeBannedAddressWithInvalidMask() {
+    void removeBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -90,7 +90,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
+    void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateNonLocalIPAddressV4();
@@ -103,7 +103,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
@@ -121,7 +121,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
+    void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
@@ -138,7 +138,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
@@ -156,7 +156,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
+    void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
@@ -171,7 +171,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressUsingIPV6() throws UnknownHostException {
+    void addBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
@@ -184,7 +184,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+    void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
@@ -197,7 +197,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
@@ -214,7 +214,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
@@ -231,7 +231,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getEmptyPeerList() {
+    void getEmptyPeerList() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
 
         Web3Impl web3 = createWeb3(peerScoringManager);
@@ -242,7 +242,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getPeerList() throws UnknownHostException {
+    void getPeerList() throws UnknownHostException {
         NodeID node = generateNodeID();
         InetAddress address = generateNonLocalIPAddressV4();
         PeerScoringManager peerScoringManager = createPeerScoringManager();
@@ -285,7 +285,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getEmptyBannedAddressList() {
+    void getEmptyBannedAddressList() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -296,7 +296,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getAddressListWithOneElement() {
+    void getAddressListWithOneElement() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -309,7 +309,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getAddressListWithTwoElements() {
+    void getAddressListWithTwoElements() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -325,7 +325,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void getAddressListWithOneElementUsingMask() {
+    void getAddressListWithOneElementUsingMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -338,7 +338,7 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void clearPeerScoring() throws UnknownHostException {
+    void clearPeerScoring() throws UnknownHostException {
         NodeID node = generateNodeID();
         InetAddress address = generateNonLocalIPAddressV4();
         PeerScoringManager peerScoringManager = createPeerScoringManager();

@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class GetBlockMessageTest {
+class GetBlockMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         GetBlockMessage message = new GetBlockMessage(hash);
 
@@ -35,7 +35,7 @@ public class GetBlockMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = new byte[]{0x0F};
         GetBlockMessage message = new GetBlockMessage(hash);
 

@@ -59,7 +59,7 @@ public class BlockChainImplTest {
     private BlockStore blockStore;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         objects = new RskTestFactory() {
             @Override
             protected GenesisLoader buildGenesisLoader() {
@@ -79,7 +79,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addGenesisBlock() {
+    void addGenesisBlock() {
         Block genesis = blockChain.getBestBlock();
 
         BlockChainStatus status = blockChain.getStatus();
@@ -97,7 +97,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void onBestBlockTest() {
+    void onBestBlockTest() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis, 0, 2L);
@@ -113,7 +113,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addBlockOne() {
+    void addBlockOne() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -138,12 +138,12 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void nullBlockAsInvalidBlock() {
+    void nullBlockAsInvalidBlock() {
         Assertions.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(null));
     }
 
     @Test
-    public void rejectBlockOneUsingBlockHeaderValidator() {
+    void rejectBlockOneUsingBlockHeaderValidator() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -153,7 +153,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addInvalidBlockOneBadStateRoot() {
+    void addInvalidBlockOneBadStateRoot() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -163,7 +163,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addInvalidBlockOneBadReceiptsRoot() {
+    void addInvalidBlockOneBadReceiptsRoot() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -173,7 +173,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addInvalidBlockOneBadLogsBloom() {
+    void addInvalidBlockOneBadLogsBloom() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -183,7 +183,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addInvalidBlockOneBadGasUsed() {
+    void addInvalidBlockOneBadGasUsed() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -193,7 +193,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addInvalidBlockOneBadPaidFees() {
+    void addInvalidBlockOneBadPaidFees() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -203,7 +203,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void importNotBest() {
+    void importNotBest() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -237,7 +237,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void getBlocksByNumber() {
+    void getBlocksByNumber() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis, 0, 2);
@@ -261,7 +261,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void getBlockByNumber() {
+    void getBlockByNumber() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -302,7 +302,8 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChain() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void switchToOtherChain() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis, 0, 2L);
@@ -331,7 +332,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void rejectSwitchToOtherChainUsingBlockHeaderValidation() throws InterruptedException {
+    void rejectSwitchToOtherChainUsingBlockHeaderValidation() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -350,7 +351,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainInvalidBadBlockBadStateRoot() {
+    void switchToOtherChainInvalidBadBlockBadStateRoot() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis, 0, 2L);
@@ -376,7 +377,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainInvalidBadBlockBadReceiptsRoot() {
+    void switchToOtherChainInvalidBadBlockBadReceiptsRoot() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -392,7 +393,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainInvalidBadBlockBadLogsBloom() {
+    void switchToOtherChainInvalidBadBlockBadLogsBloom() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -414,7 +415,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainInvalidBadGasUsed() {
+    void switchToOtherChainInvalidBadGasUsed() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis, 0, 2);
@@ -429,7 +430,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainInvalidBadPaidFees() {
+    void switchToOtherChainInvalidBadPaidFees() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -449,7 +450,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void switchToOtherChainByDifficulty() {
+    void switchToOtherChainByDifficulty() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -473,7 +474,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void rejectBlockWithoutParent() {
+    void rejectBlockWithoutParent() {
         Block genesis = blockChain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -495,7 +496,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addAlreadyInChainBlock() {
+    void addAlreadyInChainBlock() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -516,13 +517,13 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void getUnknownBlockByHash() {
+    void getUnknownBlockByHash() {
 
         Assertions.assertNull(blockChain.getBlockByHash(new BlockGenerator().getBlock(1).getHash().getBytes()));
     }
 
     @Test
-    public void getKnownBlocksByHash() {
+    void getKnownBlocksByHash() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -541,7 +542,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void validateMinedBlockOne() {
+    void validateMinedBlockOne() {
         Block genesis = blockChain.getBestBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
 
@@ -549,7 +550,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void validateMinedBlockSeven() {
+    void validateMinedBlockSeven() {
         Block genesis = blockChain.getBestBlock();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -571,7 +572,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addSevenMinedBlocks() {
+    void addSevenMinedBlocks() {
         Block genesis = blockChain.getBestBlock();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -593,12 +594,12 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void getUnknownTransactionInfoAsNull() {
+    void getUnknownTransactionInfoAsNull() {
         Assertions.assertNull(blockChain.getTransactionInfo(new byte[]{0x01}));
     }
 
     @Test
-    public void getTransactionInfo() {
+    void getTransactionInfo() {
         Block block = getBlockWithOneTransaction();
 
         Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
@@ -608,7 +609,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void listenOnBlockWhenAddingBlock() {
+    void listenOnBlockWhenAddingBlock() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -619,7 +620,7 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void addValidMGPBlock() {
+    void addValidMGPBlock() {
         Repository track = objects.getRepositoryLocator().startTrackingAt(blockChain.getBestBlock().getHeader());
 
         Account account = BlockExecutorTest.createAccount("acctest1", track, Coin.valueOf(100000));

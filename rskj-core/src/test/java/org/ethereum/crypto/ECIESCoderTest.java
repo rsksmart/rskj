@@ -27,11 +27,11 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-public class ECIESCoderTest {
+class ECIESCoderTest {
 
 
     @Test // decrypt cpp data
-    public void test1(){
+    void test1(){
         BigInteger privKey = new BigInteger("5e173f6ac3c669587538e7727cf19b782a4f2fda07c1eaa662c593e5e85e3051", 16);
         byte[] cipher = Hex.decode("049934a7b2d7f9af8fd9db941d9da281ac9381b5740e1f64f7092f3588d4f87f5ce55191a6653e5e80c1c5dd538169aa123e70dc6ffc5af1827e546c0e958e42dad355bcc1fcb9cdf2cf47ff524d2ad98cbf275e661bf4cf00960e74b5956b799771334f426df007350b46049adb21a6e78ab1408d5e6ccde6fb5e69f0f4c92bb9c725c02f99fa72b9cdc8dd53cff089e0e73317f61cc5abf6152513cb7d833f09d2851603919bf0fbe44d79a09245c6e8338eb502083dc84b846f2fee1cc310d2cc8b1b9334728f97220bb799376233e113");
 
@@ -46,7 +46,7 @@ public class ECIESCoderTest {
 
 
     @Test  // encrypt decrypt round trip
-    public void test2(){
+    void test2(){
 
         BigInteger privKey = new BigInteger("5e173f6ac3c669587538e7727cf19b782a4f2fda07c1eaa662c593e5e85e3051", 16);
 
@@ -67,7 +67,9 @@ public class ECIESCoderTest {
             decrypted_payload = ECIESCoder.decrypt(privKey, cipher);
         } catch (Throwable e) {e.printStackTrace();}
 
-        System.out.println(ByteUtil.toHexString(decrypted_payload));
+        String decryptedHex = ByteUtil.toHexString(decrypted_payload);
+        Assertions.assertNotNull(decryptedHex);
+        System.out.println(decryptedHex);
     }
 
 }

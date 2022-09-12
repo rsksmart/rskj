@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class HandshakeHandlerTest {
+class HandshakeHandlerTest {
 
     private HandshakeHandler handler;
     private ECKey hhKey;
@@ -54,7 +54,7 @@ public class HandshakeHandlerTest {
     private ChannelHandlerContext ctx;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();
         handler = new HandshakeHandler(
@@ -75,21 +75,21 @@ public class HandshakeHandlerTest {
     }
 
     @Test
-    public void shouldActivateEthIfHandshakeIsSuccessful() throws Exception {
+    void shouldActivateEthIfHandshakeIsSuccessful() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(RSK, (byte) 62)));
         verify(channel, times(1)).activateEth(ctx, EthVersion.V62);
         assertTrue(ch.isOpen());
     }
 
     @Test
-    public void shouldDisconnectIfNoCapabilityIsPresent() throws Exception {
+    void shouldDisconnectIfNoCapabilityIsPresent() throws Exception {
         simulateHandshakeStartedByPeer(Collections.emptyList());
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());
     }
 
     @Test
-    public void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
+    void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 62)));
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());

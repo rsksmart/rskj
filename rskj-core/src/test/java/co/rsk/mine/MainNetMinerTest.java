@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by SerAdmin on 1/3/2018.
  */
-public class MainNetMinerTest {
+class MainNetMinerTest {
     private TestSystemProperties config;
     private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
@@ -55,7 +55,7 @@ public class MainNetMinerTest {
     private BlockExecutor blockExecutor;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
@@ -87,7 +87,7 @@ public class MainNetMinerTest {
      * it may happen once. Twice would be suspicious.
      */
     @Test
-    public void submitBitcoinBlockProofOfWorkNotGoodEnough() {
+    void submitBitcoinBlockProofOfWorkNotGoodEnough() {
         /* We need a low target */
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockchain = blockChainBuilder.build();
@@ -135,7 +135,7 @@ public class MainNetMinerTest {
      * it should almost never fail.
      */
     @Test
-    public void submitBitcoinBlockInvalidBlockDoesntEliminateCache() {
+    void submitBitcoinBlockInvalidBlockDoesntEliminateCache() {
         //////////////////////////////////////////////////////////////////////
         // To make this test work we need a special network spec with
         // medium minimum difficulty (this is not the mainnet nor the regnet)

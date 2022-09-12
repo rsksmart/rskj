@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class TwoNodeTest {
+class TwoNodeTest {
     private static SimpleNode createNode(int size) {
         final World world = new World();
         final NetBlockStore store = new NetBlockStore();
@@ -60,8 +60,8 @@ public class TwoNodeTest {
     }
 
     @Test
-    @Disabled
-    public void buildBlockchainAndSynchronize() {
+    @Disabled("???")
+    void buildBlockchainAndSynchronize() {
         SimpleNode node1 = createNode(100);
         SimpleNode node2 = createNode(0);
 
@@ -73,8 +73,8 @@ public class TwoNodeTest {
     }
 
     @Test
-    @Disabled
-    public void buildBlockchainPartialAndSynchronize() {
+    @Disabled("???")
+    void buildBlockchainPartialAndSynchronize() {
         SimpleNode node1 = createNode(0);
         SimpleNode node2 = createNode(0);
 

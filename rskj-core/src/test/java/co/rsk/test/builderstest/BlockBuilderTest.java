@@ -29,9 +29,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 8/6/2016.
  */
-public class BlockBuilderTest {
+class BlockBuilderTest {
     @Test
-    public void buildBlockWithGenesisAsParent() {
+    void buildBlockWithGenesisAsParent() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder(null, null, null);
@@ -47,7 +47,7 @@ public class BlockBuilderTest {
     }
 
     @Test
-    public void buildBlockWithDifficulty() {
+    void buildBlockWithDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder(null, null, null);

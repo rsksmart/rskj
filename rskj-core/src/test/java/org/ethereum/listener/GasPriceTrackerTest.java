@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class GasPriceTrackerTest {
+class GasPriceTrackerTest {
 
     private static final long DB_BLOCK_PRICE = 35_000_000_000L;
     private static final long DB_TX_GAS_PRICE = 45_000_000_000L;
@@ -37,7 +37,7 @@ public class GasPriceTrackerTest {
     private BlockStore blockStore;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         blockStore = mock(BlockStore.class);
         Block bestBlock = makeBlock(Coin.valueOf(DB_BLOCK_PRICE), BEST_BLOCK_TX_COUNT, i -> makeTx(Coin.valueOf(DB_TX_GAS_PRICE)));
         Block parentBlock = makeBlock(Coin.valueOf(35_000_000_000L), PARENT_BLOCK_TX_COUNT, i -> makeTx(Coin.valueOf(DB_TX_GAS_PRICE)));
@@ -46,7 +46,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_TrackerNotTriggered_NoBestBlockOnDB_ReturnsDefaultPrice() {
+    void getGasPrice_TrackerNotTriggered_NoBestBlockOnDB_ReturnsDefaultPrice() {
         when(blockStore.getBestBlock()).thenReturn(null); // no bestBlock on DB
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
         Coin actualResult = gasPriceTracker.getGasPrice();
@@ -54,7 +54,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_TrackerNotTriggered_NotEnoughBlocksOnDB_ReturnsDBLastBlockPrice() {
+    void getGasPrice_TrackerNotTriggered_NotEnoughBlocksOnDB_ReturnsDBLastBlockPrice() {
         when(blockStore.getBlockByHash(any())).thenReturn(null); // just bestBlock without parents
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
         Coin actualResult = gasPriceTracker.getGasPrice();
@@ -62,14 +62,14 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_TrackerNotTriggered_EnoughBlocksOnDB_ReturnsDBCalculatedPrice() {
+    void getGasPrice_TrackerNotTriggered_EnoughBlocksOnDB_ReturnsDBCalculatedPrice() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
         Coin actualResult = gasPriceTracker.getGasPrice();
         assertEquals(Coin.valueOf(DB_TX_GAS_PRICE), actualResult);
     }
 
     @Test
-    public void getGasPrice_PriceWindowNotFilledByDB_BlockReceivedNotFillingWindow_ReturnsBlockPrice() {
+    void getGasPrice_PriceWindowNotFilledByDB_BlockReceivedNotFillingWindow_ReturnsBlockPrice() {
         long blockPrice = 30_000_000_000L;
 
         when(blockStore.getBlockByHash(any())).thenReturn(null); // just bestBlock without parents
@@ -86,7 +86,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_PriceWindowFilledByDB_BlockReceivedNotFillingWindow_ReturnsDBCalculatedPrice() {
+    void getGasPrice_PriceWindowFilledByDB_BlockReceivedNotFillingWindow_ReturnsDBCalculatedPrice() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         Block block = makeBlock(Coin.valueOf(30_000_000_000L), 1, i -> makeTx(Coin.valueOf(i * 1_000_000_000L)));
@@ -99,7 +99,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_PriceWindowFilledByDB_BlockReceivedFillingWindow_ReturnsBlockCalculatedPrice() {
+    void getGasPrice_PriceWindowFilledByDB_BlockReceivedFillingWindow_ReturnsBlockCalculatedPrice() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         Block block = makeBlock(Coin.valueOf(30_000_000_000L), TOTAL_SLOTS, i -> makeTx(Coin.valueOf(i * 1_000_000_000L)));
@@ -112,7 +112,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_PriceWindowFilled_BestBlockReceivedWithLowerPrice_ReturnsBlockCalculatedPrice() {
+    void getGasPrice_PriceWindowFilled_BestBlockReceivedWithLowerPrice_ReturnsBlockCalculatedPrice() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         Block bestBlock = makeBlock(Coin.valueOf(1_000_000_000L), 0, i -> null);
@@ -135,7 +135,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void getGasPrice_PriceWindowFilled_BestBlockReceivedWithGreaterPrice_ReturnsBestBlockAdjustedPrice() {
+    void getGasPrice_PriceWindowFilled_BestBlockReceivedWithGreaterPrice_ReturnsBestBlockAdjustedPrice() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         Block bestBlock = makeBlock(Coin.valueOf(50_000_000_000L), 0, i -> null);
@@ -150,7 +150,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void isFeeMarketWorking_falseWhenNotEnoughBlocks() {
+    void isFeeMarketWorking_falseWhenNotEnoughBlocks() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         // to ensure only bestBlock is included on window on initial fill
@@ -166,7 +166,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void isFeeMarketWorking_falseWhenBelowAverage() {
+    void isFeeMarketWorking_falseWhenBelowAverage() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         for (int i = 0; i < 50; i++) {
@@ -180,7 +180,7 @@ public class GasPriceTrackerTest {
     }
 
     @Test
-    public void isFeeMarketWorking_trueWhenAboveAverage() {
+    void isFeeMarketWorking_trueWhenAboveAverage() {
         GasPriceTracker gasPriceTracker = GasPriceTracker.create(blockStore);
 
         for (int i = 0; i < 50; i++) {

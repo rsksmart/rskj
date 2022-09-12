@@ -20,13 +20,13 @@ import java.util.Objects;
 
 import static org.mockito.Mockito.*;
 
-public class EthereumChannelInitializerTest {
+class EthereumChannelInitializerTest {
 
     @Test
-    public void initChannel_AddressIsNotBanned_ShouldNotDisconnect() {
+    void initChannel_AddressIsNotBanned_ShouldNotDisconnect() {
         InetSocketAddress address = Objects.requireNonNull(IpUtils.parseAddress("192.168.100.1:5555"));
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
-        doReturn(false).when(peerScoringManager).isAddressBanned(eq(address.getAddress()));
+        doReturn(false).when(peerScoringManager).isAddressBanned(address.getAddress());
         ChannelManager channelManager = mock(ChannelManager.class);
         doReturn(true).when(channelManager).isAddressBlockAvailable(any());
         ChannelPipeline pipeline = mock(ChannelPipeline.class);
@@ -49,10 +49,10 @@ public class EthereumChannelInitializerTest {
     }
 
     @Test
-    public void initChannel_AddressIsBanned_ShouldDisconnect() {
+    void initChannel_AddressIsBanned_ShouldDisconnect() {
         InetSocketAddress address = Objects.requireNonNull(IpUtils.parseAddress("192.168.100.1:5555"));
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
-        doReturn(true).when(peerScoringManager).isAddressBanned(eq(address.getAddress()));
+        doReturn(true).when(peerScoringManager).isAddressBanned(address.getAddress());
         ChannelManager channelManager = mock(ChannelManager.class);
         doReturn(true).when(channelManager).isAddressBlockAvailable(any());
         ChannelPipeline pipeline = mock(ChannelPipeline.class);

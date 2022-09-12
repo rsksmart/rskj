@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by mario on 01/08/2016.
  */
-public class NodeTest {
+class NodeTest {
 
     private Logger logger = LoggerFactory.getLogger(NodeTest.class);
 
@@ -56,7 +56,7 @@ public class NodeTest {
 
 
     @Test
-    public void nodeSerialization() {
+    void nodeSerialization() {
 
         Node node_1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
         Node node_2 = new Node(node_1.getRLP());
@@ -67,11 +67,11 @@ public class NodeTest {
 
         assertEquals(ByteUtil.toHexString(NODE_ID_1), ByteUtil.toHexString(id_2));
         assertEquals(NODE_HOST_1, host_2);
-        assertTrue(NODE_PORT_1 == port_2);
+        assertEquals((int) NODE_PORT_1, port_2);
     }
 
     @Test
-    public void getAddress() {
+    void getAddress() {
         Node node = new Node(NODE_ID_1, GOOGLE, GOOGLE_PORT);
         Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
 

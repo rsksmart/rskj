@@ -32,12 +32,12 @@ import java.util.UUID;
 /**
  * Created by mario on 20/02/17.
  */
-public class PeerDiscoveryRequestTest {
+class PeerDiscoveryRequestTest {
 
     public static final int NETWORK_ID = 1;
 
     @Test
-    public void create() {
+    void create() {
         ECKey key = new ECKey();
         String check = UUID.randomUUID().toString();
         PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);

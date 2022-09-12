@@ -11,9 +11,9 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 05/02/2019.
  */
-public class BlocksBloomStoreTest {
+class BlocksBloomStoreTest {
     @Test
-    public void getFirstNumberInRange() {
+    void getFirstNumberInRange() {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
@@ -24,7 +24,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void getLastNumberInRange() {
+    void getLastNumberInRange() {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
@@ -35,7 +35,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void noBlocksBloom() {
+    void noBlocksBloom() {
         KeyValueDataSource dataSource = mock(KeyValueDataSource.class);
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
 
@@ -46,7 +46,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void hasBlockNumberZero() {
+    void hasBlockNumberZero() {
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
 
         Assertions.assertFalse(blocksBloomStore.hasBlockNumber(0));
@@ -64,7 +64,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void hasBlockNumberInStore() {
+    void hasBlockNumberInStore() {
         KeyValueDataSource internalStore = new HashMapDB();
         Bloom bloom = new Bloom();
         BlocksBloom blocksBloom = new BlocksBloom();
@@ -81,7 +81,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void addBlocksBloom() {
+    void addBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -106,7 +106,7 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
-    public void addBlocksBloomUsingDataSource() {
+    void addBlocksBloomUsingDataSource() {
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];

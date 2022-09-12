@@ -31,10 +31,10 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReceiptStoreImplFallbackTest {
+class ReceiptStoreImplFallbackTest {
 
     @Test
-    public void getOlderReceiptDataViaFallback() {
+    void getOlderReceiptDataViaFallback() {
         HashMapDB hashMapDB = new HashMapDB();
         ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
         ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
@@ -54,7 +54,7 @@ public class ReceiptStoreImplFallbackTest {
     }
 
     @Test
-    public void addToExistingOlderReceiptDataViaFallback() {
+    void addToExistingOlderReceiptDataViaFallback() {
         HashMapDB hashMapDB = new HashMapDB();
         ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
         ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
@@ -85,7 +85,7 @@ public class ReceiptStoreImplFallbackTest {
     }
 
     @Test
-    public void ignoreNewerReceiptDataByInitialImpl() {
+    void ignoreNewerReceiptDataByInitialImpl() {
         HashMapDB hashMapDB = new HashMapDB();
         ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
         ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);

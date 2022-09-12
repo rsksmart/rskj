@@ -26,16 +26,16 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 8/6/2016.
  */
-public class DslParserTest {
+class DslParserTest {
     @Test
-    public void getNoCommandFromEmptyString() {
+    void getNoCommandFromEmptyString() {
         DslParser parser = new DslParser("");
 
         Assertions.assertNull(parser.nextCommand());
     }
 
     @Test
-    public void parseSimpleCommand() {
+    void parseSimpleCommand() {
         DslParser parser = new DslParser("do arg1 arg2");
 
         DslCommand cmd = parser.nextCommand();
@@ -50,7 +50,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseSimpleCommandWithAdditionalSpacesAndTabs() {
+    void parseSimpleCommandWithAdditionalSpacesAndTabs() {
         DslParser parser = new DslParser("        do\t\t    arg1  \t    arg2    ");
 
         DslCommand cmd = parser.nextCommand();
@@ -65,7 +65,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseSimpleCommandSkippingComment() {
+    void parseSimpleCommandSkippingComment() {
         DslParser parser = new DslParser("do arg1 arg2 # this is a comment");
 
         DslCommand cmd = parser.nextCommand();
@@ -80,7 +80,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseSimpleCommandSkippingEmptyLines() {
+    void parseSimpleCommandSkippingEmptyLines() {
         DslParser parser = new DslParser("   \ndo arg1 arg2\n   ");
 
         DslCommand cmd = parser.nextCommand();
@@ -95,7 +95,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseSimpleCommandSkippingCommentLines() {
+    void parseSimpleCommandSkippingCommentLines() {
         DslParser parser = new DslParser("# first comment   \ndo arg1 arg2\n  # second comment   ");
 
         DslCommand cmd = parser.nextCommand();
@@ -110,7 +110,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseSimpleCommandWithNoArguments() {
+    void parseSimpleCommandWithNoArguments() {
         DslParser parser = new DslParser("do");
 
         DslCommand cmd = parser.nextCommand();
@@ -123,7 +123,7 @@ public class DslParserTest {
     }
 
     @Test
-    public void parseTwoSimpleCommands() {
+    void parseTwoSimpleCommands() {
         DslParser parser = new DslParser("do1 arg11 arg12\ndo2 arg21 arg22");
 
         DslCommand cmd = parser.nextCommand();

@@ -31,17 +31,17 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Anton Nashatyrev
  */
-public class ABITest {
+class ABITest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     @Test
-    public void testTransactionCreate() {
+    void testTransactionCreate() {
         // demo only
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
         Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000,
                 1_000_000_000, new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID, "1234567890abcdef1234567890abcdef12345678");
-        ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
+        Assertions.assertDoesNotThrow(() -> ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes())));
     }
 
     static String funcJson1 = "{ \n" +
@@ -54,7 +54,7 @@ public class ABITest {
     static {funcJson1 = funcJson1.replaceAll("'", "\"");}
 
     @Test
-    public void testSimple1() {
+    void testSimple1() {
 
         logger.info("\n{}", funcJson1);
 
@@ -85,7 +85,7 @@ public class ABITest {
     static {funcJson2 = funcJson2.replaceAll("'", "\"");}
 
     @Test
-    public void testSimple2() {
+    void testSimple2() {
 
         logger.info("\n{}", funcJson2);
 
@@ -113,7 +113,7 @@ public class ABITest {
     static {funcJson3 = funcJson3.replaceAll("'", "\"");}
 
     @Test
-    public void test3() {
+    void test3() {
 
         logger.info("\n{}", funcJson3);
 
@@ -139,7 +139,7 @@ public class ABITest {
 
 
     @Test
-    public void test4() {
+    void test4() {
 
         logger.info("\n{}", funcJson4);
 
@@ -174,7 +174,7 @@ public class ABITest {
     static {funcJson5 = funcJson5.replaceAll("'", "\"");};
 
     @Test
-    public void test5() {
+    void test5() {
 
         logger.info("\n{}", funcJson5);
 
@@ -191,7 +191,7 @@ public class ABITest {
     }
 
     @Test
-    public void decodeDynamicTest1() {
+    void decodeDynamicTest1() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[{'name':'i','type':'int'}, \n" +
@@ -211,12 +211,12 @@ public class ABITest {
 
         Object[] objects = function.decodeResult(encoded);
 //        System.out.println(Arrays.toString(objects));
-        Assertions.assertEquals(((Number) objects[0]).intValue(), 111);
-        Assertions.assertArrayEquals((byte[]) objects[1], bytes);
-        Assertions.assertEquals(((Number) objects[2]).intValue(), 222);
+        Assertions.assertEquals(111, ((Number) objects[0]).intValue());
+        Assertions.assertArrayEquals(bytes, (byte[]) objects[1]);
+        Assertions.assertEquals(222, ((Number) objects[2]).intValue());
     }
     @Test
-    public void decodeDynamicTest2() {
+    void decodeDynamicTest2() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[{'name':'i','type':'int'}, \n" +
@@ -235,13 +235,13 @@ public class ABITest {
         byte[] encoded = function.encodeArguments(111, strings, 222);
         Object[] objects = function.decodeResult(encoded);
 //        System.out.println(Arrays.toString(objects));
-        Assertions.assertEquals(((Number) objects[0]).intValue(), 111);
+        Assertions.assertEquals(111, ((Number) objects[0]).intValue());
         Assertions.assertArrayEquals((Object[]) objects[1], strings);
-        Assertions.assertEquals(((Number) objects[2]).intValue(), 222);
+        Assertions.assertEquals(222, ((Number) objects[2]).intValue());
     }
 
     @Test
-    public void encodeArrayWithInvalidInputShouldFail() {
+    void encodeArrayWithInvalidInputShouldFail() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[" +

@@ -34,7 +34,7 @@ import java.util.*;
 /**
  * Created by mario on 20/02/17.
  */
-public class NodeManagerTest {
+class NodeManagerTest {
 
     private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
     private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
@@ -44,7 +44,7 @@ public class NodeManagerTest {
     private SystemProperties config;
 
     @BeforeEach
-    public void initMocks(){
+    void initMocks(){
         peerExplorer = Mockito.mock(PeerExplorer.class);
         config = Mockito.mock(SystemProperties.class);
 
@@ -54,7 +54,7 @@ public class NodeManagerTest {
     }
 
     @Test
-    public void getNodesPeerDiscoveryDisable() {
+    void getNodesPeerDiscoveryDisable() {
         List<Node> activePeers = new ArrayList<>();
         activePeers.add(new Node(Hex.decode(NODE_ID_2), "127.0.0.2", 8081));
 
@@ -82,7 +82,7 @@ public class NodeManagerTest {
     }
 
     @Test
-    public void getNodesPeerDiscoveryEnableNoPeersFound() {
+    void getNodesPeerDiscoveryEnableNoPeersFound() {
         List<Node> activePeers = new ArrayList<>();
         List<Node> bootNodes = new ArrayList<>();
 
@@ -101,7 +101,7 @@ public class NodeManagerTest {
     }
 
     @Test
-    public void getNodesPeerDiscoveryEnable() {
+    void getNodesPeerDiscoveryEnable() {
         List<Node> activePeers = new ArrayList<>();
         activePeers.add(new Node(Hex.decode(NODE_ID_2), "127.0.0.2", 8081));
 
@@ -122,7 +122,7 @@ public class NodeManagerTest {
     }
 
     @Test
-    public void purgeNodesTest() {
+    void purgeNodesTest() {
         Random random = new Random();
         Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
         NodeManager nodeManager = new NodeManager(peerExplorer, config);

@@ -34,10 +34,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-public class MiningMainchainViewImplTest {
+class MiningMainchainViewImplTest {
 
     @Test
-    public void creationIsCorrect() {
+    void creationIsCorrect() {
         BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -61,7 +61,7 @@ public class MiningMainchainViewImplTest {
     }
 
     @Test
-    public void createWithLessBlocksThanMaxHeight() {
+    void createWithLessBlocksThanMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 createBlockStore(10),
                 11);
@@ -73,7 +73,7 @@ public class MiningMainchainViewImplTest {
     }
 
     @Test
-    public void createWithBlocksEqualToMaxHeight() {
+    void createWithBlocksEqualToMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 createBlockStore(4),
                 4);
@@ -85,7 +85,7 @@ public class MiningMainchainViewImplTest {
     }
 
     @Test
-    public void createWithMoreBlocksThanMaxHeight() {
+    void createWithMoreBlocksThanMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 createBlockStore(8),
                 6);
@@ -97,7 +97,7 @@ public class MiningMainchainViewImplTest {
     }
 
     @Test
-    public void createWithOnlyGenesisAndHeightOne() {
+    void createWithOnlyGenesisAndHeightOne() {
         BlockStore blockStore = createBlockStore(1);
         Block genesis = blockStore.getChainBlockByNumber(0L);
         when(blockStore.getBestBlock()).thenReturn(genesis);
@@ -114,7 +114,7 @@ public class MiningMainchainViewImplTest {
     }
 
     @Test
-    public void createWithOnlyGenesisAndHeightGreaterThanOne() {
+    void createWithOnlyGenesisAndHeightGreaterThanOne() {
         BlockStore blockStore = createBlockStore(1);
         Block genesis = blockStore.getChainBlockByNumber(0L);
         when(blockStore.getBestBlock()).thenReturn(genesis);
@@ -136,7 +136,7 @@ public class MiningMainchainViewImplTest {
      * After the add, abstract blockchain must be B -> C -> D (best block) because max height is 3
      */
     @Test
-    public void addBlockToTheTipOfTheBlockchainGettingOverMaxHeight() {
+    void addBlockToTheTipOfTheBlockchainGettingOverMaxHeight() {
         BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -159,7 +159,7 @@ public class MiningMainchainViewImplTest {
      * After the add, abstract blockchain must be A (genesis) -> B -> C -> D (best block)
      */
     @Test
-    public void addBlockToTheTipOfTheBlockchain() {
+    void addBlockToTheTipOfTheBlockchain() {
         BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -181,7 +181,7 @@ public class MiningMainchainViewImplTest {
      * After the add, abstract blockchain must be A (genesis) -> B'(best block)
      */
     @Test
-    public void addNewBestBlockAtLowerHeight() {
+    void addNewBestBlockAtLowerHeight() {
         BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -203,7 +203,7 @@ public class MiningMainchainViewImplTest {
      * After the add, abstract blockchain must be  A (genesis) -> B' -> C' (best block)
      */
     @Test
-    public void addNewBestBlockAndItsBranchToTheTipOfTheBlockchain() {
+    void addNewBestBlockAndItsBranchToTheTipOfTheBlockchain() {
         BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -236,7 +236,7 @@ public class MiningMainchainViewImplTest {
      * complete retrieval of the chain
      */
     @Test
-    public void addNewBestBlockAndItsNotChildOfTheTipButHasAParentInTheChain() {
+    void addNewBestBlockAndItsNotChildOfTheTipButHasAParentInTheChain() {
         BlockStore blockStore = createBlockStore(10);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -286,7 +286,7 @@ public class MiningMainchainViewImplTest {
      * This particular test is for corner cases involving the genesis which would happen in development environments
      */
     @Test
-    public void addNewBestBlockAndItsNotChildOfTheTipButHasGenesisAsParent() {
+    void addNewBestBlockAndItsNotChildOfTheTipButHasGenesisAsParent() {
         BlockStore blockStore = createBlockStore(10);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -326,7 +326,7 @@ public class MiningMainchainViewImplTest {
      * Corner case found though other test cases. In production it's nigh impossible for this situation to take place
      */
     @Test
-    public void addBlockWhenBlockStoreHasOnlyGenesisAndHeightIsOne() {
+    void addBlockWhenBlockStoreHasOnlyGenesisAndHeightIsOne() {
         BlockStore blockStore = createBlockStore(1);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,
@@ -362,7 +362,7 @@ public class MiningMainchainViewImplTest {
      * Note that it shouldn't be possible for a block of this kind to reach the MiningMainchainViewImpl
      */
     @Test
-    public void addNewBestBlockWithMissingParent() {
+    void addNewBestBlockWithMissingParent() {
         BlockStore blockStore = createBlockStore(10);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
                 blockStore,

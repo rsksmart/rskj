@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class InetAddressCidrBlockTest {
+class InetAddressCidrBlockTest {
 
     @Test
-    public void equals() throws UnknownHostException {
+    void equals() throws UnknownHostException {
         InetAddress address1 = InetAddress.getByName("192.168.0.47");
         InetAddress address2 = InetAddress.getByName("198.168.0.47");
         InetAddress address3 = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -58,7 +58,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr0IPV4() throws UnknownHostException {
+    void subnetWithCidr0IPV4() throws UnknownHostException {
         InetAddress firstAddress = InetAddress.getByName("0.0.0.0");
         InetAddress anyAddress = InetAddress.getByName("192.168.1.127");
         InetAddress lastAddress = InetAddress.getByName("255.255.255.255");
@@ -71,7 +71,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr8IPV4() throws UnknownHostException {
+    void subnetWithCidr8IPV4() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("191.255.255.255");
         InetAddress firstAddressIn = InetAddress.getByName("192.0.0.1");
         InetAddress middleAddressIn = InetAddress.getByName("192.122.122.122");
@@ -88,7 +88,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr16IPV4() throws UnknownHostException {
+    void subnetWithCidr16IPV4() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("192.167.255.255");
         InetAddress firstAddressIn = InetAddress.getByName("192.168.0.1");
         InetAddress middleAddressIn = InetAddress.getByName("192.168.122.122");
@@ -105,7 +105,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr24IPV4() throws UnknownHostException {
+    void subnetWithCidr24IPV4() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("192.167.255.255");
         InetAddress firstAddressIn = InetAddress.getByName("192.168.0.1");
         InetAddress middleAddressIn = InetAddress.getByName("192.168.0.100");
@@ -122,7 +122,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr32IPV4() throws UnknownHostException {
+    void subnetWithCidr32IPV4() throws UnknownHostException {
         InetAddress uniqueAddress = InetAddress.getByName("192.168.0.47");
         InetAddress nextAddressOut = InetAddress.getByName("192.168.0.48");
         InetAddress previousAddressOut = InetAddress.getByName("192.168.1.47");
@@ -135,14 +135,14 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void invalidCidrForIpv4() throws UnknownHostException {
+    void invalidCidrForIpv4() throws UnknownHostException {
         InetAddress anyAddress = InetAddress.getByName("192.168.1.127");
         TestUtils.assertThrows(IllegalArgumentException.class, () -> new InetAddressCidrBlock(anyAddress, -1));
         TestUtils.assertThrows(IllegalArgumentException.class, () -> new InetAddressCidrBlock(anyAddress, 33));
     }
 
     @Test
-    public void subnetWithCidr0IPV6() throws UnknownHostException {
+    void subnetWithCidr0IPV6() throws UnknownHostException {
         InetAddress firstAddress = InetAddress.getByName("0:0:0:0:0:0:0:0");
         InetAddress anyAddress = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7333");
         InetAddress lastAddress = InetAddress.getByName("f:f:f:f:f:f:f:f");
@@ -155,7 +155,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr8IPV6() throws UnknownHostException {
+    void subnetWithCidr8IPV6() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("1fff:f:f:f:f:f:f:f");
         InetAddress firstAddressIn = InetAddress.getByName("2000:0:0:0:0:0:0:0");
         InetAddress middleAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -172,7 +172,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr16IPV6() throws UnknownHostException {
+    void subnetWithCidr16IPV6() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("2000:f:f:f:f:f:f:f");
         InetAddress firstAddressIn = InetAddress.getByName("2001:0:0:0:0:0:0:0");
         InetAddress middleAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -189,7 +189,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr24IPV6() throws UnknownHostException {
+    void subnetWithCidr24IPV6() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("2001:0cff:f:f:f:f:f:f");
         InetAddress firstAddressIn = InetAddress.getByName("2001:0d00:0:0:0:0:0:0");
         InetAddress middleAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -206,7 +206,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr32IPV6() throws UnknownHostException {
+    void subnetWithCidr32IPV6() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("2001:0db7:f:f:f:f:f:f");
         InetAddress firstAddressIn = InetAddress.getByName("2001:0db8:0:0:0:0:0:0");
         InetAddress middleAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -223,7 +223,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr64IPV6() throws UnknownHostException {
+    void subnetWithCidr64IPV6() throws UnknownHostException {
         InetAddress previousAddressOut = InetAddress.getByName("2001:0db8:85a2:f:f:f:f:f");
         InetAddress firstAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:0:0:0");
         InetAddress middleAddressIn = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7335");
@@ -240,7 +240,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void subnetWithCidr128IPV6() throws UnknownHostException {
+    void subnetWithCidr128IPV6() throws UnknownHostException {
         InetAddress uniqueAddress = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7334");
 
         InetAddress previousAddressOut = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7333");
@@ -254,7 +254,7 @@ public class InetAddressCidrBlockTest {
     }
 
     @Test
-    public void invalidCidrForIpv6() throws UnknownHostException {
+    void invalidCidrForIpv6() throws UnknownHostException {
         InetAddress anyAddress = InetAddress.getByName("2001:0db8:85a3:0:0:8a2e:0370:7333");
         TestUtils.assertThrows(IllegalArgumentException.class, () -> new InetAddressCidrBlock(anyAddress, -1));
         TestUtils.assertThrows(IllegalArgumentException.class, () -> new InetAddressCidrBlock(anyAddress, 129));

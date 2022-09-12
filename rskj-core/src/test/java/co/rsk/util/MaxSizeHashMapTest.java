@@ -8,10 +8,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class MaxSizeHashMapTest {
+class MaxSizeHashMapTest {
 
     @Test
-    public void maxSizeMap_Test() {
+    void maxSizeMap_Test() {
         int maxSize = 50_000;
         Map<Integer, Integer> maxSizeMap = new MaxSizeHashMap<>(maxSize, true);
 

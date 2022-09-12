@@ -29,9 +29,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 01/02/2017.
  */
-public class CallTransactionTest {
+class CallTransactionTest {
     @Test
-    public void fromSignature() {
+    void fromSignature() {
         CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
 
         Assertions.assertNotNull(func);
@@ -46,7 +46,7 @@ public class CallTransactionTest {
     }
 
     @Test
-    public void tooManyArguments() {
+    void tooManyArguments() {
         CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
 
         try {
@@ -59,7 +59,7 @@ public class CallTransactionTest {
     }
 
     @Test
-    public void tooManyArgumentsUsingParams() {
+    void tooManyArgumentsUsingParams() {
         CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
 
         try {
@@ -72,42 +72,42 @@ public class CallTransactionTest {
     }
 
     @Test
-    public void intTypeGetCanonicalNameForInt() {
+    void intTypeGetCanonicalNameForInt() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
         Assertions.assertEquals("int256", type.getCanonicalName());
     }
 
     @Test
-    public void intTypeGetCanonicalNameForUInt() {
+    void intTypeGetCanonicalNameForUInt() {
         CallTransaction.IntType type = new CallTransaction.IntType("uint");
 
         Assertions.assertEquals("uint256", type.getCanonicalName());
     }
 
     @Test
-    public void intTypeEncodeHexadecimalString() {
+    void intTypeEncodeHexadecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
         Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 16)), type.encode("0x01020304"));
     }
 
     @Test
-    public void intTypeEncodeHexadecimalStringWithoutPrefix() {
+    void intTypeEncodeHexadecimalStringWithoutPrefix() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
         Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("0102030b", 16)), type.encode("0102030b"));
     }
 
     @Test
-    public void intTypeEncodeDecimalString() {
+    void intTypeEncodeDecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
         Assertions.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)), type.encode("01020304"));
     }
 
     @Test
-    public void decodeString() {
+    void decodeString() {
         SolidityType.StringType type = new SolidityType.StringType();
         byte[] toDecode = new byte[] {
                 // len of string = 5
@@ -119,7 +119,7 @@ public class CallTransactionTest {
     }
 
     @Test
-    public void decodeEventData() {
+    void decodeEventData() {
         CallTransaction.Function event = CallTransaction.Function.fromEventSignature("test", new CallTransaction.Param[]{
                 new CallTransaction.Param(true, "txHash", SolidityType.getType("bytes32")),
                 new CallTransaction.Param(false, "amount", SolidityType.getType("uint"))

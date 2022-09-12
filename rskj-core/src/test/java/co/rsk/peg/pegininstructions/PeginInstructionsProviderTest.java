@@ -16,11 +16,11 @@ import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PeginInstructionsProviderTest {
+class PeginInstructionsProviderTest {
     private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
 
     @Test
-    public void buildPeginInstructions_nullOpReturnData() throws Exception {
+    void buildPeginInstructions_nullOpReturnData() throws Exception {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(params);
         // Add OP_RETURN output with empty data
@@ -35,7 +35,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void buildPeginInstructions_invalidProtocolVersion() {
+    void buildPeginInstructions_invalidProtocolVersion() {
         // Arrange
         int invalidProtocolVersion = 0;
         BtcTransaction btcTransaction = new BtcTransaction(params);
@@ -48,7 +48,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void buildPeginInstructions_v1_dataLengthSmallerThanExpected() {
+    void buildPeginInstructions_v1_dataLengthSmallerThanExpected() {
         // Arrange
         int protocolVersion = 1;
         BtcTransaction btcTransaction = new BtcTransaction(params);
@@ -61,7 +61,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void buildPeginInstructions_v1_dataLengthDifferentThanSupported() {
+    void buildPeginInstructions_v1_dataLengthDifferentThanSupported() {
         // Arrange
         int protocolVersion = 1;
         BtcTransaction btcTransaction = new BtcTransaction(params);
@@ -74,7 +74,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void buildPeginInstructions_v1_noBtcRefundAddress() throws Exception {
+    void buildPeginInstructions_v1_noBtcRefundAddress() throws Exception {
         // Arrange
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
@@ -95,7 +95,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void buildPeginInstructions_v1_withBtcrefundAddress() throws Exception {
+    void buildPeginInstructions_v1_withBtcrefundAddress() throws Exception {
         // Arrange
         int protocolVersion = 1;
         BtcECKey key = new BtcECKey();
@@ -121,7 +121,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_noOpReturn() {
+    void extractOpReturnData_noOpReturn() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(params);
         btcTransaction.addOutput(Coin.COIN, new BtcECKey().toAddress(params));
@@ -131,7 +131,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_noOpReturnForRsk() {
+    void extractOpReturnData_noOpReturnForRsk() {
         // Arrange
         Script opReturnScript = ScriptBuilder.createOpReturnScript("some-payload".getBytes());
 
@@ -143,7 +143,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_opReturnWithDataLengthShorterThanExpected() {
+    void extractOpReturnData_opReturnWithDataLengthShorterThanExpected() {
         // Arrange
         Script opReturnScript = ScriptBuilder.createOpReturnScript("1".getBytes());
 
@@ -155,7 +155,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_twoOpReturnOutputsForRsk() {
+    void extractOpReturnData_twoOpReturnOutputsForRsk() {
         // Arrange
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
 
@@ -168,7 +168,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_oneOpReturnForRsk() throws PeginInstructionsException {
+    void extractOpReturnData_oneOpReturnForRsk() throws PeginInstructionsException {
         // Arrange
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
 
@@ -183,7 +183,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_oneOpReturnForRskWithValue() throws PeginInstructionsException {
+    void extractOpReturnData_oneOpReturnForRskWithValue() throws PeginInstructionsException {
         // Arrange
         Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
 
@@ -198,7 +198,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_multipleOpReturnOutpust_oneForRsk() throws PeginInstructionsException {
+    void extractOpReturnData_multipleOpReturnOutpust_oneForRsk() throws PeginInstructionsException {
         // Arrange
         Script opReturnForRskScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
         Script opReturnScript1 = ScriptBuilder.createOpReturnScript("1".getBytes());
@@ -219,7 +219,7 @@ public class PeginInstructionsProviderTest {
     }
 
     @Test
-    public void extractOpReturnData_nullOpReturnData() {
+    void extractOpReturnData_nullOpReturnData() {
         // Arrange
         BtcTransaction btcTransaction = new BtcTransaction(params);
         // Add OP_RETURN output with empty data

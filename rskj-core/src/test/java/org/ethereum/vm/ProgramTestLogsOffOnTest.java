@@ -20,7 +20,7 @@ package org.ethereum.vm;
 
 import org.junit.jupiter.api.BeforeEach;
 
-public class ProgramTestLogsOffOnTest extends ProgramTest {
+class ProgramTestLogsOffOnTest extends ProgramTest {
 
     @BeforeEach
     void beforeEach() {

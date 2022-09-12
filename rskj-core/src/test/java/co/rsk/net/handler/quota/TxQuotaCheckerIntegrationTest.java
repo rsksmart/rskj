@@ -36,7 +36,7 @@ import java.math.BigInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class TxQuotaCheckerIntegrationTest {
+class TxQuotaCheckerIntegrationTest {
 
     private static final long BLOCK_AVG_GAS_PRICE = 65_164_000;
     private static final long BLOCK_MIN_GAS_PRICE = 59240;
@@ -62,7 +62,7 @@ public class TxQuotaCheckerIntegrationTest {
     private TimeProvider timeProvider;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         accountA = new AccountBuilder().name("accountA").build();
         accountB = new AccountBuilder().name("accountB").build();
         accountC = new AccountBuilder().name("accountC").build();
@@ -119,7 +119,7 @@ public class TxQuotaCheckerIntegrationTest {
     }
 
     @Test
-    public void acceptTx_realisticScenario() {
+    void acceptTx_realisticScenario() {
         when(gasPriceTracker.isFeeMarketWorking()).thenReturn(false);
 
         // new account (nonce==0)
@@ -229,7 +229,7 @@ public class TxQuotaCheckerIntegrationTest {
     }
 
     @Test
-    public void cleanMaxQuotas() {
+    void cleanMaxQuotas() {
         long elapsedTime = 0;
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime);
 

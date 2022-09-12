@@ -30,14 +30,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class RemascContractExecuteTest {
+class RemascContractExecuteTest {
 
     private static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
     private RemascContract remasc;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         remasc = new RemascContract(
                 PrecompiledContracts.REMASC_ADDR,
                 remascConfig,
@@ -47,17 +47,17 @@ public class RemascContractExecuteTest {
     }
 
     @Test
-    public void executeWithFunctionSignatureLengthTooShort(){
+    void executeWithFunctionSignatureLengthTooShort(){
         Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[3]));
     }
 
     @Test
-    public void executeWithInexistentFunction(){
+    void executeWithInexistentFunction(){
         Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[4]));
     }
 
     @Test
-    public void executeWithDataLengthTooLong() {
+    void executeWithDataLengthTooLong() {
         Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[6]));
     }
 }

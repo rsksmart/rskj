@@ -12,10 +12,10 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ProgramInvokeImplTest {
+class ProgramInvokeImplTest {
 
     @Test
-    public void testEquals_OK() {
+    void testEquals_OK() {
 
         byte[] address1 = new byte[]{1};
         byte[] origin1 = new byte[]{2};
@@ -63,7 +63,7 @@ public class ProgramInvokeImplTest {
 
         // An object must be different from null
 
-        assertNotEquals(programInvokeA, null);
+        assertNotEquals(null, programInvokeA);
 
         // Same property values make objects to be equal
 
@@ -86,7 +86,7 @@ public class ProgramInvokeImplTest {
     }
 
     @Test
-    public void testHashcode_OK() {
+    void testHashcode_OK() {
 
         byte[] address1 = new byte[]{1};
         byte[] origin1 = new byte[]{2};

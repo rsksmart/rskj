@@ -21,16 +21,16 @@ package co.rsk.rpc.modules.trace;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TraceAddressTest {
+class TraceAddressTest {
     @Test
-    public void getTopAddress() {
+    void getTopAddress() {
         TraceAddress address = new TraceAddress();
 
         Assertions.assertArrayEquals(new int[0], address.toAddress());
     }
 
     @Test
-    public void getChildAddress() {
+    void getChildAddress() {
         TraceAddress parent = new TraceAddress();
         TraceAddress address = new TraceAddress(parent, 1);
 
@@ -38,7 +38,7 @@ public class TraceAddressTest {
     }
 
     @Test
-    public void getGrandChildAddress() {
+    void getGrandChildAddress() {
         TraceAddress grandparent = new TraceAddress();
         TraceAddress parent = new TraceAddress(grandparent, 1);
         TraceAddress address = new TraceAddress(parent, 2);

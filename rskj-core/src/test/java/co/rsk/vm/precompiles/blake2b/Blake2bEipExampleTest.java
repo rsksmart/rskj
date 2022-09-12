@@ -17,10 +17,10 @@ import java.io.FileNotFoundException;
  * Testing EIP-152 provided example
  * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-152.md
  * */
-public class Blake2bEipExampleTest {
+class Blake2bEipExampleTest {
 
     @Test
-    public void runTest() throws FileNotFoundException, DslProcessorException {
+    void runTest() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
         );

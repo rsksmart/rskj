@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class TxVirtualGasCalculatorTest {
+class TxVirtualGasCalculatorTest {
 
     private static final long BLOCK_MIN_GAS_PRICE = 59240;
     private static final long BLOCK_AVG_GAS_PRICE = 65164000;
@@ -49,7 +49,7 @@ public class TxVirtualGasCalculatorTest {
 
     @ParameterizedTest(name = "{index}: expect {0} consumed virtual gas to be txGasLimit * {4} * {5} * {6} * {7} * {8} * {9}")
     @ArgumentsSource(TransactionArgumentsProvider.class)
-    public void calculate(String description, Transaction newTransaction, Transaction replacedTransaction, long accountNonce, double futureNonceFactor, double lowGasPriceFactor, double nonceFactor, double sizeFactor, double replacementFactor, double gasLimitFactor) {
+    void calculate(String description, Transaction newTransaction, Transaction replacedTransaction, long accountNonce, double futureNonceFactor, double lowGasPriceFactor, double nonceFactor, double sizeFactor, double replacementFactor, double gasLimitFactor) {
         TxVirtualGasCalculator txVirtualGasCalculator = TxVirtualGasCalculator.createWithAllFactors(accountNonce, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, BLOCK_AVG_GAS_PRICE);
         double expected = newTransaction.getGasLimitAsInteger().longValue() * futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         double actual = txVirtualGasCalculator.calculate(newTransaction, replacedTransaction);

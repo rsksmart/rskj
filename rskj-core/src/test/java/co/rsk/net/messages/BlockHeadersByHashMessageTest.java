@@ -12,9 +12,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class BlockHeadersByHashMessageTest {
+class BlockHeadersByHashMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         List<BlockHeader> blocks = new ArrayList<>();
         BlockGenerator blockGenerator = new BlockGenerator();
 

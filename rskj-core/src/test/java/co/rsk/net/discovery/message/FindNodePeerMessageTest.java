@@ -13,7 +13,7 @@ import java.util.UUID;
 import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
-public class FindNodePeerMessageTest {
+class FindNodePeerMessageTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final int NETWORK_ID = 1;
@@ -23,7 +23,7 @@ public class FindNodePeerMessageTest {
     private static final byte[] mdcFindNodePeerMessage = new byte[]{127, 110, 79, 83, 31, 7, 86, 104, 42, 124, 86, -57, 76, -92, 93, 6, 82, -37, 97, -127, -54, 72, 86, -29, -81, -97, -10, 94, -23, -102, -16, -82};
 
     @Test
-    public void parseInvalidMessageId() {
+    void parseInvalidMessageId() {
         try {
             createFindNodePeerMessageWithCheck("http://fake-uuid.com/run");
             Assertions.fail("Invalid messageId exception should've been thrown");
@@ -33,7 +33,7 @@ public class FindNodePeerMessageTest {
     }
 
     @Test
-    public void parseUUIDV1MessageId() {
+    void parseUUIDV1MessageId() {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createFindNodePeerMessageWithCheck(uuidV1);
@@ -44,7 +44,7 @@ public class FindNodePeerMessageTest {
     }
 
     @Test
-    public void parseValidMessageId() {
+    void parseValidMessageId() {
         try {
             FindNodePeerMessage message = createFindNodePeerMessageWithCheck(UUID.randomUUID().toString());
             Assertions.assertNotNull(message);

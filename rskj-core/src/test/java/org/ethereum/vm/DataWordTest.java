@@ -30,10 +30,10 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DataWordTest {
+class DataWordTest {
 
     @Test
-    public void testAdd() {
+    void testAdd() {
         byte[] three = new byte[32];
 
         for (int i = 0; i < three.length; i++) {
@@ -50,7 +50,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMod() {
+    void testMod() {
         String expected = "000000000000000000000000000000000000000000000000000000000000001a";
 
         byte[] one = new byte[32];
@@ -76,7 +76,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMul() {
+    void testMul() {
         byte[] one = new byte[32];
         one[31] = 0x1; // 0x0000000000000000000000000000000000000000000000000000000000000001
 
@@ -99,7 +99,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulOverflow() {
+    void testMulOverflow() {
         byte[] one = new byte[32];
         one[30] = 0x1; // 0x0000000000000000000000000000000000000000000000000000000000000100
 
@@ -122,7 +122,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testDiv() {
+    void testDiv() {
         byte[] one = new byte[32];
         one[30] = 0x01;
         one[31] = 0x2c; // 0x000000000000000000000000000000000000000000000000000000000000012c
@@ -144,7 +144,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testDivZero() {
+    void testDivZero() {
         byte[] one = new byte[32];
         one[30] = 0x05; // 0x0000000000000000000000000000000000000000000000000000000000000500
 
@@ -164,7 +164,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSDivNegative() {
+    void testSDivNegative() {
         // one is -300 as 256-bit signed integer:
         byte[] one = Hex.decode("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed4");
 
@@ -185,16 +185,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testPow() {
-        BigInteger x = BigInteger.valueOf(Integer.MAX_VALUE);
-        BigInteger y = BigInteger.valueOf(1000);
-
-        BigInteger result1 = x.modPow(x, y);
-        BigInteger result2 = pow(x, y);
-    }
-
-    @Test
-    public void testSignExtend1() {
+    void testSignExtend1() {
         DataWord x = DataWord.valueOf(Hex.decode("f2"));
         byte[] xdata = x.getData();
 
@@ -208,7 +199,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend2() {
+    void testSignExtend2() {
         DataWord x = DataWord.valueOf(Hex.decode("f2"));
         byte[] xdata = x.getData();
 
@@ -222,7 +213,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend3() {
+    void testSignExtend3() {
         byte k = 1;
 
         DataWord x = DataWord.valueOf(Hex.decode("0f00ab"));
@@ -237,7 +228,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend4() {
+    void testSignExtend4() {
         byte k = 1;
 
         DataWord x = DataWord.valueOf(Hex.decode("ffff"));
@@ -252,7 +243,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend5() {
+    void testSignExtend5() {
         byte k = 3;
 
         DataWord x = DataWord.valueOf(Hex.decode("ffffffff"));
@@ -267,7 +258,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend6() {
+    void testSignExtend6() {
         byte k = 3;
 
         DataWord x = DataWord.valueOf(Hex.decode("ab02345678"));
@@ -282,7 +273,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend7() {
+    void testSignExtend7() {
         byte k = 3;
 
         DataWord x = DataWord.valueOf(Hex.decode("ab82345678"));
@@ -297,7 +288,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtend8() {
+    void testSignExtend8() {
         byte k = 30;
 
         DataWord x = DataWord.valueOf(Hex.decode("ff34567882345678823456788234567882345678823456788234567882345678"));
@@ -312,7 +303,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtendException1() {
+    void testSignExtendException1() {
         byte k = -1;
 
         DataWord x = DataWord.ZERO;
@@ -324,7 +315,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testLongValue1() {
+    void testLongValue1() {
         byte[] negative = new byte[]{-1, -1, -1, -1,-1,-1,-1,-1};
 
         DataWord x = DataWord.valueOf(negative);
@@ -334,7 +325,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testSignExtendException2() {
+    void testSignExtendException2() {
         byte k = 32;
 
         DataWord x = DataWord.ZERO;
@@ -345,15 +336,15 @@ public class DataWordTest {
     }
 
     @Test
-    public void testFromString() {
+    void testFromString() {
         // I'm using a 32 bytes string to avoid the preceding blanks
         DataWord parsed = DataWord.fromString("01234567890123456789012345678901");
 
-        assertEquals(new String(parsed.getData()),"01234567890123456789012345678901");
+        assertEquals("01234567890123456789012345678901",new String(parsed.getData()));
     }
 
     @Test
-    public void testFromLongString() {
+    void testFromLongString() {
         String value = "012345678901234567890123456789012345678901234567890123456789";
         byte[] hashedValue = HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8));
         DataWord parsed = DataWord.fromLongString(value);
@@ -362,7 +353,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testAddModOverflow() {
+    void testAddModOverflow() {
         testAddMod("9999999999999999999999999999999999999999999999999999999999999999",
                 "8888888888888888888888888888888888888888888888888888888888888888",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -396,7 +387,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulMod1() {
+    void testMulMod1() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("01"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999998"));
@@ -415,7 +406,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulMod2() {
+    void testMulMod2() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("01"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
@@ -434,7 +425,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulModZero() {
+    void testMulModZero() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
@@ -453,7 +444,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulModZeroWord1() {
+    void testMulModZeroWord1() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
@@ -472,7 +463,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulModZeroWord2() {
+    void testMulModZeroWord2() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
@@ -491,7 +482,7 @@ public class DataWordTest {
     }
 
     @Test
-    public void testMulModOverflow() {
+    void testMulModOverflow() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));

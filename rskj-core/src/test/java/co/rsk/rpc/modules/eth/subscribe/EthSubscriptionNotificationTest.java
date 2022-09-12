@@ -28,7 +28,7 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class EthSubscriptionNotificationTest {
+class EthSubscriptionNotificationTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);
     private static final String TEST_BLOCK_RESULT_JSON = "{\"difficulty\":\"0x20000\",\"extraData\":\"0x\",\"gasLimit\":\"0x2fefd8\",\"gasUsed\":\"0x0\",\"logsBloom\":\"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"miner\":\"0xe94aef644e428941ee0a3741f28d80255fddba7f\",\"number\":\"0xc\",\"parentHash\":\"0xbe5de0c9c661653c979ec457f610444dcd0048007e683b2d04ce05729af56280\",\"receiptsRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"sha3Uncles\":\"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347\",\"stateRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"timestamp\":\"0x1\",\"transactionsRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"hash\":\"0x35b063d13f7d7b3c13ae508e2c2b3aa7e7ba110d4dda17f3d822ac24b1f952b7\"}";
     private static final Block TEST_BLOCK_2 = new BlockGenerator().createBlock(12, 0, 1000000L);
@@ -39,7 +39,7 @@ public class EthSubscriptionNotificationTest {
     private final JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
-    public void basicRequestBlockHeader() throws IOException {
+    void basicRequestBlockHeader() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
         EthSubscriptionNotification<BlockHeaderNotification> notification = new EthSubscriptionNotification<>(
                 new EthSubscriptionParams<>(
@@ -53,7 +53,7 @@ public class EthSubscriptionNotificationTest {
     }
 
     @Test
-    public void gasLimitWithoutLeadingZeros() throws IOException {
+    void gasLimitWithoutLeadingZeros() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7393");
         EthSubscriptionNotification notification = new EthSubscriptionNotification(
                 new EthSubscriptionParams(
@@ -67,7 +67,7 @@ public class EthSubscriptionNotificationTest {
     }
 
     @Test
-    public void basicRequestSync() throws IOException {
+    void basicRequestSync() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
         SyncStatusNotification syncStatusNotification = new SyncStatusNotification(0L, 1L, 1000L);
         EthSubscriptionNotification<SyncNotification> notification = new EthSubscriptionNotification<>(
@@ -82,7 +82,7 @@ public class EthSubscriptionNotificationTest {
     }
 
     @Test
-    public void booleanRequestSync() throws IOException {
+    void booleanRequestSync() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
         EthSubscriptionNotification<Boolean> notification = new EthSubscriptionNotification<>(
                 new EthSubscriptionParams<>(

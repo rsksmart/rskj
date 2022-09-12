@@ -48,7 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class RskForksBridgeTest {
+class RskForksBridgeTest {
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(
             BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
@@ -66,7 +66,7 @@ public class RskForksBridgeTest {
     private BridgeSupportFactory bridgeSupportFactory;
 
     @BeforeEach
-    public void before() {
+    void before() {
         world = new World();
         blockChain = world.getBlockChain();
         blockStore = world.getBlockStore();
@@ -98,7 +98,7 @@ public class RskForksBridgeTest {
     }
 
     @Test
-    public void testNoFork() throws Exception {
+    void testNoFork() throws Exception {
         Transaction releaseTx = buildReleaseTx();
         Block blockB1 = buildBlock(blockBase, releaseTx);
         Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB1));
@@ -118,7 +118,7 @@ public class RskForksBridgeTest {
     }
 
     @Test
-    public void testLosingForkBuiltFirst() throws Exception {
+    void testLosingForkBuiltFirst() throws Exception {
         Transaction releaseTx = buildReleaseTx();
 
         Block blockA1 = buildBlock(blockBase, 4l);
@@ -147,7 +147,7 @@ public class RskForksBridgeTest {
 
 
     @Test
-    public void testWinningForkBuiltFirst() throws Exception {
+    void testWinningForkBuiltFirst() throws Exception {
         Transaction releaseTx = buildReleaseTx();
 
         Block blockB1 = buildBlock(blockBase, releaseTx);
@@ -176,7 +176,7 @@ public class RskForksBridgeTest {
     }
 
     @Test
-    public void testReleaseTxJustInLoosingFork() throws Exception {
+    void testReleaseTxJustInLoosingFork() throws Exception {
         Transaction releaseTx = buildReleaseTx();
 
         Block blockA1 = buildBlock(blockBase, releaseTx);
@@ -205,7 +205,7 @@ public class RskForksBridgeTest {
     }
 
     @Test
-    public void testReleaseTxJustInWinningFork() throws Exception {
+    void testReleaseTxJustInWinningFork() throws Exception {
         Transaction releaseTx = buildReleaseTx();
 
         Block blockA1 = buildBlock(blockBase, 4l);

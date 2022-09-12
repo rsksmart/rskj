@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockHeaderContractTest {
+class BlockHeaderContractTest {
     private ExecutionEnvironment executionEnvironment;
 
     private static final BigInteger AMOUNT = new BigInteger("1000000000000000000");
@@ -95,7 +95,7 @@ public class BlockHeaderContractTest {
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
@@ -137,7 +137,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getCoinbase() throws VMException {
+    void getCoinbase() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -154,7 +154,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getMinimumGasPrice() throws VMException {
+    void getMinimumGasPrice() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -171,7 +171,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBlockHash() throws VMException {
+    void getBlockHash() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -188,7 +188,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getMergedMiningTags() throws VMException {
+    void getMergedMiningTags() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -203,11 +203,11 @@ public class BlockHeaderContractTest {
         String tagsString = new String(tags, StandardCharsets.UTF_8);
         String altTagString = new String(ADDITIONAL_TAG, StandardCharsets.UTF_8);
 
-        assertEquals(tagsString.indexOf(altTagString), 0);
+        assertEquals(0, tagsString.indexOf(altTagString));
     }
 
     @Test
-    public void getEmptyMergedMiningTags() throws VMException {
+    void getEmptyMergedMiningTags() throws VMException {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("0")));
@@ -217,11 +217,11 @@ public class BlockHeaderContractTest {
 
         byte[] tags = (byte[]) decodedResult[0];
 
-        assertArrayEquals(tags, ByteUtil.EMPTY_BYTE_ARRAY);
+        assertArrayEquals(ByteUtil.EMPTY_BYTE_ARRAY, tags);
     }
 
     @Test
-    public void getGasLimit() throws VMException {
+    void getGasLimit() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -238,7 +238,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getGasUsed() throws VMException {
+    void getGasUsed() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -255,7 +255,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getDifficulty() throws VMException {
+    void getDifficulty() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -272,7 +272,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBitcoinHeader() throws VMException {
+    void getBitcoinHeader() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -297,7 +297,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getUncleCoinbaseAddress() throws VMException {
+    void getUncleCoinbaseAddress() throws VMException {
         // creates a blockchain where every block has two uncles
         buildBlockchainOfLengthWithUncles(6);
 
@@ -337,7 +337,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getDifficultyForBlockAtDepth1000() throws VMException {
+    void getDifficultyForBlockAtDepth1000() throws VMException {
         buildBlockchainOfLength(4000);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -354,7 +354,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void blockBeyondMaximumBlockDepth() throws VMException {
+    void blockBeyondMaximumBlockDepth() throws VMException {
         buildBlockchainOfLength(5000);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -370,7 +370,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void invalidBlockDepth() throws VMException {
+    void invalidBlockDepth() throws VMException {
         buildBlockchainOfLength(300);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -386,7 +386,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBlockHeaderFieldsFromBranch() throws VMException {
+    void getBlockHeaderFieldsFromBranch() throws VMException {
         String bestChainCoinbase = "22222222222222222222";
         String initialChainCoinbase = "33333333333333333333";
 
@@ -427,7 +427,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void negativeBlockDepth() {
+    void negativeBlockDepth() {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -437,7 +437,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void negativeUncleIndex() {
+    void negativeUncleIndex() {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -540,57 +540,57 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void hasNoDefaultMethod() {
+    void hasNoDefaultMethod() {
         Assertions.assertFalse(contract.getDefaultMethod().isPresent());
     }
 
     @Test
-    public void hasNineMethods() {
+    void hasNineMethods() {
         Assertions.assertEquals(9, contract.getMethods().size());
     }
 
     @Test
-    public void hasGetCoinbaseAddress() {
+    void hasGetCoinbaseAddress() {
         assertHasMethod(GetCoinbaseAddress.class, true);
     }
 
     @Test
-    public void hasGetBlockHash() {
+    void hasGetBlockHash() {
         assertHasMethod(GetBlockHash.class, true);
     }
 
     @Test
-    public void hasGetMergedMiningTags() {
+    void hasGetMergedMiningTags() {
         assertHasMethod(GetMergedMiningTags.class, true);
     }
 
     @Test
-    public void hasGetMinimumGasPrice() {
+    void hasGetMinimumGasPrice() {
         assertHasMethod(GetMinimumGasPrice.class, true);
     }
 
     @Test
-    public void hasGetGasLimit() {
+    void hasGetGasLimit() {
         assertHasMethod(GetGasLimit.class, true);
     }
 
     @Test
-    public void hasGetGasUsed() {
+    void hasGetGasUsed() {
         assertHasMethod(GetGasUsed.class, true);
     }
 
     @Test
-    public void hasGetDifficulty() {
+    void hasGetDifficulty() {
         assertHasMethod(GetDifficulty.class, true);
     }
 
     @Test
-    public void hasGetBitcoinHeader() {
+    void hasGetBitcoinHeader() {
         assertHasMethod(GetBitcoinHeader.class, true);
     }
 
     @Test
-    public void hasGetUncleCoinbaseAddress() {
+    void hasGetUncleCoinbaseAddress() {
         assertHasMethod(GetUncleCoinbaseAddress.class, true);
     }
 

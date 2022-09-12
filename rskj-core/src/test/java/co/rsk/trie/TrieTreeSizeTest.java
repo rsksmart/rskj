@@ -23,16 +23,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 
-public class TrieTreeSizeTest {
+class TrieTreeSizeTest {
     @Test
-    public void emptyChildrenSize() {
+    void emptyChildrenSize() {
         Trie trie = new Trie();
         long emptyChildrenSize = trie.getChildrenSize().value;
         MatcherAssert.assertThat(emptyChildrenSize, is(0L));
     }
 
     @Test
-    public void childrenSizeShortValue() {
+    void childrenSizeShortValue() {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[32]);
@@ -40,7 +40,7 @@ public class TrieTreeSizeTest {
     }
 
     @Test
-    public void childrenSizeLongValue() {
+    void childrenSizeLongValue() {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[33]);

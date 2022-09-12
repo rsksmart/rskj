@@ -3,9 +3,9 @@ package co.rsk.net.sync;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ConnectionPointFinderTest {
+class ConnectionPointFinderTest {
     @Test
-    public void findConnectionPoint0In50() {
+    void findConnectionPoint0In50() {
         Long expectedConnectionPoint = 0L;
         long[] expectedHeights = new long[] { 25, 12, 6, 3, 1 };
         ConnectionPointFinder syncPeerProcessor = new ConnectionPointFinder(0L, 50);
@@ -21,7 +21,7 @@ public class ConnectionPointFinderTest {
     }
 
     @Test
-    public void findConnectionPoint0In100() {
+    void findConnectionPoint0In100() {
         Long expectedConnectionPoint = 0L;
         long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1 };
         ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(0L, 100);
@@ -37,7 +37,7 @@ public class ConnectionPointFinderTest {
     }
 
     @Test
-    public void findConnectionPoint30In100() {
+    void findConnectionPoint30In100() {
         Long expectedConnectionPoint = 30L;
         ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(0L, 100);
 
@@ -67,7 +67,7 @@ public class ConnectionPointFinderTest {
     }
 
     @Test
-    public void findConnectionPoint30In2030() {
+    void findConnectionPoint30In2030() {
         Long expectedConnectionPoint = 30L;
         long[] expectedHeights = new long[] { 1015, 507, 253, 126, 63, 31 };
         ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(0L, 2030);
@@ -98,7 +98,7 @@ public class ConnectionPointFinderTest {
     }
 
     @Test
-    public void findConnectionPoint300In4300() {
+    void findConnectionPoint300In4300() {
         Long expectedConnectionPoint = 300L;
         long[] expectedHeights = new long[] { 2150, 1075, 537 };
         ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(0L, 4300);

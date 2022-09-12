@@ -4,9 +4,9 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class MerkleTreeUtilsTest {
+class MerkleTreeUtilsTest {
     @Test
-    public void combineLeftRight() {
+    void combineLeftRight() {
         // Examples generated using bitcoind on regtest, with two-transaction blocks
         Assertions.assertEquals(
                 Sha256Hash.wrap("ceea4835dd23fae1978a3f6f3f0aa0171e018360272dd5b98d37550fbc978d01"),

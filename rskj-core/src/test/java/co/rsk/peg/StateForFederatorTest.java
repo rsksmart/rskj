@@ -33,7 +33,7 @@ import java.util.TreeMap;
 /**
  * Created by mario on 20/04/17.
  */
-public class StateForFederatorTest {
+class StateForFederatorTest {
 
     private static final String SHA3_1 = "1111111111111111111111111111111111111111111111111111111111111111";
     private static final String SHA3_2 = "2222222222222222222222222222222222222222222222222222222222222222";
@@ -43,7 +43,7 @@ public class StateForFederatorTest {
     private static final NetworkParameters NETWORK_PARAMETERS = BridgeRegTestConstants.getInstance().getBtcParams();
 
     @Test
-    public void serialize() {
+    void serialize() {
         Keccak256 hash1 = new Keccak256(SHA3_1);
         Keccak256 hash2 = new Keccak256(SHA3_2);
         Keccak256 hash3 = new Keccak256(SHA3_3);

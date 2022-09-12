@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 30/06/2017.
  */
-public class ScoringCalculatorTest {
+class ScoringCalculatorTest {
     @Test
-    public void emptyScoringHasGoodReputation() {
+    void emptyScoringHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring("id1");
 
@@ -34,7 +34,7 @@ public class ScoringCalculatorTest {
     }
 
     @Test
-    public void scoringWithOneValidBlockHasGoodReputation() {
+    void scoringWithOneValidBlockHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.VALID_BLOCK);
@@ -43,7 +43,7 @@ public class ScoringCalculatorTest {
     }
 
     @Test
-    public void scoringWithOneValidTransactionHasGoodReputation() {
+    void scoringWithOneValidTransactionHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.VALID_TRANSACTION);
@@ -52,7 +52,7 @@ public class ScoringCalculatorTest {
     }
 
     @Test
-    public void scoringWithOneInvalidBlockHasBadReputation() {
+    void scoringWithOneInvalidBlockHasBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -61,7 +61,7 @@ public class ScoringCalculatorTest {
     }
 
     @Test
-    public void scoringWithOneInvalidTransactionHasNoBadReputation() {
+    void scoringWithOneInvalidTransactionHasNoBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.INVALID_TRANSACTION);

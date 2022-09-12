@@ -26,9 +26,9 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
-public class TxValidatorGasLimitValidatorTest {
+class TxValidatorGasLimitValidatorTest {
     @Test
-    public void validGasLimit() {
+    void validGasLimit() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
 
@@ -44,7 +44,7 @@ public class TxValidatorGasLimitValidatorTest {
     }
 
     @Test
-    public void invalidGasLimit() {
+    void invalidGasLimit() {
 
         Transaction tx1 = Mockito.mock(Transaction.class);
 

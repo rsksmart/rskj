@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by mario on 22/12/16.
  */
-public class MinimumGasPriceCalculatorTest {
+class MinimumGasPriceCalculatorTest {
 
     @Test
-    public void increaseMgp() {
+    void increaseMgp() {
         Coin target = Coin.valueOf(2000L);
         Coin prev = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
@@ -37,7 +37,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void decreaseMGP() {
+    void decreaseMGP() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(900L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
@@ -46,7 +46,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void mgpOnRage() {
+    void mgpOnRage() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(995L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
@@ -55,7 +55,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void previousMgpEqualsTarget() {
+    void previousMgpEqualsTarget() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
@@ -64,7 +64,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void previousValueIsZero() {
+    void previousValueIsZero() {
         Coin target = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(Coin.ZERO);
@@ -72,7 +72,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void previousValueIsSmallTargetIsZero() {
+    void previousValueIsSmallTargetIsZero() {
         Coin target = Coin.ZERO;
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(Coin.valueOf(1L));
@@ -80,7 +80,7 @@ public class MinimumGasPriceCalculatorTest {
     }
 
     @Test
-    public void cantGetMGPtoBeNegative() {
+    void cantGetMGPtoBeNegative() {
         Coin previous = Coin.ZERO;
         Coin target = Coin.valueOf(-100L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);

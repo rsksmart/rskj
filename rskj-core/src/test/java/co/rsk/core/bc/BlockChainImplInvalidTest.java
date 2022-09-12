@@ -52,12 +52,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-public class BlockChainImplInvalidTest {
+class BlockChainImplInvalidTest {
     private Blockchain blockChain;
     private RskContext objects;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         objects = new RskTestContext(new String[0]) {
             @Override
             protected synchronized RskSystemProperties buildRskSystemProperties() {
@@ -90,12 +90,12 @@ public class BlockChainImplInvalidTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         objects.close();
     }
 
     @Test
-    public void addInvalidBlockBadStateRoot() {
+    void addInvalidBlockBadStateRoot() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -105,7 +105,7 @@ public class BlockChainImplInvalidTest {
     }
 
     @Test
-    public void addInvalidBlockBadUnclesHash() {
+    void addInvalidBlockBadUnclesHash() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
@@ -115,7 +115,7 @@ public class BlockChainImplInvalidTest {
     }
 
     @Test
-    public void addInvalidMGPBlock() {
+    void addInvalidMGPBlock() {
         TrieStore trieStore = objects.getTrieStore();
         BlockStore blockStore = objects.getBlockStore();
 

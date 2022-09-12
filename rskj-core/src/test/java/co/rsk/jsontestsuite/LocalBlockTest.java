@@ -33,12 +33,13 @@ import java.util.Collections;
  * @since 02.23.2016
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class LocalBlockTest {
+@SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
+class LocalBlockTest {
     private ClassLoader loader = LocalBlockTest.class.getClassLoader();
     private static TestSystemProperties config = new TestSystemProperties();
 
     @BeforeAll
-    public static void init() {
+     static void init() {
         config.setRemascEnabled(false);
     }
 
@@ -49,7 +50,7 @@ public class LocalBlockTest {
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runSingleTest() throws ParseException, IOException {
+    void runSingleTest() throws ParseException, IOException {
         config.setGenesisInfo("frontier.json");
 
         String json = JSONReader.loadJSONFromResource("json/BlockchainTests/bcValidBlockTest.json", loader);
@@ -58,92 +59,92 @@ public class LocalBlockTest {
 
     @Test
     @Disabled
-    public void runBCInvalidHeaderTest() throws ParseException, IOException {
+    void runBCInvalidHeaderTest() throws ParseException, IOException {
         run("bcInvalidHeaderTest");
     }
 
     @Test
     @Disabled
-    public void runBCInvalidRLPTest() throws ParseException, IOException {
+    void runBCInvalidRLPTest() throws ParseException, IOException {
         run("bcInvalidRLPTest");
     }
 
     @Test
     @Disabled
-    public void runBCRPCAPITest() throws ParseException, IOException {
+    void runBCRPCAPITest() throws ParseException, IOException {
         run("bcRPC_API_Test");
     }
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runBCUncleHeaderValidityTest() throws ParseException, IOException {
+    void runBCUncleHeaderValidityTest() throws ParseException, IOException {
         run("bcUncleHeaderValiditiy");
     }
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runBCUncleTest() throws ParseException, IOException {
+    void runBCUncleTest() throws ParseException, IOException {
         run("bcUncleTest");
     }
 
     @Test
     @Disabled
-    public void runBCValidBlockTest() throws ParseException, IOException {
+    void runBCValidBlockTest() throws ParseException, IOException {
         config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest");
     }
 
     @Disabled // after adding tx prefix to sign
     @Test
-    public void runBCBlockGasLimitTest() throws ParseException, IOException {
+    void runBCBlockGasLimitTest() throws ParseException, IOException {
         run("bcBlockGasLimitTest");
     }
 
     @Test
     @Disabled
-    public void runBCForkBlockTest() throws ParseException, IOException {
+    void runBCForkBlockTest() throws ParseException, IOException {
         run("bcForkBlockTest");
     }
 
     @Disabled // after adding tx prefix to sign
     @Test
-    public void runBCForkUncleTest() throws ParseException, IOException {
+    void runBCForkUncleTest() throws ParseException, IOException {
         run("bcForkUncle");
     }
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runBCForkStressTest() throws ParseException, IOException {
+    void runBCForkStressTest() throws ParseException, IOException {
         run("bcForkStressTest");
     }
 
     @Test
     @Disabled
-    public void runBCStateTest() throws ParseException, IOException {
+    void runBCStateTest() throws ParseException, IOException {
         run("bcStateTest");
     }
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runBCGasPricerTest() throws ParseException, IOException {
+    void runBCGasPricerTest() throws ParseException, IOException {
         run("bcGasPricerTest");
     }
 
     @Disabled // to fix after adding prefix to tx raw encode
     @Test
-    public void runBCTotalDifficultyTest() throws ParseException, IOException {
+    void runBCTotalDifficultyTest() throws ParseException, IOException {
         run("bcTotalDifficultyTest");
     }
 
     @Disabled
     @Test
-    public void runBCWalletTest() throws Exception, IOException {
+    void runBCWalletTest() throws Exception, IOException {
         run("bcWalletTest");
     }
 
     @Disabled
     @Test
-    public void runBCMultiChainTest() throws ParseException, IOException {
+    void runBCMultiChainTest() throws ParseException, IOException {
         run("bcMultiChainTest");
     }
 }

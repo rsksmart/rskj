@@ -26,14 +26,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHeaderValidatorTest {
+class BlockHeaderValidatorTest {
 
     private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
 
     private final BlockHeaderValidatorImpl blockRelayValidator = new BlockHeaderValidatorImpl(blockHeaderValidator);
 
     @Test
-    public void genesisCheck() {
+    void genesisCheck() {
         Block block = mock(Block.class);
         when(block.isGenesis()).thenReturn(true);
 
@@ -46,7 +46,7 @@ public class BlockHeaderValidatorTest {
     }
 
     @Test
-    public void blockHeaderValidatorCheck() {
+    void blockHeaderValidatorCheck() {
         Block block = mock(Block.class);
 
         when(blockHeaderValidator.isValid(any())).thenReturn(false);
@@ -60,7 +60,7 @@ public class BlockHeaderValidatorTest {
     }
 
     @Test
-    public void allValidatorsCheck() {
+    void allValidatorsCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
 

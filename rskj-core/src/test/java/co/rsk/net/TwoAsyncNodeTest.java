@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class TwoAsyncNodeTest {
+class TwoAsyncNodeTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
 
@@ -87,7 +87,7 @@ public class TwoAsyncNodeTest {
     }
 
     @Test @Disabled("This should be reviewed with sync processor or deleted")
-    public void buildBlockchainAndSynchronize() throws InterruptedException {
+    void buildBlockchainAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
 
@@ -106,7 +106,7 @@ public class TwoAsyncNodeTest {
     }
 
     @Test @Disabled("This should be reviewed with sync processor or deleted")
-    public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
+    void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
 
@@ -131,7 +131,7 @@ public class TwoAsyncNodeTest {
     }
 
     @Test @Disabled("This should be reviewed with sync processor or deleted")
-    public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
+    void buildBlockchainPartialAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(0);
         SimpleAsyncNode node2 = createNode(0);
 

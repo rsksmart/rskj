@@ -33,10 +33,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Disabled
-public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
+class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test
-    public void voteFeePerKbChange() throws VMException {
+    void voteFeePerKbChange() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -69,7 +69,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void voteFeePerKbChange_unauthorized() throws VMException {
+    void voteFeePerKbChange_unauthorized() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         Coin genesisFeePerKB = BridgeRegTestConstants.getInstance().getGenesisFeePerKb();

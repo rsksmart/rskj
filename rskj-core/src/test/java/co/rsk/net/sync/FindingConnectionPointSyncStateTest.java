@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 
-public class FindingConnectionPointSyncStateTest {
+class FindingConnectionPointSyncStateTest {
 
     // TODO Test other logic
 
@@ -42,7 +42,7 @@ public class FindingConnectionPointSyncStateTest {
     private Peer peer;
 
     @BeforeEach
-    public void setUp() throws UnknownHostException {
+    void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
@@ -53,7 +53,7 @@ public class FindingConnectionPointSyncStateTest {
     }
 
     @Test
-    public void noConnectionPoint() {
+    void noConnectionPoint() {
         when(blockStore.getMinNumber()).thenReturn(0L);
         FindingConnectionPointSyncState target =
                 new FindingConnectionPointSyncState(
@@ -74,7 +74,7 @@ public class FindingConnectionPointSyncStateTest {
     }
 
     @Test
-    public void onMessageTimeOut() {
+    void onMessageTimeOut() {
         FindingConnectionPointSyncState target = new FindingConnectionPointSyncState(
                 syncConfiguration,
                 syncEventsHandler,

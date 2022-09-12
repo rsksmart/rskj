@@ -56,14 +56,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * Modified by ajlopez on 03/04/2017, to use RepositoryImpl
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class RepositoryImplOriginalTest {
+class RepositoryImplOriginalTest {
 
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void test1() {
+    void test1() {
         Repository repository = createRepository();
 
         repository.increaseNonce(COW);
@@ -75,7 +75,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
         Repository repository = createRepository();
 
         repository.addBalance(COW, Coin.valueOf(10L));
@@ -86,7 +86,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test3() {
+    void test3() {
         Repository repository = createRepository();
 
         byte[] cowCode = Hex.decode("A1A2A3");
@@ -100,7 +100,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test4() {
+    void test4() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -119,7 +119,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test5() {
+    void test5() {
         Repository repository = createRepository();
 
         Repository track = repository.startTracking();
@@ -144,7 +144,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test6() {
+    void test6() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -171,7 +171,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test7() {
+    void test7() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -188,7 +188,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test8() {
+    void test8() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -205,7 +205,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test7_1() {
+    void test7_1() {
         Repository repository = createRepository();
         Repository track1 = repository.startTracking();
 
@@ -233,7 +233,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test7_2() {
+    void test7_2() {
         Repository repository = createRepository();
         Repository track1 = repository.startTracking();
 
@@ -261,7 +261,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test9() {
+    void test9() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -284,7 +284,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test10() {
+    void test10() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -308,7 +308,7 @@ public class RepositoryImplOriginalTest {
 
 
     @Test
-    public void test11() {
+    void test11() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -328,7 +328,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test12() {
+    void test12() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -348,7 +348,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test  // Let's upload genesis pre-mine just like in the real world
-    public void test13() {
+    void test13() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -359,14 +359,14 @@ public class RepositoryImplOriginalTest {
             repository.addBalance(accountAddress, accountsEntry.getValue().getBalance());
         }
 
-        track.commit();
+        Assertions.assertDoesNotThrow(track::commit);
 
         // To Review: config Genesis should have an State Root according to the new trie algorithm
         // assertArrayEquals(Genesis.getGenesisInstance(SystemProperties.CONFIG).getStateRoot(), repository.getRoot());
     }
 
     @Test
-    public void test14() {
+    void test14() {
         Repository repository = createRepository();
 
         final BigInteger ELEVEN = BigInteger.TEN.add(BigInteger.ONE);
@@ -397,7 +397,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test15() {
+    void test15() {
         Repository repository = createRepository();
 
         final BigInteger ELEVEN = BigInteger.TEN.add(BigInteger.ONE);
@@ -427,7 +427,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test16() {
+    void test16() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -481,7 +481,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test16_2() {
+    void test16_2() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -530,7 +530,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test16_3() {
+    void test16_3() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -579,7 +579,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test16_4() {
+    void test16_4() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -617,7 +617,7 @@ public class RepositoryImplOriginalTest {
 
 
     @Test
-    public void test16_5() {
+    void test16_5() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -652,7 +652,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test17() {
+    void test17() {
         Repository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
@@ -675,7 +675,7 @@ public class RepositoryImplOriginalTest {
     }
 
     @Test
-    public void test18() {
+    void test18() {
         Repository repository = createRepository();
         Repository repoTrack2 = repository.startTracking(); //track
 
@@ -696,7 +696,7 @@ public class RepositoryImplOriginalTest {
         assertEquals(false, repoTrack2.isExist(precompiled));
     }
     @Test
-    public void test19() {
+    void test19() {
         // Creates a repository without store
         Repository repository = createRepository();
 
@@ -747,7 +747,7 @@ public class RepositoryImplOriginalTest {
     private boolean running = true;
 
     @Test // testing for snapshot
-    public void testMultiThread() throws InterruptedException {
+    void testMultiThread() throws InterruptedException {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         final Repository repository = new MutableRepository(mutableTrie);

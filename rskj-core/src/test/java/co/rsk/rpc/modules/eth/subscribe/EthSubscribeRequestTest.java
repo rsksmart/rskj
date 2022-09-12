@@ -40,11 +40,11 @@ import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcMethod;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 
-public class EthSubscribeRequestTest {
+class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
-    public void deserializeSync() throws IOException {
+    void deserializeSync() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"syncing\"]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -54,7 +54,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializePendingTransactions() throws IOException {
+    void deserializePendingTransactions() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newPendingTransactions\"]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -64,7 +64,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeNewHeads() throws IOException {
+    void deserializeNewHeads() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -74,7 +74,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeLogsWithEmptyConfig() throws IOException {
+    void deserializeLogsWithEmptyConfig() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {}]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -87,7 +87,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeLogsWithoutConfig() throws IOException {
+    void deserializeLogsWithoutConfig() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\"]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -100,7 +100,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeLogsSingleParameters() throws IOException {
+    void deserializeLogsSingleParameters() throws IOException {
         RskAddress logAddress = new RskAddress("0x3e1127bf1a673d378a8570f7a79cea4f10e20489");
         Topic logTopic = new Topic("0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df");
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {\"address\":\"" + logAddress.toJsonString() + "\",\"topics\":\"" + logTopic.toJsonString() + "\"}]}";
@@ -118,7 +118,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeLogsParametersAsArrays() throws IOException {
+    void deserializeLogsParametersAsArrays() throws IOException {
         RskAddress logAddress = new RskAddress("0x3e1127bf1a673d378a8570f7a79cea4f10e20489");
         Topic logTopic = new Topic("0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df");
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {\"address\":[\"" + logAddress.toJsonString() + "\"],\"topics\":[\"" + logTopic.toJsonString() + "\"]}]}";
@@ -136,7 +136,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void deserializeLogsNestedTopicArrays() throws IOException {
+    void deserializeLogsNestedTopicArrays() throws IOException {
         RskAddress logAddress = new RskAddress("0x3e1127bf1a673d378a8570f7a79cea4f10e20489");
         Topic logTopic1 = new Topic("0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df");
         Topic logTopic2 = new Topic("0x4c0a694b638c4215e9140b6f08ecb38c4215e9140b6f08ecbdc8ab6b8ef9b245");
@@ -157,7 +157,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void allowOnlyASingleConfiguration() {
+    void allowOnlyASingleConfiguration() {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {}, {}]}";
         Assertions.assertThrows(JsonMappingException.class, () -> serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
@@ -173,7 +173,7 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
-    public void subscribe_withWrongParameter_thenThrowException() {
+    void subscribe_withWrongParameter_thenThrowException() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new EthSubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_UNSUBSCRIBE, "test", null));
     }
 

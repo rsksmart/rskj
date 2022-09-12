@@ -14,7 +14,7 @@ import java.util.List;
 class BootstrapIndexCandidateSelectorTest {
 
     @Test
-    public void getMaximumCommonHeightDataEmpty() {
+    void getMaximumCommonHeightDataEmpty() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -23,7 +23,7 @@ class BootstrapIndexCandidateSelectorTest {
     }
 
     @Test
-    public void getMaximumCommonHeightDataOneEntry() {
+    void getMaximumCommonHeightDataOneEntry() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -35,7 +35,7 @@ class BootstrapIndexCandidateSelectorTest {
     }
 
     @Test
-    public void getMaximumCommonHeightDataDuplicatedEntries() {
+    void getMaximumCommonHeightDataDuplicatedEntries() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -48,7 +48,7 @@ class BootstrapIndexCandidateSelectorTest {
     }
 
     @Test
-    public void getMaximumCommonHeightDataTwoEntries() {
+    void getMaximumCommonHeightDataTwoEntries() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -63,7 +63,7 @@ class BootstrapIndexCandidateSelectorTest {
     }
 
     @Test
-    public void getMaximumCommonHeightDataThreeEntries() {
+    void getMaximumCommonHeightDataThreeEntries() {
         List<String> keys = Arrays.asList("key1", "key2");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -80,7 +80,7 @@ class BootstrapIndexCandidateSelectorTest {
 
 
     @Test
-    public void getMaximumCommonHeightDataManyEntries() {
+    void getMaximumCommonHeightDataManyEntries() {
         List<String> keys = Arrays.asList("key1", "key2", "keys3");
         BootstrapIndexCandidateSelector indexMCH = new BootstrapIndexCandidateSelector(keys, 2);
         List<BootstrapDataIndex> indexes = new ArrayList<>();
@@ -101,6 +101,6 @@ class BootstrapIndexCandidateSelectorTest {
         indexes.add(new BootstrapDataIndex(entries3));
 
         BootstrapIndexCandidateSelector.HeightCandidate heightCandidate = indexMCH.getHeightData(indexes);
-        Assertions.assertEquals(heightCandidate.getHeight(), 2L);
+        Assertions.assertEquals(2L, heightCandidate.getHeight());
     }
 }

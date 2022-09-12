@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 11/01/2017.
  */
-public class TrieKeyValueTest {
+class TrieKeyValueTest {
     @Test
-    public void getNullForUnknownKey() {
+    void getNullForUnknownKey() {
         Trie trie = new Trie();
 
         Assertions.assertNull(trie.get(new byte[] { 0x01, 0x02, 0x03 }));
@@ -34,7 +34,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyValue() {
+    void putAndGetKeyValue() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -43,7 +43,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyValueTwice() {
+    void putAndGetKeyValueTwice() {
         Trie trie = new Trie();
         Trie trie1 = trie.put("foo", "bar".getBytes());
         Trie trie2 = trie1.put("foo", "bar".getBytes());
@@ -54,7 +54,7 @@ public class TrieKeyValueTest {
         Assertions.assertSame(trie1, trie2);
     }
     @Test
-    public void putAndGetKeyValueTwiceWithDifferenteValues() {
+    void putAndGetKeyValueTwiceWithDifferenteValues() {
         Trie trie = new Trie();
         Trie trie1 = trie.put("foo", "bar1".getBytes());
         Trie trie2 = trie1.put("foo", "bar2".getBytes());
@@ -66,7 +66,7 @@ public class TrieKeyValueTest {
 
 
     @Test
-    public void putAndGetKeyLongValue() {
+    void putAndGetKeyLongValue() {
         Trie trie = new Trie();
         byte[] value = TrieValueTest.makeValue(100);
 
@@ -76,7 +76,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putKeyValueAndDeleteKey() {
+    void putKeyValueAndDeleteKey() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes()).delete("foo");
@@ -84,7 +84,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putKeyLongValueAndDeleteKey() {
+    void putKeyLongValueAndDeleteKey() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", TrieValueTest.makeValue(100)).delete("foo");
@@ -92,7 +92,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetEmptyKeyValue() {
+    void putAndGetEmptyKeyValue() {
         Trie trie = new Trie();
 
         trie = trie.put("", "bar".getBytes());
@@ -101,7 +101,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetEmptyKeyLongValue() {
+    void putAndGetEmptyKeyLongValue() {
         Trie trie = new Trie();
         byte[] value = TrieValueTest.makeValue(100);
 
@@ -111,7 +111,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetTwoKeyValues() {
+    void putAndGetTwoKeyValues() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -125,7 +125,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetTwoKeyLongValues() {
+    void putAndGetTwoKeyLongValues() {
         Trie trie = new Trie();
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
@@ -141,7 +141,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyValues() {
+    void putAndGetKeyAndSubKeyValues() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -155,7 +155,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyLongValues() {
+    void putAndGetKeyAndSubKeyLongValues() {
         Trie trie = new Trie();
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
@@ -171,7 +171,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyValuesInverse() {
+    void putAndGetKeyAndSubKeyValuesInverse() {
         Trie trie = new Trie();
 
         trie = trie.put("f", "42".getBytes())
@@ -185,7 +185,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyLongValuesInverse() {
+    void putAndGetKeyAndSubKeyLongValuesInverse() {
         Trie trie = new Trie();
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
@@ -201,7 +201,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyValues() {
+    void putAndGetOneHundredKeyValues() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
@@ -216,7 +216,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyLongValues() {
+    void putAndGetOneHundredKeyLongValues() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
@@ -231,7 +231,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyValuesUsingBinaryTree() {
+    void putAndGetOneHundredKeyValuesUsingBinaryTree() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
@@ -246,7 +246,7 @@ public class TrieKeyValueTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyLongValuesUsingBinaryTree() {
+    void putAndGetOneHundredKeyLongValuesUsingBinaryTree() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)

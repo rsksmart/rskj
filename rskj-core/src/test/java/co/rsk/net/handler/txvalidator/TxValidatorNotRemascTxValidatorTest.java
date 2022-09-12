@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class TxValidatorNotRemascTxValidatorTest {
+class TxValidatorNotRemascTxValidatorTest {
 
     @Test
-    public void remascTx() {
+    void remascTx() {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
         Transaction tx1 = Mockito.mock(RemascTransaction.class);
         Mockito.when(tx1.getHash()).thenReturn(Keccak256.ZERO_HASH);
@@ -36,7 +36,7 @@ public class TxValidatorNotRemascTxValidatorTest {
     }
 
     @Test
-    public void commonTx() {
+    void commonTx() {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
         Assertions.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false).transactionIsValid());
     }

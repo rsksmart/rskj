@@ -30,21 +30,21 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @Disabled
-public class PendingFederationTest extends BridgePerformanceTestCase {
+class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 
     @Test
-    public void getPendingFederationHash() throws VMException {
+    void getPendingFederationHash() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_HASH);
     }
 
     @Test
-    public void getPendingFederationSize() throws VMException {
+    void getPendingFederationSize() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getPendingFederatorPublicKey() throws VMException {
+    void getPendingFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getPendingFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getBtcPublicKeys().size()-1)});

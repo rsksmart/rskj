@@ -51,7 +51,7 @@ import java.util.Optional;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DebugModuleImplTest {
+class DebugModuleImplTest {
 
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
@@ -61,7 +61,7 @@ public class DebugModuleImplTest {
     private DebugModuleImpl debugModule;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         blockStore = Web3Mocks.getMockBlockStore();
         receiptStore = Web3Mocks.getMockReceiptStore();
         messageHandler = Web3Mocks.getMockMessageHandler();
@@ -71,7 +71,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_wireProtocolQueueSize_basic() {
+    void debug_wireProtocolQueueSize_basic() {
         String result = debugModule.wireProtocolQueueSize();
         try {
             HexUtils.jsonHexToLong(result);
@@ -81,7 +81,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_wireProtocolQueueSize_value() {
+    void debug_wireProtocolQueueSize_value() {
         when(messageHandler.getMessageQueueSize()).thenReturn(5L);
         String result = debugModule.wireProtocolQueueSize();
         try {
@@ -93,7 +93,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
+    void debug_traceTransaction_retrieveUnknownTransactionAsNull() {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
         when(receiptStore.getInMainChain(hash, blockStore)).thenReturn(Optional.empty());
@@ -104,7 +104,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveSimpleContractCreationTrace() throws Exception {
+    void debug_traceTransaction_retrieveSimpleContractCreationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -130,7 +130,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveEmptyContractCreationTrace() throws Exception {
+    void debug_traceTransaction_retrieveEmptyContractCreationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts09.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -155,7 +155,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveSimpleContractInvocationTrace() throws Exception {
+    void debug_traceTransaction_retrieveSimpleContractInvocationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -181,7 +181,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveSimpleAccountTransfer() throws Exception {
+    void debug_traceTransaction_retrieveSimpleAccountTransfer() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/transfers01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -206,7 +206,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveSimpleAccountTransferWithTraceOptions() throws Exception {
+    void debug_traceTransaction_retrieveSimpleAccountTransferWithTraceOptions() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/transfers01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -232,7 +232,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceBlock_retrieveUnknownBlockAsNull() throws Exception {
+    void debug_traceBlock_retrieveUnknownBlockAsNull() throws Exception {
         byte[] hash = HexUtils.stringHexToByteArray("0x00");
 
         when(blockStore.getBlockByHash(hash)).thenReturn(null);
@@ -243,7 +243,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceBlock_retrieveSimpleContractsCreationTrace() throws Exception {
+    void debug_traceBlock_retrieveSimpleContractsCreationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts10.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -273,7 +273,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_traceTransaction_retrieveSimpleContractInvocationTrace_traceOptions_disableAllFields_OK() throws Exception {
+    void debug_traceTransaction_retrieveSimpleContractInvocationTrace_traceOptions_disableAllFields_OK() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -327,7 +327,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_accountTransactionQuota_whenExistingAddress_returnsItsQuota() {
+    void debug_accountTransactionQuota_whenExistingAddress_returnsItsQuota() {
         String rawAddress = "0x7986b3df570230288501eea3d890bd66948c9b79";
         RskAddress address = new RskAddress(rawAddress);
 
@@ -351,7 +351,7 @@ public class DebugModuleImplTest {
     }
 
     @Test
-    public void debug_accountTransactionQuota_whenNonExistingAddress_returnsNull() {
+    void debug_accountTransactionQuota_whenNonExistingAddress_returnsNull() {
         RskAddress address = new RskAddress("0x7986b3df570230288501eea3d890bd66948c9b79");
 
         TxQuota txQuotaCreated = TxQuota.createNew(address, TestUtils.randomHash(), 200L, System::currentTimeMillis);

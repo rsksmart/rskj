@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.
  */
-public class VMSpecificOpcodesPerformanceTest {
+class VMSpecificOpcodesPerformanceTest {
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
@@ -53,9 +53,9 @@ public class VMSpecificOpcodesPerformanceTest {
         return padZeroesLeft(Long.toHexString(loopCount), 4);
     }
 
-    @Disabled
+    @Disabled("manual performance test")
     @Test
-    public void testCallsToExistentAccounts() {
+    void testCallsToExistentAccounts() {
         int gasCostPerCALLLoop = 755;
         RskAddress shortAddress = new RskAddress("0000000000000000000000000000000000100000");
         invoke.addAccount(shortAddress,new Coin(BigInteger.valueOf(1)));
@@ -104,9 +104,9 @@ public class VMSpecificOpcodesPerformanceTest {
         printResults(stopWatch,gasCostPerCALLLoop);
     }
 
-    @Disabled
+    @Disabled("manual performance test")
     @Test
-    public void testCallsToNonExistingContracts() {
+    void testCallsToNonExistingContracts() {
         // IMPORTANT NODE
         // in RSK calling a non-existent contract IMMEDIATELY CREATES IT.
         // This does not depend on the value transferred.
@@ -213,7 +213,7 @@ public class VMSpecificOpcodesPerformanceTest {
     }
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();
         invoke.setGas(500*1000*1000); //

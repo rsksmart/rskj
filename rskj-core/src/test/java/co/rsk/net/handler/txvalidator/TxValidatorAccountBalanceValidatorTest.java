@@ -30,10 +30,10 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
-public class TxValidatorAccountBalanceValidatorTest {
+class TxValidatorAccountBalanceValidatorTest {
 
     @Test
-    public void validAccountBalance() {
+    void validAccountBalance() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
@@ -55,7 +55,7 @@ public class TxValidatorAccountBalanceValidatorTest {
     }
 
     @Test
-    public void invalidAccountBalance() {
+    void invalidAccountBalance() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
@@ -73,7 +73,7 @@ public class TxValidatorAccountBalanceValidatorTest {
     }
 
     @Test
-    public void balanceIsNotValidatedIfFreeTx() {
+    void balanceIsNotValidatedIfFreeTx() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.ZERO)

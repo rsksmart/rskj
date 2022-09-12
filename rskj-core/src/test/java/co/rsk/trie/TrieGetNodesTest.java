@@ -29,9 +29,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 23/08/2019.
  */
-public class TrieGetNodesTest {
+class TrieGetNodesTest {
     @Test
-    public void getNullForUnknownKey() {
+    void getNullForUnknownKey() {
         Trie trie = new Trie();
 
         Assertions.assertNull(trie.getNodes(new byte[] { 0x01, 0x02, 0x03 }));
@@ -39,7 +39,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putOneKeyAndGetNodes() {
+    void putOneKeyAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -53,7 +53,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putTwoKeysAndGetNodes() {
+    void putTwoKeysAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -70,7 +70,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetKeyValueTwiceWithDifferenteValuesAndGetNodes() {
+    void putAndGetKeyValueTwiceWithDifferenteValuesAndGetNodes() {
         Trie trie = new Trie();
         Trie trie1 = trie.put("foo", "bar1".getBytes());
         Trie trie2 = trie1.put("foo", "bar2".getBytes());
@@ -84,7 +84,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putLongValueAndGetNodes() {
+    void putLongValueAndGetNodes() {
         Trie trie = new Trie();
         byte[] value = TrieValueTest.makeValue(100);
 
@@ -99,7 +99,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndDeleteKeyAndGetNodes() {
+    void putAndDeleteKeyAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes()).delete("foo");
@@ -108,7 +108,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putKeyLongValueAndDeleteKeyAndGetNodes() {
+    void putKeyLongValueAndDeleteKeyAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", TrieValueTest.makeValue(100)).delete("foo");
@@ -117,7 +117,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetEmptyKeyValueAndGetNodes() {
+    void putAndGetEmptyKeyValueAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("", "bar".getBytes());
@@ -131,7 +131,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetEmptyKeyLongValueAndGetNodes() {
+    void putAndGetEmptyKeyLongValueAndGetNodes() {
         Trie trie = new Trie();
         byte[] value = TrieValueTest.makeValue(100);
 
@@ -146,7 +146,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetTwoKeyLongValues() {
+    void putAndGetTwoKeyLongValues() {
         Trie trie = new Trie();
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
@@ -164,7 +164,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyValuesAndGetNodes() {
+    void putAndGetKeyAndSubKeyValuesAndGetNodes() {
         Trie trie = new Trie();
 
         trie = trie.put("foo", "bar".getBytes());
@@ -179,7 +179,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetKeyAndSubKeyLongValuesAndGetNodes() {
+    void putAndGetKeyAndSubKeyLongValuesAndGetNodes() {
         Trie trie = new Trie();
         byte[] value1 = TrieValueTest.makeValue(100);
         byte[] value2 = TrieValueTest.makeValue(200);
@@ -196,7 +196,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyValuesAndGetNodes() {
+    void putAndGetOneHundredKeyValuesAndGetNodes() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)
@@ -221,7 +221,7 @@ public class TrieGetNodesTest {
     }
 
     @Test
-    public void putAndGetOneHundredKeyLongValues() {
+    void putAndGetOneHundredKeyLongValues() {
         Trie trie = new Trie();
 
         for (int k = 0; k < 100; k++)

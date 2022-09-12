@@ -12,16 +12,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class BootstrapDataVerifierTest {
+class BootstrapDataVerifierTest {
 
     @Test
-    public void verifyFileEmpty() {
+    void verifyFileEmpty() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         assertEquals(0, bootstrapDataVerifier.verifyEntries(new HashMap<>()));
     }
 
     @Test
-    public void verifyFileMany() {
+    void verifyFileMany() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         HashMap<String, BootstrapDataEntry> entries = new HashMap<>();
         List<String> keys = new ArrayList<>();
@@ -46,7 +46,7 @@ public class BootstrapDataVerifierTest {
     }
 
     @Test
-    public void doNotVerifyForDifferentHashes() {
+    void doNotVerifyForDifferentHashes() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         HashMap<String, BootstrapDataEntry> entries = new HashMap<>();
         List<String> keys = new ArrayList<>();

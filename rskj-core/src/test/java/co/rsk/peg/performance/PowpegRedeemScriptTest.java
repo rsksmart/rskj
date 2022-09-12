@@ -12,16 +12,16 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 @Disabled
-public class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
+class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getActivePowpegRedeemScriptTest() throws VMException {
+    void getActivePowpegRedeemScriptTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getActivePowpegRedeemScript");
         ABIEncoder abiEncoder = (int executionIndex) -> BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
         executeAndAverage(

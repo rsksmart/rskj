@@ -69,7 +69,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void test_verify() {
+    void test_verify() {
         String dataHashed = "53cb8e93030183c5ba198433e8cd1f013f3d113e0f4d1756de0d1f124ead155a";
         String rString = "8dba957877d5bdcb26d551dfa2fa509dfe3fe327caf0166130b9f467a0a0c249";
         String sString = "dab3fdf2031515d2de1d420310c69153fcc356f22b50dfd53c6e13e74e346eee";
@@ -94,7 +94,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void test_recoveryFromSignature_pointAtInfinity_returnZeroPK() {
+    void test_recoveryFromSignature_pointAtInfinity_returnZeroPK() {
         String messageHash = "f7cf90057f86838e5efd677f4741003ab90910e4e2736ff4d7999519d162d1ed";
         BigInteger r = new BigInteger("28824799845160661199077176548860063813328724131408018686643359460017962873020");
         BigInteger s = new BigInteger("48456094880180616145578324187715054843822774625773874469802229460318542735739");
@@ -105,7 +105,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testVerify_from_signatureToKey() {
+    void testVerify_from_signatureToKey() {
         BigInteger r = new BigInteger("c52c114d4f5a3ba904a9b3036e5e118fe0dbb987fe3955da20f2cd8f6c21ab9c", 16);
         BigInteger s = new BigInteger("6ba4c2874299a55ad947dbc98a25ee895aabf6b625c26c435e84bfd70edf2f69", 16);
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
@@ -122,7 +122,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testVerify_fixed_values() {
+    void testVerify_fixed_values() {
         ECKey key = ECKey.fromPublicOnly(pubKey);
         BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
         BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
@@ -132,7 +132,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testVerify_after_doSign() {
+    void testVerify_after_doSign() {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
         byte[] messageBytes = HashUtil.keccak256(message.getBytes());
@@ -141,7 +141,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testSignatureToKey_invalid_params() {
+    void testSignatureToKey_invalid_params() {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         try {
             byte v = (byte) 35;
@@ -160,7 +160,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testSignatureToKey_from_Tx() throws SignatureException {
+    void testSignatureToKey_from_Tx() throws SignatureException {
 
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] pk = this.privateKey.toByteArray();
@@ -198,7 +198,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testSignatureToKey_fixed_values() throws SignatureException {
+    void testSignatureToKey_fixed_values() throws SignatureException {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] s = ByteUtil.bigIntegerToBytes(this.s, 32);
         byte[] r = ByteUtil.bigIntegerToBytes(this.r, 32);
@@ -209,7 +209,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testSignatureToKey_fixed_values_garbage()  {
+    void testSignatureToKey_fixed_values_garbage()  {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
         byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
@@ -218,7 +218,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testRecoverFromSignature_fixed_values_garbage() throws SignatureException {
+    void testRecoverFromSignature_fixed_values_garbage() throws SignatureException {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
         byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
@@ -228,7 +228,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void testRecoverFromSignature_invalid_params() {
+    void testRecoverFromSignature_invalid_params() {
 
         BigInteger validBigInt = BigInteger.valueOf(0l);
         byte[] validBytes = validBigInt.toByteArray();
@@ -237,30 +237,37 @@ public abstract class Secp256k1ServiceTest {
         boolean validBoolean = false;
         int validRecId = 0;
         int invalidRecId = -1;
+
+        Secp256k1Service secp256k11 = this.getSecp256k1();
+
+        ECDSASignature sig = ECDSASignature.fromComponents(validBytes, validBytes);
         try {
-            this.getSecp256k1().recoverFromSignature(invalidRecId, ECDSASignature.fromComponents(validBytes, validBytes), validBytes, validBoolean);
+            secp256k11.recoverFromSignature(invalidRecId, sig, validBytes, validBoolean);
             fail();
         }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("recId must be positive"));}
 
+        sig = new ECDSASignature(invalidBigInt, validBigInt);
         try {
-            this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(invalidBigInt, validBigInt), validBytes, validBoolean);
+            secp256k11.recoverFromSignature(validRecId, sig, validBytes, validBoolean);
             fail();
         }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("r must be positive"));}
 
+        sig = new ECDSASignature(validBigInt, invalidBigInt);
         try {
-            this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, invalidBigInt), validBytes, validBoolean);
+            secp256k11.recoverFromSignature(validRecId, sig, validBytes, validBoolean);
             fail();
         }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("s must be positive"));}
 
+        sig = new ECDSASignature(validBigInt, validBigInt);
         try {
-            this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, validBigInt), invalidNullBytes, validBoolean);
+            secp256k11.recoverFromSignature(validRecId, sig, invalidNullBytes, validBoolean);
             fail();
         }catch (IllegalArgumentException e){MatcherAssert.assertThat(e.getMessage(), containsString("messageHash must not be null"));}
 
     }
 
     @Test
-    public void testRecoverFromSignature_without_V() {
+    void testRecoverFromSignature_without_V() {
         ECKey key = new ECKey();
         String message = "Hello World!";
         byte[] hash = HashUtil.sha256(message.getBytes());
@@ -279,21 +286,21 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void test_sign_signatureToKey_pk1() {
+    void test_sign_signatureToKey_pk1() {
         ECKey privateKey = ECKey.fromPrivate(BigInteger.ONE);
         ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
         sign_signatureToKey_assert(privateKey, publicKey);
     }
 
     @Test
-    public void test_sign_signatureToKey_pk10() {
+    void test_sign_signatureToKey_pk10() {
         ECKey privateKey = ECKey.fromPrivate(BigInteger.TEN);
         ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
         sign_signatureToKey_assert(privateKey, publicKey);
     }
 
     @Test
-    public void test_sign_signatureToKey_pk1M() {
+    void test_sign_signatureToKey_pk1M() {
         ECKey privateKey = ECKey.fromPrivate(BigInteger.valueOf(1_000_000_000));
         ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
         sign_signatureToKey_assert(privateKey, publicKey);

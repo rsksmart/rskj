@@ -22,9 +22,9 @@ package co.rsk.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FormatUtilsTest {
+class FormatUtilsTest {
     @Test
-    public void formatNanosecondsToSeconds() {
+    void formatNanosecondsToSeconds() {
         Assertions.assertEquals("1.234568", FormatUtils.formatNanosecondsToSeconds(1_234_567_890L));
         Assertions.assertEquals("1234.567890", FormatUtils.formatNanosecondsToSeconds(1_234_567_890_123L));
         Assertions.assertEquals("1234567.890123", FormatUtils.formatNanosecondsToSeconds(1_234_567_890_123_000L));

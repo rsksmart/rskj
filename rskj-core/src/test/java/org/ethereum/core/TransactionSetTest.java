@@ -29,9 +29,9 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
 /**
  * Created by ajlopez on 28/02/2018.
  */
-public class TransactionSetTest {
+class TransactionSetTest {
     @Test
-    public void getEmptyTransactionList() {
+    void getEmptyTransactionList() {
         TransactionSet txset = new TransactionSet();
 
         List<Transaction> result = txset.getTransactions();
@@ -41,7 +41,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void transactionIsNotInEmptySet() {
+    void transactionIsNotInEmptySet() {
         TransactionSet txset = new TransactionSet();
         Transaction transaction = createSampleTransaction();
 
@@ -53,7 +53,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void hasTransaction() {
+    void hasTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction transaction1 = createSampleTransaction(10);
         Transaction transaction2 = createSampleTransaction(20);
@@ -68,7 +68,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void addAndRemoveTransactions() {
+    void addAndRemoveTransactions() {
         TransactionSet txset = new TransactionSet();
 
         Transaction transaction1 = createSampleTransaction(1, 2, 100, 0);
@@ -94,7 +94,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void addTransactionAndGetListWithOneTransaction() {
+    void addTransactionAndGetListWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction tx = createSampleTransaction();
 
@@ -109,7 +109,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void addtTransactionTwiceAndGetListWithOneTransaction() {
+    void addtTransactionTwiceAndGetListWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction transaction = createSampleTransaction();
 
@@ -125,7 +125,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void getEmptyTransactionListByUnknownSender() {
+    void getEmptyTransactionListByUnknownSender() {
         TransactionSet txset = new TransactionSet();
 
         List<Transaction> result = txset.getTransactionsWithSender(new RskAddress(new byte[20]));
@@ -135,7 +135,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void addTransactionAndGetListBySenderWithOneTransaction() {
+    void addTransactionAndGetListBySenderWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction transaction = createSampleTransaction();
 
@@ -150,7 +150,7 @@ public class TransactionSetTest {
     }
 
     @Test
-    public void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
+    void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
         TransactionSet txset = new TransactionSet();
         Transaction transaction = createSampleTransaction();
 

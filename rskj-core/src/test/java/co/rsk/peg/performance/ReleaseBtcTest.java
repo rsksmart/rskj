@@ -38,10 +38,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 @Disabled
-public class ReleaseBtcTest extends BridgePerformanceTestCase {
+class ReleaseBtcTest extends BridgePerformanceTestCase {
 
     @Test
-    public void releaseBtc() throws VMException {
+    void releaseBtc() throws VMException {
 
         ExecutionStats stats = new ExecutionStats("releaseBtc");
         releaseBtc_success(1000, stats);

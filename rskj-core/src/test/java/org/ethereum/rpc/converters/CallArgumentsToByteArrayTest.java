@@ -29,12 +29,12 @@ import co.rsk.util.HexUtils;
 /**
  * Created by martin.medina on 3/7/17.
  */
-public class CallArgumentsToByteArrayTest {
+class CallArgumentsToByteArrayTest {
 
     private TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void getGasPriceWhenValueIsNull() throws Exception {
+    void getGasPriceWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
@@ -43,7 +43,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getGasPriceWhenValueIsEmpty() throws Exception {
+    void getGasPriceWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setGasPrice("");
 
@@ -53,7 +53,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getGasLimitWhenValueIsNull() throws Exception {
+    void getGasLimitWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
@@ -64,7 +64,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getGasLimitWhenValueIsEmpty() throws Exception {
+    void getGasLimitWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setGas("");
 
@@ -76,7 +76,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getToAddressWhenValueIsNull() throws Exception {
+    void getToAddressWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
@@ -85,7 +85,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getValueWhenValueIsNull() throws Exception {
+    void getValueWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
@@ -94,7 +94,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getValueWhenValueIsEmpty() throws Exception {
+    void getValueWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setValue("");
 
@@ -104,7 +104,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getDataWhenValueIsNull() throws Exception {
+    void getDataWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
@@ -113,7 +113,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void getDataWhenValueIsEmpty() throws Exception {
+    void getDataWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setData("");
 
@@ -123,7 +123,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void gasLimitForGasEstimationExceedingGasCap() {
+    void gasLimitForGasEstimationExceedingGasCap() {
         long hugeAmountOfGas = 900000000000000l;
         long gasEstimationCap = config.getGasEstimationCap();
 
@@ -140,7 +140,7 @@ public class CallArgumentsToByteArrayTest {
     }
 
     @Test
-    public void gasLimitForGasEstimationBelowGasCap() {
+    void gasLimitForGasEstimationBelowGasCap() {
         CallArguments callArguments = new CallArguments();
         callArguments.setGas(HexUtils.toQuantityJsonHex(1));
 

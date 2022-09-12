@@ -35,7 +35,7 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.util.*;
 
-public class MinerUtilsTest {
+class MinerUtilsTest {
 
     private static final Coin ONE_COIN = Coin.valueOf(1L);
 
@@ -43,12 +43,12 @@ public class MinerUtilsTest {
     private MinerUtils minerUtils;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         minerUtils = new MinerUtils();
     }
 
     @Test
-    public void getAllTransactionsTest() {
+    void getAllTransactionsTest() {
         TransactionPool transactionPool = Mockito.mock(TransactionPool.class);
 
         Transaction tx1 = Mockito.mock(Transaction.class);
@@ -84,7 +84,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void validTransactionRepositoryNonceTest() {
+    void validTransactionRepositoryNonceTest() {
         Transaction tx = Tx.create(config, 0, 50000, 5, 0, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
@@ -98,7 +98,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void validTransactionAccWrapNonceTest() {
+    void validTransactionAccWrapNonceTest() {
         Transaction tx = Tx.create(config, 0, 50000, 5, 1, 0, 0);
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
@@ -112,7 +112,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void invalidNonceTransactionTest() {
+    void invalidNonceTransactionTest() {
         Transaction tx = Tx.create(config, 0, 50000, 2, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -127,7 +127,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void invalidGasPriceTransactionTest() {
+    void invalidGasPriceTransactionTest() {
         Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -144,7 +144,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void harmfulTransactionTest() {
+    void harmfulTransactionTest() {
         Transaction tx = Tx.create(config, 0, 50000, 1, 0, 0, 0);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -162,7 +162,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void filterTransactions_whenRskip252DisabledThenTxIncludedRegardlessGasPrice() {
+    void filterTransactions_whenRskip252DisabledThenTxIncludedRegardlessGasPrice() {
         long minGasPriceRef = 2L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long capGasPrice = minGasPriceRef * 100;
@@ -185,7 +185,7 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void filterTransactions_whenRskip252EnabledThenTxWithMoreGasPriceThanCapExcluded() {
+    void filterTransactions_whenRskip252EnabledThenTxWithMoreGasPriceThanCapExcluded() {
         long minGasPriceRef = 2L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long capGasPrice = minGasPriceRef * 100;
@@ -210,7 +210,8 @@ public class MinerUtilsTest {
     }
 
     @Test
-    public void getAllTransactionsCheckOrderTest() {
+    @SuppressWarnings("squid:S5961")
+    void getAllTransactionsCheckOrderTest() {
         TransactionPool transactionPool = Mockito.mock(TransactionPool.class);
 
         Transaction tx0 = Mockito.mock(Transaction.class);

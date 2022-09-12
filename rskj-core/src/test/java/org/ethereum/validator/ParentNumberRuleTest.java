@@ -32,26 +32,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-public class ParentNumberRuleTest {
+class ParentNumberRuleTest {
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
     private ParentNumberRule rule = new ParentNumberRule();
 
     @Test // pass rule
-    public void parentNumberEqualBlockNumberMinusOne() {
+    void parentNumberEqualBlockNumberMinusOne() {
         BlockHeader header = getHeader(10000);
         BlockHeader parent = getHeader(9999);
         assertTrue(rule.validate(header, parent));
     }
 
     @Test // no pass rule
-    public void parentNumberEqualBlockNumber() {
+    void parentNumberEqualBlockNumber() {
         BlockHeader header = getHeader(100);
         BlockHeader parent = getHeader(100);
         assertFalse(rule.validate(header, parent));
     }
 
     @Test // no pass rule
-    public void parentNumberGreaterThanBlockNumber() {
+    void parentNumberGreaterThanBlockNumber() {
         BlockHeader header = getHeader(100);
         BlockHeader parent = getHeader(101);
         assertFalse(rule.validate(header, parent));

@@ -10,16 +10,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by ajlopez on 17/09/2017.
  */
-public class SyncPeerStatusTest {
+class SyncPeerStatusTest {
     @Test
-    public void justCreatedIsNotExpired() {
+    void justCreatedIsNotExpired() {
         SyncPeerStatus status = new SyncPeerStatus();
 
         Assertions.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 
     @Test
-    public void isExpiredAfterTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void isExpiredAfterTimeout() throws InterruptedException {
         SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(1000);
@@ -28,7 +29,8 @@ public class SyncPeerStatusTest {
     }
 
     @Test
-    public void isNotExpiredAfterShortTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void isNotExpiredAfterShortTimeout() throws InterruptedException {
         SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(100);

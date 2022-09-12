@@ -23,17 +23,17 @@ import static org.mockito.Mockito.when;
  * Created by Nazaret García on 26/05/2021
  */
 
-public class RskErrorResolverTest {
+class RskErrorResolverTest {
 
     private RskErrorResolver rskErrorResolver;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         rskErrorResolver = new RskErrorResolver();
     }
 
     @Test
-    public void test_resolveError_givenRskJsonRpcRequestException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenRskJsonRpcRequestException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = 1;
         String message = "message";
@@ -53,7 +53,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenInvalidFormatException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenInvalidFormatException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         InvalidFormatException exception = mock(InvalidFormatException.class);
 
@@ -71,7 +71,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_nullPropertyName_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnrecognizedPropertyException_nullPropertyName_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
         // Given
         UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
         when(exception.getPropertyName()).thenReturn(null);
@@ -91,7 +91,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_nullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnrecognizedPropertyException_nullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
         // Given
         UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
         when(exception.getPropertyName()).thenReturn("propertyName");
@@ -111,7 +111,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_nullPropertyNameAndNullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnrecognizedPropertyException_nullPropertyNameAndNullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
         // Given
         UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
         when(exception.getPropertyName()).thenReturn(null);
@@ -131,7 +131,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnrecognizedPropertyException_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
         // Given
         String propertyName = "propertyName";
 
@@ -159,7 +159,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_withZeroKnownProperties_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnrecognizedPropertyException_withZeroKnownProperties_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
         // Given
         String propertyName = "propertyName";
 
@@ -181,7 +181,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenGenericException_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenGenericException_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
         // Given
         Exception exception = mock(Exception.class);
 
@@ -199,7 +199,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenJsonMappingException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenJsonMappingException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = -32602;
         String message = "Can not construct instance";
@@ -219,7 +219,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnsupportedOperationException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenUnsupportedOperationException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = -32601;
         String message = "message";
@@ -239,7 +239,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenMethodNotSupportedExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenMethodNotSupportedExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = -32601;
         String message = "method not supported";
@@ -259,7 +259,7 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenInvalidRskAddressExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+    void test_resolveError_givenInvalidRskAddressExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
         Integer code = -32602;
         String message = "An RSK address must be 20 bytes long";

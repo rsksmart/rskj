@@ -33,21 +33,21 @@ public class TrieHashTest {
     private static Keccak256 emptyHash = makeEmptyHash();
 
     @Test
-    public void getNotNullHashOnEmptyTrie() {
+    void getNotNullHashOnEmptyTrie() {
         Trie trie = new Trie();
 
         Assertions.assertNotNull(trie.getHash().getBytes());
     }
 
     @Test
-    public void getHashAs32BytesOnEmptyTrie() {
+    void getHashAs32BytesOnEmptyTrie() {
         Trie trie = new Trie();
 
         Assertions.assertEquals(32, trie.getHash().getBytes().length);
     }
 
     @Test
-    public void emptyTriesHasTheSameHash() {
+    void emptyTriesHasTheSameHash() {
         Trie trie1 = new Trie();
         Trie trie2 = new Trie();
         Trie trie3 = new Trie();
@@ -58,14 +58,14 @@ public class TrieHashTest {
     }
 
     @Test
-    public void emptyHashForEmptyTrie() {
+    void emptyHashForEmptyTrie() {
         Trie trie = new Trie();
 
         Assertions.assertEquals(emptyHash, trie.getHash());
     }
 
     @Test
-    public void nonEmptyHashForNonEmptyTrie() {
+    void nonEmptyHashForNonEmptyTrie() {
         Trie trie = new Trie();
 
         trie = trie.put("foo".getBytes(), "bar".getBytes());
@@ -74,7 +74,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void nonEmptyHashForNonEmptyTrieWithLongValue() {
+    void nonEmptyHashForNonEmptyTrieWithLongValue() {
         Trie trie = new Trie();
 
         trie = trie.put("foo".getBytes(), TrieValueTest.makeValue(100));
@@ -83,7 +83,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithSameKeyValuesHaveSameHash() {
+    void triesWithSameKeyValuesHaveSameHash() {
         Trie trie1 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
         Trie trie2 = new Trie().put("foo", "bar".getBytes())
@@ -93,7 +93,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithSameKeyLongValuesHaveSameHash() {
+    void triesWithSameKeyLongValuesHaveSameHash() {
         Trie trie1 = new Trie().put("foo", "bar".getBytes())
                 .put("bar", TrieValueTest.makeValue(100));
         Trie trie2 = new Trie().put("foo", "bar".getBytes())
@@ -103,7 +103,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
+    void triesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
         Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
@@ -115,7 +115,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
+    void triesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
         Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
@@ -127,7 +127,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void threeTriesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
+    void threeTriesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
         Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes())
@@ -146,7 +146,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void threeTriesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
+    void threeTriesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
         Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200))
@@ -165,7 +165,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithDifferentKeyValuesHaveDifferentHashes() {
+    void triesWithDifferentKeyValuesHaveDifferentHashes() {
         Trie trie1 = new Trie()
                 .put("foo", "bar".getBytes())
                 .put("bar", "42".getBytes());
@@ -177,7 +177,7 @@ public class TrieHashTest {
     }
 
     @Test
-    public void triesWithDifferentKeyLongValuesHaveDifferentHashes() {
+    void triesWithDifferentKeyLongValuesHaveDifferentHashes() {
         Trie trie1 = new Trie()
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));

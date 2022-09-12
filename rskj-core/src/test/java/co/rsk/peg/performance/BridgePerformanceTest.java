@@ -51,6 +51,7 @@ import org.junit.platform.suite.api.Suite;
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
-@Disabled
-public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
+@Disabled("manual performance test")
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
 }

@@ -27,10 +27,10 @@ import java.util.Arrays;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class TrieImplKeyValueTest {
+class TrieImplKeyValueTest {
 
     @Test
-    public void zeroKeyWhenTwoKeysHasNoSharedPath() {
+    void zeroKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -44,7 +44,7 @@ public class TrieImplKeyValueTest {
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasNoSharedPath() {
+    void oneKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -58,7 +58,7 @@ public class TrieImplKeyValueTest {
     }
 
     @Test
-    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
@@ -72,7 +72,7 @@ public class TrieImplKeyValueTest {
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
@@ -86,7 +86,7 @@ public class TrieImplKeyValueTest {
     }
 
     @Test
-    public void forEqualRootStatesAfterDelete(){
+    void forEqualRootStatesAfterDelete(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 

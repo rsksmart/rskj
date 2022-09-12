@@ -27,10 +27,10 @@ import java.util.Arrays;
 /**
  * Created by martin.medina on 03/04/2017.
  */
-public class SecureTrieHashTest {
+class SecureTrieHashTest {
 
     @Test
-    public void removeOrNeverInsertShouldBringSameHashWithSecureTrie() {
+    void removeOrNeverInsertShouldBringSameHashWithSecureTrie() {
         Trie trie1 = new Trie()
                 .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())

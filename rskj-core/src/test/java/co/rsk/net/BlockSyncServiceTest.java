@@ -31,9 +31,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 
-public class BlockSyncServiceTest {
+class BlockSyncServiceTest {
     @Test
-    public void sendBlockMessagesAndAddThemToBlockchain() {
+    void sendBlockMessagesAndAddThemToBlockchain() {
         for (int i = 0; i < 50; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
             NetBlockStore store = new NetBlockStore();
@@ -52,7 +52,7 @@ public class BlockSyncServiceTest {
     }
 
     @Test
-    public void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
+    void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
         for (int i = 1; i < 52; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
             NetBlockStore store = new NetBlockStore();
@@ -82,7 +82,7 @@ public class BlockSyncServiceTest {
     }
 
     @Test
-    public void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
+    void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();

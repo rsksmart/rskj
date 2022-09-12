@@ -35,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class ConstantsTest {
+class ConstantsTest {
 
     private static final List<BtcECKey> TEST_FED_KEYS = Arrays.asList(
             BtcECKey.fromPublicOnly(BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getPubKey()),
@@ -49,13 +49,13 @@ public class ConstantsTest {
     private final ActivationConfig.ForBlock postRskip297Config = mock(ActivationConfig.ForBlock.class);
 
     @BeforeEach
-    public void setUp() {
-        when(preRskip297Config.isActive(eq(ConsensusRule.RSKIP297))).thenReturn(false);
-        when(postRskip297Config.isActive(eq(ConsensusRule.RSKIP297))).thenReturn(true);
+    void setUp() {
+        when(preRskip297Config.isActive(ConsensusRule.RSKIP297)).thenReturn(false);
+        when(postRskip297Config.isActive(ConsensusRule.RSKIP297)).thenReturn(true);
     }
 
     @Test
-    public void devnetWithFederationTest() {
+    void devnetWithFederationTest() {
         Constants constants = Constants.devnetWithFederation(TEST_FED_KEYS.subList(0, 3));
         assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(0)), is(true));
         assertThat(constants.getBridgeConstants().getGenesisFederation().hasBtcPublicKey(TEST_FED_KEYS.get(1)), is(true));
@@ -64,7 +64,7 @@ public class ConstantsTest {
     }
 
     @Test
-    public void rskip297ActivationTest() {
+    void rskip297ActivationTest() {
         assertEquals(300, Constants.regtest().getMaxTimestampsDiffInSecs(preRskip297Config));
         assertEquals(300, Constants.regtest().getMaxTimestampsDiffInSecs(postRskip297Config));
 

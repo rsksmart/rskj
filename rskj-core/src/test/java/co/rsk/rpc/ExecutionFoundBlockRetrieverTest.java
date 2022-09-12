@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class ExecutionFoundBlockRetrieverTest {
+class ExecutionFoundBlockRetrieverTest {
 
     private MiningMainchainView miningMainchainView;
     private Blockchain blockchain;
@@ -51,7 +51,7 @@ public class ExecutionFoundBlockRetrieverTest {
     private final static int INVALID_PARAM_ERROR_CODE = -32602;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blockchain = mock(BlockChainImpl.class);
         miningMainchainView = mock(MiningMainchainView.class);
         minerServer = mock(MinerServer.class);
@@ -60,7 +60,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getLatest() {
+    void getLatest() {
         Block latest = mock(Block.class);
         when(blockchain.getBestBlock())
                 .thenReturn(latest);
@@ -69,7 +69,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getLatestIsUpToDate() {
+    void getLatestIsUpToDate() {
         Block latest1 = mock(Block.class);
         Block latest2 = mock(Block.class);
         when(blockchain.getBestBlock())
@@ -81,7 +81,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getPendingUsesMinerServerLatestBlock() {
+    void getPendingUsesMinerServerLatestBlock() {
         Block latest = mock(Block.class);
         when(minerServer.getLatestBlock())
                 .thenReturn(Optional.of(latest));
@@ -90,7 +90,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getPendingUsesMinerServerAndIsUpToDate() {
+    void getPendingUsesMinerServerAndIsUpToDate() {
         Block latest1 = mock(Block.class);
         Block latest2 = mock(Block.class);
         when(minerServer.getLatestBlock())
@@ -102,7 +102,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getPendingBuildsPendingBlockIfMinerServerHasNoWork() {
+    void getPendingBuildsPendingBlockIfMinerServerHasNoWork() {
         when(minerServer.getLatestBlock())
                 .thenReturn(Optional.empty());
 
@@ -125,7 +125,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getPendingReturnsCachedBlockIfMinerServerHasNoWork() {
+    void getPendingReturnsCachedBlockIfMinerServerHasNoWork() {
         when(minerServer.getLatestBlock())
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.empty());
@@ -159,7 +159,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getPendingDoesntUseCacheIfBestBlockHasChanged() {
+    void getPendingDoesntUseCacheIfBestBlockHasChanged() {
         when(minerServer.getLatestBlock())
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.empty());
@@ -197,7 +197,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberBlockExistsHex() {
+    void getByNumberBlockExistsHex() {
         Block myBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(myBlock);
@@ -207,7 +207,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberBlockExistsDec() {
+    void getByNumberBlockExistsDec() {
         Block myBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(myBlock);
@@ -216,7 +216,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberInvalidBlockNumberHex() {
+    void getByNumberInvalidBlockNumberHex() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
 
@@ -227,7 +227,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberInvalidBlockNumberDec() {
+    void getByNumberInvalidBlockNumberDec() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
         RskJsonRpcRequestException e = TestUtils
@@ -237,7 +237,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberInvalidHex() {
+    void getByNumberInvalidHex() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("0xzz"));
@@ -247,7 +247,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getByNumberInvalidDec() {
+    void getByNumberInvalidDec() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("zz"));
@@ -256,7 +256,7 @@ public class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    public void getOtherThanPendingLatestOrNumberThrows() {
+    void getOtherThanPendingLatestOrNumberThrows() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.retrieveExecutionBlock("other"));

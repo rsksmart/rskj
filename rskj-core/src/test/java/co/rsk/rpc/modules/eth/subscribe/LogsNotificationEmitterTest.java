@@ -59,7 +59,7 @@ import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-public class LogsNotificationEmitterTest {
+class LogsNotificationEmitterTest {
     private LogsNotificationEmitter emitter;
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
@@ -67,7 +67,7 @@ public class LogsNotificationEmitterTest {
     private BlockchainBranchComparator comparator;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
         receiptStore = mock(ReceiptStore.class);
@@ -80,7 +80,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -95,7 +95,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
+    void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
         SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
         SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
         Channel channel1 = mock(Channel.class);
@@ -120,7 +120,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void filterEmittedLog() throws JsonProcessingException {
+    void filterEmittedLog() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -146,7 +146,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void emitsNewAndRemovedLogs() throws JsonProcessingException {
+    void emitsNewAndRemovedLogs() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -175,7 +175,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSucceedsForExistingSubscriptionId() {
+    void unsubscribeSucceedsForExistingSubscriptionId() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -186,7 +186,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeChannelThenNothingIsEmitted() {
+    void unsubscribeChannelThenNothingIsEmitted() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);

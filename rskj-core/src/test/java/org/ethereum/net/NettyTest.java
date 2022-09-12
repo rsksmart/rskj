@@ -36,9 +36,9 @@ import java.util.List;
 /**
  * Created by Anton Nashatyrev on 16.10.2015.
  */
-public class NettyTest {
+class NettyTest {
     @Test
-    public void pipelineTest() {
+    void pipelineTest() {
 
         final int[] int2 = new int[1];
         final boolean[] exception = new boolean[1];

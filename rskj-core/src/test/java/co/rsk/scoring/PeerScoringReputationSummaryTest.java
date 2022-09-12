@@ -3,10 +3,10 @@ package co.rsk.scoring;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class PeerScoringReputationSummaryTest {
+class PeerScoringReputationSummaryTest {
 
     @Test
-    public void equalsTest() {
+    void equalsTest() {
         Assertions.assertEquals(new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
@@ -18,15 +18,15 @@ public class PeerScoringReputationSummaryTest {
     }
 
     @Test
-    public void equalsNullTest() {
-        Assertions.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
+    void equalsNullTest() {
+        Assertions.assertNotEquals(null, new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
-                0,0,0,0,0), null);
+                0,0,0,0,0));
     }
 
     @Test
-    public void equalsOtherClassTest() {
+    void equalsOtherClassTest() {
         Assertions.assertNotEquals(new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,
@@ -34,7 +34,7 @@ public class PeerScoringReputationSummaryTest {
     }
 
     @Test
-    public void hashCodeTest() {
+    void hashCodeTest() {
         int oneSummaryHashcode = (new PeerScoringReputationSummary(0,0,0,0,
                 0,0,0,0,
                 0,0,0,0,

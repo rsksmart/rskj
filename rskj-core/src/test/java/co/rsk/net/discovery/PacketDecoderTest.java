@@ -33,13 +33,13 @@ import java.util.UUID;
 /**
  * Created by mario on 15/02/17.
  */
-public class PacketDecoderTest {
+class PacketDecoderTest {
 
     private static final int NETWORK_ID = 1;
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
 
     @Test
-    public void decode() throws Exception {
+    void decode() throws Exception {
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();

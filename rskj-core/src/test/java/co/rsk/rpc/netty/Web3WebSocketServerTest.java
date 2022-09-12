@@ -59,7 +59,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.rpc.ModuleDescription;
 import okio.Buffer;
 
-public class Web3WebSocketServerTest {
+class Web3WebSocketServerTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -70,27 +70,27 @@ public class Web3WebSocketServerTest {
     private ExecutorService wsExecutor;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         wsExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Test
-    public void smokeTest() throws Exception {
+    void smokeTest() throws Exception {
         smokeTest(getJsonRpcDummyMessage("value"));
     }
 
     @Test
-    public void smokeTestWithBigJson() throws Exception {
+    void smokeTestWithBigJson() throws Exception {
         smokeTest(getJsonRpcBigMessage());
     }
 
     @Test
-    public void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
+    void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
         smokeTest(getJsonRpcBigMessage(), "/");
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         wsExecutor.shutdown();
     }
 

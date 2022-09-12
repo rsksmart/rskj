@@ -66,13 +66,14 @@ import java.util.List;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TransactionTest {
+@SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
+class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
-    public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {
+    void test1() {
 
         //python taken exact data
         String txRLPRawData = "a9e880872386f26fc1000085e8d4a510008203e89413978aee95f38490e9769c39b2773ed763d9cd5f80";
@@ -88,12 +89,13 @@ public class TransactionTest {
         byte[] txHash = HashUtil.keccak256(data);
 
         ECDSASignature signature = ECDSASignature.fromSignature(key.doSign(txHash));
+        Assertions.assertNotNull(signature);
         System.out.println(signature);
     }
 
     @Disabled
     @Test  /* achieve public key of the sender */
-    public void test2() throws Exception {
+    void test2() throws Exception {
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
         // cow --> cd2a3d9f938e13cd947ec05abc7fe734df8dd826
@@ -141,7 +143,7 @@ public class TransactionTest {
 
     @Disabled
     @Test  /* achieve public key of the sender nonce: 01 */
-    public void test3() throws Exception {
+    void test3() throws Exception {
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
         // cow --> cd2a3d9f938e13cd947ec05abc7fe734df8dd826
@@ -199,7 +201,7 @@ public class TransactionTest {
 
     @Disabled
     @Test
-    public void testTransactionFromSignedRLP() throws Exception {
+    void testTransactionFromSignedRLP() {
         Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
 
         assertEquals(HASH_TX, txSigned.getHash());
@@ -218,7 +220,7 @@ public class TransactionTest {
 
     @Disabled
     @Test
-    public void testTransactionFromUnsignedRLP() throws Exception {
+    void testTransactionFromUnsignedRLP() {
         Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
 
         assertEquals(HASH_TX, txUnsigned.getHash());
@@ -239,7 +241,7 @@ public class TransactionTest {
 
     @Disabled
     @Test
-    public void testTransactionFromNew1() throws MissingPrivateKeyException {
+    void testTransactionFromNew1() throws MissingPrivateKeyException {
         Transaction txNew = Transaction.builder()
                 .nonce(testNonce)
                 .gasPrice(testGasPrice)
@@ -270,7 +272,7 @@ public class TransactionTest {
 
     @Disabled
     @Test
-    public void testTransactionFromNew2() throws MissingPrivateKeyException {
+    void testTransactionFromNew2() throws MissingPrivateKeyException {
         byte[] privKeyBytes = Hex.decode("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4");
 
         String RLP_TX_UNSIGNED = "eb8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc1000080808080";
@@ -306,7 +308,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void testTransactionCreateContract() {
+    void testTransactionCreateContract() {
 
 //        String rlp =
 // "f89f808609184e72a0008203e8808203e8b84b4560005444602054600f60056002600a02010b0d630000001d596002602054630000003b5860066000530860056006600202010a0d6300000036596004604054630000003b5860056060541ca0ddc901d83110ea50bc40803f42083afea1bbd420548f6392a679af8e24b21345a06620b3b512bea5f0a272703e8d6933177c23afc79516fd0ca4a204aa6e34c7e9";
@@ -349,13 +351,14 @@ public class TransactionTest {
         System.out.println("plainTx1: " + plainTx1);
         System.out.println("plainTx2: " + plainTx2);
 
+        Assertions.assertNotNull(tx2.getSender());
         System.out.println(tx2.getSender().toString());
     }
 
 
     @Disabled
     @Test
-    public void encodeReceiptTest() {
+    void encodeReceiptTest() {
 
         String data = "f90244a0f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b688301e848b902000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dbda94cd2a3d9f938e13cd947ec05abc7fe734df8dd826c083a1a1a1";
 
@@ -380,7 +383,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void constantCallConflictTest() throws Exception {
+    void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
 
@@ -509,12 +512,12 @@ public class TransactionTest {
                 return super.executeTransaction(tx);
             }
         }.setstateTestUSeREMASC(true).runImpl();
-        if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
+        Assertions.assertTrue(res.isEmpty(), res.toString());
     }
 
     @Disabled // This test fails post EIP150
     @Test
-    public void contractCreationTest() throws Exception {
+    void contractCreationTest() throws Exception {
         // Checks Homestead updates (1) & (3) from
         // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.mediawiki
 
@@ -594,11 +597,11 @@ public class TransactionTest {
         System.out.println(json.replaceAll("'", "\""));
 
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
-        if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
+        Assertions.assertTrue(res.isEmpty(), res.toString());
     }
 
     @Test
-    public void multiSuicideTest() throws IOException, InterruptedException {
+    void multiSuicideTest() throws InterruptedException {
         /*
         Original contract
 
@@ -675,7 +678,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void dontLogWhenReverting() throws IOException, InterruptedException {
+    void dontLogWhenReverting() throws InterruptedException {
         /*
 
         Original contracts
@@ -741,7 +744,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void verifyTx_noSignature() {
+    void verifyTx_noSignature() {
         BigInteger value = new BigInteger("1000000000000000000000");
         byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
@@ -762,7 +765,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void verifyTx_withSignature() {
+    void verifyTx_withSignature() {
         BigInteger value = new BigInteger("1000000000000000000000");
         byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
         byte[] privKey = HashUtil.keccak256("cat".getBytes());
@@ -785,7 +788,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void toString_nullElements() {
+    void toString_nullElements() {
         byte[] encodedNull = RLP.encodeElement(null);
         byte[] encodedEmptyArray = RLP.encodeElement(EMPTY_BYTE_ARRAY);
         byte[] rawData = RLP.encodeList(encodedNull, encodedNull, encodedNull, encodedNull, encodedNull, encodedNull,
@@ -803,7 +806,7 @@ public class TransactionTest {
     }
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress,
-                                 byte[] data, long value, BigInteger nonce) throws InterruptedException {
+                                 byte[] data, long value, BigInteger nonce) {
         Transaction tx = Transaction.builder()
                 .nonce(nonce)
                 .gasPrice(ByteUtil.longToBytesNoLeadZeroes(1))

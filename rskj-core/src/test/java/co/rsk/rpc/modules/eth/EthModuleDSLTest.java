@@ -39,9 +39,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Created by patogallaiovlabs on 28/10/2020.
  */
-public class EthModuleDSLTest {
+class EthModuleDSLTest {
     @Test
-    public void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
+    void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/eth_module/revert_reason.txt");
         World world = new World();
 

@@ -8,11 +8,11 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHeadersResponseMessageTest {
+class BlockHeadersResponseMessageTest {
 
 
     @Test
-    public void accept() {
+    void accept() {
         BlockHeader blockHeader = mock(BlockHeader.class);
         List<BlockHeader> headers = new LinkedList<>();
         headers.add(blockHeader);

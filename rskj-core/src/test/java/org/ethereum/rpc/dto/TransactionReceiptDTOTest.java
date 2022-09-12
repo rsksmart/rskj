@@ -35,10 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TransactionReceiptDTOTest {
+class TransactionReceiptDTOTest {
 
     @Test
-    public void testOkStatusField() {
+    void testOkStatusField() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -68,7 +68,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusField() {
+    void testErrorStatusField() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -98,7 +98,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusFieldUsingEmptyByteArray() {
+    void testErrorStatusFieldUsingEmptyByteArray() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -128,7 +128,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusFieldUsingNullByteArray() {
+    void testErrorStatusFieldUsingNullByteArray() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();

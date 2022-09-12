@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
 
-public class BlockCacheTest {
+class BlockCacheTest {
 
     private static final byte[] HASH_1 = HashUtil.sha256(new byte[]{1});
     private static final byte[] HASH_2 = HashUtil.sha256(new byte[]{2});
@@ -38,13 +38,13 @@ public class BlockCacheTest {
     private static final byte[] HASH_5 = HashUtil.sha256(new byte[]{5});
 
     @Test
-    public void getUnknownBlockAsNull() {
+    void getUnknownBlockAsNull() {
         BlockCache store = getSubject();
         assertThat(store.getBlockByHash(HASH_1), nullValue());
     }
 
     @Test
-    public void putAndGetValue() {
+    void putAndGetValue() {
         BlockCache store = getSubject();
         Block block = blockWithHash(new Keccak256(HASH_1));
         store.addBlock(block);
@@ -53,7 +53,7 @@ public class BlockCacheTest {
     }
 
     @Test
-    public void putMoreThanSizeAndCheckCleanup() {
+    void putMoreThanSizeAndCheckCleanup() {
         BlockCache store = getSubject();
         store.addBlock(blockWithHash(new Keccak256(HASH_1)));
         store.addBlock(blockWithHash(new Keccak256(HASH_2)));
@@ -69,7 +69,7 @@ public class BlockCacheTest {
     }
 
     @Test
-    public void repeatingValueAtEndPreventsCleanup() {
+    void repeatingValueAtEndPreventsCleanup() {
         BlockCache store = getSubject();
         store.addBlock(blockWithHash(new Keccak256(HASH_1)));
         store.addBlock(blockWithHash(new Keccak256(HASH_2)));
@@ -86,7 +86,7 @@ public class BlockCacheTest {
     }
 
     @Test
-    public void addAndRetrieveBlock() {
+    void addAndRetrieveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
         when(block.getHash()).thenReturn(new Keccak256(HASH_1));
@@ -96,7 +96,7 @@ public class BlockCacheTest {
     }
 
     @Test
-    public void addAndRemoveBlock() {
+    void addAndRemoveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
         when(block.getHash()).thenReturn(new Keccak256(HASH_1));

@@ -37,6 +37,7 @@ import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +47,13 @@ import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CryptoTest {
+class CryptoTest {
 
     private static final Logger log = LoggerFactory.getLogger("test");
 
 
     @Test
-    public void test1() {
+    void test1() {
 
         byte[] result = HashUtil.keccak256("horse".getBytes());
 
@@ -66,7 +67,7 @@ public class CryptoTest {
     }
 
     @Test
-    public void test3() {
+    void test3() {
         BigInteger privKey = new BigInteger("cd244b3015703ddf545595da06ada5516628c5feadbf49dc66049c4b370cc5d8", 16);
         byte[] addr = ECKey.fromPrivate(privKey).getAddress();
         assertEquals("89b44e4d3c81ede05d0f5de8d1a68f754d73d997", ByteUtil.toHexString(addr));
@@ -74,21 +75,21 @@ public class CryptoTest {
 
 
     @Test
-    public void test4() {
+    void test4() {
         byte[] cowBytes = HashUtil.keccak256("cow".getBytes());
         byte[] addr = ECKey.fromPrivate(cowBytes).getAddress();
         assertEquals("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826", ByteUtil.toHexString(addr).toUpperCase());
     }
 
     @Test
-    public void test5() {
+    void test5() {
         byte[] horseBytes = HashUtil.keccak256("horse".getBytes());
         byte[] addr = ECKey.fromPrivate(horseBytes).getAddress();
         assertEquals("13978AEE95F38490E9769C39B2773ED763D9CD5F", ByteUtil.toHexString(addr).toUpperCase());
     }
 
     @Test   /* performance test */
-    public void test6() {
+    void test6() {
 
         long firstTime = System.currentTimeMillis();
         System.out.println(firstTime);
@@ -105,7 +106,7 @@ public class CryptoTest {
     }
 
     @Test /* real tx hash calc */
-    public void test7() {
+    void test7() {
 
         String txRaw = "F89D80809400000000000000000000000000000000000000008609184E72A000822710B3606956330C0D630000003359366000530A0D630000003359602060005301356000533557604060005301600054630000000C5884336069571CA07F6EB94576346488C6253197BDE6A7E59DDC36F2773672C849402AA9C402C3C4A06D254E662BF7450DD8D835160CBB053463FED0B53F2CDD7F3EA8731919C8E8CC";
         byte[] txHashB = HashUtil.keccak256(Hex.decode(txRaw));
@@ -114,26 +115,28 @@ public class CryptoTest {
     }
 
     @Test /* real block hash calc */
-    public void test8() {
+    void test8() {
 
         String blockRaw = "F885F8818080A01DCC4DE8DEC75D7AAB85B567B6CCD41AD312451B948A7413F0A142FD40D49347940000000000000000000000000000000000000000A0BCDDD284BF396739C224DBA0411566C891C32115FEB998A3E2B4E61F3F35582AA01DCC4DE8DEC75D7AAB85B567B6CCD41AD312451B948A7413F0A142FD40D4934783800000808080C0C0";
 
         byte[] blockHashB = HashUtil.keccak256(Hex.decode(blockRaw));
         String blockHash = ByteUtil.toHexString(blockHashB);
+
+        Assertions.assertNotNull(blockHash);
         System.out.println(blockHash);
     }
 
-    @Test
-    public void test9() {
-        // TODO: https://tools.ietf.org/html/rfc6979#section-2.2
-        // TODO: https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/crypto/signers/ECDSASigner.java
+//    @Test
+//    void test9() {
+//        // TODO: https://tools.ietf.org/html/rfc6979#section-2.2
+//        // TODO: https://github.com/bcgit/bc-java/blob/master/core/src/main/java/org/bouncycastle/crypto/signers/ECDSASigner.java
+//
+//        System.out.println(new BigInteger(Hex.decode("3913517ebd3c0c65000000")));
+//        System.out.println(Utils.getValueShortString(new BigInteger("69000000000000000000000000")));
+//    }
 
-        System.out.println(new BigInteger(Hex.decode("3913517ebd3c0c65000000")));
-        System.out.println(Utils.getValueShortString(new BigInteger("69000000000000000000000000")));
-    }
-
     @Test
-    public void test10() {
+    void test10() {
         BigInteger privKey = new BigInteger("74ef8a796480dda87b4bc550b94c408ad386af0f65926a392136286784d63858", 16);
         byte[] addr = ECKey.fromPrivate(privKey).getAddress();
         assertEquals("ba73facb4f8291f09f27f90fe1213537b910065e", ByteUtil.toHexString(addr));
@@ -141,7 +144,7 @@ public class CryptoTest {
 
 
     @Test  // basic encryption/decryption
-    public void test11() throws Throwable {
+    void test11() throws Throwable {
 
         byte[] keyBytes = HashUtil.keccak256("...".getBytes());
         log.info("key: {}", ByteUtil.toHexString(keyBytes));
@@ -171,7 +174,7 @@ public class CryptoTest {
     }
 
     @Test  // big packet encryption
-    public void test12() throws Throwable {
+    void test12() throws Throwable {
 
         AESEngine engine = new AESEngine();
         SICBlockCipher ctrEngine = new SICBlockCipher(engine);
@@ -212,7 +215,7 @@ public class CryptoTest {
     }
 
     @Test  // cpp keys demystified
-    public void test13() throws Throwable {
+    void test13() throws Throwable {
 
 //        us.secret() a4627abc2a3c25315bff732cb22bc128f203912dd2a840f31e66efb27a47d2b1
 //        us.public() caa3d5086b31529bb00207eabf244a0a6c54d807d2ac0ec1f3b1bdde0dbf8130c115b1eaf62ce0f8062bcf70c0fefbc97cec79e7faffcc844a149a17fcd7bada
@@ -235,7 +238,7 @@ public class CryptoTest {
 
 
     @Test  // ECIES_AES128_SHA256 + No Ephemeral Key + IV(all zeroes)
-    public void test14() throws Throwable{
+    void test14() throws Throwable{
 
         AESEngine aesEngine = new AESEngine();
 
@@ -289,12 +292,15 @@ public class CryptoTest {
 
         byte[] orig = decryptorIES_Engine.processBlock(cipher, 0, cipher.length);
 
-        log.info("orig: " + ByteUtil.toHexString(orig));
+        String origStr = ByteUtil.toHexString(orig);
+        Assertions.assertNotNull(origStr);
+
+        log.info("orig: " + origStr);
     }
 
 
     @Test  // ECIES_AES128_SHA256 + Ephemeral Key + IV(all zeroes)
-    public void test15() throws Throwable{
+    void test15() throws Throwable{
 
 
         byte[] privKey = Hex.decode("a4627abc2a3c25315bff732cb22bc128f203912dd2a840f31e66efb27a47d2b1");
@@ -363,7 +369,10 @@ public class CryptoTest {
 
         byte[] orig = decryptorIES_Engine.processBlock(cipher, 0, cipher.length);
 
-        log.info("orig: " + ByteUtil.toHexString(orig));
+        String origStr = ByteUtil.toHexString(orig);
+        Assertions.assertNotNull(origStr);
+
+        log.info("orig: " + origStr);
     }
 
 }

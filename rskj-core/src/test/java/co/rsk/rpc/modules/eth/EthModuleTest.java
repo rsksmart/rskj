@@ -63,13 +63,13 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.util.HexUtils;
 
-public class EthModuleTest {
+class EthModuleTest {
 
     private TestSystemProperties config = new TestSystemProperties();
     private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     @Test
-    public void callSmokeTest() {
+    void callSmokeTest() {
         CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
@@ -108,7 +108,7 @@ public class EthModuleTest {
     }
 
     @Test
-    public void callWithoutReturn() {
+    void callWithoutReturn() {
         CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
@@ -147,7 +147,7 @@ public class EthModuleTest {
     }
 
     @Test
-    public void test_revertedTransaction() {
+    void test_revertedTransaction() {
         CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
@@ -192,7 +192,7 @@ public class EthModuleTest {
     }
 
 	@Test
-	public void sendTransactionWithGasLimitTest() {
+	void sendTransactionWithGasLimitTest() {
 
 		Constants constants = Constants.regtest();
 
@@ -225,7 +225,7 @@ public class EthModuleTest {
 
 
     @Test
-    public void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
+    void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
         Wallet wallet = new Wallet(new HashMapDB());
@@ -249,7 +249,7 @@ public class EthModuleTest {
     }
 
     @Test
-    public void getCode() {
+    void getCode() {
         byte[] expectedCode = new byte[] {1, 2, 3};
 
         TransactionPool mockTransactionPool = mock(TransactionPool.class);
@@ -281,7 +281,7 @@ public class EthModuleTest {
     }
 
     @Test
-    public void chainId() {
+    void chainId() {
         EthModule eth = new EthModule(
                 mock(BridgeConstants.class),
                 (byte) 33,

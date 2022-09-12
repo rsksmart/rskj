@@ -32,10 +32,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +47,7 @@ import static org.mockito.Mockito.mock;
  * @since 16.06.2014
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class VMComplexTest {
+class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
@@ -58,9 +55,9 @@ public class VMComplexTest {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contract call recursive
-    public void test1() {
+    void test1() {
 
         /**
          *       #The code will run
@@ -131,9 +128,9 @@ public class VMComplexTest {
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contractB call contractA with data to storage
-    public void test2() {
+    void test2() {
 
         /**
          *       #The code will run
@@ -220,9 +217,9 @@ public class VMComplexTest {
         // TODO: check that the value pushed after exec is 1
     }
 
-    @Disabled
+    @Disabled("???")
     @Test // contractB call contractA with return expectation
-    public void test3() {
+    void test3() {
 
         /**
          *       #The code will run
@@ -312,7 +309,7 @@ public class VMComplexTest {
     }
 
     @Test // CREATE magic
-    public void test4() {
+    void test4() {
 
         /**
          *       #The code will run
@@ -364,6 +361,7 @@ public class VMComplexTest {
                 vm.step(program);
         } catch (RuntimeException e) {
             program.setRuntimeFailure(e);
+            Assertions.fail();
         }
 
         logger.info("============ Results ============");
@@ -372,15 +370,16 @@ public class VMComplexTest {
         // TODO: check that the value pushed after exec is the new address
     }
 
-    @Test // CALL contract with too much gas
-    @Disabled
-    public void test5() {
+    @Test
+    @Disabled("// TODO CALL contract with too much gas")
+    @SuppressWarnings({"squid:S2699"}) // pending assert
+    void test5() {
         // TODO CALL contract with gas > gasRemaining && gas > Long.MAX_VALUE
     }
 
-    @Disabled
+    @Disabled("???")
     @Test // contractB call itself with code from contractA
-    public void test6() {
+    void test6() {
         /**
          *       #The code will run
          *       ------------------
@@ -457,9 +456,9 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost33
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contract call quadratic memory use
-    public void test7() {
+    void test7() {
 
         int expectedGas = 357;
 
@@ -516,9 +515,9 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost31
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contract call quadratic memory use
-    public void test8() {
+    void test8() {
 
         int expectedGas = 354;
 
@@ -575,9 +574,9 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost32
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contract call quadratic memory use
-    public void test9() {
+    void test9() {
 
         int expectedGas = 356;
 
@@ -634,9 +633,9 @@ public class VMComplexTest {
     }
 
     //sha3_memSizeQuadraticCost32_zeroSize
-    @Disabled //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // contract call quadratic memory use
-    public void test10() {
+    void test10() {
 
         int expectedGas = 313;
 

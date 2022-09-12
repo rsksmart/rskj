@@ -37,7 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class RskWebSocketJsonRpcHandlerTest {
+class RskWebSocketJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_1 = new SubscriptionId("0x3075");
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_2 = new SubscriptionId("0x4075");
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_3 = new SubscriptionId("0x5075");
@@ -47,14 +47,14 @@ public class RskWebSocketJsonRpcHandlerTest {
     private JsonRpcSerializer serializer;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
         handler = new RskWebSocketJsonRpcHandler(emitter);
     }
 
     @Test
-    public void visitUnsubscribe() {
+    void visitUnsubscribe() {
         EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_UNSUBSCRIBE,
@@ -73,7 +73,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void visitSubscribe() {
+    void visitSubscribe() {
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
@@ -100,7 +100,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void handlerDeserializesAndHandlesRequest() throws Exception {
+    void handlerDeserializesAndHandlesRequest() throws Exception {
 
     	String json = "{\"jsonrpc\":\"2.0\",\"id\":\"teste\",\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
 
@@ -120,7 +120,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void handlerPassesRequestToNextHandlerOnException() throws Exception {
+    void handlerPassesRequestToNextHandlerOnException() throws Exception {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
 
         when(serializer.deserializeRequest(any()))

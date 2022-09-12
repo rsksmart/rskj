@@ -32,11 +32,11 @@ import java.io.IOException;
 /**
  * Created by Anton Nashatyrev on 03.03.2016.
  */
-public class CompilerTest {
+class CompilerTest {
 
     @Test
-    @Disabled
-    public void simpleTest() throws IOException {
+    @Disabled("???")
+    void simpleTest() throws IOException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
         if (solc == null || solc.isEmpty())

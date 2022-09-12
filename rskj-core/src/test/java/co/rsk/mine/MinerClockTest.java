@@ -29,17 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MinerClockTest {
+class MinerClockTest {
 
     private Clock clock;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
     }
 
     @Test
-    public void timestampForChildIsParentTimestampIfRegtest() {
+    void timestampForChildIsParentTimestampIfRegtest() {
         MinerClock minerClock = new MinerClock(true, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
@@ -51,7 +51,7 @@ public class MinerClockTest {
     }
 
     @Test
-    public void timestampForChildIsClockTimeIfNotRegtest() {
+    void timestampForChildIsClockTimeIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
@@ -63,7 +63,7 @@ public class MinerClockTest {
     }
 
     @Test
-    public void timestampForChildIsTimestampPlusOneIfNotRegtest() {
+    void timestampForChildIsTimestampPlusOneIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(clock.instant().getEpochSecond());
@@ -75,7 +75,7 @@ public class MinerClockTest {
     }
 
     @Test
-    public void adjustTimeIfRegtest() {
+    void adjustTimeIfRegtest() {
         MinerClock minerClock = new MinerClock(true, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(33L);
@@ -89,7 +89,7 @@ public class MinerClockTest {
     }
 
     @Test
-    public void adjustTimeIfNotRegtest() {
+    void adjustTimeIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(33L);
@@ -103,7 +103,7 @@ public class MinerClockTest {
     }
 
     @Test
-    public void clearTimeIncrease() {
+    void clearTimeIncrease() {
         MinerClock minerClock = new MinerClock(true, clock);
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(33L);

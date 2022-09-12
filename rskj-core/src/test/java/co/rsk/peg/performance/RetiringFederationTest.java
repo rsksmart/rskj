@@ -33,36 +33,36 @@ import java.time.Instant;
 import java.util.Random;
 
 @Disabled
-public class RetiringFederationTest extends BridgePerformanceTestCase {
+class RetiringFederationTest extends BridgePerformanceTestCase {
     private Federation retiringFederation;
 
     @Test
-    public void getRetiringFederationAddress() throws VMException {
+    void getRetiringFederationAddress() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_ADDRESS);
     }
 
     @Test
-    public void getRetiringFederationSize() throws VMException {
+    void getRetiringFederationSize() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getRetiringFederationThreshold() throws VMException {
+    void getRetiringFederationThreshold() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_THRESHOLD);
     }
 
     @Test
-    public void getRetiringFederationCreationTime() throws VMException {
+    void getRetiringFederationCreationTime() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_CREATION_TIME);
     }
 
     @Test
-    public void getRetiringFederationCreationBlockNumber() throws VMException {
+    void getRetiringFederationCreationBlockNumber() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER);
     }
 
     @Test
-    public void getRetiringFederatorPublicKey() throws VMException {
+    void getRetiringFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getRetiringFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size()-1)});

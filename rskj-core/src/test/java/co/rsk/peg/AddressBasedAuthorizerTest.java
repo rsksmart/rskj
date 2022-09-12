@@ -30,9 +30,9 @@ import java.util.Arrays;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AddressBasedAuthorizerTest {
+class AddressBasedAuthorizerTest {
     @Test
-    public void numberOfKeys_one() {
+    void numberOfKeys_one() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -45,7 +45,7 @@ public class AddressBasedAuthorizerTest {
     }
 
     @Test
-    public void numberOfKeys_majority() {
+    void numberOfKeys_majority() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -58,7 +58,7 @@ public class AddressBasedAuthorizerTest {
     }
 
     @Test
-    public void numberOfKeys_all() {
+    void numberOfKeys_all() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -71,7 +71,7 @@ public class AddressBasedAuthorizerTest {
     }
 
     @Test
-    public void isAuthorized() {
+    void isAuthorized() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 ECKey.fromPrivate(BigInteger.valueOf(100L)),
                 ECKey.fromPrivate(BigInteger.valueOf(101L)),

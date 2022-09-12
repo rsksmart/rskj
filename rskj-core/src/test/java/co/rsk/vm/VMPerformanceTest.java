@@ -88,12 +88,13 @@ public class VMPerformanceTest {
     }
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         invoke = new ProgramInvokeMockImpl();
         long million=1000000;
         invoke.setGasLimit(1000*million);
     }
 
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
     public void waitForProfiler() {
         System.out.println("Waiting for profiler to connect..");
 
@@ -107,9 +108,9 @@ public class VMPerformanceTest {
 
     static Boolean shortArg = false;
 
-    @Disabled
+    @Disabled("manual performance test")
     @Test
-    public void testVMPerformance1() {
+    void testVMPerformance1() {
         testVMPerformance1(null);
     }
 
@@ -421,9 +422,9 @@ public class VMPerformanceTest {
 
     }
 
-    @Disabled //
+    @Disabled("manual performance test")
     @Test
-    public void testLongOperation() {
+    void testLongOperation() {
         /* bad example because requires ABI parsing
         contract Fibonacci {
             function fib() returns (uint r) {
@@ -523,9 +524,9 @@ public class VMPerformanceTest {
         }
     }
 
-    @Disabled //
+    @Disabled("manual performance test")
     @Test
-    public void testFibonacciLongTime() {
+    void testFibonacciLongTime() {
         /********************************************************************************************
          *  This is the Solidity contract that was compiled:
 
@@ -601,7 +602,7 @@ public class VMPerformanceTest {
     Avg Time per instructions [ns]: 99
     -----------------------------------------------------------------------------*/
 
-    public void testRunTime(byte[] code, String s_expected) {
+    void testRunTime(byte[] code, String s_expected) {
         program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");

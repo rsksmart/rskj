@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * Created by mario on 03/01/17.
  */
-public class GenesisJsonTest {
+class GenesisJsonTest {
 
     private static final String GENESIS_JSON = "{ " +
             "\"alloc\": { " +
@@ -52,7 +52,7 @@ public class GenesisJsonTest {
             "}";
 
     @Test
-    public void generateGenesisJson() throws IOException {
+    void generateGenesisJson() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().constructType(GenesisJson.class);
 

@@ -44,7 +44,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ConfigLoaderTest {
+class ConfigLoaderTest {
 
     private static final ConfigValue NULL_VALUE = ConfigValueFactory.fromAnyRef(null);
     private static final ConfigValue TRUE_VALUE = ConfigValueFactory.fromAnyRef(true);
@@ -60,12 +60,12 @@ public class ConfigLoaderTest {
     private ConfigLoader loader;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         loader = new ConfigLoader(cliArgs);
     }
 
     @Test
-    public void loadBaseMainnetConfigWithEmptyCliArgs() {
+    void loadBaseMainnetConfigWithEmptyCliArgs() {
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("main"));
@@ -75,7 +75,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void regtestCliFlagOverridesNetworkBaseConfig() {
+    void regtestCliFlagOverridesNetworkBaseConfig() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_REGTEST));
         Config config = loader.getConfig();
@@ -85,7 +85,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void testnetCliFlagOverridesNetworkBaseConfig() {
+    void testnetCliFlagOverridesNetworkBaseConfig() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_TESTNET));
         Config config = loader.getConfig();
@@ -94,7 +94,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void dbResetCliFlagEnablesReset() {
+    void dbResetCliFlagEnablesReset() {
         when(cliArgs.getFlags())
                 .thenReturn(Collections.singleton(NodeCliFlags.DB_RESET));
         Config config = loader.getConfig();
@@ -104,7 +104,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void rpcCorsCliOptionEnablesCorsAndChangesHostname() {
+    void rpcCorsCliOptionEnablesCorsAndChangesHostname() {
         when(cliArgs.getOptions())
                 .thenReturn(Collections.singletonMap(NodeCliOptions.RPC_CORS, "myhostname"));
         Config config = loader.getConfig();
@@ -114,14 +114,14 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void verifyConfigSettingIsOffByDefault() {
+    void verifyConfigSettingIsOffByDefault() {
         Config config = loader.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_BC_VERIFY), is(false));
     }
 
     @Test
-    public void setVerifyConfigSetting() {
+    void setVerifyConfigSetting() {
         when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.VERIFY_CONFIG));
         Config config = loader.getConfig();
 
@@ -129,14 +129,14 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void printSystemInfoSettingIsOffByDefault() {
+    void printSystemInfoSettingIsOffByDefault() {
         Config config = loader.getConfig();
 
         assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(false));
     }
 
     @Test
-    public void setPrintSystemInfoSetting() {
+    void setPrintSystemInfoSetting() {
         when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.PRINT_SYSTEM_INFO));
         Config config = loader.getConfig();
 
@@ -144,7 +144,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void detectUnexpectedKeyProblem() {
+    void detectUnexpectedKeyProblem() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("unexpectedKey", NULL_VALUE);
@@ -156,7 +156,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void detectExpectedScalarValueProblemInObject() {
+    void detectExpectedScalarValueProblemInObject() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey.nestedKey", EMPTY_OBJECT_VALUE);
@@ -168,7 +168,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void detectExpectedScalarValueProblemInList() {
+    void detectExpectedScalarValueProblemInList() {
         Config defaultConfig = EMPTY_CONFIG
                 .withValue("blockchain.config.verify", TRUE_VALUE)
                 .withValue("expectedKey", ConfigValueFactory.fromIterable(Collections.singletonList(EMPTY_LIST_VALUE)));
@@ -180,7 +180,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void detectTypeMismatchProblem() {
+    void detectTypeMismatchProblem() {
         ConfigValue[] values = { NULL_VALUE, TRUE_VALUE, ZERO_VALUE, STRING_VALUE, EMPTY_OBJECT_VALUE, EMPTY_LIST_VALUE };
         Predicate<ConfigValueType> isCollectionType = ConfigLoader::isCollectionType;
 
@@ -209,7 +209,7 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void cliParamValueMapOverrideBaseConfig() {
+    void cliParamValueMapOverrideBaseConfig() {
         when(cliArgs.getParamValueMap())
                 .thenReturn(Collections.singletonMap("database.dir", "/home/rsk/data"));
         Config config = loader.getConfig();

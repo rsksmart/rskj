@@ -46,7 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ProgramTest {
+class ProgramTest {
 
     static final int TOTAL_GAS = 10000;
     protected static final int STACK_STATE_SUCCESS = 1;
@@ -64,7 +64,7 @@ public class ProgramTest {
     protected Program program;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         final ActivationConfig.ForBlock activations = getBlockchainConfig();
         precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
@@ -117,7 +117,7 @@ public class ProgramTest {
     }
 
     @Test
-    public void testCallToPrecompiledAddress_success() throws VMException {
+    void testCallToPrecompiledAddress_success() throws VMException {
         when(precompiledContract.execute(any())).thenReturn(new byte[]{1});
 
         program.callToPrecompiledAddress(msg, precompiledContract);
@@ -130,13 +130,13 @@ public class ProgramTest {
 
 
     @Test
-    public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
+    void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
         Assertions.assertThrows(RuntimeException.class, () -> program.callToPrecompiledAddress(msg, precompiledContract));
     }
 
     @Test
-    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
+    void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new VMException("Revert exception"));
 
         program.callToPrecompiledAddress(msg, precompiledContract);
@@ -146,7 +146,7 @@ public class ProgramTest {
     }
 
     @Test
-    public void testCallToPrecompiledAddress_with_logs_success() throws VMException {
+    void testCallToPrecompiledAddress_with_logs_success() throws VMException {
         Bridge bridge = mock(Bridge.class);
         when(bridge.execute(any())).thenReturn(new byte[]{1});
 

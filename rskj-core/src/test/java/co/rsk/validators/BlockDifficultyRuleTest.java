@@ -31,7 +31,7 @@ import java.math.BigInteger;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockDifficultyRuleTest {
+class BlockDifficultyRuleTest {
     private Block parent;
     private BlockHeader parentHeader;
     private Block block;
@@ -40,7 +40,7 @@ public class BlockDifficultyRuleTest {
     private BlockDifficultyRule rule;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
@@ -52,7 +52,7 @@ public class BlockDifficultyRuleTest {
     }
 
     @Test
-    public void validWhenCalculatedDifficultyMatches() {
+    void validWhenCalculatedDifficultyMatches() {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(452);
 
@@ -60,7 +60,7 @@ public class BlockDifficultyRuleTest {
     }
 
     @Test
-    public void invalidWhenCalculatedDifficultyDoesntMatch() {
+    void invalidWhenCalculatedDifficultyDoesntMatch() {
         whenCalculatedDifficulty(452);
         whenBlockDifficulty(999);
 

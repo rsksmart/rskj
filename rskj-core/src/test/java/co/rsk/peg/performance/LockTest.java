@@ -37,11 +37,11 @@ import java.util.Random;
 // registerBtcTransaction, which has its own
 // test case given its complexity
 @Disabled
-public class LockTest extends BridgePerformanceTestCase {
+class LockTest extends BridgePerformanceTestCase {
     private Sha256Hash randomHashInMap;
 
     @Test
-    public void getMinimumLockTxValue() throws IOException, VMException {
+    void getMinimumLockTxValue() throws IOException, VMException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
         ExecutionStats stats = new ExecutionStats("getMinimumLockTxValue");
         executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
@@ -51,7 +51,7 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void isBtcTxHashAlreadyProcessed() throws IOException, VMException {
+    void isBtcTxHashAlreadyProcessed() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("isBtcTxHashAlreadyProcessed");
         isBtcTxHashAlreadyProcessed_yes(100, stats);
         isBtcTxHashAlreadyProcessed_no(100, stats);
@@ -73,7 +73,7 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcTxHashProcessedHeight() throws VMException {
+    void getBtcTxHashProcessedHeight() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcTxHashProcessedHeight");
         getBtcTxHashProcessedHeight_processed(100, stats);
         getBtcTxHashProcessedHeight_notProcessed(100, stats);

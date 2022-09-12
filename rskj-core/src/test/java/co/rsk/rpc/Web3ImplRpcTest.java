@@ -37,9 +37,9 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 20/04/2017.
  */
-public class Web3ImplRpcTest {
+class Web3ImplRpcTest {
     @Test
-    public void getRpcModules() {
+    void getRpcModules() {
         Ethereum eth = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PersonalModule pm = new PersonalModuleWalletDisabled();

@@ -59,9 +59,9 @@ public abstract class IndexedBlockStoreTest {
         this.keyValueDataSourceFn = keyValueDataSourceFn;
     }
 
-    @Test // save some load, and check it exist
-    @Disabled
-    public void test1() {
+    @Test
+    @Disabled("save some load, and check it exist")
+    void test1() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
@@ -96,7 +96,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getBlockByHash(Hex.decode("00112233"));
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing:  getChainBlockByNumber(long)
 
@@ -117,7 +117,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getChainBlockByNumber(10000);
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing: getBlocksInformationByNumber(long)
 
@@ -165,9 +165,9 @@ public abstract class IndexedBlockStoreTest {
 
     }
 
-    @Test // save some load, and check it exist
-    @Disabled
-    public void test2() {
+    @Test
+    @Disabled("save some load, and check it exist")
+    void test2() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
@@ -202,7 +202,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getBlockByHash(Hex.decode("00112233"));
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing:  getChainBlockByNumber(long)
 
@@ -223,7 +223,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getChainBlockByNumber(10000);
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing: getBlocksInformationByNumber(long)
 
@@ -274,8 +274,8 @@ public abstract class IndexedBlockStoreTest {
     }
 
     @Test
-    @Disabled
-    public void test3() {
+    @Disabled("???")
+    void test3() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
@@ -313,7 +313,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getBlockByHash(Hex.decode("00112233"));
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing:  getChainBlockByNumber(long)
 
@@ -334,7 +334,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getChainBlockByNumber(10000);
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing: getBlocksInformationByNumber(long)
 
@@ -382,9 +382,9 @@ public abstract class IndexedBlockStoreTest {
         }
     }
 
-    @Test // leveldb + mapdb, save some load, flush to disk, and check it exist
-    @Disabled
-    public void test4() {
+    @Test
+    @Disabled("leveldb + mapdb, save some load, flush to disk, and check it exist")
+    void test4() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -428,7 +428,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getBlockByHash(Hex.decode("00112233"));
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing:  getChainBlockByNumber(long)
 
@@ -449,7 +449,7 @@ public abstract class IndexedBlockStoreTest {
         assertEquals(block.getNumber(), block_.getNumber());
 
         block_ = indexedBlockStore.getChainBlockByNumber(10000);
-        assertEquals(null, block_);
+        assertNull(block_);
 
         //  testing: getBlocksInformationByNumber(long)
 
@@ -526,9 +526,9 @@ public abstract class IndexedBlockStoreTest {
         FileUtil.recursiveDelete(testDir);
     }
 
-    @Test // leveldb + mapdb, save part to disk part to cache, and check it exist
-    @Disabled
-    public void test5() {
+    @Test
+    @Disabled("leveldb + mapdb, save part to disk part to cache, and check it exist")
+    void test5() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -583,7 +583,7 @@ public abstract class IndexedBlockStoreTest {
             assertEquals(block.getNumber(), block_.getNumber());
 
             block_ = indexedBlockStore.getBlockByHash(Hex.decode("00112233"));
-            assertEquals(null, block_);
+            assertNull(block_);
 
             //  testing:  getChainBlockByNumber(long)
 
@@ -604,7 +604,7 @@ public abstract class IndexedBlockStoreTest {
             assertEquals(block.getNumber(), block_.getNumber());
 
             block_ = indexedBlockStore.getChainBlockByNumber(10000);
-            assertEquals(null, block_);
+            assertNull(block_);
 
             //  testing: getBlocksInformationByNumber(long)
 
@@ -687,7 +687,7 @@ public abstract class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total difficulty test
     @Disabled("Ethereum block format")
-    public void test6() throws IOException {
+    void test6() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -790,7 +790,7 @@ public abstract class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
     @Disabled("Ethereum block format")
-    public void test7() throws IOException {
+    void test7() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -830,10 +830,9 @@ public abstract class IndexedBlockStoreTest {
                 indexedBlockStore.saveBlock(newBlock, td, false);
             }
 
-            Block bestBlock = bestLine.get(bestLine.size() - 1);
             Block forkBlock = forkLine.get(forkLine.size() - 1);
 
-            indexedBlockStore.reBranch(forkBlock);
+            Assertions.assertDoesNotThrow(() -> indexedBlockStore.reBranch(forkBlock));
         } finally {
             blocksDB.close();
             indexDB.close();
@@ -843,7 +842,7 @@ public abstract class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
     @Disabled("Ethereum block format")
-    public void test8() {
+    void test8() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -886,11 +885,11 @@ public abstract class IndexedBlockStoreTest {
             Block bestBlock = bestLine.get(bestLine.size() - 1);
             Block forkBlock = forkLine.get(forkLine.size() - 1);
 
-            assertTrue(indexedBlockStore.getBestBlock().getNumber() == 100);
+            assertEquals(100, indexedBlockStore.getBestBlock().getNumber());
 
             indexedBlockStore.reBranch(forkBlock);
 
-            assertTrue(indexedBlockStore.getBestBlock().getNumber() == 71);
+            assertEquals(71, indexedBlockStore.getBestBlock().getNumber());
 
             // Assert that all fork moved to the main line
             for (Block currBlock : forkLine) {
@@ -918,7 +917,7 @@ public abstract class IndexedBlockStoreTest {
 
     @Test // test index merging during the flush
     @Disabled("Ethereum block format")
-    public void test9() {
+    void test9() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         // blocks with the same block number
@@ -971,7 +970,7 @@ public abstract class IndexedBlockStoreTest {
     }
 
     @Test
-    public void rewind() {
+    void rewind() {
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(
                 mock(BlockFactory.class),
                 mock(KeyValueDataSource.class),

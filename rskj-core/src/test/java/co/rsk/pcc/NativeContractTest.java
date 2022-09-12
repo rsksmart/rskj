@@ -45,7 +45,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 
-public class NativeContractTest {
+class NativeContractTest {
 
     private ActivationConfig activationConfig;
     private NativeContract contract;
@@ -57,13 +57,13 @@ public class NativeContractTest {
     private List<LogInfo> logs;
 
     @BeforeEach
-    public void beforeTests() {
+    void beforeTests() {
         activationConfig = ActivationConfigsForTest.all();
         contract = spy(new EmptyNativeContract(activationConfig));
     }
 
     @Test
-    public void createsExecutionEnvironmentUponInit() {
+    void createsExecutionEnvironmentUponInit() {
         Assertions.assertNull(contract.getExecutionEnvironment());
 
         doInit();
@@ -79,24 +79,24 @@ public class NativeContractTest {
     }
 
     @Test
-    public void getGasForDataFailsWhenNoInit() {
+    void getGasForDataFailsWhenNoInit() {
         assertFails(() -> contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
-    public void getGasForDataZeroWhenNullData() {
+    void getGasForDataZeroWhenNullData() {
         doInit();
         Assertions.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
-    public void getGasForDataZeroWhenEmptyData() {
+    void getGasForDataZeroWhenEmptyData() {
         doInit();
         Assertions.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
-    public void getGasForNullDataAndDefaultMethod() {
+    void getGasForNullDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         contract = new EmptyNativeContract(activationConfig) {
@@ -110,7 +110,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void getGasForEmptyDataAndDefaultMethod() {
+    void getGasForEmptyDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         contract = new EmptyNativeContract(activationConfig) {
@@ -124,19 +124,19 @@ public class NativeContractTest {
     }
 
     @Test
-    public void getGasForDataZeroWhenInvalidSignature() {
+    void getGasForDataZeroWhenInvalidSignature() {
         doInit();
         Assertions.assertEquals(0L, contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
-    public void getGasForDataZeroWhenNoMappedMethod() {
+    void getGasForDataZeroWhenNoMappedMethod() {
         doInit();
         Assertions.assertEquals(0L, contract.getGasForData(Hex.decode("aabbccdd")));
     }
 
     @Test
-    public void getGasForDataZeroWhenMethodDisabled() {
+    void getGasForDataZeroWhenMethodDisabled() {
         doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
@@ -149,7 +149,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void getGasForDataNonZeroWhenMethodMatches() {
+    void getGasForDataNonZeroWhenMethodMatches() {
         doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
@@ -162,7 +162,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void getGasForDataNonZeroWhenMethodMatchesMoreThanOne() {
+    void getGasForDataNonZeroWhenMethodMatchesMoreThanOne() {
         doInit();
 
         NativeMethod method1 = mock(NativeMethod.class);
@@ -184,14 +184,14 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenNoInit() {
+    void executeThrowsWhenNoInit() {
         assertContractExecutionFails("aabbccdd");
         verify(contract, never()).before();
         verify(contract, never()).after();
     }
 
     @Test
-    public void executeThrowsWhenNoTransaction() {
+    void executeThrowsWhenNoTransaction() {
         doInit(null);
         assertContractExecutionFails("aabbccdd");
         verify(contract, never()).before();
@@ -199,7 +199,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenInvalidSignature() {
+    void executeThrowsWhenInvalidSignature() {
         doInit();
         assertContractExecutionFails("aa");
         verify(contract, never()).before();
@@ -207,7 +207,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodDisabled() {
+    void executeThrowsWhenMethodDisabled() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -223,7 +223,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodMatchesButArgumentsInvalid() {
+    void executeThrowsWhenMethodMatchesButArgumentsInvalid() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -240,7 +240,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodMatchesButNoLocalCallsAllowed() {
+    void executeThrowsWhenMethodMatchesButNoLocalCallsAllowed() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -258,7 +258,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValid() throws VMException {
+    void executeRunsWhenMethodMatchesAndArgumentsValid() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -284,7 +284,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() throws NativeContractIllegalArgumentException {
+    void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() throws NativeContractIllegalArgumentException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -311,7 +311,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNullResult() throws VMException {
+    void executeWithNullResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -337,7 +337,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithEmptyOptionalResult() throws VMException {
+    void executeWithEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -363,7 +363,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNonEmptyOptionalResult() throws VMException {
+    void executeWithNonEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);

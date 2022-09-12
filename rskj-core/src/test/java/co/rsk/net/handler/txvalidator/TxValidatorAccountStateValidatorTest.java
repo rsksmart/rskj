@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class TxValidatorAccountStateValidatorTest {
+class TxValidatorAccountStateValidatorTest {
 
     @Test
-    public void validAccountState() {
+    void validAccountState() {
         AccountState state = Mockito.mock(AccountState.class);
         Mockito.when(state.isDeleted()).thenReturn(false);
 
@@ -35,7 +35,7 @@ public class TxValidatorAccountStateValidatorTest {
     }
 
     @Test
-    public void invalidAccountState() {
+    void invalidAccountState() {
         AccountState state = Mockito.mock(AccountState.class);
         Mockito.when(state.isDeleted()).thenReturn(true);
 

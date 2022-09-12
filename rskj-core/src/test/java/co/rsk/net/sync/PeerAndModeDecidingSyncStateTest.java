@@ -37,10 +37,10 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class PeerAndModeDecidingSyncStateTest {
+class PeerAndModeDecidingSyncStateTest {
 
     @Test
-    public void startsSyncingWith5Peers() {
+    void startsSyncingWith5Peers() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
 
@@ -69,7 +69,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void doesntStartSyncingWithNoPeersAfter2Minutes() {
+    void doesntStartSyncingWithNoPeersAfter2Minutes() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
 
@@ -84,7 +84,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void startsSyncingWith1PeerAfter2Minutes() {
+    void startsSyncingWith1PeerAfter2Minutes() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
 
@@ -116,7 +116,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void doesntStartSyncingWith1PeerBeforeTimeout() {
+    void doesntStartSyncingWith1PeerBeforeTimeout() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -134,7 +134,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void doesntStartSyncingIfAllPeersHaveLowerDifficulty() {
+    void doesntStartSyncingIfAllPeersHaveLowerDifficulty() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -155,7 +155,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void doesntStartSyncingIfAllPeersHaveBadReputation() {
+    void doesntStartSyncingIfAllPeersHaveBadReputation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -177,7 +177,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void backwardsSynchronization_genesisNotConnected_withMinBlock() {
+    void backwardsSynchronization_genesisNotConnected_withMinBlock() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -199,7 +199,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void backwardsSynchronization_genesisConnected() {
+    void backwardsSynchronization_genesisConnected() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -223,7 +223,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void forwardsSynchronization_genesisIsConnected() {
+    void forwardsSynchronization_genesisIsConnected() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -255,7 +255,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void forwardsSynchronization() {
+    void forwardsSynchronization() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);

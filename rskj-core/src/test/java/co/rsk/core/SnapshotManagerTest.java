@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 15/04/2017.
  */
-public class SnapshotManagerTest {
+class SnapshotManagerTest {
 
     private RskTestContext testContext;
     private Blockchain blockchain;
@@ -48,7 +48,7 @@ public class SnapshotManagerTest {
     private MinerClient minerClient;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         testContext = new RskTestContext(new String[]{"--regtest"});
         blockchain = testContext.getBlockchain();
         minerServer = testContext.getMinerServer();
@@ -61,18 +61,18 @@ public class SnapshotManagerTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         testContext.close();
     }
 
     @Test
-    public void createWithNoSnapshot() {
+    void createWithNoSnapshot() {
         Assertions.assertNotNull(manager.getSnapshots());
         Assertions.assertTrue(manager.getSnapshots().isEmpty());
     }
 
     @Test
-    public void takeSnapshotOnGenesis() {
+    void takeSnapshotOnGenesis() {
         int result = manager.takeSnapshot();
 
         Assertions.assertEquals(1, result);
@@ -84,7 +84,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void takeSnapshotOnManyBlocks() {
+    void takeSnapshotOnManyBlocks() {
         addBlocks(10);
 
         int result = manager.takeSnapshot();
@@ -98,7 +98,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void takeTwoSnapshots() {
+    void takeTwoSnapshots() {
         addBlocks(10);
 
         int result1 = manager.takeSnapshot();
@@ -119,19 +119,19 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void revertToNegativeSnapshot() {
+    void revertToNegativeSnapshot() {
         Assertions.assertFalse(manager.revertToSnapshot(-1));
     }
 
     @Test
-    public void revertToNonExistentSnapshot() {
+    void revertToNonExistentSnapshot() {
         Assertions.assertFalse(manager.revertToSnapshot(0));
         Assertions.assertFalse(manager.revertToSnapshot(1));
         Assertions.assertFalse(manager.revertToSnapshot(10));
     }
 
     @Test
-    public void revertToSnapshot() {
+    void revertToSnapshot() {
         addBlocks(10);
 
         BlockChainStatus status = blockchain.getStatus();
@@ -155,7 +155,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void revertToSnapshotClearingTransactionPool() {
+    void revertToSnapshotClearingTransactionPool() {
         addBlocks(10);
 
         BlockChainStatus status = blockchain.getStatus();
@@ -193,7 +193,7 @@ public class SnapshotManagerTest {
     }
 
     @Test
-    public void resetSnapshotClearingTransactionPool() {
+    void resetSnapshotClearingTransactionPool() {
         Block genesis = blockchain.getBestBlock();
         BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
 

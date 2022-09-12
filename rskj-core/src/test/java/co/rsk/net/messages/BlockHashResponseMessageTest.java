@@ -25,9 +25,9 @@ import java.util.Random;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHashResponseMessageTest {
+class BlockHashResponseMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         long id = 42;
         byte[] hash = new byte[32];
         Random random = new Random();
@@ -41,7 +41,7 @@ public class BlockHashResponseMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         long someId = 42;
         byte[] hash = new byte[32];
         Random random = new Random();

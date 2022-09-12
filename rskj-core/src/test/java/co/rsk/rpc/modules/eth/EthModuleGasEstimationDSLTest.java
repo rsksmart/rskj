@@ -36,6 +36,7 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -46,12 +47,12 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class EthModuleGasEstimationDSLTest {
+class EthModuleGasEstimationDSLTest {
 
     private static final long BLOCK_GAS_LIMIT = new TestSystemProperties().getTargetGasLimit();
 
     @Test
-    public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
+    void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
 
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
@@ -77,29 +78,21 @@ public class EthModuleGasEstimationDSLTest {
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas - 1
-        try {
-            args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
-            runWithArgumentsAndBlock(eth, args, block);
-            fail("shouldn't reach here");
-        } catch (GasCost.InvalidGasException e) {
-            assertEquals("Got invalid gas value, tried operation: 20999 - 21000", e.getMessage());
-        }
+        args.setGas(HexUtils.toQuantityJsonHex(estimatedGas - 1));
+        Exception e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> runWithArgumentsAndBlock(eth, args, block));
+        assertEquals("Got invalid gas value, tried operation: 20999 - 21000", e.getMessage());
 
         // Try to estimate with not enough gas
-        try {
-            args.setGas(HexUtils.toQuantityJsonHex(1000));
-            estimateGas(eth, args);
-            fail("shouldn't reach here");
-        } catch (GasCost.InvalidGasException e) {
-            assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
-        }
+        args.setGas(HexUtils.toQuantityJsonHex(1000));
+        e = Assertions.assertThrows(GasCost.InvalidGasException.class, () -> estimateGas(eth, args));
+        assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
     }
 
     /**
      * A contract with an internal CALL with value transfer, it should take into account the STIPEND_CALL amount
      */
     @Test
-    public void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
+    void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValue.txt");
 
         // Deploy Check
@@ -162,7 +155,8 @@ public class EthModuleGasEstimationDSLTest {
      * A contract with already initialized storage cells, the estimation should take into account the storage refunds
      */
     @Test
-    public void testEstimateGas_storageRefunds() throws FileNotFoundException, DslProcessorException {
+    @SuppressWarnings("squid:S5961")
+    void testEstimateGas_storageRefunds() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/updateStorage.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
@@ -268,7 +262,7 @@ public class EthModuleGasEstimationDSLTest {
      * Test if a user can estimate a transaction that exceeds the block limit
      */
     @Test
-    public void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
@@ -298,7 +292,7 @@ public class EthModuleGasEstimationDSLTest {
      * A contract call containing one storage refund + one call with value
      */
     @Test
-    public void estimateGas_callWithValuePlusSStoreRefund() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_callWithValuePlusSStoreRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValuePlusSstoreRefund.txt");
 
         TransactionReceipt contractDeployReceipt = world.getTransactionReceiptByName("tx01");
@@ -344,7 +338,7 @@ public class EthModuleGasEstimationDSLTest {
      * NOTE: each nested call retains 10000 gas to emit events
      */
     @Test
-    public void estimateGas_nestedCallsWithValueAndGasRetain() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_nestedCallsWithValueAndGasRetain() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValue.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
@@ -420,7 +414,7 @@ public class EthModuleGasEstimationDSLTest {
      * [USER] -call-without-value-> [CONTRUCT #1] -call-without-value-> [CONTRUCT #2] -call-with-value-> [CONTRUCT #3]
      */
     @Test
-    public void estimateGas_subsequentCallWithValueAndGasStipendCase1() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_subsequentCallWithValueAndGasStipendCase1() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/subsequentCallWithValueCase1.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
@@ -492,7 +486,7 @@ public class EthModuleGasEstimationDSLTest {
      * [USER] -call-without-value-> [CONTRUCT #1] -call-with-value-> [CONTRUCT #2] -call-with-value-> [CONTRUCT #3]
      */
     @Test
-    public void estimateGas_subsequentCallWithValueAndGasStipendCase2() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_subsequentCallWithValueAndGasStipendCase2() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/subsequentCallWithValueCase2.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
@@ -562,7 +556,7 @@ public class EthModuleGasEstimationDSLTest {
      * NOTE: each nested call retains 10000 gas to emit events
      */
     @Test
-    public void estimateGas_nestedCallsWithValueGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_nestedCallsWithValueGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueAndStorageRefund.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
@@ -639,7 +633,7 @@ public class EthModuleGasEstimationDSLTest {
      * NOTE: this test uses a fixed amount of gas for each internal call
      */
     @Test
-    public void estimateGas_nestedCallsWithValueFixedGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
+    void estimateGas_nestedCallsWithValueFixedGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueStorageRefundAndFixedGas.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");

@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * revert, because we are taking care of the call, and the result its not handled.
  *
  */
-public class NestedContractsTest {
+class NestedContractsTest {
 
     private static final CallTransaction.Function BUY_FUNCTION = CallTransaction.Function.fromSignature("buy", "uint");
     private static final String TX_CONTRACTRR = "tx01";
@@ -73,7 +73,7 @@ public class NestedContractsTest {
      *  SETUP
      ** ------------------------ **/
     @BeforeEach
-    public void setup() {
+    void setup() {
         world = new World();
         processor = new WorldDslProcessor(world);
         ethModule = buildEthModule(world);
@@ -84,7 +84,7 @@ public class NestedContractsTest {
      ** ------------------------ **/
 
     @Test
-    public void testNested_interfaceCall_require() throws FileNotFoundException, DslProcessorException {
+    void testNested_interfaceCall_require() throws FileNotFoundException, DslProcessorException {
         processor.processCommands(DslParser.fromResource("dsl/contract_call/contract_nested_interface_calls.txt"));
 
         assertFalse(world.getTransactionReceiptByName("tx04").isSuccessful());
@@ -122,7 +122,7 @@ public class NestedContractsTest {
     }
 
     @Test
-    public void testNested_ABICall_require() throws FileNotFoundException, DslProcessorException {
+    void testNested_ABICall_require() throws FileNotFoundException, DslProcessorException {
         processor.processCommands(DslParser.fromResource("dsl/contract_call/contract_nested_abi_calls.txt"));
         world.getRepository().commit();
 

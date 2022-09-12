@@ -14,21 +14,21 @@ import java.math.BigInteger;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class StatusResolverTest {
+class StatusResolverTest {
 
     private StatusResolver target;
     private Genesis genesis;
     private BlockStore blockStore;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         genesis = mock(Genesis.class);
         blockStore = mock(BlockStore.class);
         target = new StatusResolver(blockStore, genesis);
     }
 
     @Test
-    public void status() {
+    void status() {
         Block bestBlock = mock(Block.class);
         Keccak256 blockHash = mock(Keccak256.class);
         byte[] hashBytes = new byte[]{0x00};
@@ -41,7 +41,7 @@ public class StatusResolverTest {
         when(bestBlock.getParentHash()).thenReturn(blockHash);
         when(blockHash.getBytes()).thenReturn(hashBytes);
         when(bestBlock.getNumber()).thenReturn(blockNumber);
-        when(blockStore.getTotalDifficultyForHash(eq(hashBytes))).thenReturn(totalDifficulty);
+        when(blockStore.getTotalDifficultyForHash(hashBytes)).thenReturn(totalDifficulty);
 
         Status status = target.currentStatus();
 
@@ -53,7 +53,7 @@ public class StatusResolverTest {
 
 
     @Test
-    public void status_incompleteBlockchain() {
+    void status_incompleteBlockchain() {
         when(blockStore.getMinNumber()).thenReturn(1L);
         Keccak256 genesisHash = new Keccak256("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
         Keccak256 parentHash = new Keccak256("133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9");

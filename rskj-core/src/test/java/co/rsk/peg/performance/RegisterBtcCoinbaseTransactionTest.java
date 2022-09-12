@@ -40,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Disabled
-public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
+class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction coinbaseTx;
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
     private PartialMerkleTree pmtWithoutWitness;
@@ -48,13 +48,13 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
     private Sha256Hash witnessReservedValue;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws VMException {
+    void registerBtcCoinbaseTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerBtcCoinbaseTransaction");
         registerBtcCoinbaseTransaction_success(5000, stats);
         BridgePerformanceTest.addStats(stats);

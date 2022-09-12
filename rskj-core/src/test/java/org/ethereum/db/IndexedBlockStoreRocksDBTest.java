@@ -22,7 +22,7 @@ package org.ethereum.db;
 import org.ethereum.datasource.RocksDbDataSource;
 import org.junit.jupiter.api.BeforeEach;
 
-public class IndexedBlockStoreRocksDBTest extends IndexedBlockStoreTest {
+class IndexedBlockStoreRocksDBTest extends IndexedBlockStoreTest {
 
     @BeforeEach
     void beforeEach() {

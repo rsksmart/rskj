@@ -28,15 +28,15 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class TransactionsMessageTest {
+class TransactionsMessageTest {
     @Test
-    public void getMessageType() {
+    void getMessageType() {
         TransactionsMessage message = new TransactionsMessage(null);
         Assertions.assertEquals(MessageType.TRANSACTIONS, message.getMessageType());
     }
 
     @Test
-    public void setAndGetTransactions() {
+    void setAndGetTransactions() {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
         TransactionsMessage message = new TransactionsMessage(txs);
 
@@ -46,7 +46,7 @@ public class TransactionsMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<Transaction> txs = new LinkedList<>();
         TransactionsMessage message = new TransactionsMessage(txs);
 

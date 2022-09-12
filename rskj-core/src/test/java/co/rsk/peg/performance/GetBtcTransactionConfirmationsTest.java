@@ -26,7 +26,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
 @Disabled
-public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
+class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
     private Sha256Hash blockHash;
     private Sha256Hash txHash;
     private int merkleBranchPath;
@@ -35,7 +35,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -61,7 +61,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @BeforeEach
-    public void setRskipToTrue() throws VMException {
+    void setRskipToTrue() throws VMException {
         warmUp();
     }
 
@@ -77,7 +77,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Cache() throws VMException {
+    void getBtcTransactionConfirmations_Weighed_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -94,7 +94,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Disk() throws VMException {
+    void getBtcTransactionConfirmations_Weighed_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -111,7 +111,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Cache() throws VMException {
+    void getBtcTransactionConfirmations_Even_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -126,7 +126,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Disk() throws VMException {
+    void getBtcTransactionConfirmations_Even_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -141,7 +141,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Zero() throws VMException {
+    void getBtcTransactionConfirmations_Zero() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-zero",
                 2000, 0, 750, 3000, true
@@ -154,7 +154,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Hundred() throws VMException {
+    void getBtcTransactionConfirmations_Hundred() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-hundred",
                 2000, 100, 750, 3000, true

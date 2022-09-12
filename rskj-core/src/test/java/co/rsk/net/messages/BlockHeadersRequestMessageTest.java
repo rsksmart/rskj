@@ -9,9 +9,9 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 23/08/2017.
  */
-public class BlockHeadersRequestMessageTest {
+class BlockHeadersRequestMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
@@ -22,7 +22,7 @@ public class BlockHeadersRequestMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 

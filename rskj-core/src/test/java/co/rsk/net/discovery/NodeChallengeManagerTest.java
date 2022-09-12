@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by mario on 22/02/17.
  */
-public class NodeChallengeManagerTest {
+class NodeChallengeManagerTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final String HOST_1 = "localhost";
@@ -55,7 +55,7 @@ public class NodeChallengeManagerTest {
     private static final long CLEAN = 60000;
 
     @Test
-    public void startChallenge() {
+    void startChallenge() {
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
         ECKey key3 = ECKey.fromPrivate(Hex.decode(KEY_3)).decompress();

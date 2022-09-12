@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
  * @author martin.medina
  */
 
-public class BridgeEventLoggerImplTest {
+class BridgeEventLoggerImplTest {
 
     private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
     List<LogInfo> eventLogs;
@@ -65,7 +65,7 @@ public class BridgeEventLoggerImplTest {
     BtcTransaction btcTx;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
         eventLogger = new BridgeEventLoggerImpl(constantsMock, eventLogs);
@@ -74,7 +74,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logLockBtc() {
+    void logLockBtc() {
         Address senderAddress = mock(Address.class);
         when(senderAddress.toString()).thenReturn("mixzLp4xx5bUsHuYUEyPpL42BzEDp8kSTv");
 
@@ -95,7 +95,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logLockBtc_with_segwit_address() {
+    void logLockBtc_with_segwit_address() {
         Address senderAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
 
         RskAddress rskAddress = mock(RskAddress.class);
@@ -115,7 +115,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logPeginBtc() {
+    void logPeginBtc() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -156,7 +156,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logUpdateCollections() {
+    void logUpdateCollections() {
         // Setup Rsk transaction
         Transaction tx = mock(Transaction.class);
         RskAddress sender = mock(RskAddress.class);
@@ -172,7 +172,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logAddSignature() {
+    void logAddSignature() {
         // Setup logAddSignature params
         BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
@@ -189,7 +189,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logReleaseBtcAfterRskip146() {
+    void logReleaseBtcAfterRskip146() {
         // Setup Btc transaction
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
 
@@ -202,7 +202,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logCommitFederation() {
+    void logCommitFederation() {
         // Setup event logger
         when(constantsMock.getFederationActivationAge()).thenReturn(CONSTANTS.getFederationActivationAge());
 
@@ -261,7 +261,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logReleaseBtcRequested() {
+    void logReleaseBtcRequested() {
         Keccak256 rskTxHash = PegTestUtils.createHash3(0);
         Coin amount = Coin.SATOSHI;
 
@@ -274,7 +274,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logRejectedPegin() {
+    void logRejectedPegin() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -309,7 +309,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logUnrefundablePegin() {
+    void logUnrefundablePegin() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -345,7 +345,7 @@ public class BridgeEventLoggerImplTest {
 
 
     @Test
-    public void testLogReleaseBtcRequestReceived() {
+    void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
         byte[] btcDestinationAddress = "1234".getBytes();
         Coin amount = Coin.COIN;
@@ -359,7 +359,7 @@ public class BridgeEventLoggerImplTest {
 
 
     @Test
-    public void testLogReleaseBtcRequestRejected() {
+    void testLogReleaseBtcRequestRejected() {
         String sender = "0x00000000000000000000000000000000000000";
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
@@ -372,7 +372,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logBatchPegoutCreated() {
+    void logBatchPegoutCreated() {
         List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
 
         eventLogger.logBatchPegoutCreated(btcTx, rskTxHashes);

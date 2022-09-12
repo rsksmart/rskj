@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class EthSubscriptionNotificationEmitterTest {
+class EthSubscriptionNotificationEmitterTest {
     private BlockHeaderNotificationEmitter newHeads;
     private LogsNotificationEmitter logs;
     private PendingTransactionsNotificationEmitter pendingTransactions;
@@ -35,7 +35,7 @@ public class EthSubscriptionNotificationEmitterTest {
     private EthSubscriptionNotificationEmitter emitter;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         newHeads = mock(BlockHeaderNotificationEmitter.class);
         logs = mock(LogsNotificationEmitter.class);
         pendingTransactions = mock(PendingTransactionsNotificationEmitter.class);
@@ -44,7 +44,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void subscribeToNewHeads() {
+    void subscribeToNewHeads() {
         Channel channel = mock(Channel.class);
         EthSubscribeNewHeadsParams params = mock(EthSubscribeNewHeadsParams.class);
 
@@ -58,7 +58,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void subscribeToLogs() {
+    void subscribeToLogs() {
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
 
@@ -72,7 +72,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void subscribeToPendingTransactions() {
+    void subscribeToPendingTransactions() {
         Channel channel = mock(Channel.class);
         EthSubscribePendingTransactionsParams params = mock(EthSubscribePendingTransactionsParams.class);
 
@@ -86,7 +86,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void subscribeToSync() {
+    void subscribeToSync() {
         Channel channel = mock(Channel.class);
         EthSubscribeSyncParams params = mock(EthSubscribeSyncParams.class);
 
@@ -100,7 +100,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeUnsuccessfully() {
+    void unsubscribeUnsuccessfully() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
 
         boolean unsubscribed = emitter.unsubscribe(subscriptionId);
@@ -113,7 +113,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSuccessfullyFromNewHeads() {
+    void unsubscribeSuccessfullyFromNewHeads() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         when(newHeads.unsubscribe(subscriptionId)).thenReturn(true);
 
@@ -127,7 +127,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSuccessfullyFromLogs() {
+    void unsubscribeSuccessfullyFromLogs() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         when(logs.unsubscribe(subscriptionId)).thenReturn(true);
 
@@ -141,7 +141,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSuccessfullyFromPendingTransactions() {
+    void unsubscribeSuccessfullyFromPendingTransactions() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         when(pendingTransactions.unsubscribe(subscriptionId)).thenReturn(true);
 
@@ -155,7 +155,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSuccessfullyFromSync() {
+    void unsubscribeSuccessfullyFromSync() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         when(sync.unsubscribe(subscriptionId)).thenReturn(true);
 
@@ -169,7 +169,7 @@ public class EthSubscriptionNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeChannel() {
+    void unsubscribeChannel() {
         Channel channel = mock(Channel.class);
 
         emitter.unsubscribe(channel);

@@ -56,7 +56,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class BlockToMineBuilderTest {
+class BlockToMineBuilderTest {
 
     private BlockToMineBuilder blockBuilder;
     private BlockValidationRule validationRules;
@@ -64,7 +64,7 @@ public class BlockToMineBuilderTest {
     private ActivationConfig activationConfig;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         validationRules = mock(BlockValidationRule.class);
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
@@ -108,7 +108,7 @@ public class BlockToMineBuilderTest {
     }
 
     @Test
-    public void BuildBlockHasEmptyUnclesWhenCreateAnInvalidBlock() {
+    void BuildBlockHasEmptyUnclesWhenCreateAnInvalidBlock() {
         Consumer<BlockHeader> test = (parent) -> {
             BlockResult expectedResult = mock(BlockResult.class);
             ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -125,7 +125,7 @@ public class BlockToMineBuilderTest {
     }
 
     @Test
-    public void BuildBlockHasUnclesWhenCreateAnInvalidBlock() {
+    void BuildBlockHasUnclesWhenCreateAnInvalidBlock() {
         Consumer<BlockHeader> test = (parent) -> {
             BlockResult expectedResult = mock(BlockResult.class);
             ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -141,7 +141,7 @@ public class BlockToMineBuilderTest {
     }
 
     @Test
-    public void buildBlockBeforeUMMActivation() {
+    void buildBlockBeforeUMMActivation() {
         Keccak256 parentHash = TestUtils.randomHash();
 
         BlockHeader parent = mock(BlockHeader.class);
@@ -165,7 +165,7 @@ public class BlockToMineBuilderTest {
     }
 
     @Test
-    public void buildBlockAfterUMMActivation() {
+    void buildBlockAfterUMMActivation() {
         Keccak256 parentHash = TestUtils.randomHash();
 
         BlockHeader parent = mock(BlockHeader.class);

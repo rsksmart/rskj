@@ -37,7 +37,7 @@ import java.time.Duration;
 /**
  * Created by mario on 05/08/2016.
  */
-public class HashRateCalculatorTest {
+class HashRateCalculatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
@@ -52,7 +52,7 @@ public class HashRateCalculatorTest {
     private BlockHeader blockHeader;
 
     @BeforeEach
-    public void init() {
+    void init() {
         blockStore = Mockito.mock(BlockStore.class);
         block = Mockito.mock(Block.class);
         blockHeader = Mockito.mock(BlockHeader.class);
@@ -74,7 +74,7 @@ public class HashRateCalculatorTest {
     }
 
     @Test
-    public void calculateNodeHashRate() {
+    void calculateNodeHashRate() {
         long ts = System.currentTimeMillis() / 1000L;
         Mockito.when(blockHeader.getTimestamp()).thenReturn(ts);
 
@@ -93,7 +93,7 @@ public class HashRateCalculatorTest {
     }
 
     @Test
-    public void calculateNodeHashRateWithMiningDisabled() {
+    void calculateNodeHashRateWithMiningDisabled() {
         long ts = System.currentTimeMillis() / 1000L;
         Mockito.when(blockHeader.getTimestamp()).thenReturn(ts);
 
@@ -112,7 +112,7 @@ public class HashRateCalculatorTest {
     }
 
     @Test
-    public void calculateNodeHashRateOldBlock() {
+    void calculateNodeHashRateOldBlock() {
         long ts = System.currentTimeMillis() / 1000L;
         Mockito.when(blockHeader.getTimestamp())
                 .thenReturn(ts - 10000L);
@@ -124,11 +124,11 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
-        Assertions.assertEquals(hashRate, BigInteger.ZERO);
+        Assertions.assertEquals(BigInteger.ZERO, hashRate);
     }
 
     @Test
-    public void calculateNetHashRate() {
+    void calculateNetHashRate() {
         long ts = System.currentTimeMillis() / 1000L;
         Mockito.when(blockHeader.getTimestamp()).thenReturn(ts);
 
@@ -147,7 +147,7 @@ public class HashRateCalculatorTest {
     }
 
     @Test
-    public void calculateNetHashRateOldBlock() {
+    void calculateNetHashRateOldBlock() {
         long ts = System.currentTimeMillis() / 1000L;
         Mockito.when(blockHeader.getTimestamp())
                 .thenReturn(ts - 10000L);
@@ -159,7 +159,7 @@ public class HashRateCalculatorTest {
         HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
-        Assertions.assertEquals(hashRate, BigInteger.ZERO);
+        Assertions.assertEquals(BigInteger.ZERO, hashRate);
     }
 
 }

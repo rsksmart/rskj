@@ -46,11 +46,11 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 3/1/2016.
  */
-public class ReceiptStoreImplTest {
+class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void flushDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void flushDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         store.flush();
 
         verify(baseDataSource, times(1)).flush();
@@ -58,7 +58,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void closeDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void closeDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         store.close();
 
         verify(baseDataSource, times(1)).close();
@@ -66,7 +66,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void getUnknownKey(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void getUnknownKey(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         byte[] key = new byte[]{0x01, 0x02};
 
         Optional<TransactionInfo> result = store.get(key, key);
@@ -76,7 +76,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addAndGetTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addAndGetTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -93,7 +93,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addAndGetTransactionWith128AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addAndGetTransactionWith128AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -110,7 +110,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addAndGetTransactionWith238AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addAndGetTransactionWith238AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -127,7 +127,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addTwoTransactionsAndGetLastTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addTwoTransactionsAndGetLastTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -149,7 +149,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addTwoTransactionsAndGetAllTransactions(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addTwoTransactionsAndGetAllTransactions(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -181,7 +181,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void getUnknownTransactionByBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void getUnknownTransactionByBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash = TestUtils.randomHash();
@@ -193,7 +193,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void getTransactionByUnknownBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void getTransactionByUnknownBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash0 = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
@@ -208,7 +208,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addTwoTransactionsAndGetTransactionByFirstBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addTwoTransactionsAndGetTransactionByFirstBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
@@ -230,7 +230,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addTwoTransactionsAndGetTransactionBySecondBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addTwoTransactionsAndGetTransactionBySecondBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
@@ -252,7 +252,7 @@ public class ReceiptStoreImplTest {
 
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
-    public void addFourTransactionsAndGetReceiptByBlockHashAndBestInChain(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
+    void addFourTransactionsAndGetReceiptByBlockHashAndBestInChain(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         for (int i = 0; i < 4; i++) {
             TransactionReceipt receipt = createReceipt(i);
             Keccak256 blockHash = new Keccak256("01020304050607080900000000000000000000000000000000000000000000" + String.format("%02d" , i));
@@ -276,7 +276,7 @@ public class ReceiptStoreImplTest {
             Assertions.assertEquals(i, result.getIndex());
             Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-            when(blockStore.getBlockByHash(eq(blockHash.getBytes()))).thenReturn(block);
+            when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
             when(blockStore.getChainBlockByNumber(1)).thenReturn(block);
             when(block.getHash()).thenReturn(blockHash);
 

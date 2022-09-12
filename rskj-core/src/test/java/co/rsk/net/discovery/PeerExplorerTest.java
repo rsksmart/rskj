@@ -48,7 +48,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by mario on 15/02/17.
  */
-public class PeerExplorerTest {
+class PeerExplorerTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
@@ -83,7 +83,7 @@ public class PeerExplorerTest {
     private static final int NETWORK_ID2 = 2;
 
     @Test
-    public void sendInitialMessageToNodesNoNodes() {
+    void sendInitialMessageToNodesNoNodes() {
         Node node = new Node(new ECKey().getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
         PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true);
@@ -103,7 +103,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void sendInitialMessageToNodes() {
+    void sendInitialMessageToNodes() {
         List<String> nodes = new ArrayList<>();
         nodes.add("localhost:3306");
         nodes.add("localhost:3307");
@@ -127,7 +127,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handlePingMessageFromDifferentNetwork() throws Exception {
+    void handlePingMessageFromDifferentNetwork() throws Exception {
         List<String> nodes = new ArrayList<>();
 
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
@@ -156,7 +156,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handlePingMessage() throws Exception {
+    void handlePingMessage() throws Exception {
         List<String> nodes = new ArrayList<>();
 
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
@@ -214,7 +214,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handlePongMessage() throws Exception {
+    void handlePongMessage() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -269,7 +269,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handlePongMessageMultipleNodesPerHostKeepLast() throws Exception {
+    void handlePongMessageMultipleNodesPerHostKeepLast() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
 
@@ -323,7 +323,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handlePongMessageMultipleNodesPerHostAllowed() throws Exception {
+    void handlePongMessageMultipleNodesPerHostAllowed() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
 
@@ -380,7 +380,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handleFindNodeMessage() throws Exception {
+    void handleFindNodeMessage() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -431,7 +431,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handleFindNodeMessageWithExtraNodes() throws Exception {
+    void handleFindNodeMessageWithExtraNodes() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -485,7 +485,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void handleNeighbors() throws Exception {
+    void handleNeighbors() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
 
@@ -581,7 +581,8 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void testCleanPeriod() throws Exception {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void testCleanPeriod() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -644,7 +645,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void testStartAndStop() {
+    void testStartAndStop() {
         ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         Node node = new Node(key.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);

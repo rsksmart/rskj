@@ -31,13 +31,13 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class NodeRunnerImplTest {
+class NodeRunnerImplTest {
     private NodeContext nodeContext;
     private List<InternalService> internalServices;
     private NodeRunnerImpl runner;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         nodeContext = mock(NodeContext.class);
         internalServices = Arrays.asList(
                 mock(InternalService.class),
@@ -48,7 +48,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void contextIsNotClosed_WhenRunNode_ThenShouldStartInternalServices() throws Exception {
+    void contextIsNotClosed_WhenRunNode_ThenShouldStartInternalServices() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         runner.run();
@@ -58,7 +58,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsNotRunning_WhenRunNode_IsRunningShouldReturnTrue() throws Exception {
+    void nodeIsNotRunning_WhenRunNode_IsRunningShouldReturnTrue() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
         assertEquals(ExecState.CREATED, runner.getState());
 
@@ -68,7 +68,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsRunning_WhenStopNode_IsRunningShouldReturnFalse() throws Exception {
+    void nodeIsRunning_WhenStopNode_IsRunningShouldReturnFalse() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         runner.run();
@@ -78,7 +78,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsNotRunning_WhenRunNodeFails_ThenAlreadyStartedInternalServicesShouldStop() throws Exception {
+    void nodeIsNotRunning_WhenRunNodeFails_ThenAlreadyStartedInternalServicesShouldStop() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         doThrow(new RuntimeException("Service #2 failed to start")).when(internalServices.get(1)).start();
@@ -94,7 +94,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsAlreadyRunning_WhenRunNode_ThenShouldThrowError() throws Exception {
+    void nodeIsAlreadyRunning_WhenRunNode_ThenShouldThrowError() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         runner.run();
@@ -108,7 +108,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void contextIsClosed_WhenRunNode_ThenShouldThrowError() throws Exception {
+    void contextIsClosed_WhenRunNode_ThenShouldThrowError() throws Exception {
         doReturn(true).when(nodeContext).isClosed();
 
         try {
@@ -120,7 +120,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void contextIsNotClosed_WhenStopRunningNode_ThenShouldStopInternalServices() throws Exception {
+    void contextIsNotClosed_WhenStopRunningNode_ThenShouldStopInternalServices() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         runner.run();
@@ -132,7 +132,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsNotRunning_WhenStopNode_ThenShouldNotThrowError() {
+    void nodeIsNotRunning_WhenStopNode_ThenShouldNotThrowError() {
         try {
             runner.stop();
         } catch (RuntimeException e) {
@@ -141,7 +141,7 @@ public class NodeRunnerImplTest {
     }
 
     @Test
-    public void nodeIsAlreadyStopped_WhenStopNode_ThenShouldNotThrowError() throws Exception {
+    void nodeIsAlreadyStopped_WhenStopNode_ThenShouldNotThrowError() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
 
         runner.run();

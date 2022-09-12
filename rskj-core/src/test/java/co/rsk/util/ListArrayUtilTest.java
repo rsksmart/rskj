@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ListArrayUtilTest {
+class ListArrayUtilTest {
 
     @Test
-    public void testAsByteList() {
+    void testAsByteList() {
         byte[] array = new byte[]{'a','b','c','d'};
 
         List<Byte> result = ListArrayUtil.asByteList(array);
@@ -37,44 +37,44 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testNullIsEmpty() {
+    void testNullIsEmpty() {
         Assertions.assertTrue(ListArrayUtil.isEmpty(null));
     }
 
     @Test
-    public void testEmptyIsEmpty() {
+    void testEmptyIsEmpty() {
         Assertions.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
     }
 
     @Test
-    public void testNotEmptyIsEmpty() {
+    void testNotEmptyIsEmpty() {
         Assertions.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
     }
 
     @Test
-    public void testNullToEmpty() {
+    void testNullToEmpty() {
         Assertions.assertNotNull(ListArrayUtil.nullToEmpty(null));
     }
 
     @Test
-    public void testNonNullToEmpty() {
+    void testNonNullToEmpty() {
         byte[] array = new byte[1];
         Assertions.assertSame(array, ListArrayUtil.nullToEmpty(array));
     }
 
     @Test
-    public void testNullGetLength() {
+    void testNullGetLength() {
         Assertions.assertEquals(0, ListArrayUtil.getLength(null));
     }
 
     @Test
-    public void testNonNullGetLength() {
+    void testNonNullGetLength() {
         byte[] array = new byte[1];
         Assertions.assertEquals(1, ListArrayUtil.getLength(array));
     }
 
     @Test
-    public void testLastIndexOfSublistEmptyArrays() {
+    void testLastIndexOfSublistEmptyArrays() {
         byte[] source = new byte[] {};
         byte[] target = new byte[] {};
 
@@ -84,7 +84,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistSearchEmpty() {
+    void testLastIndexOfSublistSearchEmpty() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { };
 
@@ -94,7 +94,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistFindsMatch1() {
+    void testLastIndexOfSublistFindsMatch1() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 3, 4 };
 
@@ -104,7 +104,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistFindsMatch2() {
+    void testLastIndexOfSublistFindsMatch2() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 4, 5 };
 
@@ -114,7 +114,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistSameArray() {
+    void testLastIndexOfSublistSameArray() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 1, 2, 3, 4, 5 };
 
@@ -124,7 +124,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistTargetLongerThanSource() {
+    void testLastIndexOfSublistTargetLongerThanSource() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 1, 2, 3, 4, 5, 6 };
 
@@ -134,7 +134,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistPartialOverlapOnBeginning() {
+    void testLastIndexOfSublistPartialOverlapOnBeginning() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 0, 1, 2 };
 
@@ -144,7 +144,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistPartialOverlapOnEnd() {
+    void testLastIndexOfSublistPartialOverlapOnEnd() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 4, 5, 6 };
 
@@ -154,7 +154,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublist6ArraysWithNoSharedElements() {
+    void testLastIndexOfSublist6ArraysWithNoSharedElements() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 6, 7, 8, 9, 10 };
 
@@ -164,7 +164,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistNullSource() {
+    void testLastIndexOfSublistNullSource() {
         byte[] source = null;
         byte[] target = new byte[] { 6, 7, 8, 9, 10 };
 
@@ -174,7 +174,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistNullTarget() {
+    void testLastIndexOfSublistNullTarget() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = null;
 
@@ -184,7 +184,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesSecondOcurrence() {
+    void testLastIndexOfSublistMatchesSecondOcurrence() {
         byte[] source = new byte[] { 3, 4, 5, 3, 4, 5 };
         byte[] target = new byte[] { 3, 4, 5 };
 
@@ -194,7 +194,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesThirdOcurrence() {
+    void testLastIndexOfSublistMatchesThirdOcurrence() {
         byte[] source = new byte[] { 1, 2, 3, 1, 2, 3, 1, 2, 3 };
         byte[] target = new byte[] { 1, 2, 3 };
 
@@ -204,7 +204,7 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesLastOcurrence() {
+    void testLastIndexOfSublistMatchesLastOcurrence() {
         byte[] source = new byte[] { 1, 2, 3, 3, 4, 5, 1, 2, 3 };
         byte[] target = new byte[] { 1, 2, 3 };
 

@@ -27,6 +27,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         GetCoinbasePerformanceTestCase.class,
 })
-@Disabled
-public class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {
+@Disabled("manual performance tests")
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {
 }

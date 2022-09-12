@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by mario on 15/02/17.
  */
-public class UDPServerTest {
+class UDPServerTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
@@ -68,7 +68,8 @@ public class UDPServerTest {
     private static final long CLEAN = 60000;
 
     @Test
-    public void port0DoesntCreateANewChannel() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void port0DoesntCreateANewChannel() throws InterruptedException {
         UDPServer udpServer = new UDPServer(HOST, 0, mock(PeerExplorer.class));
         Channel channel = TestUtils.getInternalState(udpServer, "channel");
         udpServer.start();
@@ -77,7 +78,8 @@ public class UDPServerTest {
     }
 
     @Test
-    public void run3NodesFullTest() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void run3NodesFullTest() throws InterruptedException {
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
         ECKey key3 = ECKey.fromPrivate(Hex.decode(KEY_3)).decompress();
@@ -153,7 +155,7 @@ public class UDPServerTest {
     }
 
     @Test
-    public void startAndStopUDPServer() {
+    void startAndStopUDPServer() {
         //noinspection unchecked
         Function<Runnable, Thread> threadFactory = (Function<Runnable, Thread>) mock(Function.class);
         UDPServer udpServer = new UDPServer(HOST, PORT_1, mock(PeerExplorer.class), threadFactory);

@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class BridgeSupportReleaseBtcTest {
+class BridgeSupportReleaseBtcTest {
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
@@ -67,7 +67,7 @@ public class BridgeSupportReleaseBtcTest {
     private BridgeSupportBuilder bridgeSupportBuilder;
 
     @BeforeEach
-    public void setUpOnEachTest() throws IOException {
+    void setUpOnEachTest() throws IOException {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activeFederation = getFederation();
@@ -81,7 +81,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void noLogEvents_before_rskip_146_185() throws IOException {
+    void noLogEvents_before_rskip_146_185() throws IOException {
         provider = initProvider(repository, activationsBeforeForks);
         bridgeSupport = initBridgeSupport(eventLogger, activationsBeforeForks);
 
@@ -97,7 +97,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void eventLogger_logReleaseBtcRequested_after_rskip_146() throws IOException {
+    void eventLogger_logReleaseBtcRequested_after_rskip_146() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         bridgeSupport.releaseBtc(releaseTx);
@@ -112,7 +112,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void eventLogger_logReleaseBtcRequested_after_rskip_146_185() throws IOException {
+    void eventLogger_logReleaseBtcRequested_after_rskip_146_185() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
@@ -128,7 +128,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void eventLogger_logReleaseBtcRequested_release_before_activation_and_updateCollections_after_activation() throws IOException {
+    void eventLogger_logReleaseBtcRequested_release_before_activation_and_updateCollections_after_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
@@ -149,7 +149,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_before_rskip_146_185() throws IOException {
+    void handmade_release_before_rskip_146_185() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
@@ -169,7 +169,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146() throws IOException {
+    void handmade_release_after_rskip_146() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
@@ -194,7 +194,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146_185() throws IOException {
+    void handmade_release_after_rskip_146_185() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
@@ -224,7 +224,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146_rejected_lowAmount() throws IOException {
+    void handmade_release_after_rskip_146_rejected_lowAmount() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
 
@@ -252,7 +252,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146_185_rejected_lowAmount() throws IOException {
+    void handmade_release_after_rskip_146_185_rejected_lowAmount() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
@@ -285,7 +285,7 @@ public class BridgeSupportReleaseBtcTest {
 
 
     @Test
-    public void handmade_release_after_rskip_146_185_rejected_contractCaller() throws IOException {
+    void handmade_release_after_rskip_146_185_rejected_contractCaller() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
 
@@ -317,7 +317,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146_rejected_contractCaller() throws IOException {
+    void handmade_release_after_rskip_146_rejected_contractCaller() throws IOException {
 
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(false);
@@ -336,7 +336,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_after_rskip_219() throws IOException {
+    void release_after_rskip_219() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
@@ -364,7 +364,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_before_rskip_219() throws IOException {
+    void release_before_rskip_219() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
@@ -391,7 +391,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_before_rskip_219_minimum_exclusive() throws IOException {
+    void release_before_rskip_219_minimum_exclusive() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
@@ -415,7 +415,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_after_rskip_219_minimum_inclusive() throws IOException {
+    void release_after_rskip_219_minimum_inclusive() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
@@ -440,14 +440,14 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_verify_fee_below_fee_is_rejected() throws IOException {
+    void release_verify_fee_below_fee_is_rejected() throws IOException {
         Coin value = bridgeConstants.getMinimumPegoutTxValueInSatoshis().add(Coin.SATOSHI);
 
         testPegoutMinimumWithFeeVerification(Coin.COIN, value, false);
     }
 
     @Test
-    public void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_before_rskip_271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
         Coin feePerKB = Coin.COIN;
 
@@ -458,7 +458,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
+    void release_verify_fee_above_fee_but_below_gap_is_rejected_after_rskip_271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         Coin feePerKB = Coin.COIN;
 
@@ -469,7 +469,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
+    void release_verify_fee_above_fee_but_below_minimum_is_rejected() throws IOException {
         testPegoutMinimumWithFeeVerification(
             Coin.MILLICOIN,
             bridgeConstants.getMinimumPegoutTxValueInSatoshis().minus(Coin.SATOSHI),
@@ -478,12 +478,12 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
+    void release_verify_fee_above_fee_and_minimum_is_accepted() throws IOException {
         testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
     }
 
     @Test
-    public void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
+    void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -516,7 +516,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_RSKIP271() throws IOException {
+    void test_processPegoutsInBatch_after_RSKIP271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -568,7 +568,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_RSKIP271_activation_next_pegout_height_not_reached() throws IOException {
+    void test_processPegoutsInBatch_after_RSKIP271_activation_next_pegout_height_not_reached() throws IOException {
 
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -604,7 +604,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_RSKIP271_activation_no_requests_in_queue_updates_next_pegout_height() throws IOException {
+    void test_processPegoutsInBatch_after_RSKIP271_activation_no_requests_in_queue_updates_next_pegout_height() throws IOException {
 
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -633,7 +633,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_rskip_271_Insufficient_Money() throws IOException {
+    void test_processPegoutsInBatch_after_rskip_271_Insufficient_Money() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -669,7 +669,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_rskip_271_divide_transaction_when_max_size_exceeded() throws IOException {
+    void test_processPegoutsInBatch_after_rskip_271_divide_transaction_when_max_size_exceeded() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -703,7 +703,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_one_pegout() throws IOException {
+    void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_one_pegout() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -731,7 +731,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_two_pegout() throws IOException {
+    void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_two_pegout() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -759,7 +759,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsIndividually_before_rskip_271_no_funds_to_process_any_requests() throws IOException {
+    void test_processPegoutsIndividually_before_rskip_271_no_funds_to_process_any_requests() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -796,7 +796,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsIndividually_before_rskip_271_no_funds_to_process_any_requests_order_changes_in_queue() throws IOException {
+    void test_processPegoutsIndividually_before_rskip_271_no_funds_to_process_any_requests_order_changes_in_queue() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -846,7 +846,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_check_wallet_balance_before_rskip_271_process_at_least_one_request() throws IOException {
+    void test_check_wallet_balance_before_rskip_271_process_at_least_one_request() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -877,7 +877,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_check_wallet_balance_after_rskip_271_process_no_requests() throws IOException {
+    void test_check_wallet_balance_after_rskip_271_process_no_requests() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -913,7 +913,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_check_wallet_balance_after_rskip_271_process_all_requests_when_utxos_available() throws IOException {
+    void test_check_wallet_balance_after_rskip_271_process_all_requests_when_utxos_available() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();

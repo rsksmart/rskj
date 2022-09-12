@@ -29,18 +29,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class DeriveExtendedPublicKeyTest {
+class DeriveExtendedPublicKeyTest {
     private DeriveExtendedPublicKey method;
 
     @BeforeEach
-    public void createMethod() {
+    void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
         method = new DeriveExtendedPublicKey(executionEnvironment, helper);
     }
 
     @Test
-    public void functionSignatureOk() {
+    void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
         Assertions.assertEquals("deriveExtendedPublicKey", fn.name);
 
@@ -53,17 +53,17 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void shouldBeEnabled() {
+    void shouldBeEnabled() {
         Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
-    public void shouldAllowAnyTypeOfCall() {
+    void shouldAllowAnyTypeOfCall() {
         Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
-    public void executes() throws NativeContractIllegalArgumentException {
+    void executes() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 "tpubDCGMkPKredy7oh6zw8f4ExWFdTgQCrAHToF1ytny3gbVy9GkUNK2Nqh7NbKbh8dkd5VtjUiLJPkbEkeg29NVHwxYwzHJFt9SazGLZrrU4Y4",
                 method.execute(new Object[]{
@@ -87,7 +87,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void validatesExtendedPublicKeyFormat() {
+    void validatesExtendedPublicKeyFormat() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "this-is-not-an-xpub",
@@ -97,7 +97,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void ExtendedPublicKeyCannotBeNull() {
+    void ExtendedPublicKeyCannotBeNull() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     null,
@@ -107,7 +107,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotBeAnything() {
+    void pathCannotBeAnything() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -117,7 +117,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotBeNull() {
+    void pathCannotBeNull() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -127,7 +127,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotBeEmpty() {
+    void pathCannotBeEmpty() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -137,7 +137,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainALeadingM() {
+    void pathCannotContainALeadingM() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -147,7 +147,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainALeadingSlash() {
+    void pathCannotContainALeadingSlash() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -157,7 +157,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainATrailingSlash() {
+    void pathCannotContainATrailingSlash() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -167,7 +167,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainHardening() {
+    void pathCannotContainHardening() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -177,7 +177,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainNegativeNumbers() {
+    void pathCannotContainNegativeNumbers() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -187,7 +187,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainPartsBiggerOrEqualThan2Pwr31() {
+    void pathCannotContainPartsBiggerOrEqualThan2Pwr31() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -197,7 +197,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void pathCannotContainMoreThanTenParts() {
+    void pathCannotContainMoreThanTenParts() {
         assertFailsWithMessage(() -> {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
@@ -207,7 +207,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void gasIsCorrect() {
+    void gasIsCorrect() {
         Assertions.assertEquals(107_000, method.getGas(new Object[]{
                 "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
                 "2/3/4"

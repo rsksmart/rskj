@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FederationSupportTest {
+class FederationSupportTest {
 
     private FederationSupport federationSupport;
     private BridgeConstants bridgeConstants;
@@ -46,7 +46,7 @@ public class FederationSupportTest {
 
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
@@ -54,7 +54,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
+    void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
         Federation genesisFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(null);
@@ -65,7 +65,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
+    void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
         Federation newFederation = getNewFakeFederation(100);
         when(provider.getNewFederation())
                 .thenReturn(newFederation);
@@ -76,7 +76,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
+    void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(75);
         Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
@@ -92,7 +92,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
+    void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(65);
         Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
@@ -108,7 +108,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void getFederatorPublicKeys() {
+    void getFederatorPublicKeys() {
         BtcECKey btcKey0 = BtcECKey.fromPublicOnly(Hex.decode("020000000000000000001111111111111111111122222222222222222222333333"));
         ECKey rskKey0 = new ECKey();
         ECKey mstKey0 = new ECKey();
@@ -140,7 +140,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void getMemberPublicKeyOfType() {
+    void getMemberPublicKeyOfType() {
         BtcECKey btcKey0 = new BtcECKey();
         ECKey rskKey0 = new ECKey();
         ECKey mstKey0 = new ECKey();
@@ -165,7 +165,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void getMemberPublicKeyOfType_OutOfBounds() {
+    void getMemberPublicKeyOfType_OutOfBounds() {
         List<FederationMember> members = Arrays.asList(
                 new FederationMember(new BtcECKey(), new ECKey(), new ECKey()),
                 new FederationMember(new BtcECKey(), new ECKey(), new ECKey())

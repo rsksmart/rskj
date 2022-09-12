@@ -39,14 +39,14 @@ import java.util.Iterator;
 /**
  * Created by Nicolás Perez Santoro on 4/08/2020.
  */
-public class ExtCodeHashDslTest {
+class ExtCodeHashDslTest {
 
     public static final byte[] HASH_OF_EMPTY_ARRAY = Keccak256Helper.keccak256(ExtCodeHashTest.EMPTY_BYTE_ARRAY);
     private World world;
     private WorldDslProcessor processor;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(5))
         );
@@ -60,7 +60,7 @@ public class ExtCodeHashDslTest {
     //note that previous to the activation, extcodehash behaves differently in presence of cache or not
 
     @Test
-    public void invokeEXTCodeHASHAddressDoesNotExist() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHAddressDoesNotExist() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_address_does_not_exist.txt");
 
         processor.processCommands(parser);
@@ -73,7 +73,7 @@ public class ExtCodeHashDslTest {
     }
 
     @Test
-    public void invokeEXTCodeHASHAddressExistButNotContract() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHAddressExistButNotContract() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_address_exists_but_not_contract.txt");
 
         processor.processCommands(parser);
@@ -87,7 +87,7 @@ public class ExtCodeHashDslTest {
 
 
     @Test
-    public void invokeEXTCodeHASHWithCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHWithCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_with_cache_empty_deploy.txt");
 
         processor.processCommands(parser);
@@ -100,7 +100,7 @@ public class ExtCodeHashDslTest {
     }
 
     @Test
-    public void invokeEXTCodeHASHWithoutCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHWithoutCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_without_cache_empty_deploy.txt");
 
         processor.processCommands(parser);

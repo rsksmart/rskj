@@ -31,14 +31,14 @@ import java.util.Collections;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @Disabled
-public class GitHubBlockTest {
+class GitHubBlockTest {
 
     //SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "0895e096ca9de6ba745bad238cb579964bd90cea";
 
-    @Disabled // test for conveniently running a single test
+    @Disabled("test for conveniently running a single test")
     @Test
-    public void runSingleTest() throws ParseException, IOException {
+    void runSingleTest() throws ParseException, IOException {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
 
@@ -63,83 +63,83 @@ public class GitHubBlockTest {
     }
 
     @Test
-    public void runBCInvalidHeaderTest() throws ParseException, IOException {
+    void runBCInvalidHeaderTest() throws ParseException, IOException {
         run("bcInvalidHeaderTest", true, true);
     }
 
 
     @Test
-    public void runBCInvalidRLPTest() throws ParseException, IOException {
+    void runBCInvalidRLPTest() throws ParseException, IOException {
         run("bcInvalidRLPTest", true, false);
     }
 
     @Test
-    public void runBCRPCAPITest() throws ParseException, IOException {
+    void runBCRPCAPITest() throws ParseException, IOException {
         run("bcRPC_API_Test", true, true);
     }
 
 
     @Test
-    public void runBCUncleHeaderValidityTest() throws ParseException, IOException {
+    void runBCUncleHeaderValidityTest() throws ParseException, IOException {
         run("bcUncleHeaderValiditiy", true, true);
     }
 
     @Test
-     public void runBCUncleTest() throws ParseException, IOException {
+     void runBCUncleTest() throws ParseException, IOException {
         run("bcUncleTest", true, true);
     }
 
-    @Disabled
+    @Disabled("test for conveniently running a single test")
     @Test
-    public void runBCValidBlockTest() throws ParseException, IOException {
+    void runBCValidBlockTest() throws ParseException, IOException {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest", true, true);
     }
 
     @Test
-    public void runBCBlockGasLimitTest() throws ParseException, IOException {
+    void runBCBlockGasLimitTest() throws ParseException, IOException {
         run("bcBlockGasLimitTest", true, true);
     }
 
     @Test
-    public void runBCForkBlockTest() throws ParseException, IOException {
+    void runBCForkBlockTest() throws ParseException, IOException {
         run("bcForkBlockTest", true, false);
     }
 
     @Test
-    public void runBCForkUncleTest() throws ParseException, IOException {
+    void runBCForkUncleTest() throws ParseException, IOException {
         run("bcForkUncle", true, false);
     }
 
     @Test
-    public void runBCForkStressTest() throws ParseException, IOException {
+    void runBCForkStressTest() throws ParseException, IOException {
         run("bcForkStressTest", true, true);
     }
 
-    @Disabled
+    @Disabled("test for conveniently running a single test")
     @Test
-    public void runBCStateTest() throws ParseException, IOException {
+    void runBCStateTest() throws ParseException, IOException {
         run("bcStateTest", true, true);
     }
 
     @Test
-    public void runBCGasPricerTest() throws ParseException, IOException {
+    void runBCGasPricerTest() throws ParseException, IOException {
         run("bcGasPricerTest", true, true);
     }
 
     @Test
-    public void runBCTotalDifficultyTest() throws ParseException, IOException {
+    void runBCTotalDifficultyTest() throws ParseException, IOException {
         run("bcTotalDifficultyTest", false, true);
     }
 
     @Test
-    public void runBCWalletTest() throws Exception, IOException {
+    void runBCWalletTest() throws Exception, IOException {
         run("bcWalletTest", true, true);
     }
 
     @Test
-    public void runBCMultiChainTest() throws ParseException, IOException {
+    void runBCMultiChainTest() throws ParseException, IOException {
         run("bcMultiChainTest", true, true);
     }
 }

@@ -30,7 +30,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.mockito.Mockito.*;
 
-public class BlockChainFlusherTest {
+class BlockChainFlusherTest {
     private CompositeEthereumListener emitter;
     private TrieStore trieStore;
     private BlockStore blockStore;
@@ -42,7 +42,7 @@ public class BlockChainFlusherTest {
     private EthereumListener listener;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         this.emitter = mock(CompositeEthereumListener.class);
         this.trieStore = mock(TrieStore.class);
         this.blockStore = mock(BlockStore.class);
@@ -58,7 +58,7 @@ public class BlockChainFlusherTest {
     }
 
     @Test
-    public void flusherStarted_WhenStopped_ShouldUnsubscribeAndFlush() {
+    void flusherStarted_WhenStopped_ShouldUnsubscribeAndFlush() {
         flusher.stop();
 
         verify(emitter, times(1)).removeListener(listener);
@@ -71,7 +71,7 @@ public class BlockChainFlusherTest {
     }
 
     @Test
-    public void flusherStarted_WhenReceive7Blocks_ShouldFlushStores() {
+    void flusherStarted_WhenReceive7Blocks_ShouldFlushStores() {
         for (int i = 0; i < 6; i++) {
             listener.onBestBlock(null, null);
         }

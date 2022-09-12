@@ -35,13 +35,13 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-public class LockWhitelistTest {
+class LockWhitelistTest {
     private Map<Address, LockWhitelistEntry> addresses;
     private LockWhitelist whitelist;
     private Address existingAddress;
 
     @BeforeEach
-    public void createWhitelist() {
+    void createWhitelist() {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         int existingPrivate = 300;
         addresses = Arrays.stream(new Integer[]{ 100, 200, existingPrivate, 400 })
@@ -57,18 +57,18 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void getSize() {
+    void getSize() {
         Assertions.assertEquals(4, whitelist.getSize().intValue());
     }
 
     @Test
-    public void getAddresses() {
+    void getAddresses() {
         Assertions.assertNotSame(whitelist.getAddresses(), addresses);
         MatcherAssert.assertThat(whitelist.getAddresses(), containsInAnyOrder(addresses.keySet().toArray()));
     }
 
     @Test
-    public void isWhitelisted() {
+    void isWhitelisted() {
         for (Address address : addresses.keySet()) {
             assertExistance(address, true);
         }
@@ -82,7 +82,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void addOneOff() {
+    void addOneOff() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -98,7 +98,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void addUnlimited() {
+    void addUnlimited() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -114,7 +114,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void addOneOffAfterUnlimited() {
+    void addOneOffAfterUnlimited() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -130,7 +130,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void addUnlimitedAfterOneOff() {
+    void addUnlimitedAfterOneOff() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -148,7 +148,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void remove() {
+    void remove() {
         Assertions.assertTrue(whitelist.isWhitelisted(existingAddress));
         Assertions.assertTrue(whitelist.isWhitelisted(existingAddress.getHash160()));
 
@@ -161,7 +161,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void consume() {
+    void consume() {
         assertExistance(existingAddress, true);
 
         whitelist.consume(existingAddress);
@@ -172,7 +172,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void consumeUnlimited() {
+    void consumeUnlimited() {
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 "n3WzdjG7S2GjDbY1pJYxsY1VSQDkm4KDcm"
@@ -190,7 +190,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void canLockOneOff() {
+    void canLockOneOff() {
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -207,7 +207,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void cantLockOneOffMoreThanMaxValue() {
+    void cantLockOneOffMoreThanMaxValue() {
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -224,7 +224,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void cantLockOneOffAfterConsume() {
+    void cantLockOneOffAfterConsume() {
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -241,7 +241,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void canLockUnlimited() {
+    void canLockUnlimited() {
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -254,7 +254,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void canLockUnlimitedAfterConsume() {
+    void canLockUnlimitedAfterConsume() {
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -271,7 +271,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void getAllByType() {
+    void getAllByType() {
         Assertions.assertArrayEquals(
                 addresses.values().stream().filter(e -> e.getClass() == OneOffWhiteListEntry.class).map(e-> e.address()).sorted().toArray(),
                 whitelist.getAll(OneOffWhiteListEntry.class).stream().map(e-> e.address()).toArray()
@@ -283,7 +283,7 @@ public class LockWhitelistTest {
     }
 
     @Test
-    public void getAll() {
+    void getAll() {
         Assertions.assertEquals(addresses.size(), whitelist.getAll().size());
     }
 

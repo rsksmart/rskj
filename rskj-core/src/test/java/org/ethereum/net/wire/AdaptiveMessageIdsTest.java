@@ -41,17 +41,17 @@ import static org.ethereum.net.eth.EthVersion.*;
  * @since 15.10.2014
  */
 @Disabled
-public class AdaptiveMessageIdsTest {
+class AdaptiveMessageIdsTest {
 
     private MessageCodesResolver messageCodesResolver;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         messageCodesResolver = new MessageCodesResolver();
     }
 
     @Test
-    public void test1() {
+    void test1() {
 
         assertEquals(7, P2pMessageCodes.values().length);
 
@@ -65,7 +65,7 @@ public class AdaptiveMessageIdsTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
 
         assertEquals(8, EthMessageCodes.values(V62).length);
 
@@ -92,7 +92,7 @@ public class AdaptiveMessageIdsTest {
 
 
     @Test
-    public void test4() {
+    void test4() {
 
         List<Capability> capabilities = Arrays.asList(
                 new Capability(Capability.RSK, EthVersion.V62.getCode()));
@@ -111,7 +111,7 @@ public class AdaptiveMessageIdsTest {
     }
 
     @Test // Capabilities should be read in alphabetical order
-    public void test5() {
+    void test5() {
 
         List<Capability> capabilities = Arrays.asList(
                 new Capability(Capability.RSK, EthVersion.V62.getCode()));

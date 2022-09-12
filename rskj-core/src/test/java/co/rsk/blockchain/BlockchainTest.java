@@ -21,9 +21,7 @@ package co.rsk.blockchain;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by ajlopez on 4/20/2016.
  */
-public class BlockchainTest {
+class BlockchainTest {
     @Test
-    public void genesisTest() {
+    void genesisTest() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Assertions.assertEquals(0, genesis.getNumber());
     }
 
     @Test
-    public void blockchainTest() {
+    void blockchainTest() {
         Blockchain blockchain = createBlockchain();
 
         Assertions.assertNotNull(blockchain);
@@ -54,7 +52,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void childBlock() {
+    void childBlock() {
         Blockchain blockchain = createBlockchain();
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBestBlock());
@@ -65,7 +63,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void addFirstBlock() {
+    void addFirstBlock() {
         Blockchain blockchain = createBlockchain();
 
         Block block = new BlockGenerator().createChildBlock(blockchain.getBestBlock());
@@ -75,7 +73,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void addTwoBlocks() {
+    void addTwoBlocks() {
         Blockchain blockchain = createBlockchain();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -90,7 +88,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void tryToConnect() {
+    void tryToConnect() {
         Blockchain blockchain = createBlockchain();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -106,7 +104,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void tryToConnectWithCompetingChain() {
+    void tryToConnectWithCompetingChain() {
         // Two competing blockchains of the same size (2)
         Blockchain blockchain = createBlockchain();
 
@@ -131,7 +129,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void tryToConnectWithFork() {
+    void tryToConnectWithFork() {
         Blockchain blockchain = createBlockchain();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -154,7 +152,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void connectOneChainThenConnectAnotherChain() {
+    void connectOneChainThenConnectAnotherChain() {
         Blockchain blockchain = createBlockchain();
         final int height = 200;
         final long chain1Diff = 2;
@@ -176,7 +174,7 @@ public class BlockchainTest {
     }
 
     @Test
-    public void checkItDoesntAddAnInvalidBlock() {
+    void checkItDoesntAddAnInvalidBlock() {
         Blockchain blockchain = createBlockchain();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -187,7 +185,10 @@ public class BlockchainTest {
         Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = blockGenerator.createBlock(10, 5);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList(), true, true));
+        BlockHeader header = block2.getHeader();
+        List<Transaction> transactionsList = block2b.getTransactionsList();
+        List<BlockHeader> uncleList = block2b.getUncleList();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Block(header, transactionsList, uncleList, true, true));
     }
 
 

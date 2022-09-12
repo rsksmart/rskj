@@ -44,14 +44,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class TransactionTest {
+class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final byte chainId = config.getNetworkConstants().getChainId();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test  /* achieve public key of the sender */
-    public void test2() throws Exception {
+    void test2() throws Exception {
         if (chainId != 0)
             return;
 
@@ -100,7 +100,7 @@ public class TransactionTest {
     }
 
     @Test  /* achieve public key of the sender */
-    public void testSenderShouldChangeWhenReSigningTx() throws Exception {
+    void testSenderShouldChangeWhenReSigningTx() throws Exception {
         BigInteger value = new BigInteger("1000000000000000000000");
 
         byte[] privateKey = HashUtil.keccak256("cat".getBytes());
@@ -144,7 +144,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void constantCallConflictTest() throws Exception {
+    void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
 
@@ -284,11 +284,11 @@ public class TransactionTest {
                 return super.executeTransaction(tx);
             }
         }.setstateTestUSeREMASC(true).runImpl();
-        if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
+        Assertions.assertTrue(res.isEmpty(), res.toString());
     }
 
     @Test
-    public void testEip155() {
+    void testEip155() {
         // Test to match the example provided in https://github.com/ethereum/eips/issues/155
         // Note that vitalik's tx encoded raw hash is wrong and kvhnuke fixes that in a comment
         Transaction tx = Transaction
@@ -311,7 +311,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void testTransaction() {
+    void testTransaction() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.valueOf(9L))
@@ -332,7 +332,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsNull() {
+    void isContractCreationWhenReceiveAddressIsNull() {
         Transaction tx = Transaction
                 .builder()
                 .destination(RskAddress.nullAddress())
@@ -341,7 +341,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsEmptyString() {
+    void isContractCreationWhenReceiveAddressIsEmptyString() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -355,19 +355,22 @@ public class TransactionTest {
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIs00() {
-        Assertions.assertThrows(RuntimeException.class, () -> Transaction
+    void isContractCreationWhenReceiveAddressIs00() {
+        TransactionBuilder builder = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("00"))
                 .chainId(chainId)
-                .value(BigInteger.ONE));
+                .value(BigInteger.ONE);
+
+        byte[] zeroAddress = Hex.decode("00");
+
+        Assertions.assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
+    void isContractCreationWhenReceiveAddressIsFortyZeroes() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -381,7 +384,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
+    void isNotContractCreationWhenReceiveAddressIsCowAddress() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -395,7 +398,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
+    void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -409,7 +412,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void createEncodeAndDecodeTransactionWithChainId() {
+    void createEncodeAndDecodeTransactionWithChainId() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 0, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,

@@ -25,20 +25,20 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class P2pHandlerTest {
+class P2pHandlerTest {
 
     private P2pHandler p2pHandler;
     private MessageQueue msgQueue;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         EthereumListener ethereumListener = mock(EthereumListener.class);
         msgQueue = mock(MessageQueue.class);
         p2pHandler = new P2pHandler(ethereumListener, msgQueue, 1000);
     }
 
     @Test
-    public void shouldDisconnectIfHelloMessageReceived() {
+    void shouldDisconnectIfHelloMessageReceived() {
         EmbeddedChannel channel = new EmbeddedChannel(p2pHandler);
         HelloMessage msg = mock(HelloMessage.class);
         when(msg.getCommand()).thenReturn(P2pMessageCodes.HELLO);
@@ -49,7 +49,7 @@ public class P2pHandlerTest {
     }
 
     @Test
-    public void channelInactive_shouldCallKillTimers() throws Exception {
+    void channelInactive_shouldCallKillTimers() throws Exception {
         EthereumListener ethereumListener = mock(EthereumListener.class);
         P2pHandler p2pHandlerSpy = spy(new P2pHandler(ethereumListener, msgQueue, 1000));
 

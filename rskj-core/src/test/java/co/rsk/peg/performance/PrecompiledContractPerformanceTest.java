@@ -25,18 +25,19 @@ import org.junit.jupiter.api.BeforeAll;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"squid:S2187"}) // extended by subclasses
 public class PrecompiledContractPerformanceTest {
     private static List<ExecutionStats> statsList;
     private static boolean running = false;
     private static Mean averageNanosecondsPerGasUnit;
 
     @BeforeAll
-    public static void setRunning() {
+     static void setRunning() {
         running = true;
     }
 
     @BeforeAll
-    public static void estimateReferenceCost() {
+     static void estimateReferenceCost() {
         // Run VM tests and average
         averageNanosecondsPerGasUnit = new Mean();
         VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
@@ -56,7 +57,7 @@ public class PrecompiledContractPerformanceTest {
     }
 
     @AfterAll
-    public static void printStats() {
+    static void printStats() {
         for (ExecutionStats stats : statsList) {
             System.out.println(stats.getPrintable());
         }

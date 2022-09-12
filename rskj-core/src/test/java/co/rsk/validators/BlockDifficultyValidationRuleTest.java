@@ -37,14 +37,14 @@ import java.math.BigInteger;
 /**
  * Created by sergio on 23/01/17.
  */
-public class BlockDifficultyValidationRuleTest {
+class BlockDifficultyValidationRuleTest {
 
     private BlockFactory blockFactory;
     private ActivationConfig activationConfig;
     private Constants networkConstants;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         activationConfig = ActivationConfigsForTest.all();
         networkConstants = Constants.regtest();
         blockFactory = new BlockFactory(activationConfig);
@@ -60,7 +60,7 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     @Test
-    public void testDifficulty() {
+    void testDifficulty() {
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
@@ -96,7 +96,7 @@ public class BlockDifficultyValidationRuleTest {
         Mockito.when(parent.getTimestamp())
                 .thenReturn(parentTimestamp);
 
-        Assertions.assertEquals(validationRule.isValid(block,parent),true);
+        Assertions.assertEquals(true,validationRule.isValid(block,parent));
     }
 
 }

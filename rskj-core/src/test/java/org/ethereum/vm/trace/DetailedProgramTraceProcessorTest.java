@@ -39,7 +39,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DetailedProgramTraceProcessorTest {
+class DetailedProgramTraceProcessorTest {
 
     private static final String FLD_CONTRACT_ADDRESS = "contractAddress";
     private static final String FLD_INIT_STORAGE = "initStorage";
@@ -53,7 +53,7 @@ public class DetailedProgramTraceProcessorTest {
     );
 
     @Test
-    public void getUnknownTrace() {
+    void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
@@ -66,7 +66,7 @@ public class DetailedProgramTraceProcessorTest {
     }
 
     @Test
-    public void getEmptyTrace() {
+    void getEmptyTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
@@ -83,7 +83,7 @@ public class DetailedProgramTraceProcessorTest {
     }
 
     @Test
-    public void setAndGetTrace() {
+    void setAndGetTrace() {
         Keccak256 hash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
@@ -98,7 +98,7 @@ public class DetailedProgramTraceProcessorTest {
     }
 
     @Test
-    public void setAndGetTraceAsJsonNode() {
+    void setAndGetTraceAsJsonNode() {
         Keccak256 hash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 

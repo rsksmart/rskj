@@ -36,13 +36,13 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 07/05/2017.
  */
-public class CallContractTest {
+class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void callContractReturningOne() {
+    void callContractReturningOne() {
         World world = new World();
         byte[] code = new byte[] { 0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte)0xf3 };
         Account account = new AccountBuilder(world).name("acc1").code(code).build();

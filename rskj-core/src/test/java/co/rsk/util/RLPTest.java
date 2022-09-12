@@ -14,9 +14,9 @@ import java.util.ArrayList;
 /**
  * Created by ajlopez on 16/08/2017.
  */
-public class RLPTest {
+class RLPTest {
     @Test
-    public void encodeEmptyByteArray() {
+    void encodeEmptyByteArray() {
         byte[] bytes = new byte[0];
 
         byte[] result = RLP.encodeElement(bytes);
@@ -27,7 +27,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeNullByteArray() {
+    void encodeNullByteArray() {
         byte[] result = RLP.encodeElement((byte[]) null);
 
         Assertions.assertNotNull(result);
@@ -36,7 +36,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeSingleBytes() {
+    void encodeDecodeSingleBytes() {
         for (int k = 0; k < 128; k++) {
             byte[] bytes = new byte[1];
             bytes[0] = (byte) k;
@@ -58,7 +58,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeSingleBytesWithHighValue() {
+    void encodeDecodeSingleBytesWithHighValue() {
         for (int k = 128; k < 256; k++) {
             byte[] bytes = new byte[1];
             bytes[0] = (byte)k;
@@ -81,7 +81,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeSingleBytesWithHighValueUsingEncode() {
+    void encodeDecodeSingleBytesWithHighValueUsingEncode() {
         for (int k = 128; k < 256; k++) {
             byte[] bytes = new byte[1];
             bytes[0] = (byte)k;
@@ -104,7 +104,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortByteArrays() {
+    void encodeDecodeShortByteArrays() {
         for (int k = 2; k < 56; k++) {
             byte[] bytes = new byte[k];
 
@@ -126,7 +126,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortByteArraysUsingEncode() {
+    void encodeDecodeShortByteArraysUsingEncode() {
         for (int k = 2; k < 56; k++) {
             byte[] bytes = new byte[k];
 
@@ -148,7 +148,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithOneByteLength() {
+    void encodeDecodeLongByteArrayWithOneByteLength() {
         byte[] bytes = new byte[56];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -169,7 +169,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithOneByteLengthUsingEncode() {
+    void encodeDecodeLongByteArrayWithOneByteLengthUsingEncode() {
         byte[] bytes = new byte[56];
 
         byte[] encoded = RLP.encode(bytes);
@@ -190,7 +190,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithTwoBytesLength() {
+    void encodeDecodeLongByteArrayWithTwoBytesLength() {
         byte[] bytes = new byte[256];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -212,7 +212,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithTwoBytesLengthUsingEncode() {
+    void encodeDecodeLongByteArrayWithTwoBytesLengthUsingEncode() {
         byte[] bytes = new byte[256];
 
         byte[] encoded = RLP.encode(bytes);
@@ -234,7 +234,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCase() {
+    void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCase() {
         byte[] bytes = new byte[256 * 256 - 1];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -256,7 +256,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCaseUsingEncode() {
+    void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCaseUsingEncode() {
         byte[] bytes = new byte[256 * 256 - 1];
 
         byte[] encoded = RLP.encode(bytes);
@@ -278,7 +278,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithThreeBytesLength() {
+    void encodeDecodeLongByteArrayWithThreeBytesLength() {
         byte[] bytes = new byte[256 * 256];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -301,7 +301,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithThreeBytesLengthUsingEncode() {
+    void encodeDecodeLongByteArrayWithThreeBytesLengthUsingEncode() {
         byte[] bytes = new byte[256 * 256];
 
         byte[] encoded = RLP.encode(bytes);
@@ -324,7 +324,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCase() {
+    void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCase() {
         byte[] bytes = new byte[256 * 256 * 256 - 1];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -347,7 +347,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCaseUsingEncode() {
+    void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCaseUsingEncode() {
         byte[] bytes = new byte[256 * 256 * 256 - 1];
 
         byte[] encoded = RLP.encode(bytes);
@@ -370,7 +370,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithFourBytesLength() {
+    void encodeDecodeLongByteArrayWithFourBytesLength() {
         byte[] bytes = new byte[256 * 256 * 256];
 
         byte[] encoded = RLP.encodeElement(bytes);
@@ -394,7 +394,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeLongByteArrayWithFourBytesLengthUsingEncode() {
+    void encodeDecodeLongByteArrayWithFourBytesLengthUsingEncode() {
         byte[] bytes = new byte[256 * 256 * 256];
 
         byte[] encoded = RLP.encode(bytes);
@@ -418,7 +418,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeBigIntegers() {
+    void encodeDecodeBigIntegers() {
         for (int k = 0; k <= 1024; k++) {
             BigInteger value = BigInteger.valueOf(k);
             byte[] encoded = RLP.encodeBigInteger(value);
@@ -429,7 +429,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeEmptyList() {
+    void encodeDecodeEmptyList() {
         byte[] encoded = RLP.encodeList();
 
         Assertions.assertNotNull(encoded);
@@ -448,7 +448,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithShortBytes() {
+    void encodeDecodeShortListWithShortBytes() {
         byte[] value1 = new byte[] { 0x01 };
         byte[] value2 = new byte[] { 0x02 };
         byte[] element1 = RLP.encodeElement(value1);
@@ -473,7 +473,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArrays() {
+    void encodeDecodeShortListWithTwoByteArrays() {
         byte[] value1 = new byte[] { 0x01, 0x02 };
         byte[] value2 = new byte[] { 0x03, 0x04 };
         byte[] element1 = RLP.encodeElement(value1);
@@ -498,7 +498,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithElementsLength55() {
+    void encodeDecodeShortListWithTwoByteArraysWithElementsLength55() {
         byte[] value1 = new byte[25];
         byte[] value2 = new byte[28];
         byte[] element1 = RLP.encodeElement(value1);
@@ -523,7 +523,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithElementsLength56() {
+    void encodeDecodeShortListWithTwoByteArraysWithElementsLength56() {
         byte[] value1 = new byte[26];
         byte[] value2 = new byte[28];
         byte[] element1 = RLP.encodeElement(value1);
@@ -549,7 +549,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithOneByteLength() {
+    void encodeDecodeShortListWithTwoByteArraysWithOneByteLength() {
         byte[] value1 = new byte[125];
         byte[] value2 = new byte[126];
         byte[] element1 = RLP.encodeElement(value1);
@@ -575,7 +575,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLength() {
+    void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLength() {
         byte[] value1 = new byte[126];
         byte[] value2 = new byte[126];
         byte[] element1 = RLP.encodeElement(value1);
@@ -602,7 +602,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLengthBorderCase() {
+    void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLengthBorderCase() {
         byte[] value1 = new byte[128 * 256 - 3 - 1];
         byte[] value2 = new byte[128 * 256 - 3];
         byte[] element1 = RLP.encodeElement(value1);
@@ -629,7 +629,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeShortListWithTwoByteArraysWithThreeBytesLength() {
+    void encodeDecodeShortListWithTwoByteArraysWithThreeBytesLength() {
         byte[] value1 = new byte[128 * 256 - 3];
         byte[] value2 = new byte[128 * 256 - 3];
         byte[] element1 = RLP.encodeElement(value1);
@@ -657,7 +657,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithZeroByteLength() {
+    void invalidLengthWithZeroByteLength() {
         byte[] encoded = new byte[] { (byte)0x81 };
 
         try {
@@ -670,7 +670,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithZeroByteLengthUsingDecode2() {
+    void invalidLengthWithZeroByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)0x81 };
 
         try {
@@ -683,7 +683,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithOneByteLength() {
+    void invalidLengthWithOneByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
 
         try {
@@ -696,7 +696,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithOneByteLengthUsingDecode2() {
+    void invalidLengthWithOneByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
 
         try {
@@ -709,7 +709,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithOneByteLengthBorderCase() {
+    void invalidLengthWithOneByteLengthBorderCase() {
         byte[] encoded = new byte[256];
         encoded[0] = (byte)(183 + 1);
         encoded[1] = (byte)0xff;
@@ -724,7 +724,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithOneByteLengthBorderCaseUsingDecode2() {
+    void invalidLengthWithOneByteLengthBorderCaseUsingDecode2() {
         byte[] encoded = new byte[256];
         encoded[0] = (byte)(183 + 1);
         encoded[1] = (byte)0xff;
@@ -739,7 +739,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithTwoByteLength() {
+    void invalidLengthWithTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
 
         try {
@@ -752,7 +752,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithTwoByteLengthUsingDecode2() {
+    void invalidLengthWithTwoByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
 
         try {
@@ -765,7 +765,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithTwoByteLengthBorderCase() {
+    void invalidLengthWithTwoByteLengthBorderCase() {
         byte[] encoded = new byte[1 + 2 + 256 * 256 - 2];
         encoded[0] = (byte)(183 + 2);
         encoded[1] = (byte)0xff;
@@ -781,7 +781,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithTwoByteLengthBorderCaseUsingDecode2() {
+    void invalidLengthWithTwoByteLengthBorderCaseUsingDecode2() {
         byte[] encoded = new byte[1 + 2 + 256 * 256 - 2];
         encoded[0] = (byte)(183 + 2);
         encoded[1] = (byte)0xff;
@@ -797,7 +797,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithThreeByteLengthBorderCase() {
+    void invalidLengthWithThreeByteLengthBorderCase() {
         byte[] encoded = new byte[1 + 3 + 256 * 256 * 256 - 2];
         encoded[0] = (byte)(183 + 3);
         encoded[1] = (byte)255;
@@ -814,7 +814,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithThreeByteLengthBorderCaseUsingDecode2() {
+    void invalidLengthWithThreeByteLengthBorderCaseUsingDecode2() {
         byte[] encoded = new byte[1 + 3 + 256 * 256 * 256 - 2];
         encoded[0] = (byte)(183 + 3);
         encoded[1] = (byte)255;
@@ -831,7 +831,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithFourByteLength() {
+    void invalidLengthWithFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
 
         try {
@@ -844,7 +844,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidLengthWithFourByteLengthUsingDecode2() {
+    void invalidLengthWithFourByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
 
         try {
@@ -857,7 +857,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidOneByteLength() {
+    void invalidOneByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 1) };
 
         try {
@@ -870,7 +870,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidOneByteLengthUsingDecode2() {
+    void invalidOneByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 1) };
 
         try {
@@ -883,7 +883,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidTwoByteLength() {
+    void invalidTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
 
         try {
@@ -896,7 +896,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidTwoByteLengthUsingDecode2() {
+    void invalidTwoByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
 
         try {
@@ -909,7 +909,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidThreeByteLength() {
+    void invalidThreeByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
 
         try {
@@ -922,7 +922,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidThreeByteLengthUsingDecode2() {
+    void invalidThreeByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
 
         try {
@@ -935,7 +935,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidFourByteLength() {
+    void invalidFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
 
         try {
@@ -948,7 +948,7 @@ public class RLPTest {
     }
 
     @Test
-    public void invalidFourByteLengthUsingDecode2() {
+    void invalidFourByteLengthUsingDecode2() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
 
         try {
@@ -961,7 +961,7 @@ public class RLPTest {
     }
 
     @Test
-    public void lengthOfLengthOfMaxIntegerDoesntOverflow() {
+    void lengthOfLengthOfMaxIntegerDoesntOverflow() {
         try {
             // Integer.MAX_VALUE
             byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x7f, (byte)0xff, (byte)0xff, (byte)0xff };
@@ -974,7 +974,7 @@ public class RLPTest {
     }
 
     @Test
-    public void lengthOfLengthGreaterThanMaxIntegerOverflows() {
+    void lengthOfLengthGreaterThanMaxIntegerOverflows() {
         try {
             // Integer.MAX_VALUE + 1
             byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x80, (byte)0xff, (byte)0xff, (byte)0xff };
@@ -987,21 +987,20 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeInteger() {
+    void encodeDecodeInteger() {
         for (int k = 0; k < 2048; k++) {
             Assertions.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
         }
     }
 
     @Test
-    public void encodeDecodeInteger128() {
+    void encodeDecodeInteger128() {
         Assertions.assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
     }
 
     @Test
-    @Disabled
-    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
-    public void encodeDecodeIntegerInList() {
+    @Disabled("Known issue, RLP.decodeInt should not be used in this case, to be reviewed")
+    void encodeDecodeIntegerInList() {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
             byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
@@ -1010,7 +1009,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeIntegerInListUsingBigInteger() {
+    void encodeDecodeIntegerInListUsingBigInteger() {
         for (int k = 1; k < 2048; k++) {
             byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
             byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
@@ -1019,7 +1018,7 @@ public class RLPTest {
     }
 
     @Test
-    public void encodeDecodeInteger0InList() {
+    void encodeDecodeInteger0InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(0));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         // known issue, the byte array is null
@@ -1027,32 +1026,30 @@ public class RLPTest {
     }
 
     @Test
-    @Disabled
-    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
-    public void encodeDecodeInteger128InList() {
+    @Disabled("Known issue, RLP.decodeInt should not be used in this case, to be reviewed")
+    void encodeDecodeInteger128InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(128, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
-    public void encodeDecodeInteger128InListUsingBigInteger() {
+    void encodeDecodeInteger128InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(128, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 
     @Test
-    @Disabled
-    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
-    public void encodeDecodeInteger238InList() {
+    @Disabled("Known issue, RLP.decodeInt should not be used in this case, to be reviewed")
+    void encodeDecodeInteger238InList() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(238, RLP.decodeInt(bytes2, 0));
     }
 
     @Test
-    public void encodeDecodeInteger238InListUsingBigInteger() {
+    void encodeDecodeInteger238InListUsingBigInteger() {
         byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
         byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
         Assertions.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());

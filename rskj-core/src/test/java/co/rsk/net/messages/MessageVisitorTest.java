@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class MessageVisitorTest {
+class MessageVisitorTest {
 
     private MessageVisitor target;
     private Peer sender;
@@ -54,7 +54,7 @@ public class MessageVisitorTest {
     private RskSystemProperties config;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         config = mock(RskSystemProperties.class);
         blockProcessor = mock(BlockProcessor.class);
         syncProcessor = mock(SyncProcessor.class);
@@ -75,7 +75,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_invalidblock() {
+    void blockMessage_invalidblock() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
         NodeID peer = mock(NodeID.class);
@@ -100,7 +100,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_genesisBlock() {
+    void blockMessage_genesisBlock() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
 
@@ -113,7 +113,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_advancedBlockNumber() {
+    void blockMessage_advancedBlockNumber() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
 
@@ -127,7 +127,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_ignoredForUnclesReward() {
+    void blockMessage_ignoredForUnclesReward() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
 
@@ -141,7 +141,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_hasBlockInSomeBlockchain() {
+    void blockMessage_hasBlockInSomeBlockchain() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
         Keccak256 blockHash = mock(Keccak256.class);
@@ -153,7 +153,7 @@ public class MessageVisitorTest {
         when(block.getHash()).thenReturn(blockHash);
         when(blockHash.getBytes()).thenReturn(hashBytes);
 
-        when(blockProcessor.hasBlockInSomeBlockchain(eq(hashBytes))).thenReturn(true);
+        when(blockProcessor.hasBlockInSomeBlockchain(hashBytes)).thenReturn(true);
 
         target.apply(message);
 
@@ -161,7 +161,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_dontRelayBlock() {
+    void blockMessage_dontRelayBlock() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
         Keccak256 blockHash = mock(Keccak256.class);
@@ -189,7 +189,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void blockMessage_relayBlock() {
+    void blockMessage_relayBlock() {
         BlockMessage message = mock(BlockMessage.class);
         Block block = mock(Block.class);
         Keccak256 blockHash = mock(Keccak256.class);
@@ -210,14 +210,14 @@ public class MessageVisitorTest {
 
         when(blockProcessor.processBlock(sender, block)).thenReturn(blockProcessResult);
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-        when(blockProcessResult.wasBlockAdded(eq(block))).thenReturn(true);
+        when(blockProcessResult.wasBlockAdded(block)).thenReturn(true);
         when(blockProcessor.getNodeInformation()).thenReturn(blockNodeInformation);
-        when(blockNodeInformation.getNodesByBlock(eq(blockHash))).thenReturn(new HashSet<>());
+        when(blockNodeInformation.getNodesByBlock(blockHash)).thenReturn(new HashSet<>());
         when(syncProcessor.getKnownPeersNodeIDs()).thenReturn(new HashSet<>());
 
         target.apply(message);
 
-        verify(blockProcessor, times(1)).processBlock(eq(sender), eq(block));
+        verify(blockProcessor, times(1)).processBlock(sender, block);
         verify(peerScoringManager, times(1))
                 .recordEvent(peer, peerAddress, EventType.VALID_BLOCK,
                         "Valid block {} {} at {}", block.getNumber(), null, MessageVisitor.class);
@@ -225,18 +225,18 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void statusMessage() {
+    void statusMessage() {
         StatusMessage message = mock(StatusMessage.class);
         Status status = mock(Status.class);
         when(message.getStatus()).thenReturn(status);
 
         target.apply(message);
 
-        verify(syncProcessor, times(1)).processStatus(eq(sender), eq(status));
+        verify(syncProcessor, times(1)).processStatus(sender, status);
     }
 
     @Test
-    public void getBlockMessage() {
+    void getBlockMessage() {
         GetBlockMessage message = mock(GetBlockMessage.class);
         byte[] blockHash = new byte[]{0x0F};
 
@@ -244,11 +244,11 @@ public class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(blockProcessor, times(1)).processGetBlock(eq(sender), eq(blockHash));
+        verify(blockProcessor, times(1)).processGetBlock(sender, blockHash);
     }
 
     @Test
-    public void blockRequestMessage() {
+    void blockRequestMessage() {
         BlockRequestMessage message = mock(BlockRequestMessage.class);
         byte[] blockHash = new byte[]{0x0F};
 
@@ -258,21 +258,21 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processBlockRequest(eq(sender), eq(24L), eq(blockHash));
+                .processBlockRequest(sender, 24L, blockHash);
     }
 
     @Test
-    public void blockResponseMessage() {
+    void blockResponseMessage() {
         BlockResponseMessage message = mock(BlockResponseMessage.class);
 
         target.apply(message);
 
         verify(syncProcessor, times(1))
-                .processBlockResponse(eq(sender), eq(message));
+                .processBlockResponse(sender, message);
     }
 
     @Test
-    public void skeletonRequestMessage() {
+    void skeletonRequestMessage() {
         SkeletonRequestMessage message = mock(SkeletonRequestMessage.class);
         when(message.getStartNumber()).thenReturn(24L);
         when(message.getId()).thenReturn(1L);
@@ -280,11 +280,11 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processSkeletonRequest(eq(sender), eq(1L), eq(24L));
+                .processSkeletonRequest(sender, 1L, 24L);
     }
 
     @Test
-    public void blockHeadersRequestMessage() {
+    void blockHeadersRequestMessage() {
         BlockHeadersRequestMessage message = mock(BlockHeadersRequestMessage.class);
         byte[] hash = new byte[]{0x0F};
 
@@ -295,11 +295,11 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processBlockHeadersRequest(eq(sender), eq(1L), eq(hash), eq(10));
+                .processBlockHeadersRequest(sender, 1L, hash, 10);
     }
 
     @Test
-    public void blockHashRequestMessage() {
+    void blockHashRequestMessage() {
         BlockHashRequestMessage message = mock(BlockHashRequestMessage.class);
 
         when(message.getId()).thenReturn(1L);
@@ -308,50 +308,50 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processBlockHashRequest(eq(sender), eq(1L), eq(10L));
+                .processBlockHashRequest(sender, 1L, 10L);
     }
 
     @Test
-    public void blockHashResponseMessage() {
+    void blockHashResponseMessage() {
         BlockHashResponseMessage message = mock(BlockHashResponseMessage.class);
 
         target.apply(message);
 
         verify(syncProcessor, times(1))
-                .processBlockHashResponse(eq(sender), eq(message));
+                .processBlockHashResponse(sender, message);
     }
 
     @Test
-    public void newBlockHashMessage() {
+    void newBlockHashMessage() {
         NewBlockHashMessage message = mock(NewBlockHashMessage.class);
 
         target.apply(message);
 
-        verify(syncProcessor, times(1)).processNewBlockHash(eq(sender), eq(message));
+        verify(syncProcessor, times(1)).processNewBlockHash(sender, message);
     }
 
     @Test
-    public void skeletonResponseMessage() {
+    void skeletonResponseMessage() {
         SkeletonResponseMessage message = mock(SkeletonResponseMessage.class);
 
         target.apply(message);
 
         verify(syncProcessor, times(1))
-                .processSkeletonResponse(eq(sender), eq(message));
+                .processSkeletonResponse(sender, message);
     }
 
     @Test
-    public void blockHeadersResponseMessage() {
+    void blockHeadersResponseMessage() {
         BlockHeadersResponseMessage message = mock(BlockHeadersResponseMessage.class);
 
         target.apply(message);
 
         verify(syncProcessor, times(1))
-                .processBlockHeadersResponse(eq(sender), eq(message));
+                .processBlockHeadersResponse(sender, message);
     }
 
     @Test
-    public void bodyRequestMessage() {
+    void bodyRequestMessage() {
         BodyRequestMessage message = mock(BodyRequestMessage.class);
         byte[] blockHash = new byte[]{0x0F};
 
@@ -361,31 +361,31 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processBodyRequest(eq(sender), eq(1L), eq(blockHash));
+                .processBodyRequest(sender, 1L, blockHash);
     }
 
     @Test
-    public void bodyResponseMessage() {
+    void bodyResponseMessage() {
         BodyResponseMessage message = mock(BodyResponseMessage.class);
 
         target.apply(message);
 
         verify(syncProcessor, times(1))
-                .processBodyResponse(eq(sender), eq(message));
+                .processBodyResponse(sender, message);
     }
 
     @Test
-    public void newBlockHashesMessage() {
+    void newBlockHashesMessage() {
         NewBlockHashesMessage message = mock(NewBlockHashesMessage.class);
 
         target.apply(message);
 
         verify(blockProcessor, times(1))
-                .processNewBlockHashesMessage(eq(sender), eq(message));
+                .processNewBlockHashesMessage(sender, message);
     }
 
     @Test
-    public void newBlockHashesMessage_betterBlockToSync() {
+    void newBlockHashesMessage_betterBlockToSync() {
         NewBlockHashesMessage message = mock(NewBlockHashesMessage.class);
 
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
@@ -393,11 +393,11 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(blockProcessor, never())
-                .processNewBlockHashesMessage(eq(sender), eq(message));
+                .processNewBlockHashesMessage(sender, message);
     }
 
     @Test
-    public void transactionsMessage_betterBlockToSync() {
+    void transactionsMessage_betterBlockToSync() {
         TransactionsMessage message = mock(TransactionsMessage.class);
 
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
@@ -408,7 +408,7 @@ public class MessageVisitorTest {
     }
 
     @Test
-    public void transactionsMessage_oneInvalidTransaction() {
+    void transactionsMessage_oneInvalidTransaction() {
         TransactionsMessage message = mock(TransactionsMessage.class);
         Constants networkConstants = mock(Constants.class);
         NodeID peer = mock(NodeID.class);

@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 29/09/2020.
  */
-public class BlocksBloomProcessorTest {
+class BlocksBloomProcessorTest {
     @Test
-    public void noBlocksBloomInProcessAtTheBeginning() {
+    void noBlocksBloomInProcessAtTheBeginning() {
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
         BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, null);
@@ -22,7 +22,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processFirstNewBlock() {
+    void processFirstNewBlock() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -43,7 +43,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void avoidProcessWithNoEnoughConfirmations() {
+    void avoidProcessWithNoEnoughConfirmations() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -58,7 +58,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void avoidProcessNegativeBlockNumber() {
+    void avoidProcessNegativeBlockNumber() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -73,7 +73,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processFirstNewBlockInSecondRange() {
+    void processFirstNewBlockInSecondRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -94,7 +94,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processFirstNewBlockInSecondRangeWithOnlyOneBlock() {
+    void processFirstNewBlockInSecondRangeWithOnlyOneBlock() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -115,7 +115,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processBlocksInSecondRangeOnly() {
+    void processBlocksInSecondRangeOnly() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -137,7 +137,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processNewBlockTwice() {
+    void processNewBlockTwice() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -159,7 +159,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processBlocksToFillRange() {
+    void processBlocksToFillRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -180,7 +180,7 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
-    public void processBlocksToFillRangeAndStartTheNextOne() {
+    void processBlocksToFillRangeAndStartTheNextOne() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);

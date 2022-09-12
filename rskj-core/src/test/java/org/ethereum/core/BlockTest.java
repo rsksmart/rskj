@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
-public class BlockTest {
+class BlockTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
@@ -67,7 +67,7 @@ public class BlockTest {
     }
 
     @Test
-    public void testPremineFromJSON() throws ParseException {
+    void testPremineFromJSON() throws ParseException {
 
         JSONParser parser = new JSONParser();
         JSONObject genesisMap = (JSONObject) parser.parse(TEST_GENESIS);

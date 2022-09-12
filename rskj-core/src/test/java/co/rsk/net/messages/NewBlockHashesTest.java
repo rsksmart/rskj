@@ -30,9 +30,9 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class NewBlockHashesTest {
+class NewBlockHashesTest {
     @Test
-    public void getMessageType() {
+    void getMessageType() {
         Block block = new BlockGenerator().getBlock(1);
 
         List<BlockIdentifier> blockIdentifierList = new LinkedList<>();
@@ -43,7 +43,7 @@ public class NewBlockHashesTest {
     }
 
     @Test
-    public void getBlockIdentifier() {
+    void getBlockIdentifier() {
         Block block = new BlockGenerator().getBlock(1);
         List<BlockIdentifier> blockIdentifierList = new LinkedList<>();
         blockIdentifierList.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
@@ -56,7 +56,7 @@ public class NewBlockHashesTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifiers);
 

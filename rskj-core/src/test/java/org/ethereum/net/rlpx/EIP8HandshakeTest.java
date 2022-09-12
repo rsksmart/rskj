@@ -33,7 +33,7 @@ import static org.bouncycastle.util.encoders.Hex.decode;
  * @author Mikhail Kalinin
  * @since 17.02.2016
  */
-public class EIP8HandshakeTest {
+class EIP8HandshakeTest {
 
     private ECKey keyA = fromPrivate(decode("49a7b37aa6f6645917e7b807e9d1c00d4fa71f18343b0d4122a4d2df64dd6fee"));
     private ECKey keyB = fromPrivate(decode("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291"));
@@ -51,14 +51,14 @@ public class EIP8HandshakeTest {
     private EncryptionHandshake handshakerB;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         handshakerA = new EncryptionHandshake(keyB.getPubKeyPoint());
         handshakerB = new EncryptionHandshake(null, ephemeralKeyB, null, nonceB, false);
     }
 
     // AuthInitiate EIP-8 format with version 4 and no additional list elements (sent from A to B)
     @Test
-    public void test1() throws InvalidCipherTextException {
+    void test1() throws InvalidCipherTextException {
 
         byte[] authMessageData = decode(
                 "01b304ab7578555167be8154d5cc456f567d5ba302662433674222360f08d5f1534499d3678b513b" +
@@ -103,7 +103,7 @@ public class EIP8HandshakeTest {
 
     // AuthInitiate EIP-8 format with version 56 and 3 additional list elements (sent from A to B)
     @Test
-    public void test2() throws InvalidCipherTextException {
+    void test2() throws InvalidCipherTextException {
 
         byte[] authMessageData = decode(
                 "01b8044c6c312173685d1edd268aa95e1d495474c6959bcdd10067ba4c9013df9e40ff45f5bfd6f7" +
@@ -128,7 +128,7 @@ public class EIP8HandshakeTest {
 
     // AuthResponse EIP-8 format with version 4 and no additional list elements (sent from B to A)
     @Test
-    public void test3() throws InvalidCipherTextException {
+    void test3() throws InvalidCipherTextException {
 
         byte[] authInitiateData = decode(
                 "01b304ab7578555167be8154d5cc456f567d5ba302662433674222360f08d5f1534499d3678b513b" +
@@ -190,7 +190,7 @@ public class EIP8HandshakeTest {
 
     // AuthResponse EIP-8 format with version 57 and 3 additional list elements (sent from B to A)
     @Test
-    public void test4() throws InvalidCipherTextException {
+    void test4() throws InvalidCipherTextException {
 
         byte[] authMessageData = decode(
                 "01f004076e58aae772bb101ab1a8e64e01ee96e64857ce82b1113817c6cdd52c09d26f7b90981cd7" +

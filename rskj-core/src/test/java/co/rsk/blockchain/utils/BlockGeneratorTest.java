@@ -27,9 +27,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockGeneratorTest {
+class BlockGeneratorTest {
     @Test
-    public void getBlocks() {
+    void getBlocks() {
         Block block;
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -42,7 +42,7 @@ public class BlockGeneratorTest {
     }
 
     @Test
-    public void getBlockChain() {
+    void getBlockChain() {
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> chain = blockGenerator.getBlockChain(blockGenerator.getBlock(2), 10);
 

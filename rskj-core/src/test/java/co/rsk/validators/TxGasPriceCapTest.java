@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TxGasPriceCapTest {
+class TxGasPriceCapTest {
 
     @Test
-    public void isSurpassed_whenMinGasPriceIsZeroThenFalseRegardlessTxGasPrice() {
+    void isSurpassed_whenMinGasPriceIsZeroThenFalseRegardlessTxGasPrice() {
         long minGasPriceRef = 0L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long txGasPrice = minGasPriceRef + 1_000_000_000_000L;
@@ -43,7 +43,7 @@ public class TxGasPriceCapTest {
     }
 
     @Test
-    public void isSurpassed_whenRemascTransactionThenFalseRegardlessTxGasPrice() {
+    void isSurpassed_whenRemascTransactionThenFalseRegardlessTxGasPrice() {
         long minGasPriceRef = 1L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
         long txGasPrice = minGasPriceRef + 1_000_000_000_000L;
@@ -56,7 +56,7 @@ public class TxGasPriceCapTest {
     }
 
     @Test
-    public void isSurpassed_whenLessThanCapThenFalse() {
+    void isSurpassed_whenLessThanCapThenFalse() {
         long minGasPriceRef = 1L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
 
@@ -69,7 +69,7 @@ public class TxGasPriceCapTest {
     }
 
     @Test
-    public void isSurpassed_whenEqualsCapThenFalse() {
+    void isSurpassed_whenEqualsCapThenFalse() {
         long minGasPriceRef = 1L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
 
@@ -82,7 +82,7 @@ public class TxGasPriceCapTest {
     }
 
     @Test
-    public void isSurpassed_whenMoreThanCapThenTrue() {
+    void isSurpassed_whenMoreThanCapThenTrue() {
         long minGasPriceRef = 1L;
         Coin minGasPrice = Coin.valueOf(minGasPriceRef);
 

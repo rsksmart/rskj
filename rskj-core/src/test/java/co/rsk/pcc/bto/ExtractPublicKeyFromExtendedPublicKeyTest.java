@@ -30,18 +30,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class ExtractPublicKeyFromExtendedPublicKeyTest {
+class ExtractPublicKeyFromExtendedPublicKeyTest {
     private ExtractPublicKeyFromExtendedPublicKey method;
 
     @BeforeEach
-    public void createMethod() {
+    void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
         method = new ExtractPublicKeyFromExtendedPublicKey(executionEnvironment, helper);
     }
 
     @Test
-    public void functionSignatureOk() {
+    void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
         Assertions.assertEquals("extractPublicKeyFromExtendedPublicKey", fn.name);
 
@@ -53,17 +53,17 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void shouldBeEnabled() {
+    void shouldBeEnabled() {
         Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
-    public void shouldAllowAnyTypeOfCall() {
+    void shouldAllowAnyTypeOfCall() {
         Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
-    public void executes() throws NativeContractIllegalArgumentException {
+    void executes() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 "02be517550b9e3be7fe42c80932d51e88e698663b4926e598b269d050e87e34d8c",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
@@ -72,7 +72,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void validatesExtendedPublicKeyFormat() {
+    void validatesExtendedPublicKeyFormat() {
         try {
             method.execute(new Object[]{
                     "this-is-not-an-xpub",
@@ -84,7 +84,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void failsUponInvalidPublicKey() {
+    void failsUponInvalidPublicKey() {
         try {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1s",
@@ -96,7 +96,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void failsUponNull() {
+    void failsUponNull() {
         try {
             method.execute(null);
             Assertions.fail();
@@ -106,7 +106,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void gasIsCorrect() {
+    void gasIsCorrect() {
         Assertions.assertEquals(11_300, method.getGas(new Object[]{
                 "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712"
         }, new byte[]{}));

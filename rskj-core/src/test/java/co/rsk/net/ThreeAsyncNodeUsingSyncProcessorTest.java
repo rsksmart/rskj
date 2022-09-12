@@ -32,10 +32,11 @@ import org.junit.jupiter.api.Test;
 import java.util.Random;
 
 
-public class ThreeAsyncNodeUsingSyncProcessorTest {
+@SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
+class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
-    public void synchronizeNewNodesInAChain() {
+    void synchronizeNewNodesInAChain() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100,false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
@@ -84,7 +85,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void synchronizeNewNodeWithBestChain() {
+    void synchronizeNewNodeWithBestChain() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);

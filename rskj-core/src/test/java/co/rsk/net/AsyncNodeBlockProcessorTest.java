@@ -41,12 +41,12 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class AsyncNodeBlockProcessorTest {
+class AsyncNodeBlockProcessorTest {
 
     private static final long WAIT_TIME = 60_000L;
 
     @Test
-    public void processBlockSavingInStore() {
+    void processBlockSavingInStore() {
         final NetBlockStore store = new NetBlockStore();
         final Peer sender = new SimplePeer();
 
@@ -71,7 +71,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockWithTooMuchHeight() {
+    void processBlockWithTooMuchHeight() {
         final NetBlockStore store = new NetBlockStore();
         final Peer sender = new SimplePeer();
 
@@ -93,7 +93,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void advancedBlock() {
+    void advancedBlock() {
         final NetBlockStore store = new NetBlockStore();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -112,7 +112,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void canBeIgnoredForUncles() {
+    void canBeIgnoredForUncles() {
         final NetBlockStore store = new NetBlockStore();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -133,7 +133,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processBlockAddingToBlockchain() throws InterruptedException {
+    void processBlockAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
 
         Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -173,7 +173,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTenBlocksAddingToBlockchain() throws InterruptedException {
+    void processTenBlocksAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBestBlock();
@@ -218,7 +218,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processFutureBlocksAddingToBlockchain() throws InterruptedException {
+    void processFutureBlocksAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBestBlock();
@@ -263,7 +263,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTwoBlockListsAddingToBlockchain() throws InterruptedException {
+    void processTwoBlockListsAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBestBlock();
@@ -317,7 +317,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTwoBlockListsAddingToBlockchainWithFork() throws InterruptedException {
+    void processTwoBlockListsAddingToBlockchainWithFork() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final Block genesis = blockchain.getBestBlock();
@@ -371,7 +371,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void noSyncingWithEmptyBlockchain() {
+    void noSyncingWithEmptyBlockchain() {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
@@ -387,7 +387,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTenBlocksGenesisAtLastAddingToBlockchain() throws InterruptedException {
+    void processTenBlocksGenesisAtLastAddingToBlockchain() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final Block genesis = blockchain.getBestBlock();
@@ -429,7 +429,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTenBlocksInverseOrderAddingToBlockchain() throws InterruptedException {
+    void processTenBlocksInverseOrderAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBestBlock();
@@ -473,7 +473,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processTenBlocksWithHoleAddingToBlockchain() throws InterruptedException {
+    void processTenBlocksWithHoleAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
         final Block genesis = blockchain.getBestBlock();
@@ -527,7 +527,7 @@ public class AsyncNodeBlockProcessorTest {
 
     @Test
     @Timeout(WAIT_TIME)
-    public void processBlockAddingToBlockchainUsingItsParent() throws InterruptedException {
+    void processBlockAddingToBlockchainUsingItsParent() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -579,7 +579,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRetrievingParentUsingSender() {
+    void processBlockRetrievingParentUsingSender() {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
@@ -614,7 +614,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingBlockInStore() {
+    void processGetBlockHeaderMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
 
         final NetBlockStore store = new NetBlockStore();
@@ -645,7 +645,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingEmptyStore() {
+    void processGetBlockHeaderMessageUsingEmptyStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -669,7 +669,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingBlockInBlockchain() {
+    void processGetBlockHeaderMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final NetBlockStore store = new NetBlockStore();
@@ -698,7 +698,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInStore() {
+    void processGetBlockMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final Keccak256 blockHash = block.getHash();
 
@@ -734,7 +734,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingEmptyStore() {
+    void processGetBlockMessageUsingEmptyStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -758,7 +758,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInBlockchain() {
+    void processGetBlockMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final Keccak256 blockHash = block.getHash();
@@ -792,7 +792,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRequestMessageUsingBlockInStore() {
+    void processBlockRequestMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final Keccak256 blockHash = block.getHash();
 
@@ -829,7 +829,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBodyRequestMessageUsingBlockInBlockchain() {
+    void processBodyRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(3);
         final NetBlockStore store = new NetBlockStore();
@@ -859,7 +859,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingEmptyStore() {
+    void processBlockHashRequestMessageUsingEmptyStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -883,7 +883,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
+    void processBlockHashRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final Keccak256 blockHash = block.getHash();
@@ -918,7 +918,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
+    void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final NetBlockStore store = new NetBlockStore();
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -936,7 +936,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
+    void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         final Block block = blockchain.getBlockByNumber(60);
         final NetBlockStore store = new NetBlockStore();
@@ -971,7 +971,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingUnknownHash() {
+    void processBlockHeadersRequestMessageUsingUnknownHash() {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         final NetBlockStore store = new NetBlockStore();
 
@@ -990,7 +990,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() {
+    void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() {
         int skeletonStep = 192;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(skeletonStep / 2);
         final NetBlockStore store = new NetBlockStore();
@@ -1027,7 +1027,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestWithThreeResults() {
+    void processSkeletonRequestWithThreeResults() {
         final int skeletonStep = 192;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(300);
         final NetBlockStore store = new NetBlockStore();
@@ -1066,7 +1066,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestNotIncludingGenesis() {
+    void processSkeletonRequestNotIncludingGenesis() {
         final int skeletonStep = 192;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(400);
         final NetBlockStore store = new NetBlockStore();
@@ -1114,7 +1114,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void failIfProcessBlockHeadersRequestCountHigher()  {
+    void failIfProcessBlockHeadersRequestCountHigher()  {
         final Peer sender = mock(Peer.class);
 
         final Block block = new BlockGenerator().getBlock(3);
@@ -1137,7 +1137,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void duplicatedBlock() {
+    void duplicatedBlock() {
         final NetBlockStore store = new NetBlockStore();
         final Peer sender = new SimplePeer();
 
@@ -1161,7 +1161,7 @@ public class AsyncNodeBlockProcessorTest {
     }
 
     @Test
-    public void invalidBlock() {
+    void invalidBlock() {
         final NetBlockStore store = new NetBlockStore();
         final Peer sender = new SimplePeer();
 

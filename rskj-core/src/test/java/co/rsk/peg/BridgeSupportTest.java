@@ -74,7 +74,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
-public class BridgeSupportTest extends BridgeSupportTestBase {
+class BridgeSupportTest extends BridgeSupportTestBase {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");
@@ -92,14 +92,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     protected ActivationConfig.ForBlock activationsAfterForks;
 
     @BeforeEach
-    public void setUpOnEachTest() {
+    void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
     @Test
-    public void activations_is_set() {
+    void activations_is_set() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP124)).thenReturn(true);
 
@@ -109,7 +109,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_nullFeeThrows() {
+    void voteFeePerKbChange_nullFeeThrows() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
@@ -131,7 +131,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_unsuccessfulVote_unauthorized() {
+    void voteFeePerKbChange_unsuccessfulVote_unauthorized() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
@@ -153,7 +153,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_unsuccessfulVote_negativeFeePerKb() {
+    void voteFeePerKbChange_unsuccessfulVote_negativeFeePerKb() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
@@ -184,7 +184,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_unsuccessfulVote_excessiveFeePerKb() {
+    void voteFeePerKbChange_unsuccessfulVote_excessiveFeePerKb() {
         final long MAX_FEE_PER_KB = 5_000_000L;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
@@ -218,7 +218,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_successfulVote() {
+    void voteFeePerKbChange_successfulVote() {
         final long MAX_FEE_PER_KB = 5_000_000L;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
@@ -251,7 +251,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void voteFeePerKbChange_successfulVoteWithFeeChange() {
+    void voteFeePerKbChange_successfulVoteWithFeeChange() {
         final long MAX_FEE_PER_KB = 5_000_000L;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Transaction tx = mock(Transaction.class);
@@ -284,7 +284,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getLockingCap() {
+    void getLockingCap() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
@@ -309,7 +309,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getActivePowpegRedeemScript_before_RSKIP293_activation() {
+    void getActivePowpegRedeemScript_before_RSKIP293_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
@@ -322,7 +322,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getActivePowpegRedeemScript_after_RSKIP293_activation() {
+    void getActivePowpegRedeemScript_after_RSKIP293_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
@@ -339,7 +339,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void increaseLockingCap_unauthorized() {
+    void increaseLockingCap_unauthorized() {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(authorizer.isAuthorized(any(Transaction.class))).thenReturn(false);
 
@@ -355,7 +355,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void increaseLockingCap_below_current_value() {
+    void increaseLockingCap_below_current_value() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getLockingCap()).thenReturn(Coin.COIN);
 
@@ -375,7 +375,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void increaseLockingCap_above_upper_value() {
+    void increaseLockingCap_above_upper_value() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getLockingCap()).thenReturn(Coin.COIN);
 
@@ -398,7 +398,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void increaseLockingCap() {
+    void increaseLockingCap() {
         Coin lastValue = Coin.COIN;
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getLockingCap()).thenReturn(lastValue);
@@ -431,7 +431,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_before_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_before_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
         assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN.multiply(2), Coin.COIN, Coin.COIN);
@@ -447,7 +447,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_before_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_before_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
@@ -457,7 +457,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_before_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_before_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
@@ -467,7 +467,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_after_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_after_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
         assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN, Coin.COIN.multiply(2), Coin.COIN, Coin.COIN);
         assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.ZERO, Coin.COIN.multiply(3), Coin.COIN, Coin.COIN);
@@ -485,7 +485,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_after_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_after_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
         assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
@@ -495,7 +495,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_after_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_after_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
         assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
@@ -505,7 +505,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBtcTxHashAlreadyProcessed() throws IOException {
+    void isBtcTxHashAlreadyProcessed() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
@@ -526,7 +526,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTxHashProcessedHeight() throws IOException {
+    void getBtcTxHashProcessedHeight() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
@@ -547,7 +547,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void eventLoggerLogLockBtc_before_rskip_146_activation() throws Exception {
+    void eventLoggerLogLockBtc_before_rskip_146_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -606,7 +606,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void eventLoggerLogLockBtc_after_rskip_146_activation() throws Exception {
+    void eventLoggerLogLockBtc_after_rskip_146_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -675,7 +675,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
     }
     @Test
-    public void eventLoggerLogPeginRejectionEvents_before_rskip_181_activation() throws Exception {
+    void eventLoggerLogPeginRejectionEvents_before_rskip_181_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP181)).thenReturn(false);
@@ -742,7 +742,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void eventLoggerLogPeginRejectionEvents_after_rskip_181_activation() throws Exception {
+    void eventLoggerLogPeginRejectionEvents_after_rskip_181_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP181)).thenReturn(true);
@@ -809,7 +809,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void eventLoggerLogPeginBtc_before_rskip_170_activation() throws Exception {
+    void eventLoggerLogPeginBtc_before_rskip_170_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(false);
@@ -870,7 +870,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void eventLoggerLogPeginBtc_after_rskip_170_activation() throws Exception {
+    void eventLoggerLogPeginBtc_after_rskip_170_activation() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
@@ -932,7 +932,8 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransactionLockTxNotWhitelisted_before_rskip_146_activation() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    @SuppressWarnings("squid:S5961")
+    void registerBtcTransactionLockTxNotWhitelisted_before_rskip_146_activation() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -1101,7 +1102,8 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransactionLockTxNotWhitelisted_after_rskip_146_activation() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    @SuppressWarnings("squid:S5961")
+    void registerBtcTransactionLockTxNotWhitelisted_after_rskip_146_activation() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1276,7 +1278,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_sending_segwit_tx_twice_locks_just_once() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_sending_segwit_tx_twice_locks_just_once() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock mockedActivations = mock(ActivationConfig.ForBlock.class);
         when(mockedActivations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -1381,7 +1383,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
+    void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -1444,7 +1446,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void callProcessFundsMigration_is_migrating_after_rskip_146_activation() throws IOException {
+    void callProcessFundsMigration_is_migrating_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1509,7 +1511,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void callProcessFundsMigration_is_migrated_before_rskip_146_activation() throws IOException {
+    void callProcessFundsMigration_is_migrated_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -1572,7 +1574,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void callProcessFundsMigration_is_migrated_after_rskip_146_activation() throws IOException {
+    void callProcessFundsMigration_is_migrated_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1636,7 +1638,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
+    void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
 
@@ -1699,7 +1701,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void updateFederationCreationBlockHeights_after_rskip_186_activation() throws IOException {
+    void updateFederationCreationBlockHeights_after_rskip_186_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
 
@@ -1771,7 +1773,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_before_rskip_146_activation() throws IOException {
+    void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
@@ -1813,7 +1815,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_146_activation_if_release_transaction_doesnt_have_rstTxHash() throws IOException {
+    void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_146_activation_if_release_transaction_doesnt_have_rstTxHash() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1855,7 +1857,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_uses_release_transaction_rstTxHash_after_rskip_146_activation() throws IOException {
+    void rskTxWaitingForSignature_uses_release_transaction_rstTxHash_after_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
@@ -1898,7 +1900,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_176_activation() throws IOException {
+    void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_176_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -1942,7 +1944,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_sender_not_recognized_before_rskip170_no_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_sender_not_recognized_before_rskip170_no_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2025,7 +2027,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_sender_not_recognized_after_rskip170_lock() throws Exception {
+    void when_registerBtcTransaction_sender_not_recognized_after_rskip170_lock() throws Exception {
         // Assert
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
@@ -2113,7 +2115,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesLegacyType_beforeFork_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesLegacyType_beforeFork_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -2200,7 +2202,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesLegacyType_afterFork_notWhitelisted_no_lock_and_refund() throws Exception {
+    void when_registerBtcTransaction_usesLegacyType_afterFork_notWhitelisted_no_lock_and_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2296,7 +2298,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesLegacyType_afterFork_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesLegacyType_afterFork_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2381,7 +2383,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesSegCompatibilityType_beforeFork_no_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesSegCompatibilityType_beforeFork_no_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -2458,7 +2460,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2549,7 +2551,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_notWhitelisted_no_lock_and_refund() throws Exception {
+    void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_notWhitelisted_no_lock_and_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2644,7 +2646,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesMultisigType_beforeFork_no_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesMultisigType_beforeFork_no_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -2721,7 +2723,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesMultisigType_afterFork_no_lock_and_refund() throws Exception {
+    void when_registerBtcTransaction_usesMultisigType_afterFork_no_lock_and_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2810,7 +2812,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesMultisigWithWitnessType_beforeFork_no_lock_and_no_refund() throws Exception {
+    void when_registerBtcTransaction_usesMultisigWithWitnessType_beforeFork_no_lock_and_no_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -2888,7 +2890,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesMultisigWithWitnessType_afterFork_no_lock_and_refund() throws Exception {
+    void when_registerBtcTransaction_usesMultisigWithWitnessType_afterFork_no_lock_and_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -2982,7 +2984,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_tx_with_witness_before_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_rejects_tx_with_witness_before_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -3051,7 +3053,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_accepts_lock_tx_with_witness_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_accepts_lock_tx_with_witness_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3161,7 +3163,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_tx_with_witness_and_unregistered_coinbase_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_rejects_tx_with_witness_and_unregistered_coinbase_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3248,7 +3250,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_tx_with_witness_and_unqual_witness_root_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_rejects_tx_with_witness_and_unqual_witness_root_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3343,7 +3345,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_tx_without_witness_unequal_roots_after_rskip_143() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_rejects_tx_without_witness_unequal_roots_after_rskip_143() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3428,7 +3430,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_accepts_lock_tx_without_witness_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransaction_accepts_lock_tx_without_witness_after_rskip_143_activation() throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3522,7 +3524,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_accepts_lock_tx_version1_after_rskip_170_activation()
+    void registerBtcTransaction_accepts_lock_tx_version1_after_rskip_170_activation()
         throws BlockStoreException, IOException, PeginInstructionsException, BridgeIllegalArgumentException {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3628,7 +3630,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcTransaction_ignores_pegin_instructions_before_rskip_170_activation()
+    void registerBtcTransaction_ignores_pegin_instructions_before_rskip_170_activation()
         throws BlockStoreException, IOException, PeginInstructionsException, BridgeIllegalArgumentException {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3742,7 +3744,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_registerBtcTransaction_invalidPeginProtocolVersion_afterFork_no_lock_and_refund()
+    void when_registerBtcTransaction_invalidPeginProtocolVersion_afterFork_no_lock_and_refund()
         throws BlockStoreException, IOException, PeginInstructionsException, BridgeIllegalArgumentException {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3856,7 +3858,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBlockMerkleRootValid_equal_merkle_roots() {
+    void isBlockMerkleRootValid_equal_merkle_roots() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -3878,7 +3880,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBlockMerkleRootValid_unequal_merkle_roots_before_rskip_143() {
+    void isBlockMerkleRootValid_unequal_merkle_roots_before_rskip_143() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -3900,7 +3902,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBlockMerkleRootValid_coinbase_information_null_after_rskip_143() {
+    void isBlockMerkleRootValid_coinbase_information_null_after_rskip_143() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3927,7 +3929,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBlockMerkleRootValid_coinbase_information_not_null_and_unequal_mroots_after_rskip_143() {
+    void isBlockMerkleRootValid_coinbase_information_not_null_and_unequal_mroots_after_rskip_143() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3955,7 +3957,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isBlockMerkleRootValid_coinbase_information_not_null_and_equal_mroots_after_rskip_143() {
+    void isBlockMerkleRootValid_coinbase_information_not_null_and_equal_mroots_after_rskip_143() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3984,7 +3986,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_rejects_tx_with_witness_before_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_rejects_tx_with_witness_before_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -4045,7 +4047,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_accepts_tx_with_witness_after_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_accepts_tx_with_witness_after_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4126,7 +4128,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_unregistered_coinbase_after_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_unregistered_coinbase_after_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4204,7 +4206,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_registered_coinbase_unequal_witnessroot_after_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_registered_coinbase_unequal_witnessroot_after_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4281,7 +4283,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_tx_without_witness_unequal_roots_after_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_tx_without_witness_unequal_roots_after_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4342,7 +4344,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_accepts_tx_without_witness_after_rskip_143() throws Exception {
+    void getBtcTransactionConfirmations_accepts_tx_without_witness_after_rskip_143() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4412,7 +4414,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4465,7 +4467,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4514,7 +4516,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_HashNotInPmt_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_HashNotInPmt_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4577,7 +4579,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4624,21 +4626,25 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         //Leaving no confirmation blocks
         int height = 5;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 5, height);
-        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
+        Sha256Hash hash = registerHeader.getHash();
+        when(btcBlockStore.getFromCache(hash)).thenReturn(new StoredBlock(registerHeader, BigInteger.ZERO, 0));
 
+        byte[] btcTxSerialized = tx.bitcoinSerialize();
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+        byte[] bytes = Sha256Hash.ZERO_HASH.getBytes();
         Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.registerBtcCoinbaseTransaction(
-                tx.bitcoinSerialize(),
-                registerHeader.getHash(),
-                pmt.bitcoinSerialize(),
+                btcTxSerialized,
+                hash,
+                pmtSerialized,
                 mock(Sha256Hash.class),
-                Sha256Hash.ZERO_HASH.getBytes()
+                bytes
         ));
 
         verify(mock(BridgeStorageProvider.class), never()).setCoinbaseInformation(any(Sha256Hash.class), any(CoinbaseInformation.class));
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4710,7 +4716,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, VMException {
+    void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4784,7 +4790,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, VMException {
+    void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4869,7 +4875,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void hasBtcCoinbaseTransaction_before_rskip_143_activation() throws AddressFormatException {
+    void hasBtcCoinbaseTransaction_before_rskip_143_activation() throws AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -4893,7 +4899,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void hasBtcCoinbaseTransaction_after_rskip_143_activation() throws AddressFormatException {
+    void hasBtcCoinbaseTransaction_after_rskip_143_activation() throws AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4917,7 +4923,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void hasBtcCoinbaseTransaction_fails_with_null_coinbase_information_after_rskip_143_activation() throws AddressFormatException {
+    void hasBtcCoinbaseTransaction_fails_with_null_coinbase_information_after_rskip_143_activation() throws AddressFormatException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4939,7 +4945,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isAlreadyBtcTxHashProcessedHeight_true() throws IOException {
+    void isAlreadyBtcTxHashProcessedHeight_true() throws IOException {
         Repository repository = createRepository();
         BtcTransaction btcTransaction = new BtcTransaction(btcRegTestParams);
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest, activationsBeforeForks);
@@ -4951,7 +4957,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void isAlreadyBtcTxHashProcessedHeight_false() throws IOException {
+    void isAlreadyBtcTxHashProcessedHeight_false() throws IOException {
         BtcTransaction btcTransaction = new BtcTransaction(btcRegTestParams);
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class));
 
@@ -4959,7 +4965,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_negative_height() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_negative_height() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest, activationsBeforeForks);
@@ -4971,7 +4977,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_insufficient_confirmations() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_insufficient_confirmations() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstantsRegtest.getBtcParams());
         Repository repository = createRepository();
@@ -4994,7 +5000,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_invalid_pmt() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_invalid_pmt() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -5034,7 +5040,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_hash_not_in_pmt() throws BlockStoreException, AddressFormatException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_hash_not_in_pmt() throws BlockStoreException, AddressFormatException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -5072,7 +5078,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_exception_in_getTxnHashAndMerkleRoot()
+    void validationsForRegisterBtcTransaction_exception_in_getTxnHashAndMerkleRoot()
         throws BlockStoreException, AddressFormatException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
@@ -5109,7 +5115,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
 
     @Test
-    public void validationsForRegisterBtcTransaction_tx_without_inputs_before_rskip_143() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_tx_without_inputs_before_rskip_143() throws BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
@@ -5147,11 +5153,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
                 activations
         );
 
-        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), btcTxHeight, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+        Sha256Hash hash = btcTx.getHash();
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+        byte[] btcTxSerialized = btcTx.bitcoinSerialize();
+        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, btcTxHeight, pmtSerialized, btcTxSerialized));
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_tx_without_inputs_after_rskip_143() throws BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_tx_without_inputs_after_rskip_143() throws BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -5189,11 +5198,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
                 activations
         );
 
-        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), Hex.decode("00000000000100")));
+        Sha256Hash hash = btcTx.getHash();
+        byte[] pmtSerialized = pmt.bitcoinSerialize();
+        byte[] decode = Hex.decode("00000000000100");
+        Assertions.assertThrows(VerificationException.class, () -> bridgeSupport.validationsForRegisterBtcTransaction(hash, 0, pmtSerialized, decode));
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_invalid_block_merkle_root() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_invalid_block_merkle_root() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
@@ -5240,7 +5252,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_successful() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void validationsForRegisterBtcTransaction_successful() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
@@ -5291,7 +5303,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_belongs_to_active_federation() throws Exception {
+    void addSignature_fedPubKey_belongs_to_active_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
 
@@ -5334,7 +5346,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_belongs_to_retiring_federation() throws Exception {
+    void addSignature_fedPubKey_belongs_to_retiring_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -5390,7 +5402,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_no_belong_to_retiring_or_active_federation() throws Exception {
+    void addSignature_fedPubKey_no_belong_to_retiring_or_active_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -5445,7 +5457,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_no_belong_to_active_federation_no_existing_retiring_fed() throws Exception {
+    void addSignature_fedPubKey_no_belong_to_active_federation_no_existing_retiring_fed() throws Exception {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstantsRegtest,
@@ -5463,7 +5475,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureToMissingTransaction() throws Exception {
+    void addSignatureToMissingTransaction() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository repository = createRepository();
@@ -5487,7 +5499,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureFromInvalidFederator() throws Exception {
+    void addSignatureFromInvalidFederator() throws Exception {
         Repository repository = createRepository();
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest,
@@ -5510,30 +5522,30 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureWithInvalidSignature() throws Exception {
+    void addSignatureWithInvalidSignature() throws Exception {
         addSignatureFromValidFederator(Lists.newArrayList(new BtcECKey()), 1, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureWithLessSignaturesThanExpected() throws Exception {
+    void addSignatureWithLessSignaturesThanExpected() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 0, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureWithMoreSignaturesThanExpected() throws Exception {
+    void addSignatureWithMoreSignaturesThanExpected() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 2, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureNonCanonicalSignature() throws Exception {
+    void addSignatureNonCanonicalSignature() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureCreateEventLog() throws Exception {
+    void addSignatureCreateEventLog() throws Exception {
         // Setup
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository track = createRepository().startTracking();
@@ -5585,26 +5597,26 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureTwice() throws Exception {
+    void addSignatureTwice() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
     }
 
     @Test
-    public void addSignatureOneSignature() throws Exception {
+    void addSignatureOneSignature() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, false, "PartiallySigned");
     }
 
     @Test
-    public void addSignatureTwoSignatures() throws Exception {
+    void addSignatureTwoSignatures() throws Exception {
         List<BtcECKey> federatorPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         List<BtcECKey> keys = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
         addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
     }
 
     @Test
-    public void addSignatureMultipleInputsPartiallyValid() throws Exception {
+    void addSignatureMultipleInputsPartiallyValid() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository repository = createRepository();
@@ -5716,7 +5728,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_pegin_tx() {
+    void getTransactionType_pegin_tx() {
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .build();
@@ -5728,7 +5740,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_pegout_tx() {
+    void getTransactionType_pegout_tx() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
@@ -5787,7 +5799,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_migration_tx() {
+    void getTransactionType_migration_tx() {
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -5878,7 +5890,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_sentFromOldFed_afterRskip199_migration_tx() {
+    void getTransactionType_sentFromOldFed_afterRskip199_migration_tx() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
 
@@ -5934,7 +5946,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_sentFromOldFed_beforeRskip199_pegin_tx() {
+    void getTransactionType_sentFromOldFed_beforeRskip199_pegin_tx() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(false);
 
@@ -5990,7 +6002,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_sentFromP2SH_afterRskip199_pegin_tx() {
+    void getTransactionType_sentFromP2SH_afterRskip199_pegin_tx() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
 
@@ -6046,14 +6058,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_unknown_tx() {
+    void getTransactionType_unknown_tx() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         Assertions.assertEquals(TxType.UNKNOWN, bridgeSupport.getTransactionType(btcTx));
     }
 
     @Test
-    public void processPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
+    void processPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
         assertRefundInProcessPegInVersionLegacy(
             true,
             false,
@@ -6063,7 +6075,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
+    void processPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
         assertRefundInProcessPegInVersionLegacy(
             false,
             false,
@@ -6073,7 +6085,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
+    void processPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
         assertRefundInProcessPegInVersionLegacy(
             true,
             true,
@@ -6083,7 +6095,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
+    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
         RegisterBtcTransactionException, PeginInstructionsException {
 
         assertRefundInProcessPegInVersion1(
@@ -6094,7 +6106,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
+    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         BtcECKey key = new BtcECKey();
@@ -6108,7 +6120,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
+    void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
         throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         assertRefundInProcessPegInVersion1(
@@ -6119,7 +6131,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_noPeginInstructions() {
+    void processPegIn_noPeginInstructions() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
@@ -6140,7 +6152,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
+    void processPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -6183,7 +6195,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender()
+    void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender()
         throws IOException, PeginInstructionsException {
 
         // Arrange
@@ -6251,7 +6263,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_time_not_present_in_storage() throws IOException, BlockStoreException {
+    void receiveHeader_time_not_present_in_storage() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6287,7 +6299,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_time_exceed_X() throws IOException, BlockStoreException {
+    void receiveHeader_time_exceed_X() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6328,7 +6340,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_time_less_than_X() throws IOException, BlockStoreException {
+    void receiveHeader_time_less_than_X() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6369,7 +6381,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_unexpected_exception() throws IOException, BlockStoreException {
+    void receiveHeader_unexpected_exception() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6402,7 +6414,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_previous_block_not_in_storage() throws IOException, BlockStoreException {
+    void receiveHeader_previous_block_not_in_storage() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6439,7 +6451,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_block_too_old() throws IOException, BlockStoreException {
+    void receiveHeader_block_too_old() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6476,7 +6488,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void receiveHeader_block_exist_in_storage() throws IOException, BlockStoreException {
+    void receiveHeader_block_exist_in_storage() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -6582,24 +6594,24 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void migrating_many_utxos_works_before_rskip294_divide_in_2() throws IOException {
+    void migrating_many_utxos_works_before_rskip294_divide_in_2() throws IOException {
         test_migrating_many_utxos(false, 380, 2);
     }
 
     @Test
-    public void migrating_many_utxos_works_before_rskip294_divide_in_4() throws IOException {
+    void migrating_many_utxos_works_before_rskip294_divide_in_4() throws IOException {
         test_migrating_many_utxos(false, 600, 4);
     }
 
     @Test
-    public void migrating_many_utxos_works_after_rskip294_even_utxos_distribution() throws IOException {
+    void migrating_many_utxos_works_after_rskip294_even_utxos_distribution() throws IOException {
         int utxosToCreate = 400;
         int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstantsRegtest.getMaxInputsPerPegoutTransaction());
         test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
     }
 
     @Test
-    public void migrating_many_utxos_works_after_rskip294_uneven_utxos_distribution() throws IOException {
+    void migrating_many_utxos_works_after_rskip294_uneven_utxos_distribution() throws IOException {
         int utxosToCreate = 410;
         int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstantsRegtest.getMaxInputsPerPegoutTransaction());
         test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
@@ -6703,7 +6715,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
+    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
@@ -6716,7 +6728,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() {
+    void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -6732,7 +6744,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getQueuedPegoutsCount_before_RSKIP271_activation() throws IOException {
+    void getQueuedPegoutsCount_before_RSKIP271_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
@@ -6748,7 +6760,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getQueuedPegoutsCount_after_RSKIP271_activation() throws IOException {
+    void getQueuedPegoutsCount_after_RSKIP271_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -6764,7 +6776,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws IOException {
+    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
@@ -6780,7 +6792,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws IOException {
+    void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -6808,7 +6820,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation_with_erpFederation() throws IOException {
+    void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation_with_erpFederation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
@@ -6859,7 +6871,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_zero_pegouts() throws IOException {
+    void getEstimatedFeesForNextPegOutEvent_zero_pegouts() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 

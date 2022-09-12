@@ -38,9 +38,9 @@ import java.io.FileNotFoundException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class TraceModuleImplTest {
+class TraceModuleImplTest {
     @Test
-    public void retrieveUnknownTransactionAsNull() throws Exception {
+    void retrieveUnknownTransactionAsNull() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
@@ -52,7 +52,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveUnknownBlockAsNull() throws Exception {
+    void retrieveUnknownBlockAsNull() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
@@ -64,7 +64,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveSimpleContractCreationTrace() throws Exception {
+    void retrieveSimpleContractCreationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -98,7 +98,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveEmptyContractCreationTrace() throws Exception {
+    void retrieveEmptyContractCreationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts09.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -127,7 +127,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveMultiContractTraces() throws Exception {
+    void retrieveMultiContractTraces() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
 
@@ -147,7 +147,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveTraces() throws Exception {
+    void retrieveTraces() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
 
@@ -159,7 +159,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void getASingleTrace() throws Exception {
+    void getASingleTrace() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
 
@@ -170,7 +170,7 @@ public class TraceModuleImplTest {
 
         Assertions.assertNotNull(result);
         Assertions.assertEquals(result.get("transactionHash").asText(), transactionHash);
-        Assertions.assertEquals(result.get("action").get("from").asText(),"0xa0663f719962ec10bb57865532bef522059dfd96");
+        Assertions.assertEquals("0xa0663f719962ec10bb57865532bef522059dfd96",result.get("action").get("from").asText());
     }
 
     private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -479,7 +479,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveSimpleContractInvocationTrace() throws Exception {
+    void retrieveSimpleContractInvocationTrace() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -508,7 +508,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void retrieveSimpleAccountTransfer() throws Exception {
+    void retrieveSimpleAccountTransfer() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/transfers01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -537,7 +537,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void executeContractWithCall() throws Exception {
+    void executeContractWithCall() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/call01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -575,7 +575,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void executeContractWithDelegateCall() throws Exception {
+    void executeContractWithDelegateCall() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/delegatecall01.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -613,7 +613,7 @@ public class TraceModuleImplTest {
     }
 
     @Test
-    public void executeContractWithCreate2() throws Exception {
+    void executeContractWithCreate2() throws Exception {
         DslParser parser = DslParser.fromResource("dsl/create201.txt");
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);

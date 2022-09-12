@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class OneNodeTest {
+class OneNodeTest {
     private static Block getGenesis() {
         final World world = new World();
 
@@ -40,7 +40,7 @@ public class OneNodeTest {
     }
 
     @Test
-    public void buildBlockchain() {
+    void buildBlockchain() {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -53,7 +53,7 @@ public class OneNodeTest {
     }
 
     @Test
-    public void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

@@ -37,14 +37,14 @@ import java.io.IOException;
 import java.util.*;
 
 @Disabled
-public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
+class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcBlock blockWithTx;
     private int blockWithTxHeight;
     private BtcTransaction txToLock;
     private PartialMerkleTree pmtOfLockTx;
 
     @Test
-    public void registerBtcTransaction() throws VMException {
+    void registerBtcTransaction() throws VMException {
         activationConfig = ActivationConfigsForTest.all();
 
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");

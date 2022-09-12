@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class PeerScoringReporterUtilTest {
+class PeerScoringReporterUtilTest {
 
     @Test
-    public void buildsReputationSummary() {
+    void buildsReputationSummary() {
         List<PeerScoringInformation> peerScoringInformationList = new ArrayList<>(goodReputationPeers());
         peerScoringInformationList.addAll(badReputationPeers());
         peerScoringInformationList.addAll(goodReputationPeers());
@@ -45,7 +45,7 @@ public class PeerScoringReporterUtilTest {
     }
 
     @Test
-    public void emptyDetailedStatusShouldMatchToEmptySummary() throws JsonProcessingException {
+    void emptyDetailedStatusShouldMatchToEmptySummary() throws JsonProcessingException {
         List<PeerScoringInformation> peerScoringInformationList = new ArrayList<>();
 
         String detailedStatusResult = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);

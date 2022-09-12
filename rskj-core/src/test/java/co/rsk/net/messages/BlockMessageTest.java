@@ -27,22 +27,22 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class BlockMessageTest {
+class BlockMessageTest {
     @Test
-    public void getMessageType() {
+    void getMessageType() {
         BlockMessage message = new BlockMessage(null);
         Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
     }
 
     @Test
-    public void getBlock() {
+    void getBlock() {
         Block block = mock(Block.class);
         BlockMessage message = new BlockMessage(block);
         Assertions.assertSame(block, message.getBlock());
     }
 
     @Test
-    public void accept() {
+    void accept() {
         Block block = mock(Block.class);
         BlockMessage message = new BlockMessage(block);
 

@@ -22,30 +22,30 @@ import java.math.BigInteger;
  * @since 20.03.22
  */
 @Disabled
-public class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
+class PegoutBatchingBridgeMethodsTest extends BridgePerformanceTestCase {
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getQueuedPegoutsCountTest() throws VMException {
+    void getQueuedPegoutsCountTest() throws VMException {
         ExecutionStats queuedPegoutsCountStats = new ExecutionStats("getQueuedPegoutsCount");
         getQueuedPegoutsCountTest(1000, queuedPegoutsCountStats);
         BridgePerformanceTest.addStats(queuedPegoutsCountStats);
     }
 
     @Test
-    public void getNextPegoutCreationBlockNumberTest() throws VMException {
+    void getNextPegoutCreationBlockNumberTest() throws VMException {
         ExecutionStats nextPegoutCreationBlockNumberStats = new ExecutionStats("getNextPegoutCreationBlockNumber");
         getNextPegoutCreationBlockNumberTest(1000, nextPegoutCreationBlockNumberStats);
         BridgePerformanceTest.addStats(nextPegoutCreationBlockNumberStats);
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEventTest() throws VMException {
+    void getEstimatedFeesForNextPegOutEventTest() throws VMException {
         ExecutionStats estimatedFeesForNextPegOutEventStats = new ExecutionStats("getEstimatedFeesForNextPegOutEvent");
         getEstimatedFeesForNextPegOutEventTest(1000, estimatedFeesForNextPegOutEventStats);
         BridgePerformanceTest.addStats(estimatedFeesForNextPegOutEventStats);

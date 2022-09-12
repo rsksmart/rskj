@@ -17,9 +17,9 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class BodyResponseMessageTest {
+class BodyResponseMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -65,7 +65,7 @@ public class BodyResponseMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 

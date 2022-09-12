@@ -25,12 +25,12 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class JsonRpcErrorResponseTest {
+class JsonRpcErrorResponseTest {
 
 	private ObjectMapper serializer = new ObjectMapper();
 
 	@Test
-	public void serializeResponseWithError() throws IOException {
+	void serializeResponseWithError() throws IOException {
 
 		String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"error\":{\"code\":-32603,\"message\":\"Internal error.\"}}";
 

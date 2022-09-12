@@ -30,12 +30,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PeerConnectionDataTest {
+class PeerConnectionDataTest {
 
     /* PEER */
 
     @Test
-    public void testPeer() {
+    void testPeer() {
 
         //Init
         InetAddress address = InetAddress.getLoopbackAddress();

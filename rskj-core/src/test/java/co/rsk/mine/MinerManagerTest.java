@@ -53,6 +53,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by ajlopez on 15/04/2017.
  */
+@SuppressWarnings("squid:S5786") // called from another test
 public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -65,7 +66,7 @@ public class MinerManagerTest {
     private BlockExecutor blockExecutor;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         miningMainchainView = factory.getMiningMainchainView();
@@ -77,7 +78,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void refreshWorkRunOnce() {
+    void refreshWorkRunOnce() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -98,7 +99,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void refreshWorkRunTwice() {
+    void refreshWorkRunTwice() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -128,7 +129,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void mineBlockTwiceReusingTheSameWork() {
+    void mineBlockTwiceReusingTheSameWork() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -156,11 +157,11 @@ public class MinerManagerTest {
 
         Assertions.assertNotNull(blocks);
         Assertions.assertEquals(2, blocks.size());
-        Assertions.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
+        Assertions.assertNotEquals(blocks.get(0).getHash(), blocks.get(1).getHash());
     }
 
     @Test
-    public void mineBlockWhileSyncingBlocks() {
+    void mineBlockWhileSyncingBlocks() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         NodeBlockProcessor nodeBlockProcessor = mock(NodeBlockProcessor.class);
@@ -176,7 +177,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void doWork() {
+    void doWork() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -189,7 +190,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void doWorkEvenWithoutMinerServer() {
+    void doWorkEvenWithoutMinerServer() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -202,7 +203,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void doWorkInThread() {
+    void doWorkInThread() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerServerImpl minerServer = getMinerServer();
@@ -223,7 +224,7 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void mineBlock() {
+    void mineBlock() {
         Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         MinerManager manager = new MinerManager();

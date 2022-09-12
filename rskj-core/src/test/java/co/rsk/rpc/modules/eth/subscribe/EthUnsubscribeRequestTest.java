@@ -33,11 +33,11 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class EthUnsubscribeRequestTest {
+class EthUnsubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
-    public void deserializeUnsubscribe() throws IOException {
+    void deserializeUnsubscribe() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":100,\"method\":\"eth_unsubscribe\",\"params\":[\"0x0204\"]}";
         ByteArrayInputStream bais = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));
         RskJsonRpcRequest request = serializer.deserializeRequest(bais);
@@ -48,7 +48,7 @@ public class EthUnsubscribeRequestTest {
     }
 
     @Test
-    public void unsubscribe_withWrongParameter_thenThrowException() {
+    void unsubscribe_withWrongParameter_thenThrowException() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new EthUnsubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_SUBSCRIBE, "test", null));
     }
 

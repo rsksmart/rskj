@@ -13,9 +13,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 03/08/2017.
  */
-public class ImmutableTransactionTest {
+class ImmutableTransactionTest {
     @Test
-    public void tryingToSignImmutableTransaction() {
+    void tryingToSignImmutableTransaction() {
         Transaction tx = createImmutableTransaction();
 
         try {

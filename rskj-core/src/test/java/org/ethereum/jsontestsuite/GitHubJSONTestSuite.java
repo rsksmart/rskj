@@ -179,7 +179,7 @@ public class GitHubJSONTestSuite {
 
         logger.info(" - Total: Pass: {}, Failed: {} - ", pass, fails);
 
-        Assertions.assertTrue(fails == 0);
+        Assertions.assertEquals(0, fails);
 
     }
 
@@ -233,7 +233,7 @@ public class GitHubJSONTestSuite {
             logger.info(line);
             List<String> fails = StateTestRunner.run(testCases.get(testName));
 
-            Assertions.assertTrue(fails.size() == 0);
+            Assertions.assertEquals(0, fails.size());
 
         } else {
             logger.error("Sorry test case doesn't exist: {}", testName);

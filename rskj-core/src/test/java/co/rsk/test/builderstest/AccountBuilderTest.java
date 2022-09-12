@@ -29,9 +29,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 8/7/2016.
  */
-public class AccountBuilderTest {
+class AccountBuilderTest {
     @Test
-    public void createAccountWithNameAsSeed() {
+    void createAccountWithNameAsSeed() {
         Account account = new AccountBuilder().name("acc1").build();
 
         Assertions.assertNotNull(account);
@@ -39,7 +39,7 @@ public class AccountBuilderTest {
     }
 
     @Test
-    public void createAccountWithBalanceAndCode() {
+    void createAccountWithBalanceAndCode() {
         World world = new World();
 
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };

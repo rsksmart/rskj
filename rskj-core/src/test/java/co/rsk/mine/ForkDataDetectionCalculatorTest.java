@@ -41,20 +41,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-public class ForkDataDetectionCalculatorTest {
+class ForkDataDetectionCalculatorTest {
     private static final int MAX_UNCLES = 10;
 
     private static MessageSerializer serializer;
 
     @BeforeAll
-    public static void setUp() {
+     static void setUp() {
         NetworkParameters params = RegTestParams.get();
         new Context(params);
         serializer = params.getDefaultSerializer();
     }
 
     @Test
-    public void calculateWithMinPossibleBlockchainHeight() {
+    void calculateWithMinPossibleBlockchainHeight() {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(449);
 
         ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
@@ -87,7 +87,7 @@ public class ForkDataDetectionCalculatorTest {
     }
 
     @Test
-    public void calculateReturnsEmptyWhenNotEnoughBlocks() {
+    void calculateReturnsEmptyWhenNotEnoughBlocks() {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(250);
 
         ForkDetectionDataCalculator builder = new ForkDetectionDataCalculator();
@@ -98,7 +98,7 @@ public class ForkDataDetectionCalculatorTest {
     }
 
     @Test
-    public void calculateWithDivisibleBy64height() {
+    void calculateWithDivisibleBy64height() {
         List<Block> lastBlockchainBlocks = createBlockchainAsList(512);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 
@@ -132,7 +132,7 @@ public class ForkDataDetectionCalculatorTest {
     }
 
     @Test
-    public void calculateWithUnclesOnPreviousBlocks() {
+    void calculateWithUnclesOnPreviousBlocks() {
         List<Block> lastBlockchainBlocks = createBlockchainWithUnclesAsList(512, false);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 
@@ -166,7 +166,7 @@ public class ForkDataDetectionCalculatorTest {
     }
 
     @Test
-    public void calculateWithMaxUnclesOnPreviousBlocks() {
+    void calculateWithMaxUnclesOnPreviousBlocks() {
         List<Block> lastBlockchainBlocks = createBlockchainWithMaxUnclesAsList(564);
         List<Block> trimmedBlocks = lastBlockchainBlocks.subList(0, 449);
 

@@ -4,10 +4,10 @@ import io.netty.handler.codec.http.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class HttpUtilsTest {
+class HttpUtilsTest {
 
     @Test
-    public void mimeTest() {
+    void mimeTest() {
 
         final String SIMPLE_CONTENT_TYPE = "text/html";
         final String NORMAL_CONTENT_TYPE = "text/html; charset=utf-8";

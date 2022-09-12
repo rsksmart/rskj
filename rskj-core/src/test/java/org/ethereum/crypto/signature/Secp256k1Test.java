@@ -34,31 +34,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
-public class Secp256k1Test {
+class Secp256k1Test {
 
     private MockedStatic<Secp256k1Context> secp256k1ContextMocked;
 
     @BeforeEach
-    public void init() {
+    void init() {
         // Lets assume we have the ability to run Native Library.
         secp256k1ContextMocked = mockStatic(Secp256k1Context.class);
         secp256k1ContextMocked.when(Secp256k1Context::isEnabled).thenReturn(Boolean.TRUE);
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         secp256k1ContextMocked.close();
     }
 
     @Test
-    public void testInitialization_notInitialized() {
+    void testInitialization_notInitialized() {
         Secp256k1.reset();
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
         assertFalse(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
     }
 
     @Test
-    public void testInitialization_BC() {
+    void testInitialization_BC() {
         // Test BC init
         Secp256k1.reset();
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
@@ -69,7 +69,7 @@ public class Secp256k1Test {
     }
 
     @Test
-    public void testInitialization_fallbackOnBC() {
+    void testInitialization_fallbackOnBC() {
         // Test BC init
         secp256k1ContextMocked.when(Secp256k1Context::isEnabled).thenReturn(Boolean.FALSE);
         secp256k1ContextMocked.when(Secp256k1Context::getLoadError).thenReturn(new RuntimeException("Secp256k1Context test"));
@@ -81,7 +81,7 @@ public class Secp256k1Test {
     }
 
     @Test
-    public void testInitialization_Native() {
+    void testInitialization_Native() {
         // Test Native init
         Secp256k1.reset();
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
@@ -91,7 +91,7 @@ public class Secp256k1Test {
     }
 
     @Test
-    public void testInitialization_NullProperties() {
+    void testInitialization_NullProperties() {
         // Test Native init
         Secp256k1.reset();
         Secp256k1.initialize(null);
@@ -108,7 +108,7 @@ public class Secp256k1Test {
     }
 
     @Test
-    public void testInitialization_Twice() {
+    void testInitialization_Twice() {
         // Test Native init
         Secp256k1.reset();
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);

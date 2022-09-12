@@ -35,9 +35,9 @@ import java.util.stream.IntStream;
 /**
  * Created by ajlopez on 08/08/2016.
  */
-public class TransactionBuilderTest {
+class TransactionBuilderTest {
     @Test
-    public void buildTransaction() {
+    void buildTransaction() {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
@@ -60,7 +60,7 @@ public class TransactionBuilderTest {
     }
 
     @Test
-    public void buildValidRandomTransactions() {
+    void buildValidRandomTransactions() {
         List<String> randomTxsHashes = IntStream.range(0, 100)
                 .mapToObj(i -> new TransactionBuilder().buildRandomTransaction().getHash().toJsonString())
                 .collect(Collectors.toList());

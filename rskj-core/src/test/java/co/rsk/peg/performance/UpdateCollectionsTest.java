@@ -49,7 +49,7 @@ import java.util.Random;
 import java.util.SortedMap;
 
 @Disabled
-public class UpdateCollectionsTest extends BridgePerformanceTestCase {
+class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     private int minUTXOs = 1;
     private int maxUTXOs = 1000;
@@ -72,7 +72,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
     private int maxCentOutput = 100;
 
     @Test
-    public void updateCollections() throws IOException, VMException {
+    void updateCollections() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("updateCollections");
 
         updateCollections_nothing(stats, 1000);
@@ -103,7 +103,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void updateCollectionsUsingPegoutBatching() throws IOException, VMException {
+    void updateCollectionsUsingPegoutBatching() throws IOException, VMException {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
 

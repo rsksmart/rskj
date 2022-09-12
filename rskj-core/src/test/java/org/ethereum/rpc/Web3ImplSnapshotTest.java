@@ -56,7 +56,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 15/04/2017.
  */
-public class Web3ImplSnapshotTest {
+class Web3ImplSnapshotTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private RskTestFactory factory;
@@ -65,7 +65,7 @@ public class Web3ImplSnapshotTest {
     private BlockFactory blockFactory;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         mainchainView = factory.getMiningMainchainView();
@@ -73,7 +73,7 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void takeFirstSnapshot() {
+    void takeFirstSnapshot() {
         Web3Impl web3 = createWeb3();
 
         String result = web3.evm_snapshot();
@@ -83,7 +83,7 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void takeSecondSnapshot() {
+    void takeSecondSnapshot() {
         Web3Impl web3 = createWeb3();
 
         web3.evm_snapshot();
@@ -94,7 +94,7 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void revertToSnapshot() {
+    void revertToSnapshot() {
         Web3Impl web3 = createWeb3();
 
         Blockchain blockchain = this.blockchain;
@@ -120,7 +120,7 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void resetSnapshots() {
+    void resetSnapshots() {
         Web3Impl web3 = createWeb3();
         Blockchain blockchain = this.blockchain;
         BlockChainStatus status = blockchain.getStatus();
@@ -140,14 +140,14 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void revertToUnknownSnapshot() {
+    void revertToUnknownSnapshot() {
         Web3Impl web3 = createWeb3();
 
         Assertions.assertFalse(web3.evm_revert("0x2a"));
     }
 
     @Test
-    public void mine() {
+    void mine() {
         SimpleEthereum ethereum = new SimpleEthereum();
         Web3Impl web3 = createWeb3(ethereum);
 

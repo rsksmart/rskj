@@ -32,14 +32,14 @@ import org.junit.jupiter.api.Test;
 import java.util.Random;
 
 @Disabled
-public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private static final int MIN_ADDRESS_LENGTH = 26;
     private static final int MAX_ADDRESS_LENGTH = 35;
 
     private CallTransaction.Function function;
 
     @Test
-    public void toBase58Check() throws VMException {
+    void toBase58Check() throws VMException {
         function = new ToBase58Check(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {

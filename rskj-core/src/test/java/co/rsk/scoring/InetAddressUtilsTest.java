@@ -9,9 +9,9 @@ import java.net.UnknownHostException;
 /**
  * Created by ajlopez on 15/07/2017.
  */
-public class InetAddressUtilsTest {
+class InetAddressUtilsTest {
     @Test
-    public void hasMask() {
+    void hasMask() {
         Assertions.assertFalse(InetAddressUtils.hasMask(null));
         Assertions.assertFalse(InetAddressUtils.hasMask("/"));
         Assertions.assertFalse(InetAddressUtils.hasMask("1234/"));
@@ -23,7 +23,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromIPV4() throws InvalidInetAddressException {
+    void getAddressFromIPV4() throws InvalidInetAddressException {
         InetAddress address = InetAddressUtils.getAddressForBan("192.168.56.1");
 
         Assertions.assertNotNull(address);
@@ -36,7 +36,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromIPV6() throws InvalidInetAddressException, UnknownHostException {
+    void getAddressFromIPV6() throws InvalidInetAddressException, UnknownHostException {
         InetAddress address = InetAddressUtils.getAddressForBan("fe80::498a:7f0e:e63d:6b98");
         InetAddress expected = InetAddress.getByName("fe80::498a:7f0e:e63d:6b98");
 
@@ -50,7 +50,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromNull() {
+    void getAddressFromNull() {
         try {
             InetAddressUtils.getAddressForBan(null);
             Assertions.fail();
@@ -61,7 +61,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromEmptyString() {
+    void getAddressFromEmptyString() {
         try {
             InetAddressUtils.getAddressForBan("");
             Assertions.fail();
@@ -72,7 +72,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromBlankString() {
+    void getAddressFromBlankString() {
         try {
             InetAddressUtils.getAddressForBan("   ");
             Assertions.fail();
@@ -83,7 +83,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getLocalAddress() {
+    void getLocalAddress() {
         try {
             InetAddressUtils.getAddressForBan("127.0.0.1");
             Assertions.fail();
@@ -94,7 +94,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getLocalHost() {
+    void getLocalHost() {
         try {
             InetAddressUtils.getAddressForBan("localhost");
             Assertions.fail();
@@ -105,7 +105,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAnyLocalAddress() {
+    void getAnyLocalAddress() {
         try {
             InetAddressUtils.getAddressForBan("0.0.0.0");
             Assertions.fail();
@@ -116,7 +116,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
+    void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
         InetAddressCidrBlock result = InetAddressUtils.parse("192.162.12.0/24");
 
         Assertions.assertNotNull(result);
@@ -125,7 +125,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlockWithNonNumericBits() throws InvalidInetAddressException {
+    void parseAddressBlockWithNonNumericBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/a");
             Assertions.fail();
@@ -136,7 +136,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException, InvalidInetAddressException {
+    void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException, InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/-10");
             Assertions.fail();
@@ -147,7 +147,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlockWithZeroBits() throws InvalidInetAddressException {
+    void parseAddressBlockWithZeroBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/0");
             Assertions.fail();
@@ -158,7 +158,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlockWithTooBigNumberOfBits() throws InvalidInetAddressException {
+    void parseAddressBlockWithTooBigNumberOfBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/1000");
             Assertions.fail();

@@ -10,9 +10,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 26/08/2017.
  */
-public class StatusTest {
+class StatusTest {
     @Test
-    public void createWithOriginalArguments() {
+    void createWithOriginalArguments() {
         byte[] hash = HashUtil.randomHash();
 
         Status status = new Status(42, hash);
@@ -25,7 +25,7 @@ public class StatusTest {
     }
 
     @Test
-    public void createWithCompleteArguments() {
+    void createWithCompleteArguments() {
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 

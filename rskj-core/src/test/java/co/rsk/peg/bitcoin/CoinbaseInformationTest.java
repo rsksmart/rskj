@@ -6,10 +6,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CoinbaseInformationTest {
+class CoinbaseInformationTest {
 
     @Test
-    public void getWitnessMerkleRoot() {
+    void getWitnessMerkleRoot() {
         Sha256Hash secondHashTx = Sha256Hash.wrap(Hex.decode("e3d0840a0825fb7d880e5cb8306745352920a8c7e8a30fac882b275e26c6bb65"));
         Sha256Hash witnessRoot = MerkleTreeUtils.combineLeftRight(Sha256Hash.ZERO_HASH, secondHashTx);
         CoinbaseInformation instance = new CoinbaseInformation(witnessRoot);

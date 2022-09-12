@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class SystemUtilsTest {
+class SystemUtilsTest {
 
     @Captor
     private ArgumentCaptor<String> formatCaptor;
@@ -43,7 +43,7 @@ public class SystemUtilsTest {
     private ArgumentCaptor<Object> argCaptor;
 
     @Test
-    public void testPrintSystemInfo() {
+    void testPrintSystemInfo() {
         Logger logger = mock(Logger.class);
 
         SystemUtils.printSystemInfo(logger);

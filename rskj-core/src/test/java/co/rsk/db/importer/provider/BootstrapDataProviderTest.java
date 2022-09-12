@@ -14,10 +14,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BootstrapDataProviderTest {
+class BootstrapDataProviderTest {
 
     @Test
-    public void retrieveDataInsufficientsSources() {
+    void retrieveDataInsufficientsSources() {
         BootstrapDataVerifier bootstrapDataVerifier = mock(BootstrapDataVerifier.class);
         when(bootstrapDataVerifier.verifyEntries(any())).thenReturn(1);
 
@@ -38,7 +38,7 @@ public class BootstrapDataProviderTest {
     }
 
     @Test
-    public void retrieveData() {
+    void retrieveData() {
         BootstrapDataVerifier bootstrapDataVerifier = mock(BootstrapDataVerifier.class);
         when(bootstrapDataVerifier.verifyEntries(any())).thenReturn(2);
 

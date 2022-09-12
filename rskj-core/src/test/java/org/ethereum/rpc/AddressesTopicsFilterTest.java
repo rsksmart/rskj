@@ -30,9 +30,9 @@ import java.util.Random;
 /**
  * Created by ajlopez on 18/01/2018.
  */
-public class AddressesTopicsFilterTest {
+class AddressesTopicsFilterTest {
     @Test
-    public void matchAddress() {
+    void matchAddress() {
         Account account = new AccountBuilder().name("account").build();
         RskAddress address = account.getAddress();
 
@@ -43,14 +43,14 @@ public class AddressesTopicsFilterTest {
     }
 
     @Test
-    public void matchEmptyBloomWithAllFilter() {
+    void matchEmptyBloomWithAllFilter() {
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], null);
 
         Assertions.assertTrue(filter.matchBloom(new Bloom()));
     }
 
     @Test
-    public void noMatchEmptyBloomWithFilterWithAccount() {
+    void noMatchEmptyBloomWithFilterWithAccount() {
         Account account = new AccountBuilder().name("account").build();
         RskAddress address = account.getAddress();
 
@@ -60,7 +60,7 @@ public class AddressesTopicsFilterTest {
     }
 
     @Test
-    public void noMatchEmptyBloomWithFilterWithTopic() {
+    void noMatchEmptyBloomWithFilterWithTopic() {
         Topic topic = createTopic();
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
@@ -69,7 +69,7 @@ public class AddressesTopicsFilterTest {
     }
 
     @Test
-    public void matchAllBloomWithFilterWithTopic() {
+    void matchAllBloomWithFilterWithTopic() {
         Topic topic = createTopic();
 
         AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[][] {{ topic }});
@@ -78,7 +78,7 @@ public class AddressesTopicsFilterTest {
     }
 
     @Test
-    public void matchAllBloomWithFilterWithAccount() {
+    void matchAllBloomWithFilterWithAccount() {
         Account account = new AccountBuilder().name("account").build();
         RskAddress address = account.getAddress();
 

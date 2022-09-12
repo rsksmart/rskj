@@ -28,11 +28,11 @@ import org.bouncycastle.util.encoders.Hex;
  * @author Roman Mandeleil
  * @since 20.11.2014
  */
-public class BloomTest {
+class BloomTest {
 
 
     @Test /// based on http://bit.ly/1MtXxFg
-    public void test1(){
+    void test1(){
 
         byte[] address = Hex.decode("095e7baea6a6c7c4c2dfeb977efac326af552d87");
         Bloom addressBloom = Bloom.create(HashUtil.keccak256(address));
@@ -51,21 +51,6 @@ public class BloomTest {
         );
     }
 
-
-    @Test
-    public void test2() {
-        // todo: more testing
-    }
-
-    @Test
-    public void test3() {
-        // todo: more testing
-    }
-
-
-    @Test
-    public void test4() {
-        // todo: more testing
-    }
+    // todo: more testing
 
 }

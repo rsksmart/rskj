@@ -19,10 +19,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BootstrapIndexRetrieverTest {
+class BootstrapIndexRetrieverTest {
 
     @Test
-    public void retrieveEmpty() {
+    void retrieveEmpty() {
         BootstrapIndexRetriever bootstrapIndexRetriever = new BootstrapIndexRetriever(
                 new ArrayList<>(),
                 mock(BootstrapURLProvider.class),
@@ -33,7 +33,7 @@ public class BootstrapIndexRetrieverTest {
     }
 
     @Test
-    public void retrievePublicKey() throws IOException {
+    void retrievePublicKey() throws IOException {
         ObjectMapper objectMapper = mock(ObjectMapper.class);
         BootstrapDataIndex bdi = new BootstrapDataIndex(Collections.singletonList(
                 new BootstrapDataEntry(1, "", "db", "hash",

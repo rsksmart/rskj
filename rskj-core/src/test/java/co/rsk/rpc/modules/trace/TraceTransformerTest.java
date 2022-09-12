@@ -24,9 +24,9 @@ import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TraceTransformerTest {
+class TraceTransformerTest {
     @Test
-    public void getActionFromInvokeData() {
+    void getActionFromInvokeData() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -59,7 +59,7 @@ public class TraceTransformerTest {
     }
 
     @Test
-    public void getActionFromInvokeDataWithCreationData() {
+    void getActionFromInvokeDataWithCreationData() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -93,7 +93,7 @@ public class TraceTransformerTest {
     }
 
     @Test
-    public void getActionFromInvokeDataWithCreationDataUsingCreationMethod() {
+    void getActionFromInvokeDataWithCreationDataUsingCreationMethod() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);

@@ -22,7 +22,7 @@ package org.ethereum.db;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.junit.jupiter.api.BeforeEach;
 
-public class IndexedBlockStoreLevelDBTest extends IndexedBlockStoreTest {
+class IndexedBlockStoreLevelDBTest extends IndexedBlockStoreTest {
 
     @BeforeEach
     void beforeEach() {

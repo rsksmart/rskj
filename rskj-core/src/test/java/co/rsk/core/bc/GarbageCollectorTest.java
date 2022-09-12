@@ -32,7 +32,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.mockito.Mockito.*;
 
-public class GarbageCollectorTest {
+class GarbageCollectorTest {
     private CompositeEthereumListener emitter;
     private MultiTrieStore multiTrieStore;
     private BlockStore blockStore;
@@ -42,7 +42,7 @@ public class GarbageCollectorTest {
     private RepositoryLocator repositoryLocator;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         this.emitter = mock(CompositeEthereumListener.class);
         this.multiTrieStore = mock(MultiTrieStore.class);
         this.blockStore = mock(BlockStore.class);
@@ -56,14 +56,14 @@ public class GarbageCollectorTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         verify(emitter, times(0)).removeListener(listener);
         collector.stop();
         verify(emitter, times(1)).removeListener(listener);
     }
 
     @Test
-    public void collectsOnBlocksPerEpochModulo() {
+    void collectsOnBlocksPerEpochModulo() {
         for (int i = 100; i < 105; i++) {
             Block block = block(i);
             listener.onBestBlock(block, null);
@@ -80,7 +80,7 @@ public class GarbageCollectorTest {
     }
 
     @Test
-    public void collectsOnBlocksPerEpochModuloAndMinimumOfStatesToKeep() {
+    void collectsOnBlocksPerEpochModuloAndMinimumOfStatesToKeep() {
         for (int i = 0; i < 21; i++) {
             Block block = block(i);
             listener.onBestBlock(block, null);

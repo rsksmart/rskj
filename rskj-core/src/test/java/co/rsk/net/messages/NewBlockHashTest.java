@@ -22,9 +22,9 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class NewBlockHashTest {
+class NewBlockHashTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 

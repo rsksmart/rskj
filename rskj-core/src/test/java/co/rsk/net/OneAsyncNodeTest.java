@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class OneAsyncNodeTest {
+class OneAsyncNodeTest {
     private static SimpleAsyncNode createNode() {
         final World world = new World();
         final NetBlockStore store = new NetBlockStore();
@@ -80,7 +80,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchain() {
+    void buildBlockchain() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -96,7 +96,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

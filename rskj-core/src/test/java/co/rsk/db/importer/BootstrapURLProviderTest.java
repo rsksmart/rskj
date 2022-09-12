@@ -8,10 +8,10 @@ import java.net.URL;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class BootstrapURLProviderTest {
+class BootstrapURLProviderTest {
 
     @Test
-    public void getFullURL() {
+    void getFullURL() {
         String BASE_URL = "http://localhost/baseURL";
         BootstrapURLProvider bootstrapURLProvider = new BootstrapURLProvider(BASE_URL);
         String suffix = "suffix";
@@ -25,7 +25,7 @@ public class BootstrapURLProviderTest {
     }
 
     @Test
-    public void getWrongFullURL() {
+    void getWrongFullURL() {
         String BASE_URL = "localhost/baseURL";
         BootstrapURLProvider bootstrapURLProvider = new BootstrapURLProvider(BASE_URL);
         String suffix = "suffix";

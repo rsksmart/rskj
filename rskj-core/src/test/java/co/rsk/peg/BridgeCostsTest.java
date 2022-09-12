@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-public class BridgeCostsTest {
+class BridgeCostsTest {
     private static BridgeRegTestConstants bridgeConstants;
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
@@ -35,12 +35,12 @@ public class BridgeCostsTest {
     private BridgeSupportFactory bridgeSupportFactory;
 
     @BeforeAll
-    public static void setUpBeforeClass() {
+     static void setUpBeforeClass() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
     }
 
     @BeforeEach
-    public void resetConfigToRegTest() {
+    void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
         when(config.getNetworkConstants()).thenReturn(constants);
@@ -53,7 +53,7 @@ public class BridgeCostsTest {
     }
 
     @Test
-    public void receiveHeadersGasCost_beforeDynamicCost() {
+    void receiveHeadersGasCost_beforeDynamicCost() {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
         Transaction txMock = mock(Transaction.class);
@@ -72,7 +72,7 @@ public class BridgeCostsTest {
     }
 
     @Test
-    public void receiveHeadersGasCost_afterDynamicCost() {
+    void receiveHeadersGasCost_afterDynamicCost() {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
         Transaction txMock = mock(Transaction.class);
@@ -96,7 +96,7 @@ public class BridgeCostsTest {
     }
 
     @Test
-    public void receiveHeadersGasCost_afterDynamicCost_review() {
+    void receiveHeadersGasCost_afterDynamicCost_review() {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP132), anyLong());
 
@@ -121,7 +121,7 @@ public class BridgeCostsTest {
     }
 
     @Test
-    public void getGasForDataFreeTx() {
+    void getGasForDataFreeTx() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -150,61 +150,61 @@ public class BridgeCostsTest {
     }
 
     @Test
-    public void getGasForDataInvalidFunction() {
+    void getGasForDataInvalidFunction() {
         getGasForDataPaidTx(23000, null);
     }
 
     @Test
-    public void getGasForDataUpdateCollections() {
+    void getGasForDataUpdateCollections() {
         getGasForDataPaidTx(48000 + 8, Bridge.UPDATE_COLLECTIONS);
     }
 
     @Test
-    public void getGasForDataReceiveHeaders() {
+    void getGasForDataReceiveHeaders() {
         getGasForDataPaidTx(22000 + 8, Bridge.RECEIVE_HEADERS);
     }
 
     @Test
-    public void getGasForDataRegisterBtcTransaction() {
+    void getGasForDataRegisterBtcTransaction() {
         getGasForDataPaidTx(22000 + 228*2, Bridge.REGISTER_BTC_TRANSACTION, new byte[3], 1, new byte[3]);
     }
 
     @Test
-    public void getGasForDataReleaseBtc() {
+    void getGasForDataReleaseBtc() {
         getGasForDataPaidTx(23000 + 8, Bridge.RELEASE_BTC);
     }
 
     @Test
-    public void getGasForDataAddSignature() {
+    void getGasForDataAddSignature() {
         getGasForDataPaidTx(70000 + 548*2, Bridge.ADD_SIGNATURE, new byte[3], new byte[3][2], new byte[3]);
     }
     @Test
-    public void getGasForDataGSFBRC() {
+    void getGasForDataGSFBRC() {
         getGasForDataPaidTx(4000 + 8, Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT);
     }
 
     @Test
-    public void getGasForDataGSFD() {
+    void getGasForDataGSFD() {
         getGasForDataPaidTx(3_000_000 + 8, Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     @Test
-    public void getGasForDataGBBBCH() {
+    void getGasForDataGBBBCH() {
         getGasForDataPaidTx(19000 + 8, Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT);
     }
 
     @Test
-    public void getGasForDataGBBBL() {
+    void getGasForDataGBBBL() {
         getGasForDataPaidTx(76000 + 8, Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR);
     }
 
     @Test
-    public void getGasForDataGetFederationAddress() {
+    void getGasForDataGetFederationAddress() {
         getGasForDataPaidTx(11000 + 8, Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
-    public void getGasForDataGetMinimumLockTxValue() {
+    void getGasForDataGetMinimumLockTxValue() {
         getGasForDataPaidTx(2000 + 8, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
     }
 

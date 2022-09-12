@@ -28,9 +28,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 @Disabled
-public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
-    public void identity() throws IOException, VMException {
+    void identity() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("identity");
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->

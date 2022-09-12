@@ -26,14 +26,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-public class FederationMemberTest {
+class FederationMemberTest {
     private BtcECKey btcKey;
     private ECKey rskKey;
     private ECKey mstKey;
     private FederationMember member;
 
     @BeforeEach
-    public void createFederationMember() {
+    void createFederationMember() {
         btcKey = new BtcECKey();
         rskKey = new ECKey();
         mstKey = new ECKey();
@@ -41,31 +41,31 @@ public class FederationMemberTest {
     }
 
     @Test
-    public void immutable() {
+    void immutable() {
         Assertions.assertNotSame(btcKey, member.getBtcPublicKey());
-        Assertions.assertTrue(Arrays.equals(btcKey.getPubKey(), member.getBtcPublicKey().getPubKey()));
+        Assertions.assertArrayEquals(btcKey.getPubKey(), member.getBtcPublicKey().getPubKey());
         Assertions.assertNotSame(rskKey, member.getRskPublicKey());
-        Assertions.assertTrue(Arrays.equals(rskKey.getPubKey(), member.getRskPublicKey().getPubKey()));
+        Assertions.assertArrayEquals(rskKey.getPubKey(), member.getRskPublicKey().getPubKey());
     }
 
     @Test
-    public void testEquals_basic() {
-        Assertions.assertTrue(member.equals(member));
+    void testEquals_basic() {
+        Assertions.assertEquals(member, member);
 
-        Assertions.assertFalse(member.equals(null));
-        Assertions.assertFalse(member.equals(new Object()));
-        Assertions.assertFalse(member.equals("something else"));
+        Assertions.assertNotEquals(null, member);
+        Assertions.assertNotEquals(member, new Object());
+        Assertions.assertNotEquals("something else", member);
     }
 
     @Test
-    public void testEquals_sameKeys() {
+    void testEquals_sameKeys() {
         FederationMember otherMember = new FederationMember(btcKey, rskKey, mstKey);
 
-        Assertions.assertTrue(member.equals(otherMember));
+        Assertions.assertEquals(member, otherMember);
     }
 
     @Test
-    public void testEquals_sameKeysDifferentCompression() {
+    void testEquals_sameKeysDifferentCompression() {
         FederationMember uncompressedMember = new FederationMember(
                 BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(false)),
                 ECKey.fromPublicOnly(rskKey.getPubKey(false)),
@@ -78,40 +78,40 @@ public class FederationMemberTest {
                 ECKey.fromPublicOnly(mstKey.getPubKey(true))
         );
 
-        Assertions.assertTrue(compressedMember.equals(uncompressedMember));
-        Assertions.assertTrue(uncompressedMember.equals(compressedMember));
+        Assertions.assertEquals(compressedMember, uncompressedMember);
+        Assertions.assertEquals(uncompressedMember, compressedMember);
     }
 
     @Test
-    public void testEquals_differentBtcKey() {
+    void testEquals_differentBtcKey() {
         FederationMember otherMember = new FederationMember(new BtcECKey(), rskKey, mstKey);
 
-        Assertions.assertFalse(member.equals(otherMember));
+        Assertions.assertNotEquals(member, otherMember);
     }
 
     @Test
-    public void testEquals_differentRskKey() {
+    void testEquals_differentRskKey() {
         FederationMember otherMember = new FederationMember(btcKey, new ECKey(), mstKey);
 
-        Assertions.assertFalse(member.equals(otherMember));
+        Assertions.assertNotEquals(member, otherMember);
     }
 
     @Test
-    public void testEquals_differentMstKey() {
+    void testEquals_differentMstKey() {
         FederationMember otherMember = new FederationMember(btcKey, rskKey, new ECKey());
 
-        Assertions.assertFalse(member.equals(otherMember));
+        Assertions.assertNotEquals(member, otherMember);
     }
 
     @Test
-    public void keyType_byValue() {
+    void keyType_byValue() {
         Assertions.assertEquals(FederationMember.KeyType.BTC, FederationMember.KeyType.byValue("btc"));
         Assertions.assertEquals(FederationMember.KeyType.RSK, FederationMember.KeyType.byValue("rsk"));
         Assertions.assertEquals(FederationMember.KeyType.MST, FederationMember.KeyType.byValue("mst"));
     }
 
     @Test
-    public void keyType_byValueInvalid() {
+    void keyType_byValueInvalid() {
         try {
             FederationMember.KeyType.byValue("whatever");
             Assertions.fail();

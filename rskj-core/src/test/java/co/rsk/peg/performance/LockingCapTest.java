@@ -22,7 +22,7 @@ import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Disabled
-public class LockingCapTest extends BridgePerformanceTestCase {
+class LockingCapTest extends BridgePerformanceTestCase {
 
     private static final ECKey authorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("da6a5451bfd74829307ec6d4a8c55174d4859169f162a8ed8fcba8f7636e77cc"));
     private static final ECKey unauthorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("f18ad1e830dd746ba350f4a43b3067e85634b5138a8515246441a453ec7460e9"));
@@ -32,13 +32,13 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     private ECKey sender;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getLockingCap() throws VMException {
+    void getLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("getLockingCap");
         executeTestCase(
@@ -52,7 +52,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void increaseLockingCap() throws VMException {
+    void increaseLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap");
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -73,7 +73,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void increaseLockingCap_unauthorized() throws VMException {
+    void increaseLockingCap_unauthorized() throws VMException {
         sender = unauthorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap_unauthorized");
         executeTestCase(

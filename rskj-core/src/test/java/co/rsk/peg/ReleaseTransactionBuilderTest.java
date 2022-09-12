@@ -41,7 +41,7 @@ import java.util.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class ReleaseTransactionBuilderTest {
+class ReleaseTransactionBuilderTest {
     private Wallet wallet;
     private Address changeAddress;
     private ReleaseTransactionBuilder builder;
@@ -52,7 +52,7 @@ public class ReleaseTransactionBuilderTest {
     private Federation federation;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
@@ -70,7 +70,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void first_output_pay_fees() {
+    void first_output_pay_fees() {
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(Arrays.asList(
                 new BtcECKey(),
@@ -138,7 +138,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void build_pegout_tx_from_erp_federation() {
+    void build_pegout_tx_from_erp_federation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -205,14 +205,14 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void getters() {
+    void getters() {
         Assertions.assertSame(wallet, builder.getWallet());
         Assertions.assertSame(changeAddress, builder.getChangeAddress());
         Assertions.assertEquals(Coin.MILLICOIN.multiply(2), builder.getFeePerKb());
     }
 
     @Test
-    public void buildAmountTo_ok() throws InsufficientMoneyException, UTXOProviderException {
+    void buildAmountTo_ok() throws InsufficientMoneyException, UTXOProviderException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -280,7 +280,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildAmountTo_insufficientMoneyException() throws InsufficientMoneyException {
+    void buildAmountTo_insufficientMoneyException() throws InsufficientMoneyException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -294,7 +294,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildAmountTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException {
+    void buildAmountTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -308,7 +308,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildAmountTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException {
+    void buildAmountTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -322,7 +322,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildAmountTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
+    void buildAmountTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -372,7 +372,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildAmountTo_illegalStateException() throws InsufficientMoneyException {
+    void buildAmountTo_illegalStateException() throws InsufficientMoneyException {
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -389,19 +389,19 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_ok_before_RSKIP_199_activation() throws
+    void buildEmptyWalletTo_ok_before_RSKIP_199_activation() throws
         InsufficientMoneyException, UTXOProviderException {
         test_buildEmptyWalletTo_ok(false, 1);
     }
 
     @Test
-    public void buildEmptyWalletTo_ok_after_RSKIP_199_activation()
+    void buildEmptyWalletTo_ok_after_RSKIP_199_activation()
         throws InsufficientMoneyException, UTXOProviderException {
         test_buildEmptyWalletTo_ok(true, 2);
     }
 
     @Test
-    public void buildEmptyWalletTo_insufficientMoneyException() throws InsufficientMoneyException {
+    void buildEmptyWalletTo_insufficientMoneyException() throws InsufficientMoneyException {
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new InsufficientMoneyException(Coin.valueOf(1234)));
@@ -414,7 +414,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException {
+    void buildEmptyWalletTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException {
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.CouldNotAdjustDownwards());
@@ -427,7 +427,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException {
+    void buildEmptyWalletTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException {
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.ExceededMaxTransactionSize());
@@ -440,7 +440,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
+    void buildEmptyWalletTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
         Address to = mockAddress(123);
 
         List<UTXO> availableUTXOs = Arrays.asList(
@@ -487,7 +487,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_ok() {
+    void test_BuildBatchedPegouts_ok() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
@@ -542,7 +542,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_ok_P2SHAddress() {
+    void test_BuildBatchedPegouts_ok_P2SHAddress() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
         ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
         ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
@@ -599,7 +599,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_InsufficientMoneyException() {
+    void test_BuildBatchedPegouts_InsufficientMoneyException() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, Coin.COIN);
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, Coin.COIN);
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.COIN);
@@ -632,7 +632,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_WalletCouldNotAdjustDownwardsException() {
+    void test_BuildBatchedPegouts_WalletCouldNotAdjustDownwardsException() {
         // A user output could not be adjusted downwards to pay tx fees
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, Coin.MILLICOIN);
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, Coin.MILLICOIN);
@@ -694,7 +694,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_WalletExceededMaxTransactionSizeException() {
+    void test_BuildBatchedPegouts_WalletExceededMaxTransactionSizeException() {
 
         List<ReleaseRequestQueue.Entry> pegoutRequests = createTestEntries(600);
 
@@ -722,7 +722,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_UtxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
+    void test_BuildBatchedPegouts_UtxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
@@ -761,7 +761,7 @@ public class ReleaseTransactionBuilderTest {
 
 
     @Test
-    public void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
+    void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
         List<UTXO> utxos = Arrays.asList(
             new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
             new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
@@ -813,7 +813,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
+    void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
         List<UTXO> utxos = Arrays.asList(
             new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
             new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())

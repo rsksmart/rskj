@@ -21,7 +21,7 @@ package org.ethereum.validator;
 import co.rsk.mine.NetworkUpgrades;
 import org.junit.jupiter.api.BeforeEach;
 
-public class ProofOfWorkRuleOrchidTest extends ProofOfWorkRuleTest {
+class ProofOfWorkRuleOrchidTest extends ProofOfWorkRuleTest {
 
     @BeforeEach
     void beforeEach() {

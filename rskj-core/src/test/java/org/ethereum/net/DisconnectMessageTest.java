@@ -30,34 +30,34 @@ import org.slf4j.LoggerFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DisconnectMessageTest {
+class DisconnectMessageTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     /* DISCONNECT_MESSAGE */
 
     @Test /* DisconnectMessage 1 - Requested */
-    public void test_1() {
+    void test_1() {
 
         byte[] payload = Hex.decode("C100");
         DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
 
         logger.trace("{}" + disconnectMessage);
-        assertEquals(disconnectMessage.getReason(), ReasonCode.REQUESTED);
+        assertEquals(ReasonCode.REQUESTED, disconnectMessage.getReason());
     }
 
     @Test /* DisconnectMessage 2 - TCP Error */
-    public void test_2() {
+    void test_2() {
 
         byte[] payload = Hex.decode("C101");
         DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
 
         logger.trace("{}" + disconnectMessage);
-        assertEquals(disconnectMessage.getReason(), ReasonCode.TCP_ERROR);
+        assertEquals(ReasonCode.TCP_ERROR, disconnectMessage.getReason());
     }
 
     @Test /* DisconnectMessage 2 - from constructor */
-    public void test_3() {
+    void test_3() {
 
         DisconnectMessage disconnectMessage = new DisconnectMessage(ReasonCode.NULL_IDENTITY);
 
@@ -70,18 +70,18 @@ public class DisconnectMessageTest {
     }
 
     @Test //handling boundary-high
-    public void test_4() {
+    void test_4() {
 
         byte[] payload = Hex.decode("C180");
 
         DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
         logger.trace("{}" + disconnectMessage);
 
-        assertEquals(disconnectMessage.getReason(), ReasonCode.REQUESTED); //high numbers are zeroed
+        assertEquals(ReasonCode.REQUESTED, disconnectMessage.getReason()); //high numbers are zeroed
     }
 
     @Test //handling boundary-low minus 1 (error)
-    public void test_6() {
+    void test_6() {
 
         String disconnectMessageRaw = "C19999";
         byte[] payload = Hex.decode(disconnectMessageRaw);
@@ -96,7 +96,7 @@ public class DisconnectMessageTest {
     }
 
     @Test //handling boundary-high plus 1 (error)
-    public void test_7() {
+    void test_7() {
 
         String disconnectMessageRaw = "C28081";
         byte[] payload = Hex.decode(disconnectMessageRaw);

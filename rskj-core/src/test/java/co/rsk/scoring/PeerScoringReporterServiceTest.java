@@ -8,19 +8,19 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class PeerScoringReporterServiceTest {
+class PeerScoringReporterServiceTest {
 
     private TestPeerScoringReporterService peerScoringReporterService;
     private PeerScoringManager peerScoringManager;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         peerScoringManager = mock(PeerScoringManager.class);
         peerScoringReporterService = TestPeerScoringReporterService.withScheduler(3000L, peerScoringManager);
     }
 
     @Test
-    public void shouldStopOnStop() {
+    void shouldStopOnStop() {
         testStart();
 
         peerScoringReporterService.stop();
@@ -29,11 +29,11 @@ public class PeerScoringReporterServiceTest {
     }
 
     @Test
-    public void shouldStartOnStart() {
+    void shouldStartOnStart() {
         testStart();
     }
 
-    public void testStart() {
+    void testStart() {
         when(peerScoringManager.getPeersInformation()).thenReturn(mock(List.class));
 
         peerScoringReporterService.start();
@@ -42,7 +42,7 @@ public class PeerScoringReporterServiceTest {
     }
 
     @Test
-    public void shouldStopOnException() {
+    void shouldStopOnException() {
         when(peerScoringManager.getPeersInformation()).thenThrow(new RuntimeException());
 
         peerScoringReporterService.start();

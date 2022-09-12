@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
-public class BlockNodeInformationTest {
+class BlockNodeInformationTest {
 
     // createBlockHash is a convenience function to create a ByteArrayWrapper wrapping an int.
     private Keccak256 createBlockHash(int i) {
@@ -38,7 +38,7 @@ public class BlockNodeInformationTest {
     }
 
     @Test
-    public void blockEvictionPolicy() {
+    void blockEvictionPolicy() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final NodeID nodeID1 = new NodeID(new byte[]{2});
 
@@ -77,15 +77,15 @@ public class BlockNodeInformationTest {
     }
 
     @Test
-    public void getIsEmptyIfNotPresent() {
+    void getIsEmptyIfNotPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
 
-        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
-        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
+        Assertions.assertEquals(0, nodeInformation.getNodesByBlock(createBlockHash(0)).size());
+        Assertions.assertEquals(0, nodeInformation.getNodesByBlock(createBlockHash(0)).size());
     }
 
     @Test
-    public void getIsNotEmptyIfPresent() {
+    void getIsNotEmptyIfPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
@@ -96,16 +96,16 @@ public class BlockNodeInformationTest {
         nodeInformation.addBlockToNode(hash1, nodeID1);
 
         Set<NodeID> nodes = nodeInformation.getNodesByBlock(hash1);
-        Assertions.assertTrue(nodes.size() == 1);
+        Assertions.assertEquals(1, nodes.size());
         Assertions.assertTrue(nodes.contains(nodeID1));
         Assertions.assertFalse(nodes.contains(badNode));
 
         nodes = nodeInformation.getNodesByBlock(badHash);
-        Assertions.assertTrue(nodes.size() == 0);
+        Assertions.assertEquals(0, nodes.size());
     }
 
     @Test
-    public void twoNodesTwoBlocks() {
+    void twoNodesTwoBlocks() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
@@ -120,8 +120,8 @@ public class BlockNodeInformationTest {
         Set<NodeID> nodes1 = nodeInformation.getNodesByBlock(hash1);
         Set<NodeID> nodes2 = nodeInformation.getNodesByBlock(hash2);
 
-        Assertions.assertTrue(nodes1.size() == 1);
-        Assertions.assertTrue(nodes2.size() == 2);
+        Assertions.assertEquals(1, nodes1.size());
+        Assertions.assertEquals(2, nodes2.size());
 
 
         Assertions.assertTrue(nodes1.contains(nodeID1));

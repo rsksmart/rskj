@@ -11,10 +11,10 @@ import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
 
-public class MigratorTest {
+class MigratorTest {
 
     @Test
-    public void migrateConfiguration() {
+    void migrateConfiguration() {
         Reader initialConfiguration = new StringReader("inline.config.name=\"value\"\n" +
                 "nested {\n" +
                 "  nested = {\n" +

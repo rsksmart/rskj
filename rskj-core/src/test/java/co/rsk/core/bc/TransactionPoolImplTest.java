@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 08/08/2016.
  */
-public class TransactionPoolImplTest {
+class TransactionPoolImplTest {
     private static final int MAX_CACHE_SIZE = 6000;
 
     private RskTestContext rskTestContext;
@@ -61,7 +61,7 @@ public class TransactionPoolImplTest {
     private TxQuotaChecker quotaChecker;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
@@ -108,33 +108,33 @@ public class TransactionPoolImplTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         rskTestContext.close();
     }
 
     @Test
-    public void usingInit() {
+    void usingInit() {
         Assertions.assertFalse(transactionPool.hasCleanerFuture());
         Assertions.assertNotEquals(0, transactionPool.getOutdatedThreshold());
         Assertions.assertNotEquals(0, transactionPool.getOutdatedTimeout());
     }
 
     @Test
-    public void usingCleanUp() {
+    void usingCleanUp() {
         transactionPool.cleanUp();
 
         Assertions.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
-    public void usingStart() {
+    void usingStart() {
         Assertions.assertFalse(transactionPool.hasCleanerFuture());
         transactionPool.start();
         Assertions.assertTrue(transactionPool.hasCleanerFuture());
     }
 
     @Test
-    public void usingAccountsWithInitialBalance() {
+    void usingAccountsWithInitialBalance() {
         createTestAccounts(2, Coin.valueOf(10L));
 
         PendingState pendingState = transactionPool.getPendingState();
@@ -149,7 +149,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void getEmptyPendingTransactionList() {
+    void getEmptyPendingTransactionList() {
         List<Transaction> transactions = transactionPool.getPendingTransactions();
 
         Assertions.assertNotNull(transactions);
@@ -157,7 +157,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndGetPendingTransaction() {
+    void addAndGetPendingTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
@@ -171,7 +171,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndGetQueuedTransaction() {
+    void addAndGetQueuedTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 4);
@@ -192,7 +192,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndGetTwoQueuedTransaction() {
+    void addAndGetTwoQueuedTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -216,7 +216,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndGetTwoQueuedTransactionAsPendingOnes() {
+    void addAndGetTwoQueuedTransactionAsPendingOnes() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
@@ -254,7 +254,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndExecutePendingTransaction() {
+    void addAndExecutePendingTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
@@ -267,7 +267,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoletePendingTransactionsByBlock() {
+    void removeObsoletePendingTransactionsByBlock() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -301,7 +301,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoleteQueuedTransactionsByBlock() {
+    void removeObsoleteQueuedTransactionsByBlock() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -335,7 +335,8 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoletePendingTransactionsByTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void removeObsoletePendingTransactionsByTimeout() throws InterruptedException {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -363,7 +364,8 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoleteQueuedTransactionsByTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void removeObsoleteQueuedTransactionsByTimeout() throws InterruptedException {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -391,7 +393,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void getAllPendingTransactions() {
+    void getAllPendingTransactions() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -413,7 +415,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void processBestBlockRemovesTransactionsInBlock() {
+    void processBestBlockRemovesTransactionsInBlock() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(3, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -454,7 +456,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void retractBlockAddsTransactionsAsPending() {
+    void retractBlockAddsTransactionsAsPending() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(3, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -496,7 +498,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void updateTransactionPool() {
+    void updateTransactionPool() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -511,7 +513,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addTwiceAndGetPendingTransaction() {
+    void addTwiceAndGetPendingTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
@@ -531,7 +533,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addTwiceAndGetQueuedTransaction() {
+    void addTwiceAndGetQueuedTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 1);
@@ -551,7 +553,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void getEmptyTransactionList() {
+    void getEmptyTransactionList() {
         List<Transaction> transactions = transactionPool.getPendingTransactions();
 
         Assertions.assertNotNull(transactions);
@@ -559,7 +561,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void executeContractWithFakeBlock() {
+    void executeContractWithFakeBlock() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         // "NUMBER PUSH1 0x00 SSTORE" compiled to bytecodes
@@ -574,7 +576,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithSameNonceIsRejected() {
+    void checkTxWithSameNonceIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 0, 1000, 0);
@@ -589,7 +591,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxQuotaValidatorAccepted() {
+    void checkTxQuotaValidatorAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 0, 1000, 0);
@@ -601,7 +603,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxQuotaValidatorRejected() {
+    void checkTxQuotaValidatorRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 0, 1000, 0);
@@ -614,7 +616,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxMaxSizeAccepted() {
+    void checkTxMaxSizeAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -627,7 +629,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxMaxSizeRejected() {
+    void checkTxMaxSizeRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -641,7 +643,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithSameNonceBumpedIsAccepted() {
+    void checkTxWithSameNonceBumpedIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransactionWithGasPrice(1, 0, 1000, 0, 1);
@@ -654,7 +656,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighGasLimitIsRejected() {
+    void checkTxWithHighGasLimitIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0, BigInteger.valueOf(3000001));
@@ -670,7 +672,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighNonceIsRejected() {
+    void checkTxWithHighNonceIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 16);
@@ -684,7 +686,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithLowNonceIsRejected() {
+    void checkTxWithLowNonceIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -702,7 +704,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkRemascTxIsRejected() {
+    void checkRemascTxIsRejected() {
         RemascTransaction tx = new RemascTransaction(10);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
@@ -712,7 +714,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithLowGasPriceIsRejected() {
+    void checkTxWithLowGasPriceIsRejected() {
         Block newBest = new BlockBuilder(null, null, null)
                 .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
@@ -730,7 +732,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxFromAccountWithLowBalanceIsRejected() {
+    void checkTxFromAccountWithLowBalanceIsRejected() {
         Coin balance = Coin.valueOf(1000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 10000, 0);
@@ -744,7 +746,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxFromNullStateIsRejected() {
+    void checkTxFromNullStateIsRejected() {
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
@@ -756,7 +758,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighIntrinsicGasIsRejected() {
+    void checkTxWithHighIntrinsicGasIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -772,7 +774,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWhichCanNotBePaidIsRejected() {
+    void checkTxWhichCanNotBePaidIsRejected() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -791,7 +793,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
+    void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Account account1 = createAccount(1);
@@ -803,7 +805,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache() {
+    void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         Account account1 = createAccount(1);
         createTestAccounts(2, balance);
@@ -820,7 +822,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void invalidTxsIsSentAndShouldntBeInCache() {
+    void invalidTxsIsSentAndShouldntBeInCache() {
         Coin balance = Coin.valueOf(0);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -829,7 +831,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void remascTxIsReceivedAndShouldntBeInCache() {
+    void remascTxIsReceivedAndShouldntBeInCache() {
         RemascTransaction tx = new RemascTransaction(10);
         transactionPool.addTransaction(tx);
 
@@ -841,7 +843,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
+    void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(6005, balance);
         Transaction tx = createSampleTransaction(1, 2, 1, 0);
@@ -872,7 +874,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addTransaction_addTwoTransactionsUnsorted_ResultWithPendingTransactionsSortedByNonce() {
+    void addTransaction_addTwoTransactionsUnsorted_ResultWithPendingTransactionsSortedByNonce() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -906,7 +908,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addTransactions_addTwoTransactionsUnsorted_pendingTransactionsSortedByNonce() {
+    void addTransactions_addTwoTransactionsUnsorted_pendingTransactionsSortedByNonce() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 

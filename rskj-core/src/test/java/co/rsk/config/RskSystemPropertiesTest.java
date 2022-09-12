@@ -39,14 +39,14 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 3/16/2016.
  */
-public class RskSystemPropertiesTest {
+class RskSystemPropertiesTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     @Mock
     private CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
     @Test
-    public void defaultValues() {
+    void defaultValues() {
         assertFalse(config.isMinerClientEnabled());
         assertFalse(config.isMinerServerEnabled());
         assertEquals(0, config.minerMinGasPrice());
@@ -57,7 +57,7 @@ public class RskSystemPropertiesTest {
     }
 
     @Test
-    public void hasMessagesConfiguredInTestConfig() {
+    void hasMessagesConfiguredInTestConfig() {
         assertTrue(config.hasMessageRecorderEnabled());
 
         List<String> commands = config.getMessageRecorderCommands();
@@ -68,7 +68,7 @@ public class RskSystemPropertiesTest {
     }
 
     @Test
-    public void shouldUseExpectedBloomConfigKeys() {
+    void shouldUseExpectedBloomConfigKeys() {
         ArgumentCaptor<String> configKeyCaptorForHasPath = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> configKeyCaptorForGetBoolean = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> configKeyCaptorForGetInt = ArgumentCaptor.forClass(String.class);
@@ -107,7 +107,7 @@ public class RskSystemPropertiesTest {
     }
 
     @Test
-    public void testRpcModules() {
+    void testRpcModules() {
         RskSystemProperties rskSystemProperties = new RskSystemProperties(
                 new ConfigLoader(
                         new CliArgs.Parser<>(

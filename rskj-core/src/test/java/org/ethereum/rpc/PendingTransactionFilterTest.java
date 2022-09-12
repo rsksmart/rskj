@@ -30,9 +30,9 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 17/01/2018.
  */
-public class PendingTransactionFilterTest {
+class PendingTransactionFilterTest {
     @Test
-    public void noEvents() {
+    void noEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Object[] result = filter.getEvents();
@@ -42,7 +42,7 @@ public class PendingTransactionFilterTest {
     }
 
     @Test
-    public void oneTransactionAndEvents() {
+    void oneTransactionAndEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Account sender = new AccountBuilder().name("sender").build();
@@ -64,7 +64,7 @@ public class PendingTransactionFilterTest {
     }
 
     @Test
-    public void twoTransactionsAndEvents() {
+    void twoTransactionsAndEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Account sender = new AccountBuilder().name("sender").build();

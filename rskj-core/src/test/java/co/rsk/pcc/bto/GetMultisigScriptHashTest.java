@@ -35,17 +35,17 @@ import java.util.function.Consumer;
 
 import static org.mockito.Mockito.mock;
 
-public class GetMultisigScriptHashTest {
+class GetMultisigScriptHashTest {
     private GetMultisigScriptHash method;
 
     @BeforeEach
-    public void createMethod() {
+    void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new GetMultisigScriptHash(executionEnvironment);
     }
 
     @Test
-    public void functionSignatureOk() {
+    void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
         Assertions.assertEquals("getMultisigScriptHash", fn.name);
 
@@ -58,17 +58,17 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void shouldBeEnabled() {
+    void shouldBeEnabled() {
         Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
-    public void shouldAllowAnyTypeOfCall() {
+    void shouldAllowAnyTypeOfCall() {
         Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
-    public void executesWithAllCompressed() throws NativeContractIllegalArgumentException {
+    void executesWithAllCompressed() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
@@ -94,7 +94,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void executesWithMixed() throws NativeContractIllegalArgumentException {
+    void executesWithMixed() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
@@ -120,7 +120,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void minimumSignaturesMustBePresent() {
+    void minimumSignaturesMustBePresent() {
         assertFails(
                 () -> method.execute(new Object[]{
                         null,
@@ -131,7 +131,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void minimumSignaturesMustBeGreaterThanZero() {
+    void minimumSignaturesMustBeGreaterThanZero() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ZERO,
@@ -142,7 +142,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void mustProvideAtLeastTwoPublicKey() {
+    void mustProvideAtLeastTwoPublicKey() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.ONE,
@@ -167,7 +167,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void atLeastAsManyPublicKeyAsMinimumSignatures() {
+    void atLeastAsManyPublicKeyAsMinimumSignatures() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.valueOf(3L),
@@ -181,7 +181,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void atMostFifteenPublicKeys() {
+    void atMostFifteenPublicKeys() {
         byte[][] keys = new byte[16][];
         for (int i = 0; i < 16; i++) {
             keys[i] = new BtcECKey().getPubKeyPoint().getEncoded(true);
@@ -197,7 +197,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void keyLengthIsValidated() {
+    void keyLengthIsValidated() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.valueOf(1L),
@@ -211,7 +211,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void keyFormatIsValidated() {
+    void keyFormatIsValidated() {
         assertFails(
                 () -> method.execute(new Object[]{
                         BigInteger.valueOf(1L),
@@ -225,7 +225,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void gasIsBaseIfLessThanOrEqualstoTwoKeysPassed() {
+    void gasIsBaseIfLessThanOrEqualstoTwoKeysPassed() {
         Assertions.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 null

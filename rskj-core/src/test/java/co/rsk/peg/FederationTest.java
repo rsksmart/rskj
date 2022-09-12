@@ -44,14 +44,14 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
-public class FederationTest {
+class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
     private List<ECKey> rskPubKeys;
     private List<byte[]> rskAddresses;
 
     @BeforeEach
-    public void createFederation() {
+    void createFederation() {
         federation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -79,7 +79,7 @@ public class FederationTest {
     }
 
     @Test
-    public void membersImmutable() {
+    void membersImmutable() {
         boolean exception = false;
         try {
             federation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
@@ -98,7 +98,7 @@ public class FederationTest {
     }
 
     @Test
-    public void redeemScript() {
+    void redeemScript() {
         final List<Integer> calls = new ArrayList<>();
         try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
             scriptBuilderMocked.when(() -> ScriptBuilder.createRedeemScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
@@ -120,7 +120,7 @@ public class FederationTest {
     }
 
     @Test
-    public void P2SHScript() {
+    void P2SHScript() {
         final List<Integer> calls = new ArrayList<>();
         try (MockedStatic<ScriptBuilder> scriptBuilderMocked = mockStatic(ScriptBuilder.class)) {
             scriptBuilderMocked.when(() -> ScriptBuilder.createP2SHOutputScript(any(int.class), any(List.class))).thenAnswer((invocationOnMock) -> {
@@ -142,7 +142,7 @@ public class FederationTest {
     }
 
     @Test
-    public void Address() {
+    void Address() {
         // Since we can't mock both Address and ScriptBuilder at the same time (due to PowerMockito limitations)
         // we use a well known P2SH and its corresponding address
         // and just mock the ScriptBuilder
@@ -169,16 +169,14 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_basic() {
-        Assertions.assertTrue(federation.equals(federation));
-
+    void testEquals_basic() {
         Assertions.assertNotEquals(null, federation);
         Assertions.assertNotEquals(federation, new Object());
         Assertions.assertNotEquals("something else", federation);
     }
 
     @Test
-    public void testEquals_differentNumberOfMembers() {
+    void testEquals_differentNumberOfMembers() {
         Federation otherFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -189,7 +187,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentCreationTime() {
+    void testEquals_differentCreationTime() {
         Federation otherFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
@@ -200,7 +198,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentCreationBlockNumber() {
+    void testEquals_differentCreationBlockNumber() {
         Federation otherFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
@@ -211,7 +209,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentNetworkParameters() {
+    void testEquals_differentNetworkParameters() {
         Federation otherFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -222,7 +220,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentMembers() {
+    void testEquals_differentMembers() {
         List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
@@ -248,7 +246,7 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_same() {
+    void testEquals_same() {
         Federation otherFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
@@ -259,7 +257,7 @@ public class FederationTest {
     }
 
     @Test
-    public void getBtcPublicKeyIndex() {
+    void getBtcPublicKeyIndex() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assertions.assertEquals(i, federation.getBtcPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
         }
@@ -267,7 +265,7 @@ public class FederationTest {
     }
 
     @Test
-    public void hasBtcPublicKey() {
+    void hasBtcPublicKey() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assertions.assertTrue(federation.hasBtcPublicKey(sortedPublicKeys.get(i)));
         }
@@ -275,7 +273,7 @@ public class FederationTest {
     }
 
     @Test
-    public void hasMemberWithRskAddress() {
+    void hasMemberWithRskAddress() {
         for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assertions.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
         }
@@ -285,12 +283,12 @@ public class FederationTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         Assertions.assertEquals("4 of 6 signatures federation", federation.toString());
     }
 
     @Test
-    public void isMember(){
+    void isMember(){
         //Both valid params
         FederationMember federationMember = federation.getMembers().get(0);
         Assertions.assertTrue(federation.isMember(federationMember));

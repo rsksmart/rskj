@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 11/01/2017.
  */
-public class TrieOrchidMessageTest {
+class TrieOrchidMessageTest {
     @Test
-    public void emptyTrieToMessage() {
+    void emptyTrieToMessage() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(false);
@@ -43,7 +43,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithValueToMessage() {
+    void trieWithValueToMessage() {
         Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessageOrchid(false);
@@ -63,7 +63,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithLongValueToMessage() {
+    void trieWithLongValueToMessage() {
         Trie trie = new Trie().put(new byte[0], TrieValueTest.makeValue(33));
 
         byte[] message = trie.toMessageOrchid(false);
@@ -85,7 +85,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtrieAndNoValueToMessage() {
+    void trieWithSubtrieAndNoValueToMessage() {
         Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessageOrchid(false);
@@ -109,7 +109,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtriesAndNoValueToMessage() {
+    void trieWithSubtriesAndNoValueToMessage() {
         Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
 
@@ -127,7 +127,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void emptyTrieToMessageSecure() {
+    void emptyTrieToMessageSecure() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(true);
@@ -143,7 +143,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithValueToMessageSecure() {
+    void trieWithValueToMessageSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
@@ -170,7 +170,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithLongValueToMessageSecure() {
+    void trieWithLongValueToMessageSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
@@ -198,7 +198,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtrieAndNoValueToMessageSecure() {
+    void trieWithSubtrieAndNoValueToMessageSecure() {
         byte[] oldKey = new byte[] { 0x02 };
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
@@ -225,7 +225,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtriesAndNoValueToMessageSecure() {
+    void trieWithSubtriesAndNoValueToMessageSecure() {
         Trie trie = new Trie()
                 .put(Keccak256Helper.keccak256(new byte[] { 0x2 }), new byte[] { 1, 2, 3, 4 })
                 .put(Keccak256Helper.keccak256(new byte[] { 0x12 }), new byte[] { 1, 2, 3, 4 });

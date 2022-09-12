@@ -26,10 +26,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
-public class StartTest {
+class StartTest {
 
     @Test
-    public void threadIsNotSetUp_WhenSetThreadUp_ThenThreadNameShouldBeValid() {
+    void threadIsNotSetUp_WhenSetThreadUp_ThenThreadNameShouldBeValid() {
         //noinspection InstantiatingAThreadWithDefaultRunMethod
         Thread thread = new Thread();
 
@@ -39,7 +39,7 @@ public class StartTest {
     }
 
     @Test
-    public void nodeIsNotRunning_WhenRunNodeAndPreflightCheckFails_ThenNodeRunnerShouldNotRun() throws Exception {
+    void nodeIsNotRunning_WhenRunNodeAndPreflightCheckFails_ThenNodeRunnerShouldNotRun() throws Exception {
         Runtime runtime = mock(Runtime.class);
         NodeRunner runner = mock(NodeRunner.class);
         RskContext ctx = mock(RskContext.class);
@@ -60,7 +60,7 @@ public class StartTest {
     }
 
     @Test
-    public void nodeIsNotRunning_WhenRunNodeAndPreflightCheckSucceeds_ThenNodeRunnerShouldRunWithShutdownHookAdded() throws Exception {
+    void nodeIsNotRunning_WhenRunNodeAndPreflightCheckSucceeds_ThenNodeRunnerShouldRunWithShutdownHookAdded() throws Exception {
         Runtime runtime = mock(Runtime.class);
         ArgumentCaptor<Thread> threadCaptor = ArgumentCaptor.forClass(Thread.class);
         NodeRunner runner = mock(NodeRunner.class);

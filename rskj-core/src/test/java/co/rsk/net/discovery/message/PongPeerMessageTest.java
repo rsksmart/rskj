@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static org.ethereum.util.ByteUtil.*;
 
-public class PongPeerMessageTest {
+class PongPeerMessageTest {
 
     private static final int NETWORK_ID = 1;
     private static final String HOST = "localhost";
@@ -21,7 +21,7 @@ public class PongPeerMessageTest {
     private static final byte[] signaturePongPeerMessage = new byte[]{-69, 20, -38, -122, -33, -110, -118, -126, -12, -85, 20, 91, 44, 44, -5, 79, -101, -53, 124, -57, -29, 118, -81, -48, -89, -99, -29, -93, 8, -17, 113, -87, 100, -123, -124, -77, -99, 76, -51, 54, 4, -78, -41, 116, 84, -116, 35, -35, -30, -12, 16, -87, 23, -32, -73, 124, 71, -26, -105, -28, -14, 91, 122, -114, 1};
 
     @Test
-    public void parseInvalidMessageId() {
+    void parseInvalidMessageId() {
         try {
             createPongPeerMessageWithCheck("http://fake-uuid.com/run");
             Assertions.fail("Invalid messageId exception should've been thrown");
@@ -31,7 +31,7 @@ public class PongPeerMessageTest {
     }
 
     @Test
-    public void parseUUIDV1MessageId() {
+    void parseUUIDV1MessageId() {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createPongPeerMessageWithCheck(uuidV1);
@@ -42,7 +42,7 @@ public class PongPeerMessageTest {
     }
 
     @Test
-    public void parseValidMessageId() {
+    void parseValidMessageId() {
         try {
             PongPeerMessage message = createPongPeerMessageWithCheck(UUID.randomUUID().toString());
             Assertions.assertNotNull(message);

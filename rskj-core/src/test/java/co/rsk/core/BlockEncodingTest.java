@@ -40,13 +40,13 @@ import java.util.List;
 /**
  * Created by SDL on 12/5/2017.
  */
-public class BlockEncodingTest {
+class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void testBadBlockEncoding1() {
+    void testBadBlockEncoding1() {
 
         List<Transaction> txs = new ArrayList<>();
 
@@ -87,12 +87,11 @@ public class BlockEncodingTest {
                 new byte[0]
         );
 
-        // must throw java.lang.ArithmeticException
+        // Now decode, and re-encode
+        byte[] encoded = fblock.getEncoded();
+
         Assertions.assertThrows(ArithmeticException.class, () -> {
-            // Now decode, and re-encode
-            Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
-            // must throw java.lang.ArithmeticException
-            parsedBlock.getGasLimit(); // forced parse
+            blockFactory.decodeBlock(encoded); // forced parse
         });
     }
 

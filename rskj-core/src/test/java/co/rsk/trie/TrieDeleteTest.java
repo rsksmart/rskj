@@ -11,9 +11,9 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /**
  * Created by ajlopez on 06/05/2017.
  */
-public class TrieDeleteTest {
+class TrieDeleteTest {
     @Test
-    public void deleteValueGivintEmptyTrie() {
+    void deleteValueGivintEmptyTrie() {
         Trie trie = new Trie().put("key", "value".getBytes());
 
         trie = trie.delete("key".getBytes());
@@ -22,7 +22,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneValueGivesTheSameHash() {
+    void deleteOneValueGivesTheSameHash() {
         Trie trie1 = new Trie()
                 .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
@@ -34,7 +34,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneLongValueGivesTheSameHash() {
+    void deleteOneLongValueGivesTheSameHash() {
         Trie trie1 = new Trie()
                 .put("key1", TrieValueTest.makeValue(1024))
                 .put("key2", "value2".getBytes())
@@ -46,7 +46,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneValueTwiceGivesTheSameHash() {
+    void deleteOneValueTwiceGivesTheSameHash() {
         Trie trie1 = new Trie()
                 .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
@@ -59,7 +59,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredValuesGivesTheSameHash() {
+    void deleteOneHundredValuesGivesTheSameHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -77,7 +77,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredLongValuesGivesTheSameHash() {
+    void deleteOneHundredLongValuesGivesTheSameHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -95,7 +95,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredValuesGivesTheSameHashUsingSecureKeys() {
+    void deleteOneHundredValuesGivesTheSameHashUsingSecureKeys() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -113,7 +113,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredLongValuesGivesTheSameHashUsingSecureKeys() {
+    void deleteOneHundredLongValuesGivesTheSameHashUsingSecureKeys() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -131,7 +131,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteTwoHundredValuesGivesTheEmptyHash() {
+    void deleteTwoHundredValuesGivesTheEmptyHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -144,7 +144,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteTwoHundredLongValuesGivesTheEmptyHash() {
+    void deleteTwoHundredLongValuesGivesTheEmptyHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -157,7 +157,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHash() {
+    void deleteOneHundredAndOneHundredValuesGivesTheEmptyHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -173,7 +173,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHash() {
+    void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHash() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -189,7 +189,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingSecureKeys() {
+    void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingSecureKeys() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)
@@ -205,7 +205,7 @@ public class TrieDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingSecureKeys() {
+    void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingSecureKeys() {
         Trie trie1 = new Trie();
 
         for (int k = 0; k < 200; k++)

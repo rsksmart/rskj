@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by Sebastian Sicardi on 22/05/2019.
  */
-public class Create2Test {
+class Create2Test {
 
     private ActivationConfig.ForBlock activationConfig;
     private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
@@ -73,13 +73,13 @@ public class Create2Test {
     private final Transaction transaction = createTransaction();
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         activationConfig = mock(ActivationConfig.ForBlock.class);
         when(activationConfig.isActive(RSKIP125)).thenReturn(true);
     }
 
     @Test
-    public void testCREATE2_BasicTest() {
+    void testCREATE2_BasicTest() {
         /**
          * Initial test for Create2, just check that the contract is created
          */
@@ -93,7 +93,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_SaltNumber() {
+    void testCREATE2_SaltNumber() {
         /**
          * Check that address changes with different salt than before
          */
@@ -107,7 +107,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_Address() {
+    void testCREATE2_Address() {
         /**
          * Check that address changes with different sender address than before
          */
@@ -121,7 +121,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_InitCode() {
+    void testCREATE2_InitCode() {
         /**
          * Check for a different length of init_code
          */
@@ -135,7 +135,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_ZeroSize() {
+    void testCREATE2_ZeroSize() {
         /**
          * Check for a call with init_code with size 0
          * (Note that it should return same address than next test)
@@ -150,7 +150,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_EmptyCode() {
+    void testCREATE2_EmptyCode() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)
@@ -165,7 +165,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_CodeOffset() {
+    void testCREATE2_CodeOffset() {
         /**
          * Check that the offset parameter works correctly
          */
@@ -179,7 +179,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_NoCodePushed() {
+    void testCREATE2_NoCodePushed() {
         /**
          * No code pushed but code sized is greater than zero, it should get zeroes and pass
          */
@@ -193,7 +193,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_InvalidInitCode() {
+    void testCREATE2_InvalidInitCode() {
         /**
          * INIT_CODE fails (Create2 with invalid arguments) so it returns a ZERO address
          * as it fails, it spends all the gas
@@ -208,7 +208,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_DuplicateContractCreation() {
+    void testCREATE2_DuplicateContractCreation() {
         /**
          *  Two CREATE2 calls, second should fail and consume all gas
          */
@@ -255,7 +255,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_PreserveContractAddressBalance() {
+    void testCREATE2_PreserveContractAddressBalance() {
         /**
          *  CREATE2 call with expected address that has non-zero balance
          */
@@ -297,7 +297,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE_CheckFunctionBeforeRSKIP() {
+    void testCREATE_CheckFunctionBeforeRSKIP() {
         /**
          * Check that the CREATE opcode functions correctly before the RSKIP
          * It should create the contract and have nonce 0
@@ -319,7 +319,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2ShouldFailInvalidOpcode() {
+    void testCREATE2ShouldFailInvalidOpcode() {
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
 
         Assertions.assertThrows(Program.IllegalOperationException.class, () -> callCreate2("0x0000000000000000000000000000000000000000",
@@ -332,7 +332,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_EmptyCodeNonStandard() {
+    void testCREATE2_EmptyCodeNonStandard() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)
@@ -350,7 +350,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_EmptyCodeStandard() {
+    void testCREATE2_EmptyCodeStandard() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)

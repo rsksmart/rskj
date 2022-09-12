@@ -18,16 +18,16 @@ import static org.mockito.Mockito.*;
  * Created by Nazaret García on 15/01/2021
  */
 
-public class PersonalModuleWalletEnabledTest {
+class PersonalModuleWalletEnabledTest {
 
     @Test
-    public void importRawKey_KeyIsNull_ThrowsNullPointerException() {
+    void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
         Assertions.assertThrows(DecoderException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
     }
 
     @Test
-    public void importRawKey_KeyContains0xPrefix_OK() {
+    void importRawKey_KeyContains0xPrefix_OK() {
         ECKey eckey = new ECKey();
         String rawKey = ByteUtil.toHexString(eckey.getPrivKeyBytes());
         String passphrase = "passphrase1";
@@ -51,7 +51,7 @@ public class PersonalModuleWalletEnabledTest {
     }
 
     @Test
-    public void importRawKey_KeyDoesNotContains0xPrefix_OK() {
+    void importRawKey_KeyDoesNotContains0xPrefix_OK() {
         ECKey eckey = new ECKey();
         String rawKey = ByteUtil.toHexString(eckey.getPrivKeyBytes());
         String passphrase = "passphrase1";

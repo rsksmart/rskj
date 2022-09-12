@@ -26,9 +26,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by ajlopez on 27/06/2017.
  */
-public class PeerScoringTest {
+class PeerScoringTest {
     @Test
-    public void newStatusHasCounterInZero() {
+    void newStatusHasCounterInZero() {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assertions.assertEquals(0, scoring.getEventCounter(EventType.INVALID_BLOCK));
@@ -37,14 +37,14 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void newStatusHasGoodReputation() {
+    void newStatusHasGoodReputation() {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assertions.assertTrue(scoring.refreshReputationAndPunishment());
     }
 
     @Test
-    public void getInformationFromNewScoring() {
+    void getInformationFromNewScoring() {
         PeerScoring scoring = new PeerScoring("id1");
         PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
@@ -63,7 +63,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getInformationFromScoringWithTwoValidBlocks() {
+    void getInformationFromScoringWithTwoValidBlocks() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.VALID_BLOCK);
@@ -80,7 +80,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getInformationFromScoringWithThreeInvalidBlocks() {
+    void getInformationFromScoringWithThreeInvalidBlocks() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -98,7 +98,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getInformationFromScoringWithTwoValidTransactions() {
+    void getInformationFromScoringWithTwoValidTransactions() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.VALID_TRANSACTION);
@@ -115,7 +115,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getInformationFromScoringWithThreeInvalidTransactions() {
+    void getInformationFromScoringWithThreeInvalidTransactions() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_TRANSACTION);
@@ -133,14 +133,14 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void newStatusHasNoTimeLostGoodReputation() {
+    void newStatusHasNoTimeLostGoodReputation() {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assertions.assertEquals(0, scoring.getTimeLostGoodReputation());
     }
 
     @Test
-    public void recordEvent() {
+    void recordEvent() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -151,7 +151,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void recordManyEvent() {
+    void recordManyEvent() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -164,7 +164,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void recordManyEventOfDifferentType() {
+    void recordManyEventOfDifferentType() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -179,14 +179,14 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getZeroScoreWhenEmpty() {
+    void getZeroScoreWhenEmpty() {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assertions.assertEquals(0, scoring.getScore());
     }
 
     @Test
-    public void getPositiveScoreWhenValidBlock() {
+    void getPositiveScoreWhenValidBlock() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.VALID_BLOCK);
@@ -195,7 +195,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getNegativeScoreWhenInvalidBlock() {
+    void getNegativeScoreWhenInvalidBlock() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_BLOCK);
@@ -204,7 +204,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getPositiveScoreWhenValidTransaction() {
+    void getPositiveScoreWhenValidTransaction() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.VALID_TRANSACTION);
@@ -213,7 +213,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getNegativeScoreWhenInvalidTransaction() {
+    void getNegativeScoreWhenInvalidTransaction() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_TRANSACTION);
@@ -222,7 +222,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getNegativeScoreWhenValidAndInvalidTransaction() {
+    void getNegativeScoreWhenValidAndInvalidTransaction() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.VALID_TRANSACTION);
@@ -232,7 +232,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void getNegativeScoreWhenInvalidAndValidTransaction() {
+    void getNegativeScoreWhenInvalidAndValidTransaction() {
         PeerScoring scoring = new PeerScoring("id1");
 
         scoring.updateScoring(EventType.INVALID_TRANSACTION);
@@ -242,7 +242,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void twoValidEventsHasBetterScoreThanOnlyOne() {
+    void twoValidEventsHasBetterScoreThanOnlyOne() {
         PeerScoring scoring1 = new PeerScoring("id1");
         PeerScoring scoring2 = new PeerScoring("id2");
 
@@ -255,7 +255,8 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void startPunishmentWhenEnabledPunishmentStarted() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void startPunishmentWhenEnabledPunishmentStarted() throws InterruptedException {
         PeerScoring scoring = new PeerScoring("id1");
 
         Assertions.assertEquals(0, scoring.getPunishmentTime());
@@ -277,7 +278,7 @@ public class PeerScoringTest {
     }
 
     @Test
-    public void startPunishmentWhenDisabledPunishmentNotStarted() {
+    void startPunishmentWhenDisabledPunishmentNotStarted() {
         PeerScoring scoring = new PeerScoring("id1", false);
         Assertions.assertEquals(0, scoring.getPunishmentTime());
         Assertions.assertEquals(0, scoring.getPunishmentCounter());

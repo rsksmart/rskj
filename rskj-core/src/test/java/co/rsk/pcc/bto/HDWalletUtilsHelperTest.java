@@ -25,16 +25,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class HDWalletUtilsHelperTest {
+class HDWalletUtilsHelperTest {
     private HDWalletUtilsHelper helper;
 
     @BeforeEach
-    public void createHelper() {
+    void createHelper() {
         helper = new HDWalletUtilsHelper();
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
+    void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething")
@@ -42,7 +42,7 @@ public class HDWalletUtilsHelperTest {
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
+    void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething")
@@ -50,7 +50,7 @@ public class HDWalletUtilsHelperTest {
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyInvalid() {
+    void validateAndExtractNetworkFromExtendedPublicKeyInvalid() {
         Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff"));
     }
 }

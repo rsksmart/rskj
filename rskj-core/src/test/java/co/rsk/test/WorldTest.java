@@ -29,16 +29,16 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 8/7/2016.
  */
-public class WorldTest {
+class WorldTest {
     @Test
-    public void getUnknownBlockByName() {
+    void getUnknownBlockByName() {
         World world = new World();
 
         Assertions.assertNull(world.getBlockByName("foo"));
     }
 
     @Test
-    public void saveAndGetBlock() {
+    void saveAndGetBlock() {
         World world = new World();
 
         Block block = new BlockGenerator().getBlock(1);
@@ -48,7 +48,7 @@ public class WorldTest {
     }
 
     @Test
-    public void getGenesisBlock() {
+    void getGenesisBlock() {
         World world = new World();
 
         Block genesis = world.getBlockByName("g00");
@@ -64,21 +64,21 @@ public class WorldTest {
     }
 
     @Test
-    public void getBlockChain() {
+    void getBlockChain() {
         World world = new World();
 
         Assertions.assertNotNull(world.getBlockChain());
     }
 
     @Test
-    public void getUnknownAccountByName() {
+    void getUnknownAccountByName() {
         World world = new World();
 
         Assertions.assertNull(world.getAccountByName("foo"));
     }
 
     @Test
-    public void saveAndGetAccount() {
+    void saveAndGetAccount() {
         World world = new World();
 
         Account account = new Account(new ECKey(Utils.getRandom()));

@@ -18,7 +18,7 @@ import java.util.Random;
 
 import static org.mockito.Mockito.*;
 
-public class BridgeRSKIP220NewMethodsTest {
+class BridgeRSKIP220NewMethodsTest {
     private static Random random = new Random();
 
     private TestSystemProperties config;
@@ -30,7 +30,7 @@ public class BridgeRSKIP220NewMethodsTest {
     private Bridge bridge;
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
         when(config.getNetworkConstants()).thenReturn(constants);
@@ -53,7 +53,7 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainBestBlockHeader() throws IOException, BlockStoreException {
+    void getBtcBlockchainBestBlockHeader() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);
         when(bridgeSupport.getBtcBlockchainBestBlockHeader()).thenReturn(header);
@@ -63,7 +63,7 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainBestChainHeight() throws IOException, BlockStoreException, VMException {
+    void getBtcBlockchainBestChainHeight() throws IOException, BlockStoreException, VMException {
         when(bridgeSupport.getBtcBlockchainBestChainHeight()).thenReturn(42);
 
         int result = bridge.getBtcBlockchainBestChainHeight(new Object[0]);
@@ -72,7 +72,7 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHash() throws IOException, BlockStoreException {
+    void getBtcBlockchainBlockHeaderByHash() throws IOException, BlockStoreException {
         byte[] hashBytes = new byte[32];
         random.nextBytes(hashBytes);
         byte[] header = new byte[80];
@@ -85,7 +85,7 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHeight() throws IOException, BlockStoreException {
+    void getBtcBlockchainBlockHeaderByHeight() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);
         BigInteger height = BigInteger.TEN;
@@ -97,7 +97,7 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainParentBlockHeaderByHash() throws IOException, BlockStoreException {
+    void getBtcBlockchainParentBlockHeaderByHash() throws IOException, BlockStoreException {
         byte[] hashBytes = new byte[32];
         random.nextBytes(hashBytes);
         byte[] header = new byte[80];

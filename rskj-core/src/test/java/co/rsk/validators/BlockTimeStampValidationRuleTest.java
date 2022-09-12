@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * Created by mario on 23/01/17.
  */
 @ExtendWith(MockitoExtension.class)
-public class BlockTimeStampValidationRuleTest {
+class BlockTimeStampValidationRuleTest {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5 * 60;
 
@@ -56,13 +56,13 @@ public class BlockTimeStampValidationRuleTest {
     private final NetworkParameters bitcoinNetworkParameters = mock(NetworkParameters.class);
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         when(preRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(false);
         when(postRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(true);
     }
 
     @Test
-    public void timestampsAreCloseEnough() {
+    void timestampsAreCloseEnough() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, Constants.regtest(), timeProvider, bitcoinNetworkParameters);
 
@@ -72,7 +72,7 @@ public class BlockTimeStampValidationRuleTest {
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
         BtcBlock btcBlock = mock(BtcBlock.class);
         MessageSerializer messageSerializer = mock(MessageSerializer.class);
-        when(messageSerializer.makeBlock(eq(bitcoinMergedMiningHeader))).thenReturn(btcBlock);
+        when(messageSerializer.makeBlock(bitcoinMergedMiningHeader)).thenReturn(btcBlock);
         when(bitcoinNetworkParameters.getDefaultSerializer()).thenReturn(messageSerializer);
 
         when(btcBlock.getTimeSeconds()).thenReturn(1_000L);
@@ -93,7 +93,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockInThePast() {
+    void blockInThePast() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
@@ -105,7 +105,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockInTheFutureLimit() {
+    void blockInTheFutureLimit() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
@@ -117,7 +117,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockInTheFuture() {
+    void blockInTheFuture() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
@@ -129,7 +129,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockTimeLowerThanParentTime() {
+    void blockTimeLowerThanParentTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
@@ -145,7 +145,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockTimeGreaterThanParentTime() {
+    void blockTimeGreaterThanParentTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 
@@ -161,7 +161,7 @@ public class BlockTimeStampValidationRuleTest {
     }
 
     @Test
-    public void blockTimeEqualsParentTime() {
+    void blockTimeEqualsParentTime() {
         int validPeriod = 540;
         BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, Constants.regtest(), timeProvider);
 

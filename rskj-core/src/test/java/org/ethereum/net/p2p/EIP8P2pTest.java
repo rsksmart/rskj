@@ -28,11 +28,11 @@ import static org.bouncycastle.util.encoders.Hex.decode;
  * @author Mikhail Kalinin
  * @since 18.02.2016
  */
-public class EIP8P2pTest {
+class EIP8P2pTest {
 
     // devp2p hello packet advertising version 55 and containing a few additional list elements
     @Test
-    public void test1() {
+    void test1() {
 
         HelloMessage msg = new HelloMessage(decode(
                 "f87137916b6e6574682f76302e39312f706c616e39cdc5836574683dc6846d6f726b1682270fb840" +

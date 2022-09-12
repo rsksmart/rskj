@@ -26,9 +26,9 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 /**
  * Created by ajlopez on 18/01/2018.
  */
-public class TopicTest {
+class TopicTest {
     @Test
-    public void testEquals() {
+    void testEquals() {
         Topic topicA = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
         Topic topicB = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
         Topic topicC = new Topic("0000000000000000000000000000000000000000000000000000000000000002");
@@ -40,17 +40,17 @@ public class TopicTest {
     }
 
     @Test
-    public void invalidLongTopic() {
+    void invalidLongTopic() {
         Assertions.assertThrows(RuntimeException.class, () -> new Topic("000000000000000000000000000000000000000000000000000000000000000001"));
     }
 
     @Test
-    public void invalidShortTopic() {
+    void invalidShortTopic() {
         Assertions.assertThrows(RuntimeException.class, () -> new Topic("0000000000000000000000000000000001006"));
     }
 
     @Test
-    public void oddLengthAddressPaddedWithOneZero() {
+    void oddLengthAddressPaddedWithOneZero() {
         Topic topicA = new Topic("000000000000000000000000000000000000000000000000000000000000001");
         Topic topicB = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
 
@@ -58,27 +58,27 @@ public class TopicTest {
     }
 
     @Test
-    public void invalidHexTopic() {
+    void invalidHexTopic() {
         Assertions.assertThrows(DecoderException.class, () -> new Topic("00000000000000000000000000000000000000000000000000000000000000X"));
     }
 
     @Test
-    public void invalidNullTopicBytes() {
+    void invalidNullTopicBytes() {
         Assertions.assertThrows(NullPointerException.class, () -> new Topic((byte[]) null));
     }
 
     @Test
-    public void invalidNullTopicString() {
+    void invalidNullTopicString() {
         Assertions.assertThrows(NullPointerException.class, () -> new Topic((String) null));
     }
 
     @Test
-    public void invalidShortTopicBytes() {
+    void invalidShortTopicBytes() {
         Assertions.assertThrows(RuntimeException.class, () -> new Topic(new byte[31]));
     }
 
     @Test
-    public void invalidLongAddressBytes() {
+    void invalidLongAddressBytes() {
         Assertions.assertThrows(RuntimeException.class, () -> new Topic(new byte[33]));
     }
 }

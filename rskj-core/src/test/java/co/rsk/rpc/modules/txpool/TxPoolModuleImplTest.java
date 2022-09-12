@@ -42,7 +42,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 
-public class TxPoolModuleImplTest {
+class TxPoolModuleImplTest {
 
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private TxPoolModule txPoolModule;
@@ -50,7 +50,7 @@ public class TxPoolModuleImplTest {
     private Map<Integer, Account> accountMap;
 
     @BeforeEach
-    public void setup(){
+    void setup(){
         transactionPool = Web3Mocks.getMockTransactionPool();
         txPoolModule = new TxPoolModuleImpl(transactionPool);
         accountMap = new HashMap();
@@ -109,28 +109,28 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_basic() {
+    void txpool_content_basic() {
         JsonNode node = txPoolModule.content();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_inspect_basic() {
+    void txpool_inspect_basic() {
         JsonNode node = txPoolModule.inspect();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_status_basic() {
+    void txpool_status_basic() {
         JsonNode node = txPoolModule.status();
         checkFieldIsNumber(node,"pending");
         checkFieldIsNumber(node,"queued");
     }
 
     @Test
-    public void txpool_content_oneTx() {
+    void txpool_content_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.content();
@@ -143,7 +143,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_oneTx_no_receiver() {
+    void txpool_content_oneTx_no_receiver() {
         Transaction tx = createSampleTransactionWithoutReceiver();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.content();
@@ -156,7 +156,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_oneTx() {
+    void txpool_inspect_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.inspect();
@@ -169,7 +169,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameNonce() {
+    void txpool_content_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -191,7 +191,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameNonce() {
+    void txpool_inspect_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -213,7 +213,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameSender() {
+    void txpool_content_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -234,7 +234,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameSender() {
+    void txpool_inspect_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -255,7 +255,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_manyTxs() {
+    void txpool_content_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -279,7 +279,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_manyTxs() {
+    void txpool_inspect_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -303,7 +303,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_oneTx() {
+    void txpool_status_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.status();
@@ -315,7 +315,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_manyPending() {
+    void txpool_status_manyPending() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -330,7 +330,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_manyTxs() {
+    void txpool_status_manyTxs() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -399,7 +399,7 @@ public class TxPoolModuleImplTest {
 
     private void assertFullTransaction(Transaction tx, JsonNode transactionNode) {
         Assertions.assertTrue(transactionNode.has("blockHash"));
-        Assertions.assertEquals(transactionNode.get("blockHash").asText(), "0x0000000000000000000000000000000000000000000000000000000000000000");
+        Assertions.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000", transactionNode.get("blockHash").asText());
         Assertions.assertTrue(transactionNode.has("blockNumber"));
         Assertions.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
         Assertions.assertTrue(transactionNode.has("from"));

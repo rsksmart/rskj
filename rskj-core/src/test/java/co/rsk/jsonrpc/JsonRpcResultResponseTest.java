@@ -26,11 +26,11 @@ import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class JsonRpcResultResponseTest {
+class JsonRpcResultResponseTest {
 	private ObjectMapper serializer = new ObjectMapper();
 
 	@Test
-	public void serializeResponseWithResult() throws IOException {
+	void serializeResponseWithResult() throws IOException {
 
 		String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"result\":true}";
 

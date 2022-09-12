@@ -27,14 +27,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-public class RskWebSocketJsonParameterValidatorTest {
+class RskWebSocketJsonParameterValidatorTest {
 
 	private ObjectMapper mapper = new ObjectMapper();
 
 	private RskWebSocketJsonParameterValidator validator = new RskWebSocketJsonParameterValidator();
 
 	@Test
-	public void testParameterValidator_expectValid() throws IOException {
+	void testParameterValidator_expectValid() throws IOException {
 
 		mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
 
@@ -50,7 +50,7 @@ public class RskWebSocketJsonParameterValidatorTest {
 	}
 
 	@Test
-	public void testParameterValidator_expectNotValid() throws IOException {
+	void testParameterValidator_expectNotValid() throws IOException {
 
 		mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
 

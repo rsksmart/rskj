@@ -32,14 +32,14 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-public class ReversibleTransactionExecutorTest {
+class ReversibleTransactionExecutorTest {
 
     private final RskTestFactory factory = new RskTestFactory();
     private final ContractRunner contractRunner = new ContractRunner(factory);
     private final ReversibleTransactionExecutor reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
 
     @Test
-    public void executeTransactionHello() {
+    void executeTransactionHello() {
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
         RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
@@ -69,7 +69,7 @@ public class ReversibleTransactionExecutorTest {
     }
 
     @Test
-    public void executeTransactionGreeter() {
+    void executeTransactionGreeter() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
 
@@ -87,7 +87,7 @@ public class ReversibleTransactionExecutorTest {
     }
 
     @Test
-    public void executeTransactionGreeterOtherSender() {
+    void executeTransactionGreeterOtherSender() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
         RskAddress contractAddress = contractRunner.addContract(greeter.runtimeBytecode);
@@ -114,7 +114,7 @@ public class ReversibleTransactionExecutorTest {
     }
 
     @Test
-    public void executeTransactionCountCallsMultipleTimes() {
+    void executeTransactionCountCallsMultipleTimes() {
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
         RskAddress contractAddress = contractRunner.addContract(countcalls.runtimeBytecode);

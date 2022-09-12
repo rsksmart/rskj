@@ -31,7 +31,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
-public class BlockAccessorTest {
+class BlockAccessorTest {
     private static short MAXIMUM_BLOCK_DEPTH = 100;
     private static short NEGATIVE_BLOCK_DEPTH = -1;
     private static short ZERO_BLOCK_DEPTH = 0;
@@ -42,12 +42,12 @@ public class BlockAccessorTest {
     private ExecutionEnvironment executionEnvironment;
 
     @BeforeEach
-    public void createBlockAccessor() {
+    void createBlockAccessor() {
         blockAccessor = new BlockAccessor(MAXIMUM_BLOCK_DEPTH);
     }
 
     @Test
-    public void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
+    void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
         Assertions.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
@@ -55,14 +55,14 @@ public class BlockAccessorTest {
     }
 
     @Test
-    public void getBlockWithNegativeDepth() {
+    void getBlockWithNegativeDepth() {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
         Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment));
     }
 
     @Test
-    public void getGenesisBlock() throws NativeContractIllegalArgumentException {
+    void getGenesisBlock() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(1);
 
         Optional<Block> genesis = blockAccessor.getBlock(ZERO_BLOCK_DEPTH, executionEnvironment);
@@ -75,7 +75,7 @@ public class BlockAccessorTest {
     }
 
     @Test
-    public void getTenBlocksFromTheTip() throws NativeContractIllegalArgumentException {
+    void getTenBlocksFromTheTip() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(100);
 
         for(short i = 0; i < 10; i++) {

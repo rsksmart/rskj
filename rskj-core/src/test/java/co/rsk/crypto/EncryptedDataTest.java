@@ -22,19 +22,18 @@ package co.rsk.crypto;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class EncryptedDataTest {
+class EncryptedDataTest {
 
     @Test
-    public void testEncryptedData() {
+    void testEncryptedData() {
         EncryptedData ed = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
         EncryptedData ed2 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
         EncryptedData ed3 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,7});
         Assertions.assertEquals(ed.toString(), ed2.toString());
         Assertions.assertEquals(ed.hashCode(), ed2.hashCode());
-        Assertions.assertEquals(ed, ed);
         Assertions.assertEquals(ed, ed2);
-        Assertions.assertFalse(ed.equals(null));
-        Assertions.assertFalse(ed.equals("aa"));
-        Assertions.assertFalse(ed.equals(ed3));
+        Assertions.assertNotEquals(null, ed);
+        Assertions.assertNotEquals("aa", ed.toString());
+        Assertions.assertNotEquals(ed, ed3);
     }
 }

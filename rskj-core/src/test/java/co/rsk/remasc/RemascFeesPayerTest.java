@@ -41,10 +41,10 @@ import static org.mockito.Mockito.verify;
 /**
  * @author martin.medina
  */
-public class RemascFeesPayerTest {
+class RemascFeesPayerTest {
 
     @Test
-    public void payMiningFees() {
+    void payMiningFees() {
 
         // Setup objects
         Repository repositoryMock = Mockito.mock(Repository.class);

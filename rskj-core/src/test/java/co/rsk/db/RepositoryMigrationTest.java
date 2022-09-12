@@ -19,9 +19,9 @@ import static org.hamcrest.Matchers.is;
 /**
  * Created by SerAdmin on 10/24/2018.
  */
-public class RepositoryMigrationTest {
+class RepositoryMigrationTest {
     @Test
-    public void test() {
+    void test() {
         final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         final BigInteger accountNonce = BigInteger.valueOf(9);
 

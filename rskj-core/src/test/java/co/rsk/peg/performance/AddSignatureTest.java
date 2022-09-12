@@ -42,7 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Disabled
-public class AddSignatureTest extends BridgePerformanceTestCase {
+class AddSignatureTest extends BridgePerformanceTestCase {
     private BtcTransaction releaseTx;
     private Keccak256 rskTxHash;
     private BtcECKey federatorThatSignsKey;
@@ -56,7 +56,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
     );
 
     @Test
-    public void addSignature() throws VMException {
+    void addSignature() throws VMException {
         ExecutionStats stats = new ExecutionStats("addSignature");
 
         addSignature_nonFullySigned(100, stats);

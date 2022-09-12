@@ -17,18 +17,18 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @Disabled
-public class GetBtcBlockchainParentBlockHeaderByHashTest extends BridgePerformanceTestCase {
+class GetBtcBlockchainParentBlockHeaderByHashTest extends BridgePerformanceTestCase {
     private BtcBlock expectedBlock;
     private Sha256Hash originalBlockHash;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getBtcBlockchainParentBlockHeaderByHashTest() throws VMException {
+    void getBtcBlockchainParentBlockHeaderByHashTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainParentBlockHeaderByHash");
         getBtcBlockchainParentBlockHeaderByHashTest_success(1000, stats);
         BridgePerformanceTest.addStats(stats);

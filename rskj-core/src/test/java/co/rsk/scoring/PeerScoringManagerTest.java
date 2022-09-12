@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by ajlopez on 28/06/2017.
  */
-public class PeerScoringManagerTest {
+class PeerScoringManagerTest {
 
     private final Random random = new Random(111);
 
@@ -25,7 +25,7 @@ public class PeerScoringManagerTest {
     private static final int PUNISHMENT_INCREMENT_RATE = 10;
 
     @Test
-    public void isAddressBanned_NoBannedPeers_ShouldNotBeBanned() throws UnknownHostException {
+    void isAddressBanned_NoBannedPeers_ShouldNotBeBanned() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -34,7 +34,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void isAddressBanned_AddressIsBanned_ShouldBeBannedWithBadReputation() throws UnknownHostException {
+    void isAddressBanned_AddressIsBanned_ShouldBeBannedWithBadReputation() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager(100, Collections.singleton(address.getHostAddress()), Collections.emptyList());
 
@@ -43,7 +43,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void isNodeIDBanned_NoBannedPeers_ShouldNotBeBanned() {
+    void isNodeIDBanned_NoBannedPeers_ShouldNotBeBanned() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -52,7 +52,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void isNodeIDBanned_NodeIDIsBanned_ShouldBeBannedWithBadReputation() {
+    void isNodeIDBanned_NodeIDIsBanned_ShouldBeBannedWithBadReputation() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager(100, Collections.emptyList(), Collections.singleton(ByteUtil.toHexString(id.getID())));
 
@@ -61,7 +61,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void getEmptyNodeStatusFromUnknownNodeId() {
+    void getEmptyNodeStatusFromUnknownNodeId() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -72,7 +72,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void addBannedAddress() throws UnknownHostException {
+    void addBannedAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -81,7 +81,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void addBannedAddressBlock() throws UnknownHostException {
+    void addBannedAddressBlock() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 8);
 
@@ -92,7 +92,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddress() throws UnknownHostException {
+    void addAndRemoveBannedAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -103,7 +103,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void addAndRemoveBannedAddressBlock() throws UnknownHostException {
+    void addAndRemoveBannedAddressBlock() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 8);
 
@@ -116,7 +116,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void newNodeHasGoodReputation() {
+    void newNodeHasGoodReputation() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -124,7 +124,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void recordEventUsingNodeID() {
+    void recordEventUsingNodeID() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -139,7 +139,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void newAddressHasGoodReputation() throws UnknownHostException {
+    void newAddressHasGoodReputation() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -147,7 +147,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void recordEventUsingNodeIDAndAddress() throws UnknownHostException {
+    void recordEventUsingNodeIDAndAddress() throws UnknownHostException {
         NodeID id = generateNodeID();
         InetAddress address = generateIPAddressV4();
 
@@ -171,7 +171,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void recordEventUsingIPV4Address() throws UnknownHostException {
+    void recordEventUsingIPV4Address() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -186,7 +186,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidBlockGivesBadReputationToNode() throws UnknownHostException {
+    void invalidBlockGivesBadReputationToNode() throws UnknownHostException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -198,7 +198,8 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void notGoodReputationByNodeIDExpires() throws UnknownHostException, InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void notGoodReputationByNodeIDExpires() throws UnknownHostException, InterruptedException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -221,7 +222,8 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void notGoodReputationByAddressExpires() throws UnknownHostException, InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void notGoodReputationByAddressExpires() throws UnknownHostException, InterruptedException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -244,7 +246,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void firstPunishment() throws UnknownHostException, InterruptedException {
+    void firstPunishment() throws UnknownHostException, InterruptedException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -257,7 +259,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void finishPunishment() throws UnknownHostException {
+    void finishPunishment() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -283,7 +285,8 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void secondPunishment() throws UnknownHostException, InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void secondPunishment() throws UnknownHostException, InterruptedException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -309,7 +312,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidTransactionGivesNoBadReputationToNode() throws UnknownHostException {
+    void invalidTransactionGivesNoBadReputationToNode() throws UnknownHostException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -320,7 +323,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidBlockGivesBadReputationToAddress() throws UnknownHostException {
+    void invalidBlockGivesBadReputationToAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -332,7 +335,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidTransactionGivesNoBadReputationToAddress() throws UnknownHostException {
+    void invalidTransactionGivesNoBadReputationToAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -343,7 +346,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void recordEventUsingIPV6Address() throws UnknownHostException {
+    void recordEventUsingIPV6Address() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -358,7 +361,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void managesOnlyThreeNodes() {
+    void managesOnlyThreeNodes() {
         PeerScoringManager manager = createPeerScoringManager(3);
 
         NodeID node1 = generateNodeID();
@@ -382,7 +385,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void getPeersInformationFromEmptyManager() {
+    void getPeersInformationFromEmptyManager() {
         PeerScoringManager manager = createPeerScoringManager();
 
         List<PeerScoringInformation> result = manager.getPeersInformation();
@@ -392,7 +395,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void getPeersInformationFromManagerWithOneEvent() throws UnknownHostException {
+    void getPeersInformationFromManagerWithOneEvent() throws UnknownHostException {
         PeerScoringManager manager = createPeerScoringManager();
         NodeID node = generateNodeID();
         InetAddress address = generateIPAddressV4();
@@ -427,7 +430,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void getPeersInformationFromManagerWithThreeEvents() throws UnknownHostException {
+    void getPeersInformationFromManagerWithThreeEvents() throws UnknownHostException {
         PeerScoringManager manager = createPeerScoringManager();
         NodeID node = generateNodeID();
         InetAddress address = generateIPAddressV4();
@@ -464,7 +467,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void recordTimeoutIsNeutralEvent() throws UnknownHostException {
+    void recordTimeoutIsNeutralEvent() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         PeerScoringManager manager = createPeerScoringManager();
 
@@ -481,7 +484,7 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void clearPeerInformationByAddress() throws UnknownHostException {
+    void clearPeerInformationByAddress() throws UnknownHostException {
         PeerScoringManager manager = createPeerScoringManager();
         NodeID node = generateNodeID();
         InetAddress address = generateIPAddressV4();

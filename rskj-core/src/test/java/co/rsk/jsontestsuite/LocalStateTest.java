@@ -56,17 +56,17 @@ import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
  * @since 02.24.2016
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
+@SuppressWarnings("squid:S1607") // many @Disabled annotations for diverse reasons
+class LocalStateTest {
 
-public class LocalStateTest {
-
-    @Disabled // this method is mostly for hands-on convenient testing
-    public void stSingleTest() throws ParseException, IOException {
+    @Disabled("this method is mostly for hands-on convenient testing")
+    public void stSingleTest() throws IOException {
         String json = getJSON("stSystemOperationsTest");
         GitHubJSONTestSuite.runStateTest(json, "suicideSendEtherPostDeath");
     }
 
     @Test
-    public void stExample() throws ParseException, IOException {
+    void stExample() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stExample");
@@ -74,7 +74,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stCallCodes() throws ParseException, IOException {
+    void stCallCodes() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stCallCodes");
@@ -108,7 +108,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stCallDelegateCodes() throws ParseException, IOException {
+    void stCallDelegateCodes() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stCallDelegateCodes");
@@ -136,7 +136,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stCallDelegateCodesCallCode() throws ParseException, IOException {
+    void stCallDelegateCodesCallCode() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stCallDelegateCodesCallCode");
@@ -165,7 +165,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stHomeSteadSpecific() throws ParseException, IOException {
+    void stHomeSteadSpecific() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stHomeSteadSpecific");
@@ -178,7 +178,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stCallCreateCallCodeTest() throws ParseException, IOException {
+    void stCallCreateCallCodeTest() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stCallCreateCallCodeTest");
@@ -208,7 +208,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stDelegatecallTest() throws ParseException, IOException {
+    void stDelegatecallTest() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stDelegatecallTest");
 
@@ -224,7 +224,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stInitCodeTest() throws ParseException, IOException {
+    void stInitCodeTest() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stInitCodeTest");
 
@@ -250,7 +250,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stLogTests() throws ParseException, IOException {
+    void stLogTests() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stLogTests");
 
@@ -314,7 +314,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stPreCompiledContracts() throws ParseException, IOException {
+    void stPreCompiledContracts() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stPreCompiledContracts");
@@ -356,7 +356,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stMemoryStressTest() throws ParseException, IOException {
+    void stMemoryStressTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         /* These tests would fail if balances are checked
@@ -382,7 +382,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stMemoryTest() throws ParseException, IOException {
+    void stMemoryTest() throws IOException {
         String json = getJSON("stMemoryTest");
         Set<String> excluded = new HashSet<>();
 
@@ -395,7 +395,7 @@ public class LocalStateTest {
     // the performance of the VM. However there are no time contrains here, so
     // the tests are currenlty useless.
 
-    public void stQuadraticComplexityTest() throws ParseException, IOException {
+    public void stQuadraticComplexityTest() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stQuadraticComplexityTest");
         // The test Call1MB1024Calldepth must be excluded because RSK doesn't
@@ -406,7 +406,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stSolidityTest() throws ParseException, IOException {
+    void stSolidityTest() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stSolidityTest");
 
@@ -428,7 +428,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stRecursiveCreate() throws IOException {
+    void stRecursiveCreate() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stRecursiveCreate");
@@ -442,7 +442,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stRefundTest() throws ParseException, IOException {
+    void stRefundTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stRefundTest");
@@ -457,7 +457,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stSpecialTest() throws ParseException, IOException {
+    void stSpecialTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stSpecialTest");
@@ -472,7 +472,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stBlockHashTest() throws ParseException, IOException {
+    void stBlockHashTest() throws IOException {
         String json = getJSON("stBlockHashTest");
         Set<String> excluded = new HashSet<>();
 
@@ -484,7 +484,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stSystemOperationsTest() throws IOException {
+    void stSystemOperationsTest() throws IOException {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stSystemOperationsTest");
@@ -537,7 +537,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stTransactionTest() throws ParseException, IOException {
+    void stTransactionTest() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stTransactionTest");
 
@@ -564,7 +564,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stTransitionTest() throws ParseException, IOException {
+    void stTransitionTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stTransitionTest");
@@ -582,7 +582,7 @@ public class LocalStateTest {
 
     @Disabled
     @Test
-    public void stWalletTest() throws ParseException, IOException {
+    void stWalletTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stWalletTest");
@@ -634,7 +634,7 @@ public class LocalStateTest {
 
     @Disabled
     //@Test // testing full suite
-    public void testRandomStateGitHub() throws ParseException, IOException {
+    void testRandomStateGitHub() throws IOException {
 
         String sha = "99db6f4f5fea3aa5cfbe8436feba8e213d06d1e8";
         List<String> fileNames = getFileNamesForTreeSha(sha);

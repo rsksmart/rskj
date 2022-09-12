@@ -25,19 +25,19 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class PeginInformationTest {
+class PeginInformationTest {
 
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters networkParameters;
 
     @BeforeAll
-    public static void setup() {
+     static void setup() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
     @Test
-    public void parse_fromBtcLockSender() throws PeginInstructionsException {
+    void parse_fromBtcLockSender() throws PeginInstructionsException {
         // Arrange
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
@@ -76,7 +76,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_fromPeginInstructions() throws PeginInstructionsException {
+    void parse_fromPeginInstructions() throws PeginInstructionsException {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
@@ -130,7 +130,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_fromPeginInstructions_withoutBtcLockSender() throws PeginInstructionsException {
+    void parse_fromPeginInstructions_withoutBtcLockSender() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
@@ -171,7 +171,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_fromPeginInstructions_withoutBtcRefundAddress() throws PeginInstructionsException {
+    void parse_fromPeginInstructions_withoutBtcRefundAddress() throws PeginInstructionsException {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
@@ -223,7 +223,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_fromPeginInstructions_withoutBtcLockSender_withoutBtcRefundAddress() throws PeginInstructionsException {
+    void parse_fromPeginInstructions_withoutBtcLockSender_withoutBtcRefundAddress() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
@@ -264,7 +264,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_fromPeginInstructions_invalidProtocolVersion() throws PeginInstructionsException {
+    void parse_fromPeginInstructions_invalidProtocolVersion() throws PeginInstructionsException {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
@@ -306,7 +306,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_withoutBtcLockSender_withoutPeginInstructions() throws PeginInstructionsException {
+    void parse_withoutBtcLockSender_withoutPeginInstructions() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
@@ -332,7 +332,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_withBtcLockSender_withPeginInstructions_preIris() throws PeginInstructionsException {
+    void parse_withBtcLockSender_withPeginInstructions_preIris() throws PeginInstructionsException {
         // Arrange
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
@@ -386,7 +386,7 @@ public class PeginInformationTest {
     }
 
     @Test
-    public void parse_withoutBtcLockSender_withPeginInstructions_preIris() throws PeginInstructionsException {
+    void parse_withoutBtcLockSender_withPeginInstructions_preIris() throws PeginInstructionsException {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);

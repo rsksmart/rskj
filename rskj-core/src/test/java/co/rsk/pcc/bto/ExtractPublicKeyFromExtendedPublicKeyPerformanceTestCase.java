@@ -36,11 +36,11 @@ import org.junit.jupiter.api.Test;
 import java.util.Random;
 
 @Disabled
-public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
 
     @Test
-    public void extractPublicKeyFromExtendedPublicKey() throws VMException {
+    void extractPublicKeyFromExtendedPublicKey() throws VMException {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {

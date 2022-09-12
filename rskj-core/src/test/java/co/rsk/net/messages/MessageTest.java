@@ -41,17 +41,17 @@ import java.util.Random;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class MessageTest {
+class MessageTest {
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
     private BlockGenerator blockGenerator;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.all());
     }
 
     @Test
-    public void encodeDecodeGetBlockMessage() {
+    void encodeDecodeGetBlockMessage() {
         Block block = blockGenerator.getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
 
@@ -69,7 +69,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockRequestMessage() {
+    void encodeDecodeBlockRequestMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockRequestMessage message = new BlockRequestMessage(100, block.getHash().getBytes());
 
@@ -88,7 +88,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeStatusMessage() {
+    void encodeDecodeStatusMessage() {
         Block block = blockGenerator.getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
@@ -110,7 +110,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeStatusMessageWithCompleteArguments() {
+    void encodeDecodeStatusMessageWithCompleteArguments() {
         Block block = blockGenerator.getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
         StatusMessage message = new StatusMessage(status);
@@ -130,7 +130,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeStatusMessageUsingGenesisBlock() {
+    void encodeDecodeStatusMessageUsingGenesisBlock() {
         Block block = blockGenerator.getBlock(0);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
@@ -150,7 +150,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockMessage() {
+    void encodeDecodeBlockMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockMessage message = new BlockMessage(block);
 
@@ -170,7 +170,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockResponseMessage() {
+    void encodeDecodeBlockResponseMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
@@ -193,7 +193,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHeadersResponseMessage() {
+    void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
@@ -225,7 +225,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeNewBlockHashesMessage() {
+    void encodeDecodeNewBlockHashesMessage() {
         List<Block> blocks = blockGenerator.getBlockChain(10);
         Block b1 = blocks.get(5);
         Block b2 = blocks.get(7);
@@ -257,7 +257,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeTransactionsMessage() {
+    void encodeDecodeTransactionsMessage() {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
         TransactionsMessage message = new TransactionsMessage(txs);
 
@@ -283,7 +283,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHashRequestMessage() {
+    void encodeDecodeBlockHashRequestMessage() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
@@ -303,7 +303,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHashRequestMessageWithHighHeight() {
+    void encodeDecodeBlockHashRequestMessageWithHighHeight() {
         long someId = 42;
         long someHeight = 200000;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
@@ -323,7 +323,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHashResponseMessage() {
+    void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
         byte[] hash = new byte[32];
         Random random = new Random();
@@ -346,7 +346,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBlockHeadersRequestMessage() {
+    void encodeDecodeBlockHeadersRequestMessage() {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
@@ -366,7 +366,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeSkeletonResponseMessage() {
+    void encodeDecodeSkeletonResponseMessage() {
         long someId = 42;
         List<Block> blocks = blockGenerator.getBlockChain(10);
         Block b1 = blocks.get(5);
@@ -401,7 +401,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeSkeletonRequestMessage() {
+    void encodeDecodeSkeletonRequestMessage() {
         long someId = 42;
         long someStartNumber = 99;
         SkeletonRequestMessage message = new SkeletonRequestMessage(someId, someStartNumber);
@@ -421,7 +421,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeNewBlockHashMessage() {
+    void encodeDecodeNewBlockHashMessage() {
         byte[] hash = HashUtil.randomHash();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
@@ -439,7 +439,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBodyRequestMessage() {
+    void encodeDecodeBodyRequestMessage() {
         Block block = blockGenerator.getBlock(1);
         BodyRequestMessage message = new BodyRequestMessage(100, block.getHash().getBytes());
 
@@ -458,7 +458,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBodyResponseMessage() {
+    void encodeDecodeBodyResponseMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)

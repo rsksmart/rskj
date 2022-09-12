@@ -46,11 +46,11 @@ import static org.mockito.Mockito.*;
  * @author Roman Mandeleil
  * @since 15.10.2014
  */
-public class ChannelManagerImplTest {
+class ChannelManagerImplTest {
 
 
     @Test
-    public void getNumberOfPeersToSendStatusTo() {
+    void getNumberOfPeersToSendStatusTo() {
         ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
 
         assertEquals(1, channelManagerImpl.getNumberOfPeersToSendStatusTo(1));
@@ -65,13 +65,13 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void blockAddressIsAvailable() throws UnknownHostException {
+    void blockAddressIsAvailable() throws UnknownHostException {
         ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
         Assertions.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
     }
 
     @Test
-    public void blockAddressIsNotAvailable() {
+    void blockAddressIsNotAvailable() {
         TestSystemProperties config = mock(TestSystemProperties.class);
         when(config.maxConnectionsAllowed()).thenReturn(1);
         when(config.networkCIDR()).thenReturn(32);
@@ -99,7 +99,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void broadcastBlock() {
+    void broadcastBlock() {
         ChannelManager target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
 
         Block block = mock(Block.class);
@@ -110,7 +110,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void broadcastTransactions_broadcastToAllActivePeers() {
+    void broadcastTransactions_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
@@ -125,7 +125,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void broadcastTransactions_skipSender() {
+    void broadcastTransactions_skipSender() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
@@ -143,7 +143,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void broadcastTransaction_broadcastToAllActivePeers() {
+    void broadcastTransaction_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final Map<NodeID,Channel> activePeers = peersForTests(2);

@@ -48,10 +48,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class Web3EthModuleTest {
+class Web3EthModuleTest {
 
     @Test
-    public void eth_chainId() {
+    void eth_chainId() {
         EthModule ethModule = mock(EthModule.class);
         when(ethModule.chainId()).thenReturn("0x21");
         Web3EthModule web3 = new Web3RskImpl(

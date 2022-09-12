@@ -5,10 +5,10 @@ import co.rsk.config.NodeCliOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CliArgsTest {
+class CliArgsTest {
 
     @Test
-    public void parseArgsCorrectly() {
+    void parseArgsCorrectly() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir=/home/rsk/data"};
 
         CliArgs<NodeCliOptions, NodeCliFlags> cliArgs = new CliArgs.Parser<>(
@@ -16,14 +16,14 @@ public class CliArgsTest {
                 NodeCliFlags.class
         ).parse(args);
 
-        Assertions.assertEquals(cliArgs.getFlags().size(), 1);
-        Assertions.assertEquals(cliArgs.getParamValueMap().size(), 1);
-        Assertions.assertEquals(cliArgs.getParamValueMap().get("database.dir"), "/home/rsk/data");
-        Assertions.assertEquals(cliArgs.getFlags().iterator().next().getName(), "regtest");
+        Assertions.assertEquals(1, cliArgs.getFlags().size());
+        Assertions.assertEquals(1, cliArgs.getParamValueMap().size());
+        Assertions.assertEquals("/home/rsk/data", cliArgs.getParamValueMap().get("database.dir"));
+        Assertions.assertEquals("regtest", cliArgs.getFlags().iterator().next().getName());
     }
 
     @Test
-    public void parseArgsIncorrectlyWithBadXArg() {
+    void parseArgsIncorrectlyWithBadXArg() {
         String[] args = new String[]{"--regtest", "-Xdatabase.dir"};
         CliArgs.Parser<NodeCliOptions, NodeCliFlags> parser = new CliArgs.Parser<>(
                 NodeCliOptions.class,

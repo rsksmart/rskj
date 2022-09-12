@@ -32,17 +32,17 @@ import java.math.BigInteger;
 
 import static org.mockito.Mockito.mock;
 
-public class ToBase58CheckTest {
+class ToBase58CheckTest {
     private ToBase58Check method;
 
     @BeforeEach
-    public void createMethod() {
+    void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         method = new ToBase58Check(executionEnvironment);
     }
 
     @Test
-    public void functionSignatureOk() {
+    void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
         Assertions.assertEquals("toBase58Check", fn.name);
 
@@ -55,17 +55,17 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void shouldBeEnabled() {
+    void shouldBeEnabled() {
         Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
-    public void shouldAllowAnyTypeOfCall() {
+    void shouldAllowAnyTypeOfCall() {
         Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
-    public void executes() throws NativeContractIllegalArgumentException {
+    void executes() throws NativeContractIllegalArgumentException {
         Assertions.assertEquals(
                 "mgivuh9jErcGdRr81cJ3A7YfgbJV7WNyZV",
                 method.execute(new Object[]{
@@ -75,7 +75,7 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void validatesHashPresence() {
+    void validatesHashPresence() {
         try {
             method.execute(new Object[]{
                     Hex.decode("aabbcc"),
@@ -88,7 +88,7 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void validatesHashLength() {
+    void validatesHashLength() {
         try {
             method.execute(new Object[]{
                     Hex.decode("aabbcc"),
@@ -101,7 +101,7 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void validatesVersion() {
+    void validatesVersion() {
         try {
             method.execute(new Object[]{
                     Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
@@ -123,7 +123,7 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void gasIsCorrect() {
+    void gasIsCorrect() {
         Assertions.assertEquals(13_000, method.getGas(new Object[]{
                 Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
                 BigInteger.valueOf(111L)

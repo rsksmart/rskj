@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Disabled
-public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
+class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction btcTx;
     private int blockWithTxHeight;
     private boolean shouldTransferToContract =  true;
@@ -35,7 +35,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
     private Coin totalAmount;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -58,7 +58,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
     }
 
     @Test
-    public void registerFlyoverBtcTransaction() throws VMException {
+    void registerFlyoverBtcTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerFlyoverBtcTransaction");
         registerFlyoverBtcTransaction_success(5000, stats);
         registerFlyoverBtcTransaction_surpasses_locking_cap(1000, stats);

@@ -37,14 +37,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class HelloMessageTest {
+class HelloMessageTest {
 
     /* HELLO_MESSAGE */
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     //Parsing from raw bytes
     @Test
-    public void test1() {
+    void test1() {
         String helloMessageRaw = "f87902a5457468657265756d282b2b292f76302e372e392f52656c656173652f4c696e75782f672b2bccc58365746827c583736868018203e0b8401fbf1e41f08078918c9f7b6734594ee56d7f538614f602c71194db0a1af5a77f9b86eb14669fe7a8a46a2dd1b7d070b94e463f4ecd5b337c8b4d31bbf8dd5646";
 
         byte[] payload = Hex.decode(helloMessageRaw);
@@ -63,7 +63,7 @@ public class HelloMessageTest {
 
     //Instantiate from constructor
     @Test
-    public void test2() {
+    void test2() {
 
         //Init
         byte version = 2;
@@ -87,7 +87,7 @@ public class HelloMessageTest {
 
     //Fail test
     @Test
-    public void test3() {
+    void test3() {
         //Init
         byte version = -1; //invalid version
         String clientStr = ""; //null id

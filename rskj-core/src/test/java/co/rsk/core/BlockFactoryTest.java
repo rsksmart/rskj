@@ -45,25 +45,25 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockFactoryTest {
+class BlockFactoryTest {
 
     private ActivationConfig activationConfig;
     private BlockFactory factory;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         activationConfig = mock(ActivationConfig.class);
         factory = new BlockFactory(activationConfig);
     }
 
     @Test
-    public void decodeGenesisBlock() {
+    void decodeGenesisBlock() {
         enableRulesAt(0L, RSKIP92);
         MatcherAssert.assertThat(factory.decodeBlock(genesisRaw()).getHash().getBytes(), is(genesisRawHash()));
     }
 
     @Test
-    public void newHeaderWithNoForkDetectionDataAndRskip110On() {
+    void newHeaderWithNoForkDetectionDataAndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
@@ -76,7 +76,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockPriorToHeight449AndRskip110On() {
+    void decodeBlockPriorToHeight449AndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
@@ -92,7 +92,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockPriorToHeight449AndRskip110Off() {
+    void decodeBlockPriorToHeight449AndRskip110Off() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -108,7 +108,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockAfterHeight449AndRskip110OFF() {
+    void decodeBlockAfterHeight449AndRskip110OFF() {
         long number = 457L;
         enableRulesAt(number, RSKIP92);
 
@@ -124,7 +124,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockAfterHeight449AndRskip110On() {
+    void decodeBlockAfterHeight449AndRskip110On() {
         long number = 457L;
         enableRulesAt(number, RSKIP92, RSKIP110);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
@@ -152,7 +152,7 @@ public class BlockFactoryTest {
      * and prior to the RSKIP 110 activation.
      */
     @Test
-    public void decodeWithNoMergedMiningDataAndRskip110OffAndNoForkDetectionData() {
+    void decodeWithNoMergedMiningDataAndRskip110OffAndNoForkDetectionData() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -172,7 +172,7 @@ public class BlockFactoryTest {
      *  This case should not happen in real life.
      */
     @Test
-    public void decodeWithNoMergedMiningDataAndRskip110OffAndForkDetectionData() {
+    void decodeWithNoMergedMiningDataAndRskip110OffAndForkDetectionData() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -188,7 +188,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsValidUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsValidUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -206,7 +206,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsEmptyUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsEmptyUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -223,7 +223,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -239,7 +239,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsValidUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsValidUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -257,7 +257,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsEmptyUmmRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsEmptyUmmRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -274,7 +274,7 @@ public class BlockFactoryTest {
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 

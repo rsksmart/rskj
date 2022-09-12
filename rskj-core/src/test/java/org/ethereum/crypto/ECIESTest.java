@@ -45,7 +45,7 @@ import java.security.SecureRandom;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class ECIESTest {
+class ECIESTest {
     public static final int KEY_SIZE = 128;
     static Logger log = LoggerFactory.getLogger("test");
     private static ECDomainParameters curve;
@@ -58,12 +58,12 @@ public class ECIESTest {
     }
 
     @BeforeAll
-    public static void beforeAll() {
+     static void beforeAll() {
         curve = new ECDomainParameters(IES_CURVE_PARAM.getCurve(), IES_CURVE_PARAM.getG(), IES_CURVE_PARAM.getN(), IES_CURVE_PARAM.getH());
     }
 
     @Test
-    public void testKDF() {
+    void testKDF() {
         ConcatKDFBytesGenerator kdf = new ConcatKDFBytesGenerator(new SHA256Digest());
         kdf.init(new KDFParameters("Hello".getBytes(), new byte[0]));
         byte[] bytes = new byte[2];
@@ -72,7 +72,7 @@ public class ECIESTest {
     }
 
     @Test
-    public void testDecryptTestVector() throws IOException, InvalidCipherTextException {
+    void testDecryptTestVector() throws IOException, InvalidCipherTextException {
         ECPoint pub1 = pub(PRIVATE_KEY1);
         byte[] ciphertext = Hex.decode(CIPHERTEXT1);
         byte[] plaintext = decrypt(PRIVATE_KEY1, ciphertext);
@@ -80,7 +80,7 @@ public class ECIESTest {
     }
 
     @Test
-    public void testRoundTrip() throws InvalidCipherTextException, IOException {
+    void testRoundTrip() throws InvalidCipherTextException, IOException {
         ECPoint pub1 = pub(PRIVATE_KEY1);
         byte[] plaintext = "Hello world".getBytes();
         byte[] ciphertext = encrypt(pub1, plaintext);

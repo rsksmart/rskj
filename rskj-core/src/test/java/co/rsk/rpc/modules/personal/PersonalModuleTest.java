@@ -33,12 +33,12 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 
-public class PersonalModuleTest {
+class PersonalModuleTest {
 
 	private static final String PASS_FRASE = "passfrase";
 
 	@Test
-	public void sendTransactionWithGasLimitTest() throws Exception {
+	void sendTransactionWithGasLimitTest() throws Exception {
 
 		TestSystemProperties props = new TestSystemProperties();
 

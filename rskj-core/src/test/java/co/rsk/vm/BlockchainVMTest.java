@@ -38,10 +38,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 4/20/2016.
  */
-public class BlockchainVMTest {
+class BlockchainVMTest {
 
     @Test
-    public void genesisTest() {
+    void genesisTest() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Assertions.assertEquals(0, genesis.getNumber());
     }
@@ -63,7 +63,7 @@ public class BlockchainVMTest {
     }
 
     @Test
-    public void testSEND_1() {
+    void testSEND_1() {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
         BlockGenerator blockGenerator = new BlockGenerator();

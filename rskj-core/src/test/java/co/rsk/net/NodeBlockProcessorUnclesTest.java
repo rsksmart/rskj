@@ -36,9 +36,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 16/08/2016.
  */
-public class NodeBlockProcessorUnclesTest {
+class NodeBlockProcessorUnclesTest {
     @Test
-    public void addBlockWithoutUncles() {
+    void addBlockWithoutUncles() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
@@ -53,7 +53,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoKnownUncles() {
+    void addBlockWithTwoKnownUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
@@ -88,7 +88,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoUnknownUncles() {
+    void addBlockWithTwoUnknownUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
@@ -122,7 +122,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
+    void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 

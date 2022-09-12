@@ -62,13 +62,13 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class NodeMessageHandlerTest {
+class NodeMessageHandlerTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void processBlockMessageUsingProcessor() {
+    void processBlockMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -100,7 +100,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void skipProcessGenesisBlock() throws UnknownHostException {
+    void skipProcessGenesisBlock() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -121,7 +121,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void skipAdvancedBlock() throws UnknownHostException {
+    void skipAdvancedBlock() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -143,7 +143,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
+    void postBlockMessageTwice() {
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -164,7 +164,8 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void postBlockMessageUsingProcessor() throws InterruptedException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -184,7 +185,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void postBlockMessageFromBannedMiner() {
+    void postBlockMessageFromBannedMiner() {
         RskSystemProperties config = spy(this.config);
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
@@ -204,7 +205,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void postBlockMessageFromNonBannedMiner() {
+    void postBlockMessageFromNonBannedMiner() {
         RskSystemProperties config = spy(this.config);
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
@@ -227,9 +228,8 @@ public class NodeMessageHandlerTest {
     }
 
     // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times fail
-    // This should be executed in a special mode where difficulty is high.
-    @Disabled
-    public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
+    @Disabled("This should be executed in a special mode where difficulty is high")
+    public void processInvalidPoWMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -256,7 +256,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
+    void processMissingPoWBlockMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -286,7 +286,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
+    void processFutureBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -300,7 +300,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test @Disabled("This should be reviewed with sync processor or deleted")
-    public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
+    void processStatusMessageUsingNodeBlockProcessor() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -332,7 +332,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processStatusMessageUsingSyncProcessor() {
+    void processStatusMessageUsingSyncProcessor() {
         final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -351,7 +351,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processStatusMessageWithKnownBestBlock() {
+    void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -393,7 +393,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
+    void processGetBlockMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
@@ -427,7 +427,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
+    void processGetBlockMessageUsingBlockInBlockchain() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -462,7 +462,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
+    void processGetBlockMessageUsingEmptyStore() {
         final Block block = new BlockGenerator().getBlock(3);
 
         final World world = new World();
@@ -484,7 +484,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockHeaderRequestMessageUsingBlockInStore() throws UnknownHostException {
+    void processBlockHeaderRequestMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
 
         final World world = new World();
@@ -518,7 +518,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockHeaderRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
+    void processBlockHeaderRequestMessageUsingBlockInBlockchain() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -553,7 +553,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processNewBlockHashesMessage() throws UnknownHostException {
+    void processNewBlockHashesMessage() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -662,18 +662,16 @@ public class NodeMessageHandlerTest {
             }
 
             for (Keccak256 h : expected) {
-                Assertions.assertTrue(
-                        msgs.stream()
-                                .filter(h1 -> h.equals(h1))
-                                .count() == 1
-                );
+                Assertions.assertEquals(1, msgs.stream()
+                        .filter(h1 -> h.equals(h1))
+                        .count());
             }
 
         }
     }
 
     @Test
-    public void processNewBlockHashesMessageDoesNothingBecauseNodeIsSyncing() {
+    void processNewBlockHashesMessageDoesNothingBecauseNodeIsSyncing() {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
@@ -691,7 +689,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTransactionsMessage() throws UnknownHostException {
+    void processTransactionsMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
@@ -732,7 +730,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processRejectedTransactionsMessage() throws UnknownHostException {
+    void processRejectedTransactionsMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
@@ -763,7 +761,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTooMuchGasTransactionMessage() throws UnknownHostException {
+    void processTooMuchGasTransactionMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
@@ -801,7 +799,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTransactionsMessageUsingTransactionPool() throws UnknownHostException {
+    void processTransactionsMessageUsingTransactionPool() {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
@@ -825,7 +823,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
+    void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -839,7 +837,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
+    void processBlockHeadersRequestMessageUsingProcessor() {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
@@ -864,7 +862,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void fillMessageQueue_thenBlockNewMessages() throws UnknownHostException {
+    void fillMessageQueue_thenBlockNewMessages() {
 
     	TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);

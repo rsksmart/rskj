@@ -14,32 +14,32 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class P2shP2wpkhBtcLockSenderTest {
+class P2shP2wpkhBtcLockSenderTest {
 
     private static NetworkParameters networkParameters;
     private static BridgeConstants bridgeConstants;
 
     @BeforeAll
-    public static void setup() {
+     static void setup() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
     @Test
-    public void doesnt_parse_if_transaction_is_null() {
+    void doesnt_parse_if_transaction_is_null() {
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
         Assertions.assertFalse(btcLockSender.tryParse(null));
     }
 
     @Test
-    public void doesnt_parse_if_transaction_doesnt_have_witness() {
+    void doesnt_parse_if_transaction_doesnt_have_witness() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSender btcLockSender = new P2shP2wpkhBtcLockSender();
         Assertions.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
     @Test
-    public void doesnt_parse_if_transaction_has_scriptsig_with_more_than_one_chunk() {
+    void doesnt_parse_if_transaction_has_scriptsig_with_more_than_one_chunk() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
@@ -48,7 +48,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void doesnt_parse_if_transaction_has_null_scriptsig() {
+    void doesnt_parse_if_transaction_has_null_scriptsig() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addInput(new TransactionInput(btcTx.getParams(), null, null));
         TransactionWitness witness = new TransactionWitness(1);
@@ -60,7 +60,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void doesnt_parse_if_transaction_witness_doesnt_have_two_pushes() {
+    void doesnt_parse_if_transaction_witness_doesnt_have_two_pushes() {
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness witness = new TransactionWitness(1);
@@ -72,7 +72,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void gets_p2sh_p2wpkh_btc_lock_sender_from_raw_transaction() {
+    void gets_p2sh_p2wpkh_btc_lock_sender_from_raw_transaction() {
         String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHP2WPKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
@@ -86,7 +86,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void rejects_p2pkh_transaction() {
+    void rejects_p2pkh_transaction() {
         String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2PKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
@@ -95,7 +95,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void rejects_p2sh_multisig_transaction() {
+    void rejects_p2sh_multisig_transaction() {
         String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHMULTISIG);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
@@ -104,7 +104,7 @@ public class P2shP2wpkhBtcLockSenderTest {
     }
 
     @Test
-    public void rejects_p2sh_p2wsh_transaction() {
+    void rejects_p2sh_p2wsh_transaction() {
         String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHP2WSH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 

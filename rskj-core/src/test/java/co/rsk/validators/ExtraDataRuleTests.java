@@ -29,20 +29,20 @@ import org.mockito.Mockito;
  * @author martin.medina
  * @since 07.02.2017
  */
-public class ExtraDataRuleTests {
+class ExtraDataRuleTests {
 
     private BlockHeader blockHeader;
     private Block block;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
     }
 
     @Test
-    public void blockWithValidExtraData() {
+    void blockWithValidExtraData() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[32]);
 
         ExtraDataRule rule = new ExtraDataRule(42);
@@ -51,7 +51,7 @@ public class ExtraDataRuleTests {
     }
 
     @Test
-    public void blockWithValidNullExtraData() {
+    void blockWithValidNullExtraData() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(null);
 
         ExtraDataRule rule = new ExtraDataRule(42);
@@ -60,7 +60,7 @@ public class ExtraDataRuleTests {
     }
 
     @Test
-    public void blockWithValidLongerExtraDataThanAccepted() {
+    void blockWithValidLongerExtraDataThanAccepted() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[43]);
 
         ExtraDataRule rule = new ExtraDataRule(42);

@@ -43,7 +43,7 @@ import java.util.function.Function;
 
 import static org.mockito.Mockito.*;
 
-public class DownloadingBackwardsBodiesSyncStateTest {
+class DownloadingBackwardsBodiesSyncStateTest {
 
     private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
 
@@ -57,7 +57,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     private Peer peer;
 
     @BeforeEach
-    public void setUp() throws UnknownHostException {
+    void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         peersInformation = mock(PeersInformation.class);
@@ -77,7 +77,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
      * The downloaded state was invalid and does not connect to genesis.
      */
     @Test
-    public void onEnter_connectGenesis_genesisIsNotChildsParent() {
+    void onEnter_connectGenesis_genesisIsNotChildsParent() {
         List<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
                 syncConfiguration,
@@ -102,7 +102,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
      * The downloaded state was invalid and does not connect to genesis.
      */
     @Test
-    public void onEnter_connectGenesis_difficultyDoesNotMatch() {
+    void onEnter_connectGenesis_difficultyDoesNotMatch() {
         List<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
                 syncConfiguration,
@@ -123,14 +123,14 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
         when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         when(genesis.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
-        when(blockStore.getTotalDifficultyForHash(eq(childHash.getBytes())))
+        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(101)));
 
         Assertions.assertThrows(IllegalStateException.class, target::onEnter);
     }
 
     @Test
-    public void onEnter_connectGenesis() {
+    void onEnter_connectGenesis() {
         List<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
                 syncConfiguration,
@@ -152,18 +152,18 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(50)));
         BlockDifficulty cumulativeDifficulty = new BlockDifficulty(BigInteger.valueOf(50));
         when(genesis.getCumulativeDifficulty()).thenReturn(cumulativeDifficulty);
-        when(blockStore.getTotalDifficultyForHash(eq(childHash.getBytes())))
+        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
                 .thenReturn(new BlockDifficulty(BigInteger.valueOf(100)));
 
         target.onEnter();
 
-        verify(blockStore).saveBlock(eq(genesis), eq(cumulativeDifficulty), eq(true));
+        verify(blockStore).saveBlock(genesis, cumulativeDifficulty, true);
         verify(blockStore).flush();
         verify(syncEventsHandler).stopSyncing();
     }
 
     @Test
-    public void connectingUntilGenesis() {
+    void connectingUntilGenesis() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
         LinkedList<BodyResponseMessage> responses = new LinkedList<>();
         LinkedList<Block> expectedBlocks = new LinkedList<>();
@@ -224,12 +224,12 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());
-            verify(blockStore).saveBlock(eq(block), eq(expectedDifficulty), eq(true));
+            verify(blockStore).saveBlock(block, expectedDifficulty, true);
         }
     }
 
     @Test
-    public void connecting_notGenesis() {
+    void connecting_notGenesis() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
         LinkedList<BodyResponseMessage> responses = new LinkedList<>();
         LinkedList<Block> expectedBlocks = new LinkedList<>();
@@ -288,12 +288,12 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());
-            verify(blockStore).saveBlock(eq(block), eq(expectedDifficulty), eq(true));
+            verify(blockStore).saveBlock(block, expectedDifficulty, true);
         }
     }
 
     @Test
-    public void newBodyWhenNoHeaderReportEvent() {
+    void newBodyWhenNoHeaderReportEvent() {
         BlockHeader header = mock(BlockHeader.class);
         when(header.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
@@ -325,7 +325,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     }
 
     @Test
-    public void newBodyWhenUnexpectedHeaderReportEvent() {
+    void newBodyWhenUnexpectedHeaderReportEvent() {
         BlockHeader header = mock(BlockHeader.class);
         when(header.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
@@ -364,7 +364,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     }
 
     @Test
-    public void testOnMessageTimeOut() {
+    void testOnMessageTimeOut() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
                 syncConfiguration,

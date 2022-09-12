@@ -28,13 +28,13 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ECDSASignatureTest {
+class ECDSASignatureTest {
 
     private final String exampleMessage = "This is an example of a signed message.";
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
     @Test
-    public void testValidateComponents() {
+    void testValidateComponents() {
 
         // Valid components.
         // valid v
@@ -60,7 +60,7 @@ public class ECDSASignatureTest {
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         ECDSASignature expected = new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27);
 
         //same instance
@@ -73,10 +73,10 @@ public class ECDSASignatureTest {
         Assertions.assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), (byte) 0));
 
         // null
-        Assertions.assertNotEquals(expected, null);
+        Assertions.assertNotEquals(null, expected);
 
         //dif classes
-        Assertions.assertNotEquals(expected, BigInteger.ZERO);
+        Assertions.assertNotEquals(BigInteger.ZERO, expected);
 
         //diff r
         Assertions.assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27));
@@ -87,7 +87,7 @@ public class ECDSASignatureTest {
     }
 
     @Test
-    public void testValidateComponents_SignedMsg() {
+    void testValidateComponents_SignedMsg() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
@@ -95,7 +95,7 @@ public class ECDSASignatureTest {
     }
 
     @Test
-    public void fromComponentsWithRecoveryCalculation() {
+    void fromComponentsWithRecoveryCalculation() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.randomHash();
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));

@@ -9,9 +9,9 @@ import java.io.IOException;
 /**
  * Created by SerAdmin on 3/20/2018.
  */
-public class AssemblerTest {
+class AssemblerTest {
     @Test
-    public void assemblerTest1() throws IOException, InterruptedException {
+    void assemblerTest1() throws IOException, InterruptedException {
 
 
         String asm ="0x01 label1: JUMPDEST @label1 JUMPI";

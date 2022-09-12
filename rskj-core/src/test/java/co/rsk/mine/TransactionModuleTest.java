@@ -83,13 +83,13 @@ import java.time.Clock;
 
 import static org.mockito.Mockito.mock;
 
-public class TransactionModuleTest {
+class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
 
     @Test
-    public void sendTransactionMustNotBeMined() {
+    void sendTransactionMustNotBeMined() {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
@@ -116,7 +116,7 @@ public class TransactionModuleTest {
     }
 
     @Test
-    public void sendTransactionMustBeMined() {
+    void sendTransactionMustBeMined() {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
@@ -148,7 +148,7 @@ public class TransactionModuleTest {
      * This test send a several transactions, and should be mine 1 transaction in each block.
      */
     @Test
-    public void sendSeveralTransactionsWithAutoMining() {
+    void sendSeveralTransactionsWithAutoMining() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
@@ -180,7 +180,7 @@ public class TransactionModuleTest {
     }
 
     @Test
-    public void sendRawTransactionWithAutoMining() throws Exception {
+    void sendRawTransactionWithAutoMining() throws Exception {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -209,7 +209,7 @@ public class TransactionModuleTest {
     }
 
     @Test
-    public void sendRawTransactionWithoutAutoMining() {
+    void sendRawTransactionWithoutAutoMining() {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -234,7 +234,7 @@ public class TransactionModuleTest {
     }
 
     @Test
-    public void testGasEstimation() {
+    void testGasEstimation() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
 

@@ -35,13 +35,13 @@ import java.util.stream.Stream;
  * - PrecompiledSuccess(address) => d1c48ee5d8b9dfbcca9046f456364548ef0b27b0a39faf92aa1c253abf816482
  * - PrecompiledFailure(address) => aa679a624a231df95e2bd73419c633e47abb959a4d3bbfd245a07c036c38202e
  * */
-public class PrecompiledContractsCallErrorHandlingTests {
+class PrecompiledContractsCallErrorHandlingTests {
     public static final String DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT = "dsl/contract_call/precompiled_error_handling.txt";
 
     private World world;
 
     @Test
-    public void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
+    void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
         );
@@ -72,7 +72,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
     }
 
     @Test
-    public void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
+    void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
         );

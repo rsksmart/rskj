@@ -20,18 +20,18 @@ import org.ethereum.vm.exception.VMException;
 import java.math.BigInteger;
 
 @Disabled
-public class ReceiveHeaderTest extends BridgePerformanceTestCase {
+class ReceiveHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
     private BtcBlock expectedBlock;
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void ReceiveHeaderTest() throws VMException {
+    void ReceiveHeaderTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("receiveHeader");
         receiveHeader_success(1000, stats);
         receiveHeader_block_already_saved(500, stats);

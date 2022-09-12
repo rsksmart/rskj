@@ -32,12 +32,12 @@ import java.util.List;
 /**
  * Created by mario on 26/12/16.
  */
-public class TxsMinGasPriceValidatorTest {
+class TxsMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(10);
 
     @Test
-    public void blockWithEmptyTxList() {
+    void blockWithEmptyTxList() {
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTransactionsList()).thenReturn(new ArrayList<>());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
@@ -47,7 +47,7 @@ public class TxsMinGasPriceValidatorTest {
     }
 
     @Test
-    public void blockWithNullMGP() {
+    void blockWithNullMGP() {
         Block block = Mockito.mock(Block.class);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
@@ -55,7 +55,7 @@ public class TxsMinGasPriceValidatorTest {
     }
 
     @Test
-    public void blockWithAllValidTx() {
+    void blockWithAllValidTx() {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(10, 0, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);
@@ -67,7 +67,7 @@ public class TxsMinGasPriceValidatorTest {
     }
 
     @Test
-    public void blockWithAllInvalidTx() {
+    void blockWithAllInvalidTx() {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(0, 10, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);
@@ -79,7 +79,7 @@ public class TxsMinGasPriceValidatorTest {
     }
 
     @Test
-    public void blockWithSomeInvalidTx() {
+    void blockWithSomeInvalidTx() {
         Block block = Mockito.mock(Block.class);
         List<Transaction> txs = buildTxList(10, 10, BLOCK_MGP);
         Mockito.when(block.getTransactionsList()).thenReturn(txs);

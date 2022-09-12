@@ -44,17 +44,17 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PendingFederationTest {
+class PendingFederationTest {
     private PendingFederation pendingFederation;
     private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
 
     @BeforeEach
-    public void createPendingFederation() {
+    void createPendingFederation() {
         pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
     }
 
     @Test
-    public void membersImmutable() {
+    void membersImmutable() {
         boolean exception = false;
         try {
             pendingFederation.getMembers().add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
@@ -73,18 +73,18 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void isComplete() {
+    void isComplete() {
         Assertions.assertTrue(pendingFederation.isComplete());
     }
 
     @Test
-    public void isComplete_not() {
+    void isComplete_not() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(200));
         Assertions.assertFalse(otherPendingFederation.isComplete());
     }
 
     @Test
-    public void testEquals_basic() {
+    void testEquals_basic() {
         Assertions.assertEquals(pendingFederation, pendingFederation);
 
         Assertions.assertNotEquals(null, pendingFederation);
@@ -93,13 +93,13 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void testEquals_differentNumberOfMembers() {
+    void testEquals_differentNumberOfMembers() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700));
         Assertions.assertNotEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
-    public void testEquals_differentMembers() {
+    void testEquals_differentMembers() {
         List<FederationMember> members = FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500);
 
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(620))));
@@ -115,20 +115,20 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void testEquals_same() {
+    void testEquals_same() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
         Assertions.assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         Assertions.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
         Assertions.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
     @Test
-    public void buildFederation_ok_6_members_before_RSKIP_201_activation() {
+    void buildFederation_ok_6_members_before_RSKIP_201_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
@@ -156,7 +156,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_ok_9_members_before_RSKIP_201_activation() {
+    void buildFederation_ok_9_members_before_RSKIP_201_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
@@ -184,22 +184,22 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_testnet() {
+    void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_testnet() {
         testBuildErpFederationConsideringRskip284ActivationAndNetworkId(false, NetworkParameters.ID_TESTNET);
     }
 
     @Test
-    public void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_mainnet() {
+    void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_mainnet() {
         testBuildErpFederationConsideringRskip284ActivationAndNetworkId(false, NetworkParameters.ID_MAINNET);
     }
 
     @Test
-    public void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_testnet() {
+    void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_testnet() {
         testBuildErpFederationConsideringRskip284ActivationAndNetworkId(true, NetworkParameters.ID_TESTNET);
     }
 
     @Test
-    public void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_mainnet() {
+    void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_mainnet() {
         testBuildErpFederationConsideringRskip284ActivationAndNetworkId(true, NetworkParameters.ID_MAINNET);
     }
 
@@ -245,7 +245,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_incomplete() {
+    void buildFederation_incomplete() {
         PendingFederation otherPendingFederation = new PendingFederation(
             FederationTestUtils.getFederationMembersFromPks(100)
         );
@@ -265,7 +265,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void getHash() {
+    void getHash() {
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
             bridgeSerializationUtilsMocked.when(() -> BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation)).thenReturn(new byte[]{(byte) 0xaa});
 

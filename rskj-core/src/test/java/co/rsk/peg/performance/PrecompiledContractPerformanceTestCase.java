@@ -105,20 +105,20 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @BeforeAll
-    public static void setupA() {
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.genesis();
     }
 
     @AfterAll
-    public static void printStatsIfNotInSuite() throws Exception {
+    static void printStatsIfNotInSuite() throws Exception {
         if (!PrecompiledContractPerformanceTest.isRunning()) {
             PrecompiledContractPerformanceTest.printStats();
         }
     }
 
     @BeforeEach
-    public void setupCpuTime() {
+    void setupCpuTime() {
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) {
             throw new RuntimeException("Thread CPU time not supported");
@@ -130,12 +130,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @AfterEach
-    public void teardownCpuTime() {
+    void teardownCpuTime() {
         thread.setThreadCpuTimeEnabled(oldCpuTimeEnabled);
     }
 
     @AfterEach
-    public void forceGC() {
+    void forceGC() {
         long sm = Runtime.getRuntime().freeMemory();
         VMPerformanceTest.forceGc();
         long em = Runtime.getRuntime().freeMemory();

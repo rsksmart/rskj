@@ -33,9 +33,9 @@ import java.util.Map;
 import java.util.Random;
 import org.mockito.Mockito;
 
-public class BlockProcessResultTest {
+class BlockProcessResultTest {
     @Test
-    public void buildSimpleLogMessage() {
+    void buildSimpleLogMessage() {
         String blockHash = "0x01020304";
         Duration processingTime = Duration.ofNanos(123_000_000L);
 
@@ -46,7 +46,7 @@ public class BlockProcessResultTest {
     }
 
     @Test
-    public void buildLogMessageWithConnections() {
+    void buildLogMessageWithConnections() {
         String blockHash = "0x01020304";
         Duration processingTime = Duration.ofNanos(123_000_000L);
         Map<Keccak256, ImportResult> connections = new HashMap<>();
@@ -66,7 +66,7 @@ public class BlockProcessResultTest {
     }
 
     @Test
-    public void factoryMethodForIgnoredBlock() {
+    void factoryMethodForIgnoredBlock() {
         Block mock = Mockito.mock(Block.class);
         BlockProcessResult result = BlockProcessResult.ignoreBlockResult(
                 mock, Instant.now()
@@ -75,7 +75,7 @@ public class BlockProcessResultTest {
     }
 
     @Test
-    public void factoryMethodForValidBlock() {
+    void factoryMethodForValidBlock() {
         Block mock = Mockito.mock(Block.class);
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         connectionsResult.put(mock.getHash(), ImportResult.IMPORTED_BEST);

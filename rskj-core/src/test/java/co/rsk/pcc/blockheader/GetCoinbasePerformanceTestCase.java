@@ -47,10 +47,10 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 
 @Disabled
-public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
 
     @Test
-    public void getCoinbase() throws IOException, VMException {
+    void getCoinbase() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("getCoinbase");
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {

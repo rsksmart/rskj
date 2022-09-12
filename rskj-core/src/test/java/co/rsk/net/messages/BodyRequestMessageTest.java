@@ -24,9 +24,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BodyRequestMessageTest {
+class BodyRequestMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BodyRequestMessage message = new BodyRequestMessage(100, hash);
 
@@ -36,7 +36,7 @@ public class BodyRequestMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = new byte[]{0x0F};
         BodyRequestMessage message = new BodyRequestMessage(100, hash);
 

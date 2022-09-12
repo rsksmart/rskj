@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class StateRootsStoreImplTests {
+class StateRootsStoreImplTests {
 
     private static final byte[] KEY = HashUtil.keccak256(Hex.decode("aabbcc"));
 
@@ -40,21 +40,21 @@ public class StateRootsStoreImplTests {
     private StateRootsStoreImpl stateRootsStore;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         dataSource = mock(KeyValueDataSource.class);
 
         stateRootsStore = new StateRootsStoreImpl(dataSource);
     }
 
     @Test
-    public void newInstance_WhenPassNull_ThenThrowException() {
+    void newInstance_WhenPassNull_ThenThrowException() {
         //noinspection ConstantConditions
         Assertions.assertThrows(NullPointerException.class, () -> new StateRootsStoreImpl(null));
     }
 
     @Test
-    public void getItemByHash_WhenNotAddedKey_ThenShouldReturnNull() {
-        doReturn(null).when(dataSource).get(eq(KEY));
+    void getItemByHash_WhenNotAddedKey_ThenShouldReturnNull() {
+        doReturn(null).when(dataSource).get(KEY);
 
         Keccak256 result = stateRootsStore.get(KEY);
 
@@ -62,26 +62,26 @@ public class StateRootsStoreImplTests {
     }
 
     @Test
-    public void getItemByHash_WhenAlreadyAddedKey_ThenShouldReturnItem() {
-        doReturn(RESULT.getBytes()).when(dataSource).get(eq(KEY));
+    void getItemByHash_WhenAlreadyAddedKey_ThenShouldReturnItem() {
+        doReturn(RESULT.getBytes()).when(dataSource).get(KEY);
 
         Keccak256 actualResult = stateRootsStore.get(KEY);
 
         assertNotNull(actualResult);
         assertEquals(RESULT, actualResult);
 
-        verify(dataSource, atLeastOnce()).get(eq(KEY));
+        verify(dataSource, atLeastOnce()).get(KEY);
     }
 
     @Test
-    public void flush_WhenCalled_ThenShouldFlushNestedDataSource() {
+    void flush_WhenCalled_ThenShouldFlushNestedDataSource() {
         stateRootsStore.flush();
 
         verify(dataSource, times(1)).flush();
     }
 
     @Test
-    public void close_WhenCalled_ThenShouldCloseNestedDataSource() {
+    void close_WhenCalled_ThenShouldCloseNestedDataSource() {
         stateRootsStore.close();
 
         verify(dataSource, times(1)).close();

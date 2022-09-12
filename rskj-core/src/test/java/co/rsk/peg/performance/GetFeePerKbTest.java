@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @Disabled
-public class GetFeePerKbTest extends BridgePerformanceTestCase {
+class GetFeePerKbTest extends BridgePerformanceTestCase {
     private Federation federation;
 
     @Test
-    public void getFeePerKb() throws VMException {
+    void getFeePerKb() throws VMException {
         ExecutionStats stats = new ExecutionStats("getFeePerKb");
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEE_PER_KB.encode();
         executeTestCaseSection(abiEncoder, "getFeePerKb", true,50, stats);

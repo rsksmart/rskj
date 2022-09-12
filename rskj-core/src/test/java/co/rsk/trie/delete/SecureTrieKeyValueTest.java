@@ -29,10 +29,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class SecureTrieKeyValueTest {
+class SecureTrieKeyValueTest {
 
     @Test
-    public void zeroKeyWhenTwoKeysHasNoSharedPath() {
+    void zeroKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -46,7 +46,7 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasNoSharedPath() {
+    void oneKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -60,7 +60,7 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
@@ -74,7 +74,7 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void testRecursivelyDelete(){
+    void testRecursivelyDelete(){
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -115,7 +115,7 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void testRecursivelyDeleteCollapses(){
+    void testRecursivelyDeleteCollapses(){
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -160,7 +160,7 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 

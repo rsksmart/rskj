@@ -34,11 +34,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class HDWalletUtilsTest {
+class HDWalletUtilsTest {
     private HDWalletUtils contract;
 
     @BeforeEach
-    public void createContract() {
+    void createContract() {
         RskSystemProperties config = new TestSystemProperties();
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         contract = spy(new HDWalletUtils(config.getActivationConfig(), new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
@@ -46,32 +46,32 @@ public class HDWalletUtilsTest {
     }
 
     @Test
-    public void hasNoDefaultMethod() {
+    void hasNoDefaultMethod() {
         Assertions.assertFalse(contract.getDefaultMethod().isPresent());
     }
 
     @Test
-    public void hasFourMethods() {
+    void hasFourMethods() {
         Assertions.assertEquals(4, contract.getMethods().size());
     }
 
     @Test
-    public void hasToBase58Check() {
+    void hasToBase58Check() {
         assertHasMethod(ToBase58Check.class);
     }
 
     @Test
-    public void hasDeriveExtendedPublicKey() {
+    void hasDeriveExtendedPublicKey() {
         assertHasMethod(DeriveExtendedPublicKey.class);
     }
 
     @Test
-    public void hasExtractPublicKeyFromExtendedPublicKey() {
+    void hasExtractPublicKeyFromExtendedPublicKey() {
         assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class);
     }
 
     @Test
-    public void hasGetMultisigScriptHash() {
+    void hasGetMultisigScriptHash() {
         assertHasMethod(GetMultisigScriptHash.class);
     }
 

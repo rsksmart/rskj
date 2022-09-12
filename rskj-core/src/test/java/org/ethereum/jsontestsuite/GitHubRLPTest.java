@@ -34,13 +34,13 @@ import java.util.Set;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
 @Disabled
-public class GitHubRLPTest {
+class GitHubRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
     private static HashMap<String , RLPTestCase> TEST_SUITE;
 
     @BeforeAll
-    public static void init() throws ParseException, IOException {
+     static void init() throws ParseException, IOException {
         logger.info("    Initializing RLP tests...");
         String json = JSONReader.loadJSON("RLPTests/rlptest.json");
 
@@ -54,7 +54,7 @@ public class GitHubRLPTest {
     }
 
     @Test
-    public void rlpEncodeTest() throws Exception {
+    void rlpEncodeTest() throws Exception {
         logger.info("    Testing RLP encoding...");
 
         for (String key : TEST_SUITE.keySet()) {
@@ -66,7 +66,7 @@ public class GitHubRLPTest {
     }
 
     @Test
-    public void rlpDecodeTest() throws Exception {
+    void rlpDecodeTest() throws Exception {
         logger.info("    Testing RLP decoding...");
 
         Set<String> excluded = new HashSet<>();

@@ -32,11 +32,11 @@ import org.bouncycastle.util.encoders.Hex;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-public class BtcTransactionFormatUtilsTest {
+class BtcTransactionFormatUtilsTest {
     private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
 
     @Test
-    public void calculateBtcTxHash() {
+    void calculateBtcTxHash() {
         BtcTransaction btcTransaction = new BtcTransaction(params);
         MatcherAssert.assertThat(BtcTransactionFormatUtils.calculateBtcTxHash(btcTransaction.bitcoinSerialize()), is(btcTransaction.getHash()));
 
@@ -57,7 +57,7 @@ public class BtcTransactionFormatUtilsTest {
 
 
     @Test
-    public void getInputsCount() {
+    void getInputsCount() {
         BtcTransaction btcTransaction = new BtcTransaction(params);
         MatcherAssert.assertThat(BtcTransactionFormatUtils.getInputsCount(btcTransaction.bitcoinSerialize()), is(0L));
 
@@ -77,7 +77,7 @@ public class BtcTransactionFormatUtilsTest {
     }
 
     @Test
-    public void getInputsCountFromSegwitTx() {
+    void getInputsCountFromSegwitTx() {
         String rawTx = "020000000001017001d967a340069c0b169fcbeb9cb6e0d78a27c94a41acbce762abc695aefab10000000017160014c" +
                 "fa63de9979e2a8005e6cb516b86202860ff3971ffffffff0200c2eb0b0000000017a914291a7ddc558810708149a731f39cd3c3" +
                 "a8782cfd870896e1110000000017a91425a2e67511a0207c4387ce8d3eeef498a4782e64870247304402207e0615f440bbc5035" +
@@ -90,7 +90,7 @@ public class BtcTransactionFormatUtilsTest {
     }
 
     @Test
-    public void getInputsCountFromSegwitTxWithWitness() {
+    void getInputsCountFromSegwitTxWithWitness() {
         String rawTx = "020000000001017001d967a340069c0b169fcbeb9cb6e0d78a27c94a41acbce762abc695aefab10000000017160014c" +
                 "fa63de9979e2a8005e6cb516b86202860ff3971ffffffff0200c2eb0b0000000017a914291a7ddc558810708149a731f39cd3c3" +
                 "a8782cfd870896e1110000000017a91425a2e67511a0207c4387ce8d3eeef498a4782e64870247304402207e0615f440bbc5035" +
