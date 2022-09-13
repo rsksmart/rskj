@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.ethereum.jsontestsuite.RLPTestCase;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
@@ -48,7 +47,7 @@ class LocalRLPTest {
     private static HashMap<String , RLPTestCase> TEST_SUITE;
 
     @BeforeAll
-     static void init() throws ParseException, IOException {
+     static void init() throws IOException {
         logger.info("    Initializing RLP tests...");
         String json = getJSON("rlptest");
 

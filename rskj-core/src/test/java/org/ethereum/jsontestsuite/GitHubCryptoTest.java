@@ -21,7 +21,6 @@ package org.ethereum.jsontestsuite;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ class GitHubCryptoTest {
 
 
     @Test
-    void testAllInCryptoSute() throws ParseException, IOException {
+    void testAllInCryptoSute() throws IOException {
 
         String json = JSONReader.loadJSON("BasicTests/crypto.json");
 

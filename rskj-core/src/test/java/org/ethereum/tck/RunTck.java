@@ -19,11 +19,10 @@
 
 package org.ethereum.tck;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.jsontestsuite.*;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +36,7 @@ public class RunTck {
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
 
 
-    public static void main(String[] args) throws ParseException, IOException {
+    public static void main(String[] args) throws IOException {
 
         if (args.length > 0){
 
@@ -54,14 +53,14 @@ public class RunTck {
         }
     }
 
-    public static void runContentTest(String content) throws ParseException, IOException {
+    public static void runContentTest(String content) throws IOException {
 
         Map<String, Boolean> summary = new HashMap<>();
 
-        JSONParser parser = new JSONParser();
-        JSONObject testSuiteObj = (JSONObject) parser.parse(content);
+        ObjectMapper parser = new ObjectMapper();
+        JsonNode testSuiteObj = parser.readTree(content);
 
-        StateTestSuite stateTestSuite = new StateTestSuite(testSuiteObj.toJSONString());
+        StateTestSuite stateTestSuite = new StateTestSuite(testSuiteObj.toString());
         Map<String, StateTestCase> testCases = stateTestSuite.getTestCases();
 
         for (String testName : testCases.keySet()) {
@@ -101,8 +100,7 @@ public class RunTck {
 
 
 
-    public static void runTest(String name) throws ParseException, IOException {
-
+    public static void runTest(String name) throws IOException {
         String testCaseJson = JSONReader.getFromLocal(name);
         runContentTest(testCaseJson);
     }

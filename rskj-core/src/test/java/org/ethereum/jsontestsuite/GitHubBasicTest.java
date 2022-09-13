@@ -23,7 +23,6 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

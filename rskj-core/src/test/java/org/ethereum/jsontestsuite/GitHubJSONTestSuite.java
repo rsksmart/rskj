@@ -19,10 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Assumptions;
@@ -43,11 +42,11 @@ public class GitHubJSONTestSuite {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
 
-    public static void runGitHubJsonVMTest(String json, String testName) throws ParseException {
+    public static void runGitHubJsonVMTest(String json, String testName) throws IOException {
         Assumptions.assumeFalse(json.equals(""), "Online test is not available");
 
-        JSONParser parser = new JSONParser();
-        JSONObject testSuiteObj = (JSONObject) parser.parse(json);
+        ObjectMapper parser = new ObjectMapper();
+        JsonNode testSuiteObj = parser.readTree(json);
 
         TestSuite testSuite = new TestSuite(testSuiteObj);
         Iterator<TestCase> testIterator = testSuite.iterator();
@@ -72,21 +71,21 @@ public class GitHubJSONTestSuite {
         }
     }
 
-    protected static void runGitHubJsonVMTest(String json) throws ParseException {
+    protected static void runGitHubJsonVMTest(String json) throws IOException {
         Set<String> excluded = new HashSet<>();
 
 
         runGitHubJsonVMTest(json, excluded,null);
     }
-    public static void runGitHubJsonVMTest(String json, Set<String> excluded) throws ParseException {
+    public static void runGitHubJsonVMTest(String json, Set<String> excluded) throws IOException {
         runGitHubJsonVMTest(json, excluded, null);
     }
 
-        public static void runGitHubJsonVMTest(String json, Set<String> excluded, Set<String> included) throws ParseException {
+        public static void runGitHubJsonVMTest(String json, Set<String> excluded, Set<String> included) throws IOException {
         Assumptions.assumeFalse(json.equals(""), "Online test is not available");
 
-        JSONParser parser = new JSONParser();
-        JSONObject testSuiteObj = (JSONObject) parser.parse(json);
+        ObjectMapper parser = new ObjectMapper();
+        JsonNode testSuiteObj = parser.readTree(json);
 
         TestSuite testSuite = new TestSuite(testSuiteObj);
         Iterator<TestCase> testIterator = testSuite.iterator();
@@ -117,8 +116,7 @@ public class GitHubJSONTestSuite {
         }
     }
 
-    public static void runGitHubJsonSingleBlockTest(String json, String testName) throws ParseException, IOException {
-
+    public static void runGitHubJsonSingleBlockTest(String json, String testName) throws IOException {
         BlockTestSuite testSuite = new BlockTestSuite(json);
         Set<String> testCollection = testSuite.getTestCases().keySet();
 
@@ -132,7 +130,7 @@ public class GitHubJSONTestSuite {
         runSingleBlockTest(testSuite, testName);
     }
 
-    public static void runGitHubJsonBlockTest(String json, Set<String> excluded) throws ParseException, IOException {
+    public static void runGitHubJsonBlockTest(String json, Set<String> excluded) throws IOException {
         Assumptions.assumeFalse(json.equals(""), "Online test is not available");
 
         BlockTestSuite testSuite = new BlockTestSuite(json);
@@ -183,7 +181,7 @@ public class GitHubJSONTestSuite {
 
     }
 
-    protected static void runGitHubJsonBlockTest(String json) throws ParseException, IOException {
+    protected static void runGitHubJsonBlockTest(String json) throws IOException {
         Set<String> excluded = new HashSet<>();
         runGitHubJsonBlockTest(json, excluded);
     }

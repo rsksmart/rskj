@@ -21,13 +21,14 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.json.simple.JSONObject;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -44,14 +45,14 @@ public class AccountState {
     Map<DataWord, DataWord> storage = new HashMap<>();
 
 
-    public AccountState(RskAddress address, JSONObject accountState) {
+    public AccountState(RskAddress address, JsonNode accountState) {
 
         this.address = address;
-        String balance = accountState.get("balance").toString();
-        String code = (String) accountState.get("code");
-        String nonce = accountState.get("nonce").toString();
+        String balance = accountState.get("balance").asText();
+        String code = accountState.get("code").asText();
+        String nonce = accountState.get("nonce").asText();
 
-        JSONObject store = (JSONObject) accountState.get("storage");
+        JsonNode store = accountState.get("storage");
 
         this.balance = new Coin(TestCase.toBigInt(balance));
 
@@ -62,12 +63,9 @@ public class AccountState {
 
         this.nonce = TestCase.toBigInt(nonce).toByteArray();
 
-        int size = store.keySet().size();
-        Object[] keys = store.keySet().toArray();
-        for (int i = 0; i < size; ++i) {
-
-            String keyS = keys[i].toString();
-            String valS = store.get(keys[i]).toString();
+        for (Iterator<String> it = store.fieldNames(); it.hasNext(); ) {
+            String keyS = it.next();
+            String valS = store.get(keyS).asText();
 
             byte[] key = org.ethereum.json.Utils.parseData(keyS);
             byte[] value = org.ethereum.json.Utils.parseData(valS);

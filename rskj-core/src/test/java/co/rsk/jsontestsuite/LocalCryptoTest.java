@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.jsontestsuite.CryptoTestCase;
 import org.ethereum.jsontestsuite.JSONReader;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ class LocalCryptoTest {
 
 
     @Test
-    void testAllInCryptoSute() throws ParseException, IOException {
+    void testAllInCryptoSute() throws IOException {
 
         String json = getJSON("crypto");
 

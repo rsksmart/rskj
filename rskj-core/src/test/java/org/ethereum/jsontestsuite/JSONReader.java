@@ -20,12 +20,12 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,28 +113,31 @@ public class JSONReader {
 
         String result = getFromUrl("https://api.github.com/repos/ethereum/tests/git/trees/" + shacommit);
 
-        JSONParser parser = new JSONParser();
-        JSONObject testSuiteObj = null;
+        ObjectMapper parser = new ObjectMapper();
+        JsonNode testSuiteObj;
 
-        List<String> fileNames = new ArrayList<String>();
         try {
-            testSuiteObj = (JSONObject) parser.parse(result);
-            JSONArray tree = (JSONArray)testSuiteObj.get("tree");
+            testSuiteObj = parser.readTree(result);
+            ArrayNode tree = (ArrayNode)testSuiteObj.get("tree");
 
             for (Object oEntry : tree) {
-                JSONObject entry = (JSONObject) oEntry;
-                String testName = (String) entry.get("path");
+                JsonNode entry = (JsonNode) oEntry;
+                String testName = entry.get("path").asText();
                 if ( testName.equals(testcase) ) {
-                    String blobresult = getFromUrl( (String) entry.get("url") );
+                    String blobresult = getFromUrl(entry.get("url").asText());
 
-                    testSuiteObj = (JSONObject) parser.parse(blobresult);
-                    String blob  = (String) testSuiteObj.get("content");
+                    testSuiteObj = parser.readTree(blobresult);
+                    String blob  = testSuiteObj.get("content").asText();
                     byte[] valueDecoded= Base64.decodeBase64(blob.getBytes() );
                     //System.out.println("Decoded value is " + new String(valueDecoded));
                     return new String(valueDecoded);
                 }
             }
-        } catch (ParseException e) {e.printStackTrace();}
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return "";
     }
@@ -143,20 +146,23 @@ public class JSONReader {
 
         String result = getFromUrl("https://api.github.com/repos/ethereum/tests/git/trees/" + sha);
 
-        JSONParser parser = new JSONParser();
-        JSONObject testSuiteObj = null;
+        ObjectMapper parser = new ObjectMapper();
+        JsonNode testSuiteObj = null;
 
         List<String> fileNames = new ArrayList<String>();
         try {
-            testSuiteObj = (JSONObject) parser.parse(result);
-            JSONArray tree = (JSONArray)testSuiteObj.get("tree");
+            testSuiteObj = parser.readTree(result);
+            ArrayNode tree = (ArrayNode)testSuiteObj.get("tree");
 
-            for (Object oEntry : tree) {
-                JSONObject entry = (JSONObject) oEntry;
-                String testName = (String) entry.get("path");
+            for (JsonNode oEntry : tree) {
+                String testName = oEntry.get("path").asText();
                 fileNames.add(testName);
             }
-        } catch (ParseException e) {e.printStackTrace();}
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return fileNames;
     }

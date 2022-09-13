@@ -45,8 +45,6 @@ class TxVirtualGasCalculatorTest {
     private static final long BLOCK_GAS_LIMIT = 6800000;
     private static final long DEFAULT_NONCE = 100;
 
-    // TODO:I check if this output is fine
-
     @ParameterizedTest(name = "{index}: expect {0} consumed virtual gas to be txGasLimit * {4} * {5} * {6} * {7} * {8} * {9}")
     @ArgumentsSource(TransactionArgumentsProvider.class)
     void calculate(String description, Transaction newTransaction, Transaction replacedTransaction, long accountNonce, double futureNonceFactor, double lowGasPriceFactor, double nonceFactor, double sizeFactor, double replacementFactor, double gasLimitFactor) {

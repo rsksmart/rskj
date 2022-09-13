@@ -24,8 +24,6 @@ class KeyValueDataSourceTest {
 
     private static final int CACHE_SIZE = 100;
 
-    // TODO:I check if this output is fine
-
     @ParameterizedTest(name = "{1}, flush = {2}")
     @ArgumentsSource(DatasourceArgumentsProvider.class)
     void put(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {

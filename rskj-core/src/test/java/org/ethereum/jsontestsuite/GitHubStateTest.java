@@ -20,7 +20,6 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;

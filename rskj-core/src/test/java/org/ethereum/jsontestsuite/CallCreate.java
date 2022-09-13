@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -42,12 +42,12 @@ public class CallCreate {
         "value" : 74
 */
 
-    public CallCreate(JSONObject callCreateJSON) {
+    public CallCreate(JsonNode callCreateJSON) {
 
-        String data = callCreateJSON.get("data").toString();
-        String destination = callCreateJSON.get("destination").toString();
-        String gasLimit = callCreateJSON.get("gasLimit").toString();
-        String value = callCreateJSON.get("value").toString();
+        String data = callCreateJSON.get("data").asText();
+        String destination = callCreateJSON.get("destination").asText();
+        String gasLimit = callCreateJSON.get("gasLimit").asText();
+        String value = callCreateJSON.get("value").asText();
 
         if (data != null && data.length() > 2)
             this.data = Hex.decode(data.substring(2));

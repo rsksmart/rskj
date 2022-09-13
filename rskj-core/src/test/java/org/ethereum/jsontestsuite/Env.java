@@ -19,10 +19,10 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -38,8 +38,8 @@ public class Env {
     private final byte[] previousHash;
 
 
-    public Env(byte[] currentCoinbase, byte[] currentDifficulty, byte[] 
-            currentGasLimit, byte[] currentNumber, byte[] 
+    public Env(byte[] currentCoinbase, byte[] currentDifficulty, byte[]
+            currentGasLimit, byte[] currentNumber, byte[]
             currentTimestamp, byte[] previousHash) {
         this.currentCoinbase = currentCoinbase;
         this.currentDifficulty = currentDifficulty;
@@ -58,15 +58,15 @@ public class Env {
                     "currentTimestamp" : 1,
                     "previousHash" : "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"
           */
-    public Env(JSONObject env) {
+    public Env(JsonNode env) {
 
-        String coinbase = env.get("currentCoinbase").toString();
-        String difficulty = env.get("currentDifficulty").toString();
-        String timestamp = env.get("currentTimestamp").toString();
-        String number = env.get("currentNumber").toString();
-        String gasLimit = org.ethereum.json.Utils.parseUnidentifiedBase(env.get("currentGasLimit").toString());
-        Object previousHash = env.get("previousHash");
-        String prevHash = previousHash == null ? "" : previousHash.toString();
+        String coinbase = env.get("currentCoinbase").asText();
+        String difficulty = env.get("currentDifficulty").asText();
+        String timestamp = env.get("currentTimestamp").asText();
+        String number = env.get("currentNumber").asText();
+        String gasLimit = org.ethereum.json.Utils.parseUnidentifiedBase(env.get("currentGasLimit").asText());
+        JsonNode previousHash = env.get("previousHash");
+        String prevHash = previousHash == null ? "" : previousHash.asText();
 
         this.currentCoinbase = Hex.decode(coinbase);
         this.currentDifficulty = BigIntegers.asUnsignedByteArray(TestCase.toBigInt(difficulty) );

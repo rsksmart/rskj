@@ -20,18 +20,18 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
 
+import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Roman Mandeleil
@@ -65,78 +65,78 @@ public class TestCase {
     //            "callcreates": { ... }
     private List<CallCreate> callCreateList = new ArrayList<>();
 
-    public TestCase(String name, JSONObject testCaseJSONObj) throws ParseException {
-
+    public TestCase(String name, JsonNode testCaseJSONObj) throws IOException {
         this(testCaseJSONObj);
         this.name = name;
     }
 
-    public TestCase(JSONObject testCaseJSONObj) throws ParseException {
+    public TestCase(JsonNode testCaseJSONObj) throws IOException {
 
         try {
-
-            JSONObject envJSON = (JSONObject) testCaseJSONObj.get("env");
-            JSONObject execJSON = (JSONObject) testCaseJSONObj.get("exec");
-            JSONObject preJSON = (JSONObject) testCaseJSONObj.get("pre");
-            JSONObject postJSON = new JSONObject();
-            if (testCaseJSONObj.containsKey("post")) // in cases where there is no post dictionary (when testing for
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode envJSON = testCaseJSONObj.get("env");
+            JsonNode execJSON = testCaseJSONObj.get("exec");
+            JsonNode preJSON = testCaseJSONObj.get("pre");
+            ObjectNode postJSON = objectMapper.createObjectNode();
+            if (testCaseJSONObj.has("post")) // in cases where there is no post dictionary (when testing for
                 // exceptions for example)
-                postJSON = (JSONObject) testCaseJSONObj.get("post");
-            JSONArray callCreates = new JSONArray();
-            if (testCaseJSONObj.containsKey("callcreates"))
-                callCreates = (JSONArray) testCaseJSONObj.get("callcreates");
+                postJSON = (ObjectNode) testCaseJSONObj.get("post");
+            ArrayNode callCreates = objectMapper.createArrayNode();
+            if (testCaseJSONObj.has("callcreates"))
+                callCreates = (ArrayNode) testCaseJSONObj.get("callcreates");
 
-            JSONArray logsJSON = new JSONArray();
-            if (testCaseJSONObj.containsKey("logs"))
-                logsJSON = (JSONArray) testCaseJSONObj.get("logs");
+            ArrayNode logsJSON = objectMapper.createArrayNode();
+            if (testCaseJSONObj.has("logs"))
+                logsJSON = (ArrayNode) testCaseJSONObj.get("logs");
             logs = new Logs(logsJSON);
 
             String gasString = "0";
-            if (testCaseJSONObj.containsKey("gas"))
-                gasString = testCaseJSONObj.get("gas").toString();
+            if (testCaseJSONObj.has("gas"))
+                gasString = testCaseJSONObj.get("gas").asText();
             this.gas = BigIntegers.asUnsignedByteArray(toBigInt(gasString));
 
             String outString = null;
-            if (testCaseJSONObj.containsKey("out"))
-                outString = testCaseJSONObj.get("out").toString();
+            if (testCaseJSONObj.has("out"))
+                outString = testCaseJSONObj.get("out").asText();
             if (outString != null && outString.length() > 2)
                 this.out = Hex.decode(outString.substring(2));
             else
                 this.out = ByteUtil.EMPTY_BYTE_ARRAY;
 
-            for (Object key : preJSON.keySet()) {
+            for (Iterator<String> it = preJSON.fieldNames(); it.hasNext(); ) {
+                String key = it.next();
 
-                RskAddress addr = new RskAddress(key.toString());
+                RskAddress addr = new RskAddress(key);
                 AccountState accountState =
-                        new AccountState(addr, (JSONObject) preJSON.get(key));
+                        new AccountState(addr, preJSON.get(key));
 
                 pre.put(addr, accountState);
             }
 
-            for (Object key : postJSON.keySet()) {
+            for (Iterator<String> it = postJSON.fieldNames(); it.hasNext(); ) {
+                String key = it.next();
 
-                RskAddress addr = new RskAddress(key.toString());
+                RskAddress addr = new RskAddress(key);
                 AccountState accountState =
-                        new AccountState(addr, (JSONObject) postJSON.get(key));
+                        new AccountState(addr, postJSON.get(key));
 
                 post.put(addr, accountState);
             }
 
-            for (Object callCreate : callCreates) {
-
-                CallCreate cc = new CallCreate((JSONObject) callCreate);
+            for (JsonNode callCreate : callCreates) {
+                CallCreate cc = new CallCreate(callCreate);
                 this.callCreateList.add(cc);
             }
 
-            if (testCaseJSONObj.containsKey("env"))
+            if (testCaseJSONObj.has("env"))
               this.env = new Env(envJSON);
 
-            if (testCaseJSONObj.containsKey("exec"))
+            if (testCaseJSONObj.has("exec"))
               this.exec = new Exec(execJSON);
 
         } catch (Throwable e) {
             e.printStackTrace();
-            throw new ParseException(0, e);
+            throw new IOException(e.getMessage());
         }
     }
 

@@ -45,8 +45,6 @@ class TrieIteratorTest {
         Assertions.assertEquals("110110",dump);
     }
 
-    // TODO:I check if this output is fine
-
     @ParameterizedTest(name = "{index}: {0}")
     @ArgumentsSource(TrieArgumentsProvider.class)
     void testIterator(Iterator<IterationElement> iterator, byte[] expectedValues) {

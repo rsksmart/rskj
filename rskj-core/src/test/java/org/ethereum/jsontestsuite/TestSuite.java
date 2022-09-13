@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
+import com.fasterxml.jackson.databind.JsonNode;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,12 +34,12 @@ public class TestSuite {
 
     List<TestCase> testList = new ArrayList<>();
 
-    public TestSuite(JSONObject testCaseJSONObj) throws ParseException {
+    public TestSuite(JsonNode testCaseJSONObj) throws IOException {
+        for (Iterator<String> it = testCaseJSONObj.fieldNames(); it.hasNext(); ) {
+            String key = it.next();
 
-        for (Object key : testCaseJSONObj.keySet()) {
-
-            Object testCaseJSON = testCaseJSONObj.get(key);
-            TestCase testCase = new TestCase(key.toString(), (JSONObject) testCaseJSON);
+            JsonNode testCaseJSON = testCaseJSONObj.get(key);
+            TestCase testCase = new TestCase(key, testCaseJSON);
             testList.add(testCase);
         }
     }

@@ -100,7 +100,6 @@ ext {
     ]
 
     testLibVersions = [
-            jsonSimpleVer  : '1.1.1',
             junitVer       : '5.8.1',
             junitSuiteVer  : '1.9.0',
             mockitoVer     : '4.6.1',
@@ -113,7 +112,6 @@ ext {
     ]
 
     testLibs = [
-            jsonSimpleLib           : "com.googlecode.json-simple:json-simple:${testLibVersions.jsonSimpleVer}",
             junitLib                : "org.junit.jupiter:junit-jupiter-engine:${testLibVersions.junitVer}",
             junitParams             : "org.junit.jupiter:junit-jupiter-params:${testLibVersions.junitVer}",
             junitSuite              : "org.junit.platform:junit-platform-suite:${testLibVersions.junitSuiteVer}",
@@ -160,7 +158,6 @@ dependencies {
     testImplementation "${testLibs.commonsIoLib}"
     testImplementation "${testLibs.commonsCodecLib}"
     testImplementation "${testLibs.okhttpWsLib}"
-    testImplementation "${testLibs.jsonSimpleLib}" // keep last to fix dependency resolution problem
 
     testImplementation "${testLibs.rskLllLib}"
 }

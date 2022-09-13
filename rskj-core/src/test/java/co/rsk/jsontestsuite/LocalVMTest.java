@@ -20,7 +20,6 @@ package co.rsk.jsontestsuite;
 
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -40,13 +39,13 @@ import java.util.*;
 class LocalVMTest {
     private Logger logger = LoggerFactory.getLogger("VM-Test");
     @Test
-    void runSingle() throws ParseException {
+    void runSingle() throws IOException {
         String json = getJSON("vmEnvironmentalInfoTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, "balance0");
     }
 
     @Test
-    void testArithmetic() throws ParseException {
+    void testArithmetic() throws IOException {
         Set<String> excluded = new HashSet<>();
         Set<String> included = null;
         //included  =new HashSet<>();
@@ -57,35 +56,35 @@ class LocalVMTest {
     }
 
     @Test // testing full suite
-    void testBitwiseLogicOperation() throws ParseException {
+    void testBitwiseLogicOperation() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmBitwiseLogicOperationTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testBlockInfo() throws ParseException {
+    void testBlockInfo() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmBlockInfoTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testEnvironmentalInfo() throws ParseException {
+    void testEnvironmentalInfo() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmEnvironmentalInfoTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testIOandFlowOperations() throws ParseException {
+    void testIOandFlowOperations() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmIOandFlowOperationsTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test
-    void testvmInputLimits() throws ParseException {
+    void testvmInputLimits() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmInputLimits");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
@@ -93,35 +92,35 @@ class LocalVMTest {
 
     @Disabled //FIXME - 20M - possibly provide percentage indicator
     @Test
-    void testvmInputLimitsLight() throws ParseException {
+    void testvmInputLimitsLight() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmInputLimitsLight");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testVMLog() throws ParseException {
+    void testVMLog() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmLogTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
     @Disabled
     @Test // testing full suite
-    void testPerformance() throws ParseException {
+    void testPerformance() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmPerformanceTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testPushDupSwap() throws ParseException {
+    void testPushDupSwap() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmPushDupSwapTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
-    void testSha() throws ParseException {
+    void testSha() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmSha3Test");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
@@ -130,7 +129,7 @@ class LocalVMTest {
     // This ignore and fixme is at Ethereum code
     @Disabled
     @Test // testing full suite
-    void testvmSystemOperationsTest() throws ParseException {
+    void testvmSystemOperationsTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("vmSystemOperationsTest");
@@ -138,7 +137,7 @@ class LocalVMTest {
     }
 
     @Test // testing full suite
-    void testVM() throws ParseException {
+    void testVM() throws IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmtests");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
@@ -146,7 +145,7 @@ class LocalVMTest {
 
     // TODO get name of resources
     @Test // testing full suite
-    void testRandomVM() throws ParseException, IOException {
+    void testRandomVM() throws IOException {
         List<String> resources =
                 Arrays.asList(
                         //--TODO: These cases have been commented out after adding the remaining gas condition

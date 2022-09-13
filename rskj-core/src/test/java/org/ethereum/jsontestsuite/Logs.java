@@ -19,12 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,19 +34,19 @@ import java.util.List;
 public class Logs {
     List<LogInfo> logs = new ArrayList<>();
 
-    public Logs(JSONArray jLogs) {
+    public Logs(ArrayNode jLogs) {
 
         for (Object jLog1 : jLogs) {
 
-            JSONObject jLog = (JSONObject) jLog1;
-            byte[] address = Hex.decode((String) jLog.get("address"));
-            byte[] data = Hex.decode(((String) jLog.get("data")).substring(2));
+            ObjectNode jLog = (ObjectNode) jLog1;
+            byte[] address = Hex.decode(jLog.get("address").asText());
+            byte[] data = Hex.decode(jLog.get("data").asText().substring(2));
 
             List<DataWord> topics = new ArrayList<>();
 
-            JSONArray jTopics = (JSONArray) jLog.get("topics");
-            for (Object t : jTopics.toArray()) {
-                byte[] topic = Hex.decode(((String) t));
+            ArrayNode jTopics = (ArrayNode) jLog.get("topics");
+            for (JsonNode t : jTopics) {
+                byte[] topic = Hex.decode(t.asText());
                 topics.add(DataWord.valueOf(topic));
             }
 

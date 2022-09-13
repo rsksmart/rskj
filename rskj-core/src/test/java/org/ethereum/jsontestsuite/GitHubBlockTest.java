@@ -20,7 +20,6 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
-import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,7 @@ class GitHubBlockTest {
 
     @Disabled("test for conveniently running a single test")
     @Test
-    void runSingleTest() throws ParseException, IOException {
+    void runSingleTest() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
 
@@ -46,100 +45,100 @@ class GitHubBlockTest {
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
     }
 
-    private void runFrontier(String name) throws IOException, ParseException {
+    private void runFrontier(String name) throws IOException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/" + name + ".json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
-    private void runHomestead(String name) throws IOException, ParseException {
+    private void runHomestead(String name) throws IOException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
         TestSystemProperties config = new TestSystemProperties();
         GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
-    private void run(String name, boolean frontier, boolean homestead) throws IOException, ParseException {
+    private void run(String name, boolean frontier, boolean homestead) throws IOException {
         if (frontier) runFrontier(name);
         if (homestead) runHomestead(name);
     }
 
     @Test
-    void runBCInvalidHeaderTest() throws ParseException, IOException {
+    void runBCInvalidHeaderTest() throws IOException {
         run("bcInvalidHeaderTest", true, true);
     }
 
 
     @Test
-    void runBCInvalidRLPTest() throws ParseException, IOException {
+    void runBCInvalidRLPTest() throws IOException {
         run("bcInvalidRLPTest", true, false);
     }
 
     @Test
-    void runBCRPCAPITest() throws ParseException, IOException {
+    void runBCRPCAPITest() throws IOException {
         run("bcRPC_API_Test", true, true);
     }
 
 
     @Test
-    void runBCUncleHeaderValidityTest() throws ParseException, IOException {
+    void runBCUncleHeaderValidityTest() throws IOException {
         run("bcUncleHeaderValiditiy", true, true);
     }
 
     @Test
-     void runBCUncleTest() throws ParseException, IOException {
+     void runBCUncleTest() throws IOException {
         run("bcUncleTest", true, true);
     }
 
     @Disabled("test for conveniently running a single test")
     @Test
-    void runBCValidBlockTest() throws ParseException, IOException {
+    void runBCValidBlockTest() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
         run("bcValidBlockTest", true, true);
     }
 
     @Test
-    void runBCBlockGasLimitTest() throws ParseException, IOException {
+    void runBCBlockGasLimitTest() throws IOException {
         run("bcBlockGasLimitTest", true, true);
     }
 
     @Test
-    void runBCForkBlockTest() throws ParseException, IOException {
+    void runBCForkBlockTest() throws IOException {
         run("bcForkBlockTest", true, false);
     }
 
     @Test
-    void runBCForkUncleTest() throws ParseException, IOException {
+    void runBCForkUncleTest() throws IOException {
         run("bcForkUncle", true, false);
     }
 
     @Test
-    void runBCForkStressTest() throws ParseException, IOException {
+    void runBCForkStressTest() throws IOException {
         run("bcForkStressTest", true, true);
     }
 
     @Disabled("test for conveniently running a single test")
     @Test
-    void runBCStateTest() throws ParseException, IOException {
+    void runBCStateTest() throws IOException {
         run("bcStateTest", true, true);
     }
 
     @Test
-    void runBCGasPricerTest() throws ParseException, IOException {
+    void runBCGasPricerTest() throws IOException {
         run("bcGasPricerTest", true, true);
     }
 
     @Test
-    void runBCTotalDifficultyTest() throws ParseException, IOException {
+    void runBCTotalDifficultyTest() throws IOException {
         run("bcTotalDifficultyTest", false, true);
     }
 
     @Test
-    void runBCWalletTest() throws Exception, IOException {
+    void runBCWalletTest() throws Exception {
         run("bcWalletTest", true, true);
     }
 
     @Test
-    void runBCMultiChainTest() throws ParseException, IOException {
+    void runBCMultiChainTest() throws IOException {
         run("bcMultiChainTest", true, true);
     }
 }
