@@ -58,7 +58,7 @@ tasks.withType(AbstractArchiveTask) {
 
 ext {
     libVersions = [
-            nettyVer               : '4.0.56.Final',
+            nettyVer               : '4.1.78.Final',
             spongyCastleVer        : '1.58.0.0',
             bouncyCastleVer        : '1.59',
             ethereumLeveldbJniVer  : '1.18.3',
