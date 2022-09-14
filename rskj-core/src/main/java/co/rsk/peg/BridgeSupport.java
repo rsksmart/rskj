@@ -1334,7 +1334,11 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+
+        if (!activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+        }
+
         processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
     }
 
@@ -1384,6 +1388,8 @@ public class BridgeSupport {
             }
         }
 
+        boolean signed = false;
+
         // All signatures are correct. Proceed to signing
         for (int i = 0; i < numInputs; i++) {
             Sha256Hash sighash = sighashes.get(i);
@@ -1402,6 +1408,7 @@ public class BridgeSupport {
                     inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
                     input.setScriptSig(inputScript);
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
+                    signed = true;
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
                     if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
@@ -1417,6 +1424,10 @@ public class BridgeSupport {
                 logger.warn("Input {} of tx {} already signed by this federator.", i, new Keccak256(rskTxHash));
                 break;
             }
+        }
+
+        if(signed && activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
         }
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
