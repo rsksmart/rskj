@@ -20,6 +20,7 @@
 package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
+import org.rocksdb.RocksIterator;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
@@ -31,7 +32,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
-public interface KeyValueDataSource extends DataSource {
+public interface KeyValueDataSource<DbIterator> extends DataSource {
     String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     String KEYVALUE_DATASOURCE = "KeyValueDataSource";
@@ -49,6 +50,8 @@ public interface KeyValueDataSource extends DataSource {
     void delete(byte[] key);
 
     Set<ByteArrayWrapper> keys();
+
+    DbIterator iterator();
 
     /**
      * Note that updateBatch() does not imply the operation is atomic:
@@ -91,7 +94,7 @@ public interface KeyValueDataSource extends DataSource {
     static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            KeyValueDataSource<?> singleOriginDataSource = makeDataSource(originPath, kind);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }

@@ -47,7 +47,7 @@ import co.rsk.util.HexUtils;
 
 public class Wallet {
     @GuardedBy("accessLock")
-    private final KeyValueDataSource keyDS;
+    private final KeyValueDataSource<?> keyDS;
 
     @GuardedBy("accessLock")
     private final Map<RskAddress, byte[]> accounts = new HashMap<>();

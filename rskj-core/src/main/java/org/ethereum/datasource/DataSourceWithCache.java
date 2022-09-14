@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DataSourceWithCache implements KeyValueDataSource {
+public class DataSourceWithCache implements KeyValueDataSource<Iterator<ByteArrayWrapper>> {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
@@ -198,6 +198,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
         Stream<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys);
         return knownKeys.filter(k -> !uncommittedKeysToRemove.contains(k))
                 .collect(Collectors.toCollection(HashSet::new));
+    }
+
+    @Override
+    public Iterator<ByteArrayWrapper> iterator() {
+        return keys().iterator();
     }
 
     @Override
