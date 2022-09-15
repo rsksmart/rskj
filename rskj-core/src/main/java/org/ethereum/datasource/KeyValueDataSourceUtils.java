@@ -19,7 +19,7 @@ public class KeyValueDataSourceUtils {
     private KeyValueDataSourceUtils() { /* hidden */ }
 
     @Nonnull
-    static public KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
