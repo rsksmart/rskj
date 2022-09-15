@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionExecutor;
-import org.ethereum.core.TransactionSet;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -46,12 +42,13 @@ public class PendingState implements AccountInformationProvider {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final TransactionSet pendingTransactions;
     private boolean executed = false;
+    private final SignatureCache signatureCache;
 
-
-    public PendingState(RepositorySnapshot repository, TransactionSet pendingTransactions, TransactionExecutorFactory transactionExecutorFactory) {
+    public PendingState(RepositorySnapshot repository, TransactionSet pendingTransactions, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache) {
         this.pendingRepository = repository.startTracking();
         this.pendingTransactions = pendingTransactions;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.signatureCache = signatureCache;
     }
 
     @Override
@@ -117,13 +114,13 @@ public class PendingState implements AccountInformationProvider {
 
     // Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
     // solution. (No trivial solution)
-    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
+    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions, SignatureCache signatureCache) {
 
         //Priority heap, and list of transactions are ordered by descending gas price.
         Comparator<Transaction> gasPriceComparator = reverseOrder(Comparator.comparing(Transaction::getGasPrice));
 
         //First create a map to separate txs by each sender.
-        Map<RskAddress, List<Transaction>> senderTxs = transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
+        Map<RskAddress, List<Transaction>> senderTxs = transactions.stream().collect(Collectors.groupingBy(transaction -> transaction.getSender(signatureCache)));
 
         //For each sender, order all txs by nonce and then by hash,
         //finally we order by price in cases where nonce are equal, and then by hash to disambiguate
@@ -151,7 +148,7 @@ public class PendingState implements AccountInformationProvider {
         while (txsCount > 0) {
             Transaction nextTxToAdd = candidateTxs.remove();
             sortedTxs.add(nextTxToAdd);
-            List<Transaction> txs = senderTxs.get(nextTxToAdd.getSender());
+            List<Transaction> txs = senderTxs.get(nextTxToAdd.getSender(signatureCache));
             if (!txs.isEmpty()) {
                 Transaction tx = txs.remove(0);
                 candidateTxs.add(tx);
@@ -172,8 +169,7 @@ public class PendingState implements AccountInformationProvider {
     }
 
     private void executeTransactions(Repository currentRepository, List<Transaction> pendingTransactions) {
-
-        PendingState.sortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions)
+        PendingState.sortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions, signatureCache)
                 .forEach(pendingTransaction -> executeTransaction(currentRepository, pendingTransaction));
     }
 

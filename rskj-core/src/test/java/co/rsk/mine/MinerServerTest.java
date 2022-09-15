@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -34,7 +33,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.time.Clock;
@@ -43,18 +41,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockTxSignatureCache;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.ReceivedTxSignatureCache;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
@@ -101,7 +90,6 @@ import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 
-
 /**
  * Created by adrian.eidelman on 3/16/2016.
  */
@@ -118,7 +106,6 @@ public abstract class MinerServerTest {
     private BlockExecutor blockExecutor;
     private MinimumGasPriceCalculator minimumGasPriceCalculator;
     private MinerUtils minerUtils;
-    private ReceivedTxSignatureCache signatureCache;
     private Repository repository;
     private CompositeEthereumListener compositeEthereumListener;
     private RskTestFactory rskTestContext;
@@ -137,7 +124,7 @@ public abstract class MinerServerTest {
         blockStore = rskTestContext.getBlockStore();
         standardBlockchain = rskTestContext.getBlockchain();
         repository = repositoryLocator.startTrackingAt(standardBlockchain.getBestBlock().getHeader());
-        signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
+        ReceivedTxSignatureCache signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
         compositeEthereumListener = rskTestContext.getCompositeEthereumListener();
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
@@ -157,7 +144,7 @@ public abstract class MinerServerTest {
         blockFactory = rskTestContext.getBlockFactory();
         blockExecutor = rskTestContext.getBlockExecutor();
         minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
-        minerUtils = new MinerUtils();
+        minerUtils = new MinerUtils(signatureCache);
     }
 
     @Test
@@ -168,15 +155,19 @@ public abstract class MinerServerTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
+        // IMPORTANT: tx1 is a mock, each mock has a random sender set at creation time (Tx.java)
+        // There's no need of passing a cache here since getSender method is stubbed to always
+        // return the sender, and we only need to use its value when stubbing track methods.
+        RskAddress tx1Sender = tx1.getSender(null);
+
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
-        BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
+
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
-        when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        when(track.getNonce(tx1.getSender(blockTxSignatureCache))).thenReturn(BigInteger.ZERO);
+        when(track.getNonce(tx1Sender)).thenReturn(BigInteger.ZERO);
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
-        when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
+        when(track.getBalance(tx1Sender)).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
         Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
         Mockito.doReturn(track).when(track).startTracking();

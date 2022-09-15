@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.config.VmConfig;
@@ -176,7 +175,7 @@ public class TransactionExecutor {
             totalCost = totalCost.add(txGasCost);
         }
 
-        Coin senderBalance = track.getBalance(tx.getSender());
+        Coin senderBalance = track.getBalance(tx.getSender(signatureCache));
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -229,7 +228,7 @@ public class TransactionExecutor {
 
         if (isNotEqual(reqNonce, txNonce)) {
             if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(signatureCache), reqNonce, txNonce, tx.getHash());
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
@@ -270,11 +269,11 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender());
+            track.increaseNonce(tx.getSender(signatureCache));
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            track.addBalance(tx.getSender(signatureCache), txGasCost.negate());
 
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
@@ -362,7 +361,7 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
-            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
+            cacheTrack.transfer(tx.getSender(signatureCache), targetAddress, endowment);
         }
     }
 
@@ -392,7 +391,7 @@ public class TransactionExecutor {
         }
 
         Coin endowment = tx.getValue();
-        cacheTrack.transfer(tx.getSender(), newContractAddress, endowment);
+        cacheTrack.transfer(tx.getSender(signatureCache), newContractAddress, endowment);
     }
 
     private void execError(Throwable err) {
@@ -520,8 +519,9 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+        RskAddress txSender = tx.getSender(signatureCache);
+        track.addBalance(txSender, summary.getLeftover().add(summary.getRefund()));
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", txSender, summary.getRefund());
 
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();
@@ -576,7 +576,9 @@ public class TransactionExecutor {
 
         TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+        if (logger.isTraceEnabled()) {
+            logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(signatureCache), summary.getRefund());
+        }
 
         // Transfer fees to miner
         this.paidFees = summary.getFee();
@@ -634,7 +636,7 @@ public class TransactionExecutor {
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
         else {
-            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender(signatureCache).getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 

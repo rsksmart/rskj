@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
@@ -31,10 +30,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.BuildInfo;
@@ -291,7 +287,7 @@ public class MinerManagerTest {
                         blockFactory,
                         blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(new BlockTxSignatureCache(new ReceivedTxSignatureCache())) // TODO -> should it be ReceivedTxSignatureCache? See Miner Server Test for reference
                 ),
                 clock,
                 blockFactory,

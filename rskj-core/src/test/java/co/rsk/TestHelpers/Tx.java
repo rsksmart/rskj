@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.TestHelpers;
 
 import co.rsk.config.RskSystemProperties;
@@ -31,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import static org.mockito.Mockito.any;
-
 
 public class Tx {
 
@@ -60,11 +58,11 @@ public class Tx {
         r.nextBytes(returnReceiveAddressBytes);
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
-        Mockito.when(transaction.getSender()).thenReturn(returnSender);
+        Mockito.when(transaction.getSender(any())).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
         Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
-        ArrayList<Byte> bytes = new ArrayList();
+        ArrayList<Byte> bytes = new ArrayList<>();
         long amount = 21000;
         if (data != 0) {
             data /= 2;
@@ -78,7 +76,7 @@ public class Tx {
             }
         }
         int n = bytes.size();
-        byte b[] = new byte[n];
+        byte[] b = new byte[n];
         for (int i = 0; i < n; i++) {
             b[i] = bytes.get(i);
         }

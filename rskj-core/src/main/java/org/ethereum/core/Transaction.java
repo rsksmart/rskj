@@ -407,7 +407,11 @@ public class Transaction {
 
         sender = signatureCache.getSender(this);
 
-        return sender;
+        if (sender != null) {
+            return sender;
+        }
+
+        return getSender();
     }
 
     public byte getChainId() {

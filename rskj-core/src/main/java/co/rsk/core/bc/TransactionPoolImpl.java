@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
@@ -158,7 +157,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return new PendingState(currentRepository, new TransactionSet(pendingTransactions), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0));
+        return new PendingState(currentRepository, new TransactionSet(pendingTransactions), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
     }
 
     private RepositorySnapshot getCurrentRepository() {

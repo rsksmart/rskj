@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
@@ -608,7 +607,7 @@ class TransactionModuleTest {
                         blockFactory,
                         blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(new BlockTxSignatureCache(new ReceivedTxSignatureCache()))
                 ),
                 minerClock,
                 blockFactory,
