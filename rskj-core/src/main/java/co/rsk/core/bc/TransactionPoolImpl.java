@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -453,8 +454,9 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        AccountState state = currentRepository.getAccountState(tx.getSender(signatureCache));
-        return validator.isValid(tx, bestBlock, state);
+        RskAddress txSender = tx.getSender(signatureCache);
+        AccountState state = currentRepository.getAccountState(txSender);
+        return validator.isValid(tx, bestBlock, state, txSender); // TODO -> Discuss this, sender is only for logging purposes
     }
 
     /**
