@@ -12,12 +12,17 @@ import java.nio.file.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CompareDBs extends Benchmark {
     enum Test {
+        flushTest,
         readTest,
         writeTest,
-        writeBatchTest
+        writeBatchTest,
+        readWriteTest // read, Batched Writes and Async Flushes
     }
 
     static Test test = Test.readTest;
@@ -160,7 +165,9 @@ public class CompareDBs extends Benchmark {
         maxNodeCount = maxKeys*2;
         log("beHeap:maxNodeCount: "+maxNodeCount);
         long beHeapCapacity =64L*1000*1000*1000; // 64 GB
-        beHeapCapacity =1L*maxNodeCount*valueLength; // 1 MB
+        // We double the heap capacity to be able to add more
+        // nodes in the readWrite test
+        beHeapCapacity =2L*maxNodeCount*valueLength; // 1 MB
         int maxKeys = maxNodeCount;
         log("beHeap:Capacity: "+beHeapCapacity);
 
@@ -279,6 +286,9 @@ public class CompareDBs extends Benchmark {
         if (read)
             openDB(false,false,dbName);
         else
+            if ((test==Test.readWriteTest) || (test==Test.flushTest))
+                openDB(false,false,dbName);
+            else
         if (tmpDbNamePrefix.length()>0) {
             // Temporary DB. Can delete freely
             openDB(true,false,dbName);
@@ -390,6 +400,129 @@ public class CompareDBs extends Benchmark {
         dumpTrieDBFolderSize();
         closeLog();
     }
+
+    public class WorkerThread implements Runnable {
+        int spentOnFlush = 0;
+        private KeyValueDataSource db;
+        AtomicLong acumSpent;
+
+        public WorkerThread(KeyValueDataSource db,AtomicLong acumSpent){
+            this.acumSpent = acumSpent;
+            this.db=db;
+        }
+
+        @Override
+        public void run() {
+            System.out.println(Thread.currentThread().getName()+" Start.");
+            processCommand();
+            System.out.println(Thread.currentThread().getName()+" End.");
+        }
+
+        private void processCommand() {
+            long fstart = System.currentTimeMillis();
+            db.flush();
+            long fstop = System.currentTimeMillis();
+            spentOnFlush +=(fstop-fstart);
+            acumSpent.addAndGet(spentOnFlush);
+            log("Time to flush: "+(fstop-fstart)+" ms");
+
+        }
+
+    }
+
+    public void flushTime() {
+        setup(false);
+        long fstart = System.currentTimeMillis();
+        if (db instanceof FlatDbDataSource)
+            ((FlatDbDataSource)db).forceSaveBaMap();
+        //db.flush();
+        long fstop = System.currentTimeMillis();
+        log("Time to flush: "+(fstop-fstart)+" ms");
+    }
+
+    public void readWrites() {
+        // Lo que esta pasando con flat db ahora aca es
+        // que el flush tarda tanto siempo que retrasa el update.
+        boolean flushData = false;
+        setup(false);
+
+        start(true);
+        int batchSize = 10_000;
+        int maxReads = 20_000;
+        int maxRounds = maxReads*20/batchSize; // 20 times more writes than reads, but split into batches
+        // aumente la cantidad de reads de bathSize/20 a batchSize para evitar que
+        // se bloquee en el updateBatch().
+        int readsPerBatch = batchSize;
+        //long spentOnFlush =0;
+        log("maxRounds: "+maxRounds);
+        log("batchSize: "+batchSize);
+        log("maxReads: "+maxReads);
+        Set<ByteArrayWrapper> keysToRemove = new HashSet<>();
+        int unusedKeyBaseSeed = 50_000_000;
+        ExecutorService executor=null;
+        if (flushData)
+            executor = Executors.newFixedThreadPool(1);
+        AtomicLong spentOnFlush = new AtomicLong();
+
+        for(int rounds = 0;rounds<maxRounds;rounds++) {
+            HashMap<ByteArrayWrapper, byte[]> batch = new HashMap<>(batchSize);
+            // We simulate a flush every
+            // Perform
+            for (int r =0;r<readsPerBatch;r++) {
+                long x =TestUtils.getPseudoRandom().nextLong(maxKeys);
+                pseudoRandom.setSeed(x);
+                if (r % 100 == 0) { System.out.print("."); }
+                byte[] key =null;
+                if (!keyIsValueHash)
+                    key = pseudoRandom.randomBytes(keyLength);
+                byte[] expectedValue = pseudoRandom.randomBytes(valueLength);
+                if (keyIsValueHash)
+                    key= Keccak256Helper.keccak256(expectedValue);
+                byte[] value = db.get(key);
+                if ((value==null) || !FastByteComparisons.equalBytes(value,expectedValue)) {
+                    System.out.println("Wrong value");
+                    System.exit(1);
+                }
+            }
+            System.out.println("beginUpdate");
+            for (int b = 0; b < batchSize; b++) {
+                int i = rounds * batchSize + b;
+                pseudoRandom.setSeed(unusedKeyBaseSeed +i);
+                // The key is not the hash of the value.
+                // This differs from a trie test, where that is true.
+                byte key[] = null;
+                if (!keyIsValueHash)
+                    key = pseudoRandom.randomBytes(keyLength);
+                byte[] value = pseudoRandom.randomBytes(valueLength);
+                if (keyIsValueHash)
+                    key = Keccak256Helper.keccak256(value);
+
+                batch.put(new ByteArrayWrapper(key), value);
+                if (i % 100000 == 0) {
+                    dumpProgress(i, maxRounds*batchSize);
+                }
+            }
+            db.updateBatch(batch, keysToRemove);
+            if (flushData) {
+                Runnable worker = new WorkerThread(db, spentOnFlush);
+                executor.execute(worker);
+            } else
+                db.flush();
+        }
+        //while (!executor.isTerminated()) { }
+
+        System.out.println("Finished all threads");
+        dumpProgress(maxKeys,maxKeys);
+        stop(true);
+        log("spentOnFlush: "+(spentOnFlush.get()/1000)+ " sec");
+        closeDB();
+        if (flushData) {
+            executor.shutdown();
+        }
+        dumpResults(maxKeys);
+        dumpTrieDBFolderSize();
+        closeLog();
+    }
     public void closeDB() {
         log("Closing db...");
         db.close();
@@ -407,5 +540,12 @@ public class CompareDBs extends Benchmark {
         else
         if (test== Test.writeBatchTest)
             c.writeBatch();
+        else
+        if (test== Test.readWriteTest)
+            c.readWrites();
+        else
+        if (test== Test.flushTest)
+            c.flushTime();
+
     }
 }

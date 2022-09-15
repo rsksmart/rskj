@@ -126,4 +126,24 @@ public class TrieKeySlice {
     public byte[] expand() {
         return Arrays.copyOfRange(expandedKey, offset, limit);
     }
+    public TrieKeySlice append(TrieKeySlice childSharedPath) {
+        int length = length();
+        int childSharedPathLength = childSharedPath.length();
+        int newLength = length + childSharedPathLength;
+        byte[] newExpandedKey = Arrays.copyOfRange(expandedKey, offset, offset + newLength);
+        System.arraycopy(
+                childSharedPath.expandedKey, childSharedPath.offset,
+                newExpandedKey, length , childSharedPathLength
+        );
+        return new TrieKeySlice(newExpandedKey, 0, newExpandedKey.length);
+    }
+
+    public TrieKeySlice appendBit(byte implicitByte) {
+        int length = length();
+        int newLength = length + 1;
+        byte[] newExpandedKey = Arrays.copyOfRange(expandedKey, offset, offset + newLength);
+        newExpandedKey[length] = implicitByte;
+        return new TrieKeySlice(newExpandedKey,0,newLength);
+    }
+
 }

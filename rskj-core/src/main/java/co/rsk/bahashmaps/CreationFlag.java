@@ -16,7 +16,8 @@ public enum CreationFlag {
     useMWChecksumForSlotConsistency,
     useDBForDescriptions,
     autoUpgrade,
-    AlignSlotInPages;
+    AlignSlotInPages,
+    experimentalConcurrentRW;
 
     public static final EnumSet<CreationFlag> Default = EnumSet.of(
             storeKeys,variableLengthKeys,

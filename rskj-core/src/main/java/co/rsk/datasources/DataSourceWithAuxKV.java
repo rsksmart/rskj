@@ -58,6 +58,14 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     }
 
 
+    public void readLock() {
+        dbLock.readLock().lock();
+    }
+
+    public void readUnlock() {
+        dbLock.readLock().unlock();
+    }
+
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
@@ -67,15 +75,16 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         byte[] value;
 
         gets++;
-        dbLock.readLock().lock(); try {
+        readLock(); try {
           value = committedCache.get(wrappedKey);
+            if (value != null) {
+                hits++;
+            } else
+                misses++;
         } finally {
-            dbLock.readLock().unlock();
+            readUnlock();
         }
-        if (value != null) {
-            hits++;
-        } else
-            misses++;
+
 
 
         if (dump) {
@@ -107,26 +116,35 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     private byte[] put(ByteArrayWrapper wrappedKey, byte[] value) {
         checkReadOnly();
         Objects.requireNonNull(value);
-        puts++;
+
         if (dump) {
             System.out.println("Writing key " + wrappedKey.toString().substring(0, 8) +
                     " value " +
                     ByteUtil.toHexString(value).substring(0, 8) + ".. length " + value.length);
         }
 
-
-        this.putKeyValue(wrappedKey, value);
-
+        dbLock.writeLock().lock();
+        try {
+            puts++;
+            try {
+                beginLog();
+                try {
+                    this.putKeyValue(wrappedKey, value);
+                } finally {
+                    endLog();
+                    checkFlushAfterPut();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        } finally {
+            dbLock.writeLock().unlock();
+        }
         return value;
     }
 
     private void putKeyValue(ByteArrayWrapper key, byte[] value) {
-        dbLock.writeLock().lock(); try {
           committedCache.put(key, value);
-        } finally {
-            checkFlushAfterPut();
-            dbLock.writeLock().unlock();
-        }
     }
 
     public void checkFlushAfterPut() {
@@ -160,10 +178,10 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         //        .map(Map.Entry::getKey);
         // note that toSet doesn't work with byte[], so we have to do this extra step
         //return committedKeys.collect(Collectors.toSet());
-        dbLock.readLock().lock(); try {
+        readLock(); try {
           return committedCache.keySet();
         } finally {
-            dbLock.readLock().unlock();
+            readUnlock();
         }
 
     }
@@ -277,11 +295,11 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     public long countCommittedCachedElements() {
         if (committedCache != null) {
-            dbLock.readLock().lock();
+            readLock();
             try {
                 return committedCache.size();
             } finally {
-                dbLock.readLock().unlock();
+                readUnlock();
             }
         } else
             return 0;
@@ -309,10 +327,10 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
         list.add("Hits: " + hits);
         list.add("Misses: " + misses);
-        dbLock.readLock().lock(); try {
+        readLock(); try {
           list.add("committedCache.size(): " + committedCache.size());
         } finally {
-            dbLock.readLock().unlock();
+            readUnlock();
         }
         list.add("DB Hashtable stats:");
         list.addAll(getHashtableStats());

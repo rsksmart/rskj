@@ -1,11 +1,8 @@
 package co.rsk.datasources;
 
-import co.rsk.bahashmaps.ByteArray40HashMap;
-import co.rsk.bahashmaps.CreationFlag;
-import co.rsk.bahashmaps.Format;
+import co.rsk.bahashmaps.*;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.ByteArrayHeap;
-import co.rsk.bahashmaps.AbstractByteArrayHashMap;
 import co.rsk.datasources.flatdb.LogManager;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.PrefixedKeyValueDataSource;
@@ -33,6 +30,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     boolean autoUpgrade;
     boolean flushAfterPut;
     LogManager logManager;
+
 
     public enum LockType {
         Exclusive,
@@ -62,9 +60,16 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.autoUpgrade = format.creationFlags.contains(CreationFlag.autoUpgrade);
         this.flushAfterPut = format.creationFlags.contains(CreationFlag.flushAfterPut);
 
+
         if (useLogManager) {
             logManager = new LogManager(Paths.get(databaseName));
         }
+
+    }
+
+    boolean allowDisablingReadLock() {
+        return  (!format.creationFlags.contains(CreationFlag.allowRemovals)) &&
+                (format.creationFlags.contains(CreationFlag.useMWChecksumForSlotConsistency));
 
     }
 
@@ -120,6 +125,15 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         }
     }
 
+    public void forceSaveBaMap() {
+        try {
+            bamap.loaded = false;
+            bamap.save();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void flush() {
         super.flush();
@@ -145,6 +159,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
             dbLock.writeLock().unlock();
         }
     }
+
     public void close() {
         dbLock.writeLock().lock();
         try {
@@ -217,7 +232,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         // 2^39 bytes is equivalent to 512 Gigabytes.
         //
 
-        this.bamap =  new ByteArray40HashMap(initialSize,loadFActor,myKR,
+        this.bamap =  new ByteArrayVarHashMap(initialSize,loadFActor,myKR,
                 (long) beHeapCapacity,
                 sharedBaHeap,0,format,logManager);
 

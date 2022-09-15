@@ -93,9 +93,11 @@ public class FileMapUtil {
                 int pageOfs = pageSize*i;
                 int mapOfs = i*pageSize+(int) offset;
                 buf.position(mapOfs);
-                for (int b=0;b<pageSize;b++) {
-                    buf.put(table[b+pageOfs]);
-                }
+                ByteBuffer part = ByteBuffer.wrap(table,pageOfs,pageSize);
+                buf.put(part);
+                //for (int b=0;b<pageSize;b++) {
+                //    buf.put(table[b+pageOfs]);
+                //}
                 count+=pageSize;
                 if (showProgressOnConsole)
                   if (count > logBase ) {

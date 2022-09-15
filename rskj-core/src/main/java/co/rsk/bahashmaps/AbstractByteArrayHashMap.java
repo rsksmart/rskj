@@ -60,7 +60,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     // For file I/O
     Format format;
     boolean resized;
-    boolean loaded;
+    public boolean loaded;
     Path mapPath;
 
     ///////////////////////////
@@ -105,6 +105,18 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     LogManager logManager;
     int elementSize;
 
+    int getReservedBitCount() {
+        int usedBits =0;
+        // nullMarkedOffsetBitMask
+        usedBits++;
+        //bigMarkedOffsetBitMask
+        usedBits++;
+        if (useMWChecksumForSlotConsistency) {
+            usedBits+=3;
+        }
+        return usedBits;
+    }
+
     void computeMasks() {
         elementSize =getElementSize();
         int slotSizeBits =elementSize*8;//
@@ -146,6 +158,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         if (!inBatch)
             throw new RuntimeException("Not in a batch");
         inBatch = false;
+        // This long copy is not atomic, but both maxOffsetToCommit and maxOffset
+        // are updated within the write lock, so there shouldn't be a problem here.
         maxOffsetToCommit = maxOffset;
         if (logManager==null) {
             return;
@@ -806,7 +820,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         // because it maps to the same file
         if ((memoryMappedIndex) && (oldTab!=null))
             throw new RuntimeException("Memorymapped table resize not implemented");
-        Table newTab = createTable(newCap);
+        Table newTab = createTable(newCap,0); // chose again the slot size if necessay
         // Filling is not required anymore because the empty element
         // is all zeros. newTab.fill(empty );
 
@@ -1107,7 +1121,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                     float ft = (float)cap * lf;
                     this.threshold = cap < 1073741824 && ft < 1.07374182E9F ? (int)ft : 2147483647;
                     //????? TO DO: SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Entry[].class, cap);
-                    table = createTable(cap);
+                    table = createTable(cap,0);
                     //table.fill(empty );
                     for(int i = 0; i < mappings; ++i) {
                         ByteArrayWrapper key = (ByteArrayWrapper) s.readObject();
@@ -1122,7 +1136,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
     }
 
-    protected abstract Table createTable(int cap) throws IOException;
+    protected abstract Table createTable(int cap,int predefinedSlotSize) throws IOException;
 
 
     void reinitialize() {
@@ -1523,11 +1537,11 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     protected class Header  {
         public short magic;
         public short dbVersion;
-        public int totalSize;
-        public int size ;
+        public int totalSize; // The maximum number of elements in the hashtable
+        public int size; // The number of elements in the table
         public int threshold;
         public int flags;
-        public byte tableSlotSize;
+        public byte tableSlotSize; // the size of a slot in the table
         public long maxOffset;
     }
 
@@ -1614,11 +1628,11 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     }
 
     void mapTable(Header header) throws IOException {
-        table = createTable(header.totalSize);
+        table = createTable(header.totalSize,header.tableSlotSize);
     }
 
     void loadTableFromFile(Header header) throws IOException {
-        table = createTable(header.totalSize);
+        table = createTable(header.totalSize,header.tableSlotSize);
         System.out.println("Reading hash table");
         File file = mapPath.toFile();
         FileInputStream fin = new FileInputStream(file);
@@ -1731,6 +1745,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         String headerFileName = fileName + ".hdr";
         writeHeader(headerFileName, header);
     }
+
     private void writeTable(String fileName) throws IOException {
         RandomAccessFile sc
                 = new RandomAccessFile(fileName, "rw");

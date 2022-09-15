@@ -6,7 +6,9 @@ import co.rsk.dbutils.ObjectIO;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -113,7 +115,11 @@ public class UInt40Table implements Table {
     public void copyTo(FileChannel file, int ofs) throws IOException {
         // Child to -do
         System.out.println("Writing full file");
-        FileMapUtil.mapAndCopyByteArray(file,ofs,table.length,table);
+        // This seems to be faster
+        ByteBuffer bb =ByteBuffer.wrap(table);
+        file.write(bb);
+
+        //FileMapUtil.mapAndCopyByteArray(file,ofs,table.length,table);
         modifiedPageCount = 0;
         modifiedPages.clear();
     }

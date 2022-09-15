@@ -6,6 +6,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import co.rsk.spaces.*;
 import org.ethereum.datasource.KeyValueDataSource;
 
@@ -51,6 +54,8 @@ public class ByteArrayHeapBase {
     boolean memoryMapped;
     String baseFileName;
     int lastMetadataLen = -1;
+
+    protected final ReadWriteLock dataLock = new ReentrantReadWriteLock();
 
     /////////////////////////// Only used for remapping
     boolean remapping;
@@ -127,57 +132,72 @@ public class ByteArrayHeapBase {
         this.rootOfs = rootOfs;
     }
 
+    public void readLock() {
+        dataLock.readLock().lock();
+    }
+
+    public void readUnlock() {
+        dataLock.readLock().unlock();
+    }
+
+    public void writeLock() {
+        dataLock.writeLock().lock();
+    }
+
+    public void writeUnlock() {
+        dataLock.writeLock().unlock();
+    }
+
     protected void saveSpaces() {
-        int head = headOfFilledSpaces.head;
-        while (head != -1) {
-            spaces[head].saveToFile(getSpaceFileName(head));
-            head = spaces[head].previousSpaceNum;
+        readLock(); try {
+            doForAllSpaces( num -> spaces[num].saveToFile(getSpaceFileName(num)));
+        } finally {
+            readUnlock();
         }
-        head = headOfPartiallyFilledSpaces.head;
-        while (head != -1) {
-            spaces[head].saveToFile(getSpaceFileName( head));
-            head = spaces[head].previousSpaceNum;
-        }
-        getCurSpace().saveToFile(getSpaceFileName( curSpaceNum));
     }
+
     protected void syncSpaces() {
-        // Here we MUST synch all spaces using specific OS commands
+        // Here we MUST sync all spaces using specific OS commands
         // that guarantee the memory pages are actually written to disk.
+        doForAllSpaces(  num -> spaces[num].sync() );
+    }
+
+    interface SpaceNumMethod {
+        public void myMethod(int spaceNum);
+    }
+
+    protected void doForAllSpaces(SpaceNumMethod method) {
         int head = headOfFilledSpaces.head;
         while (head != -1) {
-            spaces[head].sync();
+            method.myMethod(head);
             head = spaces[head].previousSpaceNum;
         }
         head = headOfPartiallyFilledSpaces.head;
         while (head != -1) {
-            spaces[head].sync();
+            method.myMethod(head);
             head = spaces[head].previousSpaceNum;
         }
-        getCurSpace().sync();
+        method.myMethod(curSpaceNum);
     }
+
 
     public void closeFiles() {
         // We close all mapped files. This object will be unusable afterwards
         // we can close files to simulate a power failure and re-open a database.
-        int head = headOfFilledSpaces.head;
-        while (head != -1) {
-            spaces[head].destroy();
-            head = spaces[head].previousSpaceNum;
-        }
-        head = headOfPartiallyFilledSpaces.head;
-        while (head != -1) {
-            spaces[head].destroy();
-            head = spaces[head].previousSpaceNum;
-        }
-        getCurSpace().destroy();
+        doForAllSpaces( num -> spaces[num].destroy());
     }
+
     public void save() throws IOException {
+        readLock(); try {
         if (!memoryMapped) {
             saveSpaces();
         } else {
             syncSpaces();
         }
         saveDesc();
+        } finally {
+            readUnlock();
+        }
     }
 
     void saveDesc() {
@@ -187,6 +207,7 @@ public class ByteArrayHeapBase {
         desc.currentSpace = curSpaceNum;
         desc.rootOfs = rootOfs;
         desc.metadataLen = lastMetadataLen;
+        desc.curSpaceMemTop = getCurSpace().memTop;
         if (descDataSource!=null) {
             desc.saveToDataSource(descDataSource,"desc");
         } else {
@@ -234,6 +255,7 @@ public class ByteArrayHeapBase {
         lastMetadataLen = desc.metadataLen;
         String name = getSpaceFileName(curSpaceNum);
         spaces[curSpaceNum].readFromFile(name,memoryMapped);
+        spaces[curSpaceNum].memTop = desc.curSpaceMemTop;
         return desc.rootOfs;
     }
 
@@ -485,12 +507,17 @@ public class ByteArrayHeapBase {
     }
 
     public void endRemap() {
-        moveCompressedSpacesToPartiallyFilled();
-        clearRemapMode();
-        chooseCurrentSpace();
-        if (debugCheckAll)
-            checkAll();
-        remapping = false;
+        writeLock();
+        try {
+            moveCompressedSpacesToPartiallyFilled();
+            clearRemapMode();
+            chooseCurrentSpace();
+            if (debugCheckAll)
+                checkAll();
+            remapping = false;
+        } finally {
+            writeUnlock();
+        }
     }
 
 
@@ -500,17 +527,20 @@ public class ByteArrayHeapBase {
     }
 
     public void emptyOldSpaces() {
-        long originalSize = 0;
-        for (int i = 0; i < maxSpaces; i++) {
-            if (oldSpacesBitmap.get(i)) {
-                int oldSpaceNum = i;
-                originalSize += spaces[oldSpaceNum].memTop;
-                spaces[oldSpaceNum].softDestroy();
-                headOfPartiallyFilledSpaces.addSpace(oldSpaceNum);
+        readLock(); try {
+            long originalSize = 0;
+            for (int i = 0; i < maxSpaces; i++) {
+                if (oldSpacesBitmap.get(i)) {
+                    int oldSpaceNum = i;
+                    originalSize += spaces[oldSpaceNum].memTop;
+                    spaces[oldSpaceNum].softDestroy();
+                    headOfPartiallyFilledSpaces.addSpace(oldSpaceNum);
+                }
             }
+            compressionPercent = (int) (remappedSize * 100 / originalSize);
+        } finally {
+            readUnlock();
         }
-        compressionPercent = (int) (remappedSize * 100 / originalSize);
-
     }
 
 
@@ -712,30 +742,35 @@ public class ByteArrayHeapBase {
     }
 
     public long addObjectReturnOfs(byte[] encoded, byte[] metadata) {
-        Space space;
-        int metadataLen =0;
-        if (metadata!=null)
-            metadataLen = metadata.length;
-        if (!spaceAvailFor(1+encoded.length + metadataLen +debugHeaderSize)) {
-            moveToNextCurSpace();
-            if (remapping)
-                throw new RuntimeException("Not yet prepared to switch space during remap");
+        writeLock();
+        try {
+            Space space;
+            int metadataLen = 0;
+            if (metadata != null)
+                metadataLen = metadata.length;
+            if (!spaceAvailFor(1 + encoded.length + metadataLen + debugHeaderSize)) {
+                moveToNextCurSpace();
+                if (remapping)
+                    throw new RuntimeException("Not yet prepared to switch space during remap");
+            }
+
+            space = getCurSpace();
+
+
+            // We need to store the length because
+            // the encoded form does not encode the node length in it.
+            int oldMemTop = space.memTop;
+
+            int newMemTop = storeObject(space, oldMemTop,
+                    encoded, 0, encoded.length,
+                    metadata, 0, metadataLen);
+
+            space.memTop = newMemTop;
+            long ofs = buildPointer(curSpaceNum, oldMemTop);
+            return ofs;
+        } finally {
+            writeUnlock();
         }
-
-        space = getCurSpace();
-
-
-        // We need to store the length because
-        // the encoded form does not encode the node length in it.
-        int oldMemTop = space.memTop;
-
-        int newMemTop = storeObject(space, oldMemTop,
-                encoded, 0, encoded.length,
-                metadata,0,metadataLen);
-
-        space.memTop = newMemTop;
-        long ofs = buildPointer(curSpaceNum, oldMemTop);
-        return ofs;
     }
 
     public int storeObject(Space destSpace, int destOldMemTop,
@@ -821,6 +856,8 @@ public class ByteArrayHeapBase {
     }
 
     public byte[] retrieveDataByOfs(long encodedOfs) {
+        // Does not require a read lock, because writes cannot
+        // change already stored data.
         Space space;
         validMetadataLength();
 
@@ -886,29 +923,39 @@ public class ByteArrayHeapBase {
 
 
     public long getMemUsed() {
-        long used = 0;
+        readLock();
+        try {
+            long used = 0;
 
-        used += getUsage(headOfFilledSpaces);
-        used += getUsage(headOfPartiallyFilledSpaces);
+            used += getUsage(headOfFilledSpaces);
+            used += getUsage(headOfPartiallyFilledSpaces);
 
-        // While remapping the current space is unusable
-        if (curSpaceNum != -1) {
-            used += spaces[curSpaceNum].memTop;
+            // While remapping the current space is unusable
+            if (curSpaceNum != -1) {
+                used += spaces[curSpaceNum].memTop;
+            }
+            return used;
+        } finally {
+            readUnlock();
         }
-        return used;
     }
 
 
     public long getMemAllocated() {
-        long total = 0;
+        readLock();
+        try {
+            long total = 0;
 
-        total += getSize(headOfFilledSpaces);
-        total += getSize(headOfPartiallyFilledSpaces);
+            total += getSize(headOfFilledSpaces);
+            total += getSize(headOfPartiallyFilledSpaces);
 
-        if (curSpaceNum != -1) {
-            total += spaces[curSpaceNum].spaceSize();
+            if (curSpaceNum != -1) {
+                total += spaces[curSpaceNum].spaceSize();
+            }
+            return total;
+        } finally {
+            readUnlock();
         }
-        return total;
     }
 
     public long getMemMax() {
@@ -948,26 +995,30 @@ public class ByteArrayHeapBase {
     }
 
     public int getUsagePercent() {
-        long used = 0;
-        long total = 0;
+        readLock(); try {
+            long used = 0;
+            long total = 0;
 
-        used += getUsage(headOfFilledSpaces);
-        used += getUsage(headOfPartiallyFilledSpaces);
+            used += getUsage(headOfFilledSpaces);
+            used += getUsage(headOfPartiallyFilledSpaces);
 
-        total += getSize(headOfFilledSpaces);
-        total += getSize(headOfPartiallyFilledSpaces);
+            total += getSize(headOfFilledSpaces);
+            total += getSize(headOfPartiallyFilledSpaces);
 
-        // While remapping the current space is unusable
-        if (curSpaceNum != -1) {
-            used += spaces[curSpaceNum].memTop;
-            total += spaces[curSpaceNum].spaceSize();
+            // While remapping the current space is unusable
+            if (curSpaceNum != -1) {
+                used += spaces[curSpaceNum].memTop;
+                total += spaces[curSpaceNum].spaceSize();
+            }
+
+            if (total == 0)
+                return 0;
+
+            int percent = (int) ((long) used * 100 / total);
+            return percent;
+        } finally {
+            readUnlock();
         }
-
-        if (total == 0)
-            return 0;
-
-        int percent =(int) ((long) used * 100 / total);
-        return percent;
     }
 
     public int getFilledSpacesCount() {

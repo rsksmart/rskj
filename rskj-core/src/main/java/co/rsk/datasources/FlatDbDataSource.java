@@ -18,13 +18,16 @@ public class FlatDbDataSource extends DataSourceWithHeap {
     public static final int latestDBVersion = 1;
     EnumSet<CreationFlag> flags;
     DbLock lockFile ;
+    // experimentalConcurrentRW: this is an experimental feature to allow writes
+    // to occur in parallel of reads!
+    boolean experimentalConcurrentRW;
 
 
     public static Format getFormat(EnumSet<CreationFlag> creationFlags, int dbVersion) {
         Format format = new Format();
         format.creationFlags = creationFlags;
         format.dbVersion = dbVersion;
-        format.pageSize = 16384; // later I should use an OS API to get the right value
+        format.pageSize = 4096; // later I should use an OS API to get the right value
         return format;
     }
 
@@ -55,6 +58,9 @@ public class FlatDbDataSource extends DataSourceWithHeap {
                 createDescDataSource(databaseName,(creationFlags.contains(CreationFlag.useDBForDescriptions)),readOnly),
                 readOnly);
         this.flags = creationFlags;
+        this.experimentalConcurrentRW =
+                format.creationFlags.contains(CreationFlag.experimentalConcurrentRW) &&
+                        allowDisablingReadLock();
 
     }
 
@@ -89,10 +95,38 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         }
     }
 
+
+    public void readLock() {
+        if (experimentalConcurrentRW)
+            return;
+
+        dbLock.readLock().lock();
+    }
+
+    public void readUnlock() {
+        if (experimentalConcurrentRW)
+            return;
+
+        dbLock.readLock().unlock();
+    }
+
+    public void flushLock() {
+        readLock();
+    }
+
+    public void flushUnlock() {
+        readUnlock();
+    }
+
     public void flush() {
-        super.flush();
-        if (descDataSource!=null)
-           descDataSource.flush();
+        flushLock();
+        try {
+            super.flush();
+            if (descDataSource != null)
+                descDataSource.flush();
+        } finally {
+            flushUnlock();
+        }
     }
 
     public void powerFailure() {

@@ -31,20 +31,24 @@ public class ByteArray40HashMap extends AbstractByteArrayHashMap {
     }
 
 
-    protected Table createTable(int cap) throws IOException {
+    protected Table createTable(int cap,int predefinedSlotSize) throws IOException {
+        if ((predefinedSlotSize!=0) && (predefinedSlotSize!=5))
+            throw new RuntimeException("Invalid predefined slot size");
+
         boolean align =(format.creationFlags.contains(CreationFlag.AlignSlotInPages));
         if ((align) && (format.pageSize<=5))
             throw new RuntimeException("pageSize must be defined");
 
         long size = UInt40Table.getTableSize(cap,format.pageSize,align);
 
-        if ((size > Integer.MAX_VALUE)) {
-            throw new RuntimeException("Hashtable does not fit in Java array");
-        }
+
         Table table;
         if (!memoryMappedIndex) {
             table = new UInt40Table(cap, format.pageSize,align);
         } else {
+            if ((size > Integer.MAX_VALUE)) {
+                throw new RuntimeException("Hashtable does not fit in Java array");
+            }
             String fileName =  mapPath.toAbsolutePath().toString();
 
             table = new MemoryMappedTable(cap,0,fileName,5);
