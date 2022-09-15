@@ -245,7 +245,7 @@ public class BlockChainBuilder {
 
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(GasPriceTracker.class));
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(GasPriceTracker.class));
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

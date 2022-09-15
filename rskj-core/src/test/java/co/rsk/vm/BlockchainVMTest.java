@@ -27,7 +27,9 @@ import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.TestInjectorUtil;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -39,6 +41,11 @@ import java.util.List;
  * Created by ajlopez on 4/20/2016.
  */
 class BlockchainVMTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     @Test
     void genesisTest() {

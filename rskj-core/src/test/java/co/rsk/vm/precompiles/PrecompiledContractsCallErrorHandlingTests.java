@@ -10,9 +10,11 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.TestInjectorUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -39,6 +41,11 @@ class PrecompiledContractsCallErrorHandlingTests {
     public static final String DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT = "dsl/contract_call/precompiled_error_handling.txt";
 
     private World world;
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     @Test
     void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {

@@ -123,7 +123,6 @@ public abstract class MinerServerTest {
                 signatureCache,
                 10,
                 100,
-                mock(TxQuotaChecker.class),
                 mock(GasPriceTracker.class));
 
         transactionPool.processBest(standardBlockchain.getBestBlock());

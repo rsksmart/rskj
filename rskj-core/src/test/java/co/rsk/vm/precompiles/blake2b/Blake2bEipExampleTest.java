@@ -8,7 +8,9 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.util.TransactionReceiptUtil;
+import org.ethereum.util.TestInjectorUtil;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -18,6 +20,11 @@ import java.io.FileNotFoundException;
  * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-152.md
  * */
 class Blake2bEipExampleTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     @Test
     void runTest() throws FileNotFoundException, DslProcessorException {

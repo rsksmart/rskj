@@ -56,8 +56,10 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.TestInjectorUtil;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -85,6 +87,11 @@ import static org.mockito.Mockito.*;
  * Created by ajlopez on 26/04/2020.
  */
 class CliToolsTest {
+
+    @BeforeEach
+    public void setUp() {
+        TestInjectorUtil.initEmpty();
+    }
 
     @TempDir
     private Path tempDir;
