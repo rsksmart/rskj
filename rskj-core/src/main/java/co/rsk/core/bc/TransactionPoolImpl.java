@@ -214,7 +214,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
-        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender());
+        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender(signatureCache));
 
         if (txsaccount == null) {
             return Optional.empty();
@@ -242,7 +242,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Keccak256 hash = tx.getHash();
         logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
         if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
@@ -252,7 +252,7 @@ public class TransactionPoolImpl implements TransactionPool {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender());
+        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
@@ -463,7 +463,7 @@ public class TransactionPoolImpl implements TransactionPool {
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
@@ -471,7 +471,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender())) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
