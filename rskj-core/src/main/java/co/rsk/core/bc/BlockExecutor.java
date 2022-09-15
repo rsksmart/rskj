@@ -266,7 +266,7 @@ public class BlockExecutor {
         if (rskip144Active || block.getHeader().getTxExecutionSublistsEdges() != null) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute);
         } else {
-            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, true);
         }
     }
 
@@ -297,7 +297,7 @@ public class BlockExecutor {
             if (rskip144Active && block.getHeader().getTxExecutionSublistsEdges() != null) {
                 return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
             } else {
-                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, false);
             }
     }
 
@@ -307,7 +307,8 @@ public class BlockExecutor {
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
-            boolean acceptInvalidTransactions) {
+            boolean acceptInvalidTransactions,
+            boolean mining) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start execute pre RSKIP144.");
         loggingApplyBlock(block);
@@ -412,6 +413,36 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
 
         );
+
+        String filePath;
+
+        if (mining) {
+            filePath = "/Users/julianlen/workspace/output-experiments/execute-mining-sequential.csv";
+        } else {
+            filePath = "/Users/julianlen/workspace/output-experiments/execute-connecting-sequential.csv";
+        }
+
+        Path file = Paths.get(filePath);
+
+        // bNumber, numExecutedTx, feeTotal, gasTotal
+        String header = "bNumber,numExecutedTx,feeTotal,gasTotal\r";
+        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"\r";
+        try {
+            FileWriter myWriter;
+
+            if (!Files.exists(file)) {
+                myWriter = new FileWriter(filePath, true);
+                myWriter.write(header);
+                myWriter.write(data);
+            } else {
+                myWriter = new FileWriter(filePath,     true);
+                myWriter.write(data);
+            }
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         profiler.stop(metric);
         logger.trace("End execute pre RSKIP144.");
         return result;
