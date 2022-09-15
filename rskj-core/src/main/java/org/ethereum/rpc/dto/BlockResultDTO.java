@@ -18,7 +18,15 @@
 
 package org.ethereum.rpc.dto;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockStore;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,16 +35,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.util.HexUtils;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 
 public class BlockResultDTO {
@@ -123,7 +122,7 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
     }
 
-    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc) {
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc) {
         if (b == null) {
             return null;
         }
@@ -136,7 +135,7 @@ public class BlockResultDTO {
         List<Transaction> blockTransactions = b.getTransactionsList();
         // For full tx will present as TransactionResultDTO otherwise just as transaction hash
         List<Object> transactions = IntStream.range(0, blockTransactions.size())
-                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc))
+                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc, zeroSignatureIfRemasc))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -182,15 +181,15 @@ public class BlockResultDTO {
         );
     }
 
-    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc) {
+    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc, boolean zeroSignatureIfRemasc) {
         Transaction transaction = block.getTransactionsList().get(transactionIndex);
 
         if(skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
             return null;
         }
-        
+
         if(fullTx) {
-            return new TransactionResultDTO(block, transactionIndex, transaction);
+            return new TransactionResultDTO(block, transactionIndex, transaction, zeroSignatureIfRemasc);
         }
 
         return transaction.getHash().toJsonString();
