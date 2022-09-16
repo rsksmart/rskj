@@ -26,7 +26,6 @@ import java.util.*;
 
 public interface KeyValueDataSource extends DataSource {
 
-
     @Nullable
     byte[] get(byte[] key);
 
@@ -56,7 +55,5 @@ public interface KeyValueDataSource extends DataSource {
      * This makes things go to disk. To enable caching.
      */
     void flush();
-
-
 
 }

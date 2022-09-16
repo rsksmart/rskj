@@ -66,6 +66,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         this.readOnly = readOnly;
         logger.debug("New LevelDbDataSource: {}", name);
     }
+
     public LevelDbDataSource(String name, String databaseDir) {
         this(name,databaseDir,false);
     }
@@ -184,9 +185,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     private void checkReadOnly() {
-        if (readOnly)
+        if (readOnly) {
             throw new IllegalArgumentException("database is readonly");
+        }
     }
+
     @Override
     public byte[] put(byte[] key, byte[] value) {
         checkReadOnly();

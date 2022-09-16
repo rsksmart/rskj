@@ -71,6 +71,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public RocksDbDataSource(String name, String databaseDir) {
         this(name,databaseDir,false);
     }
+
     public static KeyValueDataSource makeDataSource(Path datasourcePath) {
         KeyValueDataSource ds = new RocksDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
         ds.init();
@@ -199,8 +200,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     private void checkReadOnly() {
-        if (readOnly)
+        if (readOnly) {
             throw new IllegalArgumentException("database is readonly");
+        }
     }
 
     @Override
