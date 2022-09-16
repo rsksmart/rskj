@@ -93,6 +93,12 @@ public enum BridgeEvents {
                 new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.STRING)),
                 new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
         }
+    ),
+    PEGOUT_CONFIRMED("pegout_confirmed",
+            new CallTransaction.Param[]{
+                    new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
+                    new CallTransaction.Param(false, "pegoutCreationRskBlockNumber", SolidityType.getType(SolidityType.UINT256))
+            }
     );
 
     private String eventName;

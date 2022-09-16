@@ -18,10 +18,7 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Federation;
@@ -60,5 +57,7 @@ public interface BridgeEventLogger {
     void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
 
     void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes);
+
+    void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber);
 
 }
