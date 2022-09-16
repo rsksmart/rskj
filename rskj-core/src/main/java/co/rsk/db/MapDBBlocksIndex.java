@@ -43,7 +43,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     private final DB indexDB;
 
-    public MapDBBlocksIndex(DB indexDB,boolean readOnly) {
+    public MapDBBlocksIndex(DB indexDB, boolean readOnly) {
         this.readOnly = readOnly;
         this.indexDB = indexDB;
         Map<Long, List<IndexedBlockStore.BlockInfo>> aindex;
@@ -55,26 +55,28 @@ public class MapDBBlocksIndex implements BlocksIndex {
                 .counterEnable()
                 .makeOrGet();
 
-        if (readOnly)
+        if (readOnly) {
             index = TransientMap.transientMap(aindex);
-        else
+        } else {
             index = aindex;
+        }
 
         ametadata = indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
                 .makeOrGet();
 
-        if (readOnly)
+        if (readOnly) {
             metadata = TransientMap.transientMap(ametadata);
-        else
+        } else {
             metadata = ametadata;
+        }
 
         // Max block number initialization assumes an index without gap
-        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
+        metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
             long maxBlockNumber = (long) index.size() - 1;
-            metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
-        }
+            return ByteUtil.longToBytes(maxBlockNumber);
+        });
     }
 
     @Override

@@ -35,9 +35,8 @@ import java.util.stream.Stream;
 
 /* Important invariant that must always hold:
    A key cannot be in the committedCache and uncommittedCache cache at the same time.
-   This is because, for performance reasons it seams, get() queries the committedCache BEFORE the
+   This is because, for performance reasons it seems, get() queries the committedCache BEFORE the
    uncommittedCache.
-
  */
 public class DataSourceWithCache implements KeyValueDataSource {
 
@@ -318,9 +317,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Nonnull
     private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize,
                                                                     @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        Map<ByteArrayWrapper, byte[]> cache;
-
-        cache = new MaxSizeHashMap<>(cacheSize, true);
+        Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(cacheSize, true);
 
         if (cacheSnapshotHandler != null) {
             cacheSnapshotHandler.load(cache);

@@ -451,7 +451,7 @@ public class IndexedBlockStoreTest {
         KeyValueDataSource blocksDB = keyValueDataSourceFn.apply(config);
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks) {
@@ -565,7 +565,7 @@ public class IndexedBlockStoreTest {
         blocksDB = keyValueDataSourceFn.apply(config);
         blocksDB.init();
 
-        indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+        indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
         //  testing: getListHashesStartWith(long, long)
 
@@ -596,7 +596,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
             BlockDifficulty cummDiff = BlockDifficulty.ZERO;
             int preloadSize = blocks.size() / 2;
@@ -722,7 +722,7 @@ public class IndexedBlockStoreTest {
             blocksDB = keyValueDataSourceFn.apply(config);
             blocksDB.init();
 
-            indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+            indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
             //  testing: getListHashesStartWith(long, long)
 
@@ -755,7 +755,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
@@ -858,7 +858,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
@@ -911,7 +911,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB,false));
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB, false));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);

@@ -1125,10 +1125,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         DB indexDB;
-        if (getRskSystemProperties().readOnlyMode())
+        if (getRskSystemProperties().readOnlyMode()) {
             indexDB = DBMaker.fileDB(dbFile).readOnly().make();
-        else
-            indexDB= DBMaker.fileDB(dbFile).make();
+        } else {
+            indexDB = DBMaker.fileDB(dbFile).make();
+        }
 
         DbKind currentDbKind = getRskSystemProperties().databaseKind();
         KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind,
@@ -1243,8 +1244,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
                     ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
                     : null;
-            ds = new DataSourceWithCache(ds, bloomsCacheSize, cacheSnapshotHandler,
-                    getRskSystemProperties().readOnlyMode());
+            ds = new DataSourceWithCache(ds, bloomsCacheSize, cacheSnapshotHandler, getRskSystemProperties().readOnlyMode());
         }
 
         return ds;
@@ -1322,8 +1322,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getRskSystemProperties().readOnlyMode());
 
         if (receiptsCacheSize != 0) {
-            ds = new DataSourceWithCache(ds, receiptsCacheSize,null,
-                    rskSystemProperties.readOnlyMode());
+            ds = new DataSourceWithCache(ds, receiptsCacheSize, null, rskSystemProperties.readOnlyMode());
         }
 
         return new ReceiptStoreImplV2(ds);
@@ -1396,8 +1395,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getRskSystemProperties().readOnlyMode());
 
         if (stateRootsCacheSize > 0) {
-            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize,null,
-                    rskSystemProperties.readOnlyMode());
+            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize, null, rskSystemProperties.readOnlyMode());
         }
 
         return new StateRootsStoreImpl(stateRootsDB);
