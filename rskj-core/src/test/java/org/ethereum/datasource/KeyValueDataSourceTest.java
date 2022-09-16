@@ -1,7 +1,7 @@
 package org.ethereum.datasource;
 
 import co.rsk.bahashmaps.CreationFlag;
-import co.rsk.datasources.FlatDbDataSource;
+import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -33,7 +33,7 @@ public class KeyValueDataSourceTest {
 
     public static KeyValueDataSource newFlatDbDataSource(Path tmpDir) throws IOException {
         // Create a database that allows deteles and keys that are not value hashes.
-        return new FlatDbDataSource(1000,10_000,
+        return new FlatyDbDataSource(1000,10_000,
                 Files.createTempDirectory(tmpDir, "default").resolve("test").toString(),
                 EnumSet.of(
                         CreationFlag.storeKeys,
@@ -42,7 +42,7 @@ public class KeyValueDataSourceTest {
                         CreationFlag.variableLengthKeys,
                         CreationFlag.atomicBatches,
                         CreationFlag.autoUpgrade),
-                FlatDbDataSource.latestDBVersion,false);
+                FlatyDbDataSource.latestDBVersion,false);
     }
 
     public static KeyValueDataSource newLevelDbDataSource(Path tmpDir) throws IOException {
@@ -60,7 +60,7 @@ public class KeyValueDataSourceTest {
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
                 {newLevelDbDataSource(tmpDir) , LevelDbDataSource.class.getSimpleName(), true},
                 {newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), true},
-                {newFlatDbDataSource(tmpDir),FlatDbDataSource.class.getSimpleName(), true},
+                {newFlatDbDataSource(tmpDir), FlatyDbDataSource.class.getSimpleName(), true},
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
                 {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
 
@@ -71,7 +71,7 @@ public class KeyValueDataSourceTest {
                 //{new HashMapDB(), HashMapDB.class.getSimpleName(), false},
                 //{newLevelDbDataSource(tmpDir), LevelDbDataSource.class.getSimpleName(), false},
                 //{newRocksDbDataSource(tmpDir), RocksDbDataSource.class.getSimpleName(), false},
-                {newFlatDbDataSource(tmpDir),FlatDbDataSource.class.getSimpleName(), false},
+                {newFlatDbDataSource(tmpDir), FlatyDbDataSource.class.getSimpleName(), false},
                 {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
                 {new DataSourceWithCache(newRocksDbDataSource(tmpDir), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
         });

@@ -1057,5 +1057,20 @@ public class ByteArrayHeapBase {
     public void remapByOfs(long encodedOfs) {
 
     }
+
+   /// New
+    public long retrieveNextDataOfsByOfs(long encodedOfs) {
+        return 0;
+    }
+
+
+    public boolean isOfsAvail(long encodedOfs) {
+        return false;
+    }
+
+
+    public void addObjectAtOfs(long ecodedOfs, byte[] encoded, byte[] metadata) {
+
+    }
 }
 

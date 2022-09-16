@@ -1,6 +1,6 @@
-package co.rsk.datasources.flatdb;
+package co.rsk.datasources.flatydb;
 
-import co.rsk.bahashmaps.AbstractByteArrayHashMap;
+import co.rsk.baheaps.AbstractByteArrayHeap;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,12 +48,12 @@ public class LogManager {
         batchBegan = false;
     }
 
-    public void logSetPos(int i, long markedOffset) {
+    public void logSetPos(long i, int value) {
         if (!batchBegan)
             return; // We're not batching
         LogRecord logRecord = new LogRecord();
         logRecord.htPos = i;
-        logRecord.htValue = markedOffset;
+        logRecord.htValue = value;
         try {
             logWriter.addEntry(logRecord,false);
         } catch (IOException e) {
@@ -65,13 +65,13 @@ public class LogManager {
         File logFile = logFilePath.toFile();
         return logFile.exists();
     }
-    public void putAllEntries(AbstractByteArrayHashMap bamap, List<LogRecord> entries) {
+    public void putAllEntries(AbstractByteArrayHeap baHeap, List<LogRecord> entries) {
         for(LogRecord entry : entries) {
-            bamap.processLogEntry(entry.htPos,entry.htValue);
+            baHeap.processLogEntry(entry.htPos,entry.htValue);
         }
     }
 
-    public void processLog(AbstractByteArrayHashMap bamap) throws IOException {
+    public void processLog(AbstractByteArrayHeap baHeap) throws IOException {
         File logFile = logFilePath.toFile();
         LogReader logReader = new LogReader(logFile);
         try {
@@ -99,15 +99,15 @@ public class LogManager {
                 }
                 if (entry.recordType == LogWriter.LogRecordType.EndHeader.ordinal()) {
                     // commit again this changes
-                    putAllEntries(bamap, entries);
-                    bamap.save();
+                    putAllEntries(baHeap, entries);
+                    baHeap.save();
                     entries.clear();
                     inBatch = false;
                     continue;
                 }
                 if (entry.recordType != LogWriter.LogRecordType.Entry.ordinal()) {
                     // Corrupted file. Stop here, but do not process the last batch.
-                    bamap.save();
+                    baHeap.save();
                     entries.clear();
                     return;
                 }

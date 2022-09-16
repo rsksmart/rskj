@@ -21,19 +21,16 @@ package org.ethereum.datasource;
 
 import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.datasources.FailureTrack;
-import co.rsk.datasources.FlatDbDataSource;
+import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -66,7 +63,7 @@ public class FlatDbDataSourceTest {
         return databaseDir.newFolder().toPath().resolve("test").toString();
     }
 
-    public FlatDbDataSource createTmpFlatDb(String tmpDbPath) throws IOException {
+    public FlatyDbDataSource createTmpFlatDb(String tmpDbPath) throws IOException {
         // CreationFlag.All
         EnumSet<CreationFlag> someFlags =
                 EnumSet.of(
@@ -89,10 +86,10 @@ public class FlatDbDataSourceTest {
         }
     }
 
-        return new FlatDbDataSource(1000,10_000,
+        return new FlatyDbDataSource(1000,10_000,
                 tmpDbPath ,
                 someFlags ,
-                FlatDbDataSource.latestDBVersion,false);
+                FlatyDbDataSource.latestDBVersion,false);
     }
     @Rule
     //public TemporaryFolder databaseDir = new TemporaryFolder(new File("/tmp/myTmp"));
@@ -106,7 +103,7 @@ public class FlatDbDataSourceTest {
 
 
         String tmpPath = getTmpDbPath();
-        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
         dataSource.init();
 
         // first write a single key
@@ -124,7 +121,7 @@ public class FlatDbDataSourceTest {
         dataSource.powerFailure();
 
         // Now create another database for the same files:
-        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
         dataSource2.init();
 
         // The key1/value1 must still ve there
@@ -165,7 +162,7 @@ public class FlatDbDataSourceTest {
             // We test a batch update that is interrupted by a power failure.
             // the result should be that nothing gets written.
             String tmpPath = getTmpDbPath();
-            FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+            FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
             dataSource.init();
 
             // first write a single key
@@ -191,7 +188,7 @@ public class FlatDbDataSourceTest {
             dataSource.flushWithPowerFailure(failureTrack);
 
             // Now create another database for the same files:
-            FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+            FlatyDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
             dataSource2.init();
 
             // The key1/value1 must still ve there
@@ -222,7 +219,7 @@ public class FlatDbDataSourceTest {
             // We test a batch update that is interrupted by a power failure.
             // we make sure the description files are written
             String tmpPath = getTmpDbPath();
-            FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+            FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
             dataSource.init();
 
             final int batchSize = 3;
@@ -236,7 +233,7 @@ public class FlatDbDataSourceTest {
             dataSource.flushWithPowerFailure(failureTrack);
 
             // Now create another database for the same files:
-            FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+            FlatyDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
             dataSource2.init();
 
 
@@ -255,7 +252,7 @@ public class FlatDbDataSourceTest {
         // We test a batch update that is interrupted by a power failure.
         // the result should be that nothing gets written.
         String tmpPath = getTmpDbPath();
-        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
         dataSource.init();
 
         // first write a single key
@@ -266,7 +263,7 @@ public class FlatDbDataSourceTest {
 
 
         // Now create another database for the same files:
-        FlatDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource2 = createTmpFlatDb(tmpPath);
         dataSource2.init();
 
 
@@ -274,7 +271,7 @@ public class FlatDbDataSourceTest {
     @Test
     public void testBatchUpdating() throws IOException {
         String tmpPath = getTmpDbPath();
-        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
         dataSource.init();
 
         final int batchSize = 100;
@@ -297,7 +294,7 @@ public class FlatDbDataSourceTest {
     }
     private void testPut(boolean closeAndReopen) throws IOException {
         String tmpPath = getTmpDbPath();
-        FlatDbDataSource dataSource = createTmpFlatDb(tmpPath);
+        FlatyDbDataSource dataSource = createTmpFlatDb(tmpPath);
         dataSource.init();
 
         byte[] data = randomBytes(32);

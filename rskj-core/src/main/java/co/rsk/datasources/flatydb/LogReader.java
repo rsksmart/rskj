@@ -1,4 +1,4 @@
-package co.rsk.datasources.flatdb;
+package co.rsk.datasources.flatydb;
 
 import java.io.*;
 import java.nio.ByteBuffer;

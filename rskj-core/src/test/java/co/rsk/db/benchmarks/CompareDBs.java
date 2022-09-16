@@ -2,7 +2,7 @@ package co.rsk.db.benchmarks;
 
 
 import co.rsk.bahashmaps.CreationFlag;
-import co.rsk.datasources.FlatDbDataSource;
+import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.*;
 import org.ethereum.db.ByteArrayWrapper;
@@ -27,7 +27,7 @@ public class CompareDBs extends Benchmark {
 
     static Test test = Test.readTest;
     boolean keyIsValueHash =true;
-    static DbKind database = DbKind.FLAT_DB;
+    static DbKind database = DbKind.FLATY_DB;
 
     static enum DatabaseConfig {
         withLog,
@@ -174,7 +174,7 @@ public class CompareDBs extends Benchmark {
         KeyValueDataSourceUtils.FlatDBOptions flatDbOptions = new KeyValueDataSourceUtils.FlatDBOptions();
         flatDbOptions.maxKeys =maxKeys;
         flatDbOptions.maxCapacity =beHeapCapacity;
-        flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
+        flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
 
         // These flas are the ideal to create a Trie DB, which is what
         // we aim to. So we do not supportNullValues, nor do we allowRemovals.
@@ -433,8 +433,8 @@ public class CompareDBs extends Benchmark {
     public void flushTime() {
         setup(false);
         long fstart = System.currentTimeMillis();
-        if (db instanceof FlatDbDataSource)
-            ((FlatDbDataSource)db).forceSaveBaMap();
+        //if (db instanceof FlatyDbDataSource)
+        //    ((FlatyDbDataSource)db).forceSaveBaMap();
         //db.flush();
         long fstop = System.currentTimeMillis();
         log("Time to flush: "+(fstop-fstart)+" ms");

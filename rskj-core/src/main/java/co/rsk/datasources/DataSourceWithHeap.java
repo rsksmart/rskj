@@ -3,10 +3,12 @@ package co.rsk.datasources;
 import co.rsk.bahashmaps.*;
 import co.rsk.baheaps.AbstractByteArrayHeap;
 import co.rsk.baheaps.ByteArrayHeap;
-import co.rsk.datasources.flatdb.LogManager;
+import co.rsk.datasources.flatydb.LogManager;
+import co.rsk.dbutils.ObjectIO;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.PrefixedKeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,10 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class DataSourceWithHeap extends DataSourceWithAuxKV {
-    protected AbstractByteArrayHashMap bamap;
+public class DataSourceWithHeap extends DataSourceWrapper {
     protected AbstractByteArrayHeap sharedBaHeap;
-    //protected EnumSet<AbstractByteArrayHashMap.CreationFlag> creationFlags;
     protected Format format;
     protected Path mapPath;
     protected Path dbPath;
@@ -28,9 +28,20 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     long beHeapCapacity;
     boolean useLogManager;
     boolean autoUpgrade;
+    boolean supportNullValues;
+    boolean supportBigValues;
+    boolean storeKeys;
+    boolean variableLengthKeys;
+    boolean allowRemovals;
     boolean flushAfterPut;
+    int keysize;
+    long size;
     LogManager logManager;
+    boolean inBatch;
+    boolean logEvents = true;
+    AbstractByteArrayHeap baHeap;
 
+    co.rsk.bahashmaps.BAKeyValueRelation BAKeyValueRelation;
 
     public enum LockType {
         Exclusive,
@@ -40,6 +51,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
 
 
+    // constructor
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
                               String databaseName,LockType lockType,
                               Format format,boolean additionalKV,
@@ -47,7 +59,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
                               boolean autoUpgrade,
                               KeyValueDataSource descDataSource,
                               boolean readOnly) throws IOException {
-        super(databaseName,additionalKV,readOnly);
+        super(databaseName,readOnly);
         //this.creationFlags = creationFlags;
         this.descDataSource = descDataSource;
         this.format = format;
@@ -60,6 +72,7 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         this.autoUpgrade = format.creationFlags.contains(CreationFlag.autoUpgrade);
         this.flushAfterPut = format.creationFlags.contains(CreationFlag.flushAfterPut);
 
+        this.BAKeyValueRelation = BAKeyValueRelation;
 
         if (useLogManager) {
             logManager = new LogManager(Paths.get(databaseName));
@@ -80,24 +93,13 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     public void init() {
 
-        Map<ByteArrayWrapper, byte[]> iCache = null;
         try {
-            iCache = makeCommittedCache(maxNodeCount,beHeapCapacity);
+            makeHeap(maxNodeCount,beHeapCapacity);
         } catch (IOException e) {
-            // TO DO:  What ?
             e.printStackTrace();
         }
-        /* Syncrhonize at a higher level
-        if (lockType==LockType.RW)
-            this.committedCache =RWLockedCollections.rwSynchronizedMap(iCache);
-        else
-        if (lockType==LockType.Exclusive)
-            this.committedCache = Collections.synchronizedMap(iCache);
-        else
 
-         */
-            this.committedCache = iCache;
-      super.init();
+        super.init();
     }
 
     public String getModifiers() {
@@ -110,51 +112,22 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
 
     public void flushWithPowerFailure(FailureTrack failureTrack) {
         super.flush();
-        try {
-            if ((!readOnly) && (bamap.modified())) {
-                sharedBaHeap.save();
-                // We do not save the index!
-                if (FailureTrack.shouldFailNow(failureTrack))
-                    return;
-
-                bamap.save(failureTrack);
-            }
-            // and we do not delete the log
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-    public void forceSaveBaMap() {
-        try {
-            bamap.loaded = false;
-            bamap.save();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void flush() {
         super.flush();
-        try {
-            if ((!readOnly) && (bamap.modified())) {
-                sharedBaHeap.save();
-                bamap.save();
-            }
-            deleteLog();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        deleteLog();
+
     }
     public void powerFailure() {
         dbLock.writeLock().lock();
         try {
             // do not flush
             sharedBaHeap.powerFailure(); // unmap files
-            committedCache.clear();
-            if (dsKV!=null)
-                dsKV.close();
+            //committedCache.clear();
+
         } finally {
             dbLock.writeLock().unlock();
         }
@@ -164,9 +137,8 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         dbLock.writeLock().lock();
         try {
             flush();
-            committedCache.clear();
-            if (dsKV!=null)
-                dsKV.close();
+            //committedCache.clear();
+
         } finally {
             dbLock.writeLock().unlock();
         }
@@ -200,18 +172,39 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
     }
 
     public void deleteLog() {
-       bamap.deleteLog();
+        if (logManager==null) {
+            return;
+        }
+        logManager.deleteLog();
     }
 
     public void beginLog() throws IOException {
-        bamap.beginLog();
-    }
-    public void endLog() throws IOException {
-        bamap.endLog();
+        if (inBatch)
+            throw new RuntimeException("Cannot create a batch if already in a batch");
+        inBatch = true;
+        // from now on this object should be locked and only one thread should
+        // access it. The lock must be provided by the object calling beginLog()
+        if (logManager==null) {
+            return;
+        }
+        // Only one thread may begin and work on a log at the same time
+        // beginLog() operations cannot be nested
+        logManager.beginLog();
     }
 
-        protected Map<ByteArrayWrapper, byte[]> makeCommittedCache(int maxNodeCount, long beHeapCapacity) throws IOException {
-        if (maxNodeCount==0) return null;
+    public void endLog() throws IOException {
+        if (!inBatch)
+            throw new RuntimeException("Not in a batch");
+        inBatch = false;
+
+        if (logManager==null) {
+            return;
+        }
+        logManager.endLog();
+    }
+
+        protected void makeHeap(int maxNodeCount, long beHeapCapacity) throws IOException {
+        if (maxNodeCount==0) return;
 
         MyBAKeyValueRelation myKR = null;
         if (!format.creationFlags.contains(CreationFlag.storeKeys))
@@ -232,37 +225,164 @@ public class DataSourceWithHeap extends DataSourceWithAuxKV {
         // 2^39 bytes is equivalent to 512 Gigabytes.
         //
 
-        this.bamap =  new ByteArrayVarHashMap(initialSize,loadFActor,myKR,
-                (long) beHeapCapacity,
-                sharedBaHeap,0,format,logManager);
+        //this.bamap =  new ByteArrayVarHashMap(initialSize,loadFActor,myKR,
+        //        (long) beHeapCapacity,
+        //        sharedBaHeap,0,format,logManager);
 
-        if (descDataSource!=null) {
-            this.bamap.setDataSource(
-                    new PrefixedKeyValueDataSource(mapPrefix,descDataSource));
-            this.bamap.setAutoUpgrade(autoUpgrade);
-        }
-        this.bamap.setPath(mapPath);
-        if (bamap.dataFileExists()) {
-            bamap.load();
 
-        } else {
-            bamap.save(); // save the map as soon as possible
-        }
             // Check if a log exists
         if (logManager!=null) {
             if (logManager.logExists()) {
-                logManager.processLog(bamap);
+                logManager.processLog(sharedBaHeap);
             }
         }
-        return bamap;
+
     }
 
-    public List<String> getHashtableStats() {
-        List<String> list = new ArrayList<>();
-        list.add("slotChecks: " +bamap.tableSlotChecks);
-        list.add("lookups: " +bamap.tableLookups);
-        list.add("slotchecks per lookup: " +1.0*bamap.tableSlotChecks/bamap.tableLookups);
-        return list;
+    public int hash(Object key) {
+        // It's important that this hash DOES not collude with the HashMap hash, because
+        // we're using hashmaps inside each bucket. If both hashes are the same,
+        // then all objects in the same bucket will be also in the same bucked of the
+        // hashmap stored in the bucket.
+        //
+        if (key == null)
+            return 0;
+        if (BAKeyValueRelation == null)
+            return key.hashCode();
+        else
+            return BAKeyValueRelation.getHashcode(((ByteArrayWrapper) key).getData());
     }
+
+    protected byte[] internalGet(ByteArrayWrapper wrappedKey) {
+        return this.getNode(hash(wrappedKey), wrappedKey);
+    }
+
+    int nullMetadataBitMask = (1<<0);
+    int keyStoredMetadataBitMask= (1<<1);
+
+    public boolean isValueMarkedOffset(byte metadata) {
+        //if (!supportNullValues)
+        //    return true;
+        return ((metadata & nullMetadataBitMask)==0);
+    }
+
+    public boolean isKeyStoredMarkedOffset(long markedOffset) {
+        if (storeKeys)
+            return true;
+        if (!supportBigValues)
+            return false;
+
+        return ((markedOffset & keyStoredMetadataBitMask)!=0);
+    }
+    public byte[] getDataFromKPD(byte[] keyPlusData) {
+        int keySpaceLength;
+        if (variableLengthKeys) {
+            keySpaceLength = ObjectIO.getInt(keyPlusData,0)+4;
+        } else {
+            keySpaceLength = keysize;
+        }
+        byte[] c = new byte[keyPlusData.length - keySpaceLength];
+        System.arraycopy(keyPlusData, keySpaceLength, c, 0, c.length);
+        return c;
+
+    }
+    public byte[] getDataFromKPD(byte[] keyPlusData, byte metadata) {
+
+        if (!isValueMarkedOffset(metadata)) { //*
+            return null;
+        }
+
+        if (!isKeyStoredMarkedOffset(metadata))
+            return keyPlusData;
+
+        return getDataFromKPD(keyPlusData);
+
+    }
+
+    public byte[] getKeyFromKPD(byte[] kpd,byte metadata) {
+        if (!isValueMarkedOffset(metadata)) { //*
+            return kpd;
+        }
+
+        if (isKeyStoredMarkedOffset(metadata))
+            return getKeyFromKPD(kpd,metadata);
+
+        return BAKeyValueRelation.computeKey(kpd);
+    }
+
+    public boolean fastCompareKPDWithKey(byte[] kpd,ByteArrayWrapper key,byte metadata) {
+        byte[] keyBytes2 = key.getData();
+        byte[] keyBytes1 = getKeyFromKPD(kpd, metadata);
+
+        return ByteUtil.fastEquals(keyBytes1,keyBytes2);
+    }
+
+    final byte[] getNode(int hash, Object key) {
+
+        long pureOffset = hash % beHeapCapacity;
+        while(true) {
+            byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
+            byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+            if (fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, metadata)) {
+                //if (result != null) {
+                //    result.data = getDataFromKPD(kpd, markedOffset);
+                //}
+                return getDataFromKPD(kpd, metadata);
+            }
+            long nextOffset = baHeap.retrieveNextDataOfsByOfs(pureOffset);
+            if ((nextOffset==-1) || (baHeap.isOfsAvail(nextOffset)))  {
+                return null;
+            }
+            pureOffset = nextOffset;
+        }
+    }
+
+    protected void internalPut(ByteArrayWrapper key, byte[] value) {
+        int hash = hash(key);
+        long pureOffset = hash % beHeapCapacity;
+        while(true) {
+            byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
+            byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+            if (fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, metadata)) {
+                // already exists
+                return;
+            }
+            long nextOffset = baHeap.retrieveNextDataOfsByOfs(pureOffset);
+            if (nextOffset==-1)  {
+                throw new RuntimeException("Full heap");
+            }
+            if (baHeap.isOfsAvail(nextOffset)) {
+                // free place: todo fill metadata
+                baHeap.addObjectAtOfs(nextOffset,key.getData(), new byte[]{0});
+                size++;
+            }
+            pureOffset = nextOffset;
+        }
+    }
+
+    protected void internalRemove(ByteArrayWrapper wrappedKey) {
+        throw new RuntimeException("not supported");
+    }
+
+    protected Set<ByteArrayWrapper> internalKeySet() {
+        Set<ByteArrayWrapper> result = new HashSet<>();
+        long pureOffset = 0;
+        while(true) {
+            byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
+            byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+            byte[] key = getKeyFromKPD(kpd, metadata);
+            result.add(new ByteArrayWrapper(key));
+            long nextOffset = baHeap.retrieveNextDataOfsByOfs(pureOffset);
+            if ((nextOffset==-1) || (baHeap.isOfsAvail(nextOffset)))  {
+                return result;
+            }
+            pureOffset = nextOffset;
+        }
+    }
+
+    protected long internalSize() {
+        return size;
+    }
+
 
 }

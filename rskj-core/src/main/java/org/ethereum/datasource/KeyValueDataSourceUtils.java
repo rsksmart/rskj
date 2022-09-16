@@ -1,7 +1,7 @@
 package org.ethereum.datasource;
 
 import co.rsk.bahashmaps.CreationFlag;
-import co.rsk.datasources.FlatDbDataSource;
+import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public class KeyValueDataSourceUtils {
             case ROCKS_DB:
                 ds = new RocksDbDataSource(name, databaseDir,readOnly);
                 break;
-            case FLAT_DB:
+            case FLATY_DB:
                 FlatDBOptions flatDbOptions;
                 if (options!=null) {
                     flatDbOptions = (FlatDBOptions) options;
@@ -54,11 +54,11 @@ public class KeyValueDataSourceUtils {
                     flatDbOptions = new FlatDBOptions();
                     flatDbOptions.maxKeys =16_000_000;
                     flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
-                    flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
+                    flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
                     flatDbOptions.creationFlags =CreationFlag.Default;
                 }
                 try {
-                    ds = new FlatDbDataSource(flatDbOptions.maxKeys,flatDbOptions.maxCapacity,
+                    ds = new FlatyDbDataSource(flatDbOptions.maxKeys,flatDbOptions.maxCapacity,
                             datasourcePath.toString(),
                             flatDbOptions.creationFlags,
                             flatDbOptions.dbVersion,readOnly);

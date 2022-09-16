@@ -1,14 +1,11 @@
-package co.rsk.datasources.flatdb;
-import co.rsk.bahashmaps.AbstractByteArrayHashMap;
+package co.rsk.datasources.flatydb;
 import org.bouncycastle.util.Arrays;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.EnumSet;
 
 import static java.util.Objects.requireNonNull;
 

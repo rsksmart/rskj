@@ -1,30 +1,22 @@
 package co.rsk.datasources;
 
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class DataSourceWithAuxKV implements KeyValueDataSource {
+public class DataSourceWrapper implements KeyValueDataSource {
 
     protected static final Logger logger = LoggerFactory.getLogger("datasourcewithauxkv");
 
     protected final ReadWriteLock dbLock = new ReentrantReadWriteLock();
 
-    Path kvPath;
-    KeyValueDataSource dsKV;
-    protected Map<ByteArrayWrapper, byte[]> committedCache ;
 
     public boolean readOnly = false;
     boolean dump = false;
@@ -35,27 +27,12 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     long gets;
     String databaseName;
 
-    public DataSourceWithAuxKV(String databaseName,boolean additionalKV,boolean readOnly) throws IOException {
+    public DataSourceWrapper(String databaseName, boolean readOnly) throws IOException {
         this.databaseName = databaseName;
         this.readOnly = readOnly;
-        if (additionalKV) {
-            kvPath = Paths.get(databaseName, "kv");
 
-            // This normal LevelDV database is used to store non content-addressable KV pairs
-            // using the kvPut() kvGet() methods
-            dsKV = LevelDbDataSource.makeDataSource(kvPath,readOnly);
-        }
     }
 
-    public byte[] kvGet(byte[] key) {
-        Objects.requireNonNull(key);
-        return dsKV.get(key);
-    }
-
-    public byte[] kvPut(byte[] key, byte[] value) {
-        checkReadOnly();
-        return dsKV.put(key, value);
-    }
 
 
     public void readLock() {
@@ -64,6 +41,10 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     public void readUnlock() {
         dbLock.readLock().unlock();
+    }
+
+    protected byte[] internalGet(ByteArrayWrapper wrappedKey) {
+     return null;
     }
 
     @Override
@@ -76,7 +57,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
         gets++;
         readLock(); try {
-          value = committedCache.get(wrappedKey);
+          value = internalGet(wrappedKey);
             if (value != null) {
                 hits++;
             } else
@@ -129,7 +110,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
             try {
                 beginLog();
                 try {
-                    this.putKeyValue(wrappedKey, value);
+                    this.internalPut(wrappedKey, value);
                 } finally {
                     endLog();
                     checkFlushAfterPut();
@@ -143,8 +124,8 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         return value;
     }
 
-    private void putKeyValue(ByteArrayWrapper key, byte[] value) {
-          committedCache.put(key, value);
+    protected void internalPut(ByteArrayWrapper key, byte[] value) {
+
     }
 
     public void checkFlushAfterPut() {
@@ -155,13 +136,21 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         delete(ByteUtil.wrap(key));
     }
 
-    private void delete(ByteArrayWrapper wrappedKey) {
+    protected void internalRemove(ByteArrayWrapper wrappedKey) {
+
+    }
+
+    protected void delete(ByteArrayWrapper wrappedKey) {
 
         dbLock.writeLock().lock(); try {
-            committedCache.remove(wrappedKey);
+            internalRemove(wrappedKey);
         } finally {
             dbLock.writeLock().unlock();
         }
+    }
+
+    protected Set<ByteArrayWrapper> internalKeySet() {
+        return null;
     }
 
     @Override
@@ -179,7 +168,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         // note that toSet doesn't work with byte[], so we have to do this extra step
         //return committedKeys.collect(Collectors.toSet());
         readLock(); try {
-          return committedCache.keySet();
+          return internalKeySet();
         } finally {
             readUnlock();
         }
@@ -261,11 +250,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
     }
 
     public void flushWithFailure(FailureTrack failureTrack) {
-        if (dsKV!=null) {
-            dsKV.flush();
-            if (FailureTrack.shouldFailNow(failureTrack))
-                return;
-        }
+
     }
 
     @Override
@@ -276,7 +261,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
 
     @Override
     public String getName() {
-        return "DataSourceWithAuxKV-"+databaseName;
+        return "DataSourceWrapper-"+databaseName;
     }
 
     public void init() {
@@ -292,17 +277,19 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         flush();
     }
 
+    protected long internalSize() {
+        return 0;
+    }
 
     public long countCommittedCachedElements() {
-        if (committedCache != null) {
-            readLock();
-            try {
-                return committedCache.size();
-            } finally {
-                readUnlock();
-            }
-        } else
-            return 0;
+
+        readLock();
+        try {
+            return internalSize();
+        } finally {
+            readUnlock();
+        }
+
     }
 
     public void resetHitCounters() {
@@ -328,7 +315,7 @@ public class DataSourceWithAuxKV implements KeyValueDataSource {
         list.add("Hits: " + hits);
         list.add("Misses: " + misses);
         readLock(); try {
-          list.add("committedCache.size(): " + committedCache.size());
+          list.add("size(): " + internalSize());
         } finally {
             readUnlock();
         }

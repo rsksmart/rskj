@@ -25,7 +25,7 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
-import co.rsk.datasources.FlatDbDataSource;
+import co.rsk.datasources.FlatyDbDataSource;
 import co.rsk.db.*;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
@@ -1334,7 +1334,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         KeyValueDataSourceUtils.FlatDBOptions flatDbOptions = new KeyValueDataSourceUtils.FlatDBOptions();
         flatDbOptions.maxKeys =16_000_000;
         flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
-        flatDbOptions.dbVersion = FlatDbDataSource.latestDBVersion;
+        flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
 
         // These flas are the ideal to create a Trie DB, which is what
         // we aim to. So we do not supportNullValues, nor do we allowRemovals.
@@ -1356,7 +1356,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
 
         Object specialOptions=null;
-        if (rskSystemProperties.trieDatabaseKind()==DbKind.FLAT_DB) {
+        if (rskSystemProperties.trieDatabaseKind()==DbKind.FLATY_DB) {
             specialOptions = getFlatDbOptionsForTrieStore();
         }
             KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSourceExt(trieStorePath,

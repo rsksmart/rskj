@@ -1,9 +1,8 @@
 package co.rsk.datasources;
 
-import co.rsk.bahashmaps.AbstractByteArrayHashMap;
 import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.bahashmaps.Format;
-import co.rsk.datasources.flatdb.DbLock;
+import co.rsk.datasources.flatydb.DbLock;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
@@ -13,7 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
 
-public class FlatDbDataSource extends DataSourceWithHeap {
+public class FlatyDbDataSource extends DataSourceWithHeap {
 
     public static final int latestDBVersion = 1;
     EnumSet<CreationFlag> flags;
@@ -41,9 +40,9 @@ public class FlatDbDataSource extends DataSourceWithHeap {
         return new LevelDbDataSource(name,path,readOnly);
     }
 
-    public FlatDbDataSource(int maxNodeCount, long beHeapCapacity, String databaseName,
-                            EnumSet<CreationFlag> creationFlags,
-                            int dbVersion, boolean readOnly) throws IOException {
+    public FlatyDbDataSource(int maxNodeCount, long beHeapCapacity, String databaseName,
+                             EnumSet<CreationFlag> creationFlags,
+                             int dbVersion, boolean readOnly) throws IOException {
         // single-thread test:
         //  With rwlocks or exclusive locks: 85k/sec.
         //  Without locks: 102K/sec

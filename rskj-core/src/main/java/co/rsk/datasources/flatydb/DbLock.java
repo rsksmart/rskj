@@ -1,8 +1,7 @@
-package co.rsk.datasources.flatdb;
+package co.rsk.datasources.flatydb;
 
 
 import com.google.common.base.Throwables;
-import com.google.common.io.Closeables;
 
 import java.io.File;
 import java.io.IOException;

@@ -7,9 +7,14 @@ public interface AbstractByteArrayHeap {
 
     public List<String> getStats();;
 
+
     public long addObjectReturnOfs(byte[] encoded, byte[] metadata);
 
     public byte[] retrieveDataByOfs(long encodedOfs);
+
+    public long retrieveNextDataOfsByOfs(long encodedOfs);
+    public boolean isOfsAvail(long encodedOfs);
+    public void addObjectAtOfs(long ecodedOfs, byte[] encoded, byte[] metadata);
 
     public byte[] retrieveMetadataByOfs(long encodedOfs);
 
@@ -30,5 +35,6 @@ public interface AbstractByteArrayHeap {
     public void setRootOfs(long rootOfs);
 
     public void powerFailure();
+    public void processLogEntry(long i,long value);
 
 }

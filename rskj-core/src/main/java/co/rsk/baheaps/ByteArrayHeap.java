@@ -51,6 +51,8 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
     }
 
 
+
+
     public long load() throws IOException {
         if ((autoUpgrade) && (descFileExists())) {
             if (dataSourceExists()) {
@@ -75,6 +77,11 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
     @Override
     public void powerFailure() {
         super.closeFiles();
+    }
+
+    @Override
+    public void processLogEntry(long i, long value) {
+
     }
 
 }
