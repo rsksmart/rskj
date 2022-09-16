@@ -396,6 +396,18 @@ class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
     }
 
+    @Test
+    public void logPegoutConfirmed() {
+        long pegoutCreationRskBlockNumber = 50;
+        eventLogger.logPegoutConfirmed(btcTx.getHash(), pegoutCreationRskBlockNumber);
+
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+
+        assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_CONFIRMED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{pegoutCreationRskBlockNumber});
+    }
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/

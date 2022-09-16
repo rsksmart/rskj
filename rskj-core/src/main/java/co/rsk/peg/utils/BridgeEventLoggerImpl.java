@@ -18,10 +18,7 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -212,6 +209,15 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] serializedRskTxHashes = serializeRskTxHashes(rskTxHashes);
         byte[] encodedData = event.encodeEventData(serializedRskTxHashes);
 
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    @Override
+    public void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+        CallTransaction.Function event = BridgeEvents.PEGOUT_CONFIRMED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTxHash.getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(pegoutCreationRskBlockNumber);
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
