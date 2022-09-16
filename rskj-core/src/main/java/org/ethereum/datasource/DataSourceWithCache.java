@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DataSourceWithCache implements KeyValueDataSource<Iterator<ByteArrayWrapper>> {
+public class DataSourceWithCache implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
@@ -201,8 +201,8 @@ public class DataSourceWithCache implements KeyValueDataSource<Iterator<ByteArra
     }
 
     @Override
-    public Iterator<ByteArrayWrapper> iterator() {
-        return keys().iterator();
+    public DataSourceKeyIterator keyIterator() {
+        return new DefaultKeyIterator(keys());
     }
 
     @Override

@@ -19,13 +19,10 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.cli.CliToolRskContextAware;
+import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
-import org.iq80.leveldb.DBIterator;
-import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,38 +184,22 @@ public class DbMigrate extends CliToolRskContextAware {
 
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
-        Object iterator = sourceKeyValueDataSource.iterator();
+        DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator();
 
-        if (iterator instanceof RocksIterator) {
-            RocksIterator rocksIterator = (RocksIterator) iterator;
+        while (iterator.hasNext()) {
+            byte[] data = iterator.next().getData();
 
-            for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
-                byte[] data = rocksIterator.key();
+            targetKeyValueDataSource.put(
+                    data,
+                    sourceKeyValueDataSource.get(data)
+            );
+        }
 
-                targetKeyValueDataSource.put(
-                        data,
-                        sourceKeyValueDataSource.get(data)
-                );
-            }
-
-            rocksIterator.close();
-        } else {
-            DBIterator dbIterator = (DBIterator) iterator;
-
-            for (dbIterator.seekToFirst(); dbIterator.hasNext(); dbIterator.next()) {
-                byte[] data = dbIterator.peekNext().getKey();
-                targetKeyValueDataSource.put(
-                        data,
-                        sourceKeyValueDataSource.get(data)
-                );
-            }
-
-            try {
-                dbIterator.close();
-            } catch (IOException e) {
-                logger.error("An error happened closing DB Iterator", e);
-                throw new RuntimeException(e);
-            }
+        try {
+            iterator.close();
+        } catch (Exception e) {
+            logger.error("An error happened closing DB Key Iterator", e);
+            throw new RuntimeException(e);
         }
 
         sourceKeyValueDataSource.close();

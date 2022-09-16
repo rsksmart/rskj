@@ -26,7 +26,6 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.iq80.leveldb.*;
-import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
-public class LevelDbDataSource implements KeyValueDataSource<DBIterator> {
+public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -223,8 +222,8 @@ public class LevelDbDataSource implements KeyValueDataSource<DBIterator> {
     }
 
     @Override
-    public DBIterator iterator() {
-        return db.iterator();
+    public DataSourceKeyIterator keyIterator() {
+        return new LevelDbKeyIterator(this.db);
     }
 
     @Override

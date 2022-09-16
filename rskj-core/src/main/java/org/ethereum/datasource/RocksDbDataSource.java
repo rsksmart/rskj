@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.getProperty;
 
-public class RocksDbDataSource implements KeyValueDataSource<RocksIterator> {
+public class RocksDbDataSource implements KeyValueDataSource {
 
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
     private static final int MAX_RETRIES = 2;
@@ -247,8 +247,8 @@ public class RocksDbDataSource implements KeyValueDataSource<RocksIterator> {
     }
 
     @Override
-    public RocksIterator iterator() {
-        return db.newIterator();
+    public DataSourceKeyIterator keyIterator() {
+        return new RocksDbKeyIterator(this.db);
     }
 
     @Override

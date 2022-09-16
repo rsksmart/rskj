@@ -53,14 +53,35 @@ public class KeyValueDataSourceTest {
 
     @Test
     public void put() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        byte[] randomValue = TestUtils.randomBytes(20);
+        byte[] randomKey = "testing-key".getBytes();
+        byte[] randomValue = "testing-value".getBytes();
+        ByteArrayWrapper randomKeyByteWrapper = ByteUtil.wrap(randomKey);
 
         keyValueDataSource.put(randomKey, randomValue);
         if (withFlush) {
             keyValueDataSource.flush();
         }
         assertThat(keyValueDataSource.get(randomKey), is(randomValue));
+
+        try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
+
+            iterator.seekToFirst();
+
+            assertTrue(iterator.hasNext());
+
+            ByteArrayWrapper expectedValue = null;
+
+            while (iterator.hasNext()) {
+                expectedValue = iterator.next();
+                if (expectedValue.equals(randomKeyByteWrapper)) {
+                    break;
+                }
+            }
+
+            assertEquals(expectedValue, randomKeyByteWrapper);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test(expected = NullPointerException.class)

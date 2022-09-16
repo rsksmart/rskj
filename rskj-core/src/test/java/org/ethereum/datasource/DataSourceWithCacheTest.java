@@ -40,6 +40,16 @@ public class DataSourceWithCacheTest {
         dataSourceWithCache.get(randomKey);
         dataSourceWithCache.get(randomKey);
 
+        try (DataSourceKeyIterator iterator = dataSourceWithCache.keyIterator()){
+
+            iterator.seekToFirst();
+
+            assertTrue(iterator.hasNext());
+            assertEquals(iterator.next(), ByteUtil.wrap(randomKey));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         verify(baseDataSource, times(1)).get(any(byte[].class));
 
         dataSourceWithCache.flush();

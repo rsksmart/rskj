@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ethereum.util.ByteUtil.wrap;
 
-public class HashMapDB implements KeyValueDataSource<Iterator<ByteArrayWrapper> > {
+public class HashMapDB implements KeyValueDataSource {
 
     private final Map<ByteArrayWrapper, byte[]> storage = new ConcurrentHashMap<>();
     private boolean clearOnClose = true;
@@ -73,8 +73,8 @@ public class HashMapDB implements KeyValueDataSource<Iterator<ByteArrayWrapper> 
     }
 
     @Override
-    public synchronized Iterator<ByteArrayWrapper> iterator() {
-        return storage.keySet().iterator();
+    public synchronized DataSourceKeyIterator keyIterator() {
+        return new DefaultKeyIterator(storage.keySet());
     }
 
     @Override

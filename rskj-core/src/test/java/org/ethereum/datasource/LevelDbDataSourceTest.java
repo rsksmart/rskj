@@ -21,20 +21,14 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.iq80.leveldb.DBIterator;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
 
 public class LevelDbDataSourceTest {
@@ -53,11 +47,17 @@ public class LevelDbDataSourceTest {
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-        DBIterator iterator = dataSource.iterator();
-        iterator.seekToFirst();
-        assertTrue(iterator.hasNext());
 
-        iterator.close();
+        try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
+
+            iterator.seekToFirst();
+
+            assertTrue(iterator.hasNext());
+            assertNotNull(iterator.next());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         dataSource.close();
     }
 
