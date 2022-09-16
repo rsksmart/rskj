@@ -184,19 +184,17 @@ public class DbMigrate extends CliToolRskContextAware {
 
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
-        DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator();
+        try (DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator()) {
+            iterator.seekToFirst();
 
-        while (iterator.hasNext()) {
-            byte[] data = iterator.next().getData();
+            while (iterator.hasNext()) {
+                byte[] data = iterator.next().getData();
 
-            targetKeyValueDataSource.put(
-                    data,
-                    sourceKeyValueDataSource.get(data)
-            );
-        }
-
-        try {
-            iterator.close();
+                targetKeyValueDataSource.put(
+                        data,
+                        sourceKeyValueDataSource.get(data)
+                );
+            }
         } catch (Exception e) {
             logger.error("An error happened closing DB Key Iterator", e);
             throw new RuntimeException(e);

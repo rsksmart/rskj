@@ -202,7 +202,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public DataSourceKeyIterator keyIterator() {
-        return new DefaultKeyIterator(keys());
+        if(!uncommittedCache.isEmpty()) {
+            throw new IllegalStateException("There are uncommitted keys");
+        }
+
+        return new DefaultKeyIterator(base.keys());
     }
 
     @Override

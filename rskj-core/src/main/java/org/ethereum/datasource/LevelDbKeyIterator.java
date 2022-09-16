@@ -29,7 +29,15 @@ public class LevelDbKeyIterator implements DataSourceKeyIterator {
     private DBIterator iterator;
 
     public LevelDbKeyIterator(DB db) {
+        this(db, false);
+    }
+
+    public LevelDbKeyIterator(DB db, boolean avoidSeekFirst) {
         this.iterator = db.iterator();
+
+        if (!avoidSeekFirst) {
+            this.iterator.seekToFirst();
+        }
     }
 
     @Override
@@ -44,6 +52,9 @@ public class LevelDbKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public ByteArrayWrapper next() throws NoSuchElementException {
+        if (!this.hasNext()) {
+            throw new NoSuchElementException();
+        }
         byte[] key = this.iterator.next().getKey();
         return ByteUtil.wrap(key);
     }

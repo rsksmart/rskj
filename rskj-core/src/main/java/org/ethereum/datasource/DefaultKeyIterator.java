@@ -42,6 +42,9 @@ public class DefaultKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public ByteArrayWrapper next() throws NoSuchElementException {
+        if (!this.hasNext()) {
+            throw new NoSuchElementException();
+        }
         return this.iterator.next();
     }
 
