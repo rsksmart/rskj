@@ -19,6 +19,7 @@
 package co.rsk.config;
 
 import co.rsk.remasc.RemascException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -43,12 +44,21 @@ public class RemascConfigFactory {
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
-        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)){
+        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)) {
             JsonNode node = mapper.readTree(is);
+
+            if (node.isEmpty()) {
+                throw JsonMappingException.from(node.traverse(), "Json node is empty");
+            }
+
             remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
+
+            if (remascConfig == null) {
+                throw new NullPointerException();
+            }
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
-            throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);
+            throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
         }
 
         return remascConfig;

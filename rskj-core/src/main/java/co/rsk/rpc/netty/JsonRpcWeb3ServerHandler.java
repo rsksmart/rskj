@@ -86,6 +86,12 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         errorProperties.put("code", jsonNodeFactory.numberNode(errorCode));
         errorProperties.put("message", jsonNodeFactory.textNode(errorMessage));
         JsonNode error = jsonNodeFactory.objectNode().set("error", jsonNodeFactory.objectNode().setAll(errorProperties));
-        return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(mapper.treeToValue(error, Object.class)));
+        Object object = mapper.treeToValue(error, Object.class);
+
+        if (object == null) {
+            throw new NullPointerException();
+        }
+
+        return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(object));
     }
 }

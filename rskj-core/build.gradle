@@ -67,11 +67,11 @@ ext {
             rocksdbJniVer          : '6.27.3',
             slf4jVer               : '1.7.36',
             logbackVer             : '1.2.10',
-            jacksonVer             : '2.8.11',
+            jacksonVer             : '2.13.3',
             commonsLang3Ver        : '3.12.0',
             typesafeConfigVer      : '1.4.2',
             mapdbVer               : '2.0-beta13',
-            jsonrpc4jVer           : '1.5.3',
+            jsonrpc4jVer           : '1.6',
             jaxwsRtVer             : '2.3.5',
 
             bitcoinjThinVer: '0.14.4-rsk-12',

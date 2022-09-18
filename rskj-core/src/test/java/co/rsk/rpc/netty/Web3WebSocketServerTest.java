@@ -203,8 +203,13 @@ class Web3WebSocketServerTest {
 
         byte[] request = new byte[0];
         try {
-            request = OBJECT_MAPPER.writeValueAsBytes(OBJECT_MAPPER.treeToValue(
-                    JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class));
+            Object object = OBJECT_MAPPER.treeToValue(JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class);
+
+            if (object == null) {
+                throw new NullPointerException();
+            }
+
+            request = OBJECT_MAPPER.writeValueAsBytes(object);
         } catch (JsonProcessingException e) {
             fail(e.getMessage());
         }

@@ -2,6 +2,7 @@ package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -117,6 +118,10 @@ class Web3HttpServerTest {
             Response response = sendJsonRpcMessage(randomPort, contentType, host);
             String responseBody = response.body().string();
             JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
+
+            if (jsonRpcResponse.isEmpty()) {
+                throw JsonMappingException.from(jsonRpcResponse.traverse(), "Empty response");
+            }
 
             assertThat(response.code(), is(HttpResponseStatus.OK.code()));
             assertThat(response.header("Content-Length"), is(notNullValue()));
