@@ -1,8 +1,8 @@
 package co.rsk.datasources;
 
 import co.rsk.bahashmaps.*;
-import co.rsk.baheaps.AbstractByteArrayHeap;
-import co.rsk.baheaps.ByteArrayHeap;
+import co.rsk.baheaps.AbstractFreeHeap;
+import co.rsk.baheaps.FreeHeap;
 import co.rsk.datasources.flatydb.LogManager;
 import co.rsk.dbutils.ObjectIO;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -18,7 +18,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class DataSourceWithHeap extends DataSourceWrapper {
-    protected AbstractByteArrayHeap sharedBaHeap;
+    protected AbstractFreeHeap sharedBaHeap;
     protected Format format;
     protected Path mapPath;
     protected Path dbPath;
@@ -39,7 +39,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     LogManager logManager;
     boolean inBatch;
     boolean logEvents = true;
-    AbstractByteArrayHeap baHeap;
+    AbstractFreeHeap baHeap;
 
     co.rsk.bahashmaps.BAKeyValueRelation BAKeyValueRelation;
 
@@ -147,8 +147,8 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     static protected final byte[] heapPrefix = "heap.".getBytes(StandardCharsets.UTF_8);
     static protected final byte[] mapPrefix = "map.".getBytes(StandardCharsets.UTF_8);
 
-    AbstractByteArrayHeap createByteArrayHeap(float loadFactor, long maxNodeCount, long maxCapacity) throws IOException {
-        ByteArrayHeap baHeap = new ByteArrayHeap();
+    AbstractFreeHeap createByteArrayHeap(float loadFactor, long maxNodeCount, long maxCapacity) throws IOException {
+        FreeHeap baHeap = new FreeHeap();
         baHeap.setMaxMemory(maxCapacity); //730_000_000L); // 500 Mb / 1 GB
         Files.createDirectories(Paths.get(databaseName));
         if (descDataSource!=null) {
@@ -156,6 +156,8 @@ public class DataSourceWithHeap extends DataSourceWrapper {
             baHeap.setAutoUpgrade(autoUpgrade);
         }
         baHeap.setFileName(dbPath.toString());
+        baHeap.setPageSize(format.pageSize);
+        baHeap.setStoreHeadmap(true);
         baHeap.setFileMapping(true);
         // Initialize will create the space files on disk if they don't exists, so we must
         // query first if they exists of not.
@@ -340,21 +342,25 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     protected void internalPut(ByteArrayWrapper key, byte[] value) {
         int hash = hash(key);
         long pureOffset = hash % beHeapCapacity;
+        long nextOffset =pureOffset;
         while(true) {
-            byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
-            byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
-            if (fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, metadata)) {
-                // already exists
-                return;
-            }
-            long nextOffset = baHeap.retrieveNextDataOfsByOfs(pureOffset);
-            if (nextOffset==-1)  {
-                throw new RuntimeException("Full heap");
+            if (baHeap.isObjectStoredAtOfs(pureOffset)) {
+                byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
+                byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
+                if (fastCompareKPDWithKey(kpd, (ByteArrayWrapper) key, metadata)) {
+                    // already exists
+                    return;
+                }
+                nextOffset = baHeap.retrieveNextDataOfsByOfs(pureOffset);
+                if (nextOffset == -1) {
+                    throw new RuntimeException("Full heap");
+                }
             }
             if (baHeap.isOfsAvail(nextOffset)) {
                 // free place: todo fill metadata
                 baHeap.addObjectAtOfs(nextOffset,key.getData(), new byte[]{0});
                 size++;
+                break;
             }
             pureOffset = nextOffset;
         }

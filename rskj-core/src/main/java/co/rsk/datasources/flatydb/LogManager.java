@@ -1,6 +1,6 @@
 package co.rsk.datasources.flatydb;
 
-import co.rsk.baheaps.AbstractByteArrayHeap;
+import co.rsk.baheaps.AbstractFreeHeap;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,13 +65,13 @@ public class LogManager {
         File logFile = logFilePath.toFile();
         return logFile.exists();
     }
-    public void putAllEntries(AbstractByteArrayHeap baHeap, List<LogRecord> entries) {
+    public void putAllEntries(AbstractFreeHeap baHeap, List<LogRecord> entries) {
         for(LogRecord entry : entries) {
             baHeap.processLogEntry(entry.htPos,entry.htValue);
         }
     }
 
-    public void processLog(AbstractByteArrayHeap baHeap) throws IOException {
+    public void processLog(AbstractFreeHeap baHeap) throws IOException {
         File logFile = logFilePath.toFile();
         LogReader logReader = new LogReader(logFile);
         try {

@@ -7,13 +7,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class HeapFileDesc {
-
-    public int[] filledSpaces;
-    public int[] emptySpaces;
-    public int currentSpace;
-    public long rootOfs;
     public int metadataLen;
-    public int curSpaceMemTop;
 
     public void saveToDataSource(KeyValueDataSource ds, String key) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -46,12 +40,8 @@ public class HeapFileDesc {
     }
 
     private void saveToOutputStream(OutputStream out) throws IOException {
-        writeArray(out,filledSpaces);
-        writeArray(out,emptySpaces);
-        ObjectIO.writeInt(out,currentSpace);
-        ObjectIO.writeLong(out,rootOfs);
         ObjectIO.writeInt(out,metadataLen);
-        ObjectIO.writeInt(out,curSpaceMemTop);
+
     }
 
     public void writeArray(OutputStream out,int[] a) throws IOException {
@@ -94,17 +84,7 @@ public class HeapFileDesc {
     }
 
     private static void readFromInputStream(HeapFileDesc d, InputStream in) throws IOException {
-        d.filledSpaces =loadArray(in);
-        d.emptySpaces = loadArray(in);
-        d.currentSpace = ObjectIO.readInt(in);
-        d.rootOfs = ObjectIO.readLong(in);
         d.metadataLen = ObjectIO.readInt(in);
-        try {
-            d.curSpaceMemTop = ObjectIO.readInt(in);
-        } catch ( java.io.EOFException eof) {
-            d.curSpaceMemTop = Integer.MAX_VALUE; // We cannot add more values, we don't know the top
-        }
-
     }
 
     public static int[] loadArray(InputStream in) throws IOException {

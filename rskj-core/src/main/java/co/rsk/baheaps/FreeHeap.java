@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArrayHeap {
+public class FreeHeap extends FreeHeapBase implements AbstractFreeHeap {
 
     // Here we need to return if the actual key in the datasource exists
     // NOT if the database exists, because the database has already been
@@ -31,7 +31,7 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
     public boolean firstSpaceFileExists() {
         // here we could check the presence of certain key in the data source
         // now we simply check that there is at least one space
-        String fileName = getSpaceFileName(0);
+        String fileName = space.getSpaceFileName(0);
         Path path = Paths.get(fileName);
         File f = path.toFile();
         return (f.exists() && !f.isDirectory());
@@ -53,7 +53,7 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
 
 
 
-    public long load() throws IOException {
+    public void load() throws IOException {
         if ((autoUpgrade) && (descFileExists())) {
             if (dataSourceExists()) {
                 // if both the old format and the new format co-exists
@@ -66,8 +66,7 @@ public class ByteArrayHeap extends ByteArrayHeapBase implements AbstractByteArra
             autoUpgrade = false;
         }
 
-        long r = super.load();
-        return r;
+        super.load();
     }
 
     public void save() throws IOException {

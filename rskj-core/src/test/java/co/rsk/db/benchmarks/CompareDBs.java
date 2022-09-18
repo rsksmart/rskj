@@ -25,7 +25,7 @@ public class CompareDBs extends Benchmark {
         readWriteTest // read, Batched Writes and Async Flushes
     }
 
-    static Test test = Test.readTest;
+    static Test test = Test.writeTest;
     boolean keyIsValueHash =true;
     static DbKind database = DbKind.FLATY_DB;
 

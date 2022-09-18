@@ -3,17 +3,15 @@ package co.rsk.baheaps;
 import java.io.IOException;
 import java.util.List;
 
-public interface AbstractByteArrayHeap {
+public interface AbstractFreeHeap {
 
     public List<String> getStats();;
-
-
-    public long addObjectReturnOfs(byte[] encoded, byte[] metadata);
 
     public byte[] retrieveDataByOfs(long encodedOfs);
 
     public long retrieveNextDataOfsByOfs(long encodedOfs);
     public boolean isOfsAvail(long encodedOfs);
+    public boolean isObjectStoredAtOfs(long encodedOfs);
     public void addObjectAtOfs(long ecodedOfs, byte[] encoded, byte[] metadata);
 
     public byte[] retrieveMetadataByOfs(long encodedOfs);
@@ -30,9 +28,9 @@ public interface AbstractByteArrayHeap {
     public void remapByOfs(long encodedOfs);
     public int getUsagePercent();
 
-    public long load() throws IOException;
+    public void load() throws IOException;
     public void save() throws IOException;
-    public void setRootOfs(long rootOfs);
+
 
     public void powerFailure();
     public void processLogEntry(long i,long value);

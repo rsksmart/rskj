@@ -5,11 +5,7 @@ import java.nio.ByteBuffer;
 public abstract class Space {
 
     public int memTop = 0;
-
-
-    public boolean filled;
     public boolean inUse = false;
-    public int previousSpaceNum = -1; // unlinked
 
 
     /**
@@ -89,12 +85,7 @@ public abstract class Space {
         inUse = true;
     }
 
-    public void unlink() {
-        previousSpaceNum = -1; //
-    }
-
     public void destroy() {
-        filled = false;
     }
 
     public void softCreate() {
@@ -105,7 +96,6 @@ public abstract class Space {
     public void softDestroy() {
         // do not remove the memory: this causes the Java garbage colelctor to try to move huge
         // objects around.
-        filled = false;
         inUse = false;
     }
 
