@@ -18,7 +18,6 @@
 
 package co.rsk.db;
 
-import org.ethereum.datasource.TransientMap;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
@@ -33,50 +32,41 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 /**
  * MapDBBlocksIndex is a thread safe implementation of BlocksIndex with mapDB providing the underlying functionality.
  */
-public class MapDBBlocksIndex implements BlocksIndex {
+public abstract class MapDBBlocksIndex implements BlocksIndex {
 
     private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
-    private boolean readOnly;
 
     private final DB indexDB;
 
-    public MapDBBlocksIndex(DB indexDB, boolean readOnly) {
-        this.readOnly = readOnly;
+    protected MapDBBlocksIndex(DB indexDB) {
         this.indexDB = indexDB;
-        Map<Long, List<IndexedBlockStore.BlockInfo>> aindex;
-        Map<String, byte[]> ametadata;
-
-        aindex = indexDB.hashMapCreate("index")
+        this.index = wrapIndex(indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)
                 .counterEnable()
-                .makeOrGet();
+                .makeOrGet());
 
-        if (readOnly) {
-            index = TransientMap.transientMap(aindex);
-        } else {
-            index = aindex;
-        }
-
-        ametadata = indexDB.hashMapCreate("metadata")
+        this.metadata = wrapMetadata(indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
-                .makeOrGet();
-
-        if (readOnly) {
-            metadata = TransientMap.transientMap(ametadata);
-        } else {
-            metadata = ametadata;
-        }
+                .makeOrGet());
 
         // Max block number initialization assumes an index without gap
-        metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
+        this.metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
             long maxBlockNumber = (long) index.size() - 1;
             return ByteUtil.longToBytes(maxBlockNumber);
         });
+    }
+
+    protected abstract Map<String, byte[]> wrapMetadata(Map<String, byte[]> ametadata);
+
+    protected abstract Map<Long, List<IndexedBlockStore.BlockInfo>> wrapIndex(Map<Long, List<IndexedBlockStore.BlockInfo>> aindex);
+
+    protected DB getIndexDB() {
+        return indexDB;
     }
 
     @Override
@@ -145,14 +135,6 @@ public class MapDBBlocksIndex implements BlocksIndex {
         metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(lastBlockNumber - 1));
 
         return result;
-    }
-
-    @Override
-    public void flush() {
-        // a read-only mapDB cannot be committed, even if there is nothing to commit
-        if (!readOnly) {
-            indexDB.commit();
-        }
     }
 
     @Override

@@ -1110,8 +1110,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+
         if (!blockIndexDirectory.exists()) {
-            if (getRskSystemProperties().readOnlyMode())
+            if (rskSystemProps.readOnlyMode())
                 throw new IllegalArgumentException(String.format(
                         "Unable to create blocks directory in read-only mode: %s", blockIndexDirectory
                 ));
@@ -1122,23 +1124,28 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             }
         }
 
-        DB indexDB;
-        if (getRskSystemProperties().readOnlyMode()) {
-            indexDB = DBMaker.fileDB(dbFile).readOnly().make();
+        DBMaker.Maker maker = DBMaker.fileDB(dbFile);
+        if (rskSystemProps.readOnlyMode()) {
+            maker = maker.readOnly();
+        }
+        DB indexDB = maker.make();
+
+        DbKind currentDbKind = rskSystemProps.databaseKind();
+
+        Path blocksPath = Paths.get(databaseDir, "blocks");
+
+        KeyValueDataSource blocksDB;
+        if (rskSystemProps.readOnlyMode()) {
+            // if in read-only mode add a cache in the middle to store the modified values in memory
+            KeyValueDataSource tmpDB = KeyValueDataSourceUtils.makeReadonlyDataSource(blocksPath, currentDbKind);
+            blocksDB = new ReadonlyDataSourceWithCache(tmpDB, 100);
         } else {
-            indexDB = DBMaker.fileDB(dbFile).make();
+            blocksDB = KeyValueDataSourceUtils.makePersistentDataSource(blocksPath, currentDbKind);
         }
 
-        DbKind currentDbKind = getRskSystemProperties().databaseKind();
-        KeyValueDataSource blocksDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "blocks"), currentDbKind,
-                getRskSystemProperties().readOnlyMode());
+        MapDBBlocksIndex blocksIndex = rskSystemProps.readOnlyMode() ? new ReadonlyMapDBBlocksIndex(indexDB) : new PersistentMapDBBlocksIndex(indexDB);
 
-        // if in read-only mode add a cache in the middle to store the modified values
-        // in memory
-        if (getRskSystemProperties().readOnlyMode()) {
-            blocksDB = new DataSourceWithCache(blocksDB,100,null,true);
-        }
-        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB,getRskSystemProperties().readOnlyMode()));
+        return new IndexedBlockStore(getBlockFactory(), blocksDB, blocksIndex);
     }
 
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
@@ -1233,19 +1240,35 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized KeyValueDataSource buildBlocksBloomDataSource() {
         checkIfNotClosed();
 
-        int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
-        Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, getRskSystemProperties().databaseKind(),
-                getRskSystemProperties().readOnlyMode());
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+        int bloomsCacheSize = rskSystemProps.getBloomsCacheSize();
+        Path bloomsStorePath = Paths.get(rskSystemProps.databaseDir(), "blooms");
 
-        if (bloomsCacheSize != 0) {
-            CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
-                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
-                    : null;
-            ds = new DataSourceWithCache(ds, bloomsCacheSize, cacheSnapshotHandler, getRskSystemProperties().readOnlyMode());
+        KeyValueDataSource ds;
+        if (rskSystemProps.readOnlyMode()) {
+            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(bloomsStorePath, rskSystemProps.databaseKind());
+        } else {
+            ds = KeyValueDataSourceUtils.makePersistentDataSource(bloomsStorePath, rskSystemProps.databaseKind());
         }
 
-        return ds;
+        // no cache needed
+        if (bloomsCacheSize <= 0) {
+            return ds;
+        }
+
+        if (rskSystemProps.readOnlyMode()) {
+            return new ReadonlyDataSourceWithCache(ds, bloomsCacheSize);
+        }
+
+        CacheSnapshotHandler cacheSnapshotHandler = rskSystemProps.shouldPersistBloomsCacheSnapshot()
+                ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
+                : null;
+
+        if (cacheSnapshotHandler != null) {
+            return new PersistentDataSourceWithCacheAndSnapshot(ds, bloomsCacheSize, cacheSnapshotHandler);
+        }
+
+        return new PersistentDataSourceWithCache(ds, bloomsCacheSize);
     }
 
     protected synchronized NodeRunner buildNodeRunner() {
@@ -1314,15 +1337,24 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized ReceiptStore buildReceiptStore() {
         checkIfNotClosed();
 
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"), rskSystemProperties.databaseKind(),
-                getRskSystemProperties().readOnlyMode());
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+        int receiptsCacheSize = rskSystemProps.getReceiptsCacheSize();
+        Path receiptsPath = Paths.get(rskSystemProps.databaseDir(), "receipts");
 
-        if (receiptsCacheSize != 0) {
-            ds = new DataSourceWithCache(ds, receiptsCacheSize, null, rskSystemProperties.readOnlyMode());
+        KeyValueDataSource ds;
+        if (rskSystemProps.readOnlyMode()) {
+            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(receiptsPath, rskSystemProps.databaseKind());
+        } else {
+            ds = KeyValueDataSourceUtils.makePersistentDataSource(receiptsPath, rskSystemProps.databaseKind());
         }
 
+        // no cache needed
+        if (receiptsCacheSize == 0) {
+            return new ReceiptStoreImplV2(ds);
+        }
+
+        ds = rskSystemProps.readOnlyMode() ? new ReadonlyDataSourceWithCache(ds, receiptsCacheSize)
+                : new PersistentDataSourceWithCache(ds, receiptsCacheSize);
         return new ReceiptStoreImplV2(ds);
     }
 
@@ -1356,20 +1388,34 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized TrieStore buildTrieStore(Path trieStorePath) {
         checkIfNotClosed();
 
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, rskSystemProperties.databaseKind(),
-                getRskSystemProperties().readOnlyMode());
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+        int statesCacheSize = rskSystemProps.getStatesCacheSize();
 
-        if (statesCacheSize != 0) {
-            CacheSnapshotHandler cacheSnapshotHandler = rskSystemProperties.shouldPersistStatesCacheSnapshot()
-                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
-                    : null;
-            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler,
-                    getRskSystemProperties().readOnlyMode());
+        KeyValueDataSource ds;
+        if (rskSystemProps.readOnlyMode()) {
+            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(trieStorePath, rskSystemProps.databaseKind());
+        } else {
+            ds = KeyValueDataSourceUtils.makePersistentDataSource(trieStorePath, rskSystemProps.databaseKind());
         }
 
-        return new TrieStoreImpl(ds);
+        // no cache needed
+        if (statesCacheSize == 0) {
+            return new TrieStoreImpl(ds);
+        }
+
+        if (rskSystemProps.readOnlyMode()) {
+            return new TrieStoreImpl(new ReadonlyDataSourceWithCache(ds, statesCacheSize));
+        }
+
+        CacheSnapshotHandler cacheSnapshotHandler = rskSystemProps.shouldPersistStatesCacheSnapshot()
+                ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
+                : null;
+
+        if (cacheSnapshotHandler != null) {
+            return new TrieStoreImpl(new PersistentDataSourceWithCacheAndSnapshot(ds, statesCacheSize, cacheSnapshotHandler));
+        }
+
+        return new TrieStoreImpl(new PersistentDataSourceWithCache(ds, statesCacheSize));
     }
 
     protected synchronized RepositoryLocator buildRepositoryLocator() {
@@ -1387,15 +1433,22 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected StateRootsStore buildStateRootsStore() {
         checkIfNotClosed();
 
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        int stateRootsCacheSize = rskSystemProperties.getStateRootsCacheSize();
-        KeyValueDataSource stateRootsDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "stateRoots"), rskSystemProperties.databaseKind(),
-                getRskSystemProperties().readOnlyMode());
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+        int stateRootsCacheSize = rskSystemProps.getStateRootsCacheSize();
 
-        if (stateRootsCacheSize > 0) {
-            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize, null, rskSystemProperties.readOnlyMode());
+        KeyValueDataSource stateRootsDB;
+        if (rskSystemProps.readOnlyMode()) {
+            stateRootsDB = KeyValueDataSourceUtils.makeReadonlyDataSource(Paths.get(rskSystemProps.databaseDir(), "stateRoots"), rskSystemProps.databaseKind());
+        } else {
+            stateRootsDB = KeyValueDataSourceUtils.makePersistentDataSource(Paths.get(rskSystemProps.databaseDir(), "stateRoots"), rskSystemProps.databaseKind());
         }
 
+        if (stateRootsCacheSize <= 0) {
+            return new StateRootsStoreImpl(stateRootsDB);
+        }
+
+        stateRootsDB = rskSystemProps.readOnlyMode() ? new ReadonlyDataSourceWithCache(stateRootsDB, stateRootsCacheSize)
+                : new PersistentDataSourceWithCache(stateRootsDB, stateRootsCacheSize);
         return new StateRootsStoreImpl(stateRootsDB);
     }
 
@@ -1436,14 +1489,17 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized Wallet buildWallet() {
         checkIfNotClosed();
 
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        if (!rskSystemProperties.isWalletEnabled()) {
+        RskSystemProperties rskSystemProps = getRskSystemProperties();
+        if (!rskSystemProps.isWalletEnabled()) {
             return null;
         }
 
-        KeyValueDataSource ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"), rskSystemProperties.databaseKind(),
-                getRskSystemProperties().readOnlyMode());
-
+        KeyValueDataSource ds;
+        if (rskSystemProps.readOnlyMode()) {
+            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(Paths.get(rskSystemProps.databaseDir(), "wallet"), rskSystemProps.databaseKind());
+        } else {
+            ds = KeyValueDataSourceUtils.makePersistentDataSource(Paths.get(rskSystemProps.databaseDir(), "wallet"), rskSystemProps.databaseKind());
+        }
         return new Wallet(ds);
     }
 

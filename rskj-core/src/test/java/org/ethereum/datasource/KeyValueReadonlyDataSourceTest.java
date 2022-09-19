@@ -11,12 +11,7 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
 public class KeyValueReadonlyDataSourceTest {
@@ -35,8 +30,8 @@ public class KeyValueReadonlyDataSourceTest {
     public static Collection<Object[]> data() {
 
         return Arrays.asList(new Object[][]{
-                {DbKind.LEVEL_DB, LevelDbDataSource.class.getSimpleName()},
-                {DbKind.ROCKS_DB, RocksDbDataSource.class.getSimpleName()},
+                {DbKind.LEVEL_DB, PersistentLevelDbDataSource.class.getSimpleName()},
+                {DbKind.ROCKS_DB, PersistentRocksDbDataSource.class.getSimpleName()},
              });
     }
 
@@ -45,17 +40,17 @@ public class KeyValueReadonlyDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         Path dbPath = Files.createTempDirectory(tmpDir, "default").resolve("test");
         // first create and close
-        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath,dbKind,false);
+        keyValueDataSource = KeyValueDataSourceUtils.makePersistentDataSource(dbPath, dbKind);
 
         keyValueDataSource.init();
         keyValueDataSource.close();
 
         // now re-create with readonly mode
-        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath,dbKind,true);
+        keyValueDataSource = KeyValueDataSourceUtils.makeReadonlyDataSource(dbPath, dbKind);
         keyValueDataSource.init();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
     public void put() {
         byte[] randomKey = TestUtils.randomBytes(20);
         byte[] randomValue = TestUtils.randomBytes(20);
@@ -63,7 +58,7 @@ public class KeyValueReadonlyDataSourceTest {
         keyValueDataSource.put(randomKey, randomValue);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
     public void delete() {
         byte[] randomKey = TestUtils.randomBytes(20);
         byte[] randomValue = TestUtils.randomBytes(20);
@@ -71,7 +66,7 @@ public class KeyValueReadonlyDataSourceTest {
         keyValueDataSource.delete(randomKey);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
     public void updateBatch() {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
 

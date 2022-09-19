@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -39,7 +38,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.getProperty;
 
-public class RocksDbDataSource implements KeyValueDataSource {
+public abstract class RocksDbDataSource implements KeyValueDataSource {
 
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
     private static final int MAX_RETRIES = 2;
@@ -52,7 +51,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String name;
     private RocksDB db;
     private boolean alive;
-    private boolean readOnly;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -62,24 +60,20 @@ public class RocksDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public RocksDbDataSource(String name, String databaseDir,boolean readOnly) {
-        this.readOnly = readOnly;
+    protected RocksDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New RocksDbDataSource: {}", name);
     }
-    public RocksDbDataSource(String name, String databaseDir) {
-        this(name,databaseDir,false);
-    }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new RocksDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
-    }
+    protected abstract boolean getOptionCreateIfMissing();
+
+    protected abstract void createRequiredDirectories(Path dbPath) throws IOException;
+
+    protected abstract boolean skipWriteOp() throws ReadonlyDbDataSource.ReadOnlyException;
 
     @Override
-    public void init() {
+    public final void init() {
         resetDbLock.writeLock().lock();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
         try (Options options = new Options()) {
@@ -91,7 +85,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
             Objects.requireNonNull(name, "no name set to the db");
 
-            options.setCreateIfMissing(!readOnly);
+            options.setCreateIfMissing(getOptionCreateIfMissing());
+
             options.setCompressionType(CompressionType.NO_COMPRESSION);
             options.setArenaBlockSize(GENERAL_SIZE);
             options.setWriteBufferSize(GENERAL_SIZE);
@@ -99,11 +94,10 @@ public class RocksDbDataSource implements KeyValueDataSource {
             options.setParanoidChecks(true);
 
             logger.debug("Opening database");
-            Path dbPath = getPathForName(name, databaseDir);
 
-            if (!readOnly) {
-                Files.createDirectories(dbPath.getParent());
-            }
+            Path dbPath = getPathForName(name, databaseDir);
+            createRequiredDirectories(dbPath);
+
             logger.debug("Initializing new or existing database: '{}'", name);
             openDb(options, dbPath);
 
@@ -137,7 +131,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public boolean isAlive() {
+    public final boolean isAlive() {
         try {
             resetDbLock.readLock().lock();
             return alive;
@@ -147,12 +141,12 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public final byte[] get(byte[] key) {
         Objects.requireNonNull(key);
 
         byte[] result = null;
@@ -199,15 +193,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return result;
     }
 
-    private void checkReadOnly() {
-        if (readOnly) {
-            throw new IllegalArgumentException("database is readonly");
-        }
-    }
-
     @Override
-    public byte[] put(byte[] key, byte[] value) {
-        checkReadOnly();
+    public final byte[] put(byte[] key, byte[] value) {
+        if (skipWriteOp()) {
+            return null;
+        }
 
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
@@ -237,8 +227,10 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void delete(byte[] key) {
-        checkReadOnly();
+    public final void delete(byte[] key) {
+        if (skipWriteOp()) {
+            return;
+        }
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
@@ -263,7 +255,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public Set<ByteArrayWrapper> keys() {
+    public final Set<ByteArrayWrapper> keys() {
         if (logger.isTraceEnabled()) {
             logger.trace("~> RocksDbDataSource.keys(): {}", name);
         }
@@ -315,8 +307,10 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
-        checkReadOnly();
+    public final void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+        if (skipWriteOp()) {
+            return;
+        }
 
         if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
@@ -361,7 +355,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void close() {
+    public final void close() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
@@ -380,7 +374,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void flush() {
+    public final void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 }
