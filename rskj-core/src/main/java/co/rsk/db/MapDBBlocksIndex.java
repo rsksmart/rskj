@@ -18,7 +18,6 @@
 
 package co.rsk.db;
 
-import org.ethereum.datasource.TransientMap;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
@@ -39,53 +38,46 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
-    private boolean readOnly;
 
     private final DB indexDB;
 
-    public MapDBBlocksIndex(DB indexDB, boolean readOnly) {
-        this.readOnly = readOnly;
-        this.indexDB = indexDB;
-        Map<Long, List<IndexedBlockStore.BlockInfo>> aindex;
-        Map<String, byte[]> ametadata;
+    public static MapDBBlocksIndex create(DB indexDB) {
+        return new MapDBBlocksIndex(indexDB);
+    }
 
-        aindex = indexDB.hashMapCreate("index")
+    protected MapDBBlocksIndex(DB indexDB) {
+        this.indexDB = indexDB;
+
+        this.index = wrapIndex(indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)
                 .counterEnable()
-                .makeOrGet();
+                .makeOrGet());
 
-        if (readOnly) {
-            index = TransientMap.transientMap(aindex);
-        } else {
-            index = aindex;
-        }
-
-        ametadata = indexDB.hashMapCreate("metadata")
+        this.metadata = wrapIndex(indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
-                .makeOrGet();
-
-        if (readOnly) {
-            metadata = TransientMap.transientMap(ametadata);
-        } else {
-            metadata = ametadata;
-        }
+                .makeOrGet());
 
         // Max block number initialization assumes an index without gap
-        metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
+        this.metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
             long maxBlockNumber = (long) index.size() - 1;
             return ByteUtil.longToBytes(maxBlockNumber);
         });
     }
 
+    protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
+        // no wrap needed
+        return base;
+    }
+
     @Override
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return index.isEmpty();
     }
 
     @Override
-    public long getMaxNumber() {
+    public final long getMaxNumber() {
         if (index.isEmpty()) {
             throw new IllegalStateException("Index is empty");
         }
@@ -94,7 +86,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public long getMinNumber() {
+    public final long getMinNumber() {
         if (index.isEmpty()) {
             throw new IllegalStateException("Index is empty");
         }
@@ -103,17 +95,17 @@ public class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public boolean contains(long blockNumber) {
+    public final boolean contains(long blockNumber) {
         return index.containsKey(blockNumber);
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> getBlocksByNumber(long blockNumber) {
+    public final List<IndexedBlockStore.BlockInfo> getBlocksByNumber(long blockNumber) {
         return index.getOrDefault(blockNumber, new ArrayList<>());
     }
 
     @Override
-    public void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
+    public final void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             throw new IllegalArgumentException("Block list cannot be empty nor null.");
         }
@@ -130,7 +122,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> removeLast() {
+    public final List<IndexedBlockStore.BlockInfo> removeLast() {
         long lastBlockNumber = -1;
         if (index.size() > 0) {
             lastBlockNumber = getMaxNumber();
@@ -149,14 +141,11 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public void flush() {
-        // a read-only mapDB cannot be committed, even if there is nothing to commit
-        if (!readOnly) {
-            indexDB.commit();
-        }
+        indexDB.commit();
     }
 
     @Override
-    public void close() {
+    public final void close() {
         indexDB.close();
     }
 }

@@ -42,7 +42,6 @@ import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 public class LevelDbDataSource implements KeyValueDataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -50,7 +49,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
-    private boolean readOnly;
+
+    private final Logger logger;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -60,25 +60,30 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name, String databaseDir,boolean readOnly) {
+    public static LevelDbDataSource create(String name, String databaseDir) {
+        return new LevelDbDataSource(name, databaseDir);
+    }
+
+    private LevelDbDataSource(String name, String databaseDir) {
+        this(name, databaseDir, LoggerFactory.getLogger("db"));
+    }
+
+    protected LevelDbDataSource(String name, String databaseDir, Logger logger) {
         this.databaseDir = databaseDir;
         this.name = name;
-        this.readOnly = readOnly;
-        logger.debug("New LevelDbDataSource: {}", name);
+        this.logger = logger;
     }
 
-    public LevelDbDataSource(String name, String databaseDir) {
-        this(name,databaseDir,false);
+    protected void customiseOptions(Options options) {
+        options.createIfMissing(true);
     }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
+    protected void createRequiredDirectories(Path dbPath) throws IOException {
+        Files.createDirectories(dbPath.getParent());
     }
 
     @Override
-    public void init() {
+    public final void init() {
         resetDbLock.writeLock().lock();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
         try {
@@ -91,22 +96,20 @@ public class LevelDbDataSource implements KeyValueDataSource {
             Objects.requireNonNull(name, "no name set to the db");
 
             Options options = new Options();
-            options.createIfMissing(!readOnly);
             options.compressionType(CompressionType.NONE);
             options.blockSize(10 * 1024 * 1024);
             options.writeBufferSize(10 * 1024 * 1024);
             options.cacheSize(0);
             options.paranoidChecks(true);
             options.verifyChecksums(true);
+            customiseOptions(options);
 
             try {
-
                 logger.debug("Opening database");
-                Path dbPath = getPathForName(name, databaseDir);
 
-                if (!readOnly) {
-                    Files.createDirectories(dbPath.getParent());
-                }
+                Path dbPath = getPathForName(name, databaseDir);
+                createRequiredDirectories(dbPath);
+
                 logger.debug("Initializing new or existing database: '{}'", name);
                 db = factory.open(dbPath.toFile(), options);
 
@@ -123,7 +126,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    public static Path getPathForName(String name, String databaseDir) {
+    public static final Path getPathForName(String name, String databaseDir) {
         if (Paths.get(databaseDir).isAbsolute()) {
             return Paths.get(databaseDir, name);
         } else {
@@ -132,7 +135,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public boolean isAlive() {
+    public final boolean isAlive() {
         try {
             resetDbLock.readLock().lock();
             return alive;
@@ -142,12 +145,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public final byte[] get(byte[] key) {
         Objects.requireNonNull(key);
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
@@ -184,16 +187,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void checkReadOnly() {
-        if (readOnly) {
-            throw new IllegalArgumentException("database is readonly");
-        }
-    }
-
     @Override
     public byte[] put(byte[] key, byte[] value) {
-        checkReadOnly();
-
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
@@ -218,8 +213,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void delete(byte[] key) {
-        checkReadOnly();
-
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
@@ -239,7 +232,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public Set<ByteArrayWrapper> keys() {
+    public final Set<ByteArrayWrapper> keys() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
@@ -291,9 +284,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
-        checkReadOnly();
-
-        if (rows.containsKey(null)) {
+       if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
         resetDbLock.readLock().lock();
@@ -331,7 +322,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void close() {
+    public final void close() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
@@ -355,7 +346,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void flush() {
+    public final void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 }

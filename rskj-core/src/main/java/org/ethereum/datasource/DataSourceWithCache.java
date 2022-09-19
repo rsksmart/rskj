@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -40,13 +39,8 @@ import java.util.stream.Stream;
  */
 public class DataSourceWithCache implements KeyValueDataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
-
     private final int cacheSize;
-    private final boolean preventWritesToBase;
     private final KeyValueDataSource base;
-    // When preventWritesToBase=true, uncommittedCache will forever contain
-    // the changes, and committedCache will still work as a cache.
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
 
@@ -56,31 +50,34 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    @Nullable
-    private final CacheSnapshotHandler cacheSnapshotHandler;
+    private final Logger logger;
 
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
-        this(base, cacheSize, null);
+    public static DataSourceWithCache create(@Nonnull KeyValueDataSource base, int cacheSize) {
+        return new DataSourceWithCache(base, cacheSize);
     }
 
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler,
-                               boolean preventWritesToBase) {
-        this.preventWritesToBase = preventWritesToBase;
+    private DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
+        this(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache"));
+    }
+
+    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, Logger logger) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
-        this.uncommittedCache = new HashMap<>();
-        this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
-        this.cacheSnapshotHandler = cacheSnapshotHandler;
+        this.uncommittedCache = new HashMap<>(); // TODO:I clarify failing test!
+        this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
+        this.logger = logger;
     }
 
-    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize,
-                               @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-      this(base,cacheSize,cacheSnapshotHandler,false);
+    protected Map<ByteArrayWrapper, byte[]> getCommittedCache() {
+        return committedCache;
+    }
+
+    protected void customClose() {
+        // nothing to do
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public final byte[] get(byte[] key) {
         Objects.requireNonNull(key);
 
         boolean traceEnabled = logger.isTraceEnabled();
@@ -118,7 +115,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public byte[] put(byte[] key, byte[] value) {
+    public final byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
 
         return put(wrappedKey, value);
@@ -159,7 +156,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void delete(byte[] key) {
+    public final void delete(byte[] key) {
         delete(ByteUtil.wrap(key));
     }
 
@@ -186,7 +183,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public Set<ByteArrayWrapper> keys() {
+    public final Set<ByteArrayWrapper> keys() {
         Stream<ByteArrayWrapper> baseKeys;
         Stream<ByteArrayWrapper> committedKeys;
         Stream<ByteArrayWrapper> uncommittedKeys;
@@ -216,7 +213,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+    public final void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -236,9 +233,6 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public void flush() {
-        if (preventWritesToBase) {
-            return;
-        }
         Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
 
         this.lock.writeLock().lock();
@@ -269,27 +263,27 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
-    public String getName() {
+    public final String getName() {
         return base.getName() + "-with-uncommittedCache";
     }
 
-    public void init() {
+    public final void init() {
         base.init();
     }
 
-    public boolean isAlive() {
+    public final boolean isAlive() {
         return base.isAlive();
     }
 
-    public void close() {
+    public final void close() {
         this.lock.writeLock().lock();
 
         try {
             flush();
             base.close();
-            if ((cacheSnapshotHandler != null) && (!preventWritesToBase)) {
-                cacheSnapshotHandler.save(committedCache);
-            }
+
+            customClose();
+
             uncommittedCache.clear();
             committedCache.clear();
         } finally {
@@ -297,7 +291,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
-    public void emitLogs() {
+    public final void emitLogs() {
         if (!logger.isTraceEnabled()) {
             return;
         }
@@ -314,15 +308,4 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
     }
 
-    @Nonnull
-    private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize,
-                                                                    @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(cacheSize, true);
-
-        if (cacheSnapshotHandler != null) {
-            cacheSnapshotHandler.load(cache);
-        }
-
-        return cache;
-    }
 }

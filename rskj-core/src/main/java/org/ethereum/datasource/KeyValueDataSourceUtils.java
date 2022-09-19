@@ -21,37 +21,46 @@ public class KeyValueDataSourceUtils {
     }
 
     @Nonnull
-    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, boolean readOnly) {
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDatasourceInternal(datasourcePath, kind, false);
+    }
+
+    @Nonnull
+    public static KeyValueDataSource makeReadonlyDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDatasourceInternal(datasourcePath, kind, true);
+    }
+
+    @Nonnull
+    private static KeyValueDataSource makeDatasourceInternal(@Nonnull Path datasourcePath, @Nonnull DbKind kind, boolean readOnly) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
         KeyValueDataSource ds;
         switch (kind) {
             case LEVEL_DB:
-                ds = new LevelDbDataSource(name, databaseDir, readOnly);
+                ds = readOnly ? LevelDbDataSourceReadonly.create(name, databaseDir) : LevelDbDataSource.create(name, databaseDir);
                 break;
             case ROCKS_DB:
-                ds = new RocksDbDataSource(name, databaseDir, readOnly);
+                ds = readOnly ? RocksDbDataSourceReadonly.create(name, databaseDir) : RocksDbDataSource.create(name, databaseDir);
                 break;
             default:
                 throw new IllegalArgumentException("kind");
         }
 
         ds.init();
-
         return ds;
     }
 
     public static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind,true);
+            KeyValueDataSource singleOriginDataSource = makeReadonlyDataSource(originPath, kind);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind,false);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }

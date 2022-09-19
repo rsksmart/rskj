@@ -50,7 +50,7 @@ public class ImportState extends CliToolRskContextAware {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
 
-        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind(), false);
+        KeyValueDataSource trieDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
 
         String filename = args[0];
 

@@ -120,7 +120,7 @@ public class RskContextTest {
             Path path = testDatabasesDirectory.resolve(String.format("unitrie_%d", i));
             // Files.createDirectory(
             KeyValueDataSource dataSource = KeyValueDataSourceUtils.makeDataSource(path,
-                    rskContext.getRskSystemProperties().databaseKind(),false);
+                    rskContext.getRskSystemProperties().databaseKind());
             TrieStore ts = new TrieStoreImpl(dataSource);
             byte[] v =new byte[]{(byte)i};
             byte[] key = Keccak256Helper.keccak256(v);

@@ -34,15 +34,15 @@ public class KeyValueDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         return Arrays.asList(new Object[][]{
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
-                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
+                {LevelDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
+                {DataSourceWithCache.create(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
+                {DataSourceWithCache.create(RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
-                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
+                {LevelDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
+                {DataSourceWithCache.create(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
+                {DataSourceWithCache.create(RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
         });
     }
 
