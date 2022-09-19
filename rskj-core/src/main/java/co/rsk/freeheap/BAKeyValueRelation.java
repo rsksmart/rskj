@@ -1,8 +1,8 @@
-package co.rsk.bahashmaps;
+package co.rsk.freeheap;
 
 
 public interface BAKeyValueRelation {
-    int getHashcode(byte[] var1);
+    long getHashcode(byte[] var1);
 
     byte[] computeKey(byte[] data);
 

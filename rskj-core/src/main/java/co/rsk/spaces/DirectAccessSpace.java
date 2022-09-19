@@ -62,7 +62,7 @@ public class DirectAccessSpace extends Space {
         ObjectIO.putInt(mem,(int) pos,val);
 
     }
-    public void create(int size) {
+    public void createBuffer(int size) {
 
         if (mem == null)
             mem = new byte[size];

@@ -1,4 +1,4 @@
-package co.rsk.baheaps;
+package co.rsk.freeheap;
 
 
 import co.rsk.spaces.HeapFileDesc;
@@ -75,7 +75,7 @@ public class FreeHeap extends FreeHeapBase implements AbstractFreeHeap {
 
     @Override
     public void powerFailure() {
-        super.closeFiles();
+        // *???
     }
 
     @Override

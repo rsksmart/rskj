@@ -1,4 +1,4 @@
-package co.rsk.bahashmaps;
+package co.rsk.freeheap;
 
 import java.util.EnumSet;
 

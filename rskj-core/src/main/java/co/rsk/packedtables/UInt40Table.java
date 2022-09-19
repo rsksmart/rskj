@@ -1,6 +1,5 @@
 package co.rsk.packedtables;
 
-import co.rsk.bahashmaps.CreationFlag;
 import co.rsk.dbutils.FileMapUtil;
 import co.rsk.dbutils.ObjectIO;
 
@@ -8,7 +7,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.BitSet;
 

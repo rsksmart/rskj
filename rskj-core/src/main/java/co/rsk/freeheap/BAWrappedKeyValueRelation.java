@@ -1,9 +1,9 @@
-package co.rsk.bahashmaps;
+package co.rsk.freeheap;
 
 import org.ethereum.db.ByteArrayWrapper;
 
 public interface BAWrappedKeyValueRelation {
-    int getHashcode(ByteArrayWrapper var1);
+    long getHashcode(ByteArrayWrapper var1);
 
     ByteArrayWrapper computeWrappedKey(byte[] data);
 

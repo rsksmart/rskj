@@ -1,7 +1,7 @@
 package co.rsk.db.benchmarks;
 
 
-import co.rsk.bahashmaps.CreationFlag;
+import co.rsk.freeheap.CreationFlag;
 import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.*;
@@ -35,7 +35,7 @@ public class CompareDBs extends Benchmark {
     }
     DatabaseConfig config = DatabaseConfig.withMaxOffset; // This is only for flatDb
 
-    int maxKeys = 50_000_000; // 5_000_000; //100_000_000;
+    int maxKeys = 1_000_000; // 5_000_000; //100_000_000;
     int keyLength = 32;
     int valueLength = 50;
 
@@ -171,28 +171,29 @@ public class CompareDBs extends Benchmark {
         int maxKeys = maxNodeCount;
         log("beHeap:Capacity: "+beHeapCapacity);
 
-        KeyValueDataSourceUtils.FlatDBOptions flatDbOptions = new KeyValueDataSourceUtils.FlatDBOptions();
-        flatDbOptions.maxKeys =maxKeys;
-        flatDbOptions.maxCapacity =beHeapCapacity;
-        flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
+        KeyValueDataSourceUtils.FlatyDBOptions flatyDbOptions = new KeyValueDataSourceUtils.FlatyDBOptions();
+        flatyDbOptions.maxKeys =maxKeys;
+        flatyDbOptions.maxCapacity =beHeapCapacity;
+        flatyDbOptions.maxObjectSize = 256;
+        flatyDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
 
         // These flas are the ideal to create a Trie DB, which is what
         // we aim to. So we do not supportNullValues, nor do we allowRemovals.
-        flatDbOptions.creationFlags = EnumSet.of(
+        flatyDbOptions.creationFlags = EnumSet.of(
                 CreationFlag.supportBigValues,
                 CreationFlag.atomicBatches,
                 CreationFlag.useDBForDescriptions);
 
         if (!keyIsValueHash) {
-            flatDbOptions.creationFlags.add(CreationFlag.storeKeys);
+            flatyDbOptions.creationFlags.add(CreationFlag.storeKeys);
         }
         if (config==DatabaseConfig.withLog) {
-            flatDbOptions.creationFlags.add(CreationFlag.useLogForBatchConsistency);
+            flatyDbOptions.creationFlags.add(CreationFlag.useLogForBatchConsistency);
         } else {
-            flatDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
+            flatyDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
         }
         dsDB = KeyValueDataSourceUtils.makeDataSourceExt(trieStorePath,database,false,
-                flatDbOptions);
+                flatyDbOptions);
 
         return dsDB;
     }

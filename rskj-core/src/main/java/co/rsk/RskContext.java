@@ -18,7 +18,7 @@
 
 package co.rsk;
 
-import co.rsk.bahashmaps.CreationFlag;
+import co.rsk.freeheap.CreationFlag;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
@@ -1331,22 +1331,22 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     }
 
     Object getFlatDbOptionsForTrieStore() {
-        KeyValueDataSourceUtils.FlatDBOptions flatDbOptions = new KeyValueDataSourceUtils.FlatDBOptions();
-        flatDbOptions.maxKeys =16_000_000;
-        flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
-        flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
+        KeyValueDataSourceUtils.FlatyDBOptions flatyDbOptions = new KeyValueDataSourceUtils.FlatyDBOptions();
+        flatyDbOptions.maxKeys =16_000_000;
+        flatyDbOptions.maxCapacity = flatyDbOptions.maxKeys*100;
+        flatyDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
 
         // These flas are the ideal to create a Trie DB, which is what
         // we aim to. So we do not supportNullValues, nor do we allowRemovals.
-        flatDbOptions.creationFlags = EnumSet.of(
+        flatyDbOptions.creationFlags = EnumSet.of(
                 CreationFlag.supportBigValues,
                 CreationFlag.atomicBatches);
           //      FlatDbDataSource.CreationFlag.useDBForDescriptions);
 
 
-        flatDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
+        flatyDbOptions.creationFlags.add(CreationFlag.useMaxOffsetForBatchConsistency);
 
-        return flatDbOptions;
+        return flatyDbOptions;
     }
 
     protected synchronized TrieStore buildTrieStore(Path trieStorePath) {

@@ -80,7 +80,7 @@ public abstract class Space {
         return true;
     }
 
-    public void create(int size) {
+    public void createBuffer(int size) {
         memTop = 0;
         inUse = true;
     }

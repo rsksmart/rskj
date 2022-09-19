@@ -1,4 +1,4 @@
-package co.rsk.baheaps;
+package co.rsk.freeheap;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,4 +35,5 @@ public interface AbstractFreeHeap {
     public void powerFailure();
     public void processLogEntry(long i,long value);
 
+    long getCapacity();
 }

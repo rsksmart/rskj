@@ -1,8 +1,6 @@
 package co.rsk.datasources;
 
-import co.rsk.bahashmaps.*;
-import co.rsk.baheaps.AbstractFreeHeap;
-import co.rsk.baheaps.FreeHeap;
+import co.rsk.freeheap.*;
 import co.rsk.datasources.flatydb.LogManager;
 import co.rsk.dbutils.ObjectIO;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -18,14 +16,14 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class DataSourceWithHeap extends DataSourceWrapper {
-    protected AbstractFreeHeap sharedBaHeap;
     protected Format format;
     protected Path mapPath;
     protected Path dbPath;
     protected KeyValueDataSource descDataSource;
     LockType lockType;
     int maxNodeCount;
-    long beHeapCapacity;
+    long beHeapDesiredCapacity;
+    long baHeapCapacity;
     boolean useLogManager;
     boolean autoUpgrade;
     boolean supportNullValues;
@@ -34,6 +32,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     boolean variableLengthKeys;
     boolean allowRemovals;
     boolean flushAfterPut;
+    int maxObjectSize;
     int keysize;
     long size;
     LogManager logManager;
@@ -41,7 +40,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     boolean logEvents = true;
     AbstractFreeHeap baHeap;
 
-    co.rsk.bahashmaps.BAKeyValueRelation BAKeyValueRelation;
+    co.rsk.freeheap.BAKeyValueRelation BAKeyValueRelation;
 
     public enum LockType {
         Exclusive,
@@ -53,6 +52,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
 
     // constructor
     public DataSourceWithHeap(int maxNodeCount, long beHeapCapacity,
+                              int maxObjectSize,
                               String databaseName,LockType lockType,
                               Format format,boolean additionalKV,
                               boolean useLogManager,
@@ -66,9 +66,10 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         this.useLogManager = useLogManager;
         mapPath = Paths.get(databaseName, "hash.map");
         dbPath = Paths.get(databaseName, "store");
+        this.maxObjectSize = maxObjectSize;
         this.lockType = lockType;
         this.maxNodeCount = maxNodeCount;
-        this.beHeapCapacity = beHeapCapacity;
+        this.beHeapDesiredCapacity = beHeapCapacity;
         this.autoUpgrade = format.creationFlags.contains(CreationFlag.autoUpgrade);
         this.flushAfterPut = format.creationFlags.contains(CreationFlag.flushAfterPut);
 
@@ -94,7 +95,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     public void init() {
 
         try {
-            makeHeap(maxNodeCount,beHeapCapacity);
+            makeHeap(maxNodeCount, beHeapDesiredCapacity);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,7 +126,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         dbLock.writeLock().lock();
         try {
             // do not flush
-            sharedBaHeap.powerFailure(); // unmap files
+            baHeap.powerFailure(); // unmap files
             //committedCache.clear();
 
         } finally {
@@ -147,7 +148,8 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     static protected final byte[] heapPrefix = "heap.".getBytes(StandardCharsets.UTF_8);
     static protected final byte[] mapPrefix = "map.".getBytes(StandardCharsets.UTF_8);
 
-    AbstractFreeHeap createByteArrayHeap(float loadFactor, long maxNodeCount, long maxCapacity) throws IOException {
+    AbstractFreeHeap createByteArrayHeap(
+            float loadFactor, long maxNodeCount, long maxCapacity) throws IOException {
         FreeHeap baHeap = new FreeHeap();
         baHeap.setMaxMemory(maxCapacity); //730_000_000L); // 500 Mb / 1 GB
         Files.createDirectories(Paths.get(databaseName));
@@ -157,6 +159,7 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         }
         baHeap.setFileName(dbPath.toString());
         baHeap.setPageSize(format.pageSize);
+        baHeap.setMaxObjectSize(maxObjectSize);
         baHeap.setStoreHeadmap(true);
         baHeap.setFileMapping(true);
         // Initialize will create the space files on disk if they don't exists, so we must
@@ -208,9 +211,9 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         protected void makeHeap(int maxNodeCount, long beHeapCapacity) throws IOException {
         if (maxNodeCount==0) return;
 
-        MyBAKeyValueRelation myKR = null;
+
         if (!format.creationFlags.contains(CreationFlag.storeKeys))
-            myKR = new MyBAKeyValueRelation();
+            BAKeyValueRelation = new MyBAKeyValueRelation();
 
         float loadFActor =getDefaultLoadFactor();
         int initialSize = (int) (maxNodeCount/loadFActor);
@@ -218,8 +221,10 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         // Since we are not compressing handles, we must prepare for wost case
         // First we create a heap: this is where all values will be stored
         // in a continuous "stream" of data.
-        sharedBaHeap =
+            baHeap =
                 createByteArrayHeap(loadFActor,maxNodeCount,beHeapCapacity);
+
+        baHeapCapacity = baHeap.getCapacity();
 
         // Now we create the map, which is like an index to locate the
         // information in the heap. ·"39" is the number of bits supported
@@ -229,19 +234,19 @@ public class DataSourceWithHeap extends DataSourceWrapper {
 
         //this.bamap =  new ByteArrayVarHashMap(initialSize,loadFActor,myKR,
         //        (long) beHeapCapacity,
-        //        sharedBaHeap,0,format,logManager);
+        //        baHeap,0,format,logManager);
 
 
             // Check if a log exists
         if (logManager!=null) {
             if (logManager.logExists()) {
-                logManager.processLog(sharedBaHeap);
+                logManager.processLog(baHeap);
             }
         }
 
     }
 
-    public int hash(Object key) {
+    public long hash(Object key) {
         // It's important that this hash DOES not collude with the HashMap hash, because
         // we're using hashmaps inside each bucket. If both hashes are the same,
         // then all objects in the same bucket will be also in the same bucked of the
@@ -249,10 +254,9 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         //
         if (key == null)
             return 0;
-        if (BAKeyValueRelation == null)
-            return key.hashCode();
-        else
-            return BAKeyValueRelation.getHashcode(((ByteArrayWrapper) key).getData());
+        long h = BAKeyValueRelation.getHashcode(((ByteArrayWrapper) key).getData());
+        // I need h to be positive, so I will remove the highest bit
+        return (h & 0x7fffffffffffffffL);
     }
 
     protected byte[] internalGet(ByteArrayWrapper wrappedKey) {
@@ -319,9 +323,9 @@ public class DataSourceWithHeap extends DataSourceWrapper {
         return ByteUtil.fastEquals(keyBytes1,keyBytes2);
     }
 
-    final byte[] getNode(int hash, Object key) {
+    final byte[] getNode(long hash, Object key) {
 
-        long pureOffset = hash % beHeapCapacity;
+        long pureOffset = hash % baHeapCapacity;
         while(true) {
             byte metadata = baHeap.retrieveMetadataByOfs(pureOffset)[0];
             byte[] kpd = baHeap.retrieveDataByOfs(pureOffset);
@@ -340,8 +344,8 @@ public class DataSourceWithHeap extends DataSourceWrapper {
     }
 
     protected void internalPut(ByteArrayWrapper key, byte[] value) {
-        int hash = hash(key);
-        long pureOffset = hash % beHeapCapacity;
+        long hash = hash(key);
+        long pureOffset = hash % baHeapCapacity;
         long nextOffset =pureOffset;
         while(true) {
             if (baHeap.isObjectStoredAtOfs(pureOffset)) {

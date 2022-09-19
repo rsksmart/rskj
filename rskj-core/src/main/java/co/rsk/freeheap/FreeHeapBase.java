@@ -1,4 +1,4 @@
-package co.rsk.baheaps;
+package co.rsk.freeheap;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,6 +23,7 @@ public class FreeHeapBase {
     public static boolean debugLogInfo = true;
     public static boolean logOperations = true;
 
+    List<ScanMethod> list;
     public int megas;
 
     long used;
@@ -38,6 +39,8 @@ public class FreeHeapBase {
 
     String baseFileName;
     int lastMetadataLen = -1;
+    int maxObjectSize;
+    boolean twoLevelHeader;
 
     protected final ReadWriteLock dataLock = new ReentrantReadWriteLock();
 
@@ -52,11 +55,14 @@ public class FreeHeapBase {
     public FreeHeapBase() {
         megas = default_spaceMegabytes;
         space = new UnifiedSpace(megas);
-        space.resetInternalConstants();
+        twoLevelHeader = true;
         space.memoryMapped = false;
         // Must call initialize
     }
 
+    public void setMaxObjectSize(int mos) {
+        maxObjectSize = mos;
+    }
 
     public void setPageSize(int pageSize) {
         space.setPageSize(pageSize);
@@ -90,15 +96,56 @@ public class FreeHeapBase {
     public void initialize() {
         // creates the memory set by setMaxMemory()
         reset();
+        createScanList();
     }
 
+    public void createScanList() {
+            list = new ArrayList();
+            list.add(new ScanMethod(header0CompressionBytes, 0, false));
+            list.add(new ScanMethod(header0CompressionBytes * 8, 0, true));
+            list.add(new ScanMethod(header1CompressionBytes, header1start, false));
+            list.add(new ScanMethod(header1CompressionBytes * 8, header1start, true));
+            for (int i=0;i<list.size()-1;i++) {
+                list.get(i).nextBoundaryBytes = list.get(i+1).boundaryBytes;
+            }
+    }
     public long getMaxMemory() {
         return getCapacity();
     }
 
     long desiredMaxMemory;
 
+
+
+    final static int header0CompressionBits = 8;
+    final static int header1CompressionBits = 8*16;
+    final static int header0CompressionBytes = 1;
+    final static int header1CompressionBytes = 16;
+    final static int header0bytesPerKibibyte = 1024/ header0CompressionBits;
+    final static int header1bytesPerKibibyte = 1024/ header1CompressionBits;
+    final static int headerTotalBytesPerKibibyte = header0bytesPerKibibyte + header1bytesPerKibibyte;
+    int header0bytes ;
+    int header1bytes;
+    int header1start;
+
     public void computeSpaceSizes() {
+        int kibibytesPerPage = (space.getPageSize()+1023) / 1024;
+        space.setPageHeaderSize(headerTotalBytesPerKibibyte*kibibytesPerPage);
+        header0bytes = space.getPageSize()/ header0CompressionBits;
+        header1bytes= space.getPageSize()/ header1CompressionBits;
+        header1start = header0bytes;
+
+        // We account for the need of the bitmap.
+        // For the fine granularity header, we take 1 bit every byte
+        // so it's 128 bytes
+        // For the coarse granularity header, we take 1 bit every 16 bytes,
+        // so the space needed is 8 bytes.
+
+        long pages1024 = (maxMemory+1023)/1024;
+        long overhead = pages1024* headerTotalBytesPerKibibyte;
+        //long usable = pages1024* (1024-headerTotalBytesPerKibibyte);
+        desiredMaxMemory = maxMemory+overhead;
+
         if (space.memoryMapped) {
             // Dynamically set the number of spaces. Half a gigabyte each.
             int desiredSpaceSize =  (1<<29);
@@ -112,8 +159,11 @@ public class FreeHeapBase {
         megas = (int) (getMaxMemory() / 1000 / 1000);
     }
 
+    long maxMemory;
+
     public void setMaxMemory(long m) {
-        desiredMaxMemory = m;
+        maxMemory = m;
+
     }
 
 
@@ -195,6 +245,7 @@ public class FreeHeapBase {
         computeSpaceSizes();
         space.reset();
 
+
         clearRemapMode();
         System.out.println("megas = " + megas);
         System.out.println("spaceSize = " + space.spaceSize / 1000 / 1000 + "M bytes");
@@ -254,7 +305,7 @@ public class FreeHeapBase {
     final int M2 = 74;
 
     public void writeDebugFooter(long uofs) {
-        if (uofs > space.size() - debugHeaderSize) return;
+        if (uofs > space.getCapacity() - debugHeaderSize) return;
         space.putByte(uofs,(byte)M1);
         space.putByte(uofs + 1, (byte)M2);
     }
@@ -280,7 +331,7 @@ public class FreeHeapBase {
     }
 
     public void checkDebugFooter(long uofs) {
-        if (uofs > space.size() - debugHeaderSize) return;
+        if (uofs > space.getCapacity() - debugHeaderSize) return;
         checkDeugMagicWord(uofs);
     }
 
@@ -304,46 +355,193 @@ public class FreeHeapBase {
         return res;
     }
 
-
-    public long findUOfsForObject(long uofs,int length) {
+    public long scanHeaderBit(int headerOffset,int compressionBytes,long uofs,int maxObjectSlotSize) {
         long headFound = -1;
-        for (long i=uofs;i>=0;i--) {
-            if (space.getHeadBit(i)) {
+
+        long aMin = Math.max(uofs - maxObjectSlotSize+1, 0);
+
+        for (long i = uofs; i >= aMin; i -=compressionBytes) {
+            if (space.getHeadBit(headerOffset,compressionBytes, i)) {
                 headFound = i;
                 break;
             }
         }
-        long nextOfs = uofs;
-        long initialOfs = uofs;
-        if (headFound != -1) {
-            boolean wrapAroundZero = false;
-            do {
-                // Now skip the object.
-                checkDebugHeader(headFound);
-                long dataOfs = headFound + lastMetadataLen;
-                int elen = getEncodedLength(dataOfs);
-                byte[] d = new byte[elen];
-                int lenLength = getEncodedLengthLength(dataOfs);
-                nextOfs = headFound + lastMetadataLen + lenLength + elen;
-                if (nextOfs>space.maxPointer)
-                     nextOfs -=space.maxPointer;
-                if (nextOfs < initialOfs) {
-                    wrapAroundZero = true;
-                } else
-                if ((nextOfs >= initialOfs) && (wrapAroundZero)) {
-                    break; // wrap around the initial point
-                }
-                if (space.getHeadBit(nextOfs)) {
-                    headFound = nextOfs;
-                } else
-                    break;
-            } while (true);
+        return headFound;
+    }
+
+    public long scanHeaderByte(int headerOffset,int compressionBytes,long uofs,int maxObjectSlotSize) {
+        long headFound = -1;
+
+        long aMin = Math.max(uofs - maxObjectSlotSize, 0);
+        for (long i = uofs; i >= aMin; i -=compressionBytes) {
+            if (space.getHeadByte(headerOffset,compressionBytes, i)) {
+                headFound = i;
+                break;
+            }
         }
+        return headFound;
+    }
+
+    class ScanMethod {
+        int boundaryBytes;
+        int headerOffset;
+        boolean byteSearch;
+        public int nextBoundaryBytes;
+
+        public ScanMethod(int boundaryBytes,
+                int headerOffset,
+                boolean byteSearch) {
+            this.boundaryBytes = boundaryBytes;
+            this.headerOffset = headerOffset;
+            this.byteSearch = byteSearch;
+        }
+    }
+
+/*
+
+        // First we check bits until we fill a byte
+        remScan = (int) Math.min(length, uofs % 8);
+        if (remScan>0) {
+            headFound0_bit = scanHeaderBit(0, header0CompressionFactor, uofs, remScan);
+            length -=remScan;
+            uofs -=remScan;
+        }
+
+        if (headFound0_bit==-1) {
+            // Until the header1CompressionFactor limit, jumping 8 bits a time,
+            int scanStep = header1CompressionFactor;
+            long uofs_start1 = (uofs / scanStep) * scanStep;
+            remScan = (int) Math.min(length, (uofs - uofs_start1));
+            headFound0_byte = scanHeaderByte(0, header0CompressionFactor*8, uofs, remScan);
+            length -= remScan;
+            uofs -=remScan;
+
+            if (headFound0_byte == -1) {
+
+                int scanStep = header1CompressionFactor*8;
+                remScan = (length / scanStep) * scanStep;
+                headFound1 = scanHeader(header0bytes, header1CompressionFactor, uofs_start1, remScan);
+                length -= remScan;
+
+                // Now we're at the begining of a header1CompressionFactor boundary
+                // continue scanning but jumping header1CompressionFactor;
+                remScan = (length / header1CompressionFactor) * header1CompressionFactor;
+                headFound1 = scanHeader(header0bytes, header1CompressionFactor, uofs_start1, remScan);
+                length -= remScan;
+                if (headFound1 == -1) {
+                    // continue with the remainder
+                    long uofs_start0 = uofs_start1 - remScan;
+                    headFound0 = scanHeader(0, header0CompressionFactor, uofs_start0, remScan);
+                } else {
+                    // If found in header1, look inside this header to find the exact position with header0
+                    long uofs_start0 = headFound1 + header0CompressionFactor - 1;
+                    headFound0 = scanHeader(0, header0CompressionFactor, uofs_start0, header1CompressionFactor);
+                    if (headFound0 == -1) {
+                        throw new RuntimeException("Invalid map");
+                    }
+                }
+            } else {
+                // Look for the bit within the byte
+                remScan = 1;
+                headFound0_bit = scanHeaderBit(0, header0CompressionFactor, headFound0_byte, remScan);
+                if (headFound0_bit == -1) {
+                    throw new RuntimeException("Invalid map");
+            }
+        }
+
+ */
+
+    public long scan(List<ScanMethod> list,long uofs,int length) {
+          int index = 0;
+          long headFound = -1;
+          ScanMethod s = null;
+          // go from fine to coarse
+          for (index=0; index<list.size();index++) {
+              s = list.get(index);
+              int remScan;
+              if (s.nextBoundaryBytes>0) {
+                  // Number of bytes required to reach the boundary
+                  int boundaryBytes = (int) (uofs % s.nextBoundaryBytes) + 1;
+                  //if (boundaryBytes == 0)  // never zero
+                  //    boundaryBytes = s.boundary;
+                  remScan = Math.min(length, boundaryBytes);
+              } else
+                  remScan = length;
+              if (s.byteSearch)
+                 headFound = scanHeaderByte(s.headerOffset,s.boundaryBytes, uofs, remScan);
+              else
+                  headFound = scanHeaderBit(s.headerOffset,s.boundaryBytes, uofs, remScan);
+              uofs -=remScan;
+              length -=remScan;
+              if (headFound!=-1) break;
+
+              if (length==0) break;
+          }
+        if (headFound==-1)
+            return -1;
+         // now it has found it at a certain index, we have to look into the current block boundary
+         // from coarse to fine
+        while (index>0) {
+            int boundaryBytes = s.boundaryBytes;
+            if (headFound % boundaryBytes!=0)
+                throw new RuntimeException("bad robot");
+            uofs = headFound + boundaryBytes; // we move to the end of the boundary
+            index--;
+            s = list.get(index);
+            int remScan = boundaryBytes;
+            if (s.byteSearch)
+                headFound = scanHeaderByte(s.headerOffset,s.boundaryBytes, uofs, remScan);
+            else
+                headFound = scanHeaderBit(s.headerOffset,s.boundaryBytes, uofs, remScan);
+        }
+        return headFound;
+    }
+
+
+    public long findUOfsForObject(long uofs,int length) {
+        long headFound = -1;
+        long initialOfs = uofs;
+
+        headFound = scan(list,uofs,length);
+
+        if (headFound == -1) {
+            return uofs;
+        }
+
+        long nextOfs = uofs;
+
+        boolean wrapAroundZero = false;
+        do {
+            // Now skip the object.
+            checkDebugHeader(headFound);
+            long dataOfs = headFound + lastMetadataLen;
+            int elen = getEncodedLength(dataOfs);
+            byte[] d = new byte[elen];
+            int lenLength = getEncodedLengthLength(dataOfs);
+            nextOfs = headFound + lastMetadataLen + lenLength + elen;
+            if (nextOfs > space.maxPointer)
+                nextOfs -= space.maxPointer;
+            if (nextOfs < initialOfs) {
+                wrapAroundZero = true;
+            } else if ((nextOfs >= initialOfs) && (wrapAroundZero)) {
+                break; // wrap around the initial point
+            }
+            // nextOfs MUST exists AFTER initialOfs
+            if (nextOfs < initialOfs) {
+                throw new RuntimeException("Something went really wrong");
+            }
+
+            if (space.getHeadBit(0, header0CompressionBits, nextOfs)) {
+                headFound = nextOfs;
+            } else
+                break;
+        } while (true);
 
         // now we have a nextOfs ready to write
         // TO-DO check for wrap-around
         return nextOfs;
     }
+
 
     public long storeObject(long uOffset,
                            byte[] encoded,
@@ -360,8 +558,8 @@ public class FreeHeapBase {
             throw new RuntimeException("encoding too long");
 
 
-        int totalLength = debugHeaderSize+metadataLength+calcEncodedLengthLength(objectLength)+objectLength;
-        uOffset = findUOfsForObject(uOffset,totalLength);
+        //int totalLength = debugHeaderSize+metadataLength+calcEncodedLengthLength(objectLength)+objectLength;
+        uOffset = findUOfsForObject(uOffset,maxObjectSize);
         long start = uOffset;
         if (metadata!=null) {
             space.setBytes(uOffset,metadata,0,metadataLength);
@@ -375,7 +573,8 @@ public class FreeHeapBase {
         uOffset += encoded.length;
         //writeDebugFooter(destSpace, newMemTop);
         //newMemTop += debugHeaderSize;
-        space.setHeadBit(start);
+        space.setHeadBit(0, header0CompressionBits,start);
+        space.setHeadBit(header1start, header1CompressionBits,start);
         return start;
     }
 
@@ -432,6 +631,10 @@ public class FreeHeapBase {
             throw new RuntimeException("no data stored");
     }
 
+    public boolean objectExistsAt(long uofs) {
+        return space.getHeadBit(0, header0CompressionBits,uofs);
+    }
+
     public byte[] retrieveDataByOfs(long uofs) {
         // Does not require a read lock, because writes cannot
         // change already stored data.
@@ -441,7 +644,7 @@ public class FreeHeapBase {
             throw new RuntimeException("Disposed reference used (offset "+uofs+")");
 
 
-        if (!space.getHeadBit(uofs)) {
+        if (!objectExistsAt(uofs)) {
             throw new RuntimeException("Invalid offset");
         }
         checkDebugHeader(uofs);
@@ -514,7 +717,7 @@ public class FreeHeapBase {
     }
 
     public long getCapacity() {
-        return space.size();
+        return space.getCapacity();
     }
 
     public int getUsagePercent() {
@@ -546,7 +749,7 @@ public class FreeHeapBase {
    /// New
     public long retrieveNextDataOfsByOfs(long upofs) {
 
-        if (!space.getHeadBit(upofs)) {
+        if (!objectExistsAt(upofs)) {
             throw new RuntimeException("Invalid offset");
         }
         // get size
@@ -561,11 +764,11 @@ public class FreeHeapBase {
     }
 
     public boolean isObjectStoredAtOfs(long encodedOfs) {
-        return (!isOfsAvail(encodedOfs));
+        return (objectExistsAt(encodedOfs));
     }
 
     public boolean isOfsAvail(long uofs) {
-        return (space.getHeadBit(uofs)==false);
+        return (!objectExistsAt(uofs));
     }
 
     public void setMetadataLength(int metadataLen) {

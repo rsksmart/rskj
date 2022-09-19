@@ -1,7 +1,7 @@
 package co.rsk.datasources;
 
-import co.rsk.bahashmaps.CreationFlag;
-import co.rsk.bahashmaps.Format;
+import co.rsk.freeheap.CreationFlag;
+import co.rsk.freeheap.Format;
 import co.rsk.datasources.flatydb.DbLock;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -40,14 +40,16 @@ public class FlatyDbDataSource extends DataSourceWithHeap {
         return new LevelDbDataSource(name,path,readOnly);
     }
 
-    public FlatyDbDataSource(int maxNodeCount, long beHeapCapacity, String databaseName,
+    public FlatyDbDataSource(int maxNodeCount, long beHeapCapacity,
+                             int maxObjectSize,
+                             String databaseName,
                              EnumSet<CreationFlag> creationFlags,
                              int dbVersion, boolean readOnly) throws IOException {
         // single-thread test:
         //  With rwlocks or exclusive locks: 85k/sec.
         //  Without locks: 102K/sec
 
-        super(maxNodeCount, beHeapCapacity,databaseName,LockType.RW,
+        super(maxNodeCount, beHeapCapacity,maxObjectSize,databaseName,LockType.RW,
                 getFormat(creationFlags,dbVersion),
                 (creationFlags.contains(CreationFlag.supportAdditionalKV)),
                 (creationFlags.contains(CreationFlag.atomicBatches)) &&

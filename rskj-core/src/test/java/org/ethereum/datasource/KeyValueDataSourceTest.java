@@ -1,6 +1,6 @@
 package org.ethereum.datasource;
 
-import co.rsk.bahashmaps.CreationFlag;
+import co.rsk.freeheap.CreationFlag;
 import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
@@ -34,6 +34,7 @@ public class KeyValueDataSourceTest {
     public static KeyValueDataSource newFlatDbDataSource(Path tmpDir) throws IOException {
         // Create a database that allows deteles and keys that are not value hashes.
         return new FlatyDbDataSource(1000,10_000,
+                1_000,
                 Files.createTempDirectory(tmpDir, "default").resolve("test").toString(),
                 EnumSet.of(
                         CreationFlag.storeKeys,

@@ -1,6 +1,6 @@
 package co.rsk.datasources.flatydb;
 
-import co.rsk.baheaps.AbstractFreeHeap;
+import co.rsk.freeheap.AbstractFreeHeap;
 
 import java.io.File;
 import java.io.IOException;

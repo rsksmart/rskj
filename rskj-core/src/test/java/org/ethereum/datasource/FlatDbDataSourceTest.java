@@ -19,7 +19,7 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.bahashmaps.CreationFlag;
+import co.rsk.freeheap.CreationFlag;
 import co.rsk.datasources.FailureTrack;
 import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.crypto.Keccak256Helper;
@@ -86,7 +86,7 @@ public class FlatDbDataSourceTest {
         }
     }
 
-        return new FlatyDbDataSource(1000,10_000,
+        return new FlatyDbDataSource(1000,10_000,1000,
                 tmpDbPath ,
                 someFlags ,
                 FlatyDbDataSource.latestDBVersion,false);

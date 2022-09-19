@@ -1,6 +1,6 @@
 package org.ethereum.datasource;
 
-import co.rsk.bahashmaps.CreationFlag;
+import co.rsk.freeheap.CreationFlag;
 import co.rsk.datasources.FlatyDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
@@ -23,9 +23,10 @@ public class KeyValueDataSourceUtils {
         return makeDataSourceExt(datasourcePath, kind, readOnly,null);
     }
 
-    public static class FlatDBOptions {
+    public static class FlatyDBOptions {
         public int maxKeys;
         public long maxCapacity;
+        public int maxObjectSize;
         public EnumSet<CreationFlag> creationFlags;
         public int dbVersion;
     }
@@ -47,21 +48,25 @@ public class KeyValueDataSourceUtils {
                 ds = new RocksDbDataSource(name, databaseDir,readOnly);
                 break;
             case FLATY_DB:
-                FlatDBOptions flatDbOptions;
+                FlatyDBOptions flatyDbOptions;
                 if (options!=null) {
-                    flatDbOptions = (FlatDBOptions) options;
+                    flatyDbOptions = (FlatyDBOptions) options;
                 } else {
-                    flatDbOptions = new FlatDBOptions();
-                    flatDbOptions.maxKeys =16_000_000;
-                    flatDbOptions.maxCapacity = flatDbOptions.maxKeys*100;
-                    flatDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
-                    flatDbOptions.creationFlags =CreationFlag.Default;
+                    flatyDbOptions = new FlatyDBOptions();
+                    flatyDbOptions.maxKeys =16_000_000;
+                    flatyDbOptions.maxCapacity = flatyDbOptions.maxKeys*100;
+                    // Code should go somewhere else for now.
+                    flatyDbOptions.maxObjectSize = 256; // undefined
+                    flatyDbOptions.dbVersion = FlatyDbDataSource.latestDBVersion;
+                    flatyDbOptions.creationFlags =CreationFlag.Default;
                 }
                 try {
-                    ds = new FlatyDbDataSource(flatDbOptions.maxKeys,flatDbOptions.maxCapacity,
+                    ds = new FlatyDbDataSource(flatyDbOptions.maxKeys,
+                            flatyDbOptions.maxCapacity,
+                            flatyDbOptions.maxObjectSize,
                             datasourcePath.toString(),
-                            flatDbOptions.creationFlags,
-                            flatDbOptions.dbVersion,readOnly);
+                            flatyDbOptions.creationFlags,
+                            flatyDbOptions.dbVersion,readOnly);
                 } catch (IOException e) {
                     ds = null;
                 }
