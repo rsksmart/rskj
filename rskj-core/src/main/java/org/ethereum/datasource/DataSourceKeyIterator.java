@@ -19,10 +19,8 @@
 
 package org.ethereum.datasource;
 
-import org.ethereum.db.ByteArrayWrapper;
-
 import java.util.*;
 
-public interface DataSourceKeyIterator extends Iterator<ByteArrayWrapper>, AutoCloseable {
+public interface DataSourceKeyIterator extends Iterator<byte[]>, AutoCloseable {
     void seekToFirst();
 }

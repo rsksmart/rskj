@@ -55,7 +55,6 @@ public class KeyValueDataSourceTest {
     public void put() {
         byte[] randomKey = "testing-key".getBytes();
         byte[] randomValue = "testing-value".getBytes();
-        ByteArrayWrapper randomKeyByteWrapper = ByteUtil.wrap(randomKey);
 
         keyValueDataSource.put(randomKey, randomValue);
         if (withFlush) {
@@ -69,16 +68,16 @@ public class KeyValueDataSourceTest {
 
             assertTrue(iterator.hasNext());
 
-            ByteArrayWrapper expectedValue = null;
+            byte[] expectedValue = null;
 
             while (iterator.hasNext()) {
                 expectedValue = iterator.next();
-                if (expectedValue.equals(randomKeyByteWrapper)) {
+                if (ByteUtil.wrap(expectedValue).equals(ByteUtil.wrap(randomKey))) {
                     break;
                 }
             }
 
-            assertEquals(expectedValue, randomKeyByteWrapper);
+            assertArrayEquals(expectedValue, randomKey);
         } catch (Exception e) {
             e.printStackTrace();
         }

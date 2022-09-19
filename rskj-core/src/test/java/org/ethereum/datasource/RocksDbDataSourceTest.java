@@ -24,13 +24,11 @@ import org.ethereum.util.ByteUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.rocksdb.RocksIterator;
 
 import java.io.IOException;
 import java.util.*;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
 
 public class RocksDbDataSourceTest {

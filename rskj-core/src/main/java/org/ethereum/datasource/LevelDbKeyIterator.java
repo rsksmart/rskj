@@ -18,15 +18,13 @@
  */
 package org.ethereum.datasource;
 
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBIterator;
 
 import java.util.NoSuchElementException;
 
 public class LevelDbKeyIterator implements DataSourceKeyIterator {
-    private DBIterator iterator;
+    private final DBIterator iterator;
 
     public LevelDbKeyIterator(DB db) {
         this(db, false);
@@ -51,12 +49,11 @@ public class LevelDbKeyIterator implements DataSourceKeyIterator {
     }
 
     @Override
-    public ByteArrayWrapper next() throws NoSuchElementException {
+    public byte[] next() throws NoSuchElementException {
         if (!this.hasNext()) {
             throw new NoSuchElementException();
         }
-        byte[] key = this.iterator.next().getKey();
-        return ByteUtil.wrap(key);
+        return this.iterator.next().getKey();
     }
 
     @Override

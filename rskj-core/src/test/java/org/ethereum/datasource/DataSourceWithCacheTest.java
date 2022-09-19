@@ -45,7 +45,7 @@ public class DataSourceWithCacheTest {
             iterator.seekToFirst();
 
             assertTrue(iterator.hasNext());
-            assertEquals(iterator.next(), ByteUtil.wrap(randomKey));
+            assertArrayEquals(iterator.next(), randomKey);
         } catch (Exception e) {
             e.printStackTrace();
         }

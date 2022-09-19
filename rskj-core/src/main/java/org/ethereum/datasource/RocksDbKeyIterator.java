@@ -18,15 +18,13 @@
  */
 package org.ethereum.datasource;
 
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksIterator;
 
 import java.util.NoSuchElementException;
 
 public class RocksDbKeyIterator implements DataSourceKeyIterator {
-    private RocksIterator iterator;
+    private final RocksIterator iterator;
 
     public RocksDbKeyIterator(RocksDB db) {
         this(db, false);
@@ -51,14 +49,13 @@ public class RocksDbKeyIterator implements DataSourceKeyIterator {
     }
 
     @Override
-    public ByteArrayWrapper next() throws NoSuchElementException {
+    public byte[] next() throws NoSuchElementException {
         if (!this.hasNext()) {
             throw new NoSuchElementException();
         }
 
         this.iterator.next();
-        byte[] key = this.iterator.key();
-        return ByteUtil.wrap(key);
+        return this.iterator.key();
     }
 
     @Override

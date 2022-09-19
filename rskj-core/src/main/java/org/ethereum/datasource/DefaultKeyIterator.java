@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class DefaultKeyIterator implements DataSourceKeyIterator {
-    private Iterator<ByteArrayWrapper> iterator;
+    private final Iterator<ByteArrayWrapper> iterator;
 
     public DefaultKeyIterator(Collection<ByteArrayWrapper> collection) {
         this.iterator = collection.iterator();
@@ -41,11 +41,11 @@ public class DefaultKeyIterator implements DataSourceKeyIterator {
     }
 
     @Override
-    public ByteArrayWrapper next() throws NoSuchElementException {
+    public byte[] next() throws NoSuchElementException {
         if (!this.hasNext()) {
             throw new NoSuchElementException();
         }
-        return this.iterator.next();
+        return this.iterator.next().getData();
     }
 
     @Override
