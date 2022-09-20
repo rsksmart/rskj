@@ -18,9 +18,11 @@
 
 package co.rsk.db;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
+import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
  */
 public class MapDBBlocksIndex implements BlocksIndex {
 
-    private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
+    static final String MAX_BLOCK_NUMBER_KEY = "max_block";
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
@@ -45,25 +47,26 @@ public class MapDBBlocksIndex implements BlocksIndex {
         return new MapDBBlocksIndex(indexDB);
     }
 
+    @VisibleForTesting
+    static MapDBBlocksIndex createForTesting(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
+        return new MapDBBlocksIndex(indexDB, index, metadata);
+    }
+
     protected MapDBBlocksIndex(DB indexDB) {
+        this(indexDB, buildIndex(indexDB), buildMetadata(indexDB));
+    }
+
+    // This constructor should be used from this class or from child class when creating instance for Testing purposes
+    protected MapDBBlocksIndex(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
         this.indexDB = indexDB;
-
-        this.index = wrapIndex(indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet());
-
-        this.metadata = wrapIndex(indexDB.hashMapCreate("metadata")
-                .keySerializer(Serializer.STRING)
-                .valueSerializer(Serializer.BYTE_ARRAY)
-                .makeOrGet());
+        this.index = wrapIndex(index);
+        this.metadata = wrapIndex(metadata);
 
         // Max block number initialization assumes an index without gap
-        this.metadata.computeIfAbsent(MAX_BLOCK_NUMBER_KEY, k -> {
+        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) { // NOSONAR not implemented in TransientMap
             long maxBlockNumber = (long) index.size() - 1;
-            return ByteUtil.longToBytes(maxBlockNumber);
-        });
+            metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
+        }
     }
 
     protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
@@ -147,5 +150,30 @@ public class MapDBBlocksIndex implements BlocksIndex {
     @Override
     public final void close() {
         indexDB.close();
+    }
+
+    @VisibleForTesting
+    Map<Long, List<IndexedBlockStore.BlockInfo>> getIndex() {
+        return index;
+    }
+
+    @VisibleForTesting
+    Map<String, byte[]> getMetadata() {
+        return metadata;
+    }
+
+    private static HTreeMap<String, byte[]> buildMetadata(DB indexDB) {
+        return indexDB.hashMapCreate("metadata")
+                .keySerializer(Serializer.STRING)
+                .valueSerializer(Serializer.BYTE_ARRAY)
+                .makeOrGet();
+    }
+
+    private static HTreeMap<Long, List<IndexedBlockStore.BlockInfo>> buildIndex(DB indexDB) {
+        return indexDB.hashMapCreate("index")
+                .keySerializer(Serializer.LONG)
+                .valueSerializer(BLOCK_INFO_SERIALIZER)
+                .counterEnable()
+                .makeOrGet();
     }
 }

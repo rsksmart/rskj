@@ -86,6 +86,10 @@ public class RocksDbDataSource implements KeyValueDataSource {
         Files.createDirectories(dbPath.getParent());
     }
 
+    protected RocksDB openDb(Options options, Path dbPath) throws RocksDBException {
+        return RocksDB.open(options, dbPath.toString());
+    }
+
     @Override
     public final void init() {
         resetDbLock.writeLock().lock();
@@ -110,7 +114,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
             createRequiredDirectories(dbPath);
 
             logger.debug("Initializing new or existing database: '{}'", name);
-            openDb(options, dbPath);
+            db = openDb(options, dbPath);
+            alive = true;
 
             logger.debug("<~ RocksDbDataSource.init(): {}", name);
         } catch (RocksDBException ioe) {
@@ -125,12 +130,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
             profiler.stop(metric);
             resetDbLock.writeLock().unlock();
         }
-    }
-
-    private void openDb(Options options, Path dbPath) throws RocksDBException {
-        db = RocksDB.open(options, dbPath.toString());
-
-        alive = true;
     }
 
     public static Path getPathForName(String name, String databaseDir) {
