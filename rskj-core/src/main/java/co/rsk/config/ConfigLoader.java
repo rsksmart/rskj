@@ -189,7 +189,7 @@ public class ConfigLoader {
                 // if expected object is empty, then the actual object should contain only scalar items
                 if (isCollectionType(actualEntryValue.valueType())) {
                     String entryKeyPath = prefix + actualEntryKey;
-                    logger.error("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
+                    logger.warn("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
                             entryKeyPath, actualEntryValue);
                     valid = false;
                 }
@@ -197,7 +197,7 @@ public class ConfigLoader {
                 ConfigValue expectedEntryValue = expectedObject.get(actualEntryKey);
                 String entryKeyPath = prefix + actualEntryKey;
                 if (expectedEntryValue == null) {
-                    logger.error("Unexpected config value {} for key path `{}`. See expected.conf for the expected settings", actualEntryValue, entryKeyPath);
+                    logger.warn("Unexpected config value {} for key path `{}`. See expected.conf for the expected settings", actualEntryValue, entryKeyPath);
                     valid = false;
                 } else {
                     valid &= isActualValueValid(entryKeyPath, expectedEntryValue, actualEntryValue);
@@ -219,7 +219,7 @@ public class ConfigLoader {
                 // if expected list is empty, then the actual list should contain only scalar items
                 if (isCollectionType(actualItem.valueType())) {
                     String itemKeyPath = keyPath + "[" + index + "]";
-                    logger.error("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
+                    logger.warn("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
                             itemKeyPath, actualItem);
                     valid = false;
                 }
@@ -243,7 +243,7 @@ public class ConfigLoader {
         }
 
         if (expectedValueType != actualValueType) {
-            logger.error("Config value type mismatch. `{}` has type {}, but should have {}. See expected.conf for the expected settings",
+            logger.warn("Config value type mismatch. `{}` has type {}, but should have {}. See expected.conf for the expected settings",
                     keyPath, actualValueType, expectedValueType);
             return false;
         }
