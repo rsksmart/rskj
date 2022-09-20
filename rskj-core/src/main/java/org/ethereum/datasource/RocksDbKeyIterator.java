@@ -25,12 +25,14 @@ import java.util.NoSuchElementException;
 
 public class RocksDbKeyIterator implements DataSourceKeyIterator {
     private final RocksIterator iterator;
+    private boolean blockIteration;
 
     public RocksDbKeyIterator(RocksDB db) {
         this(db, false);
     }
 
     public RocksDbKeyIterator(RocksDB db, boolean avoidSeekFirst) {
+        this.blockIteration = false;
         this.iterator = db.newIterator();
 
         if (!avoidSeekFirst) {
@@ -50,12 +52,19 @@ public class RocksDbKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public byte[] next() throws NoSuchElementException {
-        if (!this.hasNext()) {
+        byte[] key = this.iterator.key();
+
+        if (blockIteration) {
             throw new NoSuchElementException();
         }
 
-        this.iterator.next();
-        return this.iterator.key();
+        if (this.hasNext()) {
+            this.iterator.next();
+        } else {
+            this.blockIteration = true;
+        }
+
+        return key;
     }
 
     @Override

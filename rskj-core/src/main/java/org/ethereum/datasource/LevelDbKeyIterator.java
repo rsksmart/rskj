@@ -25,12 +25,14 @@ import java.util.NoSuchElementException;
 
 public class LevelDbKeyIterator implements DataSourceKeyIterator {
     private final DBIterator iterator;
+    private boolean blockIteration;
 
     public LevelDbKeyIterator(DB db) {
         this(db, false);
     }
 
     public LevelDbKeyIterator(DB db, boolean avoidSeekFirst) {
+        this.blockIteration = false;
         this.iterator = db.iterator();
 
         if (!avoidSeekFirst) {
@@ -50,10 +52,19 @@ public class LevelDbKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public byte[] next() throws NoSuchElementException {
-        if (!this.hasNext()) {
+        byte[] key = this.iterator.peekNext().getKey();
+
+        if (blockIteration) {
             throw new NoSuchElementException();
         }
-        return this.iterator.next().getKey();
+
+        if (this.hasNext()) {
+            this.iterator.next();
+        } else {
+            this.blockIteration = true;
+        }
+
+        return key;
     }
 
     @Override
