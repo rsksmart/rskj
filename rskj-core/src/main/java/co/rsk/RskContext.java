@@ -315,6 +315,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
             }
 
+            KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), rskSystemProperties.databaseDir(), rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+
             if (rskSystemProperties.importEnabled()) {
                 getBootstrapImporter().importData();
             }
