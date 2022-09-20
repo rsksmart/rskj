@@ -18,23 +18,31 @@
 
 package org.ethereum.datasource;
 
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
-public class PersistentDataSourceWithCacheAndSnapshot extends PersistentDataSourceWithCache {
+public class DataSourceWithCacheAndSnapshot extends DataSourceWithCache {
 
     // TODO:I test
 
+    // TODO:I ver de eliminar esta para reducir cambios
+
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
-    public PersistentDataSourceWithCacheAndSnapshot(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
-        super(base, cacheSize);
+    public static DataSourceWithCacheAndSnapshot create(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
+        return new DataSourceWithCacheAndSnapshot(base, cacheSize, cacheSnapshotHandler);
+    }
+
+    private DataSourceWithCacheAndSnapshot(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
+        super(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache-snapshot"));
 
         this.cacheSnapshotHandler = cacheSnapshotHandler;
         cacheSnapshotHandler.load(getCommittedCache());
     }
 
     @Override
-    protected void customCloseActions() {
+    protected void customClose() {
         cacheSnapshotHandler.save(getCommittedCache());
     }
 

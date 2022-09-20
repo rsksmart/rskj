@@ -20,27 +20,27 @@ public class KeyValueDataSourceUtils {
     }
 
     @Nonnull
-    public static KeyValueDataSource makePersistentDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
-        return makeDatasource(datasourcePath, kind, false);
+    public static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+        return makeDatasourceInternal(datasourcePath, kind, false);
     }
 
     @Nonnull
     public static KeyValueDataSource makeReadonlyDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
-        return makeDatasource(datasourcePath, kind, true);
+        return makeDatasourceInternal(datasourcePath, kind, true);
     }
 
     @Nonnull
-    private static KeyValueDataSource makeDatasource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, boolean readOnly) {
+    private static KeyValueDataSource makeDatasourceInternal(@Nonnull Path datasourcePath, @Nonnull DbKind kind, boolean readOnly) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
 
         KeyValueDataSource ds;
         switch (kind) {
             case LEVEL_DB:
-                ds = readOnly ? new ReadonlyLevelDbDataSource(name, databaseDir) : new PersistentLevelDbDataSource(name, databaseDir);
+                ds = readOnly ? LevelDbDataSourceReadonly.create(name, databaseDir) : LevelDbDataSource.create(name, databaseDir);
                 break;
             case ROCKS_DB:
-                ds = readOnly ? new ReadonlyRocksDbDataSource(name, databaseDir) : new PersistentRocksDbDataSource(name, databaseDir);
+                ds = readOnly ? RocksDbDataSourceReadonly.create(name, databaseDir) : RocksDbDataSource.create(name, databaseDir);
                 break;
             default:
                 throw new IllegalArgumentException("kind");
@@ -59,7 +59,7 @@ public class KeyValueDataSourceUtils {
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makePersistentDataSource(destinationPath, kind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }

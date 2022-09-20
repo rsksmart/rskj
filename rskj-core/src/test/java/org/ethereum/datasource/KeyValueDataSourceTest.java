@@ -34,15 +34,15 @@ public class KeyValueDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         return Arrays.asList(new Object[][]{
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-                {new PersistentLevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), PersistentLevelDbDataSource.class.getSimpleName(), true},
-                {new PersistentRocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), PersistentRocksDbDataSource.class.getSimpleName(), true},
-                {new PersistentDataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
-                {new PersistentDataSourceWithCache(new PersistentRocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", PersistentRocksDbDataSource.class.getSimpleName()), true},
+                {LevelDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
+                {DataSourceWithCache.create(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
+                {DataSourceWithCache.create(RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
                 {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
-                {new PersistentLevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), PersistentLevelDbDataSource.class.getSimpleName(), true},
-                {new PersistentRocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), PersistentRocksDbDataSource.class.getSimpleName(), false},
-                {new PersistentDataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
-                {new PersistentDataSourceWithCache(new PersistentRocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", PersistentRocksDbDataSource.class.getSimpleName()), false}
+                {LevelDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
+                {RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
+                {DataSourceWithCache.create(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
+                {DataSourceWithCache.create(RocksDbDataSource.create("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
         });
     }
 

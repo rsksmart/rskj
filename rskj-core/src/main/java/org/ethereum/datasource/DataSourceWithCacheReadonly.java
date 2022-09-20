@@ -18,29 +18,23 @@
 
 package org.ethereum.datasource;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import org.slf4j.LoggerFactory;
 
-public class PersistentRocksDbDataSource extends RocksDbDataSource {
+import javax.annotation.Nonnull;
 
-    public PersistentRocksDbDataSource(String name, String databaseDir) {
-        super(name, databaseDir);
+public class DataSourceWithCacheReadonly extends DataSourceWithCache {
+
+    public static DataSourceWithCacheReadonly create(@Nonnull KeyValueDataSource base, int cacheSize) {
+        return new DataSourceWithCacheReadonly(base, cacheSize);
+    }
+
+    private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize) {
+        super(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache-readonly"));
     }
 
     @Override
-    protected boolean getOptionCreateIfMissing() {
-        return true;
-    }
-
-    @Override
-    protected void createRequiredDirectories(Path dbPath) throws IOException {
-        Files.createDirectories(dbPath.getParent());
-    }
-
-    @Override
-    protected boolean skipWriteOp() {
-        return false;
+    public void flush() {
+        // nothing to do
     }
 
 }

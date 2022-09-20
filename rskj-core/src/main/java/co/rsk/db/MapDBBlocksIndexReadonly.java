@@ -16,38 +16,33 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.datasource;
+package co.rsk.db;
 
-import java.nio.file.Path;
+import org.ethereum.datasource.TransientMap;
+import org.mapdb.DB;
 
-public class ReadonlyRocksDbDataSource extends RocksDbDataSource implements ReadonlyDbDataSource {
+import java.util.Map;
 
-    // TODO:I test
+public class MapDBBlocksIndexReadonly extends MapDBBlocksIndex {
 
-    public ReadonlyRocksDbDataSource(String name, String databaseDir) {
-        super(name, databaseDir);
+    // TODO:I Test
+
+    public static MapDBBlocksIndexReadonly create(DB indexDB) {
+        return new MapDBBlocksIndexReadonly(indexDB);
+    }
+
+    private MapDBBlocksIndexReadonly(DB indexDB) {
+        super(indexDB);
     }
 
     @Override
-    public boolean getOptionCreateIfMissing() {
-        return false;
+    protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
+        return TransientMap.transientMap(base);
     }
 
     @Override
-    public void createRequiredDirectories(Path dbPath) {
-        // nothing to do
-    }
-
-    @Override
-    protected boolean skipWriteOp() throws ReadOnlyException {
-        checkExceptionOnWrite();
-        // otherwise just skip
-        return true;
-    }
-
-    @Override
-    public void checkExceptionOnWrite() throws ReadOnlyException {
-        throw new ReadOnlyException("database is readonly");
+    public void flush() {
+        // a read-only mapDB cannot be committed, even if there is nothing to commit
     }
 
 }

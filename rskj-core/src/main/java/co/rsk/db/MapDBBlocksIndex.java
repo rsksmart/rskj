@@ -32,7 +32,7 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 /**
  * MapDBBlocksIndex is a thread safe implementation of BlocksIndex with mapDB providing the underlying functionality.
  */
-public abstract class MapDBBlocksIndex implements BlocksIndex {
+public class MapDBBlocksIndex implements BlocksIndex {
 
     private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
 
@@ -41,15 +41,20 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
 
     private final DB indexDB;
 
+    public static MapDBBlocksIndex create(DB indexDB) {
+        return new MapDBBlocksIndex(indexDB);
+    }
+
     protected MapDBBlocksIndex(DB indexDB) {
         this.indexDB = indexDB;
+
         this.index = wrapIndex(indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)
                 .counterEnable()
                 .makeOrGet());
 
-        this.metadata = wrapMetadata(indexDB.hashMapCreate("metadata")
+        this.metadata = wrapIndex(indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
                 .makeOrGet());
@@ -61,21 +66,18 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
         });
     }
 
-    protected abstract Map<String, byte[]> wrapMetadata(Map<String, byte[]> ametadata);
-
-    protected abstract Map<Long, List<IndexedBlockStore.BlockInfo>> wrapIndex(Map<Long, List<IndexedBlockStore.BlockInfo>> aindex);
-
-    protected DB getIndexDB() {
-        return indexDB;
+    protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
+        // no wrap needed
+        return base;
     }
 
     @Override
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return index.isEmpty();
     }
 
     @Override
-    public long getMaxNumber() {
+    public final long getMaxNumber() {
         if (index.isEmpty()) {
             throw new IllegalStateException("Index is empty");
         }
@@ -84,7 +86,7 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public long getMinNumber() {
+    public final long getMinNumber() {
         if (index.isEmpty()) {
             throw new IllegalStateException("Index is empty");
         }
@@ -93,17 +95,17 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public boolean contains(long blockNumber) {
+    public final boolean contains(long blockNumber) {
         return index.containsKey(blockNumber);
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> getBlocksByNumber(long blockNumber) {
+    public final List<IndexedBlockStore.BlockInfo> getBlocksByNumber(long blockNumber) {
         return index.getOrDefault(blockNumber, new ArrayList<>());
     }
 
     @Override
-    public void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
+    public final void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
         if (blocks == null || blocks.isEmpty()) {
             throw new IllegalArgumentException("Block list cannot be empty nor null.");
         }
@@ -120,7 +122,7 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> removeLast() {
+    public final List<IndexedBlockStore.BlockInfo> removeLast() {
         long lastBlockNumber = -1;
         if (index.size() > 0) {
             lastBlockNumber = getMaxNumber();
@@ -138,7 +140,12 @@ public abstract class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public void close() {
+    public void flush() {
+        indexDB.commit();
+    }
+
+    @Override
+    public final void close() {
         indexDB.close();
     }
 }

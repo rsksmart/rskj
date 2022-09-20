@@ -37,9 +37,7 @@ import java.util.stream.Stream;
    This is because, for performance reasons it seems, get() queries the committedCache BEFORE the
    uncommittedCache.
  */
-public abstract class DataSourceWithCache implements KeyValueDataSource {
-
-    private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
+public class DataSourceWithCache implements KeyValueDataSource {
 
     private final int cacheSize;
     private final KeyValueDataSource base;
@@ -52,19 +50,30 @@ public abstract class DataSourceWithCache implements KeyValueDataSource {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
+    private final Logger logger;
+
+    public static DataSourceWithCache create(@Nonnull KeyValueDataSource base, int cacheSize) {
+        return new DataSourceWithCache(base, cacheSize);
+    }
+
+    private DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
+        this(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache"));
+    }
+
+    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, Logger logger) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new HashMap<>(); // TODO:I clarify failing test!
         this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
+        this.logger = logger;
     }
-
-    protected abstract void customCloseActions();
-
-    protected abstract boolean skipWriteOp();
 
     protected Map<ByteArrayWrapper, byte[]> getCommittedCache() {
         return committedCache;
+    }
+
+    protected void customClose() {
+        // nothing to do
     }
 
     @Override
@@ -224,9 +233,6 @@ public abstract class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public void flush() {
-        if (skipWriteOp()) {
-            return;
-        }
         Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
 
         this.lock.writeLock().lock();
@@ -276,7 +282,7 @@ public abstract class DataSourceWithCache implements KeyValueDataSource {
             flush();
             base.close();
 
-            customCloseActions();
+            customClose();
 
             uncommittedCache.clear();
             committedCache.clear();

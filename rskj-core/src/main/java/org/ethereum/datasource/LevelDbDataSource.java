@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -39,9 +40,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
-public abstract class LevelDbDataSource implements KeyValueDataSource {
+public class LevelDbDataSource implements KeyValueDataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -49,6 +49,8 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
+
+    private final Logger logger;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -58,17 +60,27 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    protected LevelDbDataSource(String name, String databaseDir) {
-        this.databaseDir = databaseDir;
-        this.name = name;
-        logger.debug("New LevelDbDataSource: {}", name);
+    public static LevelDbDataSource create(String name, String databaseDir) {
+        return new LevelDbDataSource(name, databaseDir);
     }
 
-    protected abstract boolean getOptionCreateIfMissing();
+    private LevelDbDataSource(String name, String databaseDir) {
+        this(name, databaseDir, LoggerFactory.getLogger("db"));
+    }
 
-    protected abstract void createRequiredDirectories(Path dbPath) throws IOException;
+    protected LevelDbDataSource(String name, String databaseDir, Logger logger) {
+        this.databaseDir = databaseDir;
+        this.name = name;
+        this.logger = logger;
+    }
 
-    protected abstract boolean skipWriteOp() throws ReadonlyDbDataSource.ReadOnlyException;
+    protected void customiseOptions(Options options) {
+        options.createIfMissing(true);
+    }
+
+    protected void createRequiredDirectories(Path dbPath) throws IOException {
+        Files.createDirectories(dbPath.getParent());
+    }
 
     @Override
     public final void init() {
@@ -84,13 +96,13 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
             Objects.requireNonNull(name, "no name set to the db");
 
             Options options = new Options();
-            options.createIfMissing(getOptionCreateIfMissing());
             options.compressionType(CompressionType.NONE);
             options.blockSize(10 * 1024 * 1024);
             options.writeBufferSize(10 * 1024 * 1024);
             options.cacheSize(0);
             options.paranoidChecks(true);
             options.verifyChecksums(true);
+            customiseOptions(options);
 
             try {
                 logger.debug("Opening database");
@@ -176,11 +188,7 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public final byte[] put(byte[] key, byte[] value) {
-        if (skipWriteOp()) {
-            return null;
-        }
-
+    public byte[] put(byte[] key, byte[] value) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
@@ -204,11 +212,7 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public final void delete(byte[] key) {
-        if (skipWriteOp()) {
-            return;
-        }
-
+    public void delete(byte[] key) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
@@ -279,12 +283,8 @@ public abstract class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public final void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
-        if (skipWriteOp()) {
-            return;
-        }
-
-        if (rows.containsKey(null)) {
+    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
+       if (rows.containsKey(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
         resetDbLock.readLock().lock();

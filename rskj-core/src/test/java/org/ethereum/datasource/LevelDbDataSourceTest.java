@@ -39,7 +39,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() throws IOException {
-        LevelDbDataSource dataSource = new PersistentLevelDbDataSource("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = LevelDbDataSource.create("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
@@ -54,7 +54,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() throws IOException {
-        LevelDbDataSource dataSource = new PersistentLevelDbDataSource("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = LevelDbDataSource.create("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);

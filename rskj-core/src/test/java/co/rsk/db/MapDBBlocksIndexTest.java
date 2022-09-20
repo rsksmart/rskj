@@ -53,7 +53,7 @@ public class MapDBBlocksIndexTest {
                 .thenReturn(mock(HTreeMap.class))
                 .thenReturn(mock(HTreeMap.class));
 
-        target = new PersistentMapDBBlocksIndex(indexDB);
+        target = MapDBBlocksIndex.create(indexDB);
 
         index = new HashMap<>();
         TestUtils.setInternalState(target, "index", index);

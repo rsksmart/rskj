@@ -23,7 +23,7 @@ public class DataSourceWithCacheReadonlyTest {
     @Before
     public void setupDataSources() {
         this.baseDataSource = spy(new HashMapDB());
-        this.dataSourceWithCache = new ReadonlyDataSourceWithCache(baseDataSource, CACHE_SIZE);
+        this.dataSourceWithCache = DataSourceWithCacheReadonly.create(baseDataSource, CACHE_SIZE);
     }
 
     @Test

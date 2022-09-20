@@ -28,6 +28,6 @@ public interface ReadonlyDbDataSource {
 
     }
 
-    void checkExceptionOnWrite() throws ReadOnlyException;
+    ReadOnlyException exceptionOnWriteOp();
 
 }

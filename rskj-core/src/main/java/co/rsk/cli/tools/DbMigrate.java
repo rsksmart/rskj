@@ -150,8 +150,8 @@ public class DbMigrate extends CliToolRskContextAware {
     ) {
         logger.info("Preparing data sources for db: {}", dbName);
 
-        KeyValueDataSource sourceDataSource = KeyValueDataSourceUtils.makePersistentDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
-        KeyValueDataSource targetDataSource = KeyValueDataSourceUtils.makePersistentDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
+        KeyValueDataSource sourceDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
+        KeyValueDataSource targetDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
 
         logger.info("Data sources prepared successfully");
         logger.info("Preparing indexes for db: {}", dbName);

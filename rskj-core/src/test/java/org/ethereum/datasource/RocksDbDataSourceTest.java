@@ -39,7 +39,7 @@ public class RocksDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() throws IOException {
-        RocksDbDataSource dataSource = new PersistentRocksDbDataSource("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = RocksDbDataSource.create("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
@@ -54,7 +54,7 @@ public class RocksDbDataSourceTest {
 
     @Test
     public void testPutting() throws IOException {
-        RocksDbDataSource dataSource = new PersistentRocksDbDataSource("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = RocksDbDataSource.create("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);

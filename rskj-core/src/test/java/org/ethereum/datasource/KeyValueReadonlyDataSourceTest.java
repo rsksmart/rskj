@@ -30,8 +30,8 @@ public class KeyValueReadonlyDataSourceTest {
     public static Collection<Object[]> data() {
 
         return Arrays.asList(new Object[][]{
-                {DbKind.LEVEL_DB, PersistentLevelDbDataSource.class.getSimpleName()},
-                {DbKind.ROCKS_DB, PersistentRocksDbDataSource.class.getSimpleName()},
+                {DbKind.LEVEL_DB, LevelDbDataSource.class.getSimpleName()},
+                {DbKind.ROCKS_DB, RocksDbDataSource.class.getSimpleName()},
              });
     }
 
@@ -40,7 +40,7 @@ public class KeyValueReadonlyDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         Path dbPath = Files.createTempDirectory(tmpDir, "default").resolve("test");
         // first create and close
-        keyValueDataSource = KeyValueDataSourceUtils.makePersistentDataSource(dbPath, dbKind);
+        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath, dbKind);
 
         keyValueDataSource.init();
         keyValueDataSource.close();
