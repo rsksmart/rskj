@@ -96,7 +96,7 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
             Set<ByteArrayWrapper> baseWrittenKeys = writtenKeysByThread.getOrDefault(threadId, new HashSet<>());
 
             for (Long threadId2 : threads) {
-                if (threadId.equals(threadId2)) {
+                if (threadId >= threadId2) {
                     continue;
                 }
 
