@@ -22,5 +22,4 @@ package org.ethereum.datasource;
 import java.util.*;
 
 public interface DataSourceKeyIterator extends Iterator<byte[]>, AutoCloseable {
-    void seekToFirst();
 }

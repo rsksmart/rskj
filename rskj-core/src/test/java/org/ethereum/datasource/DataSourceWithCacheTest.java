@@ -3,6 +3,7 @@ package org.ethereum.datasource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,13 +42,10 @@ public class DataSourceWithCacheTest {
         dataSourceWithCache.get(randomKey);
 
         try (DataSourceKeyIterator iterator = dataSourceWithCache.keyIterator()){
-
-            iterator.seekToFirst();
-
             assertTrue(iterator.hasNext());
             assertArrayEquals(iterator.next(), randomKey);
         } catch (Exception e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
 
         verify(baseDataSource, times(1)).get(any(byte[].class));

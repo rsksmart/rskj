@@ -21,6 +21,7 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -49,13 +50,10 @@ public class LevelDbDataSourceTest {
         assertEquals(batchSize, dataSource.keys().size());
 
         try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
-
-            iterator.seekToFirst();
-
             assertTrue(iterator.hasNext());
             assertNotNull(iterator.next());
         } catch (Exception e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
 
         dataSource.close();

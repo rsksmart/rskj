@@ -28,16 +28,9 @@ public class RocksDbKeyIterator implements DataSourceKeyIterator {
     private boolean blockIteration;
 
     public RocksDbKeyIterator(RocksDB db) {
-        this(db, false);
-    }
-
-    public RocksDbKeyIterator(RocksDB db, boolean avoidSeekFirst) {
         this.blockIteration = false;
         this.iterator = db.newIterator();
-
-        if (!avoidSeekFirst) {
-            this.iterator.seekToFirst();
-        }
+        this.iterator.seekToFirst();
     }
 
     @Override
@@ -52,23 +45,14 @@ public class RocksDbKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public byte[] next() throws NoSuchElementException {
-        byte[] key = this.iterator.key();
-
-        if (blockIteration) {
+        if (!this.hasNext()) {
             throw new NoSuchElementException();
         }
 
-        if (this.hasNext()) {
-            this.iterator.next();
-        } else {
-            this.blockIteration = true;
-        }
+        byte[] key = this.iterator.key();
+
+        this.iterator.next();
 
         return key;
-    }
-
-    @Override
-    public void seekToFirst() {
-        this.iterator.seekToFirst();
     }
 }

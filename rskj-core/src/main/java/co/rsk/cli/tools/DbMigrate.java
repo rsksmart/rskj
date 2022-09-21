@@ -185,8 +185,6 @@ public class DbMigrate extends CliToolRskContextAware {
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
         try (DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator()) {
-            iterator.seekToFirst();
-
             while (iterator.hasNext()) {
                 byte[] data = iterator.next();
 

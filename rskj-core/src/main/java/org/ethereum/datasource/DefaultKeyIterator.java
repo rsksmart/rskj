@@ -47,8 +47,4 @@ public class DefaultKeyIterator implements DataSourceKeyIterator {
         }
         return this.iterator.next().getData();
     }
-
-    @Override
-    public void seekToFirst() {
-    }
 }

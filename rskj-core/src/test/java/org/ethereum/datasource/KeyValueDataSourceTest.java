@@ -63,9 +63,6 @@ public class KeyValueDataSourceTest {
         assertThat(keyValueDataSource.get(randomKey), is(randomValue));
 
         try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
-
-            iterator.seekToFirst();
-
             assertTrue(iterator.hasNext());
 
             byte[] expectedValue = null;
@@ -79,7 +76,7 @@ public class KeyValueDataSourceTest {
 
             assertArrayEquals(expectedValue, randomKey);
         } catch (Exception e) {
-            e.printStackTrace();
+            Assert.fail(e.getMessage());
         }
     }
 
