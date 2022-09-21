@@ -49,7 +49,7 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -60,7 +60,7 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes()).get();
@@ -81,7 +81,7 @@ public class TrieStoreImplTest {
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes()).get();
@@ -99,7 +99,7 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -111,7 +111,7 @@ public class TrieStoreImplTest {
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -124,8 +124,8 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(trie.trieSize())).put(any(), any());
-        verify(map, times(1)).get(trie.getHash().getBytes());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -136,14 +136,13 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(1)).get(trie.getHash().getBytes());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
 
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(1)).get(trie.getHash().getBytes());
+        verify(map, times(0)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -164,8 +163,8 @@ public class TrieStoreImplTest {
         Keccak256 hash2 = trie.getHash();
 
         verify(map, times(trie.trieSize() + 1)).put(any(), any());
-        verify(map, times(1)).get(hash1.getBytes());
-        verify(map, times(1)).get(hash2.getBytes());
+        verify(map, times(0)).get(hash1.getBytes());
+        verify(map, times(0)).get(hash2.getBytes());
         verifyNoMoreInteractions(map);
     }
 
@@ -182,7 +181,7 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(trie.trieSize() + 1)).put(any(), any());
-        verify(map, times(2)).get(any());
+        verify(map, times(0)).get(any());
 
         verifyNoMoreInteractions(map);
     }
@@ -203,11 +202,11 @@ public class TrieStoreImplTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        verify(map, times(2)).get(any());
+        verify(map, times(1)).get(any());
 
         Assert.assertEquals(size, trie2.trieSize());
 
-        verify(map, times(2)).get(any());
+        verify(map, times(1)).get(any());
     }
 
     @Test
@@ -221,11 +220,11 @@ public class TrieStoreImplTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
-        verify(map, times(2)).get(any());
+        verify(map, times(1)).get(any());
 
         Assert.assertEquals(size, trie2.trieSize());
 
-        verify(map, times(size + 1)).get(any());
+        verify(map, times(size)).get(any());
     }
 
     @Test
@@ -238,6 +237,6 @@ public class TrieStoreImplTest {
 
         store.retrieve(trie.getHash().getBytes());
 
-        verify(map, times(2)).get(any());
+        verify(map, times(1)).get(any());
     }
 }
