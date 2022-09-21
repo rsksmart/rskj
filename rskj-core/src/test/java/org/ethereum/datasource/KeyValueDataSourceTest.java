@@ -76,7 +76,11 @@ public class KeyValueDataSourceTest {
 
             assertArrayEquals(expectedValue, randomKey);
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
+            if (!withFlush && keyValueDataSource instanceof DataSourceWithCache) {
+                assertEquals(e.getMessage(), "There are uncommitted keys");
+            } else {
+                Assert.fail(e.getMessage());
+            }
         }
     }
 

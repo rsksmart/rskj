@@ -43,14 +43,6 @@ public class LevelDbKeyIterator implements DataSourceKeyIterator {
 
     @Override
     public byte[] next() throws NoSuchElementException {
-        if (!this.hasNext()) {
-            throw new NoSuchElementException();
-        }
-
-        byte[] key = this.iterator.peekNext().getKey();
-
-        this.iterator.next();
-
-        return key;
+        return this.iterator.next().getKey();
     }
 }

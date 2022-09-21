@@ -25,10 +25,8 @@ import java.util.NoSuchElementException;
 
 public class RocksDbKeyIterator implements DataSourceKeyIterator {
     private final RocksIterator iterator;
-    private boolean blockIteration;
 
     public RocksDbKeyIterator(RocksDB db) {
-        this.blockIteration = false;
         this.iterator = db.newIterator();
         this.iterator.seekToFirst();
     }
