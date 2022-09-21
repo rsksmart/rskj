@@ -815,7 +815,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockExecutor(),
-                    getExecutionBlockRetriever()
+                    getExecutionBlockRetriever(),
+                    getBlockTxSignatureCache()
             );
         }
 

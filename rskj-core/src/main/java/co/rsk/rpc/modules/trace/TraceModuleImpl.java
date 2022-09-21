@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.config.VmConfig;
@@ -27,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
@@ -63,17 +63,21 @@ public class TraceModuleImpl implements TraceModule {
     private final BlockExecutor blockExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
 
+    private final SignatureCache signatureCache;
+
     public TraceModuleImpl(
             Blockchain blockchain,
             BlockStore blockStore,
             ReceiptStore receiptStore,
             BlockExecutor blockExecutor,
-            ExecutionBlockRetriever executionBlockRetriever) {
+            ExecutionBlockRetriever executionBlockRetriever,
+            SignatureCache signatureCache) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
+        this.signatureCache = signatureCache;
     }
 
     @Override
@@ -232,7 +236,7 @@ public class TraceModuleImpl implements TraceModule {
 
                 if (traceFilterRequest.getFromAddress() != null && !traceFilterRequest.getFromAddress().isEmpty()) {
                     List<RskAddress> addresses = traceFilterRequest.getFromAddressAsRskAddresses();
-                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(tx.getSender()));
+                    txStream = txStream.filter(tx -> tx.getSender(signatureCache).getBytes().length > 0 && addresses.contains(tx.getSender(signatureCache)));
                 }
 
                 if (traceFilterRequest.getToAddress() != null && !traceFilterRequest.getToAddress().isEmpty()) {
