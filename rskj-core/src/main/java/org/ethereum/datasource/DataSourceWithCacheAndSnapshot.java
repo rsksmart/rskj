@@ -24,8 +24,6 @@ import javax.annotation.Nonnull;
 
 public class DataSourceWithCacheAndSnapshot extends DataSourceWithCache {
 
-    // TODO:I test
-
     private final CacheSnapshotHandler cacheSnapshotHandler;
 
     public static DataSourceWithCacheAndSnapshot create(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
