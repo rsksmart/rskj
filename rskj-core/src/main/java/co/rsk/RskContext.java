@@ -837,7 +837,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (txPoolModule == null) {
-            txPoolModule = new TxPoolModuleImpl(getTransactionPool());
+            txPoolModule = new TxPoolModuleImpl(getTransactionPool(), getReceivedTxSignatureCache());
         }
 
         return txPoolModule;

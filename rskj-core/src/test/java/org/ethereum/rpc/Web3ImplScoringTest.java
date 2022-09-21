@@ -38,6 +38,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
 import org.ethereum.TestUtils;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
@@ -410,7 +411,7 @@ class Web3ImplScoringTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
                 config.getGasEstimationCap()
         );
-        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         return new Web3RskImpl(
                 rsk,

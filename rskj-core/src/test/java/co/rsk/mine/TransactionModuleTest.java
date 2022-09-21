@@ -642,7 +642,7 @@ class TransactionModuleTest {
                         config.getActivationConfig()),
                 config.getGasEstimationCap()
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ChannelManager channelManager = new SimpleChannelManager();

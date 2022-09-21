@@ -27,9 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.ethereum.core.Account;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,12 +46,14 @@ class TxPoolModuleImplTest {
     private TxPoolModule txPoolModule;
     private TransactionPool transactionPool;
     private Map<Integer, Account> accountMap;
+    private SignatureCache signatureCache;
 
     @BeforeEach
-    void setup(){
+    void setup() {
+        signatureCache = new ReceivedTxSignatureCache();
         transactionPool = Web3Mocks.getMockTransactionPool();
-        txPoolModule = new TxPoolModuleImpl(transactionPool);
-        accountMap = new HashMap();
+        txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
+        accountMap = new HashMap<>();
     }
 
     private Transaction createSampleTransaction() {
