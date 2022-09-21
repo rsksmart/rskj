@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import co.rsk.config.GasLimitConfig;
@@ -28,7 +27,6 @@ import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -68,11 +66,11 @@ class BlockToMineBuilderTest {
         validationRules = mock(BlockValidationRule.class);
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
-        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         MiningConfig miningConfig = mock(MiningConfig.class);
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         activationConfig = mock(ActivationConfig.class);
 
         blockExecutor = mock(BlockExecutor.class);
@@ -90,15 +88,16 @@ class BlockToMineBuilderTest {
                 new BlockFactory(activationConfig),
                 blockExecutor,
                 minimumGasPriceCalculator,
-                minerUtils
+                minerUtils,
+                signatureCache
         );
 
         BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
         Repository snapshot = mock(Repository.class);
         GasLimitConfig gasLimitConfig = new GasLimitConfig(0,0,false);
 
-        when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean())).thenReturn(new ArrayList<>());
+        when(minerUtils.getAllTransactions(any(), any())).thenReturn(new ArrayList<>());
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any(), anyBoolean(), any())).thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);

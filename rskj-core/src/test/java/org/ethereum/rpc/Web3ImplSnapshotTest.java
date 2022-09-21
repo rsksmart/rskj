@@ -228,7 +228,8 @@ class Web3ImplSnapshotTest {
                         blockFactory,
                         factory.getBlockExecutor(),
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils(new BlockTxSignatureCache(new ReceivedTxSignatureCache()))
+                        new MinerUtils(),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
                 clock,
                 blockFactory,

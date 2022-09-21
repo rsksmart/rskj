@@ -108,6 +108,7 @@ public abstract class MinerServerTest {
     private MinerUtils minerUtils;
     private Repository repository;
     private CompositeEthereumListener compositeEthereumListener;
+    private SignatureCache signatureCache;
     private RskTestFactory rskTestContext;
 
     protected void setUp(TestSystemProperties config) {
@@ -124,7 +125,7 @@ public abstract class MinerServerTest {
         blockStore = rskTestContext.getBlockStore();
         standardBlockchain = rskTestContext.getBlockchain();
         repository = repositoryLocator.startTrackingAt(standardBlockchain.getBestBlock().getHeader());
-        ReceivedTxSignatureCache signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
+        signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
         compositeEthereumListener = rskTestContext.getCompositeEthereumListener();
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
@@ -144,7 +145,7 @@ public abstract class MinerServerTest {
         blockFactory = rskTestContext.getBlockFactory();
         blockExecutor = rskTestContext.getBlockExecutor();
         minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
-        minerUtils = new MinerUtils(signatureCache);
+        minerUtils = new MinerUtils();
     }
 
     @Test
@@ -865,7 +866,8 @@ public abstract class MinerServerTest {
                         blockFactory,
                         blockExecutor,
                         minimumGasPriceCalculator,
-                        minerUtils
+                        minerUtils,
+                        signatureCache
                 ),
                 clock,
                 blockFactory,
@@ -897,7 +899,8 @@ public abstract class MinerServerTest {
                         blockFactory,
                         blockExecutor,
                         minimumGasPriceCalculator,
-                        minerUtils
+                        minerUtils,
+                        signatureCache
                 ),
                 clock,
                 blockFactory,

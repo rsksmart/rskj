@@ -50,12 +50,6 @@ import java.util.function.Function;
 public class MinerUtils {
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
-    private final SignatureCache signatureCache;
-
-    public MinerUtils(SignatureCache signatureCache) {
-        this.signatureCache = signatureCache;
-    }
-
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
         return getBitcoinMergedMiningCoinbaseTransaction(params, HexUtils.stringHexToByteArray(work.getBlockHashForMergedMining()));
     }
@@ -168,14 +162,14 @@ public class MinerUtils {
         }
     }
 
-    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache) {
 
         List<Transaction> txs = transactionPool.getPendingTransactions();
 
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
