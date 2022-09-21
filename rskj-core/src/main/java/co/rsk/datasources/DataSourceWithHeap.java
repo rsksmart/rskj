@@ -158,10 +158,10 @@ public class DataSourceWithHeap extends DataSourceWrapper {
             baHeap.setAutoUpgrade(autoUpgrade);
         }
         baHeap.setFileName(dbPath.toString());
-        baHeap.setPageSize(format.pageSize);
+        baHeap.setFileSystemPageSize(format.pageSize);
         baHeap.setMaxObjectSize(maxObjectSize);
         baHeap.setStoreHeadmap(true);
-        baHeap.setFileMapping(true);
+        baHeap.setFileMapping(false); // set it to true
         // Initialize will create the space files on disk if they don't exists, so we must
         // query first if they exists of not.
         boolean filesExists= baHeap.fileExists();

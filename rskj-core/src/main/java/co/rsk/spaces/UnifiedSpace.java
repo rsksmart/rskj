@@ -99,6 +99,10 @@ public class UnifiedSpace {
             spaces[spNum].createBuffer(spaceSize);
     }
 
+
+    public void setUsablePageSize(int u) {
+        this.usablePageSize = u;
+    }
     public void setPageHeaderSize(int phs) {
         this.pageHeaderSize = phs;
     }
@@ -112,7 +116,7 @@ public class UnifiedSpace {
         for (int i = maxSpaces-1; i >=0; i--) {
             spaces[i] = newSpace();
         }
-        usablePageSize = pageSize - pageHeaderSize;
+        //usablePageSize = pageSize - pageHeaderSize;
         resetInternalConstants();
         for (int i = maxSpaces-1; i >=0; i--) {
             createDataFilesForSpace(i);
@@ -276,6 +280,7 @@ public class UnifiedSpace {
         public int offsetWithinRealPage;
         public int realOffset;
         Space space;
+        boolean valid;
 
         public Pointer(long uOfs) {
             compute(uOfs);
@@ -288,9 +293,10 @@ public class UnifiedSpace {
             upageNum = (internalOfs / usablePageSize);
             upageStart = upageNum * usablePageSize;
             realPageStart = (int) upageNum * pageSize;
-            offsetWithinUpage = (int) (internalOfs - upageStart * usablePageSize);
+            offsetWithinUpage = (int) (internalOfs - upageStart);
             offsetWithinRealPage = offsetWithinUpage + pageHeaderSize;
             realOffset = realPageStart+offsetWithinRealPage;
+            valid = true;
         }
 
         public void advance(int amount) {
@@ -301,8 +307,7 @@ public class UnifiedSpace {
                 // it could be more optimized,
                 // but it's not needed because we don't expect advances of
                 // longer lengths.
-                ptrSpaceNum++;
-                space = spaces[ptrSpaceNum];
+
                 internalOfs += avail;
                 upageNum += 1;
                 upageStart += usablePageSize;
@@ -312,6 +317,17 @@ public class UnifiedSpace {
                 realOffset = realPageStart+offsetWithinRealPage;
                 amount -=avail;
                 avail =usablePageSize;
+                if (realOffset==usableSpaceSize) {
+                    ptrSpaceNum++;
+                    if (ptrSpaceNum==spaces.length) {
+                        // end of file. Mark this pointer as invalid
+                        valid = false;
+                        space = null;
+                        return;
+                    }
+                    space = spaces[ptrSpaceNum];
+                    internalOfs =0;
+                }
             }
             if (avail>amount) {
                 offsetWithinUpage +=amount;
@@ -354,7 +370,7 @@ public class UnifiedSpace {
     public void getBytes(long uOfs, byte[] data, int offset, int length) {
         Pointer p = new Pointer(uOfs);
         while (length>0) {
-            int left = p.getPageSpaceAvail();
+            int left = Math.min(length,p.getPageSpaceAvail());
             p.space.getBytes(p.realOffset,data,offset,left);
             offset +=left;
             length -=left;
@@ -365,10 +381,11 @@ public class UnifiedSpace {
     public void setBytes(long uOfs, byte[] data, int offset, int length) {
         Pointer p = new Pointer(uOfs);
         while (length>0) {
-            int left = p.getPageSpaceAvail();
+            int left = Math.min(length,p.getPageSpaceAvail());
             p.space.setBytes(p.realOffset,data,offset,left);
-            offset +=left;
             length -=left;
+            if (length==0) break; // optimize
+            offset +=left;
             p.advance(left);
         }
     }
@@ -439,9 +456,15 @@ public class UnifiedSpace {
         }
     }
 
-    public void setHeadBit(Space space,int headerOffset,int compressionFactor,int internalOfs) {
+    public void setHeadBit(Space space,int headerOffset,int compressionFactor,int internalOfs,boolean value) {
         HeadBitPointer p = new HeadBitPointer(headerOffset,compressionFactor,internalOfs);
-        space.putByte(p.byteIndex,(byte) (space.getByte(p.byteIndex) | (1<<p.bitIndex)));
+        byte newValue;
+        if (value) {
+            newValue =(byte) (space.getByte(p.byteIndex) | (1<<p.bitIndex));
+        } else {
+            newValue = (byte) (space.getByte(p.byteIndex) & ~(1<<p.bitIndex));
+        }
+        space.putByte(p.byteIndex,newValue);
     }
 
     public boolean getHeadBit(Space space,int headerOffset,int compressionFactor,int internalOfs) {
@@ -465,10 +488,10 @@ public class UnifiedSpace {
         int internalOfs = getInternalOfsFromUOfs(ptrSpaceNum, uOfs);
         return getHeadByte(space,headerOffset,compressionBytes,internalOfs);
     }
-    public void setHeadBit(int headerOffset,int compressionBytes,long uOfs) {
+    public void setHeadBit(int headerOffset,int compressionBytes,long uOfs,boolean value) {
         int ptrSpaceNum = getSpaceNumFromUOfs(uOfs);
         Space space = spaces[ptrSpaceNum];
         int internalOfs = getInternalOfsFromUOfs(ptrSpaceNum, uOfs);
-        setHeadBit(space,headerOffset,compressionBytes,internalOfs);
+        setHeadBit(space,headerOffset,compressionBytes,internalOfs,value);
     }
 }
