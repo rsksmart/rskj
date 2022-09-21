@@ -19,7 +19,6 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -95,7 +94,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.quotaChecker = txQuotaChecker;
         this.gasPriceTracker = gasPriceTracker;
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -454,9 +453,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        RskAddress txSender = tx.getSender(signatureCache);
-        AccountState state = currentRepository.getAccountState(txSender);
-        return validator.isValid(tx, bestBlock, state, txSender); // TODO -> Discuss this, sender is only for logging purposes
+        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)));
     }
 
     /**
