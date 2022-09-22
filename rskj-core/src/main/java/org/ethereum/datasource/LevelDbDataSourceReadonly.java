@@ -20,7 +20,6 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.Options;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -33,16 +32,16 @@ public class LevelDbDataSourceReadonly extends LevelDbDataSource implements Read
     }
 
     protected LevelDbDataSourceReadonly(String name, String databaseDir) {
-        super(name, databaseDir, LoggerFactory.getLogger("db-readonly"));
+        super(name, databaseDir);
     }
 
     @Override
-    public void customiseOptions(Options options) {
+    protected void customiseOptions(Options options) {
         options.createIfMissing(false);
     }
 
     @Override
-    public void createRequiredDirectories(Path dbPath) {
+    protected void createRequiredDirectories(Path dbPath) {
         // nothing to do, in readonly we don't want to create DB directories
     }
 

@@ -34,7 +34,7 @@ public class DataSourceWithCacheReadonly extends DataSourceWithCache {
     }
 
     private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        super(base, cacheSize, cacheSnapshotHandler, LoggerFactory.getLogger("datasourcewithcache-readonly"));
+        super(base, cacheSize, cacheSnapshotHandler);
     }
 
     @Override

@@ -44,6 +44,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
     private static final int MAX_RETRIES = 2;
 
+    private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -51,8 +52,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String name;
     private RocksDB db;
     private boolean alive;
-
-    private final Logger logger;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -66,14 +65,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return new RocksDbDataSource(name, databaseDir);
     }
 
-    private RocksDbDataSource(String name, String databaseDir) {
-        this(name, databaseDir, LoggerFactory.getLogger("db"));
-    }
-
-    protected RocksDbDataSource(String name, String databaseDir, Logger logger) {
+    protected RocksDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
-        this.logger = logger;
     }
 
     protected void customiseOptions(Options options) {

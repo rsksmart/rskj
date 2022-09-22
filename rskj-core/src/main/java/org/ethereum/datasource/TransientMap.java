@@ -8,6 +8,7 @@ import java.util.function.Function;
 
 public class TransientMap<K, V> implements Map<K, V>, Serializable {
     private static final long serialVersionUID = -1034234728574286014L;
+    @SuppressWarnings({"squid:S1948"}) // ensuring serializable in constructor
     private Map<K, V> base;
     private transient Set<K> keySet;
     private transient Set<Entry<K, V>> entrySet;
@@ -20,6 +21,10 @@ public class TransientMap<K, V> implements Map<K, V>, Serializable {
         if (base == null) {
             throw new NullPointerException();
         } else {
+            if (!(base instanceof Serializable)) {
+                throw new IllegalArgumentException("Map to make transient should be serializable");
+            }
+
             this.base = (Map<K, V>) base;
             added = new HashMap<>();
             changed = new HashMap<>();

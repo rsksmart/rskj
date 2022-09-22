@@ -42,6 +42,7 @@ import static org.fusesource.leveldbjni.JniDBFactory.factory;
 
 public class LevelDbDataSource implements KeyValueDataSource {
 
+    private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -49,8 +50,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
-
-    private final Logger logger;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -64,14 +63,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
         return new LevelDbDataSource(name, databaseDir);
     }
 
-    private LevelDbDataSource(String name, String databaseDir) {
-        this(name, databaseDir, LoggerFactory.getLogger("db"));
-    }
-
-    protected LevelDbDataSource(String name, String databaseDir, Logger logger) {
+    protected LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
-        this.logger = logger;
     }
 
     protected void customiseOptions(Options options) {

@@ -18,7 +18,6 @@
 
 package co.rsk.db;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.junit.Before;

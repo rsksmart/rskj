@@ -29,25 +29,20 @@ import java.util.Map;
 public class MapDBBlocksIndexReadonly extends MapDBBlocksIndex {
 
     public static MapDBBlocksIndexReadonly create(DB indexDB) {
-        return new MapDBBlocksIndexReadonly(indexDB);
+        return createInternal(indexDB, buildIndex(indexDB), buildMetadata(indexDB));
     }
 
     @VisibleForTesting
     static MapDBBlocksIndexReadonly createForTesting(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
-        return new MapDBBlocksIndexReadonly(indexDB, index, metadata);
+        return createInternal(indexDB, index, metadata);
     }
 
-    private MapDBBlocksIndexReadonly(DB indexDB) {
-        super(indexDB);
+    private static MapDBBlocksIndexReadonly createInternal(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
+        return new MapDBBlocksIndexReadonly(indexDB, TransientMap.transientMap(index), TransientMap.transientMap(metadata));
     }
 
     private MapDBBlocksIndexReadonly(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
         super(indexDB, index, metadata);
-    }
-
-    @Override
-    protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
-        return TransientMap.transientMap(base);
     }
 
     @Override
