@@ -1243,7 +1243,7 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
-        if (txsWithEnoughConfirmations.size() > 0) {
+        if (!txsWithEnoughConfirmations.isEmpty()) {
             ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
             // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
             if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
@@ -1253,6 +1253,9 @@ public class BridgeSupport {
             }
             else {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
+            }
+            if(activations.isActive(ConsensusRule.RSKIP326)) {
+                eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), rskExecutionBlock.getNumber());
             }
         }
     }
