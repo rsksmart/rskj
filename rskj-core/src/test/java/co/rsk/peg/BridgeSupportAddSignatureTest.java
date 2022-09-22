@@ -377,7 +377,12 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_calledTwiceWithSameFederator_emitEventOnlyOnce() throws Exception {
+    public void addSignature_calledTwiceWithSameFederatorPreRSKIP326_emitEventTwice() throws Exception {
+        test_addSignature_EventEmitted(false, true, 2, true);
+    }
+
+    @Test
+    public void addSignature_calledTwiceWithSameFederatorPostRSKIP326_emitEventOnlyOnce() throws Exception {
         test_addSignature_EventEmitted(true, true, 1, true);
     }
 
