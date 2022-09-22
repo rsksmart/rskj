@@ -218,7 +218,7 @@ public class BlockExecutor {
     }
 
     @VisibleForTesting
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
+    BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
         return execute(block, parent, discardInvalidTxs, false, true);
     }
 
