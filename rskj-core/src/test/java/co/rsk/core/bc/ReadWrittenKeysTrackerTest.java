@@ -22,7 +22,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.DummyReadWrittenKeysTracker;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -60,7 +59,7 @@ public class ReadWrittenKeysTrackerTest {
         int maxThreads = 4;
 
         // Add read 10 distinct keys for each one of 4 threads
-        for (int thread=0;thread<maxThreads;thread++) {
+        for (int thread=0; thread<maxThreads; thread++) {
             for (int i = 0; i < keysPerThread; i++) {
                 ByteArrayWrapper key = getKey(thread,0,i);
                 myTracker.addNewReadKeyToThread(thread,key);
@@ -142,7 +141,6 @@ public class ReadWrittenKeysTrackerTest {
 
         // Collision must be detected
         assertTrue(tracker.detectCollision());
-
     }
 
     @Test

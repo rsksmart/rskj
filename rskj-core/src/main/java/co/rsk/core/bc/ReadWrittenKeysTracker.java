@@ -18,7 +18,6 @@
 
 package co.rsk.core.bc;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.*;
@@ -76,8 +75,6 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
         readKeys.add(key);
         readKeysByThread.put(threadId, readKeys);
     }
-
-    @VisibleForTesting
     public synchronized void removeReadKeyToThread(long threadId,ByteArrayWrapper key) {
         Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
         readKeys.remove(key);
@@ -90,8 +87,6 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
         addNewWrittenKeyToThread(threadId,key);
 
     }
-
-    @VisibleForTesting
     public synchronized void removeWrittenKeyToThread(long threadId,ByteArrayWrapper key) {
         Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
         writtenKeys.remove(key);
