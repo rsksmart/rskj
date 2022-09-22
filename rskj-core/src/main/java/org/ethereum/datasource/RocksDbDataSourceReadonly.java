@@ -20,7 +20,6 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.rocksdb.Options;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -33,16 +32,16 @@ public class RocksDbDataSourceReadonly extends RocksDbDataSource implements Read
     }
 
     protected RocksDbDataSourceReadonly(String name, String databaseDir) {
-        super(name, databaseDir, LoggerFactory.getLogger("db-readonly"));
+        super(name, databaseDir);
     }
 
     @Override
-    public void customiseOptions(Options options) {
+    protected void customiseOptions(Options options) {
         options.setCreateIfMissing(false);
     }
 
     @Override
-    public void createRequiredDirectories(Path dbPath) {
+    protected void createRequiredDirectories(Path dbPath) {
         // nothing to do, in readonly we don't want to create DB directories
     }
 

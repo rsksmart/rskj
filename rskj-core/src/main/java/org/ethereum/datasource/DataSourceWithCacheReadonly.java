@@ -18,8 +18,6 @@
 
 package org.ethereum.datasource;
 
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -34,7 +32,7 @@ public class DataSourceWithCacheReadonly extends DataSourceWithCache {
     }
 
     private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
-        super(base, cacheSize, cacheSnapshotHandler, LoggerFactory.getLogger("datasourcewithcache-readonly"));
+        super(base, cacheSize, cacheSnapshotHandler);
     }
 
     @Override
