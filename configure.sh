@@ -1,6 +1,6 @@
 #!/bin/sh
 
-GRADLE_WRAPPER="0f49043be582d7a39b671f924c66bd9337b92fa88ff5951225acc60560053067"
+GRADLE_WRAPPER="575098db54a998ff1c6770b352c3b16766c09848bee7555dab09afc34e8cf590"
 DOWNLOADED_HASH=''
 DOWNLOAD_FILE=$(mktemp)
 unamestr=`uname`
@@ -12,7 +12,7 @@ downloadJar() {
 	if [ ! -d ./rskj-core/libs ]; then
 		mkdir ./rskj-core/libs
 	fi
-	curl https://deps.rsklabs.io/gradle-wrapper.jar -o "$DOWNLOAD_FILE"
+	curl https://deps.rsklabs.io/gradle-wrapper-7.4.2.jar -o "$DOWNLOAD_FILE"
 	if [ x"$PLATFORM" = x'linux' ] || [ x"$PLATFORM" = x'windows' ]; then
 		DOWNLOADED_HASH=$(sha256sum "$DOWNLOAD_FILE" | cut -d' ' -f1)
 	elif [ x"$PLATFORM" = x'mac' ]; then
