@@ -45,6 +45,104 @@ public class ReadWrittenKeysTrackerTest {
         this.key2 = new ByteArrayWrapper(new byte[]{2});
     }
 
+    ByteArrayWrapper getKey(int thread, int readWrite,int i ) {
+        // Supports upto 65536 keys
+        return new ByteArrayWrapper(new byte[]{(byte)thread, (byte) readWrite,
+                (byte) (i >> 8), (byte) (i & 0xff)});
+    }
+
+    @Test
+    public void collisionWithLongerSets() {
+        //..
+        ReadWrittenKeysTracker myTracker = (ReadWrittenKeysTracker) this.tracker;
+        int keysPerThread = 10;
+        int maxThreads = 4;
+
+        // Add read 10 distinct keys for each one of 4 threads
+        for (int thread=0; thread<maxThreads; thread++) {
+            for (int i = 0; i < keysPerThread; i++) {
+                ByteArrayWrapper key = getKey(thread,0,i);
+                myTracker.addNewReadKeyToThread(thread,key);
+            }
+        }
+        // No collisions at this point
+        assertFalse(tracker.detectCollision());
+
+        // Now add 10 distinct written keys per thread
+        for (int thread=0;thread<maxThreads;thread++) {
+            for (int i = 0; i < keysPerThread; i++) {
+                ByteArrayWrapper key = getKey(thread,1,i);
+
+                myTracker.addNewWrittenKeyToThread(thread,key);
+            }
+        }
+
+        // No collisions at this point
+        assertFalse(tracker.detectCollision());
+
+        // Now add 3 read keys to thread 0, shared with keys read by threads 1,2,3
+        for (int i = 0; i < maxThreads-1; i++) {
+            ByteArrayWrapper key = getKey(i+1,0,i);
+            myTracker.addNewReadKeyToThread(0,key);
+        }
+        // No collisions at this point
+        assertFalse(tracker.detectCollision());
+
+        ByteArrayWrapper readKeyAdded = getKey(1,1,5);
+
+        // Now add a single read key to thread 3 that collides with a key written in thread 1
+        myTracker.addNewReadKeyToThread(3,readKeyAdded);
+
+        // Collision must be detected
+        assertTrue(tracker.detectCollision());
+
+        // Now remove that key.
+        myTracker.removeReadKeyToThread(3,readKeyAdded);
+
+        // all back to normal, no collision
+        assertFalse(tracker.detectCollision());
+
+        // Now add a write-write collision
+        ByteArrayWrapper writeKeyAdded = readKeyAdded; // the same key, but written
+        // Now add a single read key to thread 3 that collides with a key written in thread 1
+        myTracker.addNewWrittenKeyToThread(3,writeKeyAdded);
+
+        // Collision must be detected
+        assertTrue(tracker.detectCollision());
+
+        myTracker.removeWrittenKeyToThread(3,writeKeyAdded);
+
+        // all back to normal, no collision
+        assertFalse(tracker.detectCollision());
+
+        /////////////////////////////////////////////////////////
+        // Now we'll do the same, but in the opposite direction
+        // between threads 1 and 3
+        /////////////////////////////////////////////////////////
+        
+        readKeyAdded = getKey(3,1,5);
+
+        // Now add a single read key to thread 1 that collides with a key written in thread 3
+        myTracker.addNewReadKeyToThread(1,readKeyAdded);
+
+        // Collision must be detected
+        assertTrue(tracker.detectCollision());
+
+        // Now remove that key.
+        myTracker.removeReadKeyToThread(1,readKeyAdded);
+
+        // all back to normal, no collision
+        assertFalse(tracker.detectCollision());
+
+        // Now add a write-write collision
+        writeKeyAdded = readKeyAdded; // the same key, but written
+        // Now add a single read key to thread 1 that collides with a key written in thread 3
+        myTracker.addNewWrittenKeyToThread(1,writeKeyAdded);
+
+        // Collision must be detected
+        assertTrue(tracker.detectCollision());
+    }
+
     @Test
     public void createATrackerShouldHaveEmptyKeysForThisThread() {
         assertEquals(0, tracker.getThisThreadReadKeys().size());

@@ -67,14 +67,33 @@ public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     @Override
     public synchronized void addNewReadKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
+        addNewReadKeyToThread(threadId,key);
+    }
+
+    public synchronized void addNewReadKeyToThread(long threadId,ByteArrayWrapper key) {
         Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
         readKeys.add(key);
+        readKeysByThread.put(threadId, readKeys);
+    }
+    public synchronized void removeReadKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
+        readKeys.remove(key);
         readKeysByThread.put(threadId, readKeys);
     }
 
     @Override
     public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
+        addNewWrittenKeyToThread(threadId,key);
+
+    }
+    public synchronized void removeWrittenKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
+        writtenKeys.remove(key);
+        writtenKeysByThread.put(threadId, writtenKeys);
+    }
+
+    public synchronized void addNewWrittenKeyToThread(long threadId,ByteArrayWrapper key) {
         Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
         writtenKeys.add(key);
         writtenKeysByThread.put(threadId, writtenKeys);
