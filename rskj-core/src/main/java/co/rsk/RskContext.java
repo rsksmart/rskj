@@ -1132,7 +1132,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         MapDBBlocksIndex blocksIndex;
         if (rskSystemProps.readOnlyMode()) {
             // if in read-only mode add a cache in the middle to store the modified values in memory
-            KeyValueDataSource tmpDB = KeyValueDataSourceUtils.makeReadonlyDataSource(blocksPath, currentDbKind);
+            KeyValueDataSource tmpDB = KeyValueDataSourceUtils.makeDataSourceReadonly(blocksPath, currentDbKind);
             blocksDB = DataSourceWithCacheReadonly.create(tmpDB, 100);
 
             DB indexDB = maker.readOnly().make();
@@ -1245,7 +1245,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         KeyValueDataSource ds;
         if (rskSystemProps.readOnlyMode()) {
-            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(bloomsStorePath, rskSystemProps.databaseKind());
+            ds = KeyValueDataSourceUtils.makeDataSourceReadonly(bloomsStorePath, rskSystemProps.databaseKind());
         } else {
             ds = KeyValueDataSourceUtils.makeDataSource(bloomsStorePath, rskSystemProps.databaseKind());
         }
@@ -1255,19 +1255,15 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             return ds;
         }
 
-        if (rskSystemProps.readOnlyMode()) {
-            return DataSourceWithCacheReadonly.create(ds, bloomsCacheSize);
-        }
-
         CacheSnapshotHandler cacheSnapshotHandler = rskSystemProps.shouldPersistBloomsCacheSnapshot()
                 ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
                 : null;
 
-        if (cacheSnapshotHandler != null) {
-            return DataSourceWithCacheAndSnapshot.create(ds, bloomsCacheSize, cacheSnapshotHandler);
+        if (rskSystemProps.readOnlyMode()) {
+            return DataSourceWithCacheReadonly.createWithSnapshot(ds, bloomsCacheSize, cacheSnapshotHandler);
         }
 
-        return DataSourceWithCache.create(ds, bloomsCacheSize);
+        return DataSourceWithCache.createWithSnapshot(ds, bloomsCacheSize, cacheSnapshotHandler);
     }
 
     protected synchronized NodeRunner buildNodeRunner() {
@@ -1342,7 +1338,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         KeyValueDataSource ds;
         if (rskSystemProps.readOnlyMode()) {
-            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(receiptsPath, rskSystemProps.databaseKind());
+            ds = KeyValueDataSourceUtils.makeDataSourceReadonly(receiptsPath, rskSystemProps.databaseKind());
         } else {
             ds = KeyValueDataSourceUtils.makeDataSource(receiptsPath, rskSystemProps.databaseKind());
         }
@@ -1394,7 +1390,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         KeyValueDataSource ds;
         if (rskSystemProps.readOnlyMode()) {
-            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(trieStorePath, rskSystemProps.databaseKind());
+            ds = KeyValueDataSourceUtils.makeDataSourceReadonly(trieStorePath, rskSystemProps.databaseKind());
         } else {
             ds = KeyValueDataSourceUtils.makeDataSource(trieStorePath, rskSystemProps.databaseKind());
         }
@@ -1404,19 +1400,15 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             return new TrieStoreImpl(ds);
         }
 
-        if (rskSystemProps.readOnlyMode()) {
-            return new TrieStoreImpl(DataSourceWithCacheReadonly.create(ds, statesCacheSize));
-        }
-
         CacheSnapshotHandler cacheSnapshotHandler = rskSystemProps.shouldPersistStatesCacheSnapshot()
                 ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
                 : null;
 
-        if (cacheSnapshotHandler != null) {
-            return new TrieStoreImpl(DataSourceWithCacheAndSnapshot.create(ds, statesCacheSize, cacheSnapshotHandler));
+        if (rskSystemProps.readOnlyMode()) {
+            return new TrieStoreImpl(DataSourceWithCacheReadonly.createWithSnapshot(ds, statesCacheSize, cacheSnapshotHandler));
         }
 
-        return new TrieStoreImpl(DataSourceWithCache.create(ds, statesCacheSize));
+        return new TrieStoreImpl(DataSourceWithCache.createWithSnapshot(ds, statesCacheSize, cacheSnapshotHandler));
     }
 
     protected synchronized RepositoryLocator buildRepositoryLocator() {
@@ -1439,7 +1431,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         KeyValueDataSource stateRootsDB;
         if (rskSystemProps.readOnlyMode()) {
-            stateRootsDB = KeyValueDataSourceUtils.makeReadonlyDataSource(Paths.get(rskSystemProps.databaseDir(), "stateRoots"), rskSystemProps.databaseKind());
+            stateRootsDB = KeyValueDataSourceUtils.makeDataSourceReadonly(Paths.get(rskSystemProps.databaseDir(), "stateRoots"), rskSystemProps.databaseKind());
         } else {
             stateRootsDB = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProps.databaseDir(), "stateRoots"), rskSystemProps.databaseKind());
         }
@@ -1499,7 +1491,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         KeyValueDataSource ds;
         if (rskSystemProps.readOnlyMode()) {
-            ds = KeyValueDataSourceUtils.makeReadonlyDataSource(Paths.get(rskSystemProps.databaseDir(), "wallet"), rskSystemProps.databaseKind());
+            ds = KeyValueDataSourceUtils.makeDataSourceReadonly(Paths.get(rskSystemProps.databaseDir(), "wallet"), rskSystemProps.databaseKind());
         } else {
             ds = KeyValueDataSourceUtils.makeDataSource(Paths.get(rskSystemProps.databaseDir(), "wallet"), rskSystemProps.databaseKind());
         }

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -52,28 +53,34 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private final Logger logger;
 
+    @Nullable
+    private final CacheSnapshotHandler cacheSnapshotHandler;
+
     public static DataSourceWithCache create(@Nonnull KeyValueDataSource base, int cacheSize) {
-        return new DataSourceWithCache(base, cacheSize);
+        return new DataSourceWithCache(base, cacheSize, null);
     }
 
-    private DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
-        this(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache"));
+    public static DataSourceWithCache createWithSnapshot(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        return new DataSourceWithCache(base, cacheSize, cacheSnapshotHandler);
     }
 
-    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, Logger logger) {
+    private DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        this(base, cacheSize, cacheSnapshotHandler, LoggerFactory.getLogger("datasourcewithcache"));
+    }
+
+    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler, @Nonnull Logger logger) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new HashMap<>(); // TODO https://github.com/rsksmart/rskj/pull/1863/files#r973101483
-        this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
+        this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
         this.logger = logger;
+        this.cacheSnapshotHandler = cacheSnapshotHandler;
     }
 
-    protected Map<ByteArrayWrapper, byte[]> getCommittedCache() {
-        return committedCache;
-    }
-
-    protected void customClose() {
-        // nothing to do
+    protected void updateSnapshot() {
+        if (cacheSnapshotHandler != null) {
+            cacheSnapshotHandler.save(committedCache);
+        }
     }
 
     @Override
@@ -281,9 +288,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         try {
             flush();
             base.close();
-
-            customClose();
-
+            updateSnapshot();
             uncommittedCache.clear();
             committedCache.clear();
         } finally {
@@ -306,6 +311,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
         } finally {
             this.lock.writeLock().unlock();
         }
+    }
+
+    @Nonnull
+    private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(cacheSize, true);
+
+        if (cacheSnapshotHandler != null) {
+            cacheSnapshotHandler.load(cache);
+        }
+
+        return cache;
     }
 
 }
