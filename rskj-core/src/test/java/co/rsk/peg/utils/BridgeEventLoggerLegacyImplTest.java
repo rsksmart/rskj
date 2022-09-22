@@ -333,6 +333,11 @@ class BridgeEventLoggerLegacyImplTest {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock, rskTxHashes));
     }
 
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void logPegoutConfirmed() {
+        eventLogger.logPegoutConfirmed(btcTxMock.getHash(), 5);
+    }
+
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
