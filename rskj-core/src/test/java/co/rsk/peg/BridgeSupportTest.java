@@ -1797,6 +1797,94 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
+    public void rskTxWaitingForSignature_preRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
+
+        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
+        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
+        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L);
+
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .withEventLogger(eventLogger)
+                .build();
+
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
+        bridgeSupport.updateCollections(tx);
+
+        verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), executionBlock.getNumber());
+
+    }
+
+    @Test
+    public void rskTxWaitingForSignature_preRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
+
+        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
+        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(new HashSet<>()));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L);
+
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .withEventLogger(eventLogger)
+                .build();
+
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
+        bridgeSupport.updateCollections(tx);
+
+        verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), executionBlock.getNumber());
+
+    }
+
+    @Test
     public void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_after_rskip_146_activation_if_release_transaction_doesnt_have_rstTxHash() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
