@@ -19,6 +19,7 @@ package co.rsk.rpc.netty;
 
 import java.io.IOException;
 
+import co.rsk.util.JacksonParserUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -39,9 +40,9 @@ class RskWebSocketJsonParameterValidatorTest {
 		mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
 
 		// right cases
-		JsonNode request1 = mapper.readTree("{'jsonrpc':'2.0','id':'teste','method':'eth_subscribe','params':['newHeads']}");
-		JsonNode request2 = mapper.readTree("{'jsonrpc':'2.0','id':'10','method':'eth_subscribe','params':['newHeads']}");
-		JsonNode request3 = mapper.readTree("{'jsonrpc':'2.0','id':10,'method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request1 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':'teste','method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request2 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':'10','method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request3 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':10,'method':'eth_subscribe','params':['newHeads']}");
 
 		Assertions.assertTrue(validator.validate(request1).isValid());
 		Assertions.assertTrue(validator.validate(request2).isValid());
@@ -50,15 +51,15 @@ class RskWebSocketJsonParameterValidatorTest {
 	}
 
 	@Test
-	void testParameterValidator_expectNotValid() throws IOException {
+	public void testParameterValidator_expectNotValid() throws IOException {
 
 		mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
 
 		// wrong cases
-		JsonNode request4 = mapper.readTree("{'jsonrpc':'2.0','id':3.3,'method':'eth_subscribe','params':['newHeads']}");
-		JsonNode request5 = mapper.readTree("{'jsonrpc':'2.0','id':{},'method':'eth_subscribe','params':['newHeads']}");
-		JsonNode request6 = mapper.readTree("{'jsonrpc':'2.0','id':false,'method':'eth_subscribe','params':['newHeads']}");
-		JsonNode request7 = mapper.readTree("{'jsonrpc':'2.0','id':null,'method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request4 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':3.3,'method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request5 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':{},'method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request6 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':false,'method':'eth_subscribe','params':['newHeads']}");
+		JsonNode request7 = JacksonParserUtil.readTree(mapper, "{'jsonrpc':'2.0','id':null,'method':'eth_subscribe','params':['newHeads']}");
 
 		Assertions.assertFalse(validator.validate(request4).isValid());
 		Assertions.assertFalse(validator.validate(request5).isValid());

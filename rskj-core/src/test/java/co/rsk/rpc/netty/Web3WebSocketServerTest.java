@@ -37,6 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import co.rsk.rpc.modules.RskJsonRpcRequest;
+import co.rsk.util.JacksonParserUtil;
 import org.ethereum.rpc.Web3;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,7 +163,7 @@ class Web3WebSocketServerTest {
 
             @Override
             public void onMessage(ResponseBody message) throws IOException {
-                JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(message.bytes());
+                JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, message.bytes());
                 assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
                 message.close();
                 wsAsyncResultLatch.countDown();
@@ -203,12 +205,7 @@ class Web3WebSocketServerTest {
 
         byte[] request = new byte[0];
         try {
-            Object object = OBJECT_MAPPER.treeToValue(JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class);
-
-            if (object == null) {
-                throw new NullPointerException();
-            }
-
+            Object object = JacksonParserUtil.treeToValue(OBJECT_MAPPER, JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class);
             request = OBJECT_MAPPER.writeValueAsBytes(object);
         } catch (JsonProcessingException e) {
             fail(e.getMessage());

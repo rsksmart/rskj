@@ -20,6 +20,7 @@ package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,11 +87,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         errorProperties.put("code", jsonNodeFactory.numberNode(errorCode));
         errorProperties.put("message", jsonNodeFactory.textNode(errorMessage));
         JsonNode error = jsonNodeFactory.objectNode().set("error", jsonNodeFactory.objectNode().setAll(errorProperties));
-        Object object = mapper.treeToValue(error, Object.class);
-
-        if (object == null) {
-            throw new NullPointerException();
-        }
+        Object object = JacksonParserUtil.treeToValue(mapper, error, Object.class);
 
         return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(object));
     }

@@ -19,7 +19,7 @@ package co.rsk.rpc.netty;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
+import co.rsk.util.JacksonParserUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,19 +77,9 @@ public class RskWebSocketJsonRpcHandler extends SimpleChannelInboundHandler<Byte
 
         try (ByteBufInputStream source = new ByteBufInputStream(content)) {
 
-            final JsonNode jsonNodeRequest = mapper.readTree(source);
-
-            if (jsonNodeRequest.isEmpty()) {
-                throw JsonMappingException.from(jsonNodeRequest.traverse(), "Request is empty");
-            }
-
+            final JsonNode jsonNodeRequest = JacksonParserUtil.readTree(mapper, source);
             RskWebSocketJsonParameterValidator.Result validationResult = parameterValidator.validate(jsonNodeRequest);
-
-            RskJsonRpcRequest request = mapper.treeToValue(jsonNodeRequest, RskJsonRpcRequest.class);
-
-            if (request == null) {
-                throw new NullPointerException();
-            }
+            RskJsonRpcRequest request = JacksonParserUtil.treeToValue(mapper, jsonNodeRequest, RskJsonRpcRequest.class);
 
             JsonRpcResultOrError resultOrError = null;
 
