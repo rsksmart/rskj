@@ -6,7 +6,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-// TODO:I concurrency?
 public class TransientMap<K, V> implements Map<K, V>, Serializable {
     private static final long serialVersionUID = -1034234728574286014L;
     private Map<K, V> base;

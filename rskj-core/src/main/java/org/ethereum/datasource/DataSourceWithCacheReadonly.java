@@ -21,20 +21,30 @@ package org.ethereum.datasource;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class DataSourceWithCacheReadonly extends DataSourceWithCache {
 
     public static DataSourceWithCacheReadonly create(@Nonnull KeyValueDataSource base, int cacheSize) {
-        return new DataSourceWithCacheReadonly(base, cacheSize);
+        return new DataSourceWithCacheReadonly(base, cacheSize, null);
     }
 
-    private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize) {
-        super(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache-readonly"));
+    public static DataSourceWithCacheReadonly createWithSnapshot(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        return new DataSourceWithCacheReadonly(base, cacheSize, cacheSnapshotHandler);
+    }
+
+    private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        super(base, cacheSize, cacheSnapshotHandler, LoggerFactory.getLogger("datasourcewithcache-readonly"));
+    }
+
+    @Override
+    protected void updateSnapshot() {
+        // nothing to do, in readonly we don't want to update snapshot
     }
 
     @Override
     public void flush() {
-        // nothing to do
+        // nothing to do, in readonly we don't want to flush to base
     }
 
 }

@@ -43,7 +43,7 @@ public class LevelDbDataSourceReadonly extends LevelDbDataSource implements Read
 
     @Override
     public void createRequiredDirectories(Path dbPath) {
-        // nothing to do
+        // nothing to do, in readonly we don't want to create DB directories
     }
 
     @Override
