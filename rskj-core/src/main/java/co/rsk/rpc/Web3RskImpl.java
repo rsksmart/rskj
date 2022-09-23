@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
@@ -40,6 +39,7 @@ import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -96,11 +96,12 @@ public class Web3RskImpl extends Web3Impl {
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore,
             Web3InformationRetriever retriever,
-            SyncProcessor syncProcessor) {
+            SyncProcessor syncProcessor,
+            SignatureCache signatureCache) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
                     personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
-                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, syncProcessor);
+                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, syncProcessor, signatureCache);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

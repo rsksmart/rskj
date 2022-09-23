@@ -1098,6 +1098,7 @@ class Web3ImplLogsTest {
                 null,
                 new BlocksBloomStore(2, 0, new HashMapDB()),
                 mock(Web3InformationRetriever.class),
+                null,
                 null);
     }
 

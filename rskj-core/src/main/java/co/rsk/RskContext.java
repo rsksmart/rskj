@@ -1289,7 +1289,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getBuildInfo(),
                 getBlocksBloomStore(),
                 getWeb3InformationRetriever(),
-                getSyncProcessor());
+                getSyncProcessor(),
+                getBlockTxSignatureCache());
     }
 
     protected synchronized Web3InformationRetriever getWeb3InformationRetriever() {
