@@ -18,10 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.core.TransactionListExecutor;
+import co.rsk.core.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
@@ -43,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.LongAccumulator;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -336,7 +332,6 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         int txindex = 0;
 
@@ -352,8 +347,8 @@ public class BlockExecutor {
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts,
-                    remascFees);
+                    deletedAccounts
+            );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -395,7 +390,7 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(remascFees, track);
+        addFeesToRemasc(totalPaidFees, track);
         saveOrCommitTrackState(saveState, track);
 
         BlockResult result = new BlockResult(
@@ -437,19 +432,13 @@ public class BlockExecutor {
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-        IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
-        Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
-        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-
-        LongAccumulator totalGasUsed = new LongAccumulator(Long::sum, 0);
-        LongAccumulator totalPaidFees = new LongAccumulator(Long::sum, 0);
-        Map<Integer, TransactionReceipt> receipts = new ConcurrentSkipListMap<>();
-        Map<Integer, Transaction> executedTransactions = new ConcurrentSkipListMap<>();
-        Set<DataWord> deletedAccounts = ConcurrentHashMap.newKeySet();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
-
         ExecutorService executorService = Executors.newFixedThreadPool(Constants.getTransactionExecutionThreads());
         ExecutorCompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
+        List<TransactionListExecutor> transactionListExecutors = new ArrayList<>();
+        ReadWrittenKeysTracker aTracker = new ReadWrittenKeysTracker();
+        Repository track = repositoryLocator.startTrackingAt(parent, aTracker);
+        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
+        aTracker.clear();
         int nTasks = 0;
 
         // execute parallel subsets of transactions
@@ -458,26 +447,23 @@ public class BlockExecutor {
             List<Transaction> sublist = block.getTransactionsList().subList(start, end);
             TransactionListExecutor txListExecutor = new TransactionListExecutor(
                     sublist,
-                    readWrittenKeysTracker,
                     block,
                     transactionExecutorFactory,
-                    track,
+                    track.startTracking(),
                     vmTrace,
                     vmTraceOptions,
-                    deletedAccounts,
+                    new HashSet<>(),
                     discardInvalidTxs,
                     acceptInvalidTransactions,
-                    receipts,
-                    executedTransactions,
-                    transactionResults,
+                    new HashMap<>(),
+                    new HashMap<>(),
+                    new HashMap<>(),
                     registerProgramResults,
                     programTraceProcessor,
-                    remascFees,
-                    totalPaidFees,
-                    totalGasUsed,
                     start
             );
             completionService.submit(txListExecutor);
+            transactionListExecutors.add(txListExecutor);
             nTasks++;
             start = end;
         }
@@ -505,12 +491,35 @@ public class BlockExecutor {
             }
         }
 
-        readWrittenKeysTracker.clear();
+        // Review collision
+        if (aTracker.detectCollision()) {
+            logger.warn("block: [{}] execution failed", block.getNumber());
+            profiler.stop(metric);
+            return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+        }
+
+        // Merge maps.
+        Map<Integer, Transaction> executedTransactions = new HashMap<>();
+        Set<DataWord> deletedAccounts = new HashSet<>();
+        Map<Integer, TransactionReceipt> receipts = new HashMap<>();
+        Map<Keccak256, ProgramResult> mergedTransactionResults = new HashMap<>();
+        Coin totalPaidFees = Coin.ZERO;
+        long totalGasUsed = 0;
+
+        for (TransactionListExecutor tle : transactionListExecutors) {
+            tle.getRepository().commit();
+            deletedAccounts.addAll(tle.getDeletedAccounts());
+            executedTransactions.putAll(tle.getExecutedTransactions());
+            receipts.putAll(tle.getReceipts());
+            mergedTransactionResults.putAll(tle.getTransactionResults());
+            totalPaidFees = totalPaidFees.add(tle.getTotalFees());
+            totalGasUsed += tle.getTotalGas();
+        }
+
         // execute remaining transactions after the parallel subsets
         List<Transaction> sublist = block.getTransactionsList().subList(start, block.getTransactionsList().size());
         TransactionListExecutor txListExecutor = new TransactionListExecutor(
                 sublist,
-                readWrittenKeysTracker,
                 block,
                 transactionExecutorFactory,
                 track,
@@ -521,12 +530,9 @@ public class BlockExecutor {
                 acceptInvalidTransactions,
                 receipts,
                 executedTransactions,
-                transactionResults,
+                mergedTransactionResults,
                 registerProgramResults,
                 programTraceProcessor,
-                remascFees,
-                totalPaidFees,
-                totalGasUsed,
                 start
         );
         Boolean success = txListExecutor.call();
@@ -534,16 +540,18 @@ public class BlockExecutor {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
-        addFeesToRemasc(remascFees, track);
+        totalPaidFees = totalPaidFees.add(txListExecutor.getTotalFees());
+        totalGasUsed += txListExecutor.getTotalGas();
+        addFeesToRemasc(totalPaidFees, track);
         saveOrCommitTrackState(saveState, track);
 
         BlockResult result = new BlockResult(
                 block,
                 new LinkedList<>(executedTransactions.values()),
                 new LinkedList<>(receipts.values()),
-                new short[0],
-                totalGasUsed.longValue(),
-                Coin.valueOf(totalPaidFees.longValue()),
+                block.getHeader().getTxExecutionSublistsEdges(),
+                totalGasUsed,
+                totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
@@ -551,10 +559,10 @@ public class BlockExecutor {
         return result;
     }
 
-    private void addFeesToRemasc(LongAccumulator remascFees, Repository track) {
-        long fee = remascFees.get();
-        if (fee > 0) {
-            track.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(fee));
+    private void addFeesToRemasc(Coin remascFees, Repository track) {
+        if (remascFees.compareTo(Coin.ZERO) > 0) {
+            logger.trace("Adding fee to remasc contract account");
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, remascFees);
         }
     }
 
@@ -584,13 +592,12 @@ public class BlockExecutor {
         IReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
         Repository track = repositoryLocator.startTrackingAt(parent, readWrittenKeysTracker);
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-
+        readWrittenKeysTracker.clear();
         int i = 1;
         long gasUsedInBlock = 0;
         Coin totalPaidFees = Coin.ZERO;
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
 
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
 
@@ -608,8 +615,8 @@ public class BlockExecutor {
                     parallelizeTransactionHandler.getGasUsedInSequential(),
                     false,
                     0,
-                    deletedAccounts,
-                    remascFees);
+                    deletedAccounts
+            );
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -626,7 +633,7 @@ public class BlockExecutor {
             if (tx.isRemascTransaction(txindex, transactionsList.size())) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
-                sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed());
             }
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
@@ -670,7 +677,7 @@ public class BlockExecutor {
             loggingTxDone();
         }
 
-        addFeesToRemasc(remascFees, track);
+        addFeesToRemasc(totalPaidFees, track);
         saveOrCommitTrackState(saveState, track);
 
 

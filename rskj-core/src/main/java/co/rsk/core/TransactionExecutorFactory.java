@@ -29,7 +29,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.LongAccumulator;
 
 public class TransactionExecutorFactory {
 
@@ -65,17 +64,7 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, new LongAccumulator(Long::sum, 0));
-    }
-
-    public TransactionExecutor newInstance(
-            Transaction tx,
-            int txindex,
-            RskAddress coinbase,
-            Repository track,
-            Block block,
-            long totalGasUsed, LongAccumulator remascFees) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>(), remascFees);
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
@@ -87,8 +76,7 @@ public class TransactionExecutorFactory {
             long totalGasUsed,
             boolean vmTrace,
             int vmTraceOptions,
-            Set<DataWord> deletedAccounts,
-            LongAccumulator remascFees) {
+            Set<DataWord> deletedAccounts) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -121,8 +109,7 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                blockTxSignatureCache,
-                remascFees
+                blockTxSignatureCache
         );
     }
 }

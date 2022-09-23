@@ -26,15 +26,15 @@ import org.ethereum.vm.GasCost;
 import java.util.*;
 
 public class ParallelizeTransactionHandler {
-    private final HashMap<ByteArrayWrapper, TransactionSublist> sublistByWrittenKey;
-    private final HashMap<ByteArrayWrapper, Set<TransactionSublist>> sublistsByReadKey;
-    private final Map<RskAddress, TransactionSublist> sublistBySender;
+    private final HashMap<ByteArrayWrapper, TransactionSublist> sublistsHavingWrittenToKey;
+    private final HashMap<ByteArrayWrapper, Set<TransactionSublist>> sublistsHavingReadFromKey;
+    private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
 
     public ParallelizeTransactionHandler(short numberOfSublists, long sublistGasLimit) {
-        this.sublistBySender = new HashMap<>();
-        this.sublistByWrittenKey = new HashMap<>();
-        this.sublistsByReadKey = new HashMap<>();
+        this.sublistOfSender = new HashMap<>();
+        this.sublistsHavingWrittenToKey = new HashMap<>();
+        this.sublistsHavingReadFromKey = new HashMap<>();
         this.sublists = new ArrayList<>();
         for (short i = 0; i < numberOfSublists; i++){
             this.sublists.add(new TransactionSublist(sublistGasLimit, false));
@@ -116,25 +116,25 @@ public class ParallelizeTransactionHandler {
 
     private void addNewKeysToMaps(RskAddress sender, TransactionSublist sublist, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         for (ByteArrayWrapper key : newReadKeys) {
-            Set<TransactionSublist> sublistsAlreadyRead = sublistsByReadKey.getOrDefault(key, new HashSet<>());
+            Set<TransactionSublist> sublistsAlreadyRead = sublistsHavingReadFromKey.getOrDefault(key, new HashSet<>());
             sublistsAlreadyRead.add(sublist);
-            sublistsByReadKey.put(key, sublistsAlreadyRead);
+            sublistsHavingReadFromKey.put(key, sublistsAlreadyRead);
         }
 
         if (sublist.isSequential()) {
-            sublistBySender.put(sender, sublist);
+            sublistOfSender.put(sender, sublist);
             return;
         } else {
-            sublistBySender.putIfAbsent(sender, sublist);
+            sublistOfSender.putIfAbsent(sender, sublist);
         }
 
         for (ByteArrayWrapper key: newWrittenKeys) {
-            sublistByWrittenKey.putIfAbsent(key, sublist);
+            sublistsHavingWrittenToKey.putIfAbsent(key, sublist);
         }
     }
 
     private Optional<TransactionSublist> getSublistBySender(Transaction tx) {
-        return Optional.ofNullable(sublistBySender.get(tx.getSender()));
+        return Optional.ofNullable(sublistOfSender.get(tx.getSender()));
     }
 
     private Optional<TransactionSublist> getAvailableSublistWithLessUsedGas(long txGasLimit) {
@@ -161,8 +161,8 @@ public class ParallelizeTransactionHandler {
 
         // read - written
         for (ByteArrayWrapper newReadKey : newReadKeys) {
-            if (sublistByWrittenKey.containsKey(newReadKey)) {
-                TransactionSublist sublist = sublistByWrittenKey.get(newReadKey);
+            if (sublistsHavingWrittenToKey.containsKey(newReadKey)) {
+                TransactionSublist sublist = sublistsHavingWrittenToKey.get(newReadKey);
                 sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
             }
         }
@@ -173,8 +173,8 @@ public class ParallelizeTransactionHandler {
 
         for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
             // written - written,
-            if (sublistByWrittenKey.containsKey(newWrittenKey)) {
-                TransactionSublist sublist = sublistByWrittenKey.get(newWrittenKey);
+            if (sublistsHavingWrittenToKey.containsKey(newWrittenKey)) {
+                TransactionSublist sublist = sublistsHavingWrittenToKey.get(newWrittenKey);
                 sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
             }
 
@@ -182,8 +182,8 @@ public class ParallelizeTransactionHandler {
                 return sublistCandidate.get();
             }
             // read - written
-            if (sublistsByReadKey.containsKey(newWrittenKey)) {
-                Set<TransactionSublist> sublist = sublistsByReadKey.get(newWrittenKey);
+            if (sublistsHavingReadFromKey.containsKey(newWrittenKey)) {
+                Set<TransactionSublist> sublist = sublistsHavingReadFromKey.get(newWrittenKey);
 
                 if (sublist.size() > 1) {
                     return getSequentialSublist();
