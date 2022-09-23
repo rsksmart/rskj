@@ -7,7 +7,7 @@ public abstract class Space {
     public int memTop = 0;
     public boolean inUse = false;
 
-
+    abstract public byte setByte(long pos,byte value);
     /**
      * Reads a byte from the specified position.
      * @param pos the position in the memory mapped file

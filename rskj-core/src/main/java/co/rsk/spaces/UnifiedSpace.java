@@ -476,18 +476,36 @@ public class UnifiedSpace {
         HeadBitPointer p = new HeadBitPointer(headerOffset,compressionFactor,internalOfs);
         return (space.getByte(p.byteIndex) !=0);
     }
+    public void setHeadByte(Space space,int headerOffset,int compressionFactor,int internalOfs,boolean value) {
+        HeadBitPointer p = new HeadBitPointer(headerOffset,compressionFactor,internalOfs);
+        if (value) {
+            space.setByte(p.byteIndex,(byte) 0xff);
+        } else {
+            space.setByte(p.byteIndex,(byte)0);
+        }
+    }
+
     public boolean getHeadBit(int headerOffset,int compressionFactor,long uOfs) {
         int ptrSpaceNum = getSpaceNumFromUOfs(uOfs);
         Space space = spaces[ptrSpaceNum];
         int internalOfs = getInternalOfsFromUOfs(ptrSpaceNum, uOfs);
         return getHeadBit(space,headerOffset,compressionFactor,internalOfs);
     }
+
     public boolean getHeadByte(int headerOffset,int compressionBytes,long uOfs) {
         int ptrSpaceNum = getSpaceNumFromUOfs(uOfs);
         Space space = spaces[ptrSpaceNum];
         int internalOfs = getInternalOfsFromUOfs(ptrSpaceNum, uOfs);
         return getHeadByte(space,headerOffset,compressionBytes,internalOfs);
     }
+
+    public void setHeadByte(int headerOffset,int compressionBytes,long uOfs,boolean value) {
+        int ptrSpaceNum = getSpaceNumFromUOfs(uOfs);
+        Space space = spaces[ptrSpaceNum];
+        int internalOfs = getInternalOfsFromUOfs(ptrSpaceNum, uOfs);
+        setHeadByte(space,headerOffset,compressionBytes,internalOfs,value);
+    }
+
     public void setHeadBit(int headerOffset,int compressionBytes,long uOfs,boolean value) {
         int ptrSpaceNum = getSpaceNumFromUOfs(uOfs);
         Space space = spaces[ptrSpaceNum];
