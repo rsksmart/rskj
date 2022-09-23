@@ -82,10 +82,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
         Files.createDirectories(dbPath.getParent());
     }
 
-    protected DB openDB(Options options, Path dbPath) throws IOException {
-        return factory.open(dbPath.toFile(), options);
-    }
-
     @Override
     public final void init() {
         resetDbLock.writeLock().lock();
@@ -115,7 +111,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 createRequiredDirectories(dbPath);
 
                 logger.debug("Initializing new or existing database: '{}'", name);
-                db = openDB(options, dbPath);
+                db = factory.open(dbPath.toFile(), options);
 
                 alive = true;
             } catch (IOException ioe) {

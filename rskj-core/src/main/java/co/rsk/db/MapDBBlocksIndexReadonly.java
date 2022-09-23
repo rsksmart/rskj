@@ -18,31 +18,21 @@
 
 package co.rsk.db;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.datasource.TransientMap;
-import org.ethereum.db.IndexedBlockStore;
 import org.mapdb.DB;
 
-import java.util.List;
 import java.util.Map;
 
 public class MapDBBlocksIndexReadonly extends MapDBBlocksIndex {
+
+    // TODO:I Test
 
     public static MapDBBlocksIndexReadonly create(DB indexDB) {
         return new MapDBBlocksIndexReadonly(indexDB);
     }
 
-    @VisibleForTesting
-    static MapDBBlocksIndexReadonly createForTesting(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
-        return new MapDBBlocksIndexReadonly(indexDB, index, metadata);
-    }
-
     private MapDBBlocksIndexReadonly(DB indexDB) {
         super(indexDB);
-    }
-
-    private MapDBBlocksIndexReadonly(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
-        super(indexDB, index, metadata);
     }
 
     @Override

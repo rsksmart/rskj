@@ -18,7 +18,6 @@
 
 package co.rsk.db;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.TestUtils;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
@@ -36,10 +35,10 @@ import static org.mockito.Mockito.*;
 public class MapDBBlocksIndexTest {
 
     private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
-    protected MapDBBlocksIndex target;
-    protected Map<Long, List<IndexedBlockStore.BlockInfo>> index;
-    protected Map<String, byte[]> metadata;
-    protected DB indexDB;
+    private MapDBBlocksIndex target;
+    private Map<Long, List<IndexedBlockStore.BlockInfo>> index;
+    private Map<String, byte[]> metadata;
+    private DB indexDB;
 
     @Before
     public void setUp() throws Exception {
@@ -51,15 +50,16 @@ public class MapDBBlocksIndexTest {
         when(hTreeMapMaker.keySerializer(any())).thenReturn(hTreeMapMaker);
         when(hTreeMapMaker.counterEnable()).thenReturn(hTreeMapMaker);
         when(hTreeMapMaker.makeOrGet())
+                .thenReturn(mock(HTreeMap.class))
                 .thenReturn(mock(HTreeMap.class));
 
-        customSetup();
-    }
+        target = MapDBBlocksIndex.create(indexDB);
 
-    protected void customSetup() {
-        target = MapDBBlocksIndex.createForTesting(indexDB, new HashMap<>(), new HashMap<>());
-        index = target.getIndex();
-        metadata = target.getMetadata();
+        index = new HashMap<>();
+        TestUtils.setInternalState(target, "index", index);
+
+        metadata = new HashMap<>();
+        TestUtils.setInternalState(target, "metadata", metadata);
     }
 
     @Test(expected = IllegalStateException.class)

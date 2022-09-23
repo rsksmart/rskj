@@ -28,11 +28,13 @@ import java.util.Set;
 
 public class LevelDbDataSourceReadonly extends LevelDbDataSource implements ReadonlyDbDataSource {
 
+    // TODO:I test
+
     public static LevelDbDataSourceReadonly create(String name, String databaseDir) {
         return new LevelDbDataSourceReadonly(name, databaseDir);
     }
 
-    protected LevelDbDataSourceReadonly(String name, String databaseDir) {
+    private LevelDbDataSourceReadonly(String name, String databaseDir) {
         super(name, databaseDir, LoggerFactory.getLogger("db-readonly"));
     }
 

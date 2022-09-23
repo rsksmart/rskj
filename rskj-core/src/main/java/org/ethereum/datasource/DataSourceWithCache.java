@@ -63,7 +63,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, Logger logger) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
-        this.uncommittedCache = new HashMap<>(); // TODO https://github.com/rsksmart/rskj/pull/1863/files#r973101483
+        this.uncommittedCache = new HashMap<>(); // TODO:I clarify failing test!
         this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
         this.logger = logger;
     }

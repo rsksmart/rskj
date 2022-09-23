@@ -28,11 +28,13 @@ import java.util.Set;
 
 public class RocksDbDataSourceReadonly extends RocksDbDataSource implements ReadonlyDbDataSource {
 
+    // TODO:I test
+
     public static RocksDbDataSourceReadonly create(String name, String databaseDir) {
         return new RocksDbDataSourceReadonly(name, databaseDir);
     }
 
-    protected RocksDbDataSourceReadonly(String name, String databaseDir) {
+    private RocksDbDataSourceReadonly(String name, String databaseDir) {
         super(name, databaseDir, LoggerFactory.getLogger("db-readonly"));
     }
 
