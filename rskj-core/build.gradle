@@ -72,7 +72,7 @@ ext {
             jsonrpc4jVer           : '1.5.3',
             jaxwsRtVer             : '2.3.5',
 
-            bitcoinjThinVer: '0.14.4-rsk-12',
+            bitcoinjThinVer: '0.14.4-rsk-13',
             rskjNativeVer: '1.2.1',
     ]
 
