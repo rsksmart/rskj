@@ -1255,7 +1255,7 @@ public class BridgeSupport {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
             }
             if(activations.isActive(ConsensusRule.RSKIP326)) {
-                eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), rskExecutionBlock.getNumber());
+                eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
             }
         }
     }
