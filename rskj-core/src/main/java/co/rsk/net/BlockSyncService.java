@@ -75,7 +75,7 @@ public class BlockSyncService {
 
     /**
      * Does initial preprocessing of the {@code block}.
-     * 
+     *
      * @return block and its ancestors (if any), which are not connected yet. Returns an empty list,
      * if the block is too advanced, already connected or some of its ancestors are still being awaited from a network.
      */
@@ -120,7 +120,7 @@ public class BlockSyncService {
 
     public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final Instant start = Instant.now();
-        
+
         // Validate block header first to see if its PoW is valid at all
         if (!isBlockHeaderValid(block)) {
             logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getHash(), sender);
@@ -150,7 +150,23 @@ public class BlockSyncService {
         }
     }
 
+    public boolean isReadyToAcceptBlocks() {
+        if (blockchain.getSize() == 1) { // empty blockchain
+            return false;
+        }
+
+        if (getLastKnownBlockNumber() == 0) { // recently restarted, no info about lastKnownBlock yet
+            return true;
+        }
+
+        return !hasBetterBlockToSync();
+    }
+
     public boolean hasBetterBlockToSync() {
+        if (getLastKnownBlockNumber() == 0) { // recently restarted, no info about lastKnownBlock yet
+            return true;
+        }
+
         return getLastKnownBlockNumber() >= getBestBlockNumber() + syncConfiguration.getLongSyncLimit();
     }
 
@@ -226,7 +242,7 @@ public class BlockSyncService {
         if (sender == null) {
             return;
         }
-        
+
         logger.trace("Missing block {}", hash.toHexString());
 
         sender.sendMessage(new GetBlockMessage(hash.getBytes()));

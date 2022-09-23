@@ -21,6 +21,8 @@ package co.rsk.core;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import co.rsk.net.BlockSyncService;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
@@ -30,6 +32,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 
@@ -58,6 +61,10 @@ public class SnapshotManagerTest {
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
         manager = new SnapshotManager(blockchain, blockStore, transactionPool, mock(MinerServer.class));
+
+        NodeBlockProcessor nodeBlockProcessor = Whitebox.getInternalState(minerClient, "nodeBlockProcessor");
+        BlockSyncService blockSyncService = Whitebox.getInternalState(nodeBlockProcessor, "blockSyncService");
+        blockSyncService.setLastKnownBlockNumber(1);
     }
 
     @After
@@ -133,7 +140,6 @@ public class SnapshotManagerTest {
     @Test
     public void revertToSnapshot() {
         addBlocks(10);
-
         BlockChainStatus status = blockchain.getStatus();
 
         int snapshotId = manager.takeSnapshot();

@@ -378,6 +378,8 @@ public class MessageVisitorTest {
     public void newBlockHashesMessage() {
         NewBlockHashesMessage message = mock(NewBlockHashesMessage.class);
 
+        when(blockProcessor.isReadyToAcceptBlocks()).thenReturn(true);
+
         target.apply(message);
 
         verify(blockProcessor, times(1))
@@ -388,7 +390,7 @@ public class MessageVisitorTest {
     public void newBlockHashesMessage_betterBlockToSync() {
         NewBlockHashesMessage message = mock(NewBlockHashesMessage.class);
 
-        when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
+        when(blockProcessor.isReadyToAcceptBlocks()).thenReturn(false);
 
         target.apply(message);
 
