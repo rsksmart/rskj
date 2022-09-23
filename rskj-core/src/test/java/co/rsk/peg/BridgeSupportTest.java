@@ -1769,9 +1769,9 @@ class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
-        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -1802,7 +1802,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_preRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
+    public void rskTxWaitingForSignature_postRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
@@ -1811,9 +1811,10 @@ class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
-        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        long rskBlockNumber = 1L;
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -1842,12 +1843,58 @@ class BridgeSupportTest extends BridgeSupportTestBase {
                 .build();
         bridgeSupport.updateCollections(tx);
 
-        verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), executionBlock.getNumber());
+        verify(eventLogger, times(1)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
 
     }
 
     @Test
-    public void rskTxWaitingForSignature_preRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
+    public void rskTxWaitingForSignature_preRSKIP326_noPegoutConfirmedEventEmitted() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
+
+        BridgeConstants spiedBridgeConstants = spy(BridgeRegTestConstants.getInstance());
+        doReturn(1).when(spiedBridgeConstants).getRsk2BtcMinimumAcceptableConfirmations();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        long rskBlockNumber = 1L;
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, rskBlockNumber)); // no rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(2L);
+
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
+                .withEventLogger(eventLogger)
+                .build();
+
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
+        bridgeSupport.updateCollections(tx);
+
+        verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), rskBlockNumber);
+
+    }
+
+    @Test
+    public void rskTxWaitingForSignature_postRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
@@ -1885,7 +1932,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
                 .build();
         bridgeSupport.updateCollections(tx);
 
-        verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), executionBlock.getNumber());
+        verify(eventLogger, times(0)).logPegoutConfirmed(btcTx.getHash(), 1L);
 
     }
 
@@ -1899,9 +1946,9 @@ class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
-        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L)); // no rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -1941,10 +1988,10 @@ class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
-        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
@@ -1985,10 +2032,10 @@ class BridgeSupportTest extends BridgeSupportTestBase {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction btcTx = mock(BtcTransaction.class);
-        Set<ReleaseTransactionSet.Entry> set = new HashSet<>();
+        Set<ReleaseTransactionSet.Entry> releaseTransactionSetEntries = new HashSet<>();
         Keccak256 rskTxHash = Keccak256.ZERO_HASH;
-        set.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
-        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(set));
+        releaseTransactionSetEntries.add(new ReleaseTransactionSet.Entry(btcTx, 1L, rskTxHash)); // HAS rsk tx hash
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(releaseTransactionSetEntries));
         when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
 
