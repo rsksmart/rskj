@@ -9,27 +9,32 @@ import java.util.Set;
 
 public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
 
-    private final Map<ByteArrayWrapper, Set<Long>> temporalReadKeys;
-    private final Map<ByteArrayWrapper, Long> temporalWrittenKeys;
+    private final Map<Long, Set<ByteArrayWrapper>> readKeysByThread;
+    private final Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread;
 
     public DummyReadWrittenKeysTracker() {
-        this.temporalReadKeys = new HashMap<>();
-        this.temporalWrittenKeys = new HashMap<>();
+        this.readKeysByThread = new HashMap<>();
+        this.writtenKeysByThread = new HashMap<>();
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalReadKeys() {
-        return new HashSet<>(this.temporalReadKeys.keySet());
+    public Set<ByteArrayWrapper> getThisThreadReadKeys() {
+        return new HashSet<>();
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalWrittenKeys() {
-        return new HashSet<>(this.temporalWrittenKeys.keySet());
+    public Set<ByteArrayWrapper> getThisThreadWrittenKeys() {
+        return new HashSet<>();
     }
 
     @Override
-    public boolean hasCollided() {
-        return false;
+    public Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread() {
+        return readKeysByThread;
+    }
+
+    @Override
+    public Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread() {
+        return writtenKeysByThread;
     }
 
     @Override
@@ -40,6 +45,11 @@ public class DummyReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     @Override
     public void addNewWrittenKey(ByteArrayWrapper key) {
         //Dummy tracker does not store added keys
+    }
+
+    @Override
+    public boolean detectCollision(){
+        return false;
     }
 
     @Override

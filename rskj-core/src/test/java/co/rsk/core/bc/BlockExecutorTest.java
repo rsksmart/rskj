@@ -690,7 +690,7 @@ public class BlockExecutorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void executeInvalidParallelBlock(boolean activeRskip144) {
+    void executeInvalidParallelBlockDueToCollision(boolean activeRskip144) {
         if (!activeRskip144) {
             return;
         }

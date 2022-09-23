@@ -35,8 +35,8 @@ public class RepositoryTrackingTest {
     }
 
     void assertRepositoryHasSize(int readRepoSize, int writtenRepoSize) {
-        Assertions.assertEquals(readRepoSize, tracker.getTemporalReadKeys().size());
-        Assertions.assertEquals(writtenRepoSize, tracker.getTemporalWrittenKeys().size());
+        Assertions.assertEquals(readRepoSize, tracker.getThisThreadReadKeys().size());
+        Assertions.assertEquals(writtenRepoSize, tracker.getThisThreadWrittenKeys().size());
     }
 
     @Test
