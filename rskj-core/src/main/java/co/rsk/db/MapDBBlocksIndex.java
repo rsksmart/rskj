@@ -36,7 +36,7 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
  */
 public class MapDBBlocksIndex implements BlocksIndex {
 
-    static final String MAX_BLOCK_NUMBER_KEY = "max_block"; // NOSONAR deprecated rule raised
+    static final String MAX_BLOCK_NUMBER_KEY = "max_block";
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
@@ -44,7 +44,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
     private final DB indexDB;
 
     public static MapDBBlocksIndex create(DB indexDB) {
-        return new MapDBBlocksIndex(indexDB, buildIndex(indexDB), buildMetadata(indexDB));
+        return new MapDBBlocksIndex(indexDB);
     }
 
     @VisibleForTesting
@@ -52,16 +52,25 @@ public class MapDBBlocksIndex implements BlocksIndex {
         return new MapDBBlocksIndex(indexDB, index, metadata);
     }
 
+    protected MapDBBlocksIndex(DB indexDB) {
+        this(indexDB, buildIndex(indexDB), buildMetadata(indexDB));
+    }
+
     MapDBBlocksIndex(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
         this.indexDB = indexDB;
-        this.index = index;
-        this.metadata = metadata;
+        this.index = wrapIndex(index);
+        this.metadata = wrapIndex(metadata);
 
         // Max block number initialization assumes an index without gap
         if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) { // NOSONAR: computeIfAbsent is not implemented in TransientMap
             long maxBlockNumber = (long) index.size() - 1;
             metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
         }
+    }
+
+    protected <K, V> Map<K, V> wrapIndex(Map<K, V> base) {
+        // no wrap needed
+        return base;
     }
 
     @Override
@@ -152,14 +161,14 @@ public class MapDBBlocksIndex implements BlocksIndex {
         return metadata;
     }
 
-    protected static HTreeMap<String, byte[]> buildMetadata(DB indexDB) {
+    private static HTreeMap<String, byte[]> buildMetadata(DB indexDB) {
         return indexDB.hashMapCreate("metadata")
                 .keySerializer(Serializer.STRING)
                 .valueSerializer(Serializer.BYTE_ARRAY)
                 .makeOrGet();
     }
 
-    protected static HTreeMap<Long, List<IndexedBlockStore.BlockInfo>> buildIndex(DB indexDB) {
+    private static HTreeMap<Long, List<IndexedBlockStore.BlockInfo>> buildIndex(DB indexDB) {
         return indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)

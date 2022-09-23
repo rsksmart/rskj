@@ -40,8 +40,6 @@ import java.util.stream.Stream;
  */
 public class DataSourceWithCache implements KeyValueDataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
-
     private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
@@ -52,6 +50,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private final Logger logger;
 
     @Nullable
     private final CacheSnapshotHandler cacheSnapshotHandler;
@@ -64,11 +64,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
         return new DataSourceWithCache(base, cacheSize, cacheSnapshotHandler);
     }
 
-    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+    private DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
+        this(base, cacheSize, cacheSnapshotHandler, LoggerFactory.getLogger("datasourcewithcache"));
+    }
+
+    protected DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable CacheSnapshotHandler cacheSnapshotHandler, @Nonnull Logger logger) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new HashMap<>(); // TODO https://github.com/rsksmart/rskj/pull/1863/files#r973101483
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
+        this.logger = logger;
         this.cacheSnapshotHandler = cacheSnapshotHandler;
     }
 

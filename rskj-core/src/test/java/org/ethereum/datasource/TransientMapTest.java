@@ -139,8 +139,7 @@ public class TransientMapTest {
 
     @Test
     public void putAll() {
-        HashMap<String, String> map = new HashMap<>();
-        Assert.assertThrows(UnsupportedOperationException.class, () -> transientMap.putAll(map));
+        Assert.assertThrows(UnsupportedOperationException.class, () -> transientMap.putAll(new HashMap<>()));
     }
 
     @Test

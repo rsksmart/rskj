@@ -1115,11 +1115,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         RskSystemProperties rskSystemProps = getRskSystemProperties();
 
         if (!blockIndexDirectory.exists()) {
-            if (rskSystemProps.readOnlyMode()) {
+            if (rskSystemProps.readOnlyMode())
                 throw new IllegalArgumentException(String.format(
                         "Unable to create blocks directory in read-only mode: %s", blockIndexDirectory
                 ));
-            }
             if (!blockIndexDirectory.mkdirs()) {
                 throw new IllegalArgumentException(String.format(
                         "Unable to create blocks directory: %s", blockIndexDirectory
