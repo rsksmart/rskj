@@ -11,7 +11,12 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
 public class KeyValueReadonlyDataSourceTest {
@@ -40,17 +45,17 @@ public class KeyValueReadonlyDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         Path dbPath = Files.createTempDirectory(tmpDir, "default").resolve("test");
         // first create and close
-        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath, dbKind);
+        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath,dbKind,false);
 
         keyValueDataSource.init();
         keyValueDataSource.close();
 
         // now re-create with readonly mode
-        keyValueDataSource = KeyValueDataSourceUtils.makeReadonlyDataSource(dbPath, dbKind);
+        keyValueDataSource = KeyValueDataSourceUtils.makeDataSource(dbPath,dbKind,true);
         keyValueDataSource.init();
     }
 
-    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void put() {
         byte[] randomKey = TestUtils.randomBytes(20);
         byte[] randomValue = TestUtils.randomBytes(20);
@@ -58,7 +63,7 @@ public class KeyValueReadonlyDataSourceTest {
         keyValueDataSource.put(randomKey, randomValue);
     }
 
-    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void delete() {
         byte[] randomKey = TestUtils.randomBytes(20);
         byte[] randomValue = TestUtils.randomBytes(20);
@@ -66,7 +71,7 @@ public class KeyValueReadonlyDataSourceTest {
         keyValueDataSource.delete(randomKey);
     }
 
-    @Test(expected = ReadonlyDbDataSource.ReadOnlyException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void updateBatch() {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
 

@@ -21,14 +21,19 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.TestUtils.randomBytes;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -39,22 +44,22 @@ public class RocksDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() throws IOException {
-        RocksDbDataSource dataSource = RocksDbDataSource.create("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = new RocksDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-
+        
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-
+        
         dataSource.close();
     }
 
     @Test
     public void testPutting() throws IOException {
-        RocksDbDataSource dataSource = RocksDbDataSource.create("test", databaseDir.newFolder().getPath());
+        RocksDbDataSource dataSource = new RocksDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);
@@ -62,7 +67,7 @@ public class RocksDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
-
+        
         dataSource.close();
     }
     private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {

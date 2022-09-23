@@ -18,7 +18,6 @@
 
 package co.rsk.db;
 
-import org.ethereum.TestUtils;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.junit.Before;
@@ -26,6 +25,7 @@ import org.junit.Test;
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -53,13 +53,17 @@ public class MapDBBlocksIndexTest {
                 .thenReturn(mock(HTreeMap.class))
                 .thenReturn(mock(HTreeMap.class));
 
-        target = MapDBBlocksIndex.create(indexDB);
+        target = new MapDBBlocksIndex(indexDB, false);
 
         index = new HashMap<>();
-        TestUtils.setInternalState(target, "index", index);
+        Field indexF = target.getClass().getDeclaredField("index");
+        indexF.setAccessible(true);
+        indexF.set(target, index);
 
         metadata = new HashMap<>();
-        TestUtils.setInternalState(target, "metadata", metadata);
+        Field metadataF = target.getClass().getDeclaredField("metadata");
+        metadataF.setAccessible(true);
+        metadataF.set(target, metadata);
     }
 
     @Test(expected = IllegalStateException.class)

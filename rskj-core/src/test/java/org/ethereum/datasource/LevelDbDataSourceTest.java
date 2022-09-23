@@ -21,14 +21,19 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.TestUtils.randomBytes;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -39,7 +44,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() throws IOException {
-        LevelDbDataSource dataSource = LevelDbDataSource.create("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
@@ -54,7 +59,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() throws IOException {
-        LevelDbDataSource dataSource = LevelDbDataSource.create("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);
