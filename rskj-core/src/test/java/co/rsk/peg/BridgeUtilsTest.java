@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
@@ -2061,6 +2060,7 @@ class BridgeUtilsTest {
                 Keccak256.ZERO_HASH.getBytes(),
                 0,
                 0,
+                null,
                 null,
                 null,
                 null,

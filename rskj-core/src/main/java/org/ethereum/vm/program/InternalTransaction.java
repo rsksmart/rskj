@@ -16,9 +16,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm.program;
 
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -34,10 +34,12 @@ public class InternalTransaction extends Transaction {
     private final int deep;
     private final int index;
     private final String note;
+    private final SignatureCache signatureCache;
+
     private boolean rejected = false;
 
     public InternalTransaction(byte[] originHash, byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-        byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note, SignatureCache signatureCache) {
 
         super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
 
@@ -47,11 +49,12 @@ public class InternalTransaction extends Transaction {
         this.index = index;
         this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
+        this.signatureCache = signatureCache;
     }
 
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        this(parentHash, parentHash, deep, index, nonce, gasPrice, gasLimit, sendAddress, receiveAddress, value, data, note);
+                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note, SignatureCache signatureCache) {
+        this(parentHash, parentHash, deep, index, nonce, gasPrice, gasLimit, sendAddress, receiveAddress, value, data, note, signatureCache);
     }
 
     private static byte[] getData(DataWord gasPrice) {
@@ -94,7 +97,7 @@ public class InternalTransaction extends Transaction {
         } else {
             nonce = RLP.encodeElement(nonce);
         }
-        byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
+        byte[] senderAddress = RLP.encodeElement(getSender(signatureCache).getBytes());
         byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
         byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeCoin(getGasPrice());

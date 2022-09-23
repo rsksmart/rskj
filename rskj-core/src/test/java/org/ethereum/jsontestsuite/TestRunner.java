@@ -282,7 +282,7 @@ public class TestRunner {
             /* 3. Create Program - exec.code */
             /* 4. run VM */
             VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), exec.getCode(), programInvoke, null, new HashSet<>());
+            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), exec.getCode(), programInvoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;

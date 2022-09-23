@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
@@ -25,6 +24,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -264,7 +265,7 @@ public class VMPerformanceTest {
 
         byte[] newCode = getClonedCode(code,cloneCount);
 
-        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null, new HashSet<>());
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -492,7 +493,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
+        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -603,7 +604,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         startMeasure();

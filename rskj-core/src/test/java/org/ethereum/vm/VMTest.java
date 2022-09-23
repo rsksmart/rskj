@@ -30,10 +30,7 @@ import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.program.Program;
@@ -3393,7 +3390,7 @@ public abstract class VMTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction, boolean preFixStaticCall) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction, new HashSet<>());
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 
     private byte[] compile(String code) {

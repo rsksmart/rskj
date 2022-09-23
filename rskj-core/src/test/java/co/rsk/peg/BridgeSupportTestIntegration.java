@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
@@ -52,10 +51,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
@@ -994,7 +990,8 @@ public class BridgeSupportTestIntegration {
                 Hex.decode(TO_ADDRESS),
                 BigIntegers.asUnsignedByteArray(AMOUNT),
                 Hex.decode(DATA),
-                ""
+                "",
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
 
         track.saveCode(tx.getSender(), new byte[]{0x1});

@@ -1,7 +1,28 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.ethereum.vm.program;
 
 import co.rsk.config.TestSystemProperties;
 import java.math.BigInteger;
+
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
@@ -27,7 +48,8 @@ class ProgramResultTest {
             new ECKey().getAddress(),
             new byte[] {},
             new byte[] {},
-            ""
+            "",
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
 
         Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getOriginHash());
@@ -48,7 +70,8 @@ class ProgramResultTest {
             new ECKey().getAddress(),
             new byte[] {},
             new byte[] {},
-            ""
+            "",
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
         InternalTransaction internalTx2 = programResult.addInternalTransaction(
             internalTx1,
@@ -60,7 +83,8 @@ class ProgramResultTest {
             new ECKey().getAddress(),
             new byte[] {},
             new byte[] {},
-            ""
+            "",
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
 
         Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx2.getOriginHash());
@@ -84,7 +108,8 @@ class ProgramResultTest {
                 new ECKey().getAddress(),
                 new byte[] {},
                 new byte[] {},
-                ""
+                "",
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache())
             );
         }
         InternalTransaction result = (InternalTransaction)internalTxN;

@@ -26,6 +26,8 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
@@ -532,7 +534,7 @@ class VMCustomTest {
     }
 
     private Program getProgram(String ops) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), Hex.decode(ops), invoke, null, new HashSet<>());
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), Hex.decode(ops), invoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 
 }

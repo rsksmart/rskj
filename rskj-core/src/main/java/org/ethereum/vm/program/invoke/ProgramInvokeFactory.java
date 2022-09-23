@@ -16,12 +16,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
@@ -34,7 +34,8 @@ import org.ethereum.vm.program.Program;
 public interface ProgramInvokeFactory {
 
     ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block,
-                                      Repository repository, BlockStore blockStore);
+                                      Repository repository, BlockStore blockStore,
+                                      SignatureCache signatureCache);
 
     ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                       DataWord inValue, long inGas,
