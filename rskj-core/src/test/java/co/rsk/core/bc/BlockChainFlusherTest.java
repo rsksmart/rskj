@@ -90,4 +90,15 @@ class BlockChainFlusherTest {
         verify(blocksBloomStore).flush();
         verify(stateRootsStore).flush();
     }
+
+    @Test
+    public void forceFlush_WhenForced_ShouldFlush() {
+        flusher.forceFlush();
+
+        verify(trieStore).flush();
+        verify(blockStore).flush();
+        verify(receiptStore).flush();
+        verify(blocksBloomStore).flush();
+        verify(stateRootsStore).flush();
+    }
 }
