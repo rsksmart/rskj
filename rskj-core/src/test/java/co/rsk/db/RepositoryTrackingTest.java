@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 import java.math.BigInteger;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class RepositoryTrackingTest {
@@ -36,8 +35,8 @@ public class RepositoryTrackingTest {
     }
 
     void assertRepositoryHasSize(int readRepoSize, int writtenRepoSize) {
-        assertEquals(readRepoSize, tracker.getTemporalReadKeys().size());
-        assertEquals(writtenRepoSize, tracker.getTemporalWrittenKeys().size());
+        assertEquals(readRepoSize, tracker.getThisThreadReadKeys().size());
+        assertEquals(writtenRepoSize, tracker.getThisThreadWrittenKeys().size());
     }
 
     @Test

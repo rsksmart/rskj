@@ -20,68 +20,116 @@ package co.rsk.core.bc;
 
 import org.ethereum.db.ByteArrayWrapper;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
-    private Map<ByteArrayWrapper, Set<Long>> threadByReadKey;
-    private Map<ByteArrayWrapper, Long> threadByWrittenKey;
-    private boolean collision;
+
+    private Map<Long, Set<ByteArrayWrapper>> readKeysByThread;
+
+    private Map<Long, Set<ByteArrayWrapper>> writtenKeysByThread;
+
 
     public ReadWrittenKeysTracker() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
-        this.collision = false;
+        this.readKeysByThread = new HashMap<>();
+        this.writtenKeysByThread = new HashMap<>();
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalReadKeys(){
-        return new HashSet<>(this.threadByReadKey.keySet());
+    public Set<ByteArrayWrapper> getThisThreadReadKeys(){
+        long threadId = Thread.currentThread().getId();
+        if (this.readKeysByThread.containsKey(threadId)) {
+            return new HashSet<>(this.readKeysByThread.get(threadId));
+        } else {
+            return new HashSet<>();
+        }
     }
 
     @Override
-    public Set<ByteArrayWrapper> getTemporalWrittenKeys(){
-        return new HashSet<>(this.threadByWrittenKey.keySet());
+    public Set<ByteArrayWrapper> getThisThreadWrittenKeys(){
+        long threadId = Thread.currentThread().getId();
+        if (this.writtenKeysByThread.containsKey(threadId)) {
+            return new HashSet<>(this.writtenKeysByThread.get(threadId));
+        } else {
+            return new HashSet<>();
+        }
     }
 
-    public boolean hasCollided() { return this.collision;}
+    @Override
+    public Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread() {
+        return new HashMap<>(this.readKeysByThread);
+    }
+
+    @Override
+    public Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread() {
+        return new HashMap<>(this.writtenKeysByThread);
+    }
 
     @Override
     public synchronized void addNewReadKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-        if (threadByWrittenKey.containsKey(key)) {
-            collision = collision || (threadId != threadByWrittenKey.get(key));
-        }
-        Set<Long> threadSet;
-        if (threadByReadKey.containsKey(key)) {
-            threadSet = threadByReadKey.get(key);
-        } else {
-            threadSet = new HashSet<>();
-        }
-        threadSet.add(threadId);
-        threadByReadKey.put(key, threadSet);
+        addNewReadKeyToThread(threadId,key);
+    }
+
+    public synchronized void addNewReadKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
+        readKeys.add(key);
+        readKeysByThread.put(threadId, readKeys);
+    }
+    public synchronized void removeReadKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> readKeys = readKeysByThread.containsKey(threadId)? readKeysByThread.get(threadId) : new HashSet<>();
+        readKeys.remove(key);
+        readKeysByThread.put(threadId, readKeys);
     }
 
     @Override
     public synchronized void addNewWrittenKey(ByteArrayWrapper key) {
         long threadId = Thread.currentThread().getId();
-        if (threadByWrittenKey.containsKey(key)) {
-            collision = collision || (threadId != threadByWrittenKey.get(key));
-        }
+        addNewWrittenKeyToThread(threadId,key);
 
-        if (threadByReadKey.containsKey(key)) {
-            Set<Long> threadSet = threadByReadKey.get(key);
-            collision = collision || !(threadSet.contains(threadId)) || (threadSet.size() > 1);
-        }
+    }
+    public synchronized void removeWrittenKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
+        writtenKeys.remove(key);
+        writtenKeysByThread.put(threadId, writtenKeys);
+    }
 
-        threadByWrittenKey.put(key, threadId);
+    public synchronized void addNewWrittenKeyToThread(long threadId,ByteArrayWrapper key) {
+        Set<ByteArrayWrapper> writtenKeys = writtenKeysByThread.containsKey(threadId)? writtenKeysByThread.get(threadId) : new HashSet<>();
+        writtenKeys.add(key);
+        writtenKeysByThread.put(threadId, writtenKeys);
     }
 
     @Override
     public synchronized void clear() {
-        this.threadByReadKey = new HashMap<>();
-        this.threadByWrittenKey = new HashMap<>();
+        this.readKeysByThread = new HashMap<>();
+        this.writtenKeysByThread = new HashMap<>();
+    }
+
+    public boolean detectCollision() {
+        Set<Long> threads = new HashSet<>();
+        threads.addAll(readKeysByThread.keySet());
+        threads.addAll(writtenKeysByThread.keySet());
+
+        for (Long threadId : threads) {
+            Set<ByteArrayWrapper> baseReadKeys = readKeysByThread.getOrDefault(threadId, new HashSet<>());
+            Set<ByteArrayWrapper> baseWrittenKeys = writtenKeysByThread.getOrDefault(threadId, new HashSet<>());
+
+            for (Long threadId2 : threads) {
+                if (threadId >= threadId2) {
+                    continue;
+                }
+
+                Set<ByteArrayWrapper> temporalReadKeys = readKeysByThread.getOrDefault(threadId2, new HashSet<>());
+                Set<ByteArrayWrapper> temporalWrittenKeys = writtenKeysByThread.getOrDefault(threadId2, new HashSet<>());
+
+                 boolean isDisjoint = Collections.disjoint(baseWrittenKeys, temporalWrittenKeys) && Collections.disjoint(baseWrittenKeys, temporalReadKeys)
+                    && Collections.disjoint(baseReadKeys, temporalWrittenKeys);
+
+                 if (!isDisjoint) {
+                     return true;
+                 }
+            }
+        }
+        return false;
     }
 }
