@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
@@ -28,17 +27,20 @@ public class TransactionSet {
     private final Map<Keccak256, Transaction> transactionsByHash;
     private final Map<RskAddress, List<Transaction>> transactionsByAddress;
 
-    public TransactionSet() {
-        this(new HashMap<>(), new HashMap<>());
+    private final SignatureCache signatureCache;
+
+    public TransactionSet(SignatureCache signatureCache) {
+        this(new HashMap<>(), new HashMap<>(), signatureCache);
     }
 
-    public TransactionSet(TransactionSet transactionSet) {
-        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress));
+    public TransactionSet(TransactionSet transactionSet, SignatureCache signatureCache) {
+        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress), signatureCache);
     }
 
-    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
+    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress, SignatureCache signatureCache) {
         this.transactionsByHash = transactionsByHash;
         this.transactionsByAddress = transactionsByAddress;
+        this.signatureCache = signatureCache;
     }
 
     public void addTransaction(Transaction transaction) {
@@ -50,7 +52,7 @@ public class TransactionSet {
 
         this.transactionsByHash.put(txhash, transaction);
 
-        RskAddress senderAddress = transaction.getSender();
+        RskAddress senderAddress = transaction.getSender(signatureCache);
 
         List<Transaction> txs = this.transactionsByAddress.get(senderAddress);
 
@@ -85,7 +87,7 @@ public class TransactionSet {
 
         this.transactionsByHash.remove(hash);
 
-        RskAddress senderAddress = transaction.getSender();
+        RskAddress senderAddress = transaction.getSender(signatureCache);
         List<Transaction> txs = this.transactionsByAddress.get(senderAddress);
 
         if (txs != null) {

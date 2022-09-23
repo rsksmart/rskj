@@ -51,8 +51,8 @@ import static org.ethereum.util.BIUtil.toBI;
 public class TransactionPoolImpl implements TransactionPool {
     private static final Logger logger = LoggerFactory.getLogger("txpool");
 
-    private final TransactionSet pendingTransactions = new TransactionSet();
-    private final TransactionSet queuedTransactions = new TransactionSet();
+    private final TransactionSet pendingTransactions;
+    private final TransactionSet queuedTransactions;
 
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
@@ -93,6 +93,9 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedTimeout = outdatedTimeout;
         this.quotaChecker = txQuotaChecker;
         this.gasPriceTracker = gasPriceTracker;
+
+        pendingTransactions = new TransactionSet(this.signatureCache);
+        queuedTransactions = new TransactionSet(this.signatureCache);
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
 
@@ -157,7 +160,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return new PendingState(currentRepository, new TransactionSet(pendingTransactions), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
+        return new PendingState(currentRepository, new TransactionSet(pendingTransactions, signatureCache), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
     }
 
     private RepositorySnapshot getCurrentRepository() {
