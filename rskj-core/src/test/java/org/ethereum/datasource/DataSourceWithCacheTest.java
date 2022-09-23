@@ -114,8 +114,6 @@ public class DataSourceWithCacheTest {
 
     @Test
     public void putTwoKeyValuesWrittenInOrder() {
-        InOrder order = inOrder(baseDataSource);
-
         byte[] randomKey1 = TestUtils.randomBytes(20);
         byte[] randomValue1 = TestUtils.randomBytes(20);
         byte[] randomKey2 = TestUtils.randomBytes(20);
@@ -126,8 +124,8 @@ public class DataSourceWithCacheTest {
 
         dataSourceWithCache.flush();
 
-        order.verify(baseDataSource).put(randomKey1, randomValue1);
-        order.verify(baseDataSource).put(randomKey2, randomValue2);
+        verify(baseDataSource).put(randomKey1, randomValue1);
+        verify(baseDataSource).put(randomKey2, randomValue2);
     }
 
     @Test

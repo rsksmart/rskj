@@ -50,7 +50,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
-    private boolean readOnly;
+    private final boolean readOnly;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -60,7 +60,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name, String databaseDir,boolean readOnly) {
+    public LevelDbDataSource(String name, String databaseDir, boolean readOnly) {
         this.databaseDir = databaseDir;
         this.name = name;
         this.readOnly = readOnly;
@@ -68,13 +68,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     public LevelDbDataSource(String name, String databaseDir) {
-        this(name,databaseDir,false);
-    }
-
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
+        this(name,databaseDir, false);
     }
 
     @Override
@@ -108,8 +102,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     Files.createDirectories(dbPath.getParent());
                 }
                 logger.debug("Initializing new or existing database: '{}'", name);
-                db = factory.open(dbPath.toFile(), options);
-
+                db = openDB(options, dbPath);
                 alive = true;
             } catch (IOException ioe) {
                 logger.error(ioe.getMessage(), ioe);
@@ -121,6 +114,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
             profiler.stop(metric);
             resetDbLock.writeLock().unlock();
         }
+    }
+
+    protected DB openDB(Options options, Path dbPath) throws IOException {
+        return factory.open(dbPath.toFile(), options);
     }
 
     public static Path getPathForName(String name, String databaseDir) {
@@ -186,7 +183,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private void checkReadOnly() {
         if (readOnly) {
-            throw new IllegalArgumentException("database is readonly");
+            throw new ReadOnlyDbException("database is readonly");
         }
     }
 

@@ -69,7 +69,7 @@ public class DataSourceWithCachePreventWritesTest {
         dataSourceWithCache.flush();
 
         ret =dataSourceWithCache.get(randomKey);
-        assertEquals(ret, null);
+        assertNull(ret);
         verify(baseDataSource, times(1)).put(any(byte[].class),any(byte[].class));
 
     }

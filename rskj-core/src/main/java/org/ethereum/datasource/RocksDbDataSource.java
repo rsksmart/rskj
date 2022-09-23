@@ -52,7 +52,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String name;
     private RocksDB db;
     private boolean alive;
-    private boolean readOnly;
+    private final boolean readOnly;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -70,12 +70,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
     public RocksDbDataSource(String name, String databaseDir) {
         this(name,databaseDir,false);
-    }
-
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new RocksDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
     }
 
     @Override
@@ -105,7 +99,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
                 Files.createDirectories(dbPath.getParent());
             }
             logger.debug("Initializing new or existing database: '{}'", name);
-            openDb(options, dbPath);
+            db = openDb(options, dbPath);
+            alive = true;
 
             logger.debug("<~ RocksDbDataSource.init(): {}", name);
         } catch (RocksDBException ioe) {
@@ -122,10 +117,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void openDb(Options options, Path dbPath) throws RocksDBException {
-        db = RocksDB.open(options, dbPath.toString());
-
-        alive = true;
+    protected RocksDB openDb(Options options, Path dbPath) throws RocksDBException {
+        return RocksDB.open(options, dbPath.toString());
     }
 
     public static Path getPathForName(String name, String databaseDir) {
@@ -201,10 +194,9 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     private void checkReadOnly() {
         if (readOnly) {
-            throw new IllegalArgumentException("database is readonly");
+            throw new ReadOnlyDbException("database is readonly");
         }
     }
-
     @Override
     public byte[] put(byte[] key, byte[] value) {
         checkReadOnly();

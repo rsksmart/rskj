@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.mapdb.DB;
 import org.mapdb.HTreeMap;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -34,11 +33,14 @@ import static org.mockito.Mockito.*;
 
 public class MapDBBlocksIndexTest {
 
-    private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
-    private MapDBBlocksIndex target;
-    private Map<Long, List<IndexedBlockStore.BlockInfo>> index;
-    private Map<String, byte[]> metadata;
-    private DB indexDB;
+    protected static final String MAX_BLOCK_NUMBER_KEY = "max_block";
+    protected MapDBBlocksIndex target;
+    protected Map<Long, List<IndexedBlockStore.BlockInfo>> index;
+    protected Map<String, byte[]> metadata;
+    protected Map<Long, List<IndexedBlockStore.BlockInfo>> baseIndex;
+    protected Map<String, byte[]> baseMetadata;
+
+    protected DB indexDB;
 
     @Before
     public void setUp() throws Exception {
@@ -53,17 +55,17 @@ public class MapDBBlocksIndexTest {
                 .thenReturn(mock(HTreeMap.class))
                 .thenReturn(mock(HTreeMap.class));
 
-        target = new MapDBBlocksIndex(indexDB, false);
+        baseMetadata = new HashMap<>();
+        baseIndex = new HashMap<>();
 
-        index = new HashMap<>();
-        Field indexF = target.getClass().getDeclaredField("index");
-        indexF.setAccessible(true);
-        indexF.set(target, index);
+        setupMode();
 
-        metadata = new HashMap<>();
-        Field metadataF = target.getClass().getDeclaredField("metadata");
-        metadataF.setAccessible(true);
-        metadataF.set(target, metadata);
+        index = target.getIndex();
+        metadata = target.getMetadata();
+    }
+
+    protected void setupMode() {
+        target = new MapDBBlocksIndex(indexDB, baseIndex, baseMetadata, false);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -91,7 +93,7 @@ public class MapDBBlocksIndexTest {
         metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(9));
         index.put(9L, new ArrayList<>());
 
-        assertEquals(target.getMaxNumber(),9);
+        assertEquals(9, target.getMaxNumber());
     }
 
     @Test
@@ -245,4 +247,5 @@ public class MapDBBlocksIndexTest {
 
         verify(indexDB, times(1)).commit();
     }
+
 }
