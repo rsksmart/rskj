@@ -43,7 +43,7 @@ public class RocksDbDataSourceReadonly extends RocksDbDataSource implements Read
 
     @Override
     public void createRequiredDirectories(Path dbPath) {
-        // nothing to do, in readonly we don't want to create DB directories
+        // nothing to do
     }
 
     @Override

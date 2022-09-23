@@ -18,7 +18,7 @@ public class DataSourceWithCacheReadonlyTest {
     private static final int CACHE_SIZE = 0; // should be ignored
 
     private HashMapDB baseDataSource;
-    private DataSourceWithCacheReadonly dataSourceWithCache;
+    private DataSourceWithCache dataSourceWithCache;
 
     @Before
     public void setupDataSources() {
@@ -79,24 +79,6 @@ public class DataSourceWithCacheReadonlyTest {
             assertThat(dataSourceWithCache.get(key.getData()), is(initialEntries.get(key)));
         }
         verify(baseDataSource, never()).put(any(byte[].class), any(byte[].class));
-    }
-
-    @Test
-    public void checkCacheSnapshotLoadTriggered() {
-        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        DataSourceWithCache.createWithSnapshot(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
-
-        verify(cacheSnapshotHandler, atLeastOnce()).load(anyMap());
-    }
-
-    @Test
-    public void checkCacheSnapshotSaveNotTriggered() {
-        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        DataSourceWithCacheReadonly.createWithSnapshot(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
-
-        dataSourceWithCache.close();
-
-        verify(cacheSnapshotHandler, never()).save(anyMap());
     }
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {

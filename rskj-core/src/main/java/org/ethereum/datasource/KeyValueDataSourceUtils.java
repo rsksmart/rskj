@@ -26,7 +26,7 @@ public class KeyValueDataSourceUtils {
     }
 
     @Nonnull
-    public static KeyValueDataSource makeDataSourceReadonly(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    public static KeyValueDataSource makeReadonlyDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
         return makeDatasourceInternal(datasourcePath, kind, true);
     }
 
@@ -54,7 +54,7 @@ public class KeyValueDataSourceUtils {
     public static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSourceReadonly(originPath, kind);
+            KeyValueDataSource singleOriginDataSource = makeReadonlyDataSource(originPath, kind);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }

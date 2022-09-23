@@ -56,13 +56,14 @@ public class MapDBBlocksIndex implements BlocksIndex {
         this(indexDB, buildIndex(indexDB), buildMetadata(indexDB));
     }
 
-    MapDBBlocksIndex(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
+    // This constructor should be used from this class or from child class when creating instance for Testing purposes
+    protected MapDBBlocksIndex(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata) {
         this.indexDB = indexDB;
         this.index = wrapIndex(index);
         this.metadata = wrapIndex(metadata);
 
         // Max block number initialization assumes an index without gap
-        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) { // NOSONAR: computeIfAbsent is not implemented in TransientMap
+        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) { // NOSONAR not implemented in TransientMap
             long maxBlockNumber = (long) index.size() - 1;
             metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
         }

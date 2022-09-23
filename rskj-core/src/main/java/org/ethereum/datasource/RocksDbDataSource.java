@@ -44,6 +44,8 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
     private static final int MAX_RETRIES = 2;
 
+    protected Logger log = LoggerFactory.getLogger(getClass());
+
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 

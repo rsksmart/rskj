@@ -22,19 +22,24 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
-public class DataSourceWithCacheReadonly extends DataSourceWithCache {
+public class DataSourceWithCacheAndSnapshot extends DataSourceWithCache {
 
-    public static DataSourceWithCacheReadonly create(@Nonnull KeyValueDataSource base, int cacheSize) {
-        return new DataSourceWithCacheReadonly(base, cacheSize);
+    private final CacheSnapshotHandler cacheSnapshotHandler;
+
+    public static DataSourceWithCacheAndSnapshot create(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
+        return new DataSourceWithCacheAndSnapshot(base, cacheSize, cacheSnapshotHandler);
     }
 
-    private DataSourceWithCacheReadonly(@Nonnull KeyValueDataSource base, int cacheSize) {
-        super(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache-readonly"));
+    private DataSourceWithCacheAndSnapshot(@Nonnull KeyValueDataSource base, int cacheSize, CacheSnapshotHandler cacheSnapshotHandler) {
+        super(base, cacheSize, LoggerFactory.getLogger("datasourcewithcache-snapshot"));
+
+        this.cacheSnapshotHandler = cacheSnapshotHandler;
+        cacheSnapshotHandler.load(getCommittedCache());
     }
 
     @Override
-    public void flush() {
-        // nothing to do
+    protected void customClose() {
+        cacheSnapshotHandler.save(getCommittedCache());
     }
 
 }

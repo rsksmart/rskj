@@ -244,24 +244,6 @@ public class DataSourceWithCacheTest {
         }
     }
 
-    @Test
-    public void checkCacheSnapshotLoadTriggered() {
-        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        DataSourceWithCache.createWithSnapshot(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
-
-        verify(cacheSnapshotHandler, atLeastOnce()).load(anyMap());
-    }
-
-    @Test
-    public void checkCacheSnapshotSaveTriggered() {
-        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
-        DataSourceWithCache dataSourceWithCache = DataSourceWithCache.createWithSnapshot(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
-
-        dataSourceWithCache.close();
-
-        verify(cacheSnapshotHandler, atLeastOnce()).save(anyMap());
-    }
-
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
         Map<ByteArrayWrapper, byte[]> updatedValues = new HashMap<>();
         for (int i = 0; i < maxValuesToCreate; i++) {
