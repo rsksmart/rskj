@@ -18,25 +18,39 @@
 
 package co.rsk.util;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
-import org.junit.Test;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
 
 public class JacksonParserUtilTest {
-
-
     @Test
     public void test_treeToValue() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = JacksonParserUtil.readTree(mapper, "{\"prop\": \"value\"}");
-        Map jsonMap = JacksonParserUtil.treeToValue(new ObjectMapper(), jsonNode, Map.class);
+        Map jsonMap = JacksonParserUtil.treeToValue(mapper, jsonNode, Map.class);
 
-        Assert.assertEquals("value", jsonMap.get("prop"));
+        Assertions.assertEquals("value", jsonMap.get("prop"));
+    }
+
+    @Test
+    public void test_treeToValueEmptyContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = JsonNodeFactory.instance.missingNode();
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.treeToValue(mapper, jsonNode, Map.class));
+    }
+
+    @Test
+    public void test_treeToValueNullContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = JsonNodeFactory.instance.nullNode();
+        Assertions.assertThrows(NullPointerException.class, () -> JacksonParserUtil.treeToValue(mapper, jsonNode, Map.class));
     }
 
     @Test
@@ -44,7 +58,20 @@ public class JacksonParserUtilTest {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = JacksonParserUtil.readTree(mapper, "{\"prop\": \"value\"}");
 
-        Assert.assertEquals("value", jsonNode.get("prop").asText());
+        Assertions.assertEquals("value", jsonNode.get("prop").asText());
+    }
+
+    @Test
+    public void test_readTreeEmptyStringContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        Assertions.assertThrows(JsonMappingException.class, () ->  JacksonParserUtil.readTree(mapper, ""));
+    }
+
+    @Test
+    public void test_readTreeNullStringContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        String content =  null;
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.readTree(mapper, content));
     }
 
     @Test
@@ -52,7 +79,20 @@ public class JacksonParserUtilTest {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = JacksonParserUtil.readTree(mapper, "{\"prop\": \"value\"}".getBytes());
 
-        Assert.assertEquals("value", jsonNode.get("prop").asText());
+        Assertions.assertEquals("value", jsonNode.get("prop").asText());
+    }
+
+    @Test
+    public void test_readTreeEmptyBytesContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.readTree(mapper, "".getBytes()));
+    }
+
+    @Test
+    public void test_readTreeNullBytesContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        byte[] content =  null;
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.readTree(mapper, content));
     }
 
     @Test
@@ -60,6 +100,19 @@ public class JacksonParserUtilTest {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonNode = JacksonParserUtil.readTree(mapper, new ByteArrayInputStream("{\"prop\": \"value\"}".getBytes()));
 
-        Assert.assertEquals("value", jsonNode.get("prop").asText());
+        Assertions.assertEquals("value", jsonNode.get("prop").asText());
+    }
+
+    @Test
+    public void test_readTreeEmptyInputStreamContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.readTree(mapper, new ByteArrayInputStream("".getBytes())));
+    }
+
+    @Test
+    public void test_readTreeNullInputStreamContent() {
+        ObjectMapper mapper = new ObjectMapper();
+        ByteArrayInputStream byteArrayInputStream = null;
+        Assertions.assertThrows(JsonMappingException.class, () -> JacksonParserUtil.readTree(mapper, byteArrayInputStream));
     }
 }

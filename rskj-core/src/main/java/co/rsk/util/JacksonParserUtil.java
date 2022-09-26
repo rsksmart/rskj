@@ -24,6 +24,10 @@ public final class JacksonParserUtil {
     }
 
     public static JsonNode readTree(ObjectMapper mapper, InputStream is) throws IOException {
+        if (is == null) {
+            throw JsonMappingException.from(mapper.getDeserializationContext(), "Input is empty");
+        }
+
         JsonNode result = mapper.readTree(is);
 
         if (result.isEmpty()) {
@@ -34,22 +38,18 @@ public final class JacksonParserUtil {
     }
 
     public static JsonNode readTree(ObjectMapper mapper, String content) throws IOException {
-        JsonNode result = mapper.readTree(content);
-
-        if (result.isEmpty()) {
+        if (content == null || content.isEmpty()) {
             throw JsonMappingException.from(mapper.getDeserializationContext(), "Input is empty");
         }
 
-        return result;
+        return mapper.readTree(content);
     }
 
     public static JsonNode readTree(ObjectMapper mapper, byte[] content) throws IOException {
-        JsonNode result = mapper.readTree(content);
-
-        if (result.isEmpty()) {
+        if (content == null || content.length == 0) {
             throw JsonMappingException.from(mapper.getDeserializationContext(), "Input is empty");
         }
 
-        return result;
+        return mapper.readTree(content);
     }
 }
