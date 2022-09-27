@@ -392,12 +392,12 @@ public class BridgeEventLoggerImplTest {
     public void logBatchPegoutCreated() {
         List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
 
-        eventLogger.logBatchPegoutCreated(btcTx, rskTxHashes);
+        eventLogger.logBatchPegoutCreated(btcTx.getHash(), rskTxHashes);
 
         commonAssertLogs(eventLogs);
 
         assertTopics(2, eventLogs);
-
+        
         assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
     }
 
