@@ -330,7 +330,7 @@ class BridgeEventLoggerLegacyImplTest {
     @Test
     void logBatchPegoutCreated() {
         ArrayList<Keccak256> rskTxHashes = new ArrayList<>();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock, rskTxHashes));
+        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), rskTxHashes));
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
