@@ -324,7 +324,7 @@ public class BridgeEventLoggerLegacyImplTest {
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void logBatchPegoutCreated() {
-        eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>());
+        eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), new ArrayList<>());
     }
 
     @Test(expected = DeprecatedMethodCallException.class)

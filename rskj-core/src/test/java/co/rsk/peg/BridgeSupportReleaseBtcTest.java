@@ -702,7 +702,7 @@ public class BridgeSupportReleaseBtcTest {
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
 
-        verify(eventLogger, times(1)).logBatchPegoutCreated(generatedTransaction, rskHashesList);
+        verify(eventLogger, times(1)).logBatchPegoutCreated(generatedTransaction.getHash(), rskHashesList);
         verify(eventLogger, times(1)).logReleaseBtcRequested(rskTx.getHash().getBytes(), generatedTransaction, totalValue);
     }
 

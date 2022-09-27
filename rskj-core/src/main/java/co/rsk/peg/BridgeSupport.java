@@ -1195,7 +1195,7 @@ public class BridgeSupport {
                 logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
                 availableUTXOs.removeAll(selectedUTXOs);
 
-                eventLogger.logBatchPegoutCreated(generatedTransaction,
+                eventLogger.logBatchPegoutCreated(generatedTransaction.getHash(),
                     pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
                 adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
