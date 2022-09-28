@@ -56,7 +56,7 @@ public interface BridgeEventLogger {
 
     void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
 
-    void logBatchPegoutCreated(Sha256Hash btcTx, List<Keccak256> rskTxHashes);
+    void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes);
 
     void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber);
 
