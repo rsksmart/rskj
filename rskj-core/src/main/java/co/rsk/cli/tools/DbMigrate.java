@@ -19,6 +19,7 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.util.NodeStopper;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -92,6 +93,11 @@ public class DbMigrate extends CliToolRskContextAware {
     }
 
     @SuppressWarnings("unused")
+    public DbMigrate(RskContext ctx, NodeStopper stopper) {
+        this.ctx = ctx;
+        this.stopper = stopper;
+    }
+
     public DbMigrate() {
     }
 
