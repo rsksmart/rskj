@@ -278,32 +278,32 @@ public class BridgeEventLoggerLegacyImplTest {
         eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogLockBtc() {
         eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogPeginBtc() {
         eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogReleaseBtcRequested() {
         eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTxMock, Coin.SATOSHI);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogRejectedPegin() {
         eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogUnrefundablePegin() {
         eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
         String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
@@ -313,7 +313,7 @@ public class BridgeEventLoggerLegacyImplTest {
         eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testLogReleaseBtcRequestRejected() {
         String sender = "0x00000000000000000000000000000000000000";
         Coin amount = Coin.COIN;
@@ -322,12 +322,12 @@ public class BridgeEventLoggerLegacyImplTest {
         eventLogger.logReleaseBtcRequestRejected(sender, amount, reason);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void logBatchPegoutCreated() {
         eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), new ArrayList<>());
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void logPegoutConfirmed() {
         eventLogger.logPegoutConfirmed(btcTxMock.getHash(), 5);
     }
