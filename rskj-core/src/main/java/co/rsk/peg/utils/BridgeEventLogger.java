@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-
 import java.util.List;
 
 /**
@@ -42,22 +41,40 @@ public interface BridgeEventLogger {
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 
-    void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount);
+    default void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logPeginBtc(RskAddress rskReceiver, BtcTransaction btcTx, Coin amount, int protocolVersion);
+    default void logPeginBtc(RskAddress rskReceiver, BtcTransaction btcTx, Coin amount, int protocolVersion) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount);
+    default void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason);
+    default void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason);
+    default void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount);
+    default void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
+    default void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes);
+    default void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes) {
+        throw new UnsupportedOperationException();
+    }
 
-    void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber);
+    default void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+        throw new UnsupportedOperationException();
+    }
 
 }
