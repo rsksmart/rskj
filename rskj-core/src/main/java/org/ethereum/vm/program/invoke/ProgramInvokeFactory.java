@@ -25,6 +25,7 @@ import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.call.CallDepthGasLocker;
 import org.ethereum.vm.program.Program;
 
 /**
@@ -37,9 +38,10 @@ public interface ProgramInvokeFactory {
                                       Repository repository, BlockStore blockStore,
                                       SignatureCache signatureCache);
 
-    ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                      DataWord inValue, long inGas,
-                                      Coin balanceInt, byte[] dataIn,
-                                      Repository repository, BlockStore blockStore,
-                                      boolean isStaticCall, boolean byTestingSuite);
+    ProgramInvoke createNested(Program program, DataWord toAddress, DataWord callerAddress,
+                               DataWord inValue, long inGas,
+                               Coin balanceInt, byte[] dataIn,
+                               Repository repository, BlockStore blockStore,
+                               boolean isStaticCall, boolean byTestingSuite,
+                               CallDepthGasLocker callDepthGasLocker);
 }

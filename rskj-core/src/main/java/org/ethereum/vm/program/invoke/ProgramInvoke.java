@@ -22,6 +22,7 @@ package org.ethereum.vm.program.invoke;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.call.CallDepthGasLocker;
 
 /**
  * @author Roman Mandeleil
@@ -60,4 +61,6 @@ public interface ProgramInvoke extends InvokeData {
     BlockStore getBlockStore();
 
     boolean isStaticCall();
+
+    CallDepthGasLocker getCallDepthGasLocker();
 }

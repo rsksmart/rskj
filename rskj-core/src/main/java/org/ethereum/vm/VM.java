@@ -110,11 +110,10 @@ public class VM {
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
-
     public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
-        isLogEnabled = logger.isInfoEnabled();
+        this.isLogEnabled = logger.isInfoEnabled();
     }
 
     private void checkSizeArgument(long size) {
@@ -1477,6 +1476,8 @@ public class VM {
     }
 
     protected void doCALL(){
+        // TODO:I this change will also affect OP_CALL, OP_CALLCODE, OP_DELEGATECALL, OP_STATICCALL, is this correct?
+
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
@@ -1524,6 +1525,8 @@ public class VM {
         long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
 
         long userSpecifiedGas = Program.limitToMaxLong(gas);
+
+        // TODO:I https://iov-labs.slack.com/archives/D0310115BGQ/p1664300661864189
         long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
                 GasCost.add(userSpecifiedGas, minimumTransferGas) :
                 userSpecifiedGas + minimumTransferGas;
@@ -1532,15 +1535,24 @@ public class VM {
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
+        long gasForCall = calleeGas;
 
         if (computeGas) {
-            gasCost = GasCost.add(gasCost, calleeGas);
-            spendOpCodeGas();
+            if (activations.isActive(RSKIP209)) {
+                spendOpCodeGas();
+
+                long consumedGas = program.lockGasForCallDepth(gasForCall, remainingGas);
+                remainingGas -= consumedGas;
+                calleeGas -= consumedGas; // to properly detect movedRemainingGasToChild
+            } else {
+                gasCost = GasCost.add(gasCost, calleeGas);
+                spendOpCodeGas();
+            }
 
             // when there's less gas than expected from the child call,
             // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
             program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
-            
+
             if (!value.isZero()) {
                 program.getResult().setCallWithValuePerformed(true);
             }

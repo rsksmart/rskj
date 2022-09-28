@@ -31,6 +31,7 @@ import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.program.call.CallDepthGasLocker;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -256,6 +257,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     @Override
     public boolean isStaticCall() {
         return false;
+    }
+
+    @Override
+    public CallDepthGasLocker getCallDepthGasLocker() {
+        return null;
     }
 
     @Override
