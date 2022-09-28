@@ -60,6 +60,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs = logs;
     }
 
+    @Override
     public void logUpdateCollections(Transaction rskTx) {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
@@ -69,6 +70,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
         String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
@@ -84,6 +86,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash) {
         CallTransaction.Function event = BridgeEvents.RELEASE_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash);
@@ -93,6 +96,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
@@ -116,6 +120,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
@@ -126,6 +131,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logPeginBtc(RskAddress receiver, BtcTransaction btcTx, Coin amount, int protocolVersion) {
         CallTransaction.Function event = BridgeEvents.PEGIN_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString(), btcTx.getHash().getBytes());
@@ -136,6 +142,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logReleaseBtcRequested(byte[] rskTransactionHash, BtcTransaction btcTx, Coin amount) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUESTED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTransactionHash, btcTx.getHash().getBytes());
@@ -145,6 +152,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
         CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
@@ -155,6 +163,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());

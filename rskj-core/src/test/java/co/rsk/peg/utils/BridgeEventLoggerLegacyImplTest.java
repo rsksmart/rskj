@@ -284,28 +284,28 @@ class BridgeEventLoggerLegacyImplTest {
 
     @Test
     void testLogLockBtc() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI));
     }
 
     @Test
     void testLogPeginBtc() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1));
     }
 
     @Test
     void testLogReleaseBtcRequested() {
         byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequested(bytes, btcTxMock, Coin.SATOSHI));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequested(bytes, btcTxMock, Coin.SATOSHI));
     }
 
     @Test
     void testLogRejectedPegin() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED));
     }
 
     @Test
     void testLogUnrefundablePegin() {
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER));
     }
 
     @Test
@@ -315,7 +315,7 @@ class BridgeEventLoggerLegacyImplTest {
         Address btcDestinationAddress = Address.fromBase58(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
         Coin amount = Coin.COIN;
 
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount));
     }
 
     @Test
@@ -324,16 +324,16 @@ class BridgeEventLoggerLegacyImplTest {
         Coin amount = Coin.COIN;
         RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
 
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logReleaseBtcRequestRejected(sender, amount, reason));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestRejected(sender, amount, reason));
     }
 
     @Test
     void logBatchPegoutCreated() {
         ArrayList<Keccak256> rskTxHashes = new ArrayList<>();
-        Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), rskTxHashes));
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), rskTxHashes));
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void logPegoutConfirmed() {
         eventLogger.logPegoutConfirmed(btcTxMock.getHash(), 5);
     }
