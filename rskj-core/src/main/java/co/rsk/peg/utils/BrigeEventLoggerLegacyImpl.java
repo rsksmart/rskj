@@ -143,7 +143,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logBatchPegoutCreated(Sha256Hash btcTx, List<Keccak256> rskTxHashes) {
+    public void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes) {
         throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logBatchPegoutCreated method after RSKIP146 activation");
     }
 

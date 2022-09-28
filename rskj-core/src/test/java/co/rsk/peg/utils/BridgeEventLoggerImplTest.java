@@ -392,7 +392,7 @@ class BridgeEventLoggerImplTest {
         commonAssertLogs(eventLogs);
 
         assertTopics(2, eventLogs);
-        
+
         assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
     }
 
