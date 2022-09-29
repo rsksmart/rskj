@@ -26,8 +26,10 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,6 +37,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 12/08/2016.
@@ -55,7 +58,7 @@ public class FamilyUtilsTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(block1, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -72,7 +75,7 @@ public class FamilyUtilsTest {
 
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertTrue(family.isEmpty());
@@ -93,7 +96,7 @@ public class FamilyUtilsTest {
         store.saveBlock(block2, TEST_DIFFICULTY, true);
         store.saveBlock(block3, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -132,7 +135,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -149,7 +152,7 @@ public class FamilyUtilsTest {
         Assert.assertFalse(family.contains(uncle31.getHash()));
         Assert.assertFalse(family.contains(uncle32.getHash()));
 
-        family = FamilyUtils.getFamily(store, block3, 3);
+        family = FamilyUtils.getFamily(store, block3, 3).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -237,7 +240,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3);
+        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());

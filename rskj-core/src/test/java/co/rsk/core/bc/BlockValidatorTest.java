@@ -40,6 +40,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,6 +48,7 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.*;
 
@@ -95,10 +97,10 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(genesis.getHash()));
-        Assert.assertFalse(ancestors.contains(block.getHash()));
+        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(genesis.getHeader().getEncoded())));
+        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block.getHeader().getEncoded())));
     }
 
     @Test
@@ -119,15 +121,16 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(genesis.getHash()));
-        Assert.assertFalse(ancestors.contains(block1.getHash()));
-        Assert.assertTrue(ancestors.contains(block2.getHash()));
-        Assert.assertTrue(ancestors.contains(block3.getHash()));
-        Assert.assertTrue(ancestors.contains(block4.getHash()));
-        Assert.assertFalse(ancestors.contains(block5.getHash()));
+        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(genesis.getEncoded())));
+        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block1.getHeader().getEncoded())));
+        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block2.getHeader().getEncoded())));
+        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block3.getHeader().getEncoded())));
+        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block4.getHeader().getEncoded())));
+        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block5.getHeader().getEncoded())));
     }
 
     @Test
@@ -162,7 +165,7 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, TEST_DIFFICULTY, false);
         store.saveBlock(block2, TEST_DIFFICULTY, true);
 
-        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertFalse(used.isEmpty());
         Assert.assertFalse(used.contains(block3.getHash()));

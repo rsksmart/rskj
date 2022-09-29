@@ -34,6 +34,10 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     private final byte[] data;
     private int hashCode = 0;
 
+    public static ByteArrayWrapper fromBytes(byte[] data) {
+        return new ByteArrayWrapper(Arrays.copyOf(data, data.length));
+    }
+
     public ByteArrayWrapper(byte[] data) {
         if (data == null) {
             throw new NullPointerException("Data must not be null");
