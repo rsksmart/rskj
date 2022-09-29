@@ -57,9 +57,6 @@ tasks.withType(AbstractArchiveTask) {
     dirMode = 0775
     fileMode = 0664
 }
-dependencies {
-    implementation 'info.picocli:picocli:4.6.3'
-}
 
 ext {
     libVersions = [
@@ -98,7 +95,7 @@ ext {
             mapdbLib               : "org.mapdb:mapdb:${libVersions.mapdbVer}",
             jsonrpc4jLib           : "com.github.briandilley.jsonrpc4j:jsonrpc4j:${libVersions.jsonrpc4jVer}",
             jaxwsRtLib             : "com.sun.xml.ws:jaxws-rt:${libVersions.jaxwsRtVer}",
-            picocliLib             : "info.picocli:picocli:${libVersions.jaxwsRtVer}",
+            picocliLib             : "info.picocli:picocli:${libVersions.picocliVer}",
 
             bitcoinjThinLib        : "co.rsk.bitcoinj:bitcoinj-thin:${libVersions.bitcoinjThinVer}",
             rskjNativeLib          : "co.rsk:native:${libVersions.rskjNativeVer}",
@@ -146,6 +143,7 @@ dependencies {
     implementation "${libs.mapdbLib}"
     implementation "${libs.jsonrpc4jLib}"
     implementation "${libs.jaxwsRtLib}"
+    implementation "${libs.picocliLib}"
 
     implementation "${libs.bitcoinjThinLib}"
     implementation "${libs.rskjNativeLib}"

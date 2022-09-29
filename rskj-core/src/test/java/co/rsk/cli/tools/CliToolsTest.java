@@ -530,58 +530,6 @@ class CliToolsTest {
     }
 
     @Test
-    public void dbMigrateWithPicocli() throws IOException {
-        File nodeIdPropsFile = new File(tempFolder.getRoot(), "nodeId.properties");
-        File dbKindPropsFile = new File(tempFolder.getRoot(), KeyValueDataSource.DB_KIND_PROPERTIES_FILE);
-
-        if (nodeIdPropsFile.createNewFile()) {
-            FileWriter myWriter = new FileWriter(nodeIdPropsFile);
-            myWriter.write("nodeId=testing");
-            myWriter.close();
-        }
-
-        new File(tempFolder.getRoot(), "blocks").mkdir();
-
-        RskContext rskContext = mock(RskContext.class);
-        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
-
-        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
-        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
-        doReturn(true).when(rskSystemProperties).databaseReset();
-        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
-
-        NodeStopper stopper = mock(NodeStopper.class);
-
-        try {
-            DbMigrateWithPicocli dbMigrateCliTool = new DbMigrateWithPicocli();
-            dbMigrateCliTool.execute(new String[]{"rocksdb"}, () -> rskContext, stopper);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        String nodeIdPropsFileLine = null;
-
-        if (nodeIdPropsFile.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(nodeIdPropsFile));
-            nodeIdPropsFileLine = reader.readLine();
-            reader.close();
-        }
-
-        String dbKindPropsFileLine = null;
-
-        if (dbKindPropsFile.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
-            reader.readLine();
-            reader.readLine();
-            dbKindPropsFileLine = reader.readLine();
-            reader.close();
-        }
-
-        Assert.assertEquals(nodeIdPropsFileLine, "nodeId=testing");
-        Assert.assertEquals(dbKindPropsFileLine, "keyvalue.datasource=ROCKS_DB");
-    }
-
-    @Test
     void startBootstrap() throws Exception {
         // check thread setup
         Thread thread = new Thread(() -> {
