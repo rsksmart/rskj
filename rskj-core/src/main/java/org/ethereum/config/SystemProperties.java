@@ -370,7 +370,7 @@ public abstract class SystemProperties {
         if (configFromFiles.hasPath("peer.privateKey")) {
             String key = configFromFiles.getString("peer.privateKey");
             if (key.length() != 64) {
-                throw new RuntimeException("The peer.privateKey needs to be Hex encoded and 32 byte length");
+                throw new RuntimeException("The peer.privateKey needs to be a 64-byte hexadecimal");
             }
             return key;
         } else {

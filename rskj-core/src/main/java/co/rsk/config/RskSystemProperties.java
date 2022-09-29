@@ -77,7 +77,7 @@ public class RskSystemProperties extends SystemProperties {
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
         if (coinbaseAddress.length() != Constants.getMaxAddressByteLength() * 2) {
-            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
+            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be a 40-byte hexadecimal");
         }
 
         return new RskAddress(coinbaseAddress);
