@@ -19,6 +19,7 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
@@ -399,6 +400,29 @@ public class BridgeEventLoggerImplTest {
         assertTopics(2, eventLogs);
 
         assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
+    }
+
+    @Test
+    public void logBatchPegoutCreatedWithWitness() {
+        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
+
+        TransactionWitness txWitness = new TransactionWitness(1);
+
+        btcTx.addInput(
+                Sha256Hash.ZERO_HASH,
+                0, ScriptBuilder.createInputScript(null, new BtcECKey())
+        );
+
+        txWitness.setPush(0, new byte[]{ 0x1 });
+        btcTx.setWitness(0, txWitness);
+        eventLogger.logBatchPegoutCreated(btcTx.getHash(true), rskTxHashes);
+
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+
+        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash(true).getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
+
     }
 
     @Test
