@@ -85,6 +85,7 @@ import static org.mockito.Mockito.mock;
 class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private TransactionExecutorFactory transactionExecutorFactory;
 
     @Test
@@ -640,7 +641,7 @@ class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig()),
+                        config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
@@ -690,7 +691,7 @@ class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), signatureCache),
                 blockTxSignatureCache
         );
     }
@@ -702,7 +703,7 @@ class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), signatureCache),
                 blockTxSignatureCache
         );
     }
@@ -711,7 +712,7 @@ class TransactionModuleTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), signatureCache);
         return bridgeSupportFactory;
     }
 }

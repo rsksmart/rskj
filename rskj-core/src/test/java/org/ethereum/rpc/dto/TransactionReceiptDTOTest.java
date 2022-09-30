@@ -45,7 +45,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender(any())).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -75,7 +75,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender(any())).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -105,7 +105,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender(any())).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -135,7 +135,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender(any())).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);

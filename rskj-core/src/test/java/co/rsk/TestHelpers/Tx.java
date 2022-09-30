@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
 
@@ -58,7 +59,7 @@ public class Tx {
         r.nextBytes(returnReceiveAddressBytes);
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
-        Mockito.when(transaction.getSender(any())).thenReturn(returnSender);
+        Mockito.when(transaction.getSender(any(SignatureCache.class))).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
         Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
@@ -81,7 +82,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(any(), any())).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(any(), any(), any())).thenReturn(amount);
 
         return transaction;
     }

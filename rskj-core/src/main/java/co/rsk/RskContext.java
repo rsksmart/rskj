@@ -485,7 +485,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory());
+            precompiledContracts = new PrecompiledContracts(
+                    getRskSystemProperties(),
+                    getBridgeSupportFactory(),
+                    getBlockTxSignatureCache());
         }
 
         return precompiledContracts;
@@ -497,7 +500,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig());
+                    getRskSystemProperties().getActivationConfig(), getBlockTxSignatureCache());
         }
 
         return bridgeSupportFactory;

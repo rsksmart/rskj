@@ -195,9 +195,9 @@ public class Transaction {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
+    public long transactionCost(Constants constants, ActivationConfig.ForBlock activations, SignatureCache signatureCache) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
+        if (BridgeUtils.isFreeBridgeTx(this, constants, activations, signatureCache)) {
             return 0;
         }
 

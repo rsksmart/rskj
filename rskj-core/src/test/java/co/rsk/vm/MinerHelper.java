@@ -57,6 +57,7 @@ public class MinerHelper {
     private long totalGasUsed;
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
+    private SignatureCache signatureCache;
 
     public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
@@ -64,6 +65,7 @@ public class MinerHelper {
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
         this.blockFactory = new BlockFactory(config.getActivationConfig());
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     }
 
     public void processBlock( Block block, Block parent) {
@@ -90,7 +92,7 @@ public class MinerHelper {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), signatureCache);
 
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
@@ -101,7 +103,7 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory), blockTxSignatureCache);
+                    new PrecompiledContracts(config, bridgeSupportFactory, signatureCache), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

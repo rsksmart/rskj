@@ -3130,12 +3130,14 @@ class BridgeUtilsTest {
     }
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
             new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
             constants.getBridgeConstants(),
-            activationConfig);
+            activationConfig,
+                signatureCache);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, signatureCache);
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
             0,
             1,
@@ -3149,7 +3151,7 @@ class BridgeUtilsTest {
         Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
-        Assertions.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+        Assertions.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber()), signatureCache));
     }
 
     private Genesis getGenesisInstance(TrieStore trieStore) {

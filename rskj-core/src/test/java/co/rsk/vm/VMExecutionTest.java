@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
  */
 class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private VmConfig vmConfig = config.getVmConfig();
     private ProgramInvokeMockImpl invoke;

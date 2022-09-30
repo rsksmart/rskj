@@ -50,7 +50,7 @@ class ProgramTest {
     protected static final int STACK_STATE_ERROR = 0;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     private final ProgramInvoke programInvoke = mock(ProgramInvoke.class);
     private final MessageCall msg = mock(MessageCall.class);

@@ -48,7 +48,7 @@ class ProgramMemoryTest {
     void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
 
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null),
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class),
                 ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>(),
                 new BlockTxSignatureCache(new ReceivedTxSignatureCache()));

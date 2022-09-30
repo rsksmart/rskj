@@ -64,7 +64,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
-        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
+        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
@@ -72,7 +72,7 @@ public class TxPendingValidator {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
+        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache);
 
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));

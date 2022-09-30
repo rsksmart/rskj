@@ -12,9 +12,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -43,6 +41,7 @@ class BridgeTest {
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void resetConfigToRegTest() {
@@ -51,6 +50,7 @@ class BridgeTest {
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     }
 
     @Test
@@ -249,9 +249,9 @@ class BridgeTest {
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getSender()).thenReturn(new RskAddress("0000000000000000000000000000000000000001"));
+        when(rskTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress("0000000000000000000000000000000000000001"));
 
-        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations);
+        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations, signatureCache);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         int zero = 0;
@@ -295,9 +295,9 @@ class BridgeTest {
         when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
 
         Transaction rskTx = mock(Transaction.class);
-        when(rskTx.getSender()).thenReturn(fed1Address);
+        when(rskTx.getSender(any(SignatureCache.class))).thenReturn(fed1Address);
 
-        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations);
+        Bridge bridge = getBridgeInstance(rskTx, bridgeSupportMock, activations, signatureCache);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         int zero = 0;
@@ -691,9 +691,9 @@ class BridgeTest {
         when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
 
         Transaction txMock = mock(Transaction.class);
-        when(txMock.getSender()).thenReturn(new RskAddress(new ECKey().getAddress()));  //acces for anyone
+        when(txMock.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(new ECKey().getAddress()));  //acces for anyone
 
-        Bridge bridge = getBridgeInstance(txMock, bridgeSupportMock, activations);
+        Bridge bridge = getBridgeInstance(txMock, bridgeSupportMock, activations, signatureCache);
 
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
@@ -949,12 +949,12 @@ class BridgeTest {
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         Transaction rskTxMock = mock(Transaction.class);
-        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender();
+        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
-        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations);
+        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations, signatureCache);
     }
 
     private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK, BridgeSupport bridgeSupportMock) {
@@ -963,12 +963,12 @@ class BridgeTest {
 
         ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
         Transaction rskTxMock = mock(Transaction.class);
-        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender();
+        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender(any(SignatureCache.class));
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
-        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations);
+        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations, signatureCache);
     }
 
     /**
@@ -979,17 +979,17 @@ class BridgeTest {
      * @param activationConfig      Provide the activationConfig to be used
      * @return Bridge instance
      */
-    private Bridge getBridgeInstance(Transaction txMock, BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
+    private Bridge getBridgeInstance(Transaction txMock, BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig, SignatureCache signatureCache) {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportInstance);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock, signatureCache);
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
         return bridge;
     }
 
     private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
-        return getBridgeInstance(mock(Transaction.class), bridgeSupportInstance, activationConfig);
+        return getBridgeInstance(mock(Transaction.class), bridgeSupportInstance, activationConfig, signatureCache);
     }
 
     @Deprecated

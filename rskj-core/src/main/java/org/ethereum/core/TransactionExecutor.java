@@ -96,7 +96,7 @@ public class TransactionExecutor {
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
-    private SignatureCache signatureCache;
+    private final SignatureCache signatureCache;
 
     private boolean localCall = false;
 
@@ -149,7 +149,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
-        basicTxCost = tx.transactionCost(constants, activations);
+        basicTxCost = tx.transactionCost(constants, activations, signatureCache);
 
         if (localCall) {
             return true;
@@ -419,7 +419,7 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(constants, activations, signatureCache), "TRANSACTION COST");
 
             vm.play(program);
 

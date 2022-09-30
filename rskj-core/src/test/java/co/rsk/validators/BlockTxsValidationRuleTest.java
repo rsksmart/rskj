@@ -23,9 +23,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +40,7 @@ class BlockTxsValidationRuleTest {
     private BlockTxsValidationRule rule;
     private RepositorySnapshot repositorySnapshot;
     private Block parent;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setup() {
@@ -52,7 +52,9 @@ class BlockTxsValidationRuleTest {
         repositorySnapshot = mock(RepositorySnapshot.class);
         when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
 
-        rule = new BlockTxsValidationRule(repositoryLocator, null); // TODO -> set useful mock here
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
+        rule = new BlockTxsValidationRule(repositoryLocator, signatureCache);
     }
 
     @Test
@@ -139,7 +141,7 @@ class BlockTxsValidationRuleTest {
 
     private Transaction transaction(RskAddress sender, int nonce) {
         Transaction transaction = mock(Transaction.class);
-        when(transaction.getSender()).thenReturn(sender);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(sender);
         when(transaction.getNonce()).thenReturn(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(nonce)));
         return transaction;
     }

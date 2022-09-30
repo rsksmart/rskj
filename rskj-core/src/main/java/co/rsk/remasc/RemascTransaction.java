@@ -20,6 +20,7 @@ package co.rsk.remasc;
 
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -87,7 +88,10 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
+    public long transactionCost(
+            Constants constants,
+            ActivationConfig.ForBlock activations,
+            SignatureCache signatureCache) {
         // RemascTransaction does not pay any fees
         return 0;
     }

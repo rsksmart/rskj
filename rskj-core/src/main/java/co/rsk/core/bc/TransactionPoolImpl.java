@@ -487,7 +487,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private long getTransactionCost(Transaction tx, long number) {
-        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number));
+        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
 
 }

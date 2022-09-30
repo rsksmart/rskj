@@ -47,9 +47,7 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -85,9 +83,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
+
+    private SignatureCache signatureCache;
+
     @BeforeEach
     void setUpOnEachTest() {
         activations = mock(ActivationConfig.ForBlock.class);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         bridgeSupportBuilder = new BridgeSupportBuilder();
@@ -2807,7 +2809,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         ));
 
         doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -2882,7 +2885,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         ));
 
         doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -2968,7 +2972,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         ));
 
         doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -3055,7 +3060,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         ));
 
         doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -3160,7 +3166,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             federationSupportMock,
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         ));
 
         doReturn(bridgeConstantsRegtest.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
@@ -3265,7 +3272,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             mock(Context.class),
             federationSupport,
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         );
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
@@ -3310,7 +3318,8 @@ class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             btcContext,
             mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
-            activations
+            activations,
+            signatureCache
         );
 
         Federation fed = bridgeConstantsRegtest.getGenesisFederation();

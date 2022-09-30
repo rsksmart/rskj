@@ -82,7 +82,7 @@ public class EthModuleTestUtils {
                 null,
                 null,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory()),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), world.getBlockTxSignatureCache()),
                 null
         );
     }

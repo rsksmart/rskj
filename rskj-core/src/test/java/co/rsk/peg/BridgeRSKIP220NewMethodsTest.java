@@ -7,6 +7,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.vm.exception.VMException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +31,7 @@ class BridgeRSKIP220NewMethodsTest {
     private BridgeSupportFactory bridgeSupportFactory;
     private Block rskExecutionBlock;
     private Bridge bridge;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void beforeEach() {
@@ -41,12 +45,14 @@ class BridgeRSKIP220NewMethodsTest {
         when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
         rskExecutionBlock = mock(Block.class);
         when(rskExecutionBlock.getNumber()).thenReturn(42L);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         bridge = new Bridge(
                 null,
                 constants,
                 activationConfig,
-                bridgeSupportFactory
+                bridgeSupportFactory,
+                signatureCache
         );
 
         bridge.init(null, rskExecutionBlock, null, null, null, null);

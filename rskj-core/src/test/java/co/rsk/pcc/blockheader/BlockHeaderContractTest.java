@@ -41,10 +41,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -93,12 +90,14 @@ class BlockHeaderContractTest {
     private CallTransaction.Function getDifficultyFunction;
     private CallTransaction.Function getBitcoinHeaderFunction;
     private CallTransaction.Function getUncleCoinbaseAddressFunction;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, signatureCache);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 

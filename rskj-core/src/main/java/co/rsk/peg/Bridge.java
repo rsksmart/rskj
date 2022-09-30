@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
@@ -35,10 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
@@ -228,20 +224,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private final BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory;
 
+    private final SignatureCache signatureCache;
+
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-                  BridgeSupportFactory bridgeSupportFactory) {
-        this(contractAddress, constants, activationConfig, bridgeSupportFactory, MerkleBranch::new);
+                  BridgeSupportFactory bridgeSupportFactory, SignatureCache signatureCache) {
+        this(contractAddress, constants, activationConfig, bridgeSupportFactory, MerkleBranch::new, signatureCache);
     }
 
     @VisibleForTesting
     Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-           BridgeSupportFactory bridgeSupportFactory, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory) {
+           BridgeSupportFactory bridgeSupportFactory, BiFunction<List<Sha256Hash>, Integer, MerkleBranch> merkleBranchFactory, SignatureCache signatureCache) {
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
         this.merkleBranchFactory = merkleBranchFactory;
+        this.signatureCache = signatureCache;
     }
 
     @Override
@@ -251,7 +250,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations, signatureCache)) {
             return 0;
         }
 
@@ -1235,8 +1234,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
-                    && (retiringFederation == null || !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation))) {
+            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation(), self.signatureCache)
+                    && (retiringFederation == null || !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation, self.signatureCache))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
                 logger.warn(errorMessage);
                 throw new VMException(errorMessage);

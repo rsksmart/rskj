@@ -159,7 +159,7 @@ public abstract class MinerServerTest {
         // IMPORTANT: tx1 is a mock, each mock has a random sender set at creation time (Tx.java)
         // There's no need of passing a cache here since getSender method is stubbed to always
         // return the sender, and we only need to use its value when stubbing track methods.
-        RskAddress tx1Sender = tx1.getSender(null);
+        RskAddress tx1Sender = tx1.getSender(signatureCache);
 
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
