@@ -282,62 +282,6 @@ class BridgeEventLoggerLegacyImplTest {
         Assertions.assertThrows(DeprecatedMethodCallException.class, () -> eventLogger.logCommitFederation(mock(Block.class), mock(Federation.class), mock(Federation.class)));
     }
 
-    @Test
-    void testLogLockBtc() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logLockBtc(mock(RskAddress.class), btcTxMock, mock(Address.class), Coin.SATOSHI));
-    }
-
-    @Test
-    void testLogPeginBtc() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logPeginBtc(mock(RskAddress.class), btcTxMock, Coin.SATOSHI, 1));
-    }
-
-    @Test
-    void testLogReleaseBtcRequested() {
-        byte[] bytes = rskTxHash.getBytes();
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequested(bytes, btcTxMock, Coin.SATOSHI));
-    }
-
-    @Test
-    void testLogRejectedPegin() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logRejectedPegin(btcTxMock, RejectedPeginReason.PEGIN_CAP_SURPASSED));
-    }
-
-    @Test
-    void testLogUnrefundablePegin() {
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logUnrefundablePegin(btcTxMock, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER));
-    }
-
-    @Test
-    void testLogReleaseBtcRequestReceived() {
-        String sender = "0x00000000000000000000000000000000000000";
-        String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-        Address btcDestinationAddress = Address.fromBase58(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
-        Coin amount = Coin.COIN;
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount));
-    }
-
-    @Test
-    void testLogReleaseBtcRequestRejected() {
-        String sender = "0x00000000000000000000000000000000000000";
-        Coin amount = Coin.COIN;
-        RejectedPegoutReason reason = RejectedPegoutReason.LOW_AMOUNT;
-
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logReleaseBtcRequestRejected(sender, amount, reason));
-    }
-
-    @Test
-    void logBatchPegoutCreated() {
-        ArrayList<Keccak256> rskTxHashes = new ArrayList<>();
-        Assertions.assertThrows(UnsupportedOperationException.class, () -> eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), rskTxHashes));
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void logPegoutConfirmed() {
-        eventLogger.logPegoutConfirmed(btcTxMock.getHash(), 5);
-    }
-
     /**********************************
      *  -------     UTILS     ------- *
      *********************************/
