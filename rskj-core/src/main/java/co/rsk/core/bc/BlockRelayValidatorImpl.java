@@ -72,7 +72,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
 
         Block parent = getParent(block);
         if (parent == null) {
-            logger.error("Invalid block {} due to missing parent {}", block.getNumber(), block.getParentHash());
+            logger.error("Invalid block {} {} due to missing parent {}", block.getNumber(), block.getHash(), block.getParentHash());
             return false;
         }
 

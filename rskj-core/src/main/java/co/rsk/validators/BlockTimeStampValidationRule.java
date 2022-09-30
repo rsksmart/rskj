@@ -118,7 +118,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
         byte[] bitcoinMergedMiningHeader = header.getBitcoinMergedMiningHeader();
         if (bitcoinMergedMiningHeader == null) {
-            logger.warn("Missing bitcoinMergedMiningHeader for block {}", header.getNumber());
+            logger.warn("Missing bitcoinMergedMiningHeader for block {} {}", header.getNumber(), header.getHash());
             return false;
         }
 
