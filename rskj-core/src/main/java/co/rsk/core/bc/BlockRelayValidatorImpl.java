@@ -23,6 +23,8 @@ import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -34,6 +36,8 @@ import javax.annotation.Nonnull;
  * - validation of the header data of the parent block
  */
 public class BlockRelayValidatorImpl implements BlockValidator {
+
+    private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     private final BlockStore blockStore;
 
@@ -58,6 +62,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
+            logger.error("Block is Genesis");
             return false;
         }
 
@@ -66,7 +71,12 @@ public class BlockRelayValidatorImpl implements BlockValidator {
         }
 
         Block parent = getParent(block);
-        return parent != null && blockParentValidator.isValid(block.getHeader(), parent);
+        if (parent == null) {
+            logger.error("Missing parent for block {}, cannot relay it", block.getNumber());
+            return false;
+        }
+
+        return blockParentValidator.isValid(block.getHeader(), parent);
     }
 
     private Block getParent(Block block) {

@@ -23,6 +23,8 @@ import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * BlockValidator has methods to validate block content before its execution
@@ -30,6 +32,8 @@ import org.ethereum.db.BlockStore;
  * Created by ajlopez on 29/07/2016.
  */
 public class BlockValidatorImpl implements BlockValidator {
+
+    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
 
     private BlockStore blockStore;
 
@@ -57,6 +61,7 @@ public class BlockValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(Block block) {
         if (block.isGenesis()) {
+            logger.error("Block is Genesis");
             return false;
         }
 
