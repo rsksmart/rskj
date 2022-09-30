@@ -62,7 +62,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
-            logger.error("Block is Genesis");
+            logger.warn("Block is Genesis");
             return false;
         }
 
@@ -72,7 +72,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
 
         Block parent = getParent(block);
         if (parent == null) {
-            logger.error("Missing parent for block {}, cannot relay it", block.getNumber());
+            logger.error("Invalid block {} due to missing parent {}", block.getNumber(), block.getParentHash());
             return false;
         }
 

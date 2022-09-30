@@ -52,7 +52,7 @@ public class BlockHeaderValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
-            logger.error("Block is Genesis");
+            logger.warn("Block is Genesis");
             return false;
         }
 
