@@ -31,6 +31,6 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {
         this.ctx = ctx;
 
-        new CommandLine(this).execute(args);
+        new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
     }
 }
