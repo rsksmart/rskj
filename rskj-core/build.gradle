@@ -9,21 +9,16 @@ apply plugin: 'jacoco'
 apply plugin: 'com.diffplug.spotless'
 spotless {
     java {
-        toggleOffOn()                //to enable the usage of spotless:on/off annotations
-        ratchetFrom 'origin/master'  // only format files which have changed since origin/main
+        toggleOffOn()               //to enable the usage of spotless:on/off annotations
+        ratchetFrom 'origin/master' // only format files which have changed since origin/main
         // This path needs to be relative to each project
         target fileTree('.') {
             include '**/*.java'
         }
-        // optional: you can specify a specific version and/or config file
-        eclipse().configFile('../config/eclipse-config.xml')
-
-        //eclipse formater does not handle imports
-        importOrder('java', 'javax', 'co.rsk', 'org.ethereum', '', '\\#')
-        removeUnusedImports()
-
+        googleJavaFormat('1.10.0') //it would be needed to upgrade java version to use newer versions of the plugin
     }
 }
+
 test {
     beforeTest { descriptor ->
         logger.lifecycle("Running test: ${descriptor}")
