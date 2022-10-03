@@ -39,8 +39,7 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
         int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
 
         if (result != 0) {
-            logger.error("The cli tool finished with {} error code.", result);
-            throw new PicocliBadResultException();
+            throw new PicocliBadResultException(result);
         }
     }
 }
