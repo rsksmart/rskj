@@ -18,6 +18,9 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
+import co.rsk.cli.exceptions.PicocliBadResultException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
@@ -27,6 +30,8 @@ import java.util.concurrent.Callable;
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
     protected RskContext ctx;
 
+    private static final Logger logger = LoggerFactory.getLogger(PicoCliToolRskContextAware.class);
+
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {
         this.ctx = ctx;
@@ -34,7 +39,8 @@ public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware 
         int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);
 
         if (result != 0) {
-            throw new IllegalStateException("Process finished with errors");
+            logger.error("The cli tool finished with {} error code.", result);
+            throw new PicocliBadResultException();
         }
     }
 }
