@@ -24,7 +24,7 @@ class MinerServerOrchidTest extends MinerServerTest {
 
     @BeforeEach
     void beforeEach() {
-        setUp(NetworkUpgrades.BAMBOO_PROPERTIES.getProperties());
+        setUp(NetworkUpgrades.ORCHID_PROPERTIES.getProperties());
     }
 
 }

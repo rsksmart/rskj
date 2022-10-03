@@ -31,6 +31,7 @@ class EncryptedDataTest {
         EncryptedData ed3 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,7});
         Assertions.assertEquals(ed.toString(), ed2.toString());
         Assertions.assertEquals(ed.hashCode(), ed2.hashCode());
+        Assertions.assertEquals(ed, ed); // NOSONAR testing EncryptedData#equals
         Assertions.assertEquals(ed, ed2);
         Assertions.assertNotEquals(null, ed);
         Assertions.assertNotEquals("aa", ed.toString());
