@@ -49,6 +49,9 @@ public class BlockHeader {
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
     private static final int UMM_LEAVES_LENGTH = 20;
 
+    /* RSKIP 351 version */
+    private final int version;
+
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private final byte[] parentHash;
     /* The SHA3 256-bit hash of the uncles list portion of this block */
@@ -123,13 +126,15 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private final boolean includeForkDetectionData;
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+    public BlockHeader(int version,
+                       byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
                        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+        this.version = version;
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -156,6 +161,8 @@ public class BlockHeader {
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
+
+    public int getVersion() { return version; }
 
     @VisibleForTesting
     public boolean isSealed() {

@@ -24,6 +24,7 @@ import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class ActivationConfigTest {
@@ -100,6 +101,7 @@ public class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip351: fingerroot500",
             "}"
     ));
 
@@ -169,5 +171,17 @@ public class ActivationConfigTest {
         ActivationConfig.read(BASE_CONFIG
                 .withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"))
         );
+    }
+
+    @Test
+    public void headerVersion0() {
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        assertEquals(0, config.getHeaderVersion(10));
+    }
+
+    @Test
+    public void headerVersion1() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        assertEquals(1, config.getHeaderVersion(10));
     }
 }

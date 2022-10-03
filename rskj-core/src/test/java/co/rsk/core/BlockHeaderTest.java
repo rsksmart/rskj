@@ -322,6 +322,19 @@ public class BlockHeaderTest {
         });
     }
 
+    private void testHeaderVersion(int version) {
+        BlockHeader header = createBlockHeaderWithVersion(version);
+        assertEquals(version, header.getVersion());
+    }
+
+    @Test
+    public void getVersion0() { this.testHeaderVersion(0); }
+
+    @Test
+    public void getVersion1() {
+        this.testHeaderVersion(1);
+    }
+
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot) {
@@ -349,11 +362,25 @@ public class BlockHeaderTest {
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean sealed) {
-        return createBlockHeader(bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+        return createBlockHeader(0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 forkDetectionData, includeForkDetectionData, ummRoot, true, sealed);
     }
 
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
+                                          boolean includeForkDetectionData, byte[] ummRoot, boolean useRskip92Encoding,
+                                          boolean sealed) {
+        return createBlockHeader(0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                forkDetectionData, includeForkDetectionData, ummRoot, useRskip92Encoding, sealed);
+    }
+
+    private BlockHeader createBlockHeaderWithVersion(int version) {
+        return createBlockHeader(version, new byte[80], new byte[32], new byte[128],
+                new byte[0], false, null, false, false);
+    }
+
+    private BlockHeader createBlockHeader(int version,
+                                          byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean useRskip92Encoding,
                                           boolean sealed) {
@@ -363,6 +390,7 @@ public class BlockHeaderTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return new BlockHeader(
+                version,
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
                 new RskAddress(TestUtils.randomAddress().getBytes()),

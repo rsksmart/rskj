@@ -310,6 +310,7 @@ public class BlockHeaderBuilder {
         }
 
         return new BlockHeader(
+                activationConfig.getHeaderVersion(number),
                 parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot,
                 logsBloom, difficulty, number,

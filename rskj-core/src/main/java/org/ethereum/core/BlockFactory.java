@@ -196,6 +196,7 @@ public class BlockFactory {
         }
 
         return new BlockHeader(
+                activationConfig.getHeaderVersion(blockNumber),
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 blockNumber, glBytes, gasUsed, timestamp, extraData,
