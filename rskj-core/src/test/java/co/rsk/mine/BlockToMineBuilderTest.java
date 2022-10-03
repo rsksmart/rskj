@@ -51,6 +51,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
@@ -140,8 +141,7 @@ class BlockToMineBuilderTest {
         runMocked(test);
     }
 
-    @Test
-    void buildBlockBeforeUMMActivation() {
+    private Block prepareForActivationTest() {
         Keccak256 parentHash = TestUtils.randomHash();
 
         BlockHeader parent = mock(BlockHeader.class);
@@ -151,8 +151,6 @@ class BlockToMineBuilderTest {
         when(parent.getMinimumGasPrice()).thenReturn(mock(Coin.class));
 
         when(validationRules.isValid(any())).thenReturn(true);
-        when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
-        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
 
         BlockResult expectedResult = mock(BlockResult.class);
         ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
@@ -160,32 +158,37 @@ class BlockToMineBuilderTest {
 
         blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
-        Block actualBlock = blockCaptor.getValue();
+        return blockCaptor.getValue();
+    }
+
+    @Test
+    public void buildBlockBeforeUMMActivation() {
+        when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
+        when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
+        Block actualBlock = this.prepareForActivationTest();
         assertNull(actualBlock.getHeader().getUmmRoot());
     }
 
     @Test
-    void buildBlockAfterUMMActivation() {
-        Keccak256 parentHash = TestUtils.randomHash();
-
-        BlockHeader parent = mock(BlockHeader.class);
-        when(parent.getNumber()).thenReturn(500L);
-        when(parent.getHash()).thenReturn(parentHash);
-        when(parent.getGasLimit()).thenReturn(new byte[0]);
-        when(parent.getMinimumGasPrice()).thenReturn(mock(Coin.class));
-
-        when(validationRules.isValid(any())).thenReturn(true);
+    public void buildBlockAfterUMMActivation() {
         when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(true);
         when(activationConfig.isActive(ConsensusRule.RSKIP252, 501L)).thenReturn(false);
-
-        BlockResult expectedResult = mock(BlockResult.class);
-        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
-        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
-
-        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
-
-        Block actualBlock = blockCaptor.getValue();
+        Block actualBlock = this.prepareForActivationTest();
         assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+    }
+
+    @Test
+    public void buildBlockBeforeRskip351() {
+        when(activationConfig.getHeaderVersion(501L)).thenReturn(0);
+        Block actualBlock = this.prepareForActivationTest();
+        assertEquals(0, actualBlock.getHeader().getVersion());
+    }
+
+    @Test
+    public void buildBlockAfterRskip351() {
+        when(activationConfig.getHeaderVersion(501L)).thenReturn(1);
+        Block actualBlock = this.prepareForActivationTest();
+        assertEquals(1, actualBlock.getHeader().getVersion());
     }
 
     private void runMocked(Consumer<BlockHeader> task) {
@@ -208,6 +211,7 @@ class BlockToMineBuilderTest {
 
     private BlockHeader createBlockHeader() {
         return new BlockHeader(
+                0,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress(),
                 EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,

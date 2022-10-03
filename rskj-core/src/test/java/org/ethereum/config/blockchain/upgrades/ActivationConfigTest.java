@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
@@ -102,6 +101,7 @@ class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip351: fingerroot500",
             "}"
     ));
 
@@ -167,5 +167,17 @@ class ActivationConfigTest {
     void failsReadingWithUnknownUpgradeConfiguration() {
         Config config = BASE_CONFIG.withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"));
         Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
+    }
+
+    @Test
+    public void headerVersion0() {
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        Assertions.assertEquals(0, config.getHeaderVersion(10));
+    }
+
+    @Test
+    public void headerVersion1() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        Assertions.assertEquals(1, config.getHeaderVersion(10));
     }
 }

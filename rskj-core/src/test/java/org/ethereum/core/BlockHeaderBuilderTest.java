@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
@@ -35,12 +36,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.Mockito.when;
 
 class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
@@ -401,7 +405,6 @@ class BlockHeaderBuilderTest {
     }
 
     private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
-
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
@@ -410,5 +413,28 @@ class BlockHeaderBuilderTest {
                     Arguments.of(true, false, 18)
             );
         }
+    }
+
+    @Test
+    public void createsHeaderWithVersion0BeforeRskip351() {
+        // RSKIP351 = -1
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)).build();
+        assertEquals(0, header.getVersion());
+    }
+
+    @Test
+    public void createHeaderWithVersion0BeforeRskip351() {
+        // RSKIP351 > header number
+        ActivationConfig activationConfig = Mockito.mock(ActivationConfig.class);
+        when(activationConfig.getHeaderVersion(geq(2))).thenReturn(0);
+        BlockHeader header = new BlockHeaderBuilder(activationConfig).setNumber(1).build();
+        assertEquals(0, header.getVersion());
+    }
+
+    @Test
+    public void createHeaderWithVersion1AfterRskip351() {
+        // RSKIP351 = 0
+        BlockHeader header = new BlockHeaderBuilder(ActivationConfigsForTest.all()).build();
+        assertEquals(1, header.getVersion());
     }
 }

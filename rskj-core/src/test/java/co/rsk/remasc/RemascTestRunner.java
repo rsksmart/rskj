@@ -288,6 +288,7 @@ class RemascTestRunner {
                 Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(
+                    0,
                     parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase,
                     genesis.getStateRoot(), BlockHashesHelper.getTxTrieRoot(txs, true),
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
