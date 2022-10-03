@@ -232,11 +232,7 @@ public enum MessageType {
                 uncles.add(blockFactory.decodeHeader(element.getRLPData()));
             }
 
-            BlockHeaderExtension headerExtension = message.size() == 2
-                    ? BlockHeaderExtension.fromRLP((RLPList) RLP.decode2(message.get(2).getRLPData()).get(0))
-                    : null;
-
-            return new BodyResponseMessage(id, transactions, uncles, headerExtension);
+            return new BodyResponseMessage(id, transactions, uncles);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {

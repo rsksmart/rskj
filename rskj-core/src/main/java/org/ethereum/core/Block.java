@@ -112,17 +112,6 @@ public class Block {
         return this.header;
     }
 
-    public BlockHeaderExtension getHeaderExtension() {
-        switch (this.getHeader().getVersion()) {
-            case 0: return null;
-            case 1: return new BlockHeaderExtension(
-                    this.header.getVersion(),
-                    this.getLogBloom()
-            );
-        }
-        return null;
-    }
-
     public Keccak256 getHash() {
         return this.header.getHash();
     }

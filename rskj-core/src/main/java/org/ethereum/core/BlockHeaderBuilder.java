@@ -309,11 +309,7 @@ public class BlockHeaderBuilder {
             }
         }
 
-        int version = 0;
-        if (activationConfig.isActive(ConsensusRule.RSKIP351, number)) version = 1;
-
         return new BlockHeader(
-                version,
                 parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot,
                 logsBloom, difficulty, number,

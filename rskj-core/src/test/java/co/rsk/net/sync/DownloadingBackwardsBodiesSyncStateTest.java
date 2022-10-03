@@ -181,7 +181,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null);
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
 
             Block block = mock(Block.class);
@@ -247,7 +247,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), null);
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
 
             Block block = mock(Block.class);

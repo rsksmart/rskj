@@ -85,7 +85,7 @@ public class DownloadingBodiesSyncStateTest {
         pendingBodyResponses.put(messageId, pendingBodyResponse);
         TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
-        BodyResponseMessage message = new BodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList(), null);
+        BodyResponseMessage message = new BodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
@@ -111,7 +111,7 @@ public class DownloadingBodiesSyncStateTest {
         pendingBodyResponses.put(messageId, pendingBodyResponse);
         TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
-        BodyResponseMessage message = new BodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList(), null);
+        BodyResponseMessage message = new BodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,

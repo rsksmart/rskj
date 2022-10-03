@@ -288,7 +288,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node3.waitUntilNTasksWithTimeout(setupRequests);
         node3.waitUntilNTasksWithTimeout(5);
         // synchronize 200 (extra tasks are from old sync protocol messages)
-        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null, null);
+        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
         node3.getSyncProcessor().registerExpectedMessage(response);
         node3.getSyncProcessor().processBodyResponse(node1.getMessageChannel(node3), response);
         node3.waitExactlyNTasksWithTimeout(200 + setupRequests - 15);

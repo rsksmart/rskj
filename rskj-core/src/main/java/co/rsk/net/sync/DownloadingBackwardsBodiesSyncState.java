@@ -95,7 +95,6 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
         }
 
         Block block = blockFactory.newBlock(requestedHeader, body.getTransactions(), body.getUncles());
-        block.getHeader().trySetExtension(body.getHeaderExtension());
         block.seal();
 
         boolean unexpectedBlock = !block.getHash().equals(requestedHeader.getHash());

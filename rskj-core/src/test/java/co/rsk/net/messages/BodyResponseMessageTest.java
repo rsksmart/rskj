@@ -3,35 +3,21 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-@RunWith(Parameterized.class)
 public class BodyResponseMessageTest {
-    BlockHeaderExtension extension;
-
-    public BodyResponseMessageTest(BlockHeaderExtension extension) {
-        super();
-        this.extension = extension;
-    }
-
-    @Parameterized.Parameters
-    public static Collection input() {
-        return Arrays.asList(new Object[][] {
-                { null },
-                { Mockito.mock(BlockHeaderExtension.class) }
-        });
-    }
-
     @Test
     public void createMessage() {
         List<Transaction> transactions = new ArrayList<>();
@@ -50,8 +36,7 @@ public class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, this.extension);
-        System.out.println(message.getHeaderExtension());
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
         Assert.assertEquals(100, message.getId());
 
@@ -67,12 +52,6 @@ public class BodyResponseMessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
-
-        if (this.extension != null) {
-            Assert.assertArrayEquals(this.extension.getEncoded(), message.getHeaderExtension().getEncoded());
-        } else {
-            Assert.assertNull(message.getHeaderExtension().getEncoded());
-        }
     }
 
     private static Transaction createTransaction(int number) {
@@ -90,7 +69,7 @@ public class BodyResponseMessageTest {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 
