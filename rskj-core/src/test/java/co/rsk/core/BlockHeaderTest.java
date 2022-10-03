@@ -363,6 +363,7 @@ public class BlockHeaderTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return new BlockHeader(
+                0,
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
                 new RskAddress(TestUtils.randomAddress().getBytes()),

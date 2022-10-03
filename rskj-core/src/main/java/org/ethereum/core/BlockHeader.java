@@ -44,10 +44,11 @@ import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
  * the basic information of a block
  */
 public class BlockHeader {
-
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
     private static final int UMM_LEAVES_LENGTH = 20;
+
+    private int headerVersion;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private final byte[] parentHash;
@@ -123,13 +124,15 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private final boolean includeForkDetectionData;
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+    public BlockHeader(int headerVersion,
+                       byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
                        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+        this.headerVersion = headerVersion;
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -155,6 +158,17 @@ public class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+    }
+
+    public int getVersion() {
+        return this.headerVersion;
+    }
+
+    public void trySetExtension(BlockHeaderExtension headerExtension) {
+        if (this.headerVersion == 1) {
+            // test hash
+            this.setLogsBloom(headerExtension.getLogsBloom());
+        }
     }
 
     @VisibleForTesting
@@ -321,6 +335,12 @@ public class BlockHeader {
         return this.getEncoded(true, true);
     }
 
+    public byte[] getFullEncodedWithoutExtension() {
+        // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
+        // calculating RSKIP92 block hashes
+        return this.getEncoded(true, true, false);
+    }
+
     public byte[] getEncoded() {
         // the encoded block header used for calculating block hashes including RSKIP92
         return this.getEncoded(true, !useRskip92Encoding);
@@ -332,6 +352,10 @@ public class BlockHeader {
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
+        return this.getEncoded(withMergedMiningFields, withMerkleProofAndCoinbase, true);
+    }
+
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean withExtensionFields) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -351,7 +375,7 @@ public class BlockHeader {
 
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
-        byte[] logsBloom = RLP.encodeElement(this.logsBloom);
+        byte[] logsBloomField = encodeLogsBloomField(withExtensionFields);
         byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
@@ -361,7 +385,7 @@ public class BlockHeader {
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
         byte[] mgp = RLP.encodeSignedCoinNonNullZero(this.minimumGasPrice);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
+                stateRoot, txTrieRoot, receiptTrieRoot, logsBloomField, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
@@ -383,6 +407,19 @@ public class BlockHeader {
         }
 
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    protected byte[] encodeLogsBloomField(boolean withExtensionFields) {
+        if (withExtensionFields || this.headerVersion == 0) return RLP.encodeElement(this.logsBloom);
+        if (this.headerVersion == 1) {
+            byte[] logsBloomFieldElement = new byte[256];
+            logsBloomFieldElement[0] = 1;
+            byte[] extensionHash = HashUtil.keccak256(this.logsBloom);
+            System.arraycopy(extensionHash, 0, logsBloomFieldElement, 1, extensionHash.length);
+            System.out.println(RLP.encodeElement(this.logsBloom).length);
+            System.out.println(RLP.encodeElement(logsBloomFieldElement).length);
+            return RLP.encodeElement(logsBloomFieldElement);
+        } else throw new IllegalStateException("Invalid header version");
     }
 
     /**

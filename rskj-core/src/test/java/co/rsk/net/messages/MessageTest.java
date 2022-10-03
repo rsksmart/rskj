@@ -25,12 +25,15 @@ import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -42,12 +45,12 @@ import java.util.Random;
  * Created by ajlopez on 5/11/2016.
  */
 public class MessageTest {
-    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
     private BlockGenerator blockGenerator;
 
     @Before
     public void setUp() {
-        blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.all());
+        blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
     }
 
     @Test
@@ -172,13 +175,18 @@ public class MessageTest {
     @Test
     public void encodeDecodeBlockResponseMessage() {
         Block block = blockGenerator.getBlock(1);
+
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         byte[] encoded = message.getEncoded();
 
         Assert.assertNotNull(encoded);
 
+        System.out.println("here");
+
         Message result = Message.create(blockFactory, encoded);
+
+        System.out.println("there");
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -475,7 +483,7 @@ public class MessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         byte[] encoded = message.getEncoded();
 
