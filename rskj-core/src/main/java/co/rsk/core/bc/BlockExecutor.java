@@ -445,7 +445,7 @@ public class BlockExecutor {
         String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
 
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+","+moment+","+
-                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+",-1,-1\r";
 
         try {
             FileWriter myWriter;
@@ -636,7 +636,7 @@ public class BlockExecutor {
 
         String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",tryToConnect,"+
-                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+",-1,-1\r";
         try {
             FileWriter myWriter;
 
@@ -819,7 +819,7 @@ public class BlockExecutor {
 
         String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
-                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
 
         try {
             FileWriter myWriter;

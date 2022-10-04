@@ -88,7 +88,7 @@ public class StartBootstrap {
     static class BootstrapRskContext extends RskContext {
 
         BootstrapRskContext(String[] args) {
-            super(args);
+            super(args, false, true);
         }
 
         @Override

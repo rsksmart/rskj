@@ -155,6 +155,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
+    private final boolean metrics;
+    private final boolean play;
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
@@ -252,15 +254,17 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Constructors ***********************************************************************************************/
 
-    public RskContext(String[] args) {
+    public RskContext(String[] args, boolean metrics, boolean play) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class
-        ).parse(args));
+        ).parse(args), metrics, play);
     }
 
-    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
+    private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs, boolean metrics, boolean play) {
         this.cliArgs = cliArgs;
+        this.metrics = metrics;
+        this.play = play;
         initializeSingletons();
     }
 
@@ -456,7 +460,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
                     getTransactionExecutorFactory(),
-                    false, false);
+                    play,
+                    metrics);
         }
 
         return blockExecutor;
