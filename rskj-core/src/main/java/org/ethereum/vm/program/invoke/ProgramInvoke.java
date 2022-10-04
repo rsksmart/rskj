@@ -22,7 +22,8 @@ package org.ethereum.vm.program.invoke;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.call.CallDepthGasLocker;
+
+import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -62,5 +63,6 @@ public interface ProgramInvoke extends InvokeData {
 
     boolean isStaticCall();
 
-    CallDepthGasLocker getCallDepthGasLocker();
+    Map<Integer, Long> getLockedGasByDepth();
+
 }

@@ -31,10 +31,10 @@ import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.vm.program.call.CallDepthGasLocker;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -260,7 +260,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     @Override
-    public CallDepthGasLocker getCallDepthGasLocker() {
+    public Map<Integer, Long> getLockedGasByDepth() {
         return null;
     }
 

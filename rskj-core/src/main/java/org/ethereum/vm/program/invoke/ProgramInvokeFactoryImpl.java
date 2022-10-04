@@ -20,6 +20,7 @@ package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.SignatureCache;
@@ -27,12 +28,12 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.call.CallDepthGasLocker;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.Map;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
@@ -131,24 +132,24 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        CallDepthGasLocker callDepthGasLocker = new CallDepthGasLocker(); // created only on original call and propagated
+        Map<Integer, Long> lockedGasByDepth = new MaxSizeHashMap<>(1024, true);
 
         return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
-                repository, blockStore, callDepthGasLocker);
+                repository, blockStore, lockedGasByDepth);
     }
 
     /**
      * This invocation created for contract call contract
      */
     @Override
-    public ProgramInvoke createNested(Program program, DataWord toAddress, DataWord callerAddress,
-                                      DataWord inValue,
-                                      long inGas,
-                                      Coin balanceInt, byte[] dataIn,
-                                      Repository repository, BlockStore blockStore,
-                                      boolean isStaticCall, boolean byTestingSuite,
-                                      CallDepthGasLocker callDepthGasLocker) {
+    public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
+                                             DataWord inValue,
+                                             long inGas,
+                                             Coin balanceInt, byte[] dataIn,
+                                             Repository repository, BlockStore blockStore,
+                                             boolean isStaticCall, boolean byTestingSuite,
+                                             Map<Integer, Long> lockedGasByDepth) {
 
         DataWord address = toAddress;
         DataWord origin = program.getOriginAddress();
@@ -205,6 +206,6 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
                 repository, program.getCallDeep() + 1, blockStore,
-                isStaticCall, byTestingSuite, callDepthGasLocker);
+                isStaticCall, byTestingSuite, lockedGasByDepth);
     }
 }

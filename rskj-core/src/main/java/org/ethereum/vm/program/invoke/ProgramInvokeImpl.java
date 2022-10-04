@@ -19,11 +19,9 @@
 
 package org.ethereum.vm.program.invoke;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.call.CallDepthGasLocker;
 import org.ethereum.vm.program.Program;
 
 import java.math.BigInteger;
@@ -71,7 +69,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private int callDeep = 0;
     private boolean isStaticCall = false;
 
-    private final CallDepthGasLocker callDepthGasLocker;
+    private final Map<Integer, Long> lockedGasByDepth;
 
     public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
                              DataWord gasPrice,
@@ -82,7 +80,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
                              boolean isStaticCall,
                              boolean byTestingSuite,
-                             CallDepthGasLocker callDepthGasLocker) {
+                             Map<Integer, Long> lockedGasByDepth) {
 
         // Transaction env
         this.address = address;
@@ -110,10 +108,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.isStaticCall = isStaticCall;
         this.byTestingSuite = byTestingSuite;
 
-        this.callDepthGasLocker = callDepthGasLocker;
+        this.lockedGasByDepth = lockedGasByDepth;
     }
 
-    @VisibleForTesting
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
@@ -132,7 +129,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
                              Repository repository, BlockStore blockStore,
-                             CallDepthGasLocker callDepthGasLocker) {
+                             Map<Integer, Long> lockedGasByDepth) {
 
         // Transaction env
         this.address = DataWord.valueOf(address);
@@ -156,7 +153,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.repository = repository;
         this.blockStore = blockStore;
 
-        this.callDepthGasLocker = callDepthGasLocker;
+        this.lockedGasByDepth = lockedGasByDepth;
     }
 
     /*           ADDRESS op         */
@@ -326,8 +323,8 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     @Override
-    public CallDepthGasLocker getCallDepthGasLocker() {
-        return callDepthGasLocker;
+    public Map<Integer, Long> getLockedGasByDepth() {
+        return lockedGasByDepth;
     }
 
     @Override
@@ -401,7 +398,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite, callDepthGasLocker);
+        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite, lockedGasByDepth);
         result = 31 * result + Arrays.hashCode(msgData);
         return result;
     }
