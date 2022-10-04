@@ -306,7 +306,8 @@ public class BridgeEventLoggerLegacyImplTest {
     @Test(expected = DeprecatedMethodCallException.class)
     public void testLogReleaseBtcRequestReceived() {
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "1234".getBytes();
+        String base58Address = "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        Address btcDestinationAddress = Address.fromBase58(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), base58Address);
         Coin amount = Coin.COIN;
 
         eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
@@ -323,7 +324,12 @@ public class BridgeEventLoggerLegacyImplTest {
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void logBatchPegoutCreated() {
-        eventLogger.logBatchPegoutCreated(btcTxMock, new ArrayList<>());
+        eventLogger.logBatchPegoutCreated(btcTxMock.getHash(), new ArrayList<>());
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void logPegoutConfirmed() {
+        eventLogger.logPegoutConfirmed(btcTxMock.getHash(), 5);
     }
 
     /**********************************

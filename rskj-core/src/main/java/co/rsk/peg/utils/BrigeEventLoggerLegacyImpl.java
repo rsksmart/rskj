@@ -1,9 +1,6 @@
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -136,7 +133,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+    public void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
         throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logReleaseBtcRequestReceived method after RSKIP146 activation");
     }
 
@@ -146,8 +143,13 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes) {
+    public void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes) {
         throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logBatchPegoutCreated method after RSKIP146 activation");
+    }
+
+    @Override
+    public void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logPegoutConfirmed method after RSKIP146 activation");
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
