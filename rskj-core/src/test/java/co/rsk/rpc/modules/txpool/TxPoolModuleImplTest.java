@@ -46,13 +46,11 @@ class TxPoolModuleImplTest {
     private TxPoolModule txPoolModule;
     private TransactionPool transactionPool;
     private Map<Integer, Account> accountMap;
-    private SignatureCache signatureCache;
 
     @BeforeEach
     void setup() {
-        signatureCache = new ReceivedTxSignatureCache();
         transactionPool = Web3Mocks.getMockTransactionPool();
-        txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
+        txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         accountMap = new HashMap<>();
     }
 

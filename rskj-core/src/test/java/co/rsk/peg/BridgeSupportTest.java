@@ -164,17 +164,12 @@ class BridgeSupportTest extends BridgeSupportTestBase {
         Transaction tx = mock(Transaction.class);
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
-        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
         when(provider.getFeePerKbElection(any()))
             .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
-            .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
             .thenReturn(authorizer);
         when(authorizer.isAuthorized(eq(tx), any()))
-            .thenReturn(true);
-        when(authorizer.isAuthorized(tx.getSender()))
             .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
             .thenReturn(2);
