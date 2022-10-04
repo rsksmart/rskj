@@ -414,19 +414,22 @@ public class BlockExecutor {
 
         );
 
-        String filePath;
-
+        String moment;
         if (mining) {
-            filePath = "/Users/julianlen/workspace/output-experiments/execute-mining-sequential.csv";
+            moment = "mining";
         } else {
-            filePath = "/Users/julianlen/workspace/output-experiments/execute-connecting-sequential.csv";
+            moment = "tryToConnect";
         }
 
+        String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
         // bNumber, numExecutedTx, feeTotal, gasTotal
-        String header = "bNumber,numExecutedTx,feeTotal,gasTotal\r";
-        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"\r";
+        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+
+        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+","+moment+","+
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
+
         try {
             FileWriter myWriter;
 
@@ -600,12 +603,12 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
         );
 
-        String filePath = "/home/ubuntu/output/execute-parallel.csv";
+        String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
-        // bNumber, numExecutedTx, feeTotal, gasTotal
-        String header = "bNumber,numExecutedTx,feeTotal,gasTotal\r";
-        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"\r";
+        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",tryToConnect,"+
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
         try {
             FileWriter myWriter;
 
@@ -770,24 +773,22 @@ public class BlockExecutor {
                 track.getTrie()
         );
 
-        String filePath = "/home/ubuntu/output/execute-for-mining.csv";
+        String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
-        // bNumber, numExecutedTx, feeTotal, gasTotal, numTxInSequential, numTxInParallel
-        String header = "bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
-        String data = block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees.toString()+","+ gasUsedInBlock +","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
+        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
 
         try {
             FileWriter myWriter;
-
             if (!Files.exists(file)) {
                 myWriter = new FileWriter(filePath, true);
                 myWriter.write(header);
-                myWriter.write(data);
             } else {
                 myWriter = new FileWriter(filePath,     true);
-                myWriter.write(data);
             }
+            myWriter.write(data);
             myWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
