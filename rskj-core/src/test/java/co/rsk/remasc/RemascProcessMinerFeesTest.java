@@ -1022,7 +1022,7 @@ public class RemascProcessMinerFeesTest {
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-        );
+                ),
+                false, false);
     }
 }

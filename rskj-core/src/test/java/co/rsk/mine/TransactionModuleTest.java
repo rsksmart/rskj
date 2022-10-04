@@ -576,8 +576,8 @@ public class TransactionModuleTest {
                 config.getActivationConfig(),
                 repositoryLocator,
 //                stateRootHandler,
-                this.transactionExecutorFactory
-        );
+                this.transactionExecutorFactory,
+                false, false);
 
         MinerServer minerServer = new MinerServerImpl(
                 config,

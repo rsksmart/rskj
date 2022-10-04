@@ -116,8 +116,8 @@ public class BlockBuilder {
                             new ProgramInvokeFactoryImpl(),
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                    )
-            );
+                    ),
+                    false, false);
             executor.executeAndFill(block, parent.getHeader());
         }
 

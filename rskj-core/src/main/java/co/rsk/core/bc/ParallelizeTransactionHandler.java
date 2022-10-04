@@ -31,7 +31,6 @@ public class ParallelizeTransactionHandler {
     private final Map<RskAddress, TransactionSublist> sublistOfSender;
     private final ArrayList<TransactionSublist> sublists;
     private boolean collided;
-    private int collisions;
 
     public ParallelizeTransactionHandler(short numberOfSublists, long sequentialSublistGasLimit, long parallelSublistGast) {
         this.sublistOfSender = new HashMap<>();

@@ -67,15 +67,21 @@ public class BlockExecutor {
     private final ActivationConfig activationConfig;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
+    private final boolean isPlay;
+    private boolean isMetrics;
     private boolean registerProgramResults;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory) {
+            TransactionExecutorFactory transactionExecutorFactory,
+            boolean isPlay,
+            boolean isMetrics) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
+        this.isPlay = isPlay;
+        this.isMetrics = isMetrics;
     }
 
     /**
@@ -414,6 +420,12 @@ public class BlockExecutor {
 
         );
 
+        if (!isMetrics) {
+            profiler.stop(metric);
+            logger.trace("End execute pre RSKIP144.");
+            return result;
+        }
+
         String moment;
         if (mining) {
             moment = "mining";
@@ -424,10 +436,15 @@ public class BlockExecutor {
         String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
-        // bNumber, numExecutedTx, feeTotal, gasTotal
-        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String playOrGenerate = "play";
+        if (!isPlay) {
+            playOrGenerate = "generate";
+        }
 
-        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+","+moment+","+
+        // bNumber, numExecutedTx, feeTotal, gasTotal
+        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+
+        String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+","+moment+","+
                 block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
 
         try {
@@ -603,11 +620,22 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
         );
 
+        if (!isMetrics) {
+            profiler.stop(metric);
+            logger.trace("End execute pre RSKIP144.");
+            return result;
+        }
+
+        String playOrGenerate = "play";
+        if (!isPlay) {
+            playOrGenerate = "generate";
+        }
+
         String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
-        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
-        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",tryToConnect,"+
+        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",tryToConnect,"+
                 block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+"-1,-1\r";
         try {
             FileWriter myWriter;
@@ -773,11 +801,24 @@ public class BlockExecutor {
                 track.getTrie()
         );
 
+        String playOrGenerate = "play";
+        if (!isPlay) {
+            playOrGenerate = "generate";
+        }
+
+        if (!isMetrics) {
+            profiler.stop(metric);
+            logger.trace("End execute pre RSKIP144.");
+            return result;
+        }
+
         String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
-        String header = "rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
-        String data = activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
+
+
+        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
                 block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
 
         try {
