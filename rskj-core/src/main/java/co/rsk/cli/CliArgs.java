@@ -77,10 +77,16 @@ public class CliArgs<O, F> {
 
         private final EnumSet<O> options;
         private final EnumSet<F> flags;
+        private final boolean ignoreUnmatchedArgs;
 
         public Parser(Class<O> optionsClass, Class<F> flagsClass) {
+            this(optionsClass, flagsClass, false);
+        }
+
+        public Parser(Class<O> optionsClass, Class<F> flagsClass, boolean ignoreUnmatchedArgs) {
             this.options = EnumSet.allOf(optionsClass);
             this.flags = EnumSet.allOf(flagsClass);
+            this.ignoreUnmatchedArgs = ignoreUnmatchedArgs;
         }
 
         public CliArgs<O, F> parse(String[] args) {
@@ -100,7 +106,12 @@ public class CliArgs<O, F> {
                             if (args[i].length() < 3) {
                                 throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
                             }
-                            flags.add(getFlagByName(args[i].substring(2, args[i].length())));
+
+                            F f = getFlagByName(args[i].substring(2, args[i].length()));
+
+                            if (f != null) {
+                                flags.add(f);
+                            }
                         } else if (currentChar == 'x') {
                             String arg = args[i].substring(2);
                             paramValueMap.putAll(parseArgToMap(arg));
@@ -110,7 +121,13 @@ public class CliArgs<O, F> {
                                         String.format("A value must be provided after the option -%s", args[i])
                                 );
                             }
-                            options.put(getOptionByName(args[i].substring(1, args[i].length())), args[i + 1]);
+
+                            O o = getOptionByName(args[i].substring(1, args[i].length()));
+
+                            if (o != null) {
+                                options.put(o, args[i + 1]);
+                            }
+
                             i++;
                         }
                         break;
@@ -134,33 +151,42 @@ public class CliArgs<O, F> {
         }
 
         private F getFlagByName(String flagName) {
-            return flags.stream()
+            F f = flags.stream()
                     .filter(flag -> flag.getName().equals(flagName))
                     .findFirst()
-                    .orElseThrow(
-                            () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
-                    );
+                    .orElse(null);
+
+            if (f == null && !this.ignoreUnmatchedArgs) {
+                throw new NoSuchElementException(String.format("--%s is not a valid flag", flagName));
+            }
+
+            return f;
         }
 
         private O getOptionByName(String optionName) {
-            return options.stream()
+            O o = options.stream()
                     .filter(opt -> opt.getName().equals(optionName))
                     .findFirst()
-                    .orElseThrow(
-                            () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
-                    );
+                    .orElse(null);
+
+            if (o == null && !this.ignoreUnmatchedArgs) {
+                throw new NoSuchElementException(String.format("-%s is not a valid option", optionName));
+            }
+
+            return o;
         }
 
         /**
          * Parses a string argument in the format e.g <i>database.dir=/home/rsk/core<i/> to a map in the following
          * structure:
          * <blockquote>
-         *     {
-         *         "database": {
-         *             "dir": "/home/rsk/core"
-         *         }
-         *     }
+         * {
+         * "database": {
+         * "dir": "/home/rsk/core"
+         * }
+         * }
          * </blockquote>
+         *
          * @param arg to parse
          * @return a string arg parsed to an equivalent map having the same structure system properties would have.
          */
