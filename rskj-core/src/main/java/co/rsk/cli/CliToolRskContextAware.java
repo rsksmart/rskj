@@ -32,7 +32,7 @@ import java.util.Objects;
 /**
  * An abstract class for cli tools that need {@link RskContext}. Lifecycle of the  {@link RskContext} instance
  * is being managed by {@link CliToolRskContextAware}.
- * <p>
+ *
  * Also {@link CliToolRskContextAware} provides a logger instance for derived classes.
  */
 public abstract class CliToolRskContextAware {

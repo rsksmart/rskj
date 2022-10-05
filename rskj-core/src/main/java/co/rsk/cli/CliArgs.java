@@ -180,13 +180,12 @@ public class CliArgs<O, F> {
          * Parses a string argument in the format e.g <i>database.dir=/home/rsk/core<i/> to a map in the following
          * structure:
          * <blockquote>
-         * {
-         * "database": {
-         * "dir": "/home/rsk/core"
-         * }
-         * }
+         *     {
+         *         "database": {
+         *             "dir": "/home/rsk/core"
+         *         }
+         *     }
          * </blockquote>
-         *
          * @param arg to parse
          * @return a string arg parsed to an equivalent map having the same structure system properties would have.
          */

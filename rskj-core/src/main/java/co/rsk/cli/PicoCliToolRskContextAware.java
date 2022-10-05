@@ -19,8 +19,6 @@ package co.rsk.cli;
 
 import co.rsk.RskContext;
 import co.rsk.cli.exceptions.PicocliBadResultException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
@@ -29,8 +27,6 @@ import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
     protected RskContext ctx;
-
-    private static final Logger logger = LoggerFactory.getLogger(PicoCliToolRskContextAware.class);
 
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {

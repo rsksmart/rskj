@@ -37,10 +37,10 @@ import java.util.stream.Stream;
 /**
  * The entry point for db migration CLI tool
  * This is an experimental/unsupported tool
- * <p>
+ *
  * Required cli args:
  * - args[0] - database target where we are going to insert the information from the current selected database.
- * <p>
+ *
  * We do support the migrations between the following databases:
  * - LevelDb (leveldb as argument)
  * - RocksDb (rocksdb as argument)
