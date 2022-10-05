@@ -79,7 +79,7 @@ public abstract class CliToolRskContextAware {
             ctx.close();
 
             stopper.stop(0);
-        }catch (PicocliBadResultException e) {
+        } catch (PicocliBadResultException e) {
             printError("{} failed", cliToolName, e);
             stopper.stop(e.getErrorCode());
         } catch (Exception e) {
