@@ -27,9 +27,13 @@ public class MutableRepositoryTracked extends MutableRepository {
     // nodes that have been part of a rolled back repository
     private Map<ByteArrayWrapper, OperationType> rollbackNodes; // todo(fedejinich) this can be final
     // parent repository to commit tracked nodes
-    private final MutableRepositoryTracked parentRepository;
+    private final MutableRepositoryTracked parentRepository; // todo(fedejinich) refactor this into optional
     // counter for reading non-existing keys
     private int readMismatchesCount = 0;
+    // enables or disables node tracking
+    private boolean enableNodeTracking = true;
+    // tracks if a repository has been part of an internal precompile call
+    private boolean internalPrecompileCall = false; // todo(fedejinich) this has been introduced for testing purposes, should refactor
 
     // default constructor
     protected MutableRepositoryTracked(MutableTrie mutableTrie, MutableRepositoryTracked parentRepository,
@@ -46,6 +50,7 @@ public class MutableRepositoryTracked extends MutableRepository {
         return new MutableRepositoryTracked(mutableTrieCache, null, new HashMap<>(), new HashMap<>());
     }
 
+    // extends MutableRepository.startTracking by creating a child repository with node tracking capabilities
     @Override
     public synchronized Repository startTracking() {
         MutableRepositoryTracked mutableRepositoryTracked = new MutableRepositoryTracked(
@@ -66,6 +71,8 @@ public class MutableRepositoryTracked extends MutableRepository {
             this.parentRepository.mergeTrackedNodes(this.trackedNodes);
             this.parentRepository.addRollbackNodes(this.rollbackNodes);
             this.parentRepository.sumReadMismatchesCount(this.readMismatchesCount);
+
+            this.mergePrecompiledCalled();
         }
     }
 
@@ -78,6 +85,14 @@ public class MutableRepositoryTracked extends MutableRepository {
             this.trackedNodes.clear();
             this.rollbackNodes.clear();
             this.readMismatchesCount = 0;
+
+            this.mergePrecompiledCalled();
+        }
+    }
+
+    private void mergePrecompiledCalled() {
+        if(this.internalPrecompileCall) {
+            this.parentRepository.internalPrecompileCall = true;
         }
     }
 
@@ -184,6 +199,10 @@ public class MutableRepositoryTracked extends MutableRepository {
     }
 
     protected void trackNode(byte[] rawKeyToTrack, OperationType operationType, boolean nodeExistsInTrie) {
+        if(!enableNodeTracking) {
+            return;
+        }
+
         if(!nodeExistsInTrie) {
             readMismatchesCount++;
             return;
@@ -221,5 +240,21 @@ public class MutableRepositoryTracked extends MutableRepository {
     public void clearTrackedNodes() {
         this.trackedNodes = new HashMap<>();
         this.rollbackNodes = new HashMap<>();
+    }
+
+    @Override
+    public Repository startTrackingInternalPrecompileCall() {
+        MutableRepositoryTracked repositoryTracked = (MutableRepositoryTracked) this.startTracking();
+
+        // rent is disabled during the precompiled execution
+        repositoryTracked.enableNodeTracking = false;
+        repositoryTracked.internalPrecompileCall = true;
+
+        return repositoryTracked;
+    }
+
+    @VisibleForTesting
+    public boolean wasInternalPrecompileCall() {
+        return internalPrecompileCall;
     }
 }

@@ -200,6 +200,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public Repository startTrackingInternalPrecompileCall() {
+        return repository.startTrackingInternalPrecompileCall();
+    }
+
+    @Override
     public void commit() {
         repository.commit();
     }

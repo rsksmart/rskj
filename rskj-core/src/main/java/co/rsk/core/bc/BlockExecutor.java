@@ -282,7 +282,7 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            // ensures that blockTrack only tracks trie-nodes ONLY from the current transaction
+            // ensures that blockTrack tracks trie-nodes ONLY from the current transaction
             blockTrack.clearTrackedNodes();
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(

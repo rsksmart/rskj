@@ -1321,7 +1321,6 @@ public class Program {
     }
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
-
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
@@ -1329,7 +1328,7 @@ public class Program {
             return;
         }
 
-        Repository track = getStorage().startTracking();
+        Repository track = getStorage().startTrackingInternalPrecompileCall();
 
         RskAddress senderAddress = getOwnerRskAddress();
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());

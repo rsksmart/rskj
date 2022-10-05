@@ -1,0 +1,79 @@
+# acc1 = "0xa0663f719962ec10bb57865532bef522059dfd96"
+account_new acc1 20000000
+
+# Deploy PrecompiledCall
+transaction_build tx01
+    sender acc1
+    nonce 0
+    receiver 00
+    data 608060405234801561001057600080fd5b506101f4806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c806333376ff914610030575b600080fd5b61003861004e565b6040516100459190610189565b60405180910390f35b600061005a600161005f565b905090565b60008060008373ffffffffffffffffffffffffffffffffffffffff16620f424060405161008b90610174565b60006040518083038160008787f1925050503d80600081146100c9576040519150601f19603f3d011682016040523d82523d6000602084013e6100ce565b606091505b50915091508115610106577fa58eddb1ee6179f36fe656498fc7f68fe6f2c903eae438bd90abc1d2577e2a2360405160405180910390a15b81610138577f12fcf496c263ba4382944836c0ee4deb93734a040e61951cdde62df434d729e160405160405180910390a15b8192505050919050565b61014b816101af565b82525050565b600061015e6000836101a4565b9150610169826101bb565b600082019050919050565b600061017f82610151565b9150819050919050565b600060208201905061019e6000830184610142565b92915050565b600081905092915050565b60008115159050919050565b5056fea26469706673582212207ca1fc9b7690c904ff2af7b3fac94c640462b00509b9fc1ebc8db839a6d2147564736f6c63430008070033
+    gas 6000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success tx01
+
+# Call callEcRecover()
+transaction_build tx02
+    sender acc1
+    nonce 1
+    contract tx01
+    data 33376ff9
+    gas 6000000
+    build
+
+block_build b02
+    parent b01
+    transactions tx02
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
+assert_tx_success tx02
+
+# Contract used
+comment
+// SPDX-License-Identifier: MIT
+// compiler version must be greater than or equal to 0.8.10 and less than 0.9.0
+pragma solidity ^0.8.7;
+
+contract PrecompiledCall {
+    event CallOk();
+    event CallFail();
+
+    constructor() {
+    }
+
+    function callPrec(address precAddress) internal returns (bool) {
+        // abi.encodeWithSignature("foo(string,uint256)", "call foo", 123)
+        (bool success, bytes memory data) = address(precAddress).call{gas: 1000000}("");
+
+        if(success) {
+            emit CallOk();
+        }
+
+        if(!success) {
+            emit CallFail();
+        }
+
+        return success;
+    }
+
+    // call to ecRecover
+    function callEcRecover() public returns (bool) {
+        return callPrec(0x0000000000000000000000000000000000000001);
+    }
+
+    // call to sha256
+    // function callSha256() public returns (bool) {
+    // }
+}
+end

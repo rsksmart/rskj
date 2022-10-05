@@ -10,13 +10,18 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.MutableTrie;
 import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
 
@@ -27,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
 import static org.ethereum.db.OperationType.*;
@@ -453,6 +459,56 @@ public class StorageRentDSLTests {
                 .get();
 
         return trie.getRentTimestamp(key.getData()).get();
+    }
+
+    @Test
+    public void avoidRentOnPrecompiledCalls() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 674_075;
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/precompiled_calls.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+
+        String txName = "tx02";
+        assertPrecompiledCall(world, PrecompiledContracts.ECRECOVER_ADDR, txName);
+    }
+
+    private void assertPrecompiledCall(World world, RskAddress precompiledAddress, String txName) {
+        // the contract emits events to reflect the status of the precompiled call ("CallOk", "CallFail")
+        assertEvents(world.getTransactionReceiptByName(txName), "CallOk", 1);
+        assertEvents(world.getTransactionReceiptByName(txName), "CallFail", 0);
+
+        assertTrue(!world.getTransactionExecutor(txName).wasInternalPrecompileCall());
+
+        checkStorageRent(world, txName, 7564, 0,
+                5, 0, 0);
+    }
+
+    /**
+     * Checks how many times an event is contained on a receipt
+     * */
+    public void assertEvents(TransactionReceipt receipt, String eventSignature, int times) {
+        String[] params = new String[0]; // todo(fedejinich) refactor this to verify the called address
+
+        // Events on rsk precompiled calls
+        Stream<String> events = receipt.getLogInfoList().stream().map(logInfo -> eventSignature(logInfo));
+        List<String> eventsSignature = events.filter(event -> isExpectedEventSignature(event, eventSignature, params))
+                .collect(Collectors.toList());
+
+        assertEquals(times, eventsSignature.size());
+    }
+
+    private static String eventSignature(LogInfo logInfo) {
+        // The first topic usually consists of the signature
+        // (a keccak256 hash) of the name of the event that occurred
+        return logInfo.getTopics().get(0).toString();
+    }
+
+    private static boolean isExpectedEventSignature(String encodedEvent, String expectedEventSignature, String[] eventTypeParams) {
+        CallTransaction.Function fun = CallTransaction.Function.fromSignature(expectedEventSignature, eventTypeParams);
+        String encodedExpectedEvent = HashUtil.toPrintableHash(fun.encodeSignatureLong());
+
+        return encodedEvent.equals(encodedExpectedEvent);
     }
 
     private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {

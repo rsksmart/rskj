@@ -643,15 +643,28 @@ public class TransactionExecutor {
 
     @VisibleForTesting
     public boolean isStorageRentEnabled() {
-        // todo(fedejinich) still need to exclude ALL the precompiled contracts
+        // todo(fedejinich) still need to exclude ALL the precompiled contracts (remasc is a precompiled contract :P)
+        boolean isPrecompiled = precompiledContracts.getContractForAddress(activations,
+                DataWord.valueOf(tx.getReceiveAddress().getBytes())) != null;
+
         boolean isRemascTx = tx.getReceiveAddress().equals(PrecompiledContracts.REMASC_ADDR) &&
                 GasCost.toGas(tx.getGasLimit()) == 0 &&
                 tx.getGasPrice().equals(Coin.ZERO);
-        
+
         return activations.isActive(RSKIP240) &&
                 (!isEmpty(tx.getData()) || GasCost.toGas(tx.getGasLimit()) != GasCost.TRANSACTION) &&
                 !isRemascTx &&
+//                !isPrecompiled &&
                 storageRentEnabled; // todo(fedejinich) this is a workaround to enable storageRent just in DSL test
+    }
+
+    /**
+     * Returns if any precompile contract has been called via internal transaction (Program.callToPrecompiledAddress())
+     * todo(fedejinich) this is for testing purposes, it should be refactored
+     * */
+    @VisibleForTesting
+    public boolean wasInternalPrecompileCall() {
+        return ((MutableRepositoryTracked) this.transactionTrack).wasInternalPrecompileCall();
     }
 
     private TransactionExecutionSummary buildTransactionExecutionSummary(TransactionExecutionSummary.Builder summaryBuilder, long gasRefund) {

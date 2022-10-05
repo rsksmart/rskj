@@ -78,4 +78,10 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * NOT represent an immutable value.
      */
     Repository startTracking();
+
+    /**
+     * This method works exactly as 'startTracking()', and disables rent tracking for
+     * internal precompiled calls (but not subsequent calls).
+     * */
+    Repository startTrackingInternalPrecompileCall();
 }

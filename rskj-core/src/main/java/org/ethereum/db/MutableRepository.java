@@ -334,7 +334,7 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(this.mutableTrie));//, this, this.enableTracking);
+        return new MutableRepository(new MutableTrieCache(this.mutableTrie));
     }
 
     @Override
@@ -367,6 +367,11 @@ public class MutableRepository implements Repository {
         internalPut(accountKey, accountState.getEncoded());
     }
 
+    @Override
+    public Repository startTrackingInternalPrecompileCall() {
+        return startTracking();
+    }
+
     @Nonnull
     private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
         AccountState account = getAccountState(addr);
@@ -377,7 +382,7 @@ public class MutableRepository implements Repository {
         return internalGet(trieKeyMapper.getAccountKey(addr));
     }
 
-    @VisibleForTesting // todo(techdebt) this method shouldn't be here
+    @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
