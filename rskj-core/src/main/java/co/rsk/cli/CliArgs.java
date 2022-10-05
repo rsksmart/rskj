@@ -122,7 +122,7 @@ public class CliArgs<O, F> {
                                 );
                             }
 
-                            O o = getOptionByName(args[i].substring(1, args[i].length()));
+                            O option = getOptionByName(args[i].substring(1, args[i].length()));
 
                             if (o != null) {
                                 options.put(o, args[i + 1]);
