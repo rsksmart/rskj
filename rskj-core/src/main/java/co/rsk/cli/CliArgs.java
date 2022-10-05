@@ -164,7 +164,7 @@ public class CliArgs<O, F> {
         }
 
         private O getOptionByName(String optionName) {
-            O o = options.stream()
+            O option = options.stream()
                     .filter(opt -> opt.getName().equals(optionName))
                     .findFirst()
                     .orElse(null);
