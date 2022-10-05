@@ -151,7 +151,7 @@ public class CliArgs<O, F> {
         }
 
         private F getFlagByName(String flagName) {
-            F f = flags.stream()
+            F flag = flags.stream()
                     .filter(flag -> flag.getName().equals(flagName))
                     .findFirst()
                     .orElse(null);
