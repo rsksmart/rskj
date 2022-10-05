@@ -17,15 +17,14 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -39,26 +38,31 @@ import java.nio.file.Paths;
  * Required cli args:
  * - args[0] - file path
  */
-public class ImportState extends CliToolRskContextAware {
+@CommandLine.Command(name = "importblocks", mixinStandardHelpOptions = true, version = "importblocks 1.0",
+        description = "The entry point for import state CLI tool")
+public class ImportState extends PicoCliToolRskContextAware {
+    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    private String filePath;
+
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+    public Integer call() throws IOException {
         RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
 
         KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), rskSystemProperties.databaseKind());
 
-        String filename = args[0];
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             importState(reader, trieDB);
         }
 
         trieDB.flush();
         trieDB.close();
+
+        return 0;
     }
 
     private void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {

@@ -22,14 +22,13 @@ import co.rsk.cli.exceptions.PicocliBadResultException;
 import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
     protected RskContext ctx;
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws IOException {
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
         this.ctx = ctx;
 
         int result = new CommandLine(this).setUnmatchedArgumentsAllowed(true).execute(args);

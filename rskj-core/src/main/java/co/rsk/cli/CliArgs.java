@@ -109,8 +109,8 @@ public class CliArgs<O, F> {
 
                             F flag = getFlagByName(args[i].substring(2, args[i].length()));
 
-                            if (f != null) {
-                                flags.add(f);
+                            if (flag != null) {
+                                flags.add(flag);
                             }
                         } else if (currentChar == 'x') {
                             String arg = args[i].substring(2);
@@ -124,8 +124,8 @@ public class CliArgs<O, F> {
 
                             O option = getOptionByName(args[i].substring(1, args[i].length()));
 
-                            if (o != null) {
-                                options.put(o, args[i + 1]);
+                            if (option != null) {
+                                options.put(option, args[i + 1]);
                             }
 
                             i++;
@@ -151,16 +151,16 @@ public class CliArgs<O, F> {
         }
 
         private F getFlagByName(String flagName) {
-            F flag = flags.stream()
+            F flagFound = flags.stream()
                     .filter(flag -> flag.getName().equals(flagName))
                     .findFirst()
                     .orElse(null);
 
-            if (f == null && !this.ignoreUnmatchedArgs) {
+            if (flagFound == null && !this.ignoreUnmatchedArgs) {
                 throw new NoSuchElementException(String.format("--%s is not a valid flag", flagName));
             }
 
-            return f;
+            return flagFound;
         }
 
         private O getOptionByName(String optionName) {
@@ -169,11 +169,11 @@ public class CliArgs<O, F> {
                     .findFirst()
                     .orElse(null);
 
-            if (o == null && !this.ignoreUnmatchedArgs) {
+            if (option == null && !this.ignoreUnmatchedArgs) {
                 throw new NoSuchElementException(String.format("-%s is not a valid option", optionName));
             }
 
-            return o;
+            return option;
         }
 
         /**

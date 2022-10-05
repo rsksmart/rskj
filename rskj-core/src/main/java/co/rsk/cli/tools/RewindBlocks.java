@@ -17,15 +17,16 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import picocli.CommandLine;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +43,11 @@ import java.util.Optional;
  * - "fmi" option can be used for finding minimum inconsistent block number and printing it to stdout. It'll print -1, if no such block is found;
  * - "rbc" option does two things: it looks for minimum inconsistent block and, if there's such, rewinds blocks from top one till the found one inclusively.
  */
-public class RewindBlocks extends CliToolRskContextAware {
+@CommandLine.Command(name = "rewindblocks", mixinStandardHelpOptions = true, version = "rewindblocks 1.0",
+        description = "The entry point for rewind blocks state CLI tool")
+public class RewindBlocks extends PicoCliToolRskContextAware {
+    @CommandLine.Option(names = {"-b", "--block"}, description = "block number or \"fmi\"/\"rbc\" options (\"find min inconsistent block\" / \"rewind to best consistent block\" respectively)", required = true)
+    private String blockNumOrOp;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -61,9 +66,8 @@ public class RewindBlocks extends CliToolRskContextAware {
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
+    public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
-        String blockNumOrOp = args[0];
 
         if ("fmi".equals(blockNumOrOp)) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
@@ -78,6 +82,8 @@ public class RewindBlocks extends CliToolRskContextAware {
 
             rewindBlocks(blockNumber, blockStore);
         }
+
+        return 0;
     }
 
     private void printMinInconsistentBlock(@Nonnull BlockStore blockStore, @Nonnull RepositoryLocator repositoryLocator) {

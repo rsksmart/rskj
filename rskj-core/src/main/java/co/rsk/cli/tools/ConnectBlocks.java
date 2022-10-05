@@ -17,8 +17,7 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -26,8 +25,8 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -40,31 +39,36 @@ import java.lang.invoke.MethodHandles;
  * Required cli args:
  * - args[0] - file path
  */
-public class ConnectBlocks extends CliToolRskContextAware {
+@CommandLine.Command(name = "cnblocks", mixinStandardHelpOptions = true, version = "cnblocks 1.0",
+        description = "The entry point for connect blocks CLI tool")
+public class ConnectBlocks extends PicoCliToolRskContextAware {
+
+    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    private String filePath;
 
     public static void main(String[] args) throws IOException {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+    public Integer call() throws IOException {
         BlockFactory blockFactory = ctx.getBlockFactory();
         Blockchain blockchain = ctx.getBlockchain();
         TrieStore trieStore = ctx.getTrieStore();
         BlockStore blockStore = ctx.getBlockStore();
         ReceiptStore receiptStore = ctx.getReceiptStore();
 
-        String filename = args[0];
-
         long startTime = System.currentTimeMillis();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             connectBlocks(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
         }
 
         long endTime = System.currentTimeMillis();
 
         printInfo("Duration: " + (endTime - startTime) + " millis");
+
+        return 0;
     }
 
     private void connectBlocks(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
