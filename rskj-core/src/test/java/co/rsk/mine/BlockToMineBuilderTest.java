@@ -179,14 +179,14 @@ class BlockToMineBuilderTest {
 
     @Test
     public void buildBlockBeforeRskip351() {
-        when(activationConfig.getHeaderVersion(501L)).thenReturn(0);
+        when(activationConfig.getHeaderVersion(501L)).thenReturn((byte) 0x0);
         Block actualBlock = this.prepareForActivationTest();
         assertEquals(0, actualBlock.getHeader().getVersion());
     }
 
     @Test
     public void buildBlockAfterRskip351() {
-        when(activationConfig.getHeaderVersion(501L)).thenReturn(1);
+        when(activationConfig.getHeaderVersion(501L)).thenReturn((byte) 0x1);
         Block actualBlock = this.prepareForActivationTest();
         assertEquals(1, actualBlock.getHeader().getVersion());
     }
@@ -211,7 +211,7 @@ class BlockToMineBuilderTest {
 
     private BlockHeader createBlockHeader() {
         return new BlockHeader(
-                0,
+                (byte) 0x0,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress(),
                 EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,

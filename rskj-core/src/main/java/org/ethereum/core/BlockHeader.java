@@ -50,7 +50,7 @@ public class BlockHeader {
     private static final int UMM_LEAVES_LENGTH = 20;
 
     /* RSKIP 351 version */
-    private final int version;
+    private final byte version;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private final byte[] parentHash;
@@ -126,7 +126,7 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private final boolean includeForkDetectionData;
 
-    public BlockHeader(int version,
+    public BlockHeader(byte version,
                        byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -162,7 +162,7 @@ public class BlockHeader {
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
 
-    public int getVersion() { return version; }
+    public byte getVersion() { return version; }
 
     @VisibleForTesting
     public boolean isSealed() {

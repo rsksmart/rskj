@@ -325,17 +325,17 @@ class BlockHeaderTest {
         });
     }
 
-    private void testHeaderVersion(int version) {
+    private void testHeaderVersion(byte version) {
         BlockHeader header = createBlockHeaderWithVersion(version);
         assertEquals(version, header.getVersion());
     }
 
     @Test
-    public void getVersion0() { this.testHeaderVersion(0); }
+    public void getVersion0() { this.testHeaderVersion((byte) 0x0); }
 
     @Test
     public void getVersion1() {
-        this.testHeaderVersion(1);
+        this.testHeaderVersion((byte) 0x1);
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
@@ -365,7 +365,7 @@ class BlockHeaderTest {
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean sealed) {
-        return createBlockHeader(0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+        return createBlockHeader((byte) 0x0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 forkDetectionData, includeForkDetectionData, ummRoot, true, sealed);
     }
 
@@ -373,16 +373,16 @@ class BlockHeaderTest {
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean useRskip92Encoding,
                                           boolean sealed) {
-        return createBlockHeader(0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+        return createBlockHeader((byte) 0x0, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 forkDetectionData, includeForkDetectionData, ummRoot, useRskip92Encoding, sealed);
     }
 
-    private BlockHeader createBlockHeaderWithVersion(int version) {
+    private BlockHeader createBlockHeaderWithVersion(byte version) {
         return createBlockHeader(version, new byte[80], new byte[32], new byte[128],
                 new byte[0], false, null, false, false);
     }
 
-    private BlockHeader createBlockHeader(int version,
+    private BlockHeader createBlockHeader(byte version,
                                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean useRskip92Encoding,
