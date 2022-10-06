@@ -29,7 +29,7 @@ public class GenesisHeader extends BlockHeader {
                          byte[] coinbase,
                          byte[] stateRootHash) {
         super(
-                0,
+                (byte) 0x0,
                 parentHash,
                 unclesHash,
                 new RskAddress(coinbase),
@@ -73,7 +73,7 @@ public class GenesisHeader extends BlockHeader {
                          boolean useRskip92Encoding,
                          byte[] coinbase) {
         super(
-                0,
+                (byte) 0x0,
                 parentHash,
                 unclesHash,
                 new RskAddress(coinbase),

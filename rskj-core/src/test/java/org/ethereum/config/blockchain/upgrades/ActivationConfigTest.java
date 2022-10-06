@@ -176,12 +176,12 @@ public class ActivationConfigTest {
     @Test
     public void headerVersion0() {
         ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
-        assertEquals(0, config.getHeaderVersion(10));
+        assertEquals((byte) 0x0, config.getHeaderVersion(10));
     }
 
     @Test
     public void headerVersion1() {
         ActivationConfig config = ActivationConfigsForTest.all();
-        assertEquals(1, config.getHeaderVersion(10));
+        assertEquals((byte) 0x1, config.getHeaderVersion(10));
     }
 }
