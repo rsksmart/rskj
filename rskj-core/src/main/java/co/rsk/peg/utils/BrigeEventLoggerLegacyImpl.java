@@ -2,8 +2,6 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.DeprecatedMethodCallException;
 import co.rsk.peg.Federation;
@@ -105,51 +103,6 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
-    }
-
-    @Override
-    public void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logLockBtc method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logPeginBtc(RskAddress rskReceiver, BtcTransaction btcTx, Coin amount, int protocolVersion) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logPeginBtc method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logReleaseBtcRequested method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logRejectedPegin method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logUnrefundablePegin method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logReleaseBtcRequestReceived method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logReleaseBtcRequestRejected method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logBatchPegoutCreated method after RSKIP146 activation");
-    }
-
-    @Override
-    public void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
-        throw new DeprecatedMethodCallException("Calling BrigeEventLoggerLegacyImpl.logPegoutConfirmed method after RSKIP146 activation");
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
