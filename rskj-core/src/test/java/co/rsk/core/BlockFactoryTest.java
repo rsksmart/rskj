@@ -297,6 +297,11 @@ public class BlockFactoryTest {
         assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
     }
 
+    @Test
+    public void genesisHasVersion0() {
+        assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
