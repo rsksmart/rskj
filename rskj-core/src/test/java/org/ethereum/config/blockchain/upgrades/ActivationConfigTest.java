@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.Config;
@@ -100,6 +99,7 @@ public class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip348: fingerroot500",
             "}"
     ));
 

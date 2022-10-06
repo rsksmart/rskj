@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
@@ -172,10 +171,10 @@ public class Remasc {
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        RskAddress rskLabsAddress = getRskLabsAddress();
-        Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
-        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, rskLabsAddress, logs);
-        syntheticReward = syntheticReward.subtract(payToRskLabs);
+        RskAddress remascRewardAddress = getRemascRewardAddress();
+        Coin payToRemasc = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRemascDivisor()));
+        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRemasc, remascRewardAddress, logs);
+        syntheticReward = syntheticReward.subtract(payToRemasc);
         Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
@@ -193,9 +192,16 @@ public class Remasc {
         }
     }
 
-    RskAddress getRskLabsAddress() {
-        boolean isRskip218Enabled = activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber());
-        return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
+    RskAddress getRemascRewardAddress() {
+        if (activationConfig.isActive(ConsensusRule.RSKIP348, executionBlock.getNumber())) {
+            return remascConstants.getRemascRewardAddressRskip348();
+        }
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber())) {
+            return remascConstants.getRemascRewardAddressRskip218();
+        }
+
+        return remascConstants.getRemascRewardAddress();
     }
 
     private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
