@@ -289,6 +289,11 @@ class BlockFactoryTest {
         Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader));
     }
 
+    @Test
+    public void genesisHasVersion0() {
+        assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
