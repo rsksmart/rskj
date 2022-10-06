@@ -78,20 +78,20 @@ public class BlockExecutor {
      * @param parent       The parent of the block.
      */
     public BlockResult executeAndFill(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, true, false);
+        BlockResult result = execute(block, parent, true, false, false);
         fill(block, result);
         return result;
     }
 
     @VisibleForTesting
     public void executeAndFillAll(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, true);
+        BlockResult result = execute(block, parent, false, true, false);
         fill(block, result);
     }
 
     @VisibleForTesting
     public void executeAndFillReal(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, false);
+        BlockResult result = execute(block, parent, false, false, false);
         if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             fill(block, result);
         }
@@ -122,7 +122,7 @@ public class BlockExecutor {
      */
     @VisibleForTesting
     public boolean executeAndValidate(Block block, BlockHeader parent) {
-        BlockResult result = execute(block, parent, false, false);
+        BlockResult result = execute(block, parent, false, false, false);
 
         return this.validate(block, result);
     }
@@ -218,12 +218,12 @@ public class BlockExecutor {
     }
 
     @VisibleForTesting
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
-        return execute(block, parent, discardInvalidTxs, false);
+    BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
+        return execute(block, parent, discardInvalidTxs, false, true);
     }
 
-    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute, boolean saveState) {
+        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
     }
 
     /**
@@ -237,7 +237,7 @@ public class BlockExecutor {
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
         executeInternal(
-                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
+                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute, false
         );
     }
 
@@ -247,7 +247,8 @@ public class BlockExecutor {
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
-            boolean acceptInvalidTransactions) {
+            boolean acceptInvalidTransactions,
+            boolean saveState) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeInternal.");
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
@@ -351,10 +352,14 @@ public class BlockExecutor {
         }
 
         logger.trace("End txs executions.");
-        if (!vmTrace) {
+        if (saveState) {
             logger.trace("Saving track.");
             track.save();
             logger.trace("End saving track.");
+        } else {
+            logger.trace("Committing track.");
+            track.commit();
+            logger.trace("End committing track.");
         }
 
         logger.trace("Building execution results.");

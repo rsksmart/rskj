@@ -95,18 +95,6 @@ public class TrieStoreImpl implements TrieStore {
 
         byte[] trieKeyBytes = trie.getHash().getBytes();
 
-        if (isRootNode && this.store.get(trieKeyBytes) != null) {
-            // the full trie is already saved
-            logger.trace("End saving trie, level : {}, already saved.", level);
-
-            if (traceInfo != null) {
-                traceInfo.numOfNoSavesInSaveTrie++;
-                traceInfo.numOfNoSavesInBlockProcess++;
-            }
-
-            return;
-        }
-
         if (traceInfo != null) {
             traceInfo.numOfSavesInSaveTrie++;
             traceInfo.numOfSavesInBlockProcess++;

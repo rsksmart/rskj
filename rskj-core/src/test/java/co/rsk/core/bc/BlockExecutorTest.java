@@ -55,17 +55,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -119,7 +117,7 @@ public class BlockExecutorTest {
         Assert.assertFalse(result.getTransactionReceipts().isEmpty());
         Assert.assertEquals(1, result.getTransactionReceipts().size());
 
-        Assert.assertNull(executor.getProgramResult(tx.getHash()));
+        assertNull(executor.getProgramResult(tx.getHash()));
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx, receipt.getTransaction());
@@ -256,6 +254,32 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
+    @Test
+    public void executeAndFillBlockWithNoSavingToStore() {
+        TestObjects objects = generateBlockWithOneTransaction();
+        Block parent = objects.getParent();
+        Block block = objects.getBlock();
+        TrieStore trieStore = objects.getTrieStore();
+        BlockExecutor executor = buildBlockExecutor(trieStore);
+
+        executor.executeAndFill(block, parent.getHeader());
+
+        assertEquals(Optional.empty(), trieStore.retrieve(block.getStateRoot()));
+    }
+
+    @Test
+    public void executeBlockWithSavingToStore() {
+        TestObjects objects = generateBlockWithOneTransaction();
+        Block parent = objects.getParent();
+        Block block = objects.getBlock();
+        TrieStore trieStore = objects.getTrieStore();
+        BlockExecutor executor = buildBlockExecutor(trieStore);
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false, false, true);
+
+        assertEquals(trieStore.retrieve(block.getStateRoot()), Optional.of(result.getFinalState()));
+    }
+    
     @Test
     public void executeAndFillBlockWithOneTransaction() {
         TestObjects objects = generateBlockWithOneTransaction();

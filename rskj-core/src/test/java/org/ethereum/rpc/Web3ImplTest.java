@@ -2839,15 +2839,19 @@ public class Web3ImplTest {
 
     private Block createNonCanonicalBlock(World world, List<Transaction> txs) {
         final Block genesis = world.getBlockChain().getBestBlock();
-        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
-        final Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        final Block block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        final Block block2Canonical = blockBuilder.parent(block1Canonical).build();
-
         world.getBlockChain().tryToConnect(genesis);
+
+        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+
+        final Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1Canonical);
+
+        final Block block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block);
+
+        final Block block2Canonical = blockBuilder.parent(block1Canonical).build();
         world.getBlockChain().tryToConnect(block2Canonical);
+
         return block;
     }
 }
