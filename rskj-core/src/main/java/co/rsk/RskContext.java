@@ -52,6 +52,7 @@ import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -266,7 +267,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         this.cliArgs = cliArgs;
-        initializeSingletons();
+        initializeNativeLibs();
     }
 
     /***** Public Methods *********************************************************************************************/
@@ -1434,8 +1435,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Private Methods ********************************************************************************************/
 
-    private void initializeSingletons() {
+    private void initializeNativeLibs() {
         Secp256k1.initialize(getRskSystemProperties());
+        AbstractAltBN128.init();
     }
 
     private BlockTxSignatureCache getBlockTxSignatureCache() {

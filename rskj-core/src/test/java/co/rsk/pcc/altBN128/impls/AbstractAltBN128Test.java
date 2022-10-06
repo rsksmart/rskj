@@ -25,19 +25,19 @@ public class AbstractAltBN128Test {
 
     @Test
     public void testInitialization_JavaAltBN128() {
-        AbstractAltBN128 result = AbstractAltBN128.init(() -> false, () -> null);
+        AbstractAltBN128 result = AbstractAltBN128.create(() -> false, () -> null);
         assertTrue(result instanceof JavaAltBN128);
     }
 
     @Test
     public void testInitialization_fallbackOnJavaAltBN128() {
-        AbstractAltBN128 result = AbstractAltBN128.init(() -> true, RuntimeException::new);
+        AbstractAltBN128 result = AbstractAltBN128.create(() -> true, RuntimeException::new);
         assertTrue(result instanceof JavaAltBN128);
     }
 
     @Test
     public void testInitialization_GoAltBN128() {
-        AbstractAltBN128 result = AbstractAltBN128.init(() -> true, () -> null);
+        AbstractAltBN128 result = AbstractAltBN128.create(() -> true, () -> null);
         assertTrue(result instanceof GoAltBN128);
     }
 }
