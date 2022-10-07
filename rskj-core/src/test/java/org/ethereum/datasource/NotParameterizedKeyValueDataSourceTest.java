@@ -41,12 +41,12 @@ class NotParameterizedKeyValueDataSourceTest {
     }
 
     @Test
-    void mergeDataSourceLevelDbTest() throws IOException {
+    void mergeDataSourceLevelDbTest() {
         testMergeDataSource(DbKind.LEVEL_DB);
     }
 
     @Test
-    void mergeDataSourceRocksDbTest() throws IOException {
+    void mergeDataSourceRocksDbTest() {
         testMergeDataSource(DbKind.ROCKS_DB);
     }
 
@@ -72,6 +72,22 @@ class NotParameterizedKeyValueDataSourceTest {
         dbKindFile.delete();
         DbKind dbKindFallback = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
+    }
+
+    @Test
+    void generatedDbKindFileDbKindFileTest() throws IOException {
+        String dbPath = tempDir.toString();
+        File dbKindFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
+
+        KeyValueDataSource.generatedDbKindFile(DbKind.LEVEL_DB, dbPath);
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When LEVEL_DB is provided on generate, that should be the value when requested");
+
+        dbKindFile.delete();
+
+        KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+        DbKind dbKindRocks = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindRocks, "When ROCKS_DB is provided on generate, that should be the value when requested");
     }
 
     private void testMergeDataSource(DbKind dbKind) {
