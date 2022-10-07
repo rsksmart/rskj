@@ -75,7 +75,9 @@ public class TxPendingValidator {
         long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache);
 
         if (state == null && basicTxCost != 0) {
-            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
+            if (logger.isTraceEnabled()) {
+                logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
+            }
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 

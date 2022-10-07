@@ -2688,10 +2688,12 @@ public class BridgeSupport {
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value());
         }
 
-        if (!rskTx.getSender(signatureCache).equals(lbcAddress)) {
+        RskAddress sender = rskTx.getSender(signatureCache);
+
+        if (!sender.equals(lbcAddress)) {
             logger.debug(
                 "[registerFlyoverBtcTransaction] Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
-                rskTx.getSender(signatureCache),
+                sender,
                 lbcAddress
             );
             return BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value());

@@ -402,7 +402,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (this.txQuotaChecker == null) {
-            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis, getBlockTxSignatureCache());
+            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis, getReceivedTxSignatureCache());
         }
         return txQuotaChecker;
     }
