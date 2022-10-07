@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -47,6 +48,30 @@ class NotParameterizedKeyValueDataSourceTest {
     @Test
     void mergeDataSourceRocksDbTest() throws IOException {
         testMergeDataSource(DbKind.ROCKS_DB);
+    }
+
+    @Test
+    void getDbKindValueFromDbKindFileTest() throws IOException {
+        String dbPath = tempDir.toString(); // TODO:I check for usages of tempDir.getRoot(), we should not do it!
+        File dbKindFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
+        String propName = "keyvalue.datasource=";
+
+        BufferedWriter writer = new BufferedWriter(new FileWriter(dbKindFile));
+        writer.write(propName + DbKind.LEVEL_DB);
+        writer.close();
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind file is LEVEL_DB, calculated should too");
+
+        dbKindFile.delete();
+        writer = new BufferedWriter(new FileWriter(dbKindFile));
+        writer.write(propName + DbKind.ROCKS_DB);
+        writer.close();
+        DbKind dbKindRocks = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindRocks, "When DbKind file is ROCKS_DB, calculated should too");
+
+        dbKindFile.delete();
+        DbKind dbKindFallback = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindFallback, "When missing DbKind, LEVEL_DB should be returned as fallback");
     }
 
     private void testMergeDataSource(DbKind dbKind) {
