@@ -1,5 +1,6 @@
 package org.ethereum.datasource;
 
+import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -10,7 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.*;
@@ -122,6 +127,27 @@ class DataSourceWithCacheTest {
     }
 
     @Test
+    void putNull() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        Assertions.assertThrows(NullPointerException.class, () -> dataSourceWithCache.put(randomKey, null));
+    }
+
+    @Test
+    void putCachedValueReturnsCachedValue() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        ByteArrayWrapper wrappedKey = ByteUtil.wrap(randomKey);
+        byte[] randomValue = TestUtils.randomBytes(20);
+
+        Map<ByteArrayWrapper, byte[]> committedCache = spy(new HashMap<>());
+        committedCache.put(wrappedKey, randomValue);
+        TestUtils.setInternalState(dataSourceWithCache, "committedCache", committedCache);
+
+        Assertions.assertEquals(randomValue, dataSourceWithCache.put(randomKey, randomValue));
+        verify(committedCache, times(1)).get(wrappedKey);
+        verify(committedCache, never()).remove(any(ByteArrayWrapper.class));
+    }
+
+    @Test
     void putTwoKeyValuesWrittenInOrder() {
         InOrder order = inOrder(baseDataSource);
 
@@ -137,6 +163,45 @@ class DataSourceWithCacheTest {
 
         order.verify(baseDataSource).put(randomKey1, randomValue1);
         order.verify(baseDataSource).put(randomKey2, randomValue2);
+    }
+
+    @Test
+    void putLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSourceWithCache, "lock");
+        lock.writeLock().lock();
+
+        Map<ByteArrayWrapper, byte[]> committedCache = spy(new HashMap<>());
+        TestUtils.setInternalState(dataSourceWithCache, "committedCache", committedCache);
+
+        byte[] randomKey1 = TestUtils.randomBytes(20);
+        ByteArrayWrapper randomKeyWrapped = ByteUtil.wrap(randomKey1);
+        byte[] randomValue1 = TestUtils.randomBytes(20);
+        byte[] randomValueAfterLock = TestUtils.randomBytes(20);
+        committedCache.put(randomKeyWrapped, randomValue1); // to check how many times remove is called
+
+        AtomicBoolean threadStarted = new AtomicBoolean(false);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<?> future = executor.submit(new Thread(() -> {
+            threadStarted.set(true);
+            dataSourceWithCache.put(randomKey1, randomValueAfterLock);
+        }));
+
+        // wait for thread to be started and put a value during active lock for thread
+        Awaitility.await().timeout(Duration.ofSeconds(10)).until(threadStarted::get);
+        dataSourceWithCache.put(randomKey1, randomValue1);
+        verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
+        verify(committedCache, times(0)).remove(randomKeyWrapped); // not called, it was in committedCache
+
+        lock.writeLock().unlock();
+
+        try {
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+            Assertions.assertArrayEquals(dataSourceWithCache.get(randomKey1), randomValueAfterLock); // prevailing value should be the last one being put
+            verify(committedCache, times(2)).get(randomKeyWrapped); // called from thread now also
+            verify(committedCache, times(1)).remove(randomKeyWrapped); // called from thread after updating the value
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail("No threading exception should've happened");
+        }
     }
 
     @Test
