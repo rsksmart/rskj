@@ -98,6 +98,19 @@ public final class PendingFederation {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP353)) {
+            logger.info("[buildFederation] Going to create a P2SH ERP Federation");
+            return new ErpFederation(
+                members,
+                creationTime,
+                blockNumber,
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay(),
+                activations
+            );
+        }
+
         if (activations.isActive(ConsensusRule.RSKIP201)) {
             logger.info("[buildFederation] Going to create an ERP Federation");
             return new ErpFederation(
