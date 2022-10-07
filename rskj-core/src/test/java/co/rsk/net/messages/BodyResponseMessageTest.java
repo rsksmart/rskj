@@ -3,10 +3,7 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -18,6 +15,10 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 public class BodyResponseMessageTest {
+    private BodyResponseMessage createBodyResponseMessage(List<Transaction> transactions, List<BlockHeader> uncles, BlockHeaderExtension headerExtension) {
+        return new BodyResponseMessage(100, transactions, uncles, headerExtension);
+    }
+
     @Test
     public void createMessage() {
         List<Transaction> transactions = new ArrayList<>();
@@ -36,7 +37,7 @@ public class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = this.createBodyResponseMessage(transactions, uncles, null);
 
         Assert.assertEquals(100, message.getId());
 
@@ -54,6 +55,26 @@ public class BodyResponseMessageTest {
             Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
     }
 
+    @Test
+    public void createMessageWithExtension() {
+        List<Transaction> transactions = mock(ArrayList.class);
+        List<BlockHeader> uncles = mock(ArrayList.class);
+
+        byte version = 0x1;
+        byte[] logsBloom = new byte[]{ 1, 2, 3, 4 };
+
+        BlockHeader header = mock(BlockHeader.class);
+        when(header.getVersion()).thenReturn(version);
+        when(header.getLogsBloom()).thenReturn(logsBloom);
+        BlockHeaderExtension headerExtension = BlockHeaderExtension.fromHeader(header);
+
+        BodyResponseMessage message = this.createBodyResponseMessage(transactions, uncles, headerExtension);
+
+        BlockHeaderExtension messageHeaderExtension = message.getHeaderExtension();
+        Assert.assertEquals(version, messageHeaderExtension.getHeaderVersion());
+        Assert.assertArrayEquals(logsBloom, messageHeaderExtension.getLogsBloom());
+    }
+
     private static Transaction createTransaction(int number) {
         AccountBuilder acbuilder = new AccountBuilder();
         acbuilder.name("sender" + number);
@@ -68,8 +89,9 @@ public class BodyResponseMessageTest {
     public void accept() {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
+        BlockHeaderExtension blockHeaderExtension = mock(BlockHeaderExtension.class);
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = this.createBodyResponseMessage(transactions, uncles, blockHeaderExtension);
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 

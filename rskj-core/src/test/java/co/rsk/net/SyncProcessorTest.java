@@ -557,6 +557,10 @@ public class SyncProcessorTest {
         Assert.assertEquals(0, processor.getExpectedResponses().size());
     }
 
+    private BodyResponseMessage createBodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
+        return new BodyResponseMessage(id, transactions, uncles, null);
+    }
+
     @Test
     public void processBodyResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
@@ -576,7 +580,7 @@ public class SyncProcessorTest {
                 mock(Genesis.class),
                 mock(EthereumListener.class));
 
-        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
+        BodyResponseMessage response = createBodyResponseMessage(new Random().nextLong(), null, null);
         processor.registerExpectedMessage(response);
 
         processor.processBodyResponse(sender, response);
@@ -614,7 +618,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = createBodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -672,7 +676,7 @@ public class SyncProcessorTest {
         txs.add(tx);
 
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
+        BodyResponseMessage response = createBodyResponseMessage(lastRequestId, txs, uncles);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -729,7 +733,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = createBodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -820,7 +824,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = createBodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();

@@ -164,6 +164,11 @@ public class BlockHeader {
 
     public byte getVersion() { return version; }
 
+    public BlockHeaderExtension getExtension() {
+        if (this.version == 0x1) return BlockHeaderExtension.fromHeader(this);
+        return null;
+    }
+
     @VisibleForTesting
     public boolean isSealed() {
         return this.sealed;

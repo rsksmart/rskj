@@ -24,6 +24,7 @@ import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -335,6 +336,31 @@ public class BlockHeaderTest {
         this.testHeaderVersion((byte) 0x1);
     }
 
+    @Test
+    public void getHeaderExtensionVersion0() {
+        byte version = 0x0;
+        byte[] logsBloom = new byte[]{ 1, 2, 3, 4 };
+
+        BlockHeader header = createBlockHeaderWithVersionAndLogsBloom(version, logsBloom);
+
+        assertEquals(null, header.getExtension());
+        assertArrayEquals(logsBloom, header.getLogsBloom());
+    }
+
+    @Test
+    public void getHeaderExtensionVersion1() {
+        byte version = 0x1;
+        byte[] logsBloom = new byte[]{ 1, 2, 3, 4 };
+
+        BlockHeader header = createBlockHeaderWithVersionAndLogsBloom(version, logsBloom);
+        BlockHeaderExtension extension = header.getExtension();
+
+        assertEquals(version, extension.getHeaderVersion());
+        assertArrayEquals(logsBloom, header.getLogsBloom());
+        assertArrayEquals(logsBloom, extension.getLogsBloom());
+    }
+
+
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot) {
@@ -377,6 +403,13 @@ public class BlockHeaderTest {
     private BlockHeader createBlockHeaderWithVersion(byte version) {
         return createBlockHeader(version, new byte[80], new byte[32], new byte[128],
                 new byte[0], false, null, false, false);
+    }
+
+    private BlockHeader createBlockHeaderWithVersionAndLogsBloom(byte version, byte[] logsBloom) {
+        BlockHeader header = createBlockHeader(version, new byte[80], new byte[32], new byte[128],
+                new byte[0], false, null, false, false);
+        header.setLogsBloom(logsBloom);
+        return header;
     }
 
     private BlockHeader createBlockHeader(byte version,

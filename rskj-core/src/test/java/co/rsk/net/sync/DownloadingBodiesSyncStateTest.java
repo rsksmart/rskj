@@ -28,6 +28,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -66,6 +67,10 @@ public class DownloadingBodiesSyncStateTest {
         when(peer.getAddress()).thenReturn(InetAddress.getByName("127.0.0.1"));
     }
 
+    private BodyResponseMessage createBodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
+        return new BodyResponseMessage(id, transactions, uncles, null);
+    }
+
     @Test
     public void newBodyWhenUnexpectedMessageLogEvent() {
         DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
@@ -85,7 +90,7 @@ public class DownloadingBodiesSyncStateTest {
         pendingBodyResponses.put(messageId, pendingBodyResponse);
         TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
-        BodyResponseMessage message = new BodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList());
+        BodyResponseMessage message = this.createBodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
@@ -111,7 +116,7 @@ public class DownloadingBodiesSyncStateTest {
         pendingBodyResponses.put(messageId, pendingBodyResponse);
         TestUtils.setInternalState(state, "pendingBodyResponses", pendingBodyResponses);
 
-        BodyResponseMessage message = new BodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList());
+        BodyResponseMessage message = this.createBodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,

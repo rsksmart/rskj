@@ -161,6 +161,10 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         verify(syncEventsHandler).stopSyncing();
     }
 
+    private BodyResponseMessage createBodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
+        return new BodyResponseMessage(id, transactions, uncles, null);
+    }
+
     @Test
     public void connectingUntilGenesis() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
@@ -181,7 +185,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
+            BodyResponseMessage response = this.createBodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
 
             Block block = mock(Block.class);
@@ -247,7 +251,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             toRequest.addFirst(headerToRequest);
             when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
+            BodyResponseMessage response = this.createBodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
 
             Block block = mock(Block.class);

@@ -457,13 +457,7 @@ public class MessageTest {
         Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
-    @Test
-    public void encodeDecodeBodyResponseMessage() {
-        List<Transaction> transactions = new ArrayList<>();
-
-        for (int k = 1; k <= 10; k++)
-            transactions.add(createTransaction(k));
-
+    private List<BlockHeader> createUncles() {
         List<BlockHeader> uncles = new ArrayList<>();
 
         BlockGenerator blockGenerator = this.blockGenerator;
@@ -474,8 +468,22 @@ public class MessageTest {
             uncles.add(block.getHeader());
             parent = block;
         }
+        return uncles;
+    }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+    private List<Transaction> createTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (int k = 1; k <= 10; k++)
+            transactions.add(createTransaction(k));
+        return transactions;
+    }
+
+    @Test
+    public void encodeDecodeBodyResponseMessage() {
+        List<Transaction> transactions = createTransactions();
+        List<BlockHeader> uncles = createUncles();
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         byte[] encoded = message.getEncoded();
 
@@ -501,6 +509,22 @@ public class MessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+    }
+
+    @Test
+    public void encodeDecodeBodyResponseMessageWithExtension() {
+        List<Transaction> transactions = createTransactions();
+        List<BlockHeader> uncles = createUncles();
+        byte[] logsBloom = new Bloom().getData();
+        BlockHeaderExtension headerExtension = new BlockHeaderBuilder(ActivationConfigsForTest.all())
+                .setLogsBloom(logsBloom).build().getExtension();
+
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, headerExtension);
+
+        BlockHeaderExtension extension = ((BodyResponseMessage) Message.create(blockFactory, message.getEncoded())).getHeaderExtension();
+
+        Assert.assertEquals(1, extension.getHeaderVersion());
+        Assert.assertArrayEquals(logsBloom, extension.getLogsBloom());
     }
 
     private static Transaction createTransaction(int number) {

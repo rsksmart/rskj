@@ -28,6 +28,7 @@ import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
@@ -232,7 +233,11 @@ public enum MessageType {
                 uncles.add(blockFactory.decodeHeader(element.getRLPData()));
             }
 
-            return new BodyResponseMessage(id, transactions, uncles);
+            BlockHeaderExtension headerExtension = message.size() == 3
+                ? BlockHeaderExtension.fromEncoded(message.get(2).getRLPData())
+                : null;
+
+            return new BodyResponseMessage(id, transactions, uncles, headerExtension);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {
