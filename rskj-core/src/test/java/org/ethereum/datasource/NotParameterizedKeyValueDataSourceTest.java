@@ -8,7 +8,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 
 class NotParameterizedKeyValueDataSourceTest {
@@ -41,12 +43,12 @@ class NotParameterizedKeyValueDataSourceTest {
     }
 
     @Test
-    void mergeDataSourceLevelDbTest() {
+    void mergeDataSourceLevelDb() {
         testMergeDataSource(DbKind.LEVEL_DB);
     }
 
     @Test
-    void mergeDataSourceRocksDbTest() {
+    void mergeDataSourceRocksDb() {
         testMergeDataSource(DbKind.ROCKS_DB);
     }
 
@@ -75,7 +77,7 @@ class NotParameterizedKeyValueDataSourceTest {
     }
 
     @Test
-    void generatedDbKindFileDbKindFileTest() throws IOException {
+    void generatedDbKindFileDbKindFileTest() {
         String dbPath = tempDir.toString();
         File dbKindFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
 
@@ -88,6 +90,60 @@ class NotParameterizedKeyValueDataSourceTest {
         KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
         DbKind dbKindRocks = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindRocks, "When ROCKS_DB is provided on generate, that should be the value when requested");
+    }
+
+    @Test
+    void validateDbKindNoFolder() throws IOException {
+        String dbPathNoDir = Files.createFile(Paths.get(tempDir.toString(), "no_file")).toAbsolutePath().toString();
+        Assertions.assertThrows(IllegalStateException.class, () -> KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, dbPathNoDir, false));
+    }
+
+    @Test
+    void validateDbKindMissingFolder() {
+        String dbPath = tempDir.toString();
+        KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When DbKind file is missing validation should create it with the provided value");
+    }
+
+    @Test
+    void validateDbKindExistingFolderDifferentDbWithoutResetThrows() {
+        String dbPath = tempDir.toString();
+        KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+
+        try {
+            KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, dbPath, false);
+            Assertions.fail("Should've thrown exception due to already existing dbKind file without reset flag");
+        } catch (RuntimeException re) {
+            Assertions.assertTrue(re.getMessage().startsWith("DbKind mismatch. You have selected"));
+        }
+    }
+
+    @Test
+    void validateDbKindExistingFolderDifferentDbWithResetGeneratesNewFileThrows() {
+        String dbPath = tempDir.toString();
+        KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+        KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, dbPath, true);
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind changes and reset flag is specified on validation, new DbKind file should be generated");
+    }
+
+    @Test
+    void validateDbKindExistingFolderSameDbWithoutResetDoesNothing() {
+        String dbPath = tempDir.toString();
+        KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+        KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB without reset specified on validation, nothing changes on DbKind file");
+    }
+
+    @Test
+    void validateDbKindExistingFolderSameDbWithResetDoesNothing() {
+        String dbPath = tempDir.toString();
+        KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+        KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, dbPath, true);
+        DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
+        Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When same DB and reset specified on validation, nothing changes on DbKind file");
     }
 
     private void testMergeDataSource(DbKind dbKind) {
