@@ -334,6 +334,28 @@ public class BridgeSerializationUtils {
         );
     }
 
+    public static P2shErpFederation deserializeP2shErpFederation(
+        byte[] data,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
+    ) {
+        Federation federation = deserializeFederationWithDeserializer(
+            data,
+            bridgeConstants.getBtcParams(),
+            BridgeSerializationUtils::deserializeFederationMember
+        );
+
+        return new P2shErpFederation(
+            federation.getMembers(),
+            federation.creationTime,
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            activations
+        );
+    }
+
     /**
      * A FederationMember is serialized as a list in the following order:
      * - BTC public key

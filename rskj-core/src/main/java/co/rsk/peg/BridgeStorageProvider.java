@@ -42,7 +42,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.remasc.RemascStorageProvider
+ * @see co.rsk.peg.BridgeStorageProvider
  * @author ajlopez
  * @author Oscar Guindzberg
  */
@@ -77,8 +77,9 @@ public class BridgeStorageProvider {
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
     private static final DataWord OLD_FEDERATION_FORMAT_VERSION = DataWord.fromString("oldFederationFormatVersion");
     private static final DataWord PENDING_FEDERATION_FORMAT_VERSION = DataWord.fromString("pendingFederationFormatVersion");
-    private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
-    private static final Integer ERP_FEDERATION_FORMAT_VERSION = 2000;
+    private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
+    private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
+    private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
     private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
@@ -389,7 +390,12 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
+            if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
+                saveStorageVersion(
+                    NEW_FEDERATION_FORMAT_VERSION,
+                    P2SH_ERP_FEDERATION_FORMAT_VERSION
+                );
+            } else if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
                 saveStorageVersion(
                     NEW_FEDERATION_FORMAT_VERSION,
                     ERP_FEDERATION_FORMAT_VERSION
@@ -1044,19 +1050,26 @@ public class BridgeStorageProvider {
 
     private Federation deserializeFederationAccordingToVersion(
         byte[] data,
-        Integer version,
+        int version,
         BridgeConstants bridgeConstants
     ) {
-        if (version.equals(ERP_FEDERATION_FORMAT_VERSION)) {
-            return BridgeSerializationUtils.deserializeErpFederation(
-                data,
-                bridgeConstants,
-                activations
-            );
+        switch (version) {
+            case ERP_FEDERATION_FORMAT_VERSION:
+                return BridgeSerializationUtils.deserializeErpFederation(
+                    data,
+                    bridgeConstants,
+                    activations
+                );
+            case P2SH_ERP_FEDERATION_FORMAT_VERSION:
+                return BridgeSerializationUtils.deserializeP2shErpFederation(
+                    data,
+                    bridgeConstants,
+                    activations
+                );
+            default:
+                // Assume this is the multi-key version
+                return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
         }
-
-        // Assume this is the multi-key version
-        return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
