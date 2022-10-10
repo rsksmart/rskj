@@ -336,6 +336,87 @@ class DataSourceWithCacheTest {
         verify(cacheSnapshotHandler, atLeastOnce()).save(anyMap());
     }
 
+    @Test
+    public void flush() {
+        byte[] baseKey1 = TestUtils.randomBytes(20);
+        ByteArrayWrapper baseKeyWrapped = ByteUtil.wrap(baseKey1);
+        byte[] baseValue1 = TestUtils.randomBytes(20);
+        baseDataSource.put(baseKey1, baseValue1);
+        dataSourceWithCache.get(baseKey1); // this should put baseKey1 into committedCache
+
+        byte[] baseKeyToDelete = TestUtils.randomBytes(20);
+        ByteArrayWrapper baseKeyToDeleteWrapped = ByteUtil.wrap(baseKeyToDelete);
+        byte[] baseValueToDelete = TestUtils.randomBytes(20);
+        baseDataSource.put(baseKeyToDelete, baseValueToDelete);
+        dataSourceWithCache.get(baseKeyToDelete); // this should put the key in committedCache
+        dataSourceWithCache.delete(baseKeyToDelete); // this should remove the key from committedCache
+
+        byte[] newKey = TestUtils.randomBytes(20);
+        ByteArrayWrapper newKeyWrapped = ByteUtil.wrap(newKey);
+        byte[] newValue = TestUtils.randomBytes(20);
+        dataSourceWithCache.put(newKey, newValue); // this should add the key to uncommittedCache
+
+        byte[] newKeyToDelete = TestUtils.randomBytes(20);
+        ByteArrayWrapper newKeyToDeleteWrapped = ByteUtil.wrap(newKeyToDelete);
+        byte[] newValueToDelete = TestUtils.randomBytes(20);
+        dataSourceWithCache.put(newKeyToDelete, newValueToDelete); // this should add the key to uncommittedCache
+        dataSourceWithCache.delete(newKeyToDelete); // this should mark the key for deletion
+
+        Map<ByteArrayWrapper, byte[]> uncommittedCache = TestUtils.getInternalState(dataSourceWithCache, "uncommittedCache");
+        Assert.assertEquals(3, uncommittedCache.size());
+
+        dataSourceWithCache.flush();
+
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch = Collections.singletonMap(newKeyWrapped, newValue);
+        Set<ByteArrayWrapper> uncommittedKeysToRemove = new HashSet<>(Arrays.asList(newKeyToDeleteWrapped, baseKeyToDeleteWrapped));
+
+        verify(baseDataSource, times(1)).updateBatch(uncommittedBatch, uncommittedKeysToRemove);
+
+        Map<ByteArrayWrapper, byte[]> committedCache = TestUtils.getInternalState(dataSourceWithCache, "committedCache");
+        Assert.assertEquals(committedCache.get(baseKeyWrapped), baseValue1);
+        Assert.assertEquals(committedCache.get(newKeyWrapped), newValue);
+        Assert.assertNull(committedCache.get(newKeyToDeleteWrapped));
+        Assert.assertNull(committedCache.get(baseKeyToDeleteWrapped));
+        Assert.assertEquals(4, committedCache.size());
+
+        uncommittedCache = TestUtils.getInternalState(dataSourceWithCache, "uncommittedCache");
+        Assert.assertTrue(uncommittedCache.isEmpty());
+
+        Assert.assertEquals(baseDataSource.get(baseKey1), baseValue1);
+        Assert.assertEquals(baseDataSource.get(newKey), newValue);
+        Assert.assertNull(baseDataSource.get(baseKeyToDelete));
+        Assert.assertNull(baseDataSource.get(newKeyToDelete));
+    }
+
+    @Test
+    public void flushLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSourceWithCache, "lock");
+        lock.writeLock().lock();
+
+        AtomicBoolean threadStarted = new AtomicBoolean(false);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<?> future = executor.submit(new Thread(() -> {
+            threadStarted.set(true);
+            dataSourceWithCache.flush();
+        }));
+
+        // wait for thread to be started and flush during active lock for thread
+        Awaitility.await().timeout(Duration.ofSeconds(10)).until(threadStarted::get);
+        verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
+
+        dataSourceWithCache.flush();
+        verify(baseDataSource, times(1)).updateBatch(any(), any()); // thread with the lock succeeds instantly
+
+        lock.writeLock().unlock();
+
+        try {
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+            verify(baseDataSource, times(2)).updateBatch(any(), any()); // thread without the lock finally gets it
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assert.fail("No threading exception should've happened");
+        }
+    }
+
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
         Map<ByteArrayWrapper, byte[]> updatedValues = new HashMap<>();
         for (int i = 0; i < maxValuesToCreate; i++) {
