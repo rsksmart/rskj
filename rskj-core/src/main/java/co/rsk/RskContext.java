@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -415,6 +414,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return receivedTxSignatureCache;
+    }
+
+    public BlockTxSignatureCache getBlockTxSignatureCache() {
+        checkIfNotClosed();
+
+        if (blockTxSignatureCache == null) {
+            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
+        }
+
+        return blockTxSignatureCache;
     }
 
     public synchronized RepositoryLocator getRepositoryLocator() {
@@ -1445,14 +1454,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private void initializeNativeLibs() {
         Secp256k1.initialize(getRskSystemProperties());
         AbstractAltBN128.init();
-    }
-
-    private BlockTxSignatureCache getBlockTxSignatureCache() {
-        if (blockTxSignatureCache == null) {
-            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
-        }
-
-        return blockTxSignatureCache;
     }
 
     private KeyValueDataSource getBlocksBloomDataSource() {
