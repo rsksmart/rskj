@@ -23,7 +23,6 @@ import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +52,7 @@ class LevelDbDataSourceTest {
     private LevelDbDataSource dataSource;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         dataSource = new LevelDbDataSource("test", databaseDir.toString());
         dataSource.init();
     }
@@ -89,6 +88,57 @@ class LevelDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
+    }
+
+    @Test
+    void putNullKey() {
+        byte[] value = randomBytes(32);
+        Assertions.assertThrows(NullPointerException.class, () -> dataSource.put(null, value));
+    }
+
+    @Test
+    void putNullValue() {
+        byte[] key = randomBytes(32);
+        Assertions.assertThrows(NullPointerException.class, () -> dataSource.put(key, null));
+    }
+
+    @Test
+    void putLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock();
+        boolean unlocked = false;
+
+        try {
+            byte[] key = randomBytes(32);
+            byte[] initialValue = randomBytes(32);
+            byte[] updatedValue = randomBytes(32);
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                dataSource.put(key, updatedValue);
+            }));
+
+            // wait for thread to be started and put a new value on thread holding the write lock
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertNull(dataSource.get(key)); // thread put should have not been executed during lock
+            dataSource.put(key, initialValue);
+            Assertions.assertArrayEquals(initialValue, dataSource.get(key)); // thread put should have not been executed during write lock
+
+            lock.writeLock().unlock();
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+            Assertions.assertArrayEquals(updatedValue, dataSource.get(key)); // thread put should prevail as last one being run
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.writeLock().unlock();
+            }
+        }
     }
 
     @Test
