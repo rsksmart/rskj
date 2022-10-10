@@ -187,7 +187,7 @@ class DataSourceWithCacheTest {
         }));
 
         // wait for thread to be started and put a value during active lock for thread
-        Awaitility.await().timeout(Duration.ofSeconds(10)).until(threadStarted::get);
+        Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
         dataSourceWithCache.put(randomKey1, randomValue1);
         verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
         verify(committedCache, times(0)).remove(randomKeyWrapped); // not called, it was in committedCache
@@ -363,7 +363,7 @@ class DataSourceWithCacheTest {
         dataSourceWithCache.delete(newKeyToDelete); // this should mark the key for deletion
 
         Map<ByteArrayWrapper, byte[]> uncommittedCache = TestUtils.getInternalState(dataSourceWithCache, "uncommittedCache");
-        Assert.assertEquals(3, uncommittedCache.size());
+        Assertions.assertEquals(3, uncommittedCache.size());
 
         dataSourceWithCache.flush();
 
@@ -373,19 +373,19 @@ class DataSourceWithCacheTest {
         verify(baseDataSource, times(1)).updateBatch(uncommittedBatch, uncommittedKeysToRemove);
 
         Map<ByteArrayWrapper, byte[]> committedCache = TestUtils.getInternalState(dataSourceWithCache, "committedCache");
-        Assert.assertEquals(committedCache.get(baseKeyWrapped), baseValue1);
-        Assert.assertEquals(committedCache.get(newKeyWrapped), newValue);
-        Assert.assertNull(committedCache.get(newKeyToDeleteWrapped));
-        Assert.assertNull(committedCache.get(baseKeyToDeleteWrapped));
-        Assert.assertEquals(4, committedCache.size());
+        Assertions.assertEquals(committedCache.get(baseKeyWrapped), baseValue1);
+        Assertions.assertEquals(committedCache.get(newKeyWrapped), newValue);
+        Assertions.assertNull(committedCache.get(newKeyToDeleteWrapped));
+        Assertions.assertNull(committedCache.get(baseKeyToDeleteWrapped));
+        Assertions.assertEquals(4, committedCache.size());
 
         uncommittedCache = TestUtils.getInternalState(dataSourceWithCache, "uncommittedCache");
-        Assert.assertTrue(uncommittedCache.isEmpty());
+        Assertions.assertTrue(uncommittedCache.isEmpty());
 
-        Assert.assertEquals(baseDataSource.get(baseKey1), baseValue1);
-        Assert.assertEquals(baseDataSource.get(newKey), newValue);
-        Assert.assertNull(baseDataSource.get(baseKeyToDelete));
-        Assert.assertNull(baseDataSource.get(newKeyToDelete));
+        Assertions.assertEquals(baseDataSource.get(baseKey1), baseValue1);
+        Assertions.assertEquals(baseDataSource.get(newKey), newValue);
+        Assertions.assertNull(baseDataSource.get(baseKeyToDelete));
+        Assertions.assertNull(baseDataSource.get(newKeyToDelete));
     }
 
     @Test
@@ -401,7 +401,7 @@ class DataSourceWithCacheTest {
         }));
 
         // wait for thread to be started and flush during active lock for thread
-        Awaitility.await().timeout(Duration.ofSeconds(10)).until(threadStarted::get);
+        Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
         verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
 
         dataSourceWithCache.flush();
@@ -413,7 +413,7 @@ class DataSourceWithCacheTest {
             future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
             verify(baseDataSource, times(2)).updateBatch(any(), any()); // thread without the lock finally gets it
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            Assert.fail("No threading exception should've happened");
+            Assertions.fail("No threading exception should've happened");
         }
     }
 
