@@ -169,38 +169,44 @@ class DataSourceWithCacheTest {
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSourceWithCache, "lock");
         lock.writeLock().lock();
-
-        Map<ByteArrayWrapper, byte[]> committedCache = spy(new HashMap<>());
-        TestUtils.setInternalState(dataSourceWithCache, "committedCache", committedCache);
-
-        byte[] randomKey1 = TestUtils.randomBytes(20);
-        ByteArrayWrapper randomKeyWrapped = ByteUtil.wrap(randomKey1);
-        byte[] randomValue1 = TestUtils.randomBytes(20);
-        byte[] randomValueAfterLock = TestUtils.randomBytes(20);
-        committedCache.put(randomKeyWrapped, randomValue1); // to check how many times remove is called
-
-        AtomicBoolean threadStarted = new AtomicBoolean(false);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(new Thread(() -> {
-            threadStarted.set(true);
-            dataSourceWithCache.put(randomKey1, randomValueAfterLock);
-        }));
-
-        // wait for thread to be started and put a value during active lock for thread
-        Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
-        dataSourceWithCache.put(randomKey1, randomValue1);
-        verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
-        verify(committedCache, times(0)).remove(randomKeyWrapped); // not called, it was in committedCache
-
-        lock.writeLock().unlock();
+        boolean unlocked = false;
 
         try {
+            Map<ByteArrayWrapper, byte[]> committedCache = spy(new HashMap<>());
+            TestUtils.setInternalState(dataSourceWithCache, "committedCache", committedCache);
+
+            byte[] randomKey1 = TestUtils.randomBytes(20);
+            ByteArrayWrapper randomKeyWrapped = ByteUtil.wrap(randomKey1);
+            byte[] randomValue1 = TestUtils.randomBytes(20);
+            byte[] randomValueAfterLock = TestUtils.randomBytes(20);
+            committedCache.put(randomKeyWrapped, randomValue1); // to check how many times remove is called
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                dataSourceWithCache.put(randomKey1, randomValueAfterLock);
+            }));
+
+            // wait for thread to be started and put a value during active lock for thread
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            dataSourceWithCache.put(randomKey1, randomValue1);
+            verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
+            verify(committedCache, times(0)).remove(randomKeyWrapped); // not called, it was in committedCache
+
+            lock.writeLock().unlock();
+            unlocked = true;
+
             future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
             Assertions.assertArrayEquals(dataSourceWithCache.get(randomKey1), randomValueAfterLock); // prevailing value should be the last one being put
             verify(committedCache, times(2)).get(randomKeyWrapped); // called from thread now also
             verify(committedCache, times(1)).remove(randomKeyWrapped); // called from thread after updating the value
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            Assertions.fail("No threading exception should've happened");
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
+            }
         }
     }
 
@@ -392,28 +398,34 @@ class DataSourceWithCacheTest {
     public void flushLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSourceWithCache, "lock");
         lock.writeLock().lock();
-
-        AtomicBoolean threadStarted = new AtomicBoolean(false);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(new Thread(() -> {
-            threadStarted.set(true);
-            dataSourceWithCache.flush();
-        }));
-
-        // wait for thread to be started and flush during active lock for thread
-        Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
-        verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
-
-        dataSourceWithCache.flush();
-        verify(baseDataSource, times(1)).updateBatch(any(), any()); // thread with the lock succeeds instantly
-
-        lock.writeLock().unlock();
+        boolean unlocked = false;
 
         try {
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                dataSourceWithCache.flush();
+            }));
+
+            // wait for thread to be started and flush during active lock for thread
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
+
+            dataSourceWithCache.flush();
+            verify(baseDataSource, times(1)).updateBatch(any(), any()); // thread with the lock succeeds instantly
+
+            lock.writeLock().unlock();
+            unlocked = true;
+
             future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
             verify(baseDataSource, times(2)).updateBatch(any(), any()); // thread without the lock finally gets it
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            Assertions.fail("No threading exception should've happened");
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
+            }
         }
     }
 

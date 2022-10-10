@@ -43,6 +43,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.ethereum.TestUtils.randomBytes;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 
 class LevelDbDataSourceTest {
 
@@ -52,18 +53,18 @@ class LevelDbDataSourceTest {
     private LevelDbDataSource dataSource;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         dataSource = new LevelDbDataSource("test", databaseDir.toString());
         dataSource.init();
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         dataSource.close();
     }
 
     @Test
-    public void testBatchUpdating() {
+    void testBatchUpdating() {
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
 
@@ -82,7 +83,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void testPutting() {
+    void testPutting() {
         byte[] key = randomBytes(32);
         dataSource.put(key, randomBytes(32));
 
@@ -91,7 +92,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void getAfterMiss() {
+    void getAfterMiss() {
         byte[] key = randomBytes(32);
         Assertions.assertNull(dataSource.get(key));
 
@@ -104,7 +105,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void getAfterUpdate() {
+    void getAfterUpdate() {
         byte[] key = randomBytes(32);
         byte[] value = randomBytes(32);
 
@@ -120,7 +121,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void getAfterDelete() {
+    void getAfterDelete() {
         byte[] key = randomBytes(32);
         byte[] value = randomBytes(32);
 
@@ -135,7 +136,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void getWithException() {
+    void getWithException() {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
@@ -148,35 +149,39 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void getLockWorks() {
+    void getLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock();
-
-        byte[] key = TestUtils.randomBytes(20);
-        byte[] value = TestUtils.randomBytes(20);
-
-        AtomicBoolean threadStarted = new AtomicBoolean(false);
-
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(new Thread(() -> {
-            threadStarted.set(true);
-            byte[] readValue = dataSource.get(key); // should be locked
-            Assertions.assertArrayEquals(value, readValue); // should read value put during lock
-        }));
-
-        // wait for thread to be started and put a value during active lock for thread
-        Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, CoreMatchers.equalTo(true));
-        dataSource.put(key, value); // put value during thread lock
-
-        lock.writeLock().unlock(); // release the lock
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        boolean unlocked = false;
 
         try {
+            byte[] key = TestUtils.randomBytes(20);
+            byte[] value = TestUtils.randomBytes(20); // TODO:I use generateBytes for all random usages in my changes
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                byte[] readValue = dataSource.get(key); // should be locked
+                Assertions.assertArrayEquals(value, readValue); // should read value put during lock
+            }));
+
+            // wait for thread to be started and put a value while thread is locked
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            dataSource.put(key, value); // put value during write lock
+            lock.writeLock().unlock(); // release write lock, so future can start read
+            unlocked = true;
+
             future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            Assertions.fail("No threading exception should've happened");
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
+            }
         }
     }
-
 
     private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {
         HashMap<ByteArrayWrapper, byte[]> result = new HashMap<>();
