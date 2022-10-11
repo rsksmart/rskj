@@ -37,7 +37,7 @@ import java.util.concurrent.Callable;
  * This is an experimental/unsupported tool
  */
 @CommandLine.Command(name = "indexblooms", mixinStandardHelpOptions = true, version = "indexblooms 1.0",
-        description = "The entry point for indexing block blooms")
+        description = "Indexes blooms for a specific block range")
 public class IndexBlooms implements Callable<Integer> {
 
     @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
