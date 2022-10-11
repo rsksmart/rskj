@@ -231,6 +231,9 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         }
     }
 
+
+    //    public void connectingUntilGenesisWithHeaderExtensions()
+
     @Test
     public void connecting_notGenesis() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
@@ -294,6 +297,8 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             verify(blockStore).saveBlock(eq(block), eq(expectedDifficulty), eq(true));
         }
     }
+
+    //     public void connecting_notGenesisWithHeaderExtensions()
 
     @Test
     public void newBodyWhenNoHeaderReportEvent() {

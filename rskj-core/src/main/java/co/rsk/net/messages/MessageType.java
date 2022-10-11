@@ -28,7 +28,6 @@ import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;

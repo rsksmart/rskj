@@ -5,8 +5,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
-
-import java.util.Arrays;
 import java.util.List;
 
 /**

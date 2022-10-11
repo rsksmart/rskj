@@ -640,6 +640,8 @@ public class SyncProcessorTest {
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
+    // public void processBodyResponseWithExtensionAddsToBlockchain()
+
     @Test
     public void doesntProcessInvalidBodyResponse() {
         final NetBlockStore store = new NetBlockStore();
@@ -699,6 +701,8 @@ public class SyncProcessorTest {
         // if an unexpected body arrives then stops syncing
         Assert.assertFalse(processor.isSyncing());
     }
+
+    // public void doesntProcessInvalidHeaderExtension() {
 
     @Test
     public void doesntProcessUnexpectedBodyResponse() {
@@ -845,6 +849,8 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
+
+    // public void processBodyResponseWithHeaderExtensionAddsToBlockchain()
 
     @Test
     public void processBlockResponseAddsToBlockchain() {
