@@ -46,7 +46,19 @@ import java.util.Optional;
 @CommandLine.Command(name = "rewindblocks", mixinStandardHelpOptions = true, version = "rewindblocks 1.0",
         description = "The entry point for rewind blocks state CLI tool")
 public class RewindBlocks extends PicoCliToolRskContextAware {
-    @CommandLine.Option(names = {"-b", "--block"}, description = "block number or \"fmi\"/\"rbc\" options (\"find min inconsistent block\" / \"rewind to best consistent block\" respectively)", required = true)
+    static class RewindOpts {
+        @CommandLine.Option(names = {"-b", "--block"}, description = "block number to rewind blocks to", required = true)
+        Long blockNum;
+
+        @CommandLine.Option(names = {"-fmi", "--findMinInconsistentBlock"}, description = "flag to find a min inconsistent block", required = true)
+        Boolean findMinInconsistentBlock = false;
+
+        @CommandLine.Option(names = {"-rbc", "--rewindToBestConsistentBlock"}, description = "flag to rewind to a best consistent block", required = true)
+        Boolean rewindToBestConsistentBlock = false;
+    }
+
+    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    private RewindOpts opts;
     private String blockNumOrOp;
 
     public static void main(String[] args) {
