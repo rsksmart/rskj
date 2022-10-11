@@ -188,7 +188,7 @@ class DataSourceWithCacheTest {
                 dataSourceWithCache.put(randomKey1, randomValueAfterLock);
             }));
 
-            // wait for thread to be started and put a value during active lock for thread
+            // wait for thread to be started and put a value while thread is locked
             Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             dataSourceWithCache.put(randomKey1, randomValue1);
             verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
@@ -408,7 +408,7 @@ class DataSourceWithCacheTest {
                 dataSourceWithCache.flush();
             }));
 
-            // wait for thread to be started and flush during active lock for thread
+            // wait for thread to be started and flush while thread is locked
             Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
 

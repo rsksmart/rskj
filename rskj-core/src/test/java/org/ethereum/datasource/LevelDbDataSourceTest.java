@@ -49,7 +49,6 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
 class LevelDbDataSourceTest {
-
     @TempDir
     public Path databaseDir;
 
@@ -64,59 +63,6 @@ class LevelDbDataSourceTest {
     @AfterEach
     void tearDown() {
         dataSource.close();
-    }
-
-    @Test
-    void updateBatch() {
-        final int batchSize = 100;
-        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-
-        byte[] keyToDelete1 = randomBytes(32);
-        byte[] keyToDelete2 = randomBytes(32);
-        dataSource.put(keyToDelete1, randomBytes(32));
-        assertNotNull(dataSource.get(keyToDelete1));
-        dataSource.put(keyToDelete2, randomBytes(32));
-        assertNotNull(dataSource.get(keyToDelete2));
-
-        Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
-        dataSource.updateBatch(batch, deleteKeys);
-
-        assertEquals(batchSize, dataSource.keys().size());
-        assertNull(dataSource.get(keyToDelete1));
-        assertNull(dataSource.get(keyToDelete2));
-
-        try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
-            assertTrue(iterator.hasNext());
-            assertNotNull(iterator.next());
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
-    void updateBatchNullKey() {
-        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
-            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
-        }
-        batch.put(null, randomBytes(32));
-
-        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
-        IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
-        Assertions.assertEquals("Cannot update null values", iae.getMessage());
-    }
-
-    @Test
-    void updateBatchNullValue() {
-        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
-            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
-        }
-        batch.put(ByteUtil.wrap(randomBytes(32)), null);
-
-        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
-        IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
-        Assertions.assertEquals("Cannot update null values", iae.getMessage());
     }
 
     @Test
@@ -163,27 +109,6 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void put() {
-        byte[] key = randomBytes(32);
-        dataSource.put(key, randomBytes(32));
-
-        assertNotNull(dataSource.get(key));
-        assertEquals(1, dataSource.keys().size());
-    }
-
-    @Test
-    void putNullKey() {
-        byte[] value = randomBytes(32);
-        Assertions.assertThrows(NullPointerException.class, () -> dataSource.put(null, value));
-    }
-
-    @Test
-    void putNullValue() {
-        byte[] key = randomBytes(32);
-        Assertions.assertThrows(NullPointerException.class, () -> dataSource.put(key, null));
-    }
-
-    @Test
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
         lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
@@ -220,50 +145,6 @@ class LevelDbDataSourceTest {
                 lock.writeLock().unlock();
             }
         }
-    }
-
-    @Test
-    void getAfterMiss() {
-        byte[] key = randomBytes(32);
-        Assertions.assertNull(dataSource.get(key));
-
-        byte[] value = randomBytes(32);
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        dataSource.flush();
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-    }
-
-    @Test
-    void getAfterUpdate() {
-        byte[] key = randomBytes(32);
-        byte[] value = randomBytes(32);
-
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        byte[] newValue = randomBytes(32);
-        dataSource.put(key, newValue);
-        Assertions.assertArrayEquals(dataSource.get(key), newValue);
-
-        dataSource.flush();
-        Assertions.assertArrayEquals(dataSource.get(key), newValue);
-    }
-
-    @Test
-    void getAfterDelete() {
-        byte[] key = randomBytes(32);
-        byte[] value = randomBytes(32);
-
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        dataSource.delete(key);
-        Assertions.assertNull(dataSource.get(key));
-
-        dataSource.flush();
-        Assertions.assertNull(dataSource.get(key));
     }
 
     @Test
@@ -315,20 +196,6 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void delete() {
-        byte[] key1 = TestUtils.randomBytes(20);
-        byte[] value1 = TestUtils.randomBytes(20);
-        byte[] key2 = TestUtils.randomBytes(20);
-        byte[] value2 = TestUtils.randomBytes(20);
-        dataSource.put(key1, value1);
-        dataSource.put(key2, value2);
-
-        dataSource.delete(key2);
-        Assertions.assertNull(dataSource.get(key2));
-        Assertions.assertNotNull(dataSource.get(key1));
-    }
-
-    @Test
     void deleteLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
         lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
@@ -367,24 +234,6 @@ class LevelDbDataSourceTest {
                 lock.writeLock().unlock();
             }
         }
-    }
-
-    @Test
-    void keys() {
-        Assertions.assertTrue(dataSource.keys().isEmpty());
-
-        byte[] key1 = TestUtils.randomBytes(20);
-        byte[] value1 = TestUtils.randomBytes(20);
-        byte[] key2 = TestUtils.randomBytes(20);
-        byte[] value2 = TestUtils.randomBytes(20);
-
-        dataSource.put(key1, value1);
-        dataSource.put(key2, value2);
-
-        Set<ByteArrayWrapper> expectedKeys = new HashSet<>();
-        expectedKeys.add(ByteUtil.wrap(key1));
-        expectedKeys.add(ByteUtil.wrap(key2));
-        Assertions.assertEquals(expectedKeys, dataSource.keys());
     }
 
     @Test
@@ -429,7 +278,7 @@ class LevelDbDataSourceTest {
                 Assertions.assertEquals(expectedKeysOnThread, dataSource.keys());
             }));
 
-            // wait for thread to be started and put a value during active lock for thread
+            // wait for thread to be started and put a value while thread is locked
             Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             Assertions.assertEquals(expectedKeysBeforeThread, dataSource.keys());
             dataSource.put(key2, value2);

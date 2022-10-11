@@ -69,59 +69,6 @@ class RocksDbDataSourceTest {
     }
 
     @Test
-    void updateBatch() {
-        final int batchSize = 100;
-        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-
-        byte[] keyToDelete1 = randomBytes(32);
-        byte[] keyToDelete2 = randomBytes(32);
-        dataSource.put(keyToDelete1, randomBytes(32));
-        assertNotNull(dataSource.get(keyToDelete1));
-        dataSource.put(keyToDelete2, randomBytes(32));
-        assertNotNull(dataSource.get(keyToDelete2));
-
-        Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
-        dataSource.updateBatch(batch, deleteKeys);
-
-        assertEquals(batchSize, dataSource.keys().size());
-        assertNull(dataSource.get(keyToDelete1));
-        assertNull(dataSource.get(keyToDelete2));
-
-        try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
-            assertTrue(iterator.hasNext());
-            assertNotNull(iterator.next());
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
-    void updateBatchNullKey() {
-        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
-            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
-        }
-        batch.put(null, randomBytes(32));
-
-        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
-        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
-        Assertions.assertEquals("Cannot update null values", iae.getMessage());
-    }
-
-    @Test
-    void updateBatchNullValue() {
-        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
-        for (int i = 0; i < 10; i++) {
-            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
-        }
-        batch.put(ByteUtil.wrap(randomBytes(32)), null);
-
-        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
-        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
-        assertEquals("Cannot update null values", iae.getMessage());
-    }
-
-    @Test
     void updateBatchRetriesOnPutError() {
         RocksDB db = Mockito.mock(RocksDB.class);
         TestUtils.setInternalState(dataSource, "db", db);
@@ -178,27 +125,6 @@ class RocksDbDataSourceTest {
     }
 
     @Test
-    void put() {
-        byte[] key = randomBytes(32);
-        dataSource.put(key, randomBytes(32));
-
-        assertNotNull(dataSource.get(key));
-        assertEquals(1, dataSource.keys().size());
-    }
-
-    @Test
-    void putNullKey() {
-        byte[] value = randomBytes(32);
-        assertThrows(NullPointerException.class, () -> dataSource.put(null, value));
-    }
-
-    @Test
-    void putNullValue() {
-        byte[] key = randomBytes(32);
-        assertThrows(NullPointerException.class, () -> dataSource.put(key, null));
-    }
-
-    @Test
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
         lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
@@ -238,50 +164,6 @@ class RocksDbDataSourceTest {
     }
 
     @Test
-    void getAfterMiss() {
-        byte[] key = randomBytes(32);
-        Assertions.assertNull(dataSource.get(key));
-
-        byte[] value = randomBytes(32);
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        dataSource.flush();
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-    }
-
-    @Test
-    void getAfterUpdate() {
-        byte[] key = randomBytes(32);
-        byte[] value = randomBytes(32);
-
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        byte[] newValue = randomBytes(32);
-        dataSource.put(key, newValue);
-        Assertions.assertArrayEquals(dataSource.get(key), newValue);
-
-        dataSource.flush();
-        Assertions.assertArrayEquals(dataSource.get(key), newValue);
-    }
-
-    @Test
-    void getAfterDelete() {
-        byte[] key = randomBytes(32);
-        byte[] value = randomBytes(32);
-
-        dataSource.put(key, value);
-        Assertions.assertArrayEquals(dataSource.get(key), value);
-
-        dataSource.delete(key);
-        Assertions.assertNull(dataSource.get(key));
-
-        dataSource.flush();
-        Assertions.assertNull(dataSource.get(key));
-    }
-
-    @Test
     void getWithException() throws RocksDBException {
         RocksDB db = Mockito.mock(RocksDB.class);
         TestUtils.setInternalState(dataSource, "db", db);
@@ -312,7 +194,7 @@ class RocksDbDataSourceTest {
                 Assertions.assertArrayEquals(value, readValue); // should read value put during lock
             }));
 
-            // wait for thread to be started and put a value during active lock for thread
+            // wait for thread to be started and put a value while thread is locked
             Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             dataSource.put(key, value); // put value during write lock
             lock.writeLock().unlock(); // release write lock, so future can start read
@@ -326,20 +208,6 @@ class RocksDbDataSourceTest {
                 lock.readLock().unlock();
             }
         }
-    }
-
-    @Test
-    void delete() {
-        byte[] key1 = TestUtils.randomBytes(20);
-        byte[] value1 = TestUtils.randomBytes(20);
-        byte[] key2 = TestUtils.randomBytes(20);
-        byte[] value2 = TestUtils.randomBytes(20);
-        dataSource.put(key1, value1);
-        dataSource.put(key2, value2);
-
-        dataSource.delete(key2);
-        Assertions.assertNull(dataSource.get(key2));
-        Assertions.assertNotNull(dataSource.get(key1));
     }
 
     @Test
@@ -379,6 +247,52 @@ class RocksDbDataSourceTest {
         } finally {
             if (!unlocked) {
                 lock.writeLock().unlock();
+            }
+        }
+    }
+
+    @Test
+    void keysLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        boolean unlocked = false;
+
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+
+        dataSource.put(key1, value1);
+
+        Set<ByteArrayWrapper> expectedKeysBeforeThread = new HashSet<>();
+        expectedKeysBeforeThread.add(ByteUtil.wrap(key1));
+
+        Set<ByteArrayWrapper> expectedKeysOnThread = new HashSet<>();
+        expectedKeysOnThread.add(ByteUtil.wrap(key1));
+        expectedKeysOnThread.add(ByteUtil.wrap(key2));
+
+        try {
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                Assertions.assertEquals(expectedKeysOnThread, dataSource.keys());
+            }));
+
+            // wait for thread to be started and put a value while thread is locked
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertEquals(expectedKeysBeforeThread, dataSource.keys());
+            dataSource.put(key2, value2);
+
+            lock.writeLock().unlock();
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
             }
         }
     }

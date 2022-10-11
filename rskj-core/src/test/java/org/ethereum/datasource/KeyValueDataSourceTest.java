@@ -4,7 +4,6 @@ import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -17,8 +16,9 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static org.ethereum.TestUtils.randomBytes;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class KeyValueDataSourceTest {
 
@@ -37,7 +37,7 @@ class KeyValueDataSourceTest {
         MatcherAssert.assertThat(keyValueDataSource.get(randomKey), is(randomValue));
 
         try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
-            Assertions.assertTrue(iterator.hasNext());
+            assertTrue(iterator.hasNext());
 
             byte[] expectedValue = null;
 
@@ -48,34 +48,147 @@ class KeyValueDataSourceTest {
                 }
             }
 
-            Assertions.assertArrayEquals(expectedValue, randomKey);
+            assertArrayEquals(expectedValue, randomKey);
         } catch (Exception e) {
             if (!withFlush && keyValueDataSource instanceof DataSourceWithCache) {
-                Assertions.assertEquals("There are uncommitted keys", e.getMessage());
+                assertEquals("There are uncommitted keys", e.getMessage());
             } else {
-                Assertions.fail(e.getMessage());
+                fail(e.getMessage());
             }
         }
     }
 
     @ParameterizedTest(name = "{1}, flush = {2}")
     @ArgumentsSource(DatasourceArgumentsProvider.class)
-    void getNull(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
-        Assertions.assertThrows(NullPointerException.class, () -> keyValueDataSource.get(null));
+    public void putNullKey(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] value = randomBytes(32);
+        assertThrows(NullPointerException.class, () -> keyValueDataSource.put(null, value));
     }
 
     @ParameterizedTest(name = "{1}, flush = {2}")
     @ArgumentsSource(DatasourceArgumentsProvider.class)
-    void delete(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        byte[] randomValue = TestUtils.randomBytes(20);
+    public void putNullValue(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] key = randomBytes(32);
+        assertThrows(NullPointerException.class, () -> keyValueDataSource.put(key, null));
+    }
 
-        keyValueDataSource.put(randomKey, randomValue);
-        keyValueDataSource.delete(randomKey);
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    public void getAfterMiss(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] key = randomBytes(32);
+        assertNull(keyValueDataSource.get(key));
+
+        byte[] value = randomBytes(32);
+        keyValueDataSource.put(key, value);
+
         if (withFlush) {
             keyValueDataSource.flush();
         }
-        MatcherAssert.assertThat(keyValueDataSource.get(randomKey), is(nullValue()));
+
+        assertArrayEquals(keyValueDataSource.get(key), value);
+    }
+
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    public void getAfterUpdate(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] key = randomBytes(32);
+        byte[] value = randomBytes(32);
+
+        keyValueDataSource.put(key, value);
+        assertArrayEquals(keyValueDataSource.get(key), value);
+
+        byte[] newValue = randomBytes(32);
+        keyValueDataSource.put(key, newValue);
+
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+
+        assertArrayEquals(keyValueDataSource.get(key), newValue);
+
+        try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
+            assertTrue(iterator.hasNext());
+
+            byte[] expectedValue = null;
+
+            while (iterator.hasNext()) {
+                expectedValue = iterator.next();
+                if (ByteUtil.wrap(expectedValue).equals(ByteUtil.wrap(key))) {
+                    break;
+                }
+            }
+
+            assertArrayEquals(expectedValue, key);
+        } catch (Exception e) {
+            if (!withFlush && keyValueDataSource instanceof DataSourceWithCache) {
+                assertEquals("There are uncommitted keys", e.getMessage());
+            } else {
+                fail(e.getMessage());
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    public void getAfterDelete(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] key = randomBytes(32);
+        byte[] value = randomBytes(32);
+
+        keyValueDataSource.put(key, value);
+        assertArrayEquals(keyValueDataSource.get(key), value);
+
+        keyValueDataSource.delete(key);
+
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+
+        assertNull(keyValueDataSource.get(key));
+    }
+
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void getNull(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        assertThrows(NullPointerException.class, () -> keyValueDataSource.get(null));
+    }
+
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    public void delete(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+        keyValueDataSource.put(key1, value1);
+        keyValueDataSource.put(key2, value2);
+
+        keyValueDataSource.delete(key2);
+
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+
+        assertNull(keyValueDataSource.get(key2));
+        assertNotNull(keyValueDataSource.get(key1));
+    }
+
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    public void keys(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        assertTrue(keyValueDataSource.keys().isEmpty());
+
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+
+        keyValueDataSource.put(key1, value1);
+        keyValueDataSource.put(key2, value2);
+
+        Set<ByteArrayWrapper> expectedKeys = new HashSet<>();
+        expectedKeys.add(ByteUtil.wrap(key1));
+        expectedKeys.add(ByteUtil.wrap(key2));
+        assertEquals(expectedKeys, keyValueDataSource.keys());
     }
 
     @ParameterizedTest(name = "{1}, flush = {2}")
@@ -88,8 +201,9 @@ class KeyValueDataSourceTest {
         if (withFlush) {
             keyValueDataSource.flush();
         }
+
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
-            MatcherAssert.assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(updatedValue.getValue()));
+            assertArrayEquals(updatedValue.getValue(), keyValueDataSource.get(updatedValue.getKey().getData()));
         }
     }
 
@@ -105,26 +219,36 @@ class KeyValueDataSourceTest {
         }
 
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
-            MatcherAssert.assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(nullValue()));
+            assertNull(keyValueDataSource.get(updatedValue.getKey().getData()));
         }
     }
 
     @ParameterizedTest(name = "{1}, flush = {2}")
     @ArgumentsSource(DatasourceArgumentsProvider.class)
-    void putNullValue(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        Assertions.assertThrows(RuntimeException.class, () -> keyValueDataSource.put(randomKey, null)); ;
+    public void updateBatchNullKey(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+        }
+        batch.put(null, randomBytes(32));
+
+        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> keyValueDataSource.updateBatch(batch, deleteKeys));
+        assertEquals("Cannot update null values", iae.getMessage());
     }
 
     @ParameterizedTest(name = "{1}, flush = {2}")
     @ArgumentsSource(DatasourceArgumentsProvider.class)
-    void updateBatchWithNulls(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
-        Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
-        ByteArrayWrapper keyToNull = updatedValues.keySet().iterator().next();
-        updatedValues.put(keyToNull, null);
+    public void updateBatchNullValue(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+        }
+        batch.put(ByteUtil.wrap(randomBytes(32)), null);
 
-        Set<ByteArrayWrapper> keysToRemove = Collections.emptySet();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> keyValueDataSource.updateBatch(updatedValues, keysToRemove));
+        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> keyValueDataSource.updateBatch(batch, deleteKeys));
+        assertEquals("Cannot update null values", iae.getMessage());
     }
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
