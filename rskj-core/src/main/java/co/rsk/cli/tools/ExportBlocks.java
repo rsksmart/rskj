@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
  * - args[1] - to block number
  * - args[2] - file path
  */
-@CommandLine.Command(name = "exportblocks", mixinStandardHelpOptions = true, version = "exportblocks 1.0",
+@CommandLine.Command(name = "export-blocks", mixinStandardHelpOptions = true, version = "export-blocks 1.0",
         description = "The entry point for export blocks CLI tool")
 public class ExportBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
