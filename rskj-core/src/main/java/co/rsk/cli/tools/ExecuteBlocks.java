@@ -45,7 +45,7 @@ public class ExecuteBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private Long fromBlockNumber;
 
-    @CommandLine.Option(names = {"-tb", "--toblock"}, description = "To block number", required = true)
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
     private Long toBlockNumber;
 
     public static void main(String[] args) {
