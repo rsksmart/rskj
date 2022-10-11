@@ -42,7 +42,7 @@ import java.math.BigInteger;
         description = "Imports blocks from a file")
 public class ImportBlocks extends PicoCliToolRskContextAware {
 
-    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to import blocks from", required = true)
     private String filePath;
 
     public static void main(String[] args) {
