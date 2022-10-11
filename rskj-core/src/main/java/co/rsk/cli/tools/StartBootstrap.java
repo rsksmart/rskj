@@ -44,7 +44,7 @@ import java.util.concurrent.Callable;
  * Note: this is an experimental tool
  */
 @CommandLine.Command(name = "startbootstrap", mixinStandardHelpOptions = true, version = "startbootstrap 1.0",
-        description = "The bootstrap node starts one service which only participates in the peer discovery protocol")
+        description = "Starts a bootstrap node with one service, which only participates in the peer discovery protocol")
 public class StartBootstrap implements Callable<Integer> {
 
     private static final Logger logger = LoggerFactory.getLogger("bootstrap");
