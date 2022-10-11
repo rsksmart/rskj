@@ -38,7 +38,7 @@ import java.math.BigInteger;
  * Required cli args:
  * - args[0] - file path
  */
-@CommandLine.Command(name = "importblocks", mixinStandardHelpOptions = true, version = "importblocks 1.0",
+@CommandLine.Command(name = "import-blocks", mixinStandardHelpOptions = true, version = "import-blocks 1.0",
         description = "The entry point for import blocks CLI tool")
 public class ImportBlocks extends PicoCliToolRskContextAware {
 
