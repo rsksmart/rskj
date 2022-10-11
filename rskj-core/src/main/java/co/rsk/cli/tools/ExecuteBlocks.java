@@ -39,7 +39,7 @@ import java.util.Arrays;
  * - args[0] - from block number
  * - args[1] - to block number
  */
-@CommandLine.Command(name = "execblocks", mixinStandardHelpOptions = true, version = "execblocks 1.0",
+@CommandLine.Command(name = "execute-blocks", mixinStandardHelpOptions = true, version = "execute-blocks 1.0",
         description = "The entry point for execute blocks CLI tool")
 public class ExecuteBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
