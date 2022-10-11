@@ -41,7 +41,7 @@ import java.util.Optional;
  * - args[0] - block number
  * - args[1] - file path
  */
-@CommandLine.Command(name = "exportstate", mixinStandardHelpOptions = true, version = "exportstate 1.0",
+@CommandLine.Command(name = "export-state", mixinStandardHelpOptions = true, version = "export-state 1.0",
         description = "The entry point for export state CLI tool")
 public class ExportState extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-b", "--block"}, description = "Block number", required = true)
