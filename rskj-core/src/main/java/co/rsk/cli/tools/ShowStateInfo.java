@@ -40,7 +40,7 @@ import java.util.Optional;
  * Required cli args:
  * - args[0] - block number or "best"
  */
-@CommandLine.Command(name = "showstateinfo", mixinStandardHelpOptions = true, version = "showstateinfo 1.0",
+@CommandLine.Command(name = "show-state-info", mixinStandardHelpOptions = true, version = "show-state-info 1.0",
         description = "Shows state information for a specific block number")
 public class ShowStateInfo extends PicoCliToolRskContextAware {
 
