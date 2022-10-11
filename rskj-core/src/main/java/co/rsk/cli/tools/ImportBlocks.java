@@ -39,7 +39,7 @@ import java.math.BigInteger;
  * - args[0] - file path
  */
 @CommandLine.Command(name = "import-blocks", mixinStandardHelpOptions = true, version = "import-blocks 1.0",
-        description = "The entry point for import blocks CLI tool")
+        description = "Imports blocks from a file")
 public class ImportBlocks extends PicoCliToolRskContextAware {
 
     @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
