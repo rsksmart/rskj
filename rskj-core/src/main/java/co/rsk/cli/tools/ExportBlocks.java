@@ -48,7 +48,7 @@ public class ExportBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
     private Long toBlockNumber;
 
-    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to export blocks to", required = true)
     private String filePath;
 
     public static void main(String[] args) {
