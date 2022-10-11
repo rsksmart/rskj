@@ -42,7 +42,7 @@ import java.lang.invoke.MethodHandles;
 @CommandLine.Command(name = "export-blocks", mixinStandardHelpOptions = true, version = "export-blocks 1.0",
         description = "Exports blocks from a specific block range to a file")
 public class ExportBlocks extends PicoCliToolRskContextAware {
-    @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private Long fromBlockNumber;
 
     @CommandLine.Option(names = {"-tb", "--toblock"}, description = "To block number", required = true)
