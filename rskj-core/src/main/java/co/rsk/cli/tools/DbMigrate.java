@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  * - LevelDb (leveldb as argument)
  * - RocksDb (rocksdb as argument)
  */
-@CommandLine.Command(name = "dbmigrate", mixinStandardHelpOptions = true, version = "dbmigrate 1.0",
+@CommandLine.Command(name = "db-migrate", mixinStandardHelpOptions = true, version = "db-migrate 1.0",
         description = "Migrates between different databases such as leveldb and rocksdb.")
 public class DbMigrate extends PicoCliToolRskContextAware {
     private static final Logger logger = LoggerFactory.getLogger(DbMigrate.class);
