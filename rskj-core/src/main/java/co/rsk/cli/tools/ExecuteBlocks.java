@@ -40,7 +40,7 @@ import java.util.Arrays;
  * - args[1] - to block number
  */
 @CommandLine.Command(name = "execute-blocks", mixinStandardHelpOptions = true, version = "execute-blocks 1.0",
-        description = "The entry point for execute blocks CLI tool")
+        description = "Executes blocks for a specified block range")
 public class ExecuteBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
     private Long fromBlockNumber;
