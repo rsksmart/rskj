@@ -39,7 +39,7 @@ import java.lang.invoke.MethodHandles;
  * Required cli args:
  * - args[0] - file path
  */
-@CommandLine.Command(name = "cnblocks", mixinStandardHelpOptions = true, version = "cnblocks 1.0",
+@CommandLine.Command(name = "connect-blocks", mixinStandardHelpOptions = true, version = "connect-blocks 1.0",
         description = "The entry point for connect blocks CLI tool")
 public class ConnectBlocks extends PicoCliToolRskContextAware {
 
