@@ -201,7 +201,7 @@ class RocksDbDataSourceTest {
     @Test
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
         try {
@@ -230,6 +230,152 @@ class RocksDbDataSourceTest {
             assertArrayEquals(updatedValue, dataSource.get(key)); // thread put should prevail as last one being run
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.writeLock().unlock();
+            }
+        }
+    }
+
+    @Test
+    void getAfterMiss() {
+        byte[] key = randomBytes(32);
+        Assertions.assertNull(dataSource.get(key));
+
+        byte[] value = randomBytes(32);
+        dataSource.put(key, value);
+        Assertions.assertArrayEquals(dataSource.get(key), value);
+
+        dataSource.flush();
+        Assertions.assertArrayEquals(dataSource.get(key), value);
+    }
+
+    @Test
+    void getAfterUpdate() {
+        byte[] key = randomBytes(32);
+        byte[] value = randomBytes(32);
+
+        dataSource.put(key, value);
+        Assertions.assertArrayEquals(dataSource.get(key), value);
+
+        byte[] newValue = randomBytes(32);
+        dataSource.put(key, newValue);
+        Assertions.assertArrayEquals(dataSource.get(key), newValue);
+
+        dataSource.flush();
+        Assertions.assertArrayEquals(dataSource.get(key), newValue);
+    }
+
+    @Test
+    void getAfterDelete() {
+        byte[] key = randomBytes(32);
+        byte[] value = randomBytes(32);
+
+        dataSource.put(key, value);
+        Assertions.assertArrayEquals(dataSource.get(key), value);
+
+        dataSource.delete(key);
+        Assertions.assertNull(dataSource.get(key));
+
+        dataSource.flush();
+        Assertions.assertNull(dataSource.get(key));
+    }
+
+    @Test
+    void getWithException() throws RocksDBException {
+        RocksDB db = Mockito.mock(RocksDB.class);
+        TestUtils.setInternalState(dataSource, "db", db);
+
+        byte[] key = TestUtils.randomBytes(20);
+        RocksDBException fakeException = new RocksDBException("fake exception");
+        Mockito.when(db.get(key)).thenThrow(fakeException);
+        Assertions.assertThrows(RuntimeException.class, () -> dataSource.get(key));
+        Mockito.verify(db, Mockito.times(2)).get(key);
+    }
+
+    @Test
+    void getLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        boolean unlocked = false;
+
+        try {
+            byte[] key = TestUtils.randomBytes(20);
+            byte[] value = TestUtils.randomBytes(20);
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                byte[] readValue = dataSource.get(key); // should be locked
+                Assertions.assertArrayEquals(value, readValue); // should read value put during lock
+            }));
+
+            // wait for thread to be started and put a value during active lock for thread
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            dataSource.put(key, value); // put value during write lock
+            lock.writeLock().unlock(); // release write lock, so future can start read
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
+            }
+        }
+    }
+
+    @Test
+    void delete() {
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+        dataSource.put(key1, value1);
+        dataSource.put(key2, value2);
+
+        dataSource.delete(key2);
+        Assertions.assertNull(dataSource.get(key2));
+        Assertions.assertNotNull(dataSource.get(key1));
+    }
+
+    @Test
+    void deleteLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        boolean unlocked = false;
+
+        try {
+            byte[] key = randomBytes(32);
+            byte[] value = randomBytes(32);
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                Assertions.assertNotNull(dataSource.get(key));
+                dataSource.delete(key);
+                Assertions.assertNull(dataSource.get(key));
+            }));
+
+            // wait for thread to be started and put a new value on thread holding the write lock
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertNull(dataSource.get(key)); // thread put should have not been executed during lock
+            dataSource.put(key, value);
+            Assertions.assertArrayEquals(value, dataSource.get(key)); // thread put should have not been executed during write lock
+
+            Assertions.assertNotNull(dataSource.get(key));
+            lock.writeLock().unlock();
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+            Assertions.assertNull(dataSource.get(key)); // thread put should prevail as last one being run
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
         } finally {
             if (!unlocked) {
                 lock.writeLock().unlock();

@@ -94,7 +94,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void updateBatchNullKey() {
+    void updateBatchNullKey() {
         Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
@@ -107,7 +107,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void updateBatchNullValue() {
+    void updateBatchNullValue() {
         Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
@@ -120,7 +120,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void updateBatchRetriesOnPutError() {
+    void updateBatchRetriesOnPutError() {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
@@ -140,7 +140,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void updateBatchRetriesOnDeleteError() {
+    void updateBatchRetriesOnDeleteError() {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
@@ -186,7 +186,7 @@ class LevelDbDataSourceTest {
     @Test
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
         try {
@@ -282,7 +282,7 @@ class LevelDbDataSourceTest {
     @Test
     void getLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
         try {
@@ -315,6 +315,61 @@ class LevelDbDataSourceTest {
     }
 
     @Test
+    void delete() {
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+        dataSource.put(key1, value1);
+        dataSource.put(key2, value2);
+
+        dataSource.delete(key2);
+        Assertions.assertNull(dataSource.get(key2));
+        Assertions.assertNotNull(dataSource.get(key1));
+    }
+
+    @Test
+    void deleteLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        boolean unlocked = false;
+
+        try {
+            byte[] key = randomBytes(32);
+            byte[] value = randomBytes(32);
+
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                Assertions.assertNotNull(dataSource.get(key));
+                dataSource.delete(key);
+                Assertions.assertNull(dataSource.get(key));
+            }));
+
+            // wait for thread to be started and put a new value on thread holding the write lock
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertNull(dataSource.get(key)); // thread put should have not been executed during lock
+            dataSource.put(key, value);
+            Assertions.assertArrayEquals(value, dataSource.get(key)); // thread put should have not been executed during write lock
+
+            Assertions.assertNotNull(dataSource.get(key));
+            lock.writeLock().unlock();
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+            Assertions.assertNull(dataSource.get(key)); // thread put should prevail as last one being run
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.writeLock().unlock();
+            }
+        }
+    }
+
+    @Test
     void keys() {
         Assertions.assertTrue(dataSource.keys().isEmpty());
 
@@ -333,7 +388,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    public void keysDBThrows() throws IOException {
+    void keysDBThrows() throws IOException {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
@@ -349,7 +404,7 @@ class LevelDbDataSourceTest {
     @Test
     void keysLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
         byte[] key1 = TestUtils.randomBytes(20);
