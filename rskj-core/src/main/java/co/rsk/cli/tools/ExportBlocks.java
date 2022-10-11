@@ -45,7 +45,7 @@ public class ExportBlocks extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private Long fromBlockNumber;
 
-    @CommandLine.Option(names = {"-tb", "--toblock"}, description = "To block number", required = true)
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
     private Long toBlockNumber;
 
     @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
