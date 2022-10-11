@@ -41,7 +41,7 @@ import java.nio.file.Paths;
 @CommandLine.Command(name = "import-state", mixinStandardHelpOptions = true, version = "import-state 1.0",
         description = "Imports state from a file")
 public class ImportState extends PicoCliToolRskContextAware {
-    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to import state from", required = true)
     private String filePath;
 
     public static void main(String[] args) {
