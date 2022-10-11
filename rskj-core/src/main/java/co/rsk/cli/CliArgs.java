@@ -98,38 +98,7 @@ public class CliArgs<O, F> {
             for (int i = 0; i < args.length; i++) {
                 switch (args[i].charAt(0)) {
                     case '-':
-                        if (args[i].length() < 2) {
-                            throw new IllegalArgumentException("You must provide an option name, e.g. -d");
-                        }
-                        char currentChar = Character.toLowerCase(args[i].charAt(1));
-                        if (currentChar == '-') {
-                            if (args[i].length() < 3) {
-                                throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
-                            }
-
-                            F flag = getFlagByName(args[i].substring(2, args[i].length()));
-
-                            if (flag != null) {
-                                flags.add(flag);
-                            }
-                        } else if (currentChar == 'x') {
-                            String arg = args[i].substring(2);
-                            paramValueMap.putAll(parseArgToMap(arg));
-                        } else {
-                            if (args.length - 1 == i) {
-                                throw new IllegalArgumentException(
-                                        String.format("A value must be provided after the option -%s", args[i])
-                                );
-                            }
-
-                            O option = getOptionByName(args[i].substring(1, args[i].length()));
-
-                            if (option != null) {
-                                options.put(option, args[i + 1]);
-                            }
-
-                            i++;
-                        }
+                        this.parseArguments(args, i, options, flags, paramValueMap);
                         break;
                     default:
                         arguments.add(args[i]);
@@ -148,6 +117,41 @@ public class CliArgs<O, F> {
             }
 
             return new CliArgs<>(arguments, options, flags, paramValueMap);
+        }
+
+        private void parseArguments(String[] args, int i, Map<O, String> options, Set<F> flags, Map<String, String> paramValueMap) {
+            if (args[i].length() < 2) {
+                throw new IllegalArgumentException("You must provide an option name, e.g. -d");
+            }
+            char currentChar = Character.toLowerCase(args[i].charAt(1));
+            if (currentChar == '-') {
+                if (args[i].length() < 3) {
+                    throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
+                }
+
+                F flag = getFlagByName(args[i].substring(2, args[i].length()));
+
+                if (flag != null) {
+                    flags.add(flag);
+                }
+            } else if (currentChar == 'x') {
+                String arg = args[i].substring(2);
+                paramValueMap.putAll(parseArgToMap(arg));
+            } else {
+                if (args.length - 1 == i) {
+                    throw new IllegalArgumentException(
+                            String.format("A value must be provided after the option -%s", args[i])
+                    );
+                }
+
+                O option = getOptionByName(args[i].substring(1, args[i].length()));
+
+                if (option != null) {
+                    options.put(option, args[i + 1]);
+                }
+
+                i++;
+            }
         }
 
         private F getFlagByName(String flagName) {

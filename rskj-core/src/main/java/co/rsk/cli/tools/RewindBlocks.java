@@ -47,19 +47,18 @@ import java.util.Optional;
         description = "The entry point for rewind blocks state CLI tool")
 public class RewindBlocks extends PicoCliToolRskContextAware {
     static class RewindOpts {
-        @CommandLine.Option(names = {"-b", "--block"}, description = "block number to rewind blocks to", required = true)
-        Long blockNum;
+        @CommandLine.Option(names = {"-b", "--block"}, description = "block number to rewind blocks to")
+        public Long blockNum;
 
-        @CommandLine.Option(names = {"-fmi", "--findMinInconsistentBlock"}, description = "flag to find a min inconsistent block", required = true)
-        Boolean findMinInconsistentBlock = false;
+        @CommandLine.Option(names = {"-fmi", "--findMinInconsistentBlock"}, description = "flag to find a min inconsistent block", defaultValue = "false")
+        public Boolean findMinInconsistentBlock;
 
-        @CommandLine.Option(names = {"-rbc", "--rewindToBestConsistentBlock"}, description = "flag to rewind to a best consistent block", required = true)
-        Boolean rewindToBestConsistentBlock = false;
+        @CommandLine.Option(names = {"-rbc", "--rewindToBestConsistentBlock"}, description = "flag to rewind to a best consistent block", defaultValue = "false")
+        public Boolean rewindToBestConsistentBlock;
     }
 
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
+    @CommandLine.ArgGroup(multiplicity = "1")
     private RewindOpts opts;
-    private String blockNumOrOp;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -81,18 +80,16 @@ public class RewindBlocks extends PicoCliToolRskContextAware {
     public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
 
-        if ("fmi".equals(blockNumOrOp)) {
+        if (opts.findMinInconsistentBlock) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             printMinInconsistentBlock(blockStore, repositoryLocator);
-        } else if ("rbc".equals(blockNumOrOp)) {
+        } else if (opts.rewindToBestConsistentBlock) {
             RepositoryLocator repositoryLocator = ctx.getRepositoryLocator();
 
             rewindInconsistentBlocks(blockStore, repositoryLocator);
         } else {
-            long blockNumber = Long.parseLong(blockNumOrOp);
-
-            rewindBlocks(blockNumber, blockStore);
+            rewindBlocks(opts.blockNum, blockStore);
         }
 
         return 0;

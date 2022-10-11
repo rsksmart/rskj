@@ -19,6 +19,8 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
+import co.rsk.cli.PicoCliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -58,6 +60,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import picocli.CommandLine;
+import org.mockito.Mockito;
+import picocli.CommandLine;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +95,7 @@ class CliToolsTest {
         processor.processCommands(parser);
 
         File blocksFile = tempDir.resolve( "blocks.txt").toFile();
-        String[] args = new String[]{"--fromblock", "0", "--toblock", "2", "--file", blocksFile.getAbsolutePath()};
+        String[] args = new String[]{"--fromBlock", "0", "--toBlock", "2", "--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -127,7 +133,7 @@ class CliToolsTest {
         processor.processCommands(parser);
 
         File stateFile = tempDir.resolve("state.txt").toFile();
-        String[] args = new String[]{"--block","2", "--file", stateFile.getAbsolutePath()};
+        String[] args = new String[]{"--block", "2", "--file", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -167,7 +173,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[]{"--block","best"};
+        String[] args = new String[]{"--block", "best"};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -204,7 +210,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[]{"--fromblock","1", "--toblock", "2"};
+        String[] args = new String[]{"--fromBlock", "1", "--toBlock", "2"};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -416,7 +422,7 @@ class CliToolsTest {
 
         StringBuilder output = new StringBuilder();
         RewindBlocks rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"--block", "fmi"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-fmi"}, () -> rskContext, stopper);
 
         String data = output.toString();
         Assertions.assertTrue(data.contains("No inconsistent block has been found"));
@@ -459,7 +465,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"--block", "fmi"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-fmi"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assertions.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -470,7 +476,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"--block", "rbc"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-rbc"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assertions.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -503,7 +509,7 @@ class CliToolsTest {
         NodeStopper stopper = mock(NodeStopper.class);
 
         DbMigrate dbMigrateCliTool = new DbMigrate();
-        dbMigrateCliTool.execute(new String[]{"-tdb", "rocksdb"}, () -> rskContext, stopper);
+        dbMigrateCliTool.execute(new String[]{"-t", "rocksdb"}, () -> rskContext, stopper);
 
         String nodeIdPropsFileLine = null;
 
@@ -700,5 +706,33 @@ class CliToolsTest {
         Object expected = jsonMapper.readValue(expectedResultFile, Object.class);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testErrorHandlingInPicocli() {
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(true).when(rskSystemProperties).databaseReset();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        @CommandLine.Command(name = "dummy-tool", mixinStandardHelpOptions = true, version = "1.0",
+                description = "This is just a dummy tool")
+        class DummyCliTool extends PicoCliToolRskContextAware {
+            @Override
+            public Integer call() {
+                return -1;
+            }
+        }
+
+        DummyCliTool dummyTool = new DummyCliTool();
+
+        dummyTool.execute(new String[]{}, () -> rskContext, stopper);
+
+        verify(stopper, times(1)).stop(Mockito.eq(-1));
     }
 }

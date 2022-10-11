@@ -42,7 +42,7 @@ import java.util.Optional;
  * - args[1] - file path
  */
 @CommandLine.Command(name = "export-state", mixinStandardHelpOptions = true, version = "export-state 1.0",
-        description = "The entry point for export state CLI tool")
+        description = "Exports state at specific block number to a file")
 public class ExportState extends PicoCliToolRskContextAware {
     @CommandLine.Option(names = {"-b", "--block"}, description = "Block number", required = true)
     private Long blockNumber;

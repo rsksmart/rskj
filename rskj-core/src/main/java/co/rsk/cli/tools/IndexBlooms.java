@@ -36,14 +36,14 @@ import java.util.concurrent.Callable;
  * The entry point for indexing block blooms
  * This is an experimental/unsupported tool
  */
-@CommandLine.Command(name = "indexblooms", mixinStandardHelpOptions = true, version = "indexblooms 1.0",
+@CommandLine.Command(name = "index-blooms", mixinStandardHelpOptions = true, version = "index-blooms 1.0",
         description = "Indexes blooms for a specific block range")
 public class IndexBlooms implements Callable<Integer> {
 
-    @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private String fromBlockNumber;
 
-    @CommandLine.Option(names = {"-tb", "--toblock"}, description = "To block number", required = true)
+    @CommandLine.Option(names = {"-tb", "--toBlock"}, description = "To block number", required = true)
     private String toBlockNumber;
 
     private static final Logger logger = LoggerFactory.getLogger(IndexBlooms.class);
