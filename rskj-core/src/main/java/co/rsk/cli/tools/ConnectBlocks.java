@@ -43,7 +43,7 @@ import java.lang.invoke.MethodHandles;
         description = "Connects blocks to a chain from external source file")
 public class ConnectBlocks extends PicoCliToolRskContextAware {
 
-    @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file with blocks to connect", required = true)
     private String filePath;
 
     public static void main(String[] args) throws IOException {
