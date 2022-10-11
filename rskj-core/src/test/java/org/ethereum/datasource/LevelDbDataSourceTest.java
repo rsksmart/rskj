@@ -19,11 +19,13 @@
 
 package org.ethereum.datasource;
 
+import com.google.common.collect.ImmutableSet;
 import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.WriteBatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,13 +67,23 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void testBatchUpdating() {
+    void updateBatch() {
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
 
-        dataSource.updateBatch(batch, Collections.emptySet());
+        byte[] keyToDelete1 = randomBytes(32);
+        byte[] keyToDelete2 = randomBytes(32);
+        dataSource.put(keyToDelete1, randomBytes(32));
+        assertNotNull(dataSource.get(keyToDelete1));
+        dataSource.put(keyToDelete2, randomBytes(32));
+        assertNotNull(dataSource.get(keyToDelete2));
+
+        Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
+        dataSource.updateBatch(batch, deleteKeys);
 
         assertEquals(batchSize, dataSource.keys().size());
+        assertNull(dataSource.get(keyToDelete1));
+        assertNull(dataSource.get(keyToDelete2));
 
         try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
             assertTrue(iterator.hasNext());
@@ -79,8 +91,75 @@ class LevelDbDataSourceTest {
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
 
-        dataSource.close();
+    @Test
+    public void updateBatchNullKey() {
+        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+        }
+        batch.put(null, randomBytes(32));
+
+        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
+        IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
+        Assertions.assertEquals("Cannot update null values", iae.getMessage());
+    }
+
+    @Test
+    public void updateBatchNullValue() {
+        Map<ByteArrayWrapper, byte[]> batch = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            batch.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+        }
+        batch.put(ByteUtil.wrap(randomBytes(32)), null);
+
+        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
+        IllegalArgumentException iae = Assertions.assertThrows(IllegalArgumentException.class, () -> dataSource.updateBatch(batch, deleteKeys));
+        Assertions.assertEquals("Cannot update null values", iae.getMessage());
+    }
+
+    @Test
+    public void updateBatchRetriesOnPutError() {
+        DB db = Mockito.mock(DB.class);
+        TestUtils.setInternalState(dataSource, "db", db);
+
+        WriteBatch writeBatch = mock(WriteBatch.class);
+        when(db.createWriteBatch()).thenReturn(writeBatch);
+        String dbExceptionMessage = "fake DBException";
+        when(writeBatch.put(any(), any())).thenThrow(new DBException(dbExceptionMessage));
+
+        final int batchSize = 100;
+        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
+
+        Set<ByteArrayWrapper> deleteKeys = Collections.emptySet();
+        RuntimeException updateException = Assertions.assertThrows(RuntimeException.class, () -> dataSource.updateBatch(batch, deleteKeys));
+        Assertions.assertEquals(DBException.class.getName() + ": " + dbExceptionMessage, updateException.getMessage());
+
+        verify(writeBatch, times(2)).put(any(), any());
+    }
+
+    @Test
+    public void updateBatchRetriesOnDeleteError() {
+        DB db = Mockito.mock(DB.class);
+        TestUtils.setInternalState(dataSource, "db", db);
+
+        WriteBatch writeBatch = mock(WriteBatch.class);
+        when(db.createWriteBatch()).thenReturn(writeBatch);
+        String dbExceptionMessage = "fake DBException";
+        when(writeBatch.delete(any())).thenThrow(new DBException(dbExceptionMessage));
+
+        final int batchSize = 100;
+        Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
+
+        byte[] keyToDelete1 = randomBytes(32);
+        byte[] keyToDelete2 = randomBytes(32);
+        Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
+
+        RuntimeException updateException = Assertions.assertThrows(RuntimeException.class, () -> dataSource.updateBatch(batch, deleteKeys));
+        Assertions.assertEquals(DBException.class.getName() + ": " + dbExceptionMessage, updateException.getMessage());
+
+        verify(writeBatch, times(2)).delete(any());
     }
 
     @Test
@@ -254,13 +333,15 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void keysDBThrows() throws IOException {
-        DB db = Mockito.mock(DB.class, Mockito.RETURNS_DEEP_STUBS);
+    public void keysDBThrows() throws IOException {
+        DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
-        DBIterator iterator = db.iterator();
+        DBIterator dbIterator = mock(DBIterator.class);
+        when(db.iterator()).thenReturn(dbIterator);
+
         String exceptionMessage = "close threw";
-        doThrow(new IOException(exceptionMessage)).when(iterator).close();
+        doThrow(new IOException(exceptionMessage)).when(dbIterator).close();
         RuntimeException rte = Assertions.assertThrows(RuntimeException.class, () -> dataSource.keys());
         Assertions.assertEquals(IOException.class.getName() + ": " + exceptionMessage, rte.getMessage());
     }
