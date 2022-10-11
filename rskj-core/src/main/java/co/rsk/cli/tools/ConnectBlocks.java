@@ -40,7 +40,7 @@ import java.lang.invoke.MethodHandles;
  * - args[0] - file path
  */
 @CommandLine.Command(name = "connect-blocks", mixinStandardHelpOptions = true, version = "connect-blocks 1.0",
-        description = "The entry point for connect blocks CLI tool")
+        description = "Connects blocks to a chain from external source file")
 public class ConnectBlocks extends PicoCliToolRskContextAware {
 
     @CommandLine.Option(names = {"-f", "--file"}, description = "File path", required = true)
