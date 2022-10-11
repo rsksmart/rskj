@@ -23,6 +23,7 @@ import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.iq80.leveldb.DBIterator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static org.ethereum.TestUtils.randomBytes;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
 
 class LevelDbDataSourceTest {
 
@@ -82,7 +84,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void testPutting() {
+    void put() {
         byte[] key = randomBytes(32);
         dataSource.put(key, randomBytes(32));
 
@@ -105,7 +107,7 @@ class LevelDbDataSourceTest {
     @Test
     void putLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock();
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
         boolean unlocked = false;
 
         try {
@@ -201,7 +203,7 @@ class LevelDbDataSourceTest {
     @Test
     void getLockWorks() {
         ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
-        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
         boolean unlocked = false;
 
         try {
@@ -221,6 +223,82 @@ class LevelDbDataSourceTest {
             Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             dataSource.put(key, value); // put value during write lock
             lock.writeLock().unlock(); // release write lock, so future can start read
+            unlocked = true;
+
+            future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Assertions.fail(e.getMessage());
+        } finally {
+            if (!unlocked) {
+                lock.readLock().unlock();
+            }
+        }
+    }
+
+    @Test
+    void keys() {
+        Assertions.assertTrue(dataSource.keys().isEmpty());
+
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+
+        dataSource.put(key1, value1);
+        dataSource.put(key2, value2);
+
+        Set<ByteArrayWrapper> expectedKeys = new HashSet<>();
+        expectedKeys.add(ByteUtil.wrap(key1));
+        expectedKeys.add(ByteUtil.wrap(key2));
+        Assertions.assertEquals(expectedKeys, dataSource.keys());
+    }
+
+    @Test
+    void keysDBThrows() throws IOException {
+        DB db = Mockito.mock(DB.class, Mockito.RETURNS_DEEP_STUBS);
+        TestUtils.setInternalState(dataSource, "db", db);
+
+        DBIterator iterator = db.iterator();
+        String exceptionMessage = "close threw";
+        doThrow(new IOException(exceptionMessage)).when(iterator).close();
+        RuntimeException rte = Assertions.assertThrows(RuntimeException.class, () -> dataSource.keys());
+        Assertions.assertEquals(IOException.class.getName() + ": " + exceptionMessage, rte.getMessage());
+    }
+
+    @Test
+    void keysLockWorks() {
+        ReentrantReadWriteLock lock = TestUtils.getInternalState(dataSource, "resetDbLock");
+        lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple reads
+        boolean unlocked = false;
+
+        byte[] key1 = TestUtils.randomBytes(20);
+        byte[] value1 = TestUtils.randomBytes(20);
+        byte[] key2 = TestUtils.randomBytes(20);
+        byte[] value2 = TestUtils.randomBytes(20);
+
+        dataSource.put(key1, value1);
+
+        Set<ByteArrayWrapper> expectedKeysBeforeThread = new HashSet<>();
+        expectedKeysBeforeThread.add(ByteUtil.wrap(key1));
+
+        Set<ByteArrayWrapper> expectedKeysOnThread = new HashSet<>();
+        expectedKeysOnThread.add(ByteUtil.wrap(key1));
+        expectedKeysOnThread.add(ByteUtil.wrap(key2));
+
+        try {
+            AtomicBoolean threadStarted = new AtomicBoolean(false);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future<?> future = executor.submit(new Thread(() -> {
+                threadStarted.set(true);
+                Assertions.assertEquals(expectedKeysOnThread, dataSource.keys());
+            }));
+
+            // wait for thread to be started and put a value during active lock for thread
+            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertEquals(expectedKeysBeforeThread, dataSource.keys());
+            dataSource.put(key2, value2);
+
+            lock.writeLock().unlock();
             unlocked = true;
 
             future.get(500, TimeUnit.MILLISECONDS); // would throw assertion errors in thread if any
