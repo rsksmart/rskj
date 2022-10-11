@@ -43,7 +43,7 @@ import java.util.concurrent.Callable;
  *
  * Note: this is an experimental tool
  */
-@CommandLine.Command(name = "startbootstrap", mixinStandardHelpOptions = true, version = "startbootstrap 1.0",
+@CommandLine.Command(name = "start-bootstrap", mixinStandardHelpOptions = true, version = "start-bootstrap 1.0",
         description = "Starts a bootstrap node with one service, which only participates in the peer discovery protocol")
 public class StartBootstrap implements Callable<Integer> {
 
