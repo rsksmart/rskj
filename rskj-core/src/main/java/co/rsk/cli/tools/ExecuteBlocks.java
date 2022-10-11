@@ -42,7 +42,7 @@ import java.util.Arrays;
 @CommandLine.Command(name = "execute-blocks", mixinStandardHelpOptions = true, version = "execute-blocks 1.0",
         description = "Executes blocks for a specified block range")
 public class ExecuteBlocks extends PicoCliToolRskContextAware {
-    @CommandLine.Option(names = {"-fb", "--fromblock"}, description = "From block number", required = true)
+    @CommandLine.Option(names = {"-fb", "--fromBlock"}, description = "From block number", required = true)
     private Long fromBlockNumber;
 
     @CommandLine.Option(names = {"-tb", "--toblock"}, description = "To block number", required = true)
