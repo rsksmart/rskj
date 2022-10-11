@@ -51,7 +51,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
     private static final Logger logger = LoggerFactory.getLogger(DbMigrate.class);
     private static final String NODE_ID_FILE = "nodeId.properties";
 
-    @CommandLine.Option(names = {"-tdb", "--targetdb"}, description = "The target db to migrate to. Example: leveldb, rocksdb ...")
+    @CommandLine.Option(names = {"-t", "--targetDb"}, description = "The target db to migrate to. Example: leveldb, rocksdb ...", required = true)
     private String targetdb;
 
     private static class DbInformation {
