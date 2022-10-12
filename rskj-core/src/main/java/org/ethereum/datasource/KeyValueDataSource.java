@@ -50,6 +50,8 @@ public interface KeyValueDataSource extends DataSource {
 
     Set<ByteArrayWrapper> keys();
 
+    DataSourceKeyIterator keyIterator();
+
     /**
      * Note that updateBatch() does not imply the operation is atomic:
      * if somethings breaks, it's possible that some keys get written and some

@@ -27,15 +27,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class RocksDbDataSourceTest {
 
@@ -53,7 +48,14 @@ public class RocksDbDataSourceTest {
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-        
+
+        try (DataSourceKeyIterator iterator = dataSource.keyIterator()){
+            assertTrue(iterator.hasNext());
+            assertNotNull(iterator.next());
+        } catch (Exception e) {
+            Assert.fail(e.getMessage());
+        }
+
         dataSource.close();
     }
 

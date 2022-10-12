@@ -247,6 +247,11 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     @Override
+    public DataSourceKeyIterator keyIterator() {
+        return new RocksDbKeyIterator(this.db);
+    }
+
+    @Override
     public Set<ByteArrayWrapper> keys() {
         if (logger.isTraceEnabled()) {
             logger.trace("~> RocksDbDataSource.keys(): {}", name);

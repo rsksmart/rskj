@@ -73,6 +73,11 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
+    public synchronized DataSourceKeyIterator keyIterator() {
+        return new DefaultKeyIterator(storage.keySet());
+    }
+
+    @Override
     public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");

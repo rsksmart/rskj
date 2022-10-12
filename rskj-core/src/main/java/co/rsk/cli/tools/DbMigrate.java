@@ -19,6 +19,7 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.cli.CliToolRskContextAware;
+import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.FileUtil;
@@ -37,10 +38,10 @@ import java.util.stream.Stream;
 /**
  * The entry point for db migration CLI tool
  * This is an experimental/unsupported tool
- *
+ * <p>
  * Required cli args:
  * - args[0] - database target where we are going to insert the information from the current selected database.
- *
+ * <p>
  * We do support the migrations between the following databases:
  * - LevelDb (leveldb as argument)
  * - RocksDb (rocksdb as argument)
@@ -183,12 +184,19 @@ public class DbMigrate extends CliToolRskContextAware {
 
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
-        sourceKeyValueDataSource.keys().forEach(sourceKey ->
+        try (DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator()) {
+            while (iterator.hasNext()) {
+                byte[] data = iterator.next();
+
                 targetKeyValueDataSource.put(
-                        sourceKey.getData(),
-                        sourceKeyValueDataSource.get(sourceKey.getData())
-                )
-        );
+                        data,
+                        sourceKeyValueDataSource.get(data)
+                );
+            }
+        } catch (Exception e) {
+            logger.error("An error happened closing DB Key Iterator", e);
+            throw new RuntimeException(e);
+        }
 
         sourceKeyValueDataSource.close();
         targetKeyValueDataSource.close();

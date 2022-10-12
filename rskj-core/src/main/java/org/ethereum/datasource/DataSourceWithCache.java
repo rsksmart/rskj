@@ -201,6 +201,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
+    public DataSourceKeyIterator keyIterator() {
+        if(!uncommittedCache.isEmpty()) {
+            throw new IllegalStateException("There are uncommitted keys");
+        }
+
+        return new DefaultKeyIterator(base.keys());
+    }
+
+    @Override
     public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");

@@ -53,14 +53,35 @@ public class KeyValueDataSourceTest {
 
     @Test
     public void put() {
-        byte[] randomKey = TestUtils.randomBytes(20);
-        byte[] randomValue = TestUtils.randomBytes(20);
+        byte[] randomKey = "testing-key".getBytes();
+        byte[] randomValue = "testing-value".getBytes();
 
         keyValueDataSource.put(randomKey, randomValue);
         if (withFlush) {
             keyValueDataSource.flush();
         }
         assertThat(keyValueDataSource.get(randomKey), is(randomValue));
+
+        try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
+            assertTrue(iterator.hasNext());
+
+            byte[] expectedValue = null;
+
+            while (iterator.hasNext()) {
+                expectedValue = iterator.next();
+                if (ByteUtil.wrap(expectedValue).equals(ByteUtil.wrap(randomKey))) {
+                    break;
+                }
+            }
+
+            assertArrayEquals(expectedValue, randomKey);
+        } catch (Exception e) {
+            if (!withFlush && keyValueDataSource instanceof DataSourceWithCache) {
+                assertEquals(e.getMessage(), "There are uncommitted keys");
+            } else {
+                Assert.fail(e.getMessage());
+            }
+        }
     }
 
     @Test(expected = NullPointerException.class)

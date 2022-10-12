@@ -222,6 +222,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
+    public DataSourceKeyIterator keyIterator() {
+        return new LevelDbKeyIterator(this.db);
+    }
+
+    @Override
     public Set<ByteArrayWrapper> keys() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
