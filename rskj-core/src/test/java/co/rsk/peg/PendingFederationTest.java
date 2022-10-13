@@ -314,7 +314,7 @@ public class PendingFederationTest {
         }
 
         Assert.assertEquals(expectedFederation, builtFederation);
-        if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
+        if (isRskip201Active && !isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
             Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
         }
     }
