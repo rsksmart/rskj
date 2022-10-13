@@ -210,7 +210,9 @@ public class BridgeSupport {
 
     @VisibleForTesting
     InputStream getCheckPoints() {
-        InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+        String resourceName = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+        InputStream checkpoints = BridgeSupport.class.getResourceAsStream(resourceName);
+        logger.debug("[getCheckPoints] Looking for checkpoint {}. Found? {}", resourceName, checkpoints != null);
         if (checkpoints == null) {
             // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
             checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
