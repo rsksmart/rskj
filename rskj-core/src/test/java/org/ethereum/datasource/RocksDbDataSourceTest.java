@@ -144,8 +144,8 @@ class RocksDbDataSourceTest {
             }));
 
             // wait for thread to be started and put a new value on thread holding the write lock
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
-            assertNull(dataSource.get(key)); // thread put should have not been executed during lock
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Assertions.assertNull(dataSource.get(key)); // thread put should have not been executed during lock
             dataSource.put(key, initialValue);
             assertArrayEquals(initialValue, dataSource.get(key)); // thread put should have not been executed during write lock
 
@@ -195,7 +195,7 @@ class RocksDbDataSourceTest {
             }));
 
             // wait for thread to be started and put a value while thread is locked
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             dataSource.put(key, value); // put value during write lock
             lock.writeLock().unlock(); // release write lock, so future can start read
             unlocked = true;
@@ -231,7 +231,7 @@ class RocksDbDataSourceTest {
             }));
 
             // wait for thread to be started and put a new value on thread holding the write lock
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             Assertions.assertNull(dataSource.get(key)); // thread put should have not been executed during lock
             dataSource.put(key, value);
             Assertions.assertArrayEquals(value, dataSource.get(key)); // thread put should have not been executed during write lock
@@ -280,7 +280,7 @@ class RocksDbDataSourceTest {
             }));
 
             // wait for thread to be started and put a value while thread is locked
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             Assertions.assertEquals(expectedKeysBeforeThread, dataSource.keys());
             dataSource.put(key2, value2);
 

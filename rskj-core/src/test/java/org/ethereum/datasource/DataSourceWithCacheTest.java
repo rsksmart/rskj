@@ -189,7 +189,7 @@ class DataSourceWithCacheTest {
             }));
 
             // wait for thread to be started and put a value while thread is locked
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             dataSourceWithCache.put(randomKey1, randomValue1);
             verify(committedCache, times(1)).get(any(ByteArrayWrapper.class)); // not called from thread yet
             verify(committedCache, times(0)).remove(randomKeyWrapped); // not called, it was in committedCache
@@ -409,7 +409,7 @@ class DataSourceWithCacheTest {
             }));
 
             // wait for thread to be started and flush while thread is locked
-            Awaitility.await().timeout(Duration.ofMillis(100)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
+            Awaitility.await().timeout(Duration.ofMillis(1000)).pollDelay(Duration.ofMillis(10)).untilAtomic(threadStarted, equalTo(true));
             verify(baseDataSource, never()).updateBatch(any(), any()); // thread without the lock waits
 
             dataSourceWithCache.flush();
