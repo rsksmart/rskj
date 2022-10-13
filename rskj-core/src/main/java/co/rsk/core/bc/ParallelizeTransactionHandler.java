@@ -112,6 +112,17 @@ public class ParallelizeTransactionHandler {
         return sublistOrder;
     }
 
+    public List<Short> getTxsPerSublist() {
+        List<Short> sublistSizes = new ArrayList<>();
+        for (TransactionSublist sublist: this.sublists) {
+            if (sublist.isSequential()) {
+                continue;
+            }
+            sublistSizes.add((short) sublist.getTransactions().size());
+        }
+        return sublistSizes;
+    }
+
     public long getGasUsedInSequential() {
         return getSequentialSublist().getGasUsed();
     }

@@ -633,10 +633,36 @@ public class BlockExecutor {
 
         String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
+        int threads = Constants.getTransactionExecutionThreads();
+        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel";
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",thread".concat(String.valueOf(j)));
+        }
 
-        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        header = header + "\r";
+
+        short[] txExecutionSublistsEdges = block.getHeader().getTxExecutionSublistsEdges();
+
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",tryToConnect,"+
-                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+",-1,-1\r";
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ totalGasUsed+",-1,-1";
+
+        short lastNum = 0;
+        short len = 0;
+        for (short edge : txExecutionSublistsEdges) {
+            data = data.concat(","+ (edge - lastNum));
+            lastNum = edge;
+            len++;
+        }
+
+        if (len < threads) {
+            for (int i=0; i < threads - len; i++) {
+                data = data.concat(","+ 0);
+            }
+        }
+
+        data = data + "\r";
+
+
         try {
             FileWriter myWriter;
 
@@ -815,11 +841,24 @@ public class BlockExecutor {
         String filePath = "/home/ubuntu/output/metrics.csv";
         Path file = Paths.get(filePath);
 
+        int threads = Constants.getTransactionExecutionThreads();
+        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInParallel,numTxInSequential";
 
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",thread".concat(String.valueOf(j)));
+        }
 
-        String header = "playOrGenerate,rskip144,moment,bNumber,numExecutedTx,feeTotal,gasTotal,numTxInSequential,numTxInParallel\r";
+        header = header+"\r";
+
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
-                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential()+"\r";
+                block.getNumber() +","+ executedTransactions.size() +","+totalPaidFees+","+ gasUsedInBlock+","+ parallelizeTransactionHandler.getTxInParallel() +","+ parallelizeTransactionHandler.getTxInSequential();
+
+        List<Short> transactionsInOrder = parallelizeTransactionHandler.getTxsPerSublist();
+        for (Short txs : transactionsInOrder) {
+            data = data.concat(','+String.valueOf(txs));
+        }
+
+        data = data+"\r";
 
         try {
             FileWriter myWriter;
