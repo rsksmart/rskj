@@ -2,7 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
+import co.rsk.bitcoinj.script.P2shErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import java.time.Instant;
@@ -30,7 +30,7 @@ public class P2shErpFederation extends ErpFederation {
     public final Script getRedeemScript() {
         if (redeemScript == null) {
             logger.debug("[getRedeemScript] Creating the redeem script from the keys");
-            ErpFederationRedeemScriptParser.createP2shErpRedeemScript(
+            redeemScript = P2shErpFederationRedeemScriptParser.createP2shErpRedeemScript(
                 ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
                 ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                 activationDelay
