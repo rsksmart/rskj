@@ -57,7 +57,7 @@ public class ErpFederation extends Federation {
     }
 
     @Override
-    public final Script getRedeemScript() {
+    public Script getRedeemScript() {
         if (!activations.isActive(ConsensusRule.RSKIP284) &&
             btcParams.getId().equals(NetworkParameters.ID_TESTNET)) {
             logger.debug("[getRedeemScript] Returning hardcoded redeem script");

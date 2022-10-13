@@ -33,10 +33,10 @@ public class FederationTestUtils {
 
     public static Federation getFederation(Integer... federationMemberPks) {
         return new Federation(
-                getFederationMembersFromPks(federationMemberPks),
-                ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            getFederationMembersFromPks(federationMemberPks),
+            ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
 
@@ -44,9 +44,9 @@ public class FederationTestUtils {
         List<FederationMember> result = new ArrayList<>();
         for (int i = 1; i <= memberCount; i++) {
             result.add(new FederationMember(
-                    BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
-                    ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
-                    ECKey.fromPrivate(BigInteger.valueOf((i) * 102))
+                BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
+                ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
+                ECKey.fromPrivate(BigInteger.valueOf((i) * 102))
             ));
         }
         result.sort(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR);
@@ -55,9 +55,9 @@ public class FederationTestUtils {
 
     public static List<FederationMember> getFederationMembersFromPks(Integer... pks) {
         return Arrays.stream(pks).map(n -> new FederationMember(
-                BtcECKey.fromPrivate(BigInteger.valueOf(n)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+1)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+2))
+            BtcECKey.fromPrivate(BigInteger.valueOf(n)),
+            ECKey.fromPrivate(BigInteger.valueOf(n+1)),
+            ECKey.fromPrivate(BigInteger.valueOf(n+2))
         )).collect(Collectors.toList());
     }
 
