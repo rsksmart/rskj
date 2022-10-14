@@ -61,7 +61,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
     @Override
     public void onEnter() {
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer(blockStore);
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
         boolean isLongSyncing = peerBestBlockNumOpt.map(this::shouldLongSync).orElse(false);
 
@@ -81,7 +81,7 @@ public class PeerAndModeDecidingSyncState extends BaseSyncState {
     }
 
     private boolean tryStartLongForwardSync() {
-        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer();
+        Optional<Peer> bestPeerOpt = peersInformation.getBestPeer(blockStore);
         Optional<Long> peerBestBlockNumOpt = bestPeerOpt.flatMap(this::getPeerBestBlockNumber);
         if (!bestPeerOpt.isPresent() || !peerBestBlockNumOpt.isPresent()) {
             logger.trace("Forward syncing not possible, no valid peer");
