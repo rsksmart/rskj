@@ -236,22 +236,56 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeAndDeserializeFederation_beforeRskip284_testnet() {
-        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_TESTNET);
+        testSerializeAndDeserializeFederation(
+            false,
+            false,
+            NetworkParameters.ID_TESTNET
+        );
     }
 
     @Test
     public void serializeAndDeserializeFederation_beforeRskip284_mainnet() {
-        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_MAINNET);
+        testSerializeAndDeserializeFederation(
+            false,
+            false,
+            NetworkParameters.ID_MAINNET
+        );
     }
 
     @Test
     public void serializeAndDeserializeFederation_afterRskip284_testnet() {
-        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_TESTNET);
+        testSerializeAndDeserializeFederation(
+            true,
+            false,
+            NetworkParameters.ID_TESTNET
+        );
     }
 
     @Test
     public void serializeAndDeserializeFederation_afterRskip284_mainnet() {
-        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_MAINNET);
+        testSerializeAndDeserializeFederation(
+            true,
+            false,
+            NetworkParameters.ID_MAINNET
+        );
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip353_testnet() {
+        testSerializeAndDeserializeFederation(
+            true,
+            true,
+            NetworkParameters.ID_TESTNET
+        );
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip353_mainnet() {
+        testSerializeAndDeserializeFederation(
+            true,
+            true,
+            NetworkParameters.ID_MAINNET
+        );
     }
 
     @Test
@@ -1189,7 +1223,11 @@ public class BridgeSerializationUtilsTest {
         Assert.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
-    private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
+    private void testSerializeAndDeserializeFederation(
+        boolean isRskip284Active,
+        boolean isRskip353Active,
+        String networkId) {
+
         final int NUM_CASES = 20;
 
         BridgeConstants bridgeConstants;
@@ -1201,6 +1239,7 @@ public class BridgeSerializationUtilsTest {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
@@ -1247,6 +1286,29 @@ public class BridgeSerializationUtilsTest {
 
             if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
                 Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
+            }
+
+            if (isRskip353Active) {
+                Federation testP2shErpFederation = new P2shErpFederation(
+                    members,
+                    Instant.now(),
+                    123,
+                    bridgeConstants.getBtcParams(),
+                    bridgeConstants.getErpFedPubKeysList(),
+                    bridgeConstants.getErpFedActivationDelay(),
+                    activations
+                );
+                byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
+
+                Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(
+                    serializedTestP2shErpFederation,
+                    bridgeConstants,
+                    activations
+                );
+
+                Assert.assertEquals(testP2shErpFederation, deserializedTestP2shErpFederation);
+                Assert.assertNotEquals(testFederation, deserializedTestP2shErpFederation);
+                Assert.assertNotEquals(testErpFederation, deserializedTestP2shErpFederation);
             }
         }
     }
