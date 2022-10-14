@@ -28,7 +28,7 @@ import java.util.Optional;
 
 public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
-    private static final Logger logger = LoggerFactory.getLogger(PeerAndModeDecidingSyncState.class);
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final PeersInformation peersInformation;
     private final BlockStore blockStore;
