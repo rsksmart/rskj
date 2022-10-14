@@ -53,16 +53,11 @@ public class ErpFederationTest {
 
     @Before
     public void setup() {
-        defaultKeys = Arrays.stream(new String[]{
-            "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
-            "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
-            "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
-            "03776b1fd8f86da3c1db3d69699e8250a15877d286734ea9a6da8e9d8ad25d16c1",
-            "03ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc"
-        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        emergencyKeys = BridgeMainNetConstants.getInstance().getErpFedPubKeysList();
-        emergencyKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        activationDelayValue = BridgeMainNetConstants.getInstance().getErpFedActivationDelay();
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+
+        defaultKeys = bridgeConstants.getGenesisFederation().getBtcPublicKeys();
+        emergencyKeys = bridgeConstants.getErpFedPubKeysList();
+        activationDelayValue = bridgeConstants.getErpFedActivationDelay();
 
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
@@ -117,7 +112,7 @@ public class ErpFederationTest {
     @Test
     public void getP2SHScript() {
         Script p2shs = federation.getP2SHScript();
-        String expectedProgram = "a9142f7126864a9794495ca5fd3e210708ecdb6944f087";
+        String expectedProgram = "a914e16874869871d2fbc116ed503699b42b886e4eeb87";
 
         Assert.assertEquals(expectedProgram, Hex.toHexString(p2shs.getProgram()));
         Assert.assertEquals(3, p2shs.getChunks().size());
@@ -130,7 +125,7 @@ public class ErpFederationTest {
     @Test
     public void getAddress() {
         String fedAddress = federation.getAddress().toBase58();
-        String expectedAddress = "2Mwa5J8hkVjCtDZ13pDWDuGGACfsLK6XrKr";
+        String expectedAddress = "2NDo5A7r5GbgMt9hH4iQ3fvuxspixP67xgU";
 
         Assert.assertEquals(expectedAddress, fedAddress);
     }
@@ -793,14 +788,10 @@ public class ErpFederationTest {
             activations
         );
 
-        List<BtcECKey> sortedErpKeys = constants.getErpFedPubKeysList()
-            .stream()
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .collect(Collectors.toList());
         validateErpRedeemScript(
             erpFederation.getRedeemScript(),
             defaultKeys,
-            sortedErpKeys,
+            constants.getErpFedPubKeysList(),
             constants.getErpFedActivationDelay(),
             isRskip293Active
         );
@@ -869,6 +860,10 @@ public class ErpFederationTest {
         List<BtcECKey> emergencyMultisigKeys,
         Long csvValue,
         boolean isRskip293Active) {
+
+        // Keys are sorted when added to the redeem script, so we need them sorted in order to validate
+        defaultMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        emergencyMultisigKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         int expectedCsvValueLength = isRskip293Active ? BigInteger.valueOf(csvValue).toByteArray().length : 2;
         byte[] serializedCsvValue = isRskip293Active ?
