@@ -27,6 +27,8 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
@@ -40,6 +42,8 @@ import java.util.stream.Stream;
  *     things such as the underlying communication channel.
  */
 public class PeersInformation {
+
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
     private static final int MAX_SIZE_FAILURE_RECORDS = 10;
@@ -106,9 +110,17 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
-        return getBestCandidatesStream()
+        long boostrapNodes = getBestCandidatesStream().filter(c -> c.getKey().getAddress().getHostName().contains("bootstrap")).count(); // TODO:I read bootstrap from config
+        long allNodes = getBestCandidatesStream().count();
+
+        Optional<Peer> selectedPeer = getBestCandidatesStream()
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
+
+        String selectedPeerHost = selectedPeer.map(p -> p.getAddress().getHostName()).orElse("none");
+        logger.debug("getBestPeer Total Peers {}, Boostrap {}, selected {}", allNodes, boostrapNodes, selectedPeerHost);
+
+        return selectedPeer;
     }
 
     public Optional<Peer> getBestOrEqualPeer() {
