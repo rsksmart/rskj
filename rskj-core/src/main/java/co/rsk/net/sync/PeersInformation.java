@@ -26,6 +26,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +110,7 @@ public class PeersInformation {
         return this.peerStatuses.get(peer);
     }
 
-    public Optional<Peer> getBestPeer() {
+    public Optional<Peer> getBestPeer(BlockStore blockStore) {
         long boostrapNodes = getBestCandidatesStream().filter(c -> c.getKey().getAddress().getHostName().contains("bootstrap")).count(); // TODO:I read bootstrap from config
         long allNodes = getBestCandidatesStream().count();
 
@@ -118,7 +119,8 @@ public class PeersInformation {
                 .map(Map.Entry::getKey);
 
         String selectedPeerHost = selectedPeer.map(p -> p.getAddress().getHostName()).orElse("none");
-        logger.debug("getBestPeer Total Peers {}, Boostrap {}, selected {}", allNodes, boostrapNodes, selectedPeerHost);
+        long bestBlock = blockStore.getBestBlock().getNumber();
+        logger.debug("getBestPeer Total Peers {}, Boostrap {}, selected {}, bestBlock {}", allNodes, boostrapNodes, selectedPeerHost, bestBlock);
 
         return selectedPeer;
     }
