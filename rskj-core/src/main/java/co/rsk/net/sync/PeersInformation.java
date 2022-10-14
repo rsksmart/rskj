@@ -106,8 +106,16 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
-        List<Map.Entry<Peer, SyncPeerStatus>> bestPeerCandidates = getBestCandidatesStream().sorted(this.peerComparator.reversed()).collect(Collectors.toList());
-        Peer randomPeer = bestPeerCandidates.get((int) Math.floor(Math.random() * (bestPeerCandidates.size() -1))).getKey();
+        List<Map.Entry<Peer, SyncPeerStatus>> bestPeerCandidates = getBestCandidatesStream()
+                .sorted(this.peerComparator.reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+        if (bestPeerCandidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Peer randomPeer = bestPeerCandidates.get((int) Math.floor(Math.random() * (bestPeerCandidates.size() - 1))).getKey();
         return Optional.of(randomPeer);
     }
 
