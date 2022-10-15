@@ -972,16 +972,17 @@ public class BridgeSupport {
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
+        long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageBegin = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
 
         return federationAge > ageBegin && federationAge < ageEnd;
     }
 
     private boolean federationIsPastMigrationAge(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageEnd = bridgeConstants.getFederationActivationAge(activations) + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
 
         return federationAge >= ageEnd;
     }
@@ -1264,7 +1265,7 @@ public class BridgeSupport {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
 
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
                 provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
                 provider.clearNextFederationCreationBlockHeight();
             }
@@ -2604,7 +2605,7 @@ public class BridgeSupport {
         if (nextFederationCreationBlockHeightOpt.isPresent()) {
             long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
-            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge(activations)) {
                 return nextFederationCreationBlockHeight;
             }
         }
