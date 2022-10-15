@@ -50,6 +50,7 @@ public abstract class BridgeConstants {
 
     protected long fundsMigrationAgeSinceActivationBegin;
     protected long fundsMigrationAgeSinceActivationEnd;
+    protected long specialCaseFundsMigrationAgeSinceActivationEnd;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
 
@@ -129,8 +130,10 @@ public abstract class BridgeConstants {
         return fundsMigrationAgeSinceActivationBegin;
     }
 
-    public long getFundsMigrationAgeSinceActivationEnd() {
-        return fundsMigrationAgeSinceActivationEnd;
+    public long getFundsMigrationAgeSinceActivationEnd(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP353) ?
+            specialCaseFundsMigrationAgeSinceActivationEnd :
+            fundsMigrationAgeSinceActivationEnd;
     }
 
     public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }

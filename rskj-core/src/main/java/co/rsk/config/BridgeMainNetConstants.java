@@ -98,6 +98,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         fundsMigrationAgeSinceActivationBegin = 0L;
         fundsMigrationAgeSinceActivationEnd = 10585L;
+        specialCaseFundsMigrationAgeSinceActivationEnd = 172_800L; // 60 days, considering 1 block every 30 seconds
 
         List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
             "0448f51638348b034995b1fd934fe14c92afde783e69f120a46ee16eb6bdc2e4f6b5e37772094c68c0dea2b1be3d96ea9651a9eebda7304914c8047f4e3e251378",
