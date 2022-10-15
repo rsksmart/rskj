@@ -25,7 +25,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import java.util.List;
 
-public class BridgeConstants {
+public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected Federation genesisFederation;
