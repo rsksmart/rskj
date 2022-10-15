@@ -975,14 +975,15 @@ public class BridgeSupport {
         long federationActivationAge = bridgeConstants.getFederationActivationAge(activations);
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
         long ageBegin = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge > ageBegin && federationAge < ageEnd;
     }
 
     private boolean federationIsPastMigrationAge(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = bridgeConstants.getFederationActivationAge(activations) + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageEnd = bridgeConstants.getFederationActivationAge(activations) +
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge >= ageEnd;
     }
