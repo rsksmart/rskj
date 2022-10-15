@@ -7,8 +7,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.RejectedPegoutReason;
@@ -76,9 +74,9 @@ public class BridgeSupportReleaseBtcTest {
         eventLogger = mock(BridgeEventLogger.class);
         utxo = buildUTXO();
         provider = initProvider(repository, activationMock);
+        bridgeSupportBuilder = new BridgeSupportBuilder();
         bridgeSupport = spy(initBridgeSupport(eventLogger, activationMock));
         releaseTx = buildReleaseRskTx();
-        bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
     @Test
@@ -1074,8 +1072,13 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
-        return getBridgeSupport(
-            bridgeConstants, provider, repository, eventLogger, mock(Block.class), null, activationMock);
+        return bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withRepository(repository)
+            .withEventLogger(eventLogger)
+            .withActivations(activationMock)
+            .build();
     }
 
     private BridgeStorageProvider initProvider(Repository repository, ActivationConfig.ForBlock activationMock) throws IOException {
@@ -1087,48 +1090,6 @@ public class BridgeSupportReleaseBtcTest {
 
     private static Repository createRepository() {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BridgeEventLogger eventLogger, Block executionBlock,
-                                           BtcBlockStoreWithCache.Factory blockStoreFactory,
-                                           ActivationConfig.ForBlock activations) {
-        return getBridgeSupport(
-            constants,
-            provider,
-            track,
-            eventLogger,
-            new BtcLockSenderProvider(),
-            executionBlock,
-            blockStoreFactory,
-            activations
-        );
-    }
-
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BridgeEventLogger eventLogger, BtcLockSenderProvider btcLockSenderProvider,
-                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory,
-                                           ActivationConfig.ForBlock activations) {
-        if (btcLockSenderProvider == null) {
-            btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        }
-        if (blockStoreFactory == null) {
-            blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        }
-        return new BridgeSupport(
-            constants,
-            provider,
-            eventLogger,
-            btcLockSenderProvider,
-            mock(PeginInstructionsProvider.class),
-            track,
-            executionBlock,
-            new Context(constants.getBtcParams()),
-            new FederationSupport(constants, provider, executionBlock),
-            blockStoreFactory,
-            activations
-        );
     }
 
     private static Federation getFederation() {
