@@ -6626,12 +6626,11 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
         Block block = mock(Block.class);
         // Set block right after the migration should start
-        when(block.getNumber()).thenReturn(
-            newFed.getCreationBlockNumber() +
-            bridgeConstantsRegtest.getFederationActivationAge() +
+        long blockNumber = newFed.getCreationBlockNumber() +
+            bridgeConstantsRegtest.getFederationActivationAge(activations) +
             bridgeConstantsRegtest.getFundsMigrationAgeSinceActivationBegin() +
-            1
-        );
+            1;
+        when(block.getNumber()).thenReturn(blockNumber);
 
         List<UTXO> utxosToMigrate = new ArrayList<>();
         for (int i = 0; i < utxosToCreate; i++) {
@@ -7309,7 +7308,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             track,
             executionBlock,
             new Context(constants.getBtcParams()),
-            new FederationSupport(constants, provider, executionBlock),
+            new FederationSupport(constants, provider, executionBlock, activations),
             blockStoreFactory,
             activations
         );
