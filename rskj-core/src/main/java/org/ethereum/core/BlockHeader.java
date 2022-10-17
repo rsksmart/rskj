@@ -169,6 +169,13 @@ public class BlockHeader {
         return null;
     }
 
+    // can set logsBloom after sealing
+    public void setExtension(BlockHeaderExtension extension) {
+        if (extension.getHeaderVersion() == 0x1) {
+            this.logsBloom = extension.getLogsBloom();
+        }
+    }
+
     @VisibleForTesting
     public boolean isSealed() {
         return this.sealed;

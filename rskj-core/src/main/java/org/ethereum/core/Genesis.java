@@ -63,6 +63,7 @@ public class Genesis extends Block {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 isRskip126Enabled,
+                null,
                 false
         );
         if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {

@@ -277,6 +277,7 @@ class RemascTestRunner {
                 txs,
                 uncles,
                 true,
+                null,
                 false
         );
     }

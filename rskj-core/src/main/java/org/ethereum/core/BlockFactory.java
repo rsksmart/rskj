@@ -80,16 +80,16 @@ public class BlockFactory {
             uncleList.add(uncleHeader);
         }
 
-        return newBlock(header, transactionList, uncleList, sealed);
+        return newBlock(header, transactionList, uncleList, null, sealed);
     }
 
-    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList) {
-        return newBlock(header, transactionList, uncleList, true);
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, BlockHeaderExtension headerExtension) {
+        return newBlock(header, transactionList, uncleList, headerExtension, true);
     }
 
-    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, boolean sealed) {
+    public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList, BlockHeaderExtension headerExtension, boolean sealed) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, header.getNumber());
-        return new Block(header, transactionList, uncleList, isRskip126Enabled, sealed);
+        return new Block(header, transactionList, uncleList, isRskip126Enabled, headerExtension, sealed);
     }
 
     public BlockHeader decodeHeader(byte[] encoded) {

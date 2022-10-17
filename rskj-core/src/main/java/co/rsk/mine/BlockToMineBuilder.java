@@ -161,7 +161,7 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice,
             byte[] extraData) {
         BlockHeader newHeader = createHeader(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
-        Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+        Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, null, false);
 
         // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
         if (validationRules.isValid(newBlock)) {
@@ -173,7 +173,7 @@ public class BlockToMineBuilder {
         panicProcessor.panic("buildBlock", "some validation failed trying to create a new block");
 
         newHeader = createHeader(mainchainHeaders, Collections.emptyList(), txs, minimumGasPrice, extraData);
-        return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
+        return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), null, false);
     }
 
     private BlockHeader createHeader(

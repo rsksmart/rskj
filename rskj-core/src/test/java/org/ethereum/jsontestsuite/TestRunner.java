@@ -694,7 +694,7 @@ public class TestRunner {
             transactions.add(TransactionBuilder.build(tx));
 
         BlockHeader blockHeader = buildHeader(blockFactory, header);
-        return blockFactory.newBlock(blockHeader, transactions, uncles);
+        return blockFactory.newBlock(blockHeader, transactions, uncles, null);
     }
 
 

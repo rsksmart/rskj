@@ -192,7 +192,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles(), null))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -261,7 +261,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles(), null))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -350,7 +350,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         Block block = mock(Block.class);
         when(block.getNumber()).thenReturn(bodyId);
         when(block.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32))); // make it differ
-        when(blockFactory.newBlock(header, body.getTransactions(), body.getUncles()))
+        when(blockFactory.newBlock(header, body.getTransactions(), body.getUncles(), null))
                 .thenReturn(block);
 
         DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(

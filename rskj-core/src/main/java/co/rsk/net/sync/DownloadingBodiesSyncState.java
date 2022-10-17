@@ -118,7 +118,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
         BlockHeader header = pendingBodyResponses.remove(requestId).header;
         Block block;
         try {
-            block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
+            block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles(), message.getHeaderExtension());
             block.seal();
         } catch (IllegalArgumentException ex) {
             handleInvalidBody(peer, header);

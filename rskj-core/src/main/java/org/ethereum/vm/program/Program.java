@@ -1403,7 +1403,8 @@ public class Program {
                         .setTimestamp(getTimestamp().longValue())
                         .build(),
                     Collections.emptyList(),
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    null
             );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());

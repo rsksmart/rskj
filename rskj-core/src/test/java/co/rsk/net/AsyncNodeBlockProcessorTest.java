@@ -1134,7 +1134,7 @@ public class AsyncNodeBlockProcessorTest {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Block sameBlock = new Block(block.getHeader(), block.getTransactionsList(), block.getUncleList(), true, true);
+        final Block sameBlock = new Block(block.getHeader(), block.getTransactionsList(), block.getUncleList(), true, null, true);
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;

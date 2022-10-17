@@ -64,14 +64,14 @@ public class Block {
     private volatile boolean sealed;
 
     public static Block createBlockFromHeader(BlockHeader header, boolean isRskip126Enabled) {
-        return new Block(header, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true, false);
+        return new Block(header, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled,  null, true, false);
     }
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
-        this(header, transactionsList, uncleList, isRskip126Enabled, sealed, true);
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, BlockHeaderExtension headerExtension, boolean sealed) {
+        this(header, transactionsList, uncleList, isRskip126Enabled, headerExtension, sealed, true);
     }
 
-    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
+    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, BlockHeaderExtension headerExtension, boolean sealed, boolean checktxs) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
 
         if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
@@ -80,6 +80,11 @@ public class Block {
             );
             panicProcessor.panic("txroot", message);
             throw new IllegalArgumentException(message);
+        }
+
+        if (headerExtension != null) {
+            // check hash
+            header.setExtension(headerExtension);
         }
 
         this.header = header;

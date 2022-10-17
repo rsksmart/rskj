@@ -186,9 +186,10 @@ public class BlockchainTest {
 
         Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = blockGenerator.createBlock(10, 5);
-        new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList(), true, true);
+        new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList(), true, null, true);
     }
 
+    // public void checkItDoesntAddAnInvalidHeaderExtension()
 
     private static BlockChainImpl createBlockchain() {
         World world = new World();

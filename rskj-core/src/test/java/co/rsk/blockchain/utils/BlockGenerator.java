@@ -176,7 +176,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 Collections.emptyList(),
-                uncles
+                uncles,
+                null
         );
     }
 
@@ -213,6 +214,7 @@ public class BlockGenerator {
                 newHeader,
                 txs,
                 Collections.emptyList(),
+                null,
                 false
         );
     }
@@ -292,7 +294,7 @@ public class BlockGenerator {
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        return blockFactory.newBlock(newHeader, txs, uncles, false);
+        return blockFactory.newBlock(newHeader, txs, uncles, null, false);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
@@ -340,7 +342,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         );
     }
 
@@ -377,7 +380,8 @@ public class BlockGenerator {
         return blockFactory.newBlock(
                 newHeader,
                 txs,
-                Collections.emptyList()
+                Collections.emptyList(),
+                null
         );
     }
 
