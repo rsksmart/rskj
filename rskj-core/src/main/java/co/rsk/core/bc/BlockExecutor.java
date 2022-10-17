@@ -639,6 +639,10 @@ public class BlockExecutor {
             header = header.concat(",thread".concat(String.valueOf(j)));
         }
 
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",gasThread".concat(String.valueOf(j)));
+        }
+
         header = header + "\r";
 
         short[] txExecutionSublistsEdges = block.getHeader().getTxExecutionSublistsEdges();
@@ -654,10 +658,15 @@ public class BlockExecutor {
             len++;
         }
 
+
         if (len < threads) {
             for (int i=0; i < threads - len; i++) {
                 data = data.concat(","+ 0);
             }
+        }
+
+        for (int i =0; i < threads; i++) {
+            data = data.concat(','+String.valueOf(-1));
         }
 
         data = data + "\r";
@@ -757,7 +766,7 @@ public class BlockExecutor {
             if (tx.getClass() == RemascTransaction.class) {
                 sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());
             } else {
-                sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed());
+                sublistGasAccumulated = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getThisThreadReadKeys(), readWrittenKeysTracker.getThisThreadWrittenKeys(), txExecutor.getGasUsed(), block.getNumber());
             }
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
@@ -848,6 +857,10 @@ public class BlockExecutor {
             header = header.concat(",thread".concat(String.valueOf(j)));
         }
 
+        for (int j = 0; j < threads; j++) {
+            header = header.concat(",gasThread".concat(String.valueOf(j)));
+        }
+
         header = header+"\r";
 
         String data = playOrGenerate+","+activationConfig.isActive(ConsensusRule.RSKIP144, block.getNumber())+",mining,"+
@@ -856,6 +869,11 @@ public class BlockExecutor {
         List<Short> transactionsInOrder = parallelizeTransactionHandler.getTxsPerSublist();
         for (Short txs : transactionsInOrder) {
             data = data.concat(','+String.valueOf(txs));
+        }
+
+        List<Long> gasPerSublist = parallelizeTransactionHandler.getGasPerSublist();
+        for (Long gas : gasPerSublist) {
+            data = data.concat(','+String.valueOf(gas));
         }
 
         data = data+"\r";

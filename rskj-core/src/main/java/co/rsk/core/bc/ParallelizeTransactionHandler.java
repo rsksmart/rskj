@@ -23,6 +23,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.GasCost;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class ParallelizeTransactionHandler {
@@ -38,14 +40,23 @@ public class ParallelizeTransactionHandler {
         this.sublistsHavingReadFromKey = new HashMap<>();
         this.sublists = new ArrayList<>();
         for (short i = 0; i < numberOfSublists; i++){
-            this.sublists.add(new TransactionSublist(parallelSublistGast, false));
+            this.sublists.add(new TransactionSublist(i, parallelSublistGast, false));
         }
-        this.sublists.add(new TransactionSublist(sequentialSublistGasLimit, true));
+        this.sublists.add(new TransactionSublist(-1, sequentialSublistGasLimit, true));
         this.collided = false;
     }
 
-    public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
-        TransactionSublist sublistCandidate = getSublistCandidates(tx, newReadKeys, newWrittenKeys);
+    public Optional<Long> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx, long blockNumber) {
+        String filePath = "/Users/julianlen/workspace/output-experiments/collisions.txt";
+        TransactionSublist sublistCandidate;
+
+        try {
+            FileWriter myWriter = new FileWriter(filePath, true);
+            sublistCandidate = getSublistCandidates(tx, newReadKeys, newWrittenKeys, blockNumber, myWriter);
+            myWriter.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         if (!sublistHasAvailableGas(tx, sublistCandidate)) {
             if (sublistCandidate.isSequential()) {
@@ -123,6 +134,17 @@ public class ParallelizeTransactionHandler {
         return sublistSizes;
     }
 
+    public List<Long> getGasPerSublist() {
+        List<Long> sublistGas = new ArrayList<>();
+        for (TransactionSublist sublist: this.sublists) {
+            if (sublist.isSequential()) {
+                continue;
+            }
+            sublistGas.add(sublist.getGasUsed());
+        }
+        return sublistGas;
+    }
+
     public long getGasUsedInSequential() {
         return getSequentialSublist().getGasUsed();
     }
@@ -168,8 +190,16 @@ public class ParallelizeTransactionHandler {
     }
 
 
-    private TransactionSublist getSublistCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
+    private TransactionSublist getSublistCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long blockNumber, FileWriter myWriter) {
         Optional<TransactionSublist> sublistCandidate = getSublistBySender(tx);
+        String result = "";
+        if (blockNumber == 2) {
+            result = result.concat("====================== BN:" + blockNumber + ",TN:" + tx.getHash().toHexString() + "========================\r");
+        }
+        if (blockNumber == 2 && sublistCandidate.isPresent() && !sublistCandidate.get().isSequential()) {
+            result = result.concat("====================== COLLISION BY SENDER ========================\r");
+            result = result.concat(tx.getSender().toHexString() + "\r");
+        }
 
         if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
             return getSequentialSublist();
@@ -180,6 +210,10 @@ public class ParallelizeTransactionHandler {
             if (sublistsHavingWrittenToKey.containsKey(newReadKey)) {
                 TransactionSublist sublist = sublistsHavingWrittenToKey.get(newReadKey);
                 sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
+                if (blockNumber == 2) {
+                    result = result.concat("====================== nR-W ========================\r");
+                    result = result.concat(newReadKey.toString()+"\r");
+                }
             }
         }
 
@@ -192,6 +226,10 @@ public class ParallelizeTransactionHandler {
             if (sublistsHavingWrittenToKey.containsKey(newWrittenKey)) {
                 TransactionSublist sublist = sublistsHavingWrittenToKey.get(newWrittenKey);
                 sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
+                if (blockNumber == 2) {
+                    result = result.concat("====================== nW-W ========================\r");
+                    result = result.concat(newWrittenKey.toString()+"\r");
+                }
             }
 
             if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
@@ -200,6 +238,10 @@ public class ParallelizeTransactionHandler {
             // read - written
             if (sublistsHavingReadFromKey.containsKey(newWrittenKey)) {
                 Set<TransactionSublist> sublist = sublistsHavingReadFromKey.get(newWrittenKey);
+                if (blockNumber == 2) {
+                    result = result.concat("====================== nW-R ========================\r");
+                    result = result.concat(newWrittenKey.toString()+"\r");
+                }
 
                 if (sublist.size() > 1) {
                     this.collided = true;
@@ -207,6 +249,17 @@ public class ParallelizeTransactionHandler {
                 }
 
                 sublistCandidate = Optional.of(sublistCandidate.map(sc -> getTransactionSublistForReadKeys(sublist, sc)).orElse(getNextSublist(sublist)));
+            }
+        }
+
+        if (sublistCandidate.isPresent()) {
+            try {
+                if (blockNumber == 2){
+                    result = result.concat("====================== BUCKET:" +  sublistCandidate.get().getName() + "========================\r\r");
+                }
+                myWriter.write(result);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -252,16 +305,22 @@ public class ParallelizeTransactionHandler {
 
     private static class TransactionSublist {
 
+        private long name;
         private final long gasLimit;
         private final boolean isSequential;
         private final List<Transaction> transactions;
         private long gasUsedInSublist;
 
-        public TransactionSublist(long sublistGasLimit, boolean isSequential) {
+        public TransactionSublist(long name, long sublistGasLimit, boolean isSequential) {
+            this.name = name;
             this.gasLimit = sublistGasLimit;
             this.isSequential = isSequential;
             this.transactions = new ArrayList<>();
             this.gasUsedInSublist = 0;
+        }
+
+        private long getName() {
+            return this.name;
         }
 
         private void addTransaction(Transaction tx, long gasUsedByTx) {
