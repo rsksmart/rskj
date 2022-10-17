@@ -125,9 +125,10 @@ public class PeersInformation {
                 .findFirst()
                 .map(Map.Entry::getKey);
 
-        String selectedPeerHost = selectedPeer.map(p -> p.getAddress().getHostName()).orElse("none");
+        String selectedPeerHost = selectedPeer.map(p -> p.getAddress().toString()).orElse("none");
+        String selectedPeerId = selectedPeer.map(p -> p.getPeerNodeID().toString()).orElse("none");
         long bestBlock = blockStore.getBestBlock().getNumber();
-        logger.debug("getBestPeer Total Peers {}, Boostrap {}, selected {}, bestBlock {}", allNodes, boostrapNodes, selectedPeerHost, bestBlock);
+        logger.debug("getBestPeer Total Peers {}, Boostrap {}, selected host {}, selected id {} bestBlock {}", allNodes, boostrapNodes, selectedPeerHost, selectedPeerId, bestBlock);
 
         return selectedPeer;
     }
