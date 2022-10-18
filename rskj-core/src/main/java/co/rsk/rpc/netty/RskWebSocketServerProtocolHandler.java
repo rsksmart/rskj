@@ -15,7 +15,10 @@ public class RskWebSocketServerProtocolHandler extends WebSocketServerProtocolHa
 
     public RskWebSocketServerProtocolHandler(String websocketPath, int maxFrameSize) {
         // there are no subprotocols nor extensions
-        super(websocketPath, null, false, maxFrameSize, true);
+        // Note: A port:host can only have one webSocketPath, and that's a Netty limitation.
+        // For more information about
+        // Netty limitations: https://stackoverflow.com/questions/8778806/how-to-handle-different-url-websocket-connections-in-netty/71757361#71757361
+        super(websocketPath, null, false, maxFrameSize, false, true);
     }
 
     @Override
