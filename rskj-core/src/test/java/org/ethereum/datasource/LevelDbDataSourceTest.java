@@ -44,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
@@ -86,7 +85,7 @@ class LevelDbDataSourceTest {
     }
 
     @Test
-    void updateBatchRetriesOnDeleteError() { // TODO:I look for public-void on tests
+    void updateBatchRetriesOnDeleteError() {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
@@ -98,8 +97,8 @@ class LevelDbDataSourceTest {
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
 
-        byte[] keyToDelete1 = randomBytes(32);
-        byte[] keyToDelete2 = randomBytes(32);
+        byte[] keyToDelete1 = TestUtils.generateBytes(this.getClass(), "keyToDelete1", 32);
+        byte[] keyToDelete2 = TestUtils.generateBytes(this.getClass(), "keyToDelete2", 32);
         Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
 
         RuntimeException updateException = Assertions.assertThrows(RuntimeException.class, () -> dataSource.updateBatch(batch, deleteKeys));
@@ -115,9 +114,9 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = randomBytes(32);
-            byte[] initialValue = randomBytes(32);
-            byte[] updatedValue = randomBytes(32);
+            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 32);
+            byte[] initialValue = TestUtils.generateBytes(this.getClass(), "initialValue", 32);
+            byte[] updatedValue = TestUtils.generateBytes(this.getClass(), "updatedValue", 32);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -152,7 +151,7 @@ class LevelDbDataSourceTest {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
-        byte[] key = TestUtils.randomBytes(20);
+        byte[] key = TestUtils.generateBytes(this.getClass(), "key", 20);
         DBException fakeException = new DBException("fake exception");
         Mockito.when(db.get(key)).thenThrow(fakeException);
         DBException dbExceptionThrown = Assertions.assertThrows(DBException.class, () -> dataSource.get(key));
@@ -167,8 +166,8 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = TestUtils.randomBytes(20);
-            byte[] value = TestUtils.randomBytes(20); // TODO:I use generateBytes for all random usages in my changes
+            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 20);
+            byte[] value = TestUtils.generateBytes(this.getClass(), "value", 20);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -202,8 +201,8 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = randomBytes(32);
-            byte[] value = randomBytes(32);
+            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 32);
+            byte[] value = TestUtils.generateBytes(this.getClass(), "value", 32);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -256,10 +255,10 @@ class LevelDbDataSourceTest {
         lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
-        byte[] key1 = TestUtils.randomBytes(20);
-        byte[] value1 = TestUtils.randomBytes(20);
-        byte[] key2 = TestUtils.randomBytes(20);
-        byte[] value2 = TestUtils.randomBytes(20);
+        byte[] key1 = TestUtils.generateBytes(this.getClass(), "key1", 20);
+        byte[] value1 = TestUtils.generateBytes(this.getClass(), "value1", 20);
+        byte[] key2 = TestUtils.generateBytes(this.getClass(), "key2", 20);
+        byte[] value2 = TestUtils.generateBytes(this.getClass(), "value2", 20);
 
         dataSource.put(key1, value1);
 

@@ -54,7 +54,7 @@ class NotParameterizedKeyValueDataSourceTest {
 
     @Test
     void getDbKindValueFromDbKindFileTest() throws IOException {
-        String dbPath = tempDir.toString(); // TODO:I check for usages of tempDir.getRoot(), we should not do it!
+        String dbPath = tempDir.toString();
         File dbKindFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
         String propName = "keyvalue.datasource=";
 
