@@ -20,7 +20,6 @@ package co.rsk.cli.tools;
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
 import co.rsk.cli.PicoCliToolRskContextAware;
-import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -60,8 +59,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import picocli.CommandLine;
 import org.mockito.Mockito;
 import picocli.CommandLine;
 
@@ -686,12 +683,14 @@ class CliToolsTest {
         File workDir = new File(classLoader.getResource("doc/rpc").getFile());
         File destFile = tempDir.resolve( "generated_openrpc.json").toFile();
 
-        GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc();
-
-        String[] args = new String[]{version, workDir.getAbsolutePath(), destFile.getAbsolutePath()};
+        GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc(
+                version,
+                workDir.getAbsolutePath(),
+                destFile.getAbsolutePath()
+        );
 
         try {
-            generateOpenRpcDocCliTool.execute(args);
+            generateOpenRpcDocCliTool.call();
         } catch (RuntimeException e) {
             fail("should have not thrown " + e.getMessage());
         }
@@ -714,7 +713,7 @@ class CliToolsTest {
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
 
         doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
-        doReturn(tempFolder.getRoot().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(tempDir.getRoot().toFile().getPath()).when(rskSystemProperties).databaseDir();
         doReturn(true).when(rskSystemProperties).databaseReset();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
 
@@ -733,6 +732,6 @@ class CliToolsTest {
 
         dummyTool.execute(new String[]{}, () -> rskContext, stopper);
 
-        verify(stopper, times(1)).stop(Mockito.eq(-1));
+        verify(stopper, times(1)).stop(Mockito.eq(1));
     }
 }

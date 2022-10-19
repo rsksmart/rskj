@@ -25,7 +25,6 @@ import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 
 public abstract class PicoCliToolRskContextAware extends CliToolRskContextAware implements Callable<Integer> {
-    protected RskContext ctx;
 
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {

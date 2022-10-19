@@ -18,7 +18,6 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
-import co.rsk.cli.exceptions.PicocliBadResultException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
@@ -32,12 +31,14 @@ import java.util.Objects;
 /**
  * An abstract class for cli tools that need {@link RskContext}. Lifecycle of the  {@link RskContext} instance
  * is being managed by {@link CliToolRskContextAware}.
- *
+ * <p>
  * Also {@link CliToolRskContextAware} provides a logger instance for derived classes.
  */
 public abstract class CliToolRskContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger("clitool");
+    protected RskContext ctx;
+    protected NodeStopper stopper;
 
     protected static CliToolRskContextAware create(@Nonnull Class<?> cliToolClass) {
         Objects.requireNonNull(cliToolClass, "cliToolClass should not be null");
@@ -55,17 +56,30 @@ public abstract class CliToolRskContextAware {
     }
 
     public void execute(@Nonnull String[] args) {
-        execute(args, () -> new RskContext(args, true), System::exit);
+        execute(args, () -> new RskContext(args), System::exit);
     }
 
-    public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper stopper) {
+    public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper nodeStopper) {
         Objects.requireNonNull(args, "args should not be null");
         Objects.requireNonNull(contextFactory, "contextFactory should not be null");
-        Objects.requireNonNull(stopper, "stopper should not be null");
+        Objects.requireNonNull(nodeStopper, "stopper should not be null");
 
         String cliToolName = getClass().getSimpleName();
 
-        try (RskContext ctx = contextFactory.create()){
+        // Ignore contextFactory if ctx was set previously
+        // in order to allow compatibility between picocli
+        // and old cli tool version
+        if (this.ctx == null) {
+            this.ctx = contextFactory.create();
+        }
+        // Ignore nodeStopper if stopper was set previously
+        // in order to allow compatibility between picocli
+        // and old cli tool version
+        if (this.stopper == null) {
+            this.stopper = nodeStopper;
+        }
+
+        try {
             printInfo("{} started", cliToolName);
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
@@ -79,9 +93,6 @@ public abstract class CliToolRskContextAware {
             ctx.close();
 
             stopper.stop(0);
-        } catch (PicocliBadResultException e) {
-            printError("{} failed", cliToolName, e);
-            stopper.stop(e.getErrorCode());
         } catch (Exception e) {
             printError("{} failed", cliToolName, e);
 

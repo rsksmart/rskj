@@ -73,7 +73,7 @@ public class ShowStateInfo extends PicoCliToolRskContextAware {
         return 0;
     }
 
-    private void printStateInfo(BlockStore blockStore, TrieStore trieStore) {
+    private void printStateInfo(BlockStore blockStore, TrieStore trieStore) throws NumberFormatException {
         StateInfo stateInfo = new StateInfo();
 
         Block block;
