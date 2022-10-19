@@ -1,0 +1,9 @@
+{
+  "Transaction": {
+    "required": true,
+    "name": "transaction",
+    "schema": {
+      "$ref": "#/components/schemas/Transaction"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "eth_getUncleCountByBlockNumber",
+  "summary": "Returns the number of uncles in a block from a block matching the given block number.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    }
+  ],
+  "result": {
+    "$ref": "#/components/contentDescriptors/UncleCountResult"
+  },
+  "examples": [
+    {
+      "name": "uncleBlockFound",
+      "params": [
+        {
+          "name": "blockNumberOrTag",
+          "value": "0x1b4"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x2"
+      }
+    }
+  ]
+}

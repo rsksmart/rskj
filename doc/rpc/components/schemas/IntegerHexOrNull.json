@@ -1,0 +1,13 @@
+{
+  "IntegerOrNull": {
+    "title": "integerOrNull",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

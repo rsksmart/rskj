@@ -1,0 +1,10 @@
+{
+  "TransactionCreate": {
+    "name": "transactionData",
+    "required": true,
+    "description": "The transaction data",
+    "schema": {
+      "$ref": "#/components/schemas/TransactionCreate"
+    }
+  }
+}

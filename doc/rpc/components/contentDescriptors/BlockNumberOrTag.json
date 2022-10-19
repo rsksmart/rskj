@@ -1,0 +1,17 @@
+{
+  "BlockNumberOrTag": {
+    "name": "blockNumberOrTag",
+    "required": true,
+    "schema": {
+      "title": "blockNumberOrTag",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/BlockNumberHex"
+        },
+        {
+          "$ref": "#/components/schemas/BlockNumberTag"
+        }
+      ]
+    }
+  }
+}

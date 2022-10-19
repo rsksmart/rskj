@@ -1,0 +1,59 @@
+{
+  "name": "eth_getBlockByNumber",
+  "summary": "Returns information about a block by block number",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    },
+    {
+      "name": "fullTransactionObjects",
+      "description": "If `true` returns the full transaction objects, if `false` only the hashes of the transactions.",
+      "required": true,
+      "schema": {
+        "title": "fullTransactionObjects",
+        "type": "boolean"
+      }
+    }
+  ],
+  "result": {
+    "name": "getBlockByNumberResult",
+    "schema": {
+      "$ref": "#/components/schemas/BlockOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "blockWithFullTransactions",
+      "description": "blockWithFullTransactions",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x1b4"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": true
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
+      }
+    }, {
+      "name": "blockWithTransactionHash",
+      "description": "blockWithTransactionHash",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x1b4"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": false
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultTransactionHash"
+      }
+    }
+  ]
+}

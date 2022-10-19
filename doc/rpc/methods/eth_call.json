@@ -1,0 +1,56 @@
+{
+  "name": "eth_call",
+  "summary": "Executes a new message call (locally) immediately without creating a transaction on the block chain.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionCreate"
+    },
+    {
+      "name": "blockRefOrNumberOrTag",
+      "required": true,
+      "schema": {
+        "title": "blockRefOrNumberOrTag",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BlockRef"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberHex"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberDec"
+          },
+          {
+            "$ref": "#/components/schemas/BlockNumberTag"
+          }
+        ]
+      }
+    }
+  ],
+  "result": {
+    "name": "returnValue",
+    "description": "The return value of the executed contract",
+    "schema": {
+      "$ref": "#/components/schemas/Bytes"
+    }
+  },
+  "examples": [
+    {
+      "name": "callExample",
+      "description": "callExample",
+      "params": [
+        {
+          "$ref": "#/components/schemas/TransactionCreateExampleParam"
+        },
+        {
+          "name": "blockRef",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x"
+      }
+    }
+  ]
+}

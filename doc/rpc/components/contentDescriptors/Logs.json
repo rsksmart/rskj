@@ -1,0 +1,14 @@
+{
+  "Logs": {
+    "name": "logs",
+    "description": "An array of all logs matching filter with given id.",
+    "schema": {
+      "title": "setOfLogs",
+      "type": "array",
+      "description": "Array of log objects, or an empty array if nothing has changed since last poll.",
+      "items": {
+        "$ref": "#/components/schemas/Log"
+      }
+    }
+  }
+}

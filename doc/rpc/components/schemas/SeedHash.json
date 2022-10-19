@@ -1,0 +1,7 @@
+{
+  "SeedHash": {
+    "title": "seedHash",
+    "description": "The seed hash used for the DAG.",
+    "$ref": "#/components/schemas/DataWord"
+  }
+}

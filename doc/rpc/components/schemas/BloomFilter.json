@@ -1,0 +1,7 @@
+{
+  "BloomFilter": {
+    "title": "bloomFilter",
+    "type": "string",
+    "description": "A 2048 bit bloom filter from the logs of the transaction. Each log sets 3 bits though taking the low-order 11 bits of each of the first three pairs of bytes in a Keccak 256 hash of the log's byte series"
+  }
+}

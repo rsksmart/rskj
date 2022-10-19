@@ -1,0 +1,30 @@
+{
+  "name": "eth_sendTransaction",
+  "summary": "Creates new message call transaction or a contract creation, if the data field contains code.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionCreate"
+    }
+  ],
+  "result": {
+    "name": "transactionHash",
+    "description": "The transaction hash, or `zero` hash if the transaction is not yet available.\n\nUse `eth_getTransactionReceipt` to get the contract address, after the transaction was mined, when you created a contract.",
+    "schema": {
+      "$ref": "#/components/schemas/Keccak"
+    }
+  },
+  "examples": [
+    {
+      "name": "transaction",
+      "params": [
+        {
+          "$ref": "#/components/schemas/TransactionCreateExampleParam"
+        }
+      ],
+      "result": {
+        "name": "transactionHash",
+        "value": "0x0297ed9012b044e671a86a8e88bc7cfc79311a1da38b807783ac87b9b89b1b69"
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "eth_getBlockByHash",
+  "summary": "Returns information about a block by hash",
+  "params": [
+    {
+      "name": "blockHash",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/BlockHash"
+      }
+    },
+    {
+      "name": "fullTransactionObjects",
+      "description": "If `true` this method returns the full transaction objects, if `false` only the hashes of the transactions.",
+      "required": true,
+      "schema": {
+        "title": "fullTransactionObjects",
+        "type": "boolean"
+      }
+    }
+  ],
+  "result": {
+    "name": "getBlockByHashResult",
+    "schema": {
+      "$ref": "#/components/schemas/BlockOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "blockWithFullTransactions",
+      "description": "blockWithFullTransactions",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": true
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
+      }
+    }, {
+      "name": "blockWithTransactionHash",
+      "description": "blockWithTransactionHash",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
+        },
+        {
+          "name": "fullTransactionObjects",
+          "value": false
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultTransactionHash"
+      }
+    }
+  ]
+}

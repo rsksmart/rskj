@@ -1,0 +1,32 @@
+{
+  "name": "eth_getUncleCountByBlockHash",
+  "summary": "Returns the number of uncles in a block from a block matching the given block hash.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockHash"
+    }
+  ],
+  "result": {
+    "name": "uncleCountResult",
+    "description": "The Number of total uncles in the given block",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "uncleCount",
+      "description": "uncleCount",
+      "params": [
+        {
+          "name": "blockHash",
+          "value": "0xf1652d8322a880e520f996f7d28b645814a58a202d7d2ab7f058e5566fe4f9f3"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x2"
+      }
+    }
+  ]
+}

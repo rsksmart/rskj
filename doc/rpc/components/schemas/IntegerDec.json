@@ -1,0 +1,8 @@
+{
+  "IntegerDec": {
+    "title": "integer dec",
+    "type": "string",
+    "pattern": "^[0-9]+$",
+    "description": "Decimal representation of the integer"
+  }
+}

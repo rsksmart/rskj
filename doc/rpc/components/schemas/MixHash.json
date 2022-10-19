@@ -1,0 +1,7 @@
+{
+  "MixHash": {
+    "title": "mixHash",
+    "description": "The mix digest.",
+    "$ref": "#/components/schemas/DataWord"
+  }
+}

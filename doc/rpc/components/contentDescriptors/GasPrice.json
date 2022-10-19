@@ -1,0 +1,11 @@
+{
+  "GasPrice": {
+    "name": "gasPrice",
+    "required": true,
+    "schema": {
+      "title": "gasPriceResult",
+      "description": "Integer of the gas price",
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  }
+}

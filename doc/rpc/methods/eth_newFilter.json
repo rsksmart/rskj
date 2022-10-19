@@ -1,0 +1,39 @@
+{
+  "name": "eth_newFilter",
+  "summary": "Creates a filter object, based on filter options, to notify when the state changes (logs).",
+  "description": "To check if the state has changed, call `eth_getFilterChanges`.\n\n**A note on specifying topic filters**:\nTopics are order-dependent. A transaction with a log with topics `[A, B]` will be matched by the following topic filters:\n\n`[]` anything\n`[A]` A in first position (and anything after)\n`[null, B]` anything in first position AND B in second position (and anything after)\n`[A, B]` A in first position AND B in second position (and anything after)\n`[[A, B], [A, B]]` (A OR B) in first position AND (A OR B) in second position (and anything after)",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/Filter"
+    }
+  ],
+  "result": {
+    "name": "filterId",
+    "description": "The filter ID for use in `eth_getFilterChanges`",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "newFilter",
+      "params": [
+        {
+          "name": "filter",
+          "value": {
+            "fromBlock": "0x1",
+            "toBlock": "0x2",
+            "address": "0x8888f1f195afa192cfee860698584c030f4c9db1",
+            "topics": [
+              "0x0000000000000000000000000000000000000000000000000000000012341234"
+            ]
+          }
+        }
+      ],
+      "result": {
+        "name": "filterId",
+        "value": "0x1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "eth_getTransactionCount",
+  "summary": "Returns the number of transactions `sent` from an address",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/Address"
+    },
+    {
+      "$ref": "#/components/contentDescriptors/BlockRefOrNumberOrTag"
+    }
+  ],
+  "result": {
+    "name": "transactionCount",
+    "schema": {
+      "title": "nonceOrNull",
+      "oneOf": [
+        {
+          "$ref": "#/components/schemas/Nonce"
+        },
+        {
+          "$ref": "#/components/schemas/Null"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "name": "found",
+      "params": [
+        {
+          "name": "address",
+          "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+        },{
+          "name": "blockTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "nonce",
+        "value": "0x1"
+      }
+    },{
+      "name": "notFound",
+      "params": [
+        {
+          "name": "address",
+          "value": "0x546bf98e30785c887cdb23267cbffefeb4b0a72b"
+        },{
+          "name": "blockTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "nonce",
+        "value": "null"
+      }
+    }
+  ]
+}

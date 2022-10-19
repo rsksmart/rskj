@@ -1,0 +1,71 @@
+{
+  "name": "eth_syncing",
+  "summary": "Returns an object with data about the sync status or false.",
+  "params": [],
+  "result": {
+    "name": "syncing",
+    "schema": {
+      "title": "isSyncingResult",
+      "oneOf": [
+        {
+          "title": "syncingData",
+          "description": "An object with sync status data",
+          "type": "object",
+          "properties": {
+            "startingBlock": {
+              "title": "syncingDataStartingBlock",
+              "description": "Block at which the import started (will only be reset, after the sync reached his head)",
+              "$ref": "#/components/schemas/IntegerHex"
+            },
+            "currentBlock": {
+              "title": "syncingDataCurrentBlock",
+              "description": "The current block, same as eth_blockNumber",
+              "$ref": "#/components/schemas/IntegerHex"
+            },
+            "highestBlock": {
+              "title": "syncingDataHighestBlock",
+              "description": "The estimated highest block",
+              "$ref": "#/components/schemas/IntegerHex"
+            },
+            "knownStates": {
+              "title": "syncingDataKnownStates",
+              "description": "The known states",
+              "$ref": "#/components/schemas/IntegerHex"
+            },
+            "pulledStates": {
+              "title": "syncingDataPulledStates",
+              "description": "The pulled states",
+              "$ref": "#/components/schemas/IntegerHex"
+            }
+          }
+        },
+        {
+          "title": "notSyncing",
+          "type": "boolean"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "name": "whenSyncing",
+      "params": [],
+      "result": {
+        "name": "result",
+        "value": {
+          "startingBlock": "0x384",
+          "currentBlock": "0x386",
+          "highestBlock": "0x454"
+        }
+      }
+    },
+    {
+      "name": "whenNotSyncing",
+      "params": [],
+      "result": {
+        "name": "result",
+        "value": false
+      }
+    }
+  ]
+}

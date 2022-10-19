@@ -1,0 +1,10 @@
+{
+  "Transactions": {
+    "title": "transactions",
+    "description": "An array of transactions",
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/Transaction"
+    }
+  }
+}

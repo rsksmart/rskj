@@ -1,0 +1,46 @@
+{
+  "name": "eth_getBalance",
+  "summary": "Returns the balance of the account of given address, 0 if not fo",
+  "params": [
+    {
+      "name": "address",
+      "required": true,
+      "description": "Address to check for balance",
+      "schema": {
+        "$ref": "#/components/schemas/Address"
+      }
+    },
+    {
+      "$ref": "#/components/contentDescriptors/BlockRefOrNumberOrTag"
+    }
+  ],
+  "result": {
+    "name": "getBalanceResult",
+    "schema": {
+      "title": "integer",
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]+$",
+      "description": "Hex representation of the integer, `0x0` if the address is not found"
+    }
+  },
+  "examples": [
+    {
+      "name": "getBalanceExample",
+      "description": "getBalanceExample",
+      "params": [
+        {
+          "name": "address",
+          "value": "0xc94770007dda54cF92009BFF0dE90c06F603a09f"
+        },
+        {
+          "name": "blockTag",
+          "value": "latest"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x0234c8a3397aab58"
+      }
+    }
+  ]
+}

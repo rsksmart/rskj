@@ -1,0 +1,54 @@
+{
+  "name": "mnr_submitWork",
+  "summary": "Used for submitting a proof-of-work solution.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/Nonce"
+    },
+    {
+      "name": "powHash",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/PowHash"
+      }
+    },
+    {
+      "name": "mixHash",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/MixHash"
+      }
+    }
+  ],
+  "result": {
+    "name": "isSolutionValid",
+    "description": "returns `true` if the provided solution is valid, otherwise `false`.",
+    "schema": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "name": "submitWorkExample",
+      "params": [
+        {
+          "name": "nonceExample",
+          "value": "0x0000000000000001"
+        },
+        {
+          "name": "powHashExample",
+          "value": "0x6bf2cAE0dE3ec3ecA5E194a6C6e02cf42aADfe1C2c4Fff12E5D36C3Cf7297F22"
+        },
+        {
+          "name": "mixHashExample",
+          "value": "0xD1FE5700000000000000000000000000D1FE5700000000000000000000000000"
+        }
+      ],
+      "result": {
+        "name": "solutionInvalidExample",
+        "description": "this example should return `false` as it is not a valid pow to submit",
+        "value": false
+      }
+    }
+  ]
+}

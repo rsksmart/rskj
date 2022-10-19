@@ -1,0 +1,39 @@
+{
+  "name": "eth_getFilterLogs",
+  "summary": "Returns an array of all logs matching filter with given id.",
+  "externalDocs": {
+    "description": "Result of this method is too big for this doc, please check more info on",
+    "url": "https://developers.rsk.co/rsk/node/architecture/json-rpc/"
+  },
+  "params": [
+    {
+      "name": "filterId",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/FilterId"
+      }
+    }
+  ],
+  "result": {
+    "$ref": "#/components/contentDescriptors/Logs"
+  },
+  "examples": [
+    {
+      "name": "logsResult",
+      "params": [
+        {
+          "name": "filterId",
+          "value": "0x16"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": [
+          {
+            "$ref": "#/components/schemas/LogExampleResult"
+          }
+        ]
+      }
+    }
+  ]
+}

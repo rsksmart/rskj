@@ -1,0 +1,83 @@
+{
+  "Receipt": {
+    "title": "receipt",
+    "type": "object",
+    "description": "The receipt of a transaction",
+    "required": [
+      "blockHash",
+      "blockNumber",
+      "contractAddress",
+      "cumulativeGasUsed",
+      "from",
+      "gasUsed",
+      "logs",
+      "logsBloom",
+      "to",
+      "transactionHash",
+      "transactionIndex"
+    ],
+    "properties": {
+      "blockHash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "blockNumber": {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      "contractAddress": {
+        "title": "ReceiptContractAddress",
+        "description": "The contract address created, if the transaction was a contract creation, otherwise null",
+        "$ref": "#/components/schemas/AddressOrNull"
+      },
+      "cumulativeGasUsed": {
+        "title": "ReceiptCumulativeGasUsed",
+        "description": "The gas units used by the transaction",
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "from": {
+        "title": "From",
+        "description": "The sender of the transaction",
+        "$ref": "#/components/schemas/Address"
+      },
+      "gasUsed": {
+        "title": "ReceiptGasUsed",
+        "description": "The total gas used by the transaction",
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "logs": {
+        "title": "logs",
+        "type": "array",
+        "description": "An array of all the logs triggered during the transaction",
+        "items": {
+          "$ref": "#/components/schemas/Log"
+        }
+      },
+      "logsBloom": {
+        "$ref": "#/components/schemas/BloomFilter"
+      },
+      "to": {
+        "$ref": "#/components/schemas/DestinationAddress"
+      },
+      "transactionHash": {
+        "$ref": "#/components/schemas/TransactionHash"
+      },
+      "transactionIndex": {
+        "$ref": "#/components/schemas/TransactionIndex"
+      },
+      "postTransactionState": {
+        "title": "ReceiptPostTransactionState",
+        "description": "The intermediate stateRoot directly after transaction execution.",
+        "$ref": "#/components/schemas/Keccak"
+      },
+      "status": {
+        "title": "ReceiptStatus",
+        "description": "Whether or not the transaction threw an error.",
+        "type": "boolean"
+      },
+      "root": {
+        "title": "Receipt Root",
+        "description": "32 bytes of post-transaction `stateroot` (pre Byzantium).",
+        "type": "string"
+      }
+    }
+  }
+}

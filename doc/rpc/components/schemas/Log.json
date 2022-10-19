@@ -1,0 +1,44 @@
+{
+  "Log": {
+    "title": "log",
+    "type": "object",
+    "description": "An indexed event generated during a transaction",
+    "properties": {
+      "address": {
+        "title": "LogAddress",
+        "description": "Sender of the transaction",
+        "$ref": "#/components/schemas/Address"
+      },
+      "blockHash": {
+        "$ref": "#/components/schemas/BlockHash"
+      },
+      "blockNumber": {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      },
+      "data": {
+        "title": "LogData",
+        "description": "The data/input string sent along with the transaction",
+        "$ref": "#/components/schemas/Bytes"
+      },
+      "logIndex": {
+        "title": "LogIndex",
+        "description": "The index of the event within its transaction, null when its pending",
+        "$ref": "#/components/schemas/IntegerHex"
+      },
+      "removed": {
+        "title": "logIsRemoved",
+        "description": "Whether or not the log was orphaned off the main chain",
+        "type": "boolean"
+      },
+      "topics": {
+        "$ref": "#/components/schemas/Topics"
+      },
+      "transactionHash": {
+        "$ref": "#/components/schemas/TransactionHash"
+      },
+      "transactionIndex": {
+        "$ref": "#/components/schemas/TransactionIndex"
+      }
+    }
+  }
+}

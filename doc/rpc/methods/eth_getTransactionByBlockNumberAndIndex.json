@@ -1,0 +1,57 @@
+{
+  "name": "eth_getTransactionByBlockNumberAndIndex",
+  "summary": "Returns the information about a transaction requested by the block number and index of which it was mined.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/BlockNumberOrTag"
+    },
+    {
+      "name": "index",
+      "description": "The ordering in which a transaction is mined within its block.",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/IntegerHex"
+      }
+    }
+  ],
+  "result": {
+    "$ref": "#/components/contentDescriptors/TransactionResult"
+  },
+  "examples": [
+    {
+      "name": "existingExample",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x29c"
+        },
+        {
+          "name": "index",
+          "value": "0x0"
+        }
+      ],
+      "result": {
+        "name": "transaction",
+        "value": {
+          "$ref": "#/components/schemas/TransactionExampleResult"
+        }
+      }
+    },{
+      "name": "nullExample",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x174876e800"
+        },
+        {
+          "name": "index",
+          "value": "0x0"
+        }
+      ],
+      "result": {
+        "name": "nullResultExample",
+        "value": null
+      }
+    }
+  ]
+}

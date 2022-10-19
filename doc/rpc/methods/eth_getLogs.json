@@ -1,0 +1,35 @@
+{
+  "name": "eth_getLogs",
+  "summary": "Returns an array of all logs matching a given filter object.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/Filter"
+    }
+  ],
+  "result": {
+    "$ref": "#/components/contentDescriptors/Logs"
+  },
+  "examples": [
+    {
+      "name": "logsByTopic",
+      "params": [
+        {
+          "name": "filter",
+          "value": {
+            "topics": [
+              "0x000000000000000000000000a94f5374fce5edbc8e2a8697c15331677e6ebf0b"
+            ]
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": [
+          {
+            "$ref": "#/components/schemas/LogExampleResult"
+          }
+        ]
+      }
+    }
+  ]
+}

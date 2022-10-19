@@ -1,0 +1,37 @@
+{
+  "name": "mnr_getWork",
+  "summary": "Returns the hash of the current block, the seedHash, and the boundary condition to be met ('target').",
+  "params": [],
+  "result": {
+    "name": "work",
+    "schema": {
+      "title": "getWorkResults",
+      "type": "array",
+      "items": [
+        {
+          "$ref": "#/components/schemas/PowHash"
+        },
+        {
+          "$ref": "#/components/schemas/SeedHash"
+        },
+        {
+          "$ref": "#/components/schemas/Difficulty"
+        }
+      ]
+    }
+  },
+  "examples": [
+    {
+      "name": "work",
+      "params": [],
+      "result": {
+        "name": "work",
+        "value": [
+          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+          "0x5EED00000000000000000000000000005EED0000000000000000000000000000",
+          "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000"
+        ]
+      }
+    }
+  ]
+}

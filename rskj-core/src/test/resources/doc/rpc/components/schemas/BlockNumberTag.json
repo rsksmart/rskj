@@ -1,0 +1,12 @@
+{
+  "BlockNumberTag": {
+    "title": "blockNumberTag",
+    "type": "string",
+    "description": "A fixed tag describing block height, check options below.",
+    "enum": [
+      "earliest",
+      "latest",
+      "pending"
+    ]
+  }
+}

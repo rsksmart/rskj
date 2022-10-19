@@ -1,0 +1,10 @@
+{
+  "Topics": {
+    "title": "LogTopics",
+    "description": "Topics are order-dependent. Each topic can also be an array of DATA with `or` options.",
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/Topic"
+    }
+  }
+}

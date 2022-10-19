@@ -1,0 +1,13 @@
+{
+  "BlockOrNull": {
+    "title": "blockOrNull",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Block"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

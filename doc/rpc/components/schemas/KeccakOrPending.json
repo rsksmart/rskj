@@ -1,0 +1,13 @@
+{
+  "KeccakOrPending": {
+    "title": "keccakOrPending",
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/Keccak"
+      },
+      {
+        "$ref": "#/components/schemas/Null"
+      }
+    ]
+  }
+}

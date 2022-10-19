@@ -1,0 +1,19 @@
+{
+  "name": "eth_newPendingTransactionFilter",
+  "summary": "Creates a filter in the node, to notify when new pending transactions arrive.",
+  "description": "To check if the state has changed, call `eth_getFilterChanges`.",
+  "params": [],
+  "result": {
+    "$ref": "#/components/contentDescriptors/FilterId"
+  },
+  "examples": [
+    {
+      "name": "newPendingTransactionFilter",
+      "params": [],
+      "result": {
+        "name": "filterId",
+        "value": "0x1"
+      }
+    }
+  ]
+}

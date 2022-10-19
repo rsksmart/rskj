@@ -1,0 +1,64 @@
+{
+  "name": "eth_getUncleByBlockNumberAndIndex",
+  "summary": "Returns information about a uncle of a block by hash and uncle index position.",
+  "params": [
+    {
+      "name": "uncleBlockNumber",
+      "description": "The block in which the uncle was included",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/BlockNumberHex"
+      }
+    },
+    {
+      "name": "index",
+      "description": "The ordering in which a uncle is included within its block.",
+      "required": true,
+      "schema": {
+        "$ref": "#/components/schemas/IntegerHex"
+      }
+    }
+  ],
+  "result": {
+    "name": "uncleResult",
+    "description": "returns an uncle block or null",
+    "schema": {
+      "$ref": "#/components/schemas/BlockOrNull"
+    }
+  },
+  "examples": [
+    {
+      "name": "uncleBlockFound",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x29c"
+        },
+        {
+          "name": "uncleIndex",
+          "value": "0x0"
+        }
+      ],
+      "result": {
+        "$ref": "#/components/schemas/BlockExampleResultFullTransaction"
+      }
+    },
+    {
+      "name": "uncleBlockNotFound",
+      "params": [
+        {
+          "name": "blockNumber",
+          "value": "0x0"
+        },
+        {
+          "name": "uncleIndex",
+          "value": "0x0"
+        }
+      ],
+      "result": {
+        "name": "nullResultExample",
+        "value": null
+      }
+    }
+  ]
+}

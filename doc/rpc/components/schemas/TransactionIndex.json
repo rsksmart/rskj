@@ -1,0 +1,7 @@
+{
+  "TransactionIndex": {
+    "title": "transactionIndex",
+    "description": "The index of the transaction. null when its pending",
+    "$ref": "#/components/schemas/IntegerOrNull"
+  }
+}

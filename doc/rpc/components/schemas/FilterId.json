@@ -1,0 +1,7 @@
+{
+  "FilterId": {
+    "title": "filterId",
+    "type": "string",
+    "description": "An identifier used to reference the filter."
+  }
+}

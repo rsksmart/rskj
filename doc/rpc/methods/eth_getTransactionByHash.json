@@ -1,0 +1,41 @@
+{
+  "name": "eth_getTransactionByHash",
+  "summary": "Returns the information about a transaction requested by transaction hash.",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionHash"
+    }
+  ],
+  "result": {
+    "$ref": "#/components/contentDescriptors/TransactionResult"
+  },
+  "examples": [
+    {
+      "name": "transactionFound",
+      "params": [
+        {
+          "name": "txHash",
+          "value": "0x05140aca6b0312a2d7dce35a3227b86b8a973fc69e508c5d4beb2b3c88fa28a1"
+        }
+      ],
+      "result": {
+        "name": "transaction",
+        "value": {
+          "$ref": "#/components/schemas/TransactionExampleResult"
+        }
+      }
+    },{
+      "name": "transactionNotFound",
+      "params": [
+        {
+          "name": "txHash",
+          "value": "0x52ba75091ea97266d10a1d8c827c449464321729f33f9bb25bacc9816a4bccaa"
+        }
+      ],
+      "result": {
+        "name": "noTransaction",
+        "value": null
+      }
+    }
+  ]
+}

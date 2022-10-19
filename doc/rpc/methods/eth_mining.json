@@ -1,0 +1,22 @@
+{
+  "name": "eth_mining",
+  "summary": "Returns true if client is actively mining new blocks.",
+  "params": [],
+  "result": {
+    "name": "mining",
+    "description": "Whether or not the client is mining",
+    "schema": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "name": "isMining",
+      "params": [],
+      "result": {
+        "name": "result",
+        "value": true
+      }
+    }
+  ]
+}

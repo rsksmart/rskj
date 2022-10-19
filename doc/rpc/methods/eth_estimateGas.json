@@ -1,0 +1,31 @@
+{
+  "name": "eth_estimateGas",
+  "description": "Generates and returns an estimate of how much gas is necessary to allow the transaction to complete. The transaction will not be added to the blockchain. Note that the estimate may be significantly more than the amount of gas actually used by the transaction, for a variety of reasons including EVM mechanics and node performance. \n\n See `eth_call` parameters, expect that all properties are optional. If no gas limit is specified geth uses the block gas limit from the pending block as an upper bound. As a result the returned estimate might not be enough to executed the call/transaction when the amount of gas is higher than the pending block gas limit.",
+  "summary": "Calculates an estimate of how much gas is necessary to allow the transaction to complete",
+  "params": [
+    {
+      "$ref": "#/components/contentDescriptors/TransactionCreate"
+    }
+  ],
+  "result": {
+    "name": "gasUsed",
+    "description": "The amount of gas used",
+    "schema": {
+      "$ref": "#/components/schemas/IntegerHex"
+    }
+  },
+  "examples": [
+    {
+      "name": "gasEstimation",
+      "params": [
+        {
+          "$ref": "#/components/schemas/TransactionCreateExampleParam"
+        }
+      ],
+      "result": {
+        "name": "result",
+        "value": "0x5208"
+      }
+    }
+  ]
+}
