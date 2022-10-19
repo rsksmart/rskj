@@ -108,7 +108,6 @@ public class PeersInformation {
     public Optional<Peer> getBestPeer() {
         List<Map.Entry<Peer, SyncPeerStatus>> bestPeerCandidates = getBestCandidatesStream()
                 .sorted(this.peerComparator.reversed())
-                .limit(5)
                 .collect(Collectors.toList());
 
         if (bestPeerCandidates.isEmpty()) {
