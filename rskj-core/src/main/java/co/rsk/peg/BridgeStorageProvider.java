@@ -444,29 +444,34 @@ public class BridgeStorageProvider {
     /**
      * Save the old federation
      */
-    public void saveOldFederation() {
-        if (shouldSaveOldFederation) {
-            RepositorySerializer<Federation> serializer =
-                BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
+    protected void saveOldFederation() {
+        if (!shouldSaveOldFederation) {
+            return;
+        }
+        RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-            if (activations.isActive(RSKIP123)) {
-                if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
-                    saveStorageVersion(
-                        OLD_FEDERATION_FORMAT_VERSION,
-                        ERP_FEDERATION_FORMAT_VERSION
-                    );
-                } else {
-                    saveStorageVersion(
-                        OLD_FEDERATION_FORMAT_VERSION,
-                        FEDERATION_FORMAT_VERSION_MULTIKEY
-                    );
-                }
-
-                serializer = BridgeSerializationUtils::serializeFederation;
+        if (activations.isActive(RSKIP123)) {
+            if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
+                saveStorageVersion(
+                    OLD_FEDERATION_FORMAT_VERSION,
+                    P2SH_ERP_FEDERATION_FORMAT_VERSION
+                );
+            } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
+                saveStorageVersion(
+                    OLD_FEDERATION_FORMAT_VERSION,
+                    ERP_FEDERATION_FORMAT_VERSION
+                );
+            } else {
+                saveStorageVersion(
+                    OLD_FEDERATION_FORMAT_VERSION,
+                    FEDERATION_FORMAT_VERSION_MULTIKEY
+                );
             }
 
-            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, serializer);
+            serializer = BridgeSerializationUtils::serializeFederation;
         }
+
+        safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, serializer);
     }
 
     public PendingFederation getPendingFederation() {
