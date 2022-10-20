@@ -18,9 +18,12 @@
 
 package co.rsk.db;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.datasource.TransientMap;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
+import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
 import java.util.ArrayList;
@@ -38,28 +41,35 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
     private final Map<String, byte[]> metadata;
+    private final boolean readOnly;
 
     private final DB indexDB;
 
-    public MapDBBlocksIndex(DB indexDB) {
+    public MapDBBlocksIndex(DB indexDB, boolean readOnly) {
+        this(indexDB, buildIndex(indexDB), buildMetadata(indexDB), readOnly);
+    }
 
+    @VisibleForTesting
+    MapDBBlocksIndex(DB indexDB, Map<Long, List<IndexedBlockStore.BlockInfo>> index, Map<String, byte[]> metadata, boolean readOnly) {
+        this.readOnly = readOnly;
         this.indexDB = indexDB;
 
-        index = indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet();
+        if (readOnly) {
+            this.index = TransientMap.transientMap(index);
+        } else {
+            this.index = index;
+        }
 
-        metadata = indexDB.hashMapCreate("metadata")
-                .keySerializer(Serializer.STRING)
-                .valueSerializer(Serializer.BYTE_ARRAY)
-                .makeOrGet();
+        if (readOnly) {
+            this.metadata = TransientMap.transientMap(metadata);
+        } else {
+            this.metadata = metadata;
+        }
 
         // Max block number initialization assumes an index without gap
-        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
+        if (!this.metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) { // NOSONAR: computeIfAbsent is not implemented in TransientMap
             long maxBlockNumber = (long) index.size() - 1;
-            metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
+            this.metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
         }
     }
 
@@ -133,11 +143,39 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public void flush() {
-        indexDB.commit();
+        // a read-only mapDB cannot be committed, even if there is nothing to commit
+        if (!readOnly) {
+            indexDB.commit();
+        }
     }
 
     @Override
     public void close() {
         indexDB.close();
+    }
+
+    @VisibleForTesting
+    Map<Long, List<IndexedBlockStore.BlockInfo>> getIndex() {
+        return index;
+    }
+
+    @VisibleForTesting
+    Map<String, byte[]> getMetadata() {
+        return metadata;
+    }
+
+    private static HTreeMap<Long, List<IndexedBlockStore.BlockInfo>> buildIndex(DB indexDB) {
+        return indexDB.hashMapCreate("index")
+                .keySerializer(Serializer.LONG)
+                .valueSerializer(BLOCK_INFO_SERIALIZER)
+                .counterEnable()
+                .makeOrGet();
+    }
+
+    private static HTreeMap<String, byte[]> buildMetadata(DB indexDB) {
+        return indexDB.hashMapCreate("metadata")
+                .keySerializer(Serializer.STRING)
+                .valueSerializer(Serializer.BYTE_ARRAY)
+                .makeOrGet();
     }
 }

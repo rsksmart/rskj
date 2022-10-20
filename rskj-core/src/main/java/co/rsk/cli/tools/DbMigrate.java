@@ -22,6 +22,7 @@ import co.rsk.cli.CliToolRskContextAware;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +129,7 @@ public class DbMigrate extends CliToolRskContextAware {
                     .forEach(this::migrate);
         }
 
-        KeyValueDataSource.validateDbKind(targetDbKind, targetDbDir, true);
+        KeyValueDataSourceUtils.validateDbKind(targetDbKind, targetDbDir, true);
 
         String nodeIdFilePath = "/" + NODE_ID_FILE;
 
@@ -150,8 +151,8 @@ public class DbMigrate extends CliToolRskContextAware {
     ) {
         logger.info("Preparing data sources for db: {}", dbName);
 
-        KeyValueDataSource sourceDataSource = KeyValueDataSource.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
-        KeyValueDataSource targetDataSource = KeyValueDataSource.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
+        KeyValueDataSource sourceDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind, false);
+        KeyValueDataSource targetDataSource = KeyValueDataSourceUtils.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind, false);
 
         logger.info("Data sources prepared successfully");
         logger.info("Preparing indexes for db: {}", dbName);

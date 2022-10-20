@@ -84,6 +84,42 @@ public class KeyValueDataSourceTest {
         }
     }
 
+    @Test
+    public void putThenFlushThenPut() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomValue = TestUtils.randomBytes(20);
+
+        keyValueDataSource.put(randomKey, randomValue);
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+        byte[] modifiedRandomValue = Arrays.copyOf(randomValue, randomValue.length);
+        modifiedRandomValue[modifiedRandomValue.length - 1] += 1;
+        keyValueDataSource.put(randomKey, modifiedRandomValue);
+        assertThat(keyValueDataSource.get(randomKey), is(modifiedRandomValue));
+    }
+
+    @Test
+    public void putThenFlushThenDeleteThenFlushThenPut() {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomValue = TestUtils.randomBytes(20);
+
+        keyValueDataSource.put(randomKey, randomValue);
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+        keyValueDataSource.delete(randomKey);
+        assertNull(keyValueDataSource.get(randomKey));
+        byte[] modifiedRandomValue = Arrays.copyOf(randomValue, randomValue.length);
+        modifiedRandomValue[modifiedRandomValue.length - 1] += 1;
+        keyValueDataSource.put(randomKey, modifiedRandomValue);
+        if (withFlush) {
+            keyValueDataSource.flush();
+        }
+        assertThat(keyValueDataSource.get(randomKey), is(modifiedRandomValue));
+
+    }
+
     @Test(expected = NullPointerException.class)
     public void getNull() {
         keyValueDataSource.get(null);
