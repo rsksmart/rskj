@@ -63,7 +63,7 @@ public class SyncPool implements InternalService {
     private static final long WORKER_TIMEOUT = 3; // 3 seconds
 
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(30);
-
+    public static int count = 0;
     private final Map<NodeID, Channel> peers = new HashMap<>();
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, Instant> pendingConnections = new HashMap<>();

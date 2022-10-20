@@ -22,6 +22,7 @@ package org.ethereum.net.server;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.TraceUtils;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -40,9 +41,12 @@ import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
+
+import static co.rsk.util.TraceUtils.ETHEREUM_CLIENT_ID;
 
 public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
@@ -84,6 +88,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
     @Override
     public void initChannel(NioSocketChannel ch) {
+        MDC.put(ETHEREUM_CLIENT_ID, TraceUtils.getRandomId());
         try {
             logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
 

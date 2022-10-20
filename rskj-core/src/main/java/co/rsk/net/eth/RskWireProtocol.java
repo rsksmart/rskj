@@ -30,6 +30,7 @@ import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.TraceUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.core.Genesis;
@@ -45,6 +46,7 @@ import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -103,6 +105,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
+        MDC.put(TraceUtils.RSK_WIRE_TRACE_ID, TraceUtils.getRandomId());
         loggerNet.debug("Read message: {}", msg);
 
         if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {

@@ -61,7 +61,7 @@
     <logger name="blockexecutor" level="INFO"/>
     <logger name="general" level="INFO"/>
     <logger name="gaspricetracker" level="INFO"/>
-    <logger name="web3" level="DEBUG"/>
+    <logger name="web3" level="INFO"/>
     <logger name="repository" level="INFO"/>
     <logger name="VM" level="ERROR"/>
     <logger name="blockqueue" level="INFO"/>

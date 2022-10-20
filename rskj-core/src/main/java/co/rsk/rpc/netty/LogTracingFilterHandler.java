@@ -17,20 +17,21 @@
  */
 package co.rsk.rpc.netty;
 
+import co.rsk.util.TraceUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import org.slf4j.MDC;
 
-import java.util.UUID;
-
 public class LogTracingFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+
+    public static final String X_TRACE_ID = "X-TRACE-ID";
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws InterruptedException {
-        String uuid = request.headers().contains("X-TRACE-ID") ? request.headers().get("X-TRACE-ID")
-                : UUID.randomUUID().toString();
-        MDC.put("trace.id", uuid);
+        String requestID = request.headers().contains(X_TRACE_ID) ? request.headers().get(X_TRACE_ID)
+                : TraceUtils.getRandomId();
+        MDC.put(TraceUtils.JSON_RPC_REQ_ID, requestID);
         // retain the request so it isn't released automatically by SimpleChannelInboundHandler
         ctx.fireChannelRead(request.retain());
     }
