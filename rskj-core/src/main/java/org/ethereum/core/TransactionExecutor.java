@@ -57,6 +57,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP240;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.program.Program.*;
 
 /**
  * @author Roman Mandeleil
@@ -334,10 +335,9 @@ public class TransactionExecutor {
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
-                execError(String.format( "Out of Gas calling precompiled contract at block %d " +
+                outOfGas(String.format("Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
-                gasLeftover = 0;
                 profiler.stop(metric);
                 return;
             }
@@ -427,6 +427,7 @@ public class TransactionExecutor {
         if (vm == null) {
             transactionTrack.commit();
             return;
+
         }
 
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
@@ -459,8 +460,7 @@ public class TransactionExecutor {
             }
         } catch (Exception e) {
             transactionTrack.rollback();
-            gasLeftover = 0;
-            execError(e);
+            outOfGas(e.getMessage());
             result.setException(e);
             profiler.stop(metric);
             return;
@@ -477,7 +477,7 @@ public class TransactionExecutor {
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
         if (gasLeftover < returnDataGasValue) {
             program.setRuntimeFailure(
-                    Program.ExceptionHelper.notEnoughSpendingGas(
+                    ExceptionHelper.notEnoughSpendingGas(
                             program,
                             "No gas to return just created contract",
                             returnDataGasValue));
@@ -485,7 +485,7 @@ public class TransactionExecutor {
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
-                    Program.ExceptionHelper.tooLargeContractSize(
+                    ExceptionHelper.tooLargeContractSize(
                             program,
                             Constants.getMaxContractSize(),
                             createdContractSize));
@@ -514,7 +514,6 @@ public class TransactionExecutor {
     private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
-            // there's no need to save any change
             transactionTrack.commit(); // todo(fedejinich) this was previously done at the end of go() method
             localCallFinalization();
             return;
@@ -523,24 +522,12 @@ public class TransactionExecutor {
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if(isStorageRentEnabled()) {
-            // pay storage rent
             logger.trace("Paying storage rent. gas leftover: {}", gasLeftover);
-
-            Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
-
-            storageRentResult = StorageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
-                    (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
-                    initialMismatchesCount);
-
-            profiler.stop(storageRentMetric);
-
-            gasLeftover = storageRentResult.getGasAfterPayingRent();
-
-            logger.trace("Paid rent: {}. gas leftover: {}",
-                    storageRentResult.totalPaidRent(), gasLeftover);
+            payStorageRent();
+            logger.trace("Paid storage rent: {}. gas leftover: {}", storageRentResult.totalRent(), gasLeftover);
+        } else {
+            transactionTrack.commit();
         }
-
-        transactionTrack.commit();
 
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
@@ -585,6 +572,32 @@ public class TransactionExecutor {
         logger.trace("tx listener done");
 
         logger.trace("tx finalization done");
+    }
+
+    private void payStorageRent() {
+        Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
+
+        storageRentResult = StorageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+                (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
+                initialMismatchesCount);
+
+        profiler.stop(storageRentMetric);
+
+        if(storageRentResult.isOutOfGas()) {
+            outOfGas(String.format("Not enough gas to pay storage rent. rent to pay: {}",
+                    storageRentResult.getOutOfGasRentToPay()));
+            result.clearFieldsOnException(); 
+            transactionTrack.rollback();
+            return;
+        }
+
+        gasLeftover = storageRentResult.getGasAfterPayingRent();
+        transactionTrack.commit();
+    }
+
+    private void outOfGas(String outOfGasMessage) {
+        execError(outOfGasMessage);
+        gasLeftover = 0;
     }
 
     private void localCallFinalization() {
@@ -732,5 +745,10 @@ public class TransactionExecutor {
     @VisibleForTesting
     public StorageRentResult getStorageRentResult() {
         return storageRentResult;
+    }
+
+    @VisibleForTesting
+    public long getGasLeftover() {
+        return gasLeftover;
     }
 }

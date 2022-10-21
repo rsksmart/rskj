@@ -26,6 +26,22 @@ public class RentedNode {
         this.rentTimestamp = rentTimestamp;
     }
 
+    public ByteArrayWrapper getKey() {
+        return key;
+    }
+
+    public OperationType getOperationType() {
+        return operationType;
+    }
+
+    public long getNodeSize() {
+        return nodeSize;
+    }
+
+    public long getRentTimestamp() {
+        return rentTimestamp;
+    }
+
     /**
      * Calculates the payable rent amount (the total amount it's limited by the rent cap)
      *
@@ -57,14 +73,6 @@ public class RentedNode {
         );
     }
 
-    public long getNodeSize() {
-        return nodeSize;
-    }
-
-    public long getRentTimestamp() {
-        return rentTimestamp;
-    }
-
     /***
      * Given a block timestamp, calculates the duration of a rented node (in milliseconds)
      *
@@ -88,7 +96,7 @@ public class RentedNode {
     /**
      * The rollback fee represents the 25% of accumulated rent at a given block.
      * If the same key is already contained and has a positive rent, then the fee is zero.
-     * This is because rent is fully paid by payableRent() and not as rollbackFee()
+     * This is because rent is fully paid by payableRent() and not as rollbackFee().
      *
      * @param executionBlockTimestamp the current block timestamp
      * @param rentedNodeSet nodes that are already paying storage rent
@@ -109,8 +117,6 @@ public class RentedNode {
         return alreadyPaysRent && payableRent > 0 ? 0 : feeByRent(computedRent);
     }
 
-
-
     @Override
     public String toString() {
         return "RentedNode[key: " + key +
@@ -118,14 +124,6 @@ public class RentedNode {
                 ", nodeSize: " + nodeSize +
                 ", lastRentPaidTimestamp: " + rentTimestamp
                 +"]";
-    }
-
-    public ByteArrayWrapper getKey() {
-        return key;
-    }
-
-    public OperationType getOperationType() {
-        return operationType;
     }
 
     @Override

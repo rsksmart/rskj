@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
@@ -84,7 +85,8 @@ public class RepositoryLocator {
         ));
     }
 
-    private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
+    @VisibleForTesting
+    public Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
