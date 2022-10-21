@@ -673,12 +673,12 @@ class CliToolsTest {
     }
 
     @Test
-    public void generateOpenRpcDoc() throws IOException {
+    void generateOpenRpcDoc() throws IOException {
         String version = "1.1.1";
 
         ClassLoader classLoader = this.getClass().getClassLoader();
         File workDir = new File(classLoader.getResource("doc/rpc").getFile());
-        File destFile = new File(tempFolder.getRoot(), "generated_openrpc.json");
+        File destFile = tempDir.resolve( "generated_openrpc.json").toFile();
 
         GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc();
 

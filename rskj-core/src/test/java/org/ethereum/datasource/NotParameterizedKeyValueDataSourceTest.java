@@ -15,7 +15,7 @@ public class NotParameterizedKeyValueDataSourceTest {
     public Path tempDir;
 
     @Test
-    public void testShouldValidateKindWithEmptyDbDirAndResetDbFalseSuccessfully() {
+    void testShouldValidateKindWithEmptyDbDirAndResetDbFalseSuccessfully() {
         KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, tempDir.toString(), false);
     }
 

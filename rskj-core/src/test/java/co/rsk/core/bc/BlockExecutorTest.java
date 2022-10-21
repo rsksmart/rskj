@@ -253,7 +253,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeAndFillBlockWithNoSavingToStore() {
+    void executeAndFillBlockWithNoSavingToStore() {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
@@ -266,7 +266,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeBlockWithSavingToStore() {
+    void executeBlockWithSavingToStore() {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
         Block block = objects.getBlock();
