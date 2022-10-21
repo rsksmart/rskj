@@ -19,6 +19,9 @@
 
 package co.rsk.storagerent;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.db.OperationType;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
@@ -118,6 +121,24 @@ public class StorageRentUtil {
                 .divide(BigDecimal.valueOf(nodeSize).multiply(RENTAL_RATE), RoundingMode.FLOOR);
 
         return lastPaidTimestamp + timePaid.longValue();
+    }
+
+    public static long feeByRent(long computedRent) {
+        return BigDecimal.valueOf(computedRent)
+                .divide(BigDecimal.valueOf(4), RoundingMode.FLOOR)
+                .longValue();
+    }
+
+    public static long rentThreshold(OperationType operationType) {
+        switch (operationType) {
+            case WRITE_OPERATION:
+            case DELETE_OPERATION:
+                return WRITE_THRESHOLD;
+            case READ_OPERATION:
+                return READ_THRESHOLD;
+            default:
+                throw new RuntimeException("this shouldn't happen");
+        }
     }
 
     private static void validPositiveValue(long value, String s) {

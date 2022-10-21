@@ -19,12 +19,14 @@
 
 package co.rsk.storagerent;
 
+import org.ethereum.db.OperationType;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class StorageRentUtilTest {
 
@@ -164,6 +166,19 @@ public class StorageRentUtilTest {
         } catch (IllegalArgumentException e) {
             assertEquals("rentThreshold must be positive", e.getMessage());
         }
+    }
+
+    @Test
+    public void feeByRent() {
+        assertEquals(25, StorageRentUtil.feeByRent(100));
+    }
+
+    @Test
+    public void rentThreshold() {
+        assertEquals(READ_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.READ_OPERATION));
+        assertEquals(WRITE_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.WRITE_OPERATION));
+        assertEquals(WRITE_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.DELETE_OPERATION));
+        assertEquals(3, OperationType.values().length);
     }
 
     private void assertEqualsDouble(double expected, double actual) {

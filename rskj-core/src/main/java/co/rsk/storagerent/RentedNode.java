@@ -1,12 +1,9 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,11 +26,6 @@ public class RentedNode {
         this.rentTimestamp = rentTimestamp;
     }
 
-    @VisibleForTesting
-    public RentedNode(byte[] rawKey, OperationType operationType, long nodeSize, long rentTimestamp) {
-        this(new ByteArrayWrapper(rawKey), operationType, nodeSize, rentTimestamp);
-    }
-
     /**
      * Calculates the payable rent amount (the total amount it's limited by the rent cap)
      *
@@ -43,9 +35,9 @@ public class RentedNode {
      * */
     public long payableRent(long currentBlockTimestamp) {
         return computeRent(
-                rentDue(getNodeSize(), duration(currentBlockTimestamp)),
-                rentCap(),
-                rentThreshold(getOperationType()));
+                rentDue(this.nodeSize, duration(currentBlockTimestamp)),
+                RENT_CAP,
+                rentThreshold(this.operationType));
     }
     /**
      * Calculates the new timestamp after paying the rent
@@ -54,14 +46,14 @@ public class RentedNode {
      *
      * @return a new updated timestamp
      * */
-    public long getUpdatedRentTimestamp(long currentBlockTimestamp) {
+    public long updatedRentTimestamp(long currentBlockTimestamp) {
         return computeNewTimestamp(
-                getNodeSize(),
-                rentDue(getNodeSize(), duration(currentBlockTimestamp)),
-                getRentTimestamp(),
+                this.nodeSize,
+                rentDue(this.nodeSize, duration(currentBlockTimestamp)),
+                this.rentTimestamp,
                 currentBlockTimestamp,
-                rentCap(),
-                rentThreshold(getOperationType())
+                RENT_CAP,
+                rentThreshold(this.operationType)
         );
     }
 
@@ -93,22 +85,6 @@ public class RentedNode {
         return duration;
     }
 
-    public static long rentThreshold(OperationType operationType) {
-        switch (operationType) {
-            case WRITE_OPERATION:
-            case DELETE_OPERATION:
-                return WRITE_THRESHOLD;
-            case READ_OPERATION:
-                return READ_THRESHOLD;
-            default:
-                throw new RuntimeException("this shouldn't happen");
-        }
-    }
-
-    private long rentCap() {
-        return RENT_CAP;
-    }
-
     /**
      * The rollback fee represents the 25% of accumulated rent at a given block.
      * If the same key is already contained and has a positive rent, then the fee is zero.
@@ -121,8 +97,8 @@ public class RentedNode {
      * */
     public long rollbackFee(long executionBlockTimestamp, Set<RentedNode> rentedNodeSet) {
         long computedRent = computeRent(
-                rentDue(getNodeSize(), duration(executionBlockTimestamp)),
-                rentCap(),
+                rentDue(this.nodeSize, duration(executionBlockTimestamp)),
+                RENT_CAP,
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
 
         long payableRent = payableRent(executionBlockTimestamp);
@@ -133,12 +109,7 @@ public class RentedNode {
         return alreadyPaysRent && payableRent > 0 ? 0 : feeByRent(computedRent);
     }
 
-    @VisibleForTesting
-    public long feeByRent(long computedRent) {
-        return BigDecimal.valueOf(computedRent)
-                .divide(BigDecimal.valueOf(4), RoundingMode.FLOOR)
-                .longValue();
-    }
+
 
     @Override
     public String toString() {
@@ -179,8 +150,5 @@ public class RentedNode {
         return result;
     }
 
-    @VisibleForTesting
-    public long rentByBlock(long executionBlockTimestamp) {
-        return rentDue(this.getNodeSize(), executionBlockTimestamp);
-    }
+
 }

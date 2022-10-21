@@ -12,6 +12,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -358,11 +359,11 @@ public class StorageRentDSLTests {
                                         String txName, long initialTimestamp, long finalTimestamp, int expectedRentedNodesRent) {
         StorageRentResult storageRentResult = world.getTransactionExecutor(txName).getStorageRentResult();
 
-        RentedNode senderAccountState = new RentedNode(trieKeyMapper.getAccountKey(sender),
+        RentedNode senderAccountState = rentedNode(trieKeyMapper.getAccountKey(sender),
                 WRITE_OPERATION, 7, initialTimestamp);
-        RentedNode contractAccountState = new RentedNode(trieKeyMapper.getAccountKey(contract),
+        RentedNode contractAccountState = rentedNode(trieKeyMapper.getAccountKey(contract),
                 WRITE_OPERATION, 3, initialTimestamp);
-        RentedNode code = new RentedNode(trieKeyMapper.getCodeKey(contract),
+        RentedNode code = rentedNode(trieKeyMapper.getCodeKey(contract),
                 READ_OPERATION, 347, initialTimestamp);
 
         assertTrue(storageRentResult.getRentedNodes().contains(senderAccountState));
@@ -479,5 +480,9 @@ public class StorageRentDSLTests {
         processor.processCommands(parser);
 
         return world;
+    }
+
+    public RentedNode rentedNode(byte[] rawKey, OperationType operationType, long nodeSize, long rentTimestamp) {
+        return new RentedNode(new ByteArrayWrapper(rawKey), operationType, nodeSize, rentTimestamp);
     }
 }
