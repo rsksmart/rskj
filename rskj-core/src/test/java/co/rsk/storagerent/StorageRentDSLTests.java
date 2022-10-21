@@ -30,15 +30,14 @@ import static org.ethereum.db.OperationType.*;
 import static org.junit.Assert.*;
 
 /**
- * Grey box testing of the StorageRent feature (RSKIP240)
+ * Grey box tests of the StorageRent feature (RSKIP240)
  * */
 public class StorageRentDSLTests {
 
     public static final long BLOCK_AVERAGE_TIME = TimeUnit.SECONDS.toMillis(30);
 
     /**
-     * Executes a simple value transfer,
-     * it shouldn't trigger storage rent.
+     * Executes a simple value transfer, it shouldn't trigger storage rent.
      * */
     @Test
     public void valueTransfer() throws FileNotFoundException, DslProcessorException {
@@ -50,14 +49,14 @@ public class StorageRentDSLTests {
     }
 
     /**
-     * Transfers tokens from an ERC20 contract
+     * Transfers tokens from an ERC20 contract.
      * */
     @Test
     public void tokenTransfer() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 67_716;
+        long blockCount = 67_716; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
             "dsl/storagerent/token_transfer.txt",
-            BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, 12 days aprox
+            BLOCK_AVERAGE_TIME * blockCount
         );
 
         /**
@@ -79,11 +78,6 @@ public class StorageRentDSLTests {
         assertEquals(900, balanceOf(world, acc1Address,"tx05"));
         // checks the balanceOf acc2 AFTER doing the token transfer
         assertEquals(100, balanceOf(world, acc2Address,"tx06"));
-
-        /**
-         * Storage rent checks, each transaction is executed in a separate block to accumulate enough rent.
-         * 'totalPaidRent' for tx04 is 15001 because contract-code node accumulates rent "faster" than the rest (due to its size)
-         * */
 
         // deploy erc20
         checkStorageRent(world, "tx01", 22500, 0, 8, 0, 9);
@@ -109,10 +103,10 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void internalTransactionFailsButOverallEndsOk() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 74_875;
+        long blockCount = 74_875; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
             "dsl/storagerent/nested_call_handled_fail.txt",
-                BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, 185 days aprox
+                BLOCK_AVERAGE_TIME * blockCount
         );
 
         // rollbackRent should be >0, we want to "penalize" failed access
@@ -128,10 +122,10 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void internalTransactionUnhandledFail() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 74_875;
+        long blockCount = 74_875; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
             "dsl/storagerent/nested_call_unhandled_fail.txt",
-            BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, 25 days aprox
+            BLOCK_AVERAGE_TIME * blockCount
         );
 
         // it failed due to the unhandled exception
@@ -150,10 +144,10 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void internalTransactionsSucceedsButOverallFails() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 74_875;
+        long blockCount = 74_875; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
             "dsl/storagerent/nested_call_succeeds_overall_fail.txt",
-            BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, 25 days aprox
+            BLOCK_AVERAGE_TIME * blockCount
         );
 
         // it failed due to the last revert
@@ -173,10 +167,10 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void internalTransactionsAndOverallSucceeds() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 74_875;
+        long blockCount = 74_875; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
-            BLOCK_AVERAGE_TIME * blockCount // this is the limit to start paying rent, aprox 25 days
+            BLOCK_AVERAGE_TIME * blockCount
         );
         checkStorageRent(world, "tx04", 15002, 0, 8, 0, 4);
     }
@@ -191,7 +185,7 @@ public class StorageRentDSLTests {
     @Test
     public void rollbackFees() throws FileNotFoundException, DslProcessorException {
         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-        long blockCount = 99999999;
+        long blockCount = 99999999; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/rollbackFees.txt",
                 BLOCK_AVERAGE_TIME * blockCount
@@ -239,7 +233,7 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void deleteNodeWithAccumulatedRent() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 974_875;
+        long blockCount = 974_875; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/delete_operation.txt",
                 BLOCK_AVERAGE_TIME * blockCount
@@ -284,7 +278,7 @@ public class StorageRentDSLTests {
      * */
     @Test
     public void deleteNodeWithAccumulatedOutstandingRent() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 974_8750;
+        long blockCount = 974_8750; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/delete_operation.txt",
                 BLOCK_AVERAGE_TIME * blockCount
@@ -333,7 +327,7 @@ public class StorageRentDSLTests {
     @Test
     public void fixedPenaltyForReadingNonExistingKeys_multipleTx() throws FileNotFoundException, DslProcessorException {
         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-        long blockCount = 674_075;
+        long blockCount = 674_075; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/mismatches_multiple_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
@@ -393,7 +387,7 @@ public class StorageRentDSLTests {
 
     @Test
     public void fixedPenaltyForReadingNonExistingKeys_nestedTx() throws FileNotFoundException, DslProcessorException {
-        long blockCount = 674_075;
+        long blockCount = 674_075; // accumulate rent
         World world = processedWorldWithCustomTimeBetweenBlocks(
                 "dsl/storagerent/mismatches_nested_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
@@ -425,9 +419,6 @@ public class StorageRentDSLTests {
                 .collect(Collectors.toList());
 
         assertEquals(new HashSet<>(rentedKeys).size(), rentedKeys.size());
-
-        // todo(fedejinich) discuss this assert with shree, what should we do if this happens?
-//        assertTrue(rollbackKeys.stream().allMatch(rollbackKey -> !rentedKeys.contains(rollbackKey)));
     }
 
 
@@ -473,8 +464,6 @@ public class StorageRentDSLTests {
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
         assertEquals(paidRent, storageRentResult.totalPaidRent());
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
-        // todo(fedejinich) add assert for getMismatchesRent()
-        // todo(fedejinich) add assert for payableRent()
     }
 
     private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
