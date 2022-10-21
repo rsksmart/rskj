@@ -21,9 +21,10 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static co.rsk.storagerent.RentedNode.rentThreshold;
+import static co.rsk.storagerent.StorageRentUtil.rentThreshold;
 import static org.ethereum.db.OperationType.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
