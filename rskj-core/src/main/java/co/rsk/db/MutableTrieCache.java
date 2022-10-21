@@ -273,7 +273,6 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override @VisibleForTesting
     public MutableTrie find(byte[] key) {
-        // todo(fedejinich) I'm not using any cache
         return this.trie.find(key);
     }
 
