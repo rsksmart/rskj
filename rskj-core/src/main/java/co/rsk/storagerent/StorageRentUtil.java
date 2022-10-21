@@ -68,7 +68,6 @@ public class StorageRentUtil {
      * @param duration a duration from the last paid time (expressed in milliseconds)
      * @return total rent due (gas amount)
      */
-    // todo(fedejinich) this should be a private method, it's only used in computeRent & computeNewTimestamp
     public static long rentDue(long nodeSize, long duration) {
         validPositiveValue(nodeSize, "node size must be positive");
         validPositiveValue(duration, "duration must be positive");
