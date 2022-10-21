@@ -2,13 +2,14 @@ package co.rsk.storagerent;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.trie.MutableTrie;
 import co.rsk.util.HexUtils;
 import com.typesafe.config.ConfigValueFactory;
-import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ByteArrayWrapper;
@@ -16,6 +17,7 @@ import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
@@ -271,7 +273,6 @@ public class StorageRentDSLTests {
         assertNull(getStorageValueByBlockName(world, contract, "b02"));
     }
 
-    // todo(fedejinich) there's duplicated code between this test and deleteNodeWithAccumulatedRent
     /**
      * Delete an existing trie node with accumulated outstanding rent.
      * It should:
@@ -393,7 +394,65 @@ public class StorageRentDSLTests {
                 "dsl/storagerent/mismatches_nested_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
-        checkStorageRent(world,"tx04",41327,0,6,0,11);
+        checkStorageRent(world,"tx04",41327,0,6,0,
+                11);
+    }
+
+    /**
+     * Executes an erc20 transfer two times, the second one runs out of gas exactly at rent payment
+     * It should
+     *  - Avoid updating timestamps
+     *  - Behave as an OOG
+     * */
+    @Test
+    public void notEnoughFundsToPayRent() throws FileNotFoundException, DslProcessorException {
+        long blockCount = 67_716_000; // accumulate rent
+        World world = processedWorldWithCustomTimeBetweenBlocks(
+                "dsl/storagerent/not_enough_funds.txt",
+                BLOCK_AVERAGE_TIME * blockCount
+        );
+
+        long b02Timestamp = world.getBlockByName("b02").getTimestamp();
+
+        // check timestamps after b02
+        for (RentedNode rentedNode : world.getTransactionExecutor("tx02")
+                .getStorageRentResult()
+                .getRentedNodes()) {
+            long currentTimestamp = rentTimestampByBlock(world, rentedNode.getKey(), "b02");
+            long b01Timestamp = world.getBlockByName("b01").getTimestamp();
+            assertTrue(b01Timestamp < currentTimestamp && currentTimestamp <= b02Timestamp);
+        }
+
+        // tx03 doesn't have enough funds to pay storage rent, timestamps should be the same as b02
+        String tx03 = "tx03";
+        TransactionExecutor transactionExecutorTx03 = world.getTransactionExecutor(tx03);
+        ProgramResult programResultTx03 = transactionExecutorTx03.getResult();
+        StorageRentResult storageRentResultTx03 = transactionExecutorTx03.getStorageRentResult();
+
+        assertEquals(0, transactionExecutorTx03.getGasLeftover());
+        // program ended up ok
+        assertNull(programResultTx03.getException());
+        assertFalse(programResultTx03.isRevert());
+        // but run out of gas at rent payment
+        assertTrue(storageRentResultTx03.isOutOfGas());
+        assertArrayEquals(new byte[0], world.getTransactionReceiptByName(tx03).getStatus()); // tx fail
+        assertTrue(storageRentResultTx03.getOutOfGasRentToPay() > 0);
+
+        for (RentedNode n : storageRentResultTx03
+                .getRentedNodes()) {
+            long rentTimestampAtB02 = rentTimestampByBlock(world, n.getKey(), "b02");
+            // timestamp wasn't updated
+            assertEquals(rentTimestampAtB02, rentTimestampByBlock(world, n.getKey(), "b03"));
+        }
+    }
+
+    private long rentTimestampByBlock(World world, ByteArrayWrapper key, String blockName) {
+        RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
+        MutableTrie trie = repositoryLocator
+                .mutableTrieSnapshotAt(world.getBlockByName(blockName).getHeader())
+                .get();
+
+        return trie.getRentTimestamp(key.getData()).get();
     }
 
     private static DataWord getStorageValueByBlockName(World world, RskAddress addr, String blockName) {
@@ -463,7 +522,7 @@ public class StorageRentDSLTests {
         assertEquals(rentedNodesCount, storageRentResult.getRentedNodes().size());
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
-        assertEquals(paidRent, storageRentResult.totalPaidRent());
+        assertEquals(paidRent, storageRentResult.totalRent());
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
     }
 
