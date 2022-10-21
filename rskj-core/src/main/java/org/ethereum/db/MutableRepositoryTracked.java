@@ -5,13 +5,15 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import static co.rsk.storagerent.RentedNode.rentThreshold;
+import static co.rsk.storagerent.StorageRentUtil.rentThreshold;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 
@@ -108,7 +110,7 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
         rentedNodes.forEach(node -> {
-            long updatedRentTimestamp = node.getUpdatedRentTimestamp(executionBlockTimestamp);
+            long updatedRentTimestamp = node.updatedRentTimestamp(executionBlockTimestamp);
 
             // only updates to bigger timestamps
             if(updatedRentTimestamp > node.getRentTimestamp()) {
