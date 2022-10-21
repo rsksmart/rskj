@@ -12,7 +12,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
-import org.ethereum.vm.program.Program;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -66,8 +65,9 @@ public class StorageRentManagerTest {
         long expectedRollbackNodesCount = 3;
 
         checkStorageRentPayment(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPaidRent, expectedPayableRent,
-                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount);
+                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPayableRent,
+                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount, false,
+                expectedPaidRent);
     }
 
     private ByteArrayWrapper key(String key) {
@@ -104,12 +104,13 @@ public class StorageRentManagerTest {
         long expectedRollbackNodesCount = 0;
 
         checkStorageRentPayment(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPaidRent, expectedPayableRent,
-                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount);
+                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPayableRent,
+                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount, false,
+                expectedPaidRent);
     }
 
     @Test
-    public void pay_shouldThrowRuntimeExceptionForEmptyLists() {
+    public void pay_shouldThrowIllegalStateExceptionForEmptyLists() {
         int notRelevant = -1;
 
         // params
@@ -124,9 +125,9 @@ public class StorageRentManagerTest {
         try {
             // there are no expected values because this test should fail
             checkStorageRentPayment(notRelevant, notRelevant,
-                    mockBlockTrack, mockTransactionTrack, notRelevant, notRelevant, notRelevant, notRelevant,
-                    notRelevant, notRelevant);
-        } catch (RuntimeException e) {
+                    mockBlockTrack, mockTransactionTrack, notRelevant, notRelevant, notRelevant,
+                    notRelevant, notRelevant, false, notRelevant);
+        } catch (IllegalStateException e) {
             assertEquals("there should be rented nodes or rollback nodes", e.getMessage());
         }
     }
@@ -168,8 +169,8 @@ public class StorageRentManagerTest {
 
         // normal rent payment
         checkStorageRentPayment(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPaidRent, expectedPayableRent,
-                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount);
+                mockBlockTrack, mockTransactionTrack, expectedRemainingGas, expectedPayableRent,
+                expectedRollbacksRent, expectedRentedNodesCount, expectedRollbackNodesCount, false, expectedPaidRent);
 
         // now try to pay rent without enough gas
 
@@ -180,16 +181,10 @@ public class StorageRentManagerTest {
         when(newBlockTrack.getRollBackNodes()).thenReturn(rollbackKeys);
         mockGetRentedNode(newBlockTrack, rentedKeys, rollbackKeys, nodeSize, threeYearsAccumulatedRent);
 
-        try {
-            long notEnoughGas = gasRemaining - 1;
-            long notRelevant = -1;
-
-            checkStorageRentPayment(notEnoughGas, executionBlockTimestamp,
-                    newBlockTrack, unusedTrack, notRelevant, notRelevant, notRelevant,
-                    notRelevant, notRelevant, notRelevant);
-        } catch (Program.OutOfGasException e) {
-            assertEquals("not enough gasRemaining to pay storage rent. gasRemaining: 28749, gasNeeded: 28750", e.getMessage());
-        }
+        long notEnoughGas = gasRemaining - 1;
+        checkStorageRentPayment(notEnoughGas, executionBlockTimestamp,
+                newBlockTrack, unusedTrack, 0, 25000,
+                3750, 5, 3, true, 0);
     }
 
 
@@ -248,7 +243,7 @@ public class StorageRentManagerTest {
 
         transactionTrack.commit();
 
-        assertTrue(result.totalPaidRent() > 0);
+        assertTrue(result.totalRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, updatedTimestamp),
@@ -310,7 +305,7 @@ public class StorageRentManagerTest {
         transactionTrack.commit();
 
         // it shouldn't have updated the timestamp
-        assertTrue(result.totalPaidRent() > 0);
+        assertTrue(result.totalRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, firstBlockTimestamp), // no timestamp update
@@ -337,19 +332,23 @@ public class StorageRentManagerTest {
      * Checks rent payment, given rented nodes and rollback nodes.
      */
     private void checkStorageRentPayment(long gasRemaining, long executionBlockTimestamp,
-                                         MutableRepositoryTracked mockBlockTrack, MutableRepositoryTracked mockTransactionTrack, long expectedRemainingGas,
-                                         long expectedPaidRent, long expectedPayableRent, long expectedRollbacksRent,
-                                         long expectedRentedNodesCount, long expectedRollbackNodesCount) {
+                                         MutableRepositoryTracked mockBlockTrack,
+                                         MutableRepositoryTracked mockTransactionTrack,
+                                         long expectedRemainingGas, long expectedPayableRent,
+                                         long expectedRollbacksRent, long expectedRentedNodesCount,
+                                         long expectedRollbackNodesCount, boolean expectedIsOutOfGas,
+                                         long expectedPaidRent) {
         StorageRentResult storageRentResult = StorageRentManager.pay(gasRemaining, executionBlockTimestamp,
                 mockBlockTrack, mockTransactionTrack, 0);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
         assertTrue(remainingGasAfterPayingRent >= 0);
         assertEquals(expectedRemainingGas, remainingGasAfterPayingRent);
-        assertEquals(expectedPaidRent, storageRentResult.totalPaidRent());
         assertEquals(expectedPayableRent, storageRentResult.getPayableRent());
         assertEquals(expectedRollbacksRent, storageRentResult.getRollbacksRent());
         assertEquals(expectedRentedNodesCount, storageRentResult.getRentedNodes().size());
         assertEquals(expectedRollbackNodesCount, storageRentResult.getRollbackNodes().size());
+        assertEquals(expectedIsOutOfGas, storageRentResult.isOutOfGas());
+        assertEquals(expectedPaidRent, storageRentResult.getPaidRent());
     }
 }
