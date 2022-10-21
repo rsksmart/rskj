@@ -102,7 +102,6 @@ public class MutableRepositoryTracked extends MutableRepository {
         Optional<Long> rentTimestamp = this.mutableTrie.getRentTimestamp(rawKey);
         long lastRentPaidTimestamp = rentTimestamp.isPresent() ? rentTimestamp.get() : NO_RENT_TIMESTAMP;
 
-        // todo(fedejinich) remove nodeExistInTrie, it's always true! (nonexisting nodes are excluded at trackNode())
         RentedNode rentedNode = new RentedNode(key, operationType, nodeSize, lastRentPaidTimestamp);
 
         return rentedNode;
