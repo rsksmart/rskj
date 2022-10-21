@@ -451,7 +451,7 @@ public class BridgeStorageProvider {
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
         if (activations.isActive(RSKIP123)) {
-            if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
+            if (activations.isActive(RSKIP353) && oldFederation instanceof P2shErpFederation) {
                 saveStorageVersion(
                     OLD_FEDERATION_FORMAT_VERSION,
                     P2SH_ERP_FEDERATION_FORMAT_VERSION
