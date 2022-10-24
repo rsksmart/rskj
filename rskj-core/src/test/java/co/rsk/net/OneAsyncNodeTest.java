@@ -35,8 +35,8 @@ import org.ethereum.core.Genesis;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class OneAsyncNodeTest {
+class OneAsyncNodeTest {
     private static SimpleAsyncNode createNode() {
         final World world = new World();
         final NetBlockStore store = new NetBlockStore();
@@ -80,7 +80,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchain() {
+    void buildBlockchain() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -91,12 +91,12 @@ public class OneAsyncNodeTest {
         node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
-    public void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -112,7 +112,7 @@ public class OneAsyncNodeTest {
         node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

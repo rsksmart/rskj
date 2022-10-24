@@ -1,18 +1,18 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockHeader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHeadersResponseMessageTest {
+class BlockHeadersResponseMessageTest {
 
 
     @Test
-    public void accept() {
+    void accept() {
         BlockHeader blockHeader = mock(BlockHeader.class);
         List<BlockHeader> headers = new LinkedList<>();
         headers.add(blockHeader);

@@ -25,22 +25,22 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class PendingTransactionsNotificationEmitterTest {
+class PendingTransactionsNotificationEmitterTest {
     private PendingTransactionsNotificationEmitter emitter;
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
         emitter = new PendingTransactionsNotificationEmitter(ethereum, serializer);
@@ -51,7 +51,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void onPendingTransactionsReceivedEventTriggersMessageToChannel() throws JsonProcessingException {
+    void onPendingTransactionsReceivedEventTriggersMessageToChannel() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
@@ -67,7 +67,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void sendMultipleTransactionsToMultipleSubscriptions() throws JsonProcessingException {
+    void sendMultipleTransactionsToMultipleSubscriptions() throws JsonProcessingException {
         SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
         Channel channel1 = mock(Channel.class);
         SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
@@ -91,7 +91,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void notificationContainsHashedTransaction() {
+    void notificationContainsHashedTransaction() {
         SubscriptionId subscriptionId =  new SubscriptionId(("0x7392"));
         Transaction transaction = TransactionUtils.createTransaction();
         EthSubscriptionNotification<String> notification = emitter.getNotification(subscriptionId, transaction);
@@ -101,7 +101,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSucceedsForExistingSubscriptionId() {
+    void unsubscribeSucceedsForExistingSubscriptionId() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
@@ -111,7 +111,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeChannelThenNothingIsEmitted() {
+    void unsubscribeChannelThenNothingIsEmitted() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
@@ -123,7 +123,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void serializationFailsMessageNotSent() throws JsonProcessingException {
+    void serializationFailsMessageNotSent() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         JsonProcessingException mockException = mock(JsonProcessingException.class);
         Channel channel = mock(Channel.class);

@@ -27,9 +27,9 @@ import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class TwoNodeTest {
+class TwoNodeTest {
     private static SimpleNode createNode(int size) {
         final World world = new World();
         final NetBlockStore store = new NetBlockStore();
@@ -60,21 +60,21 @@ public class TwoNodeTest {
     }
 
     @Test
-    @Ignore
-    public void buildBlockchainAndSynchronize() {
+    @Disabled("???")
+    void buildBlockchainAndSynchronize() {
         SimpleNode node1 = createNode(100);
         SimpleNode node2 = createNode(0);
 
         node1.sendStatusTo(node2);
 
-        Assert.assertEquals(100, node1.getBestBlock().getNumber());
-        Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(100, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(100, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 
     @Test
-    @Ignore
-    public void buildBlockchainPartialAndSynchronize() {
+    @Disabled("???")
+    void buildBlockchainPartialAndSynchronize() {
         SimpleNode node1 = createNode(0);
         SimpleNode node2 = createNode(0);
 
@@ -90,8 +90,8 @@ public class TwoNodeTest {
 
         node1.sendStatusTo(node2);
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(10, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(10, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 }

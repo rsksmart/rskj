@@ -21,12 +21,14 @@ package org.ethereum.config.blockchain.upgrades;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ActivationConfigTest {
+class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
             "hardforkActivationHeights: {",
             "    genesis: 0",
@@ -104,16 +106,16 @@ public class ActivationConfigTest {
     ));
 
     @Test
-    public void readBaseConfig() {
+    void readBaseConfig() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG);
 
         for (ConsensusRule value : ConsensusRule.values()) {
-            assertThat(config.isActive(value, 42), is(true));
+            MatcherAssert.assertThat(config.isActive(value, 42), is(true));
         }
     }
 
     @Test
-    public void readWithTwoUpgradesInOrchid060() {
+    void readWithTwoUpgradesInOrchid060() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG
                 .withValue("hardforkActivationHeights.orchid060", ConfigValueFactory.fromAnyRef(200))
                 .withValue("consensusRules.rskip98", ConfigValueFactory.fromAnyRef("orchid060"))
@@ -121,53 +123,49 @@ public class ActivationConfigTest {
 
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP98 || value == ConsensusRule.RSKIP103) {
-                assertThat(config.isActive(value, 100), is(false));
+                MatcherAssert.assertThat(config.isActive(value, 100), is(false));
             } else {
-                assertThat(config.isActive(value, 100), is(true));
+                MatcherAssert.assertThat(config.isActive(value, 100), is(true));
             }
         }
     }
 
     @Test
-    public void readWithOneHardcodedActivationNumber() {
+    void readWithOneHardcodedActivationNumber() {
         ActivationConfig config = ActivationConfig.read(BASE_CONFIG
                 .withValue("consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200))
         );
 
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP85) {
-                assertThat(config.isActive(value, 100), is(false));
+                MatcherAssert.assertThat(config.isActive(value, 100), is(false));
             } else {
-                assertThat(config.isActive(value, 100), is(true));
+                MatcherAssert.assertThat(config.isActive(value, 100), is(true));
             }
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void failsReadingWithMissingNetworkUpgrade() {
-        ActivationConfig.read(BASE_CONFIG
-                .withoutPath("consensusRules.rskip85")
-        );
+    @Test
+    void failsReadingWithMissingNetworkUpgrade() {
+        Config config = BASE_CONFIG.withoutPath("consensusRules.rskip85");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void failsReadingWithMissingHardFork() {
-        ActivationConfig.read(BASE_CONFIG
-                .withoutPath("hardforkActivationHeights.orchid")
-        );
+    @Test
+    void failsReadingWithMissingHardFork() {
+        Config config = BASE_CONFIG.withoutPath("hardforkActivationHeights.orchid");
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void failsReadingWithUnknownForkConfiguration() {
-        ActivationConfig.read(BASE_CONFIG
-                .withValue("hardforkActivationHeights.orkid", ConfigValueFactory.fromAnyRef(200))
-        );
+    @Test
+    void failsReadingWithUnknownForkConfiguration() {
+        Config config = BASE_CONFIG.withValue("hardforkActivationHeights.orkid", ConfigValueFactory.fromAnyRef(200));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void failsReadingWithUnknownUpgradeConfiguration() {
-        ActivationConfig.read(BASE_CONFIG
-                .withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"))
-        );
+    @Test
+    void failsReadingWithUnknownUpgradeConfiguration() {
+        Config config = BASE_CONFIG.withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> ActivationConfig.read(config));
     }
 }

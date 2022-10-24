@@ -20,18 +20,18 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class SkeletonRequestMessageTest {
+class SkeletonRequestMessageTest {
 
     @Test
-    public void createMessage() {
+    void createMessage() {
         long id = 42;
         long startNumber = 18;
         SkeletonRequestMessage message = new SkeletonRequestMessage(id, startNumber);
@@ -42,7 +42,7 @@ public class SkeletonRequestMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         SkeletonRequestMessage message = new SkeletonRequestMessage(1, 10);
 
         MessageVisitor visitor = mock(MessageVisitor.class);

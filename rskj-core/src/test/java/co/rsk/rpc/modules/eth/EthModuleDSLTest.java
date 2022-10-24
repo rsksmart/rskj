@@ -27,20 +27,21 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.EthModuleTestUtils;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
  */
-public class EthModuleDSLTest {
+class EthModuleDSLTest {
     @Test
-    public void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
+    void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/eth_module/revert_reason.txt");
         World world = new World();
 
@@ -50,8 +51,8 @@ public class EthModuleDSLTest {
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName("tx02");
         byte[] status = transactionReceipt.getStatus();
 
-        Assert.assertNotNull(status);
-        Assert.assertEquals(0, status.length);
+        Assertions.assertNotNull(status);
+        Assertions.assertEquals(0, status.length);
 
         EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
@@ -65,7 +66,7 @@ public class EthModuleDSLTest {
             eth.call(args, "0x2");
             fail();
         } catch (RskJsonRpcRequestException e) {
-            assertThat(e.getMessage(), Matchers.containsString("Negative value."));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value."));
         }
 
         args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1

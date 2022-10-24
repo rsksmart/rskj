@@ -26,19 +26,19 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TransactionReceiptDTOTest {
+class TransactionReceiptDTOTest {
 
     @Test
-    public void testOkStatusField() {
+    void testOkStatusField() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -68,7 +68,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusField() {
+    void testErrorStatusField() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -98,7 +98,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusFieldUsingEmptyByteArray() {
+    void testErrorStatusFieldUsingEmptyByteArray() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -128,7 +128,7 @@ public class TransactionReceiptDTOTest {
     }
 
     @Test
-    public void testErrorStatusFieldUsingNullByteArray() {
+    void testErrorStatusFieldUsingNullByteArray() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();

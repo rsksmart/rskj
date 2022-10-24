@@ -29,8 +29,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -38,19 +38,19 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
  * @since 15.10.2014
  */
-public class ChannelManagerImplTest {
+class ChannelManagerImplTest {
 
 
     @Test
-    public void getNumberOfPeersToSendStatusTo() {
+    void getNumberOfPeersToSendStatusTo() {
         ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
 
         assertEquals(1, channelManagerImpl.getNumberOfPeersToSendStatusTo(1));
@@ -65,13 +65,13 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void blockAddressIsAvailable() throws UnknownHostException {
+    void blockAddressIsAvailable() throws UnknownHostException {
         ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
-        Assert.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
+        Assertions.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
     }
 
     @Test
-    public void blockAddressIsNotAvailable() {
+    void blockAddressIsNotAvailable() {
         TestSystemProperties config = mock(TestSystemProperties.class);
         when(config.maxConnectionsAllowed()).thenReturn(1);
         when(config.networkCIDR()).thenReturn(32);
@@ -95,11 +95,11 @@ public class ChannelManagerImplTest {
         channelManager.add(peer);
         channelManager.tryProcessNewPeers();
 
-        Assert.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
+        Assertions.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
     }
 
     @Test
-    public void broadcastBlock() {
+    void broadcastBlock() {
         ChannelManager target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
 
         Block block = mock(Block.class);
@@ -110,7 +110,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void broadcastTransactions_broadcastToAllActivePeers() {
+    void broadcastTransactions_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
@@ -120,12 +120,12 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
 
-        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
-        Assert.assertEquals(2, broadcastedTo.size());
+        Assertions.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assertions.assertEquals(2, broadcastedTo.size());
     }
 
     @Test
-    public void broadcastTransactions_skipSender() {
+    void broadcastTransactions_skipSender() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
@@ -138,12 +138,12 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.singleton(sender.getNodeId()));
 
-        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
-        Assert.assertEquals(2, broadcastedNodeIDS.size());
+        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assertions.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
+        Assertions.assertEquals(2, broadcastedNodeIDS.size());
     }
 
     @Test
-    public void broadcastTransaction_broadcastToAllActivePeers() {
+    void broadcastTransaction_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final Map<NodeID,Channel> activePeers = peersForTests(2);
@@ -152,8 +152,8 @@ public class ChannelManagerImplTest {
 
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransaction(transaction, Collections.emptySet());
 
-        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
-        Assert.assertEquals(2, broadcastedTo.size());
+        Assertions.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assertions.assertEquals(2, broadcastedTo.size());
     }
 
     public Map<NodeID,Channel> peersForTests(int count) {

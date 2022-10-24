@@ -6,27 +6,27 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 14/11/2017.
  */
-public class RemascFederationProviderTest {
+class RemascFederationProviderTest {
     @Test
-    public void getDefaultFederationSize() {
+    void getDefaultFederationSize() {
         RemascFederationProvider provider = getRemascFederationProvider();
-        Assert.assertEquals(3, provider.getFederationSize());
+        Assertions.assertEquals(3, provider.getFederationSize());
     }
 
     @Test
-    public void getFederatorAddress() {
+    void getFederatorAddress() {
         RemascFederationProvider provider = getRemascFederationProvider();
 
         byte[] address = provider.getFederatorAddress(0).getBytes();
 
-        Assert.assertNotNull(address);
-        Assert.assertEquals(20, address.length);
+        Assertions.assertNotNull(address);
+        Assertions.assertEquals(20, address.length);
     }
 
     private static RemascFederationProvider getRemascFederationProvider() {

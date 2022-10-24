@@ -19,23 +19,23 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class GetBlockMessageTest {
+class GetBlockMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         GetBlockMessage message = new GetBlockMessage(hash);
 
-        Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertArrayEquals(hash, message.getBlockHash());
+        Assertions.assertEquals(MessageType.GET_BLOCK_MESSAGE, message.getMessageType());
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = new byte[]{0x0F};
         GetBlockMessage message = new GetBlockMessage(hash);
 

@@ -22,8 +22,8 @@ package org.ethereum.net.rlpx;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +31,13 @@ import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Created by mario on 01/08/2016.
  */
-public class NodeTest {
+class NodeTest {
 
     private Logger logger = LoggerFactory.getLogger(NodeTest.class);
 
@@ -56,7 +56,7 @@ public class NodeTest {
 
 
     @Test
-    public void nodeSerialization() {
+    void nodeSerialization() {
 
         Node node_1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
         Node node_2 = new Node(node_1.getRLP());
@@ -67,25 +67,25 @@ public class NodeTest {
 
         assertEquals(ByteUtil.toHexString(NODE_ID_1), ByteUtil.toHexString(id_2));
         assertEquals(NODE_HOST_1, host_2);
-        assertTrue(NODE_PORT_1 == port_2);
+        assertEquals((int) NODE_PORT_1, port_2);
     }
 
     @Test
-    public void getAddress() {
+    void getAddress() {
         Node node = new Node(NODE_ID_1, GOOGLE, GOOGLE_PORT);
         Pattern pattern = Pattern.compile(IP_ADDRESS_PATTERN);
 
         String address = node.getAddress().getAddress().getHostAddress();
         Matcher matcher = pattern.matcher(address);
 
-        Assert.assertTrue(StringUtils.isNotBlank(address));
-        Assert.assertTrue(address, matcher.matches());
+        Assertions.assertTrue(StringUtils.isNotBlank(address));
+        Assertions.assertTrue(matcher.matches(), address);
 
         node = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
 
         address = node.getAddressAsString();
-        Assert.assertTrue(StringUtils.isNotBlank(address));
-        Assert.assertTrue(address.startsWith(NODE_HOST_1));
+        Assertions.assertTrue(StringUtils.isNotBlank(address));
+        Assertions.assertTrue(address.startsWith(NODE_HOST_1));
 
     }
 

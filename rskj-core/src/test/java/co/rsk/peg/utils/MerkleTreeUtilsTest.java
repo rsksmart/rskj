@@ -1,14 +1,14 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class MerkleTreeUtilsTest {
+class MerkleTreeUtilsTest {
     @Test
-    public void combineLeftRight() {
+    void combineLeftRight() {
         // Examples generated using bitcoind on regtest, with two-transaction blocks
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 Sha256Hash.wrap("ceea4835dd23fae1978a3f6f3f0aa0171e018360272dd5b98d37550fbc978d01"),
                 MerkleTreeUtils.combineLeftRight(
                         Sha256Hash.wrap("b945b008fbc3f357db745909958b570773fc14575a36af8bbc195b484e21f366"),
@@ -16,7 +16,7 @@ public class MerkleTreeUtilsTest {
                 )
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 Sha256Hash.wrap("107857d7233c41d4c37ecaa9ad9d9ab15371f643074866cd23d657e6e99676be"),
                 MerkleTreeUtils.combineLeftRight(
                         Sha256Hash.wrap("083eafdf670bb1bbc83b63262887e3cf519c3e252fac29adfb92c1e857b37f91"),
@@ -24,7 +24,7 @@ public class MerkleTreeUtilsTest {
                 )
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 Sha256Hash.wrap("71a12c9bd54735864dd6e12640e6d00d60a42a2e92e4cd0bde3f9f268b7d4345"),
                 MerkleTreeUtils.combineLeftRight(
                         Sha256Hash.wrap("c960ed36a67318cd562d384bfbf41499db1312835e2bfe86805d9465afe9736f"),

@@ -27,17 +27,17 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
 
 import static org.mockito.Mockito.*;
 
-public class DownloadingHeadersSyncStateTest {
+class DownloadingHeadersSyncStateTest {
     @Test
-    public void itIgnoresNewPeerInformation() {
+    void itIgnoresNewPeerInformation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         Map<Peer, List<BlockIdentifier>> skeletons = Collections.singletonMap(null, null);
@@ -52,12 +52,12 @@ public class DownloadingHeadersSyncStateTest {
 
         for (int i = 0; i < 10; i++) {
             syncState.newPeerStatus();
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
         }
     }
 
     @Test
-    public void itTimeoutsWhenWaitingForRequest() {
+    void itTimeoutsWhenWaitingForRequest() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SyncState syncState = new DownloadingHeadersSyncState(
@@ -70,17 +70,17 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         syncState.newPeerStatus();
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
-        Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
     @Test
-    public void itDoesntTimeoutWhenSendingMessages() {
+    void itDoesntTimeoutWhenSendingMessages() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
@@ -93,22 +93,22 @@ public class DownloadingHeadersSyncStateTest {
                 0);
 
         syncState.newPeerStatus();
-        Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
         for (int i = 0; i < 10; i++) {
             syncState.messageSent();
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
             syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
-            Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.stopSyncingWasCalled());
         }
 
         syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
-        Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
     @Test
-    public void newBlockHeadersWhenNoCurrentChunkThenSyncIssue() {
+    void newBlockHeadersWhenNoCurrentChunkThenSyncIssue() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
@@ -133,7 +133,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenUnexpectedChunkSizeThenInvalidMessage() {
+    void newBlockHeadersWhenUnexpectedChunkSizeThenInvalidMessage() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);
@@ -164,7 +164,7 @@ public class DownloadingHeadersSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenUnexpectedHeaderThenInvalidMessage() {
+    void newBlockHeadersWhenUnexpectedHeaderThenInvalidMessage() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
         Peer selectedPeer = mock(Peer.class);

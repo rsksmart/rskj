@@ -1,16 +1,17 @@
 package co.rsk.db.importer;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BootstrapURLProviderTest {
+class BootstrapURLProviderTest {
 
     @Test
-    public void getFullURL() {
+    void getFullURL() {
         String BASE_URL = "http://localhost/baseURL";
         BootstrapURLProvider bootstrapURLProvider = new BootstrapURLProvider(BASE_URL);
         String suffix = "suffix";
@@ -23,12 +24,13 @@ public class BootstrapURLProviderTest {
         }
     }
 
-    @Test(expected=BootstrapImportException.class)
-    public void getWrongFullURL() {
+    @Test
+    void getWrongFullURL() {
         String BASE_URL = "localhost/baseURL";
         BootstrapURLProvider bootstrapURLProvider = new BootstrapURLProvider(BASE_URL);
         String suffix = "suffix";
-        bootstrapURLProvider.getFullURL(suffix);
+
+        Assertions.assertThrows(BootstrapImportException.class, () -> bootstrapURLProvider.getFullURL(suffix));
     }
 
 }

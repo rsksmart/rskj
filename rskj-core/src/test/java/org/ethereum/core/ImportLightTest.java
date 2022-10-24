@@ -48,7 +48,8 @@ import java.util.function.Supplier;
 /**
  * Created by Anton Nashatyrev on 29.12.2015.
  */
-public class ImportLightTest {
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(
             Genesis genesis,

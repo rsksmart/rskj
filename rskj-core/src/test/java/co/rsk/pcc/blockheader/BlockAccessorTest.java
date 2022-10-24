@@ -23,15 +23,15 @@ import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
-public class BlockAccessorTest {
+class BlockAccessorTest {
     private static short MAXIMUM_BLOCK_DEPTH = 100;
     private static short NEGATIVE_BLOCK_DEPTH = -1;
     private static short ZERO_BLOCK_DEPTH = 0;
@@ -41,47 +41,47 @@ public class BlockAccessorTest {
     private BlockAccessor blockAccessor;
     private ExecutionEnvironment executionEnvironment;
 
-    @Before
-    public void createBlockAccessor() {
+    @BeforeEach
+    void createBlockAccessor() {
         blockAccessor = new BlockAccessor(MAXIMUM_BLOCK_DEPTH);
     }
 
     @Test
-    public void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
+    void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
-        Assert.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
-        Assert.assertFalse(blockAccessor.getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment).isPresent());
-    }
-
-    @Test(expected = NativeContractIllegalArgumentException.class)
-    public void getBlockWithNegativeDepth() throws NativeContractIllegalArgumentException {
-        executionEnvironment = mock(ExecutionEnvironment.class);
-
-        blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment);
+        Assertions.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
+        Assertions.assertFalse(blockAccessor.getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment).isPresent());
     }
 
     @Test
-    public void getGenesisBlock() throws NativeContractIllegalArgumentException {
+    void getBlockWithNegativeDepth() {
+        executionEnvironment = mock(ExecutionEnvironment.class);
+
+        Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment));
+    }
+
+    @Test
+    void getGenesisBlock() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(1);
 
         Optional<Block> genesis = blockAccessor.getBlock(ZERO_BLOCK_DEPTH, executionEnvironment);
         Optional<Block> firstBlock = blockAccessor.getBlock(ONE_BLOCK_DEPTH, executionEnvironment);
 
-        Assert.assertTrue(genesis.isPresent());
-        Assert.assertFalse(firstBlock.isPresent());
+        Assertions.assertTrue(genesis.isPresent());
+        Assertions.assertFalse(firstBlock.isPresent());
 
-        Assert.assertEquals(0, genesis.get().getNumber());
+        Assertions.assertEquals(0, genesis.get().getNumber());
     }
 
     @Test
-    public void getTenBlocksFromTheTip() throws NativeContractIllegalArgumentException {
+    void getTenBlocksFromTheTip() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(100);
 
         for(short i = 0; i < 10; i++) {
             Optional<Block> block = blockAccessor.getBlock(i, executionEnvironment);
-            Assert.assertTrue(block.isPresent());
-            Assert.assertEquals(99 - i, block.get().getNumber());
+            Assertions.assertTrue(block.isPresent());
+            Assertions.assertEquals(99 - i, block.get().getNumber());
         }
     }
 }

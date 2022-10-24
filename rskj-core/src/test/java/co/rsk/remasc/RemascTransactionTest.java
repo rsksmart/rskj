@@ -18,18 +18,18 @@
 
 package co.rsk.remasc;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class RemascTransactionTest {
+class RemascTransactionTest {
 
     @Test
-    public void serializationTest() throws Exception{
+    void serializationTest() throws Exception{
         RemascTransaction tx = new RemascTransaction(10);
         byte[] encoded = tx.getEncoded();
         RemascTransaction tx2 = new RemascTransaction(encoded);
-        Assert.assertEquals(tx, tx2);
-        Assert.assertEquals(tx.getHash(), tx2.getHash());
+        Assertions.assertEquals(tx, tx2);
+        Assertions.assertEquals(tx.getHash(), tx2.getHash());
     }
 
 }

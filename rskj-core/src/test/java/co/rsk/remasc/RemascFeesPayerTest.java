@@ -28,8 +28,8 @@ import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -41,10 +41,10 @@ import static org.mockito.Mockito.verify;
 /**
  * @author martin.medina
  */
-public class RemascFeesPayerTest {
+class RemascFeesPayerTest {
 
     @Test
-    public void payMiningFees() {
+    void payMiningFees() {
 
         // Setup objects
         Repository repositoryMock = Mockito.mock(Repository.class);
@@ -58,33 +58,33 @@ public class RemascFeesPayerTest {
         // Do call
         feesPayer.payMiningFees(blockHash, value, toAddress, logs);
 
-        Assert.assertEquals(1, feesPayer.getSubtraces().size());
+        Assertions.assertEquals(1, feesPayer.getSubtraces().size());
 
         ProgramSubtrace subtrace = feesPayer.getSubtraces().get(0);
 
-        Assert.assertEquals(DataWord.valueOf(PrecompiledContracts.REMASC_ADDR.getBytes()), subtrace.getInvokeData().getCallerAddress());
-        Assert.assertEquals(DataWord.valueOf(toAddress.getBytes()), subtrace.getInvokeData().getOwnerAddress());
-        Assert.assertEquals(DataWord.valueOf(value.getBytes()), subtrace.getInvokeData().getCallValue());
+        Assertions.assertEquals(DataWord.valueOf(PrecompiledContracts.REMASC_ADDR.getBytes()), subtrace.getInvokeData().getCallerAddress());
+        Assertions.assertEquals(DataWord.valueOf(toAddress.getBytes()), subtrace.getInvokeData().getOwnerAddress());
+        Assertions.assertEquals(DataWord.valueOf(value.getBytes()), subtrace.getInvokeData().getCallValue());
 
-        Assert.assertEquals(1, logs.size());
+        Assertions.assertEquals(1, logs.size());
 
         // Assert address that made the log
         LogInfo result = logs.get(0);
-        Assert.assertArrayEquals(PrecompiledContracts.REMASC_ADDR.getBytes(), result.getAddress());
+        Assertions.assertArrayEquals(PrecompiledContracts.REMASC_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
-        Assert.assertEquals(2, result.getTopics().size());
-        Assert.assertEquals("000000000000000000000000000000006d696e696e675f6665655f746f706963", result.getTopics().get(0).toString());
-        Assert.assertEquals("0000000000000000000000006c386a4b26f73c802f34673f7248bb118f97424a", result.getTopics().get(1).toString());
+        Assertions.assertEquals(2, result.getTopics().size());
+        Assertions.assertEquals("000000000000000000000000000000006d696e696e675f6665655f746f706963", result.getTopics().get(0).toString());
+        Assertions.assertEquals("0000000000000000000000006c386a4b26f73c802f34673f7248bb118f97424a", result.getTopics().get(1).toString());
 
         // Assert log data
-        Assert.assertNotNull(result.getData());
+        Assertions.assertNotNull(result.getData());
         List<RLPElement> rlpData = RLP.decode2(result.getData());
-        Assert.assertEquals(1 , rlpData.size());
+        Assertions.assertEquals(1 , rlpData.size());
         RLPList dataList = (RLPList)rlpData.get(0);
-        Assert.assertEquals(2, dataList.size());
-        Assert.assertArrayEquals(blockHash, dataList.get(0).getRLPData());
-        Assert.assertEquals(value, RLP.parseCoin(dataList.get(1).getRLPData()));
+        Assertions.assertEquals(2, dataList.size());
+        Assertions.assertArrayEquals(blockHash, dataList.get(0).getRLPData());
+        Assertions.assertEquals(value, RLP.parseCoin(dataList.get(1).getRLPData()));
 
         // Assert repository calls are made right
         verify(repositoryMock, times(1)).addBalance(PrecompiledContracts.REMASC_ADDR, value.negate());

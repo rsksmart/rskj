@@ -31,7 +31,8 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.core.TransactionReceipt;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -39,16 +40,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 
-public class BlockHashesHelperTest {
+class BlockHashesHelperTest {
 
     @Test
-    public void calculateReceiptsTrieRootForOK() {
+    void calculateReceiptsTrieRootForOK() {
         World world = new World();
 
         // Creation of transactions
@@ -83,13 +84,13 @@ public class BlockHashesHelperTest {
         List<Trie> trie = BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, tx1.getHash());
 
         assertNotNull(trie);
-        assertEquals(trie.size(), 2);
+        assertEquals(2, trie.size());
 
     }
 
 
-    @Test(expected = BlockHashesHelperException.class)
-    public void calculateReceiptsTrieRootForException() {
+    @Test
+    void calculateReceiptsTrieRootForException() {
         World world = new World();
 
         // Creation of transactions
@@ -105,11 +106,12 @@ public class BlockHashesHelperTest {
         ReceiptStore receiptStore = mock(ReceiptStore.class);
 
         Keccak256 hashTx = tx.getHash();
-        List<Trie> trie = BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, hashTx);
+
+        Assertions.assertThrows(BlockHashesHelperException.class, () -> BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, hashTx));
     }
 
     @Test
-    public void calculateReceiptsTrieRootForDifferentTxHash() {
+    void calculateReceiptsTrieRootForDifferentTxHash() {
         World world = new World();
 
         // Creation of transactions

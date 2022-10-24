@@ -40,9 +40,9 @@ import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by Sebastian Sicardi on 22/05/2019.
  */
-public class Create2Test {
+class Create2Test {
 
     private ActivationConfig.ForBlock activationConfig;
     private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
@@ -72,14 +72,14 @@ public class Create2Test {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         activationConfig = mock(ActivationConfig.ForBlock.class);
         when(activationConfig.isActive(RSKIP125)).thenReturn(true);
     }
 
     @Test
-    public void testCREATE2_BasicTest() {
+    void testCREATE2_BasicTest() {
         /**
          * Initial test for Create2, just check that the contract is created
          */
@@ -93,7 +93,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_SaltNumber() {
+    void testCREATE2_SaltNumber() {
         /**
          * Check that address changes with different salt than before
          */
@@ -107,7 +107,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_Address() {
+    void testCREATE2_Address() {
         /**
          * Check that address changes with different sender address than before
          */
@@ -121,7 +121,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_InitCode() {
+    void testCREATE2_InitCode() {
         /**
          * Check for a different length of init_code
          */
@@ -135,7 +135,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_ZeroSize() {
+    void testCREATE2_ZeroSize() {
         /**
          * Check for a call with init_code with size 0
          * (Note that it should return same address than next test)
@@ -150,7 +150,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_EmptyCode() {
+    void testCREATE2_EmptyCode() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)
@@ -165,7 +165,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_CodeOffset() {
+    void testCREATE2_CodeOffset() {
         /**
          * Check that the offset parameter works correctly
          */
@@ -179,7 +179,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_NoCodePushed() {
+    void testCREATE2_NoCodePushed() {
         /**
          * No code pushed but code sized is greater than zero, it should get zeroes and pass
          */
@@ -193,7 +193,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_InvalidInitCode() {
+    void testCREATE2_InvalidInitCode() {
         /**
          * INIT_CODE fails (Create2 with invalid arguments) so it returns a ZERO address
          * as it fails, it spends all the gas
@@ -208,7 +208,7 @@ public class Create2Test {
     }
 
     @Test
-    public void testCREATE2_DuplicateContractCreation() {
+    void testCREATE2_DuplicateContractCreation() {
         /**
          *  Two CREATE2 calls, second should fail and consume all gas
          */
@@ -246,16 +246,16 @@ public class Create2Test {
 
         Program program = executeCode(codeToExecute);
         Stack stack = program.getStack();
-        Assert.assertEquals(2, stack.size());
+        Assertions.assertEquals(2, stack.size());
         String address2 = ByteUtil.toHexString(stack.pop().getLast20Bytes());
         String address1 = ByteUtil.toHexString(stack.pop().getLast20Bytes());
-        Assert.assertEquals(expectedAddress1.toUpperCase(), address1.toUpperCase());
-        Assert.assertEquals(expectedAddress2.toUpperCase(), address2.toUpperCase());
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assertions.assertEquals(expectedAddress1.toUpperCase(), address1.toUpperCase());
+        Assertions.assertEquals(expectedAddress2.toUpperCase(), address2.toUpperCase());
+        Assertions.assertEquals(gasExpected, program.getResult().getGasUsed());
     }
 
     @Test
-    public void testCREATE2_PreserveContractAddressBalance() {
+    void testCREATE2_PreserveContractAddressBalance() {
         /**
          *  CREATE2 call with expected address that has non-zero balance
          */
@@ -289,15 +289,15 @@ public class Create2Test {
         Program program = executeCode(codeToExecute);
         Coin actualContractBalance = invoke.getRepository().getBalance(contractAddress);
         Stack stack = program.getStack();
-        Assert.assertEquals(1, stack.size());
+        Assertions.assertEquals(1, stack.size());
         String actualAddress = ByteUtil.toHexString(stack.pop().getLast20Bytes());
-        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
-        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
-        Assert.assertEquals(expectedContractBalance, actualContractBalance);
+        Assertions.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assertions.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assertions.assertEquals(expectedContractBalance, actualContractBalance);
     }
 
     @Test
-    public void testCREATE_CheckFunctionBeforeRSKIP() {
+    void testCREATE_CheckFunctionBeforeRSKIP() {
         /**
          * Check that the CREATE opcode functions correctly before the RSKIP
          * It should create the contract and have nonce 0
@@ -313,26 +313,26 @@ public class Create2Test {
         String address = ByteUtil.toHexString(stack.peek().getLast20Bytes());
         long nonce = program.getStorage().getNonce(new RskAddress(address)).longValue();
 
-        Assert.assertEquals(0, nonce);
-        Assert.assertEquals("77045E71A7A2C50903D88E564CD72FAB11E82051", address.toUpperCase());
-        Assert.assertEquals(1, stack.size());
+        Assertions.assertEquals(0, nonce);
+        Assertions.assertEquals("77045E71A7A2C50903D88E564CD72FAB11E82051", address.toUpperCase());
+        Assertions.assertEquals(1, stack.size());
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testCREATE2ShouldFailInvalidOpcode() {
+    @Test
+    void testCREATE2ShouldFailInvalidOpcode() {
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
 
-        callCreate2("0x0000000000000000000000000000000000000000",
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> callCreate2("0x0000000000000000000000000000000000000000",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0x601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b",
                 10,
                 8,
                 "A992CD9E3E78C0A6BBBB4F06B52B3AD8924B0916",
-                32045);
+                32045));
     }
 
     @Test
-    public void testCREATE2_EmptyCodeNonStandard() {
+    void testCREATE2_EmptyCodeNonStandard() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)
@@ -346,11 +346,11 @@ public class Create2Test {
                 32012);
 
         Keccak256 existentHash = invoke.getRepository().getCodeHashNonStandard(new RskAddress("65BD0714DEFB919BC02F9507D6F9D9CD21195ECC"));
-        Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), existentHash.getBytes());
+        Assertions.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), existentHash.getBytes());
     }
 
     @Test
-    public void testCREATE2_EmptyCodeStandard() {
+    void testCREATE2_EmptyCodeStandard() {
         /**
          * Check for a call with no init_code
          * (Note that it should return same address than previous test)
@@ -366,7 +366,7 @@ public class Create2Test {
         byte[] emptyHash = Keccak256Helper.keccak256(ExtCodeHashTest.EMPTY_BYTE_ARRAY);
         Keccak256 existentHash = invoke.getRepository().getCodeHashStandard(new RskAddress("65BD0714DEFB919BC02F9507D6F9D9CD21195ECC"));
 
-        Assert.assertArrayEquals(emptyHash, existentHash.getBytes());
+        Assertions.assertArrayEquals(emptyHash, existentHash.getBytes());
     }
 
     private void callCreate2(String address, String salt, String pushInitCode, int size, int intOffset, String expected, long gasExpected) {
@@ -391,9 +391,9 @@ public class Create2Test {
         Stack stack = program.getStack();
         String result = ByteUtil.toHexString(Arrays.copyOfRange(stack.peek().getData(), 12, stack.peek().getData().length));
 
-        Assert.assertEquals(1, stack.size());
-        Assert.assertEquals(expected.toUpperCase(), result.toUpperCase());
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assertions.assertEquals(1, stack.size());
+        Assertions.assertEquals(expected.toUpperCase(), result.toUpperCase());
+        Assertions.assertEquals(gasExpected, program.getResult().getGasUsed());
     }
 
     private static Transaction createTransaction() {

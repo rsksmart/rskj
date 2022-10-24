@@ -1,7 +1,7 @@
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by mario on 13/07/17.
  */
-public class IpUtilsTest {
+class IpUtilsTest {
 
     private static final String IPV6_WITH_PORT = "[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443";
     private static final String IPV6_NO_PORT = "[2001:db8:85a3:8d3:1319:8a2e:370:7348]";
@@ -20,43 +20,43 @@ public class IpUtilsTest {
     private static final String HOSTNAME_WITH_PORT = "localhost:456";
 
     @Test
-    public void parseIPv6() {
+    void parseIPv6() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
-    public void parseIPv6NoPort() {
+    void parseIPv6NoPort() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_NO_PORT);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
-    public void parseIPv6InvalidFormat() {
+    void parseIPv6InvalidFormat() {
         InetSocketAddress result = IpUtils.parseAddress(IPV6_INVALID);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
-    public void parseIPv4() {
+    void parseIPv4() {
         InetSocketAddress result = IpUtils.parseAddress(IPV4_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
-    public void parseIPv4NoPort() {
+    void parseIPv4NoPort() {
         InetSocketAddress result = IpUtils.parseAddress(IPV4_NO_PORT);
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
-    public void parseHostnameWithPort() {
+    void parseHostnameWithPort() {
         InetSocketAddress result = IpUtils.parseAddress(HOSTNAME_WITH_PORT);
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
     }
 
     @Test
-    public void parseAddresses() {
+    void parseAddresses() {
         List<String> addresses = new ArrayList<>();
         addresses.add(IPV6_WITH_PORT);
         addresses.add(IPV6_NO_PORT);
@@ -64,7 +64,7 @@ public class IpUtilsTest {
         addresses.add(IPV4_WITH_PORT);
         addresses.add(IPV4_NO_PORT);
         List<InetSocketAddress> result = IpUtils.parseAddresses(addresses);
-        Assert.assertFalse(result.isEmpty());
-        Assert.assertEquals(2, result.size());
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(2, result.size());
     }
 }

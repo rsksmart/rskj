@@ -29,9 +29,9 @@ import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.util.Iterator;
@@ -39,14 +39,14 @@ import java.util.Iterator;
 /**
  * Created by Nicolás Perez Santoro on 4/08/2020.
  */
-public class ExtCodeHashDslTest {
+class ExtCodeHashDslTest {
 
     public static final byte[] HASH_OF_EMPTY_ARRAY = Keccak256Helper.keccak256(ExtCodeHashTest.EMPTY_BYTE_ARRAY);
     private World world;
     private WorldDslProcessor processor;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(5))
         );
@@ -60,59 +60,59 @@ public class ExtCodeHashDslTest {
     //note that previous to the activation, extcodehash behaves differently in presence of cache or not
 
     @Test
-    public void invokeEXTCodeHASHAddressDoesNotExist() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHAddressDoesNotExist() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_address_does_not_exist.txt");
 
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract( "b02", "tx01", 0);
-        Assert.assertNull(extcodehash);
+        Assertions.assertNull(extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract( "b05", "tx01", 0);
-        Assert.assertNull(extcodehash2);
+        Assertions.assertNull(extcodehash2);
     }
 
     @Test
-    public void invokeEXTCodeHASHAddressExistButNotContract() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHAddressExistButNotContract() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_address_exists_but_not_contract.txt");
 
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract( "b02", "tx01", 0);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b05", "tx01", 0);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
     }
 
 
     @Test
-    public void invokeEXTCodeHASHWithCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHWithCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_with_cache_empty_deploy.txt");
 
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract("b02", "tx01", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b05", "tx03", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash2);
     }
 
     @Test
-    public void invokeEXTCodeHASHWithoutCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
+    void invokeEXTCodeHASHWithoutCacheEmptyDeploy() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/extcodehash/extcodehash_without_cache_empty_deploy.txt");
 
         processor.processCommands(parser);
 
         byte[] extcodehash = getExtCodeHashStateForBlockAndContract("b03", "tx01", 1);
-        Assert.assertNull(extcodehash);
+        Assertions.assertNull(extcodehash);
 
         byte[] extcodehash2 = getExtCodeHashStateForBlockAndContract("b04", "tx01", 1);
-        Assert.assertNull(extcodehash2);
+        Assertions.assertNull(extcodehash2);
 
         byte[] extcodehash3 = getExtCodeHashStateForBlockAndContract("b05", "tx01", 1);
-        Assert.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash3);
+        Assertions.assertArrayEquals(HASH_OF_EMPTY_ARRAY, extcodehash3);
     }
 
     private byte[] getExtCodeHashStateForBlockAndContract(String targetBlock, String targetContract, int storageKey) {

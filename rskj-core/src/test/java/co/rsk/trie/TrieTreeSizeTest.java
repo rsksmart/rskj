@@ -18,32 +18,32 @@
 
 package co.rsk.trie;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 
-public class TrieTreeSizeTest {
+class TrieTreeSizeTest {
     @Test
-    public void emptyChildrenSize() {
+    void emptyChildrenSize() {
         Trie trie = new Trie();
         long emptyChildrenSize = trie.getChildrenSize().value;
-        Assert.assertThat(emptyChildrenSize, is(0L));
+        MatcherAssert.assertThat(emptyChildrenSize, is(0L));
     }
 
     @Test
-    public void childrenSizeShortValue() {
+    void childrenSizeShortValue() {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[32]);
-        Assert.assertThat(trie.getChildrenSize().value, is(35L));
+        MatcherAssert.assertThat(trie.getChildrenSize().value, is(35L));
     }
 
     @Test
-    public void childrenSizeLongValue() {
+    void childrenSizeLongValue() {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[33]);
-        Assert.assertThat(trie.getChildrenSize().value, is(71L));
+        MatcherAssert.assertThat(trie.getChildrenSize().value, is(71L));
     }
 }

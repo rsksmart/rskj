@@ -27,84 +27,84 @@ import co.rsk.pcc.bto.HDWalletUtils;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PrecompiledContractTest {
+class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
     @Test
-    public void getBridgeContract() {
+    void getBridgeContract() {
         DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
-        Assert.assertNotNull(bridge);
-        Assert.assertEquals(Bridge.class, bridge.getClass());
+        Assertions.assertNotNull(bridge);
+        Assertions.assertEquals(Bridge.class, bridge.getClass());
     }
 
     @Test
-    public void getBridgeContractTwice() {
+    void getBridgeContractTwice() {
         DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge1 = precompiledContracts.getContractForAddress(null, bridgeAddress);
         PrecompiledContract bridge2 = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
-        Assert.assertNotNull(bridge1);
-        Assert.assertNotNull(bridge2);
-        Assert.assertNotSame(bridge1, bridge2);
+        Assertions.assertNotNull(bridge1);
+        Assertions.assertNotNull(bridge2);
+        Assertions.assertNotSame(bridge1, bridge2);
     }
 
     @Test
-    public void getBlockHeaderContractBeforeRskip119() {
+    void getBlockHeaderContractBeforeRskip119() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(false);
         DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
         PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
-        Assert.assertNull(blockHeaderContract);
+        Assertions.assertNull(blockHeaderContract);
     }
 
     @Test
-    public void getBlockHeaderContractAfterRskip119() {
+    void getBlockHeaderContractAfterRskip119() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
         DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
         PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
         PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
-        Assert.assertNotNull(blockHeaderContract1);
-        Assert.assertNotNull(blockHeaderContract2);
-        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract1.getClass());
-        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract2.getClass());
-        Assert.assertNotSame(blockHeaderContract1, blockHeaderContract2);
+        Assertions.assertNotNull(blockHeaderContract1);
+        Assertions.assertNotNull(blockHeaderContract2);
+        Assertions.assertEquals(BlockHeaderContract.class, blockHeaderContract1.getClass());
+        Assertions.assertEquals(BlockHeaderContract.class, blockHeaderContract2.getClass());
+        Assertions.assertNotSame(blockHeaderContract1, blockHeaderContract2);
     }
 
     @Test
-    public void getHdWalletUtilsBeforeRskip106() {
+    void getHdWalletUtilsBeforeRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(false);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
         PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
-        Assert.assertNull(btoUtils);
+        Assertions.assertNull(btoUtils);
     }
 
     @Test
-    public void getHdWalletUtilsAfterRskip106() {
+    void getHdWalletUtilsAfterRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
         DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
         PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
         PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
-        Assert.assertNotNull(btoUtils1);
-        Assert.assertNotNull(btoUtils2);
-        Assert.assertEquals(HDWalletUtils.class, btoUtils1.getClass());
-        Assert.assertEquals(HDWalletUtils.class, btoUtils2.getClass());
-        Assert.assertNotSame(btoUtils1, btoUtils2);
+        Assertions.assertNotNull(btoUtils1);
+        Assertions.assertNotNull(btoUtils2);
+        Assertions.assertEquals(HDWalletUtils.class, btoUtils1.getClass());
+        Assertions.assertEquals(HDWalletUtils.class, btoUtils2.getClass());
+        Assertions.assertNotSame(btoUtils1, btoUtils2);
     }
 }

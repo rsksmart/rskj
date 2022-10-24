@@ -82,8 +82,9 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -93,14 +94,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
  */
-public class Web3ImplTest {
+class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
     private static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
@@ -112,45 +113,44 @@ public class Web3ImplTest {
     private Wallet wallet;
 
     @Test
-    public void web3_clientVersion() {
+    void web3_clientVersion() {
         Web3 web3 = createWeb3();
 
         String clientVersion = web3.web3_clientVersion();
 
-        assertTrue("client version is not including rsk!", clientVersion.toLowerCase().contains("rsk"));
+        assertTrue(clientVersion.toLowerCase().contains("rsk"), "client version is not including rsk!");
     }
 
     @Test
-    public void net_version() {
+    void net_version() {
         Web3Impl web3 = createWeb3();
 
         String netVersion = web3.net_version();
 
-        assertTrue("RSK net version different than expected", netVersion.compareTo(Byte.toString(config.getNetworkConstants().getChainId())) == 0);
+        assertEquals(0, netVersion.compareTo(Byte.toString(config.getNetworkConstants().getChainId())), "RSK net version different than expected");
     }
 
     @Test
-    public void eth_protocolVersion() {
+    void eth_protocolVersion() {
         World world = new World();
         Web3Impl web3 = createWeb3(world);
 
         String netVersion = web3.eth_protocolVersion();
 
-        assertTrue("RSK net version different than one", netVersion.compareTo("1") == 0);
+        assertEquals(0, netVersion.compareTo("1"), "RSK net version different than one");
     }
 
     @Test
-    public void net_peerCount() {
+    void net_peerCount() {
         Web3Impl web3 = createWeb3();
 
         String peerCount = web3.net_peerCount();
 
-        assertEquals("Different number of peers than expected",
-                "0x0", peerCount);
+        assertEquals("0x0", peerCount, "Different number of peers than expected");
     }
 
     @Test
-    public void web3_sha3() throws Exception {
+    void web3_sha3() throws Exception {
 
     	String toHashInHex = "0x696e7465726e6574"; // 'internet' in hexa
 
@@ -160,21 +160,19 @@ public class Web3ImplTest {
 
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
-        assertEquals("hash does not match", "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex);
-
-    }
-
-    @Test(expected = RskJsonRpcRequestException.class)
-    public void web3_sha3_expect_exception() throws Exception {
-
-    	Web3 web3 = createWeb3();
-
-    	web3.web3_sha3("internet");
+        assertEquals("0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex, "hash does not match");
 
     }
 
     @Test
-    public void eth_syncing_returnFalseWhenNotSyncing() {
+    void web3_sha3_expect_exception() {
+    	Web3 web3 = createWeb3();
+
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> web3.web3_sha3("internet"));
+    }
+
+    @Test
+    void eth_syncing_returnFalseWhenNotSyncing() {
         World world = new World();
         SimpleBlockProcessor nodeProcessor = new SimpleBlockProcessor();
         nodeProcessor.lastKnownBlockNumber = 0;
@@ -182,11 +180,11 @@ public class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        assertTrue("Node is not syncing, must return false", !(boolean) result);
+        assertFalse((boolean) result, "Node is not syncing, must return false");
     }
 
     @Test
-    public void eth_syncing_returnSyncingResultWhenSyncing() {
+    void eth_syncing_returnSyncingResultWhenSyncing() {
         World world = new World();
         SimpleBlockProcessor nodeProcessor = new SimpleBlockProcessor();
         Web3Impl web3 = createWeb3(world, nodeProcessor, null);
@@ -196,13 +194,13 @@ public class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        assertTrue("Node is syncing, must return sync manager", result instanceof SyncingResult);
-        assertEquals("Highest block is 5", 0, ((SyncingResult) result).getHighestBlock().compareTo("0x5"));
-        assertEquals("Simple blockchain starts from genesis block", 0, ((SyncingResult) result).getCurrentBlock().compareTo("0x0"));
+        assertTrue(result instanceof SyncingResult, "Node is syncing, must return sync manager");
+        assertEquals(0, ((SyncingResult) result).getHighestBlock().compareTo("0x5"), "Highest block is 5");
+        assertEquals(0, ((SyncingResult) result).getCurrentBlock().compareTo("0x0"), "Simple blockchain starts from genesis block");
     }
 
     @Test
-    public void getBalanceWithAccount() {
+    void getBalanceWithAccount() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -212,7 +210,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndLatestBlock() {
+    void getBalanceWithAccountAndLatestBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -222,7 +220,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndGenesisBlock() {
+    void getBalanceWithAccountAndGenesisBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -234,7 +232,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndBlock() {
+    void getBalanceWithAccountAndBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         createChainWithOneBlock(world);
@@ -248,35 +246,35 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return balance at given address in genesis block
-    public void getBalanceWithAccountAndBlockNumber() {
+    void getBalanceWithAccountAndBlockNumber() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockNumber(BALANCE_10K_HEX, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
-    public void getBalanceWithAccountAndInvalidInputThrowsException() {
+    void getBalanceWithAccountAndInvalidInputThrowsException() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertInvalidInput(blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return balance at given address in genesis block
-    public void getBalanceWithAccountAndBlockHash() {
+    void getBalanceWithAccountAndBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockHash(BALANCE_10K_HEX, chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void getBalanceWithAccountAndNonExistentBlockHash() {
+    void getBalanceWithAccountAndNonExistentBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
-    public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
+    void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
@@ -284,14 +282,14 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
-    public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
+    void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
@@ -299,34 +297,34 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return balance at given address in genesis block
-    public void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenCanonical(BALANCE_10K_HEX, chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return balance at given address in genesis block
-    public void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenNotCanonical(BALANCE_10K_HEX, chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return balance at given address in specified block
-    public void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenNotCanonical(BALANCE_10K_HEX, chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return balance at given address in specified bloc
-    public void getBalanceWithAccountAndNonCanonicalBlockHash() {
+    void getBalanceWithAccountAndNonCanonicalBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHash(BALANCE_10K_HEX, chain.block, blockRef -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
-    public void getBalanceWithAccountAndBlockWithTransaction() {
+    void getBalanceWithAccountAndBlockWithTransaction() {
         World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
         TransactionPool transactionPool = world.getTransactionPool();
@@ -353,21 +351,21 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
-    public void getStorageAtAccountAndBlockNumber() {
+    void getStorageAtAccountAndBlockNumber() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockNumber("0x0", blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return storage at given address in genesis block
-    public void getStorageAtAccountAndBlockHash() {
+    void getStorageAtAccountAndBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockHash("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void getStorageAtAccountAndNonExistentBlockHash() {
+    void getStorageAtAccountAndNonExistentBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
@@ -375,49 +373,49 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
-    public void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
+    void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
-    public void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
+    void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return storage at given address in genesis block
-    public void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return storage at given address in genesis block
-    public void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenNotCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return storage at given address in specified block
-    public void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenNotCanonical("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return storage at given address in specified bloc
-    public void getStorageAtAccountAndNonCanonicalBlockHash() {
+    void getStorageAtAccountAndNonCanonicalBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHash("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
 
@@ -425,223 +423,223 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
-    public void getCodeAtAccountAndBlockNumber() {
+    void getCodeAtAccountAndBlockNumber() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertByBlockNumber("0x010203", blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return code at given address in genesis block
-    public void getCodeAtAccountAndBlockHash() {
+    void getCodeAtAccountAndBlockHash() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertByBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void getCodeAtAccountAndNonExistentBlockHash() {
+    void getCodeAtAccountAndNonExistentBlockHash() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
-    public void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
+    void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
-    public void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
+    void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithAContractCode(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return code at given address in genesis block
-    public void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertCanonicalBlockHashWhenCanonical("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return code at given address in genesis block
-    public void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithAContractCode(false);
         assertCanonicalBlockHashWhenNotCanonical("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return code at given address in specified block
-    public void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithAContractCode(true);
         assertNonCanonicalBlockHashWhenNotCanonical("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return code at given address in specified bloc
-    public void getCodeAtAccountAndNonCanonicalBlockHash() {
+    void getCodeAtAccountAndNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithAContractCode(true);
         assertNonCanonicalBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
-    public void callByBlockNumber() {
+    void callByBlockNumber() {
         final ChainParams chain = createChainWithACall(false);
         assertByBlockNumber(CALL_RESPOND, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return  contract call respond at given address in genesis block
-    public void callByBlockHash() {
+    void callByBlockHash() {
         final ChainParams chain = createChainWithACall(false);
         assertByBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void callByNonExistentBlockHash() {
+    void callByNonExistentBlockHash() {
         final ChainParams chain = createChainWithACall(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
-    public void callByNonExistentBlockHashWhenCanonicalIsRequired() {
+    void callByNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
         assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
-    public void callByNonExistentBlockHashWhenCanonicalIsNotRequired() {
+    void callByNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
         assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     // [ {argsForCall} { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void callByNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void callByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return  contract call respond at given address in genesis block
-    public void callByCanonicalBlockHashWhenCanonicalIsRequired() {
+    void callByCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithACall(false);
         assertCanonicalBlockHashWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return  contract call respond at given address in genesis block
-    public void callByCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void callByCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(false);
         assertCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return  contract call respond at given address in specified block
-    public void callByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void callByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = createChainWithACall(true);
         assertNonCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>" } -> return  contract call respond at given address in specified bloc
-    public void callByNonCanonicalBlockHash() {
+    void callByNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithACall(true);
         assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
-    public void invokeByBlockNumber() {
+    void invokeByBlockNumber() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockNumber("0x1", blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
-    public void invokeByInvalidInputThrowsException() {
+    void invokeByInvalidInputThrowsException() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertInvalidInput(blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return data at given address in genesis block
-    public void invokeByBlockHash() {
+    void invokeByBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertByBlockHash("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void invokeByNonExistentBlockHash() {
+    void invokeByNonExistentBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
-    public void invokeByNonExistentBlockHashWhenCanonicalIsRequired() {
+    void invokeByNonExistentBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenCanonical(blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
-    public void invokeByNonExistentBlockHashWhenCanonicalIsNotRequired() {
+    void invokeByNonExistentBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void invokeByNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void invokeByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return data at given address in genesis block
-    public void invokeCanonicalBlockHashWhenCanonicalIsRequired() {
+    void invokeCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return data at given address in genesis block
-    public void invokeByCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void invokeByCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertCanonicalBlockHashWhenNotCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return data at given address in specified block
-    public void invokeByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+    void invokeByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHashWhenNotCanonical("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return data at given address in specified block
-    public void invokeByNonCanonicalBlockHash() {
+    void invokeByNonCanonicalBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(true);
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
-    public void eth_mining() {
+    void eth_mining() {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         BlockStore blockStore = Web3Mocks.getMockBlockStore();
@@ -676,20 +674,20 @@ public class Web3ImplTest {
                 mock(Web3InformationRetriever.class),
                 null);
 
-        assertTrue("Node is not mining", !web3.eth_mining());
+        assertFalse(web3.eth_mining(), "Node is not mining");
         try {
             minerClient.start();
 
-            assertTrue("Node is mining", web3.eth_mining());
+            assertTrue(web3.eth_mining(), "Node is mining");
         } finally {
             minerClient.stop();
         }
 
-        assertTrue("Node is not mining", !web3.eth_mining());
+        assertFalse(web3.eth_mining(), "Node is not mining");
     }
 
     @Test
-    public void getGasPrice() {
+    void getGasPrice() {
         Web3Impl web3 = createWeb3();
         web3.setEth(new SimpleEthereum());
         String expectedValue = ByteUtil.toHexString(new BigInteger("20000000000").toByteArray());
@@ -698,7 +696,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUnknownTransactionReceipt() {
+    void getUnknownTransactionReceipt() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         Web3Impl web3 = createWeb3(world, receiptStore);
@@ -709,12 +707,12 @@ public class Web3ImplTest {
 
         String hashString = tx.getHash().toHexString();
 
-        Assert.assertNull(web3.eth_getTransactionReceipt(hashString));
-        Assert.assertNull(web3.rsk_getRawTransactionReceiptByHash(hashString));
+        Assertions.assertNull(web3.eth_getTransactionReceipt(hashString));
+        Assertions.assertNull(web3.rsk_getRawTransactionReceiptByHash(hashString));
     }
 
     @Test
-    public void getTransactionReceipt() {
+    void getTransactionReceipt() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         Web3Impl web3 = createWeb3(world, receiptStore);
@@ -755,7 +753,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getTransactionReceiptNotInMainBlockchain() {
+    void getTransactionReceiptNotInMainBlockchain() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         Web3Impl web3 = createWeb3(world, receiptStore);
@@ -781,11 +779,11 @@ public class Web3ImplTest {
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
-        Assert.assertNull(tr);
+        Assertions.assertNull(tr);
     }
 
     @Test
-    public void getTransactionByHash() {
+    void getTransactionByHash() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
@@ -814,13 +812,13 @@ public class Web3ImplTest {
         // Check the v value used to encode the transaction
         // NOT the v value used in signature
         // the encoded value includes chain id
-        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, HexUtils.stringHexToByteArray(tr.getV()));
-        Assert.assertThat(HexUtils.stringHexToBigInteger(tr.getS()), is(tx.getSignature().getS()));
-        Assert.assertThat(HexUtils.stringHexToBigInteger(tr.getR()), is(tx.getSignature().getR()));
+        Assertions.assertArrayEquals(new byte[] {tx.getEncodedV()}, HexUtils.stringHexToByteArray(tr.getV()));
+        MatcherAssert.assertThat(HexUtils.stringHexToBigInteger(tr.getS()), is(tx.getSignature().getS()));
+        MatcherAssert.assertThat(HexUtils.stringHexToBigInteger(tr.getR()), is(tx.getSignature().getR()));
     }
 
     @Test
-    public void getPendingTransactionByHash() {
+    void getPendingTransactionByHash() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
@@ -844,14 +842,14 @@ public class Web3ImplTest {
 
         assertEquals("0x" + hashString, tr.getHash());
         assertEquals("0x0", tr.getNonce());
-        assertEquals(null, tr.getBlockHash());
-        assertEquals(null, tr.getTransactionIndex());
+        assertNull(tr.getBlockHash());
+        assertNull(tr.getTransactionIndex());
         assertEquals("0x", tr.getInput());
         assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.getTo());
     }
 
     @Test
-    public void getTransactionByHashNotInMainBlockchain() {
+    void getTransactionByHashNotInMainBlockchain() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
 
@@ -877,11 +875,11 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
-        Assert.assertNull(tr);
+        Assertions.assertNull(tr);
     }
 
     @Test
-    public void getTransactionByBlockHashAndIndex() {
+    void getTransactionByBlockHashAndIndex() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -905,7 +903,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUnknownTransactionByBlockHashAndIndex() {
+    void getUnknownTransactionByBlockHashAndIndex() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -919,11 +917,11 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 
-        Assert.assertNull(tr);
+        Assertions.assertNull(tr);
     }
 
     @Test
-    public void getTransactionByBlockNumberAndIndex() {
+    void getTransactionByBlockNumberAndIndex() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -947,7 +945,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUnknownTransactionByBlockNumberAndIndex() {
+    void getUnknownTransactionByBlockNumberAndIndex() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -959,11 +957,11 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x1", "0x0");
 
-        Assert.assertNull(tr);
+        Assertions.assertNull(tr);
     }
 
     @Test
-    public void getTransactionCount() {
+    void getTransactionCount() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -990,48 +988,48 @@ public class Web3ImplTest {
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return tx count at given address in genesis block
-    public void getTransactionCountByBlockNumber() {
+    void getTransactionCountByBlockNumber() {
         final ChainParams chain = createChainWithATransaction(false);
         assertByBlockNumber("0x1", blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
-    public void getTransactionCountAndInvalidInputThrowsException() {
+    void getTransactionCountAndInvalidInputThrowsException() {
         final ChainParams chain = createChainWithATransaction(false);
         assertInvalidInput(blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return tx count at given address in genesis block
-    public void getTransactionCountByBlockHash() {
+    void getTransactionCountByBlockHash() {
         final ChainParams chain = createChainWithATransaction(false);
         assertByBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
-    public void getTransactionCountByNonExistentBlockHash() {
+    void getTransactionCountByNonExistentBlockHash() {
         final ChainParams chain = chainWithAccount10kBalance(false);
         assertNonExistentBlockHash(blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
-    public void getTransactionCountByNonCanonicalBlockHashWhenCanonicalIsRequired() {
+    void getTransactionCountByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         final ChainParams chain = createChainWithATransaction(true);
         assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return tx count at given address in specified bloc
-    public void getTransactionCountByNonCanonicalBlockHash() {
+    void getTransactionCountByNonCanonicalBlockHash() {
         final ChainParams chain = createChainWithATransaction(true);
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
-    public void getBlockByNumber() {
+    void getBlockByNumber() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1070,7 +1068,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlocksByNumber() {
+    void getBlocksByNumber() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1101,7 +1099,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByNumberRetrieveLatestBlock() {
+    void getBlockByNumberRetrieveLatestBlock() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1121,7 +1119,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByNumberRetrieveEarliestBlock() {
+    void getBlockByNumberRetrieveEarliestBlock() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1146,7 +1144,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByNumberBlockDoesNotExists() {
+    void getBlockByNumberBlockDoesNotExists() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1154,24 +1152,25 @@ public class Web3ImplTest {
         String bnOrId = "0x1234";
         BlockResultDTO blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
-        Assert.assertNull(blockResult);
+        Assertions.assertNull(blockResult);
 
         String hexString = web3.rsk_getRawBlockHeaderByNumber(bnOrId);
-        Assert.assertNull(hexString);
+        Assertions.assertNull(hexString);
     }
 
-    @Test(expected = org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
-    public void getBlockByNumberWhenNumberIsInvalidThrowsException() {
+    @Test
+    void getBlockByNumberWhenNumberIsInvalidThrowsException() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
 
         String bnOrId = "991234";
-        web3.eth_getBlockByNumber(bnOrId, false);
+
+        Assertions.assertThrows(org.ethereum.rpc.exception.RskJsonRpcRequestException.class, () -> web3.eth_getBlockByNumber(bnOrId, false));
     }
 
     @Test
-    public void getBlockByHash() {
+    void getBlockByHash() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1223,7 +1222,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByHashWithFullTransactionsAsResult() {
+    void getBlockByHashWithFullTransactionsAsResult() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1253,7 +1252,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByHashWithTransactionsHashAsResult() {
+    void getBlockByHashWithTransactionsHashAsResult() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1282,7 +1281,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByHashBlockDoesNotExists() {
+    void getBlockByHashBlockDoesNotExists() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1290,14 +1289,14 @@ public class Web3ImplTest {
         String blockHash = "0x1234000000000000000000000000000000000000000000000000000000000000";
         BlockResultDTO blockResult = web3.eth_getBlockByHash(blockHash, false);
 
-        Assert.assertNull(blockResult);
+        Assertions.assertNull(blockResult);
 
         String hexString = web3.rsk_getRawBlockHeaderByHash(blockHash);
-        Assert.assertNull(hexString);
+        Assertions.assertNull(hexString);
     }
 
     @Test
-    public void getBlockByHashBlockWithUncles() {
+    void getBlockByHashBlockWithUncles() {
         World world = new World();
         Web3Impl web3 = createWeb3(world);
 
@@ -1354,7 +1353,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBlockByNumberBlockWithUncles() {
+    void getBlockByNumberBlockWithUncles() {
         World world = new World();
         Web3Impl web3 = createWeb3(world);
 
@@ -1411,7 +1410,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUncleByBlockHashAndIndexBlockWithUncles() {
+    void getUncleByBlockHashAndIndexBlockWithUncles() {
         /* Structure:
          *    Genesis
          * |     |     |
@@ -1477,7 +1476,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUncleByBlockHashAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+    void getUncleByBlockHashAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -1521,7 +1520,7 @@ public class Web3ImplTest {
         blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
 
         assertEquals(1, blockE.getTransactionsList().size());
-        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+        Assertions.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
 
         List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
@@ -1541,7 +1540,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUncleByBlockNumberAndIndexBlockWithUncles() {
+    void getUncleByBlockNumberAndIndexBlockWithUncles() {
         /* Structure:
          *    Genesis
          * |     |     |
@@ -1606,7 +1605,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getUncleByBlockNumberAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+    void getUncleByBlockNumberAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -1650,7 +1649,7 @@ public class Web3ImplTest {
         blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
 
         assertEquals(1, blockE.getTransactionsList().size());
-        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+        Assertions.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
 
         List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
         Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
@@ -1669,7 +1668,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getCode() {
+    void getCode() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1694,7 +1693,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void callFromDefaultAddressInWallet() {
+    void callFromDefaultAddressInWallet() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
 
@@ -1738,7 +1737,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void callFromAddressInWallet() {
+    void callFromAddressInWallet() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
@@ -1785,7 +1784,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void callNoneContractReturn() {
+    void callNoneContractReturn() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
 
@@ -1818,7 +1817,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getCodeBlockDoesNotExist() {
+    void getCodeBlockDoesNotExist() {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -1835,7 +1834,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void net_listening() {
+    void net_listening() {
         World world = new World();
 
         SimpleEthereum eth = new SimpleEthereum(world.getBlockChain());
@@ -1843,14 +1842,14 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(eth, peerServer);
 
-        assertTrue("Node is not listening", !web3.net_listening());
+        assertFalse(web3.net_listening(), "Node is not listening");
 
         peerServer.isListening = true;
-        assertTrue("Node is listening", web3.net_listening());
+        assertTrue(web3.net_listening(), "Node is listening");
     }
 
     @Test
-    public void eth_coinbase() {
+    void eth_coinbase() {
         String originalCoinbase = "1dcc4de8dec75d7aab85b513f0a142fd40d49347";
         MinerServer minerServerMock = mock(MinerServer.class);
         when(minerServerMock.getCoinbaseAddress()).thenReturn(new RskAddress(originalCoinbase));
@@ -1892,7 +1891,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void eth_accounts() {
+    void eth_accounts() {
         Web3Impl web3 = createWeb3();
         int originalAccounts = web3.personal_listAccounts().length;
 
@@ -1901,14 +1900,14 @@ public class Web3ImplTest {
 
         Set<String> accounts = Arrays.stream(web3.eth_accounts()).collect(Collectors.toSet());
 
-        assertEquals("Not all accounts are being retrieved", originalAccounts + 2, accounts.size());
+        assertEquals(originalAccounts + 2, accounts.size(), "Not all accounts are being retrieved");
 
         assertTrue(accounts.contains(addr1));
         assertTrue(accounts.contains(addr2));
     }
 
     @Test
-    public void eth_sign() {
+    void eth_sign() {
         Web3Impl web3 = createWeb3();
 
         String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
@@ -1917,14 +1916,14 @@ public class Web3ImplTest {
 
         String signature = web3.eth_sign(addr1, "0x" + ByteUtil.toHexString(hash));
 
-        Assert.assertThat(
+        MatcherAssert.assertThat(
                 signature,
                 is("0xc8be87722c6452172a02a62fdea70c8b25cfc9613d28647bf2aeb3c7d1faa1a91b861fccc05bb61e25ff4300502812750706ca8df189a0b8163540b9bccabc9f1b")
         );
     }
 
     @Test
-    public void eth_sign_testSignatureGenerationToBeAlways32BytesLength() {
+    void eth_sign_testSignatureGenerationToBeAlways32BytesLength() {
         try (MockedStatic<ECDSASignature> ecdsaSignatureMocked = mockStatic(ECDSASignature.class)) {
             ecdsaSignatureMocked.when(() -> ECDSASignature.fromSignature(any()))
                     .thenReturn(new ECDSASignature(
@@ -1943,7 +1942,7 @@ public class Web3ImplTest {
 
             String signature = web3.eth_sign(addr1, "0x" + ByteUtil.toHexString(hash));
 
-            Assert.assertThat(
+            MatcherAssert.assertThat(
                     signature,
                     is("0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100")
             );
@@ -1951,7 +1950,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void createNewAccount() {
+    void createNewAccount() {
         Web3Impl web3 = createWeb3();
 
         String addr = web3.personal_newAccount("passphrase1");
@@ -1970,7 +1969,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void listAccounts() {
+    void listAccounts() {
         Web3Impl web3 = createWeb3();
         int originalAccounts = web3.personal_listAccounts().length;
 
@@ -1986,7 +1985,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void importAccountUsingRawKey() {
+    void importAccountUsingRawKey() {
         Web3Impl web3 = createWeb3();
 
         ECKey eckey = new ECKey();
@@ -2013,7 +2012,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void importAccountUsingRawKeyContaining0xPrefix() {
+    void importAccountUsingRawKeyContaining0xPrefix() {
         Web3Impl web3 = createWeb3();
 
         ECKey eckey = new ECKey();
@@ -2040,7 +2039,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void dumpRawKey() throws Exception {
+    void dumpRawKey() throws Exception {
         Web3Impl web3 = createWeb3();
 
         ECKey eckey = new ECKey();
@@ -2054,7 +2053,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void dumpRawKeyContaining0xPrefix() throws Exception {
+    void dumpRawKeyContaining0xPrefix() throws Exception {
         Web3Impl web3 = createWeb3();
 
         ECKey eckey = new ECKey();
@@ -2068,7 +2067,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void sendPersonalTransaction() {
+    void sendPersonalTransaction() {
         Web3Impl web3 = createWeb3();
 
         // **** Initializes data ******************
@@ -2115,11 +2114,11 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        assertEquals("Method is not creating the expected transaction", 0, expectedHash.compareTo(txHash));
+        assertEquals(0, expectedHash.compareTo(txHash), "Method is not creating the expected transaction");
     }
 
     @Test
-    public void unlockAccount() {
+    void unlockAccount() {
         Web3Impl web3 = createWeb3();
 
         String addr = web3.personal_newAccount("passphrase1");
@@ -2134,7 +2133,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void unlockAccountInvalidDuration() {
+    void unlockAccountInvalidDuration() {
         Web3Impl web3 = createWeb3();
 
         String addr = web3.personal_newAccount("passphrase1");
@@ -2147,7 +2146,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void lockAccount() {
+    void lockAccount() {
         Web3Impl web3 = createWeb3();
 
         String addr = web3.personal_newAccount("passphrase1");
@@ -2171,36 +2170,38 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void eth_sendTransactionWithValidChainId() {
+    void eth_sendTransactionWithValidChainId() {
         checkSendTransaction(config.getNetworkConstants().getChainId());
     }
 
     @Test
-    public void eth_sendTransactionWithZeroChainId() {
+    void eth_sendTransactionWithZeroChainId() {
         checkSendTransaction((byte) 0);
     }
 
     @Test
-    public void eth_sendTransactionWithNoChainId() {
+    void eth_sendTransactionWithNoChainId() {
         checkSendTransaction(null);
     }
 
-    @Test(expected = RskJsonRpcRequestException.class)
-    public void eth_sendTransactionWithInvalidChainId() {
-        checkSendTransaction((byte) 1); // chain id of Ethereum Mainnet
+    @Test
+    void eth_sendTransactionWithInvalidChainId() {
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> {
+            checkSendTransaction((byte) 1); // chain id of Ethereum Mainnet
+        });
     }
 
     @Test
-    public void createNewAccountWithoutDuplicates() {
+    void createNewAccountWithoutDuplicates() {
         Web3Impl web3 = createWeb3();
         int originalAccountSize = wallet.getAccountAddresses().size();
         String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
 
-        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+        assertEquals(originalAccountSize + 1, wallet.getAccountAddresses().size(), "The number of accounts was not increased");
 
         web3.personal_newAccountWithSeed("testAccount");
 
-        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+        assertEquals(originalAccountSize + 1, wallet.getAccountAddresses().size(), "The number of accounts was increased");
     }
 
     private void checkSendTransaction(Byte chainId) {
@@ -2256,11 +2257,11 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        assertEquals("Method is not creating the expected transaction", 0, expectedHash.compareTo(txHash));
+        assertEquals(0, expectedHash.compareTo(txHash), "Method is not creating the expected transaction");
     }
 
     @Test
-    public void getNoCode() throws Exception {
+    void getNoCode() throws Exception {
         World world = new World();
 
         Web3Impl web3 = createWeb3(world);
@@ -2272,18 +2273,18 @@ public class Web3ImplTest {
         world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
-        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Assertions.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
 
         String scode = web3.eth_getCode(accountAddress, "0x1");
 
         assertNotNull(scode);
-        org.junit.Assert.assertEquals("0x", scode);
+        Assertions.assertEquals("0x", scode);
     }
 
     @Test
-    public void callWithoutReturn() {
+    void callWithoutReturn() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
 
@@ -2309,7 +2310,7 @@ public class Web3ImplTest {
 
         String result = web3.eth_call(argsForCall, "latest");
 
-        org.junit.Assert.assertEquals("0x", result);
+        Assertions.assertEquals("0x", result);
     }
 
     private Web3Impl createWeb3(World world) {

@@ -21,51 +21,24 @@ package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.*;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collection;
 
 import static org.mockito.Mockito.*;
 
 
-@RunWith(Parameterized.class)
-public class ProgramTest {
+public abstract class ProgramTest {
 
     private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> params() {
-        return Arrays.asList(new Object[][]{
-                {true, true},
-                {true, false},
-                {false, true},
-                {false, false}
-        });
-    }
-
-    private final boolean isLogEnabled;
-    private final boolean isGasLogEnabled;
-
     private MockedStatic<LoggerFactory> loggerFactoryMocked;
 
-    public ProgramTest(boolean isLogEnabled, boolean isGasLogEnabled) {
-        this.isLogEnabled = isLogEnabled;
-        this.isGasLogEnabled = isGasLogEnabled;
-    }
-
-    @Before
-    public void setup() {
+    protected void setUp(boolean isLogEnabled, boolean isGasLogEnabled) {
         loggerFactoryMocked = mockStatic(LoggerFactory.class, Mockito.CALLS_REAL_METHODS);
 
         Logger logger = Mockito.mock(Logger.class);
@@ -79,106 +52,107 @@ public class ProgramTest {
         when(gasLogger.isInfoEnabled()).thenReturn(isGasLogEnabled);
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         loggerFactoryMocked.close();
     }
 
     @Test
-    public void helloContract() {
+    void helloContract() {
         ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"chinchilla"},
                 TestContract.hello().functions.get("hello").decodeResult(result.getHReturn()));
     }
 
     @Test
-    public void helloContractIsNotPayable() {
+    void helloContractIsNotPayable() {
         ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN, false);
-        Assert.assertTrue(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertTrue(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void childContractDoesntInheritMsgValue() {
+    void childContractDoesntInheritMsgValue() {
         ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void childContractDoesntInheritMsgValue_2() {
+    void childContractDoesntInheritMsgValue_2() {
         ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
+    void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
         ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new Object[]{BigInteger.valueOf(42)},
                 TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 
     @Test
-    public void childContractGetsStipend() {
+    void childContractGetsStipend() {
         ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new Object[]{BigInteger.valueOf(43)},
                 TestContract.bankTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 
     @Test
-    public void shouldRevertIfLessThanStipendGasAvailable() {
+    void shouldRevertIfLessThanStipendGasAvailable() {
         ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false);
-        Assert.assertTrue(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertTrue(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void cantCreateTooLargeContract() {
+    void cantCreateTooLargeContract() {
         ProgramResult result = TestContract.bigTest().createContract();
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof RuntimeException);
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNotNull(result.getException());
+        Assertions.assertTrue(result.getException() instanceof RuntimeException);
     }
 
     @Test
-    public void returnDataSizeTests() {
+    void returnDataSizeTests() {
         ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void returnPrecompiledDataSizeTest() {
+    void returnPrecompiledDataSizeTest() {
         ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO, true);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void callPrecompiledContractMethodThroughStub() {
+    void callPrecompiledContractMethodThroughStub() {
         ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
     }
 
     @Test
-    public void returnDataCopyTest() {
+    void returnDataCopyTest() {
         TestContract contract = TestContract.returnDataTest();
         ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO, false);
-        Assert.assertFalse(result.isRevert());
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertFalse(result.isRevert());
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new Object[]{LOREM_IPSUM},
                 contract.functions.get("testCopy").decodeResult(result.getHReturn()));
     }
+
 }

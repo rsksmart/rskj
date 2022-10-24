@@ -20,16 +20,16 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
-public class TxValidatorNonceRangeValidatorTest {
+class TxValidatorNonceRangeValidatorTest {
 
     @Test
-    public void oneSlotRange() {
+    void oneSlotRange() {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
@@ -41,13 +41,13 @@ public class TxValidatorNonceRangeValidatorTest {
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(1));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator(1);
-        Assert.assertFalse(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertFalse(tvnrv.validate(tx3, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertTrue(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assertions.assertFalse(tvnrv.validate(tx3, as, null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
-    public void fiveSlotsRange() {
+    void fiveSlotsRange() {
         Transaction[] txs = new Transaction[7];
         for (int i = 0; i < 7; i++) {
             txs[i] = Mockito.mock(Transaction.class);
@@ -63,17 +63,17 @@ public class TxValidatorNonceRangeValidatorTest {
             Transaction tx = txs[i];
             long txNonce = tx.getNonceAsInteger().longValue();
             boolean isValid = tvnrv.validate(tx, as, null, null, Long.MAX_VALUE, false).transactionIsValid();
-            Assert.assertEquals(isValid, txNonce >= 1 && txNonce <= 5); // only valid if tx nonce is in the range [1; 5]
+            Assertions.assertEquals(isValid, txNonce >= 1 && txNonce <= 5); // only valid if tx nonce is in the range [1; 5]
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalAccountSlotsValue_Zero() {
-        new TxValidatorNonceRangeValidator(0);
+    @Test
+    void illegalAccountSlotsValue_Zero() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TxValidatorNonceRangeValidator(0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void illegalAccountSlotsValue_Negative() {
-        new TxValidatorNonceRangeValidator(-1);
+    @Test
+    void illegalAccountSlotsValue_Negative() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TxValidatorNonceRangeValidator(-1));
     }
 }

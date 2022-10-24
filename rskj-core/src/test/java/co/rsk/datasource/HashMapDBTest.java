@@ -20,15 +20,15 @@ package co.rsk.datasource;
 
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 3/1/2016.
  */
-public class HashMapDBTest {
+class HashMapDBTest {
     @Test
-    public void putKeyValue() {
+    void putKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
         byte[] key = new byte[] { 0x01, 0x02 };
@@ -36,22 +36,22 @@ public class HashMapDBTest {
 
         byte[] result = ds.put(key, value);
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
-    public void getUnknownKeyValue() {
+    void getUnknownKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
         byte[] key = new byte[] { 0x01, 0x02 };
 
         byte[] result = ds.get(key);
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 
     @Test
-    public void putAndGetKeyValue() {
+    void putAndGetKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
         byte[] key = new byte[] { 0x01, 0x02 };
@@ -60,12 +60,12 @@ public class HashMapDBTest {
         ds.put(key, value);
         byte[] result = ds.get(key);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(value, result);
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(value, result);
     }
 
     @Test
-    public void putAndDeleteKeyValue() {
+    void putAndDeleteKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
         byte[] key = new byte[] { 0x01, 0x02 };
@@ -75,6 +75,6 @@ public class HashMapDBTest {
         ds.delete(key);
         byte[] result = ds.get(key);
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
     }
 }

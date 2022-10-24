@@ -23,30 +23,30 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RepositoryLocatorTest {
+class RepositoryLocatorTest {
 
     private StateRootHandler stateRootHandler;
     private TrieStore trieStore;
     private RepositoryLocator target;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         stateRootHandler = mock(StateRootHandler.class);
         trieStore = mock(TrieStore.class);
         target = new RepositoryLocator(trieStore, stateRootHandler);
     }
 
     @Test
-    public void getsSnapshotFromTranslatedStateRoot() {
+    void getsSnapshotFromTranslatedStateRoot() {
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
@@ -60,7 +60,7 @@ public class RepositoryLocatorTest {
     }
 
     @Test
-    public void findSnapshotAt_notFound() {
+    void findSnapshotAt_notFound() {
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
@@ -75,7 +75,7 @@ public class RepositoryLocatorTest {
     }
 
     @Test
-    public void findSnapshotAt_found() {
+    void findSnapshotAt_found() {
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);

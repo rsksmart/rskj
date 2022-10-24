@@ -17,7 +17,7 @@
  */
 
 package co.rsk.rpc.modules.personal;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,18 +27,18 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.TransactionFactoryHelper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 
-public class PersonalModuleTest {
+class PersonalModuleTest {
 
 	private static final String PASS_FRASE = "passfrase";
 
 	@Test
-	public void sendTransactionWithGasLimitTest() throws Exception {
+	void sendTransactionWithGasLimitTest() throws Exception {
 
 		TestSystemProperties props = new TestSystemProperties();
 

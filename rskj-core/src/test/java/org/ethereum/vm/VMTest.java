@@ -40,10 +40,8 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -56,26 +54,19 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@RunWith(Parameterized.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class VMTest {
-
-    @Parameterized.Parameters
-    public static Collection<Object> params() {
-        return Arrays.asList(new Object[]{true, false});
-    }
+@TestMethodOrder(MethodOrderer.MethodName.class)
+public abstract class VMTest {
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
     private VM vm;
-    private final boolean isLogEnabled;
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
@@ -84,12 +75,7 @@ public class VMTest {
 
     private static MockedStatic<LoggerFactory> loggerFactoryMocked;
 
-    public VMTest(boolean isLogEnabled) {
-        this.isLogEnabled = isLogEnabled;
-    }
-
-    @Before
-    public void setup() {
+    protected void setUp(boolean isLogEnabled) {
         Logger logger = mock(Logger.class);
         when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
 
@@ -100,34 +86,34 @@ public class VMTest {
         invoke = new ProgramInvokeMockImpl();
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         loggerFactoryMocked.close();
     }
 
     @Test
-    public void testSTATICCALLWithStatusZeroUsingSStore() {
+    void testSTATICCALLWithStatusZeroUsingSStore() {
         testSTATICCALLWithStatusZeroUsingOpCode("SSTORE");
     }
 
     @Test
-    public void testSTATICCALLWithStatusZeroUsingLogs() {
+    void testSTATICCALLWithStatusZeroUsingLogs() {
         for (int k = 0; k < 5; k++) {
             testSTATICCALLWithStatusZeroUsingOpCode("LOG" + k);
         }
     }
 
     @Test
-    public void testSTATICCALLWithStatusZeroUsingCreate() {
+    void testSTATICCALLWithStatusZeroUsingCreate() {
         testSTATICCALLWithStatusZeroUsingOpCode("CREATE");
     }
 
     @Test
-    public void testSTATICCALLWithStatusZeroUsingSuicide() {
+    void testSTATICCALLWithStatusZeroUsingSuicide() {
         testSTATICCALLWithStatusZeroUsingOpCode("SUICIDE");
     }
 
-    public void testSTATICCALLWithStatusZeroUsingOpCode(String opcode) {
+    void testSTATICCALLWithStatusZeroUsingOpCode(String opcode) {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 " + opcode), null);
         RskAddress address = invoke.getContractAddress();
         program = getProgram(compile("PUSH1 0x00" +
@@ -146,7 +132,7 @@ public class VMTest {
 
 
     @Test
-    public void testCALLWithBigUserSpecifiedGas() {
+    void testCALLWithBigUserSpecifiedGas() {
         String maxGasValue = "7FFFFFFFFFFFFFFF";
         RskAddress callee = createAddress("callee");
         // purposefully broken contract so as to consume all gas
@@ -165,14 +151,14 @@ public class VMTest {
         ), createTransaction(0));
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
-        Assert.assertEquals(
-                "faulty program with bigger gas limit than gas available should use all the gas in a block",
-                program.getResult().getGasUsed(), invoke.getGas()
+        Assertions.assertEquals(
+                program.getResult().getGasUsed(),
+                invoke.getGas(), "faulty program with bigger gas limit than gas available should use all the gas in a block"
         );
     }
 
-    @Test(expected = Program.OutOfGasException.class)
-    public void testLOGWithDataCostBiggerThanPreviousGasSize() {
+    @Test
+    void testLOGWithDataCostBiggerThanPreviousGasSize() {
 
         // The test wants to try to set dataCost to something between
         // 2**62-1 (the prev gas max size) and 2**63-1 (the current gas max)
@@ -195,14 +181,14 @@ public class VMTest {
         ));
         program.fullTrace();
         try {
-            vm.steps(program, Long.MAX_VALUE);
+            Assertions.assertThrows(Program.OutOfGasException.class, () -> vm.steps(program, Long.MAX_VALUE));
         } finally {
             invoke.setGasLimit(100000);
         }
     }
 
     @Test
-    public void testSTATICCALLWithStatusOne() {
+    void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
@@ -222,15 +208,15 @@ public class VMTest {
 
     // This test should throw an exception because we are reading from the RETURNDATABUFFER
     // in a non-existent position. This results in an error according to EIP 211
-    @Test(expected = RuntimeException.class)
-    public void returnDataBufferAfterCallToNonExistentContract() {
+    @Test
+    void returnDataBufferAfterCallToNonExistentContract() {
         byte[] expected = new byte[32];
         Arrays.fill(expected, (byte) 0);
-        doCallToNonExistentContractAndReturnValue(expected, true);
+        Assertions.assertThrows(RuntimeException.class, () -> doCallToNonExistentContractAndReturnValue(expected, true));
     }
 
     @Test
-    public void beforeIrisReturnDataBufferAfterCallToNonExistentContract() {
+    void beforeIrisReturnDataBufferAfterCallToNonExistentContract() {
         byte[] expected = new byte[32];
         Arrays.fill(expected, (byte) 0);
         expected[31] = (byte) 21;
@@ -278,12 +264,12 @@ public class VMTest {
     }
 
     @Test
-    public void returnDataSizeAfterCallToNonExistentContract() {
+    void returnDataSizeAfterCallToNonExistentContract() {
         doCallToNonExistentContractAndReturnDataSize(true, 0);
     }
 
     @Test
-    public void beforeIrisReturnDataSizeAfterCallToNonExistentContract() {
+    void beforeIrisReturnDataSizeAfterCallToNonExistentContract() {
         doCallToNonExistentContractAndReturnDataSize(false, 32);
     }
 
@@ -321,25 +307,25 @@ public class VMTest {
     }
 
     @Test
-    public void returnDataBufferAfterInsufficientFunds() {
+    void returnDataBufferAfterInsufficientFunds() {
         String contract = "471fd3ad3e9eeadeec4608b92d16ce6b500704cc"; // in the mock contract specified above
         doCallInsufficientFunds(true, 0, contract);
     }
 
     @Test
-    public void returnDataBufferAfterInsufficientFundsAtPrecompiled() {
+    void returnDataBufferAfterInsufficientFundsAtPrecompiled() {
         String precompiled = "0000000000000000000000000000000001000010";
         doCallInsufficientFunds(true, 0, precompiled);
     }
 
     @Test
-    public void beforeIrisReturnDataBufferWithInsufficientFunds() {
+    void beforeIrisReturnDataBufferWithInsufficientFunds() {
         String contract = "471fd3ad3e9eeadeec4608b92d16ce6b500704cc"; // in the mock contract specified above
         doCallInsufficientFunds(false, 32, contract);
     }
 
     @Test
-    public void beforeIrisReturnDataBufferWithInsufficientFundsAtPrecompiled() {
+    void beforeIrisReturnDataBufferWithInsufficientFundsAtPrecompiled() {
         String precompiled = "0000000000000000000000000000000001000010";
         doCallInsufficientFunds(false, 32, precompiled);
     }
@@ -380,12 +366,12 @@ public class VMTest {
     }
 
     @Test
-    public void returnDataBufferAfterEnoughGasAtPrecompiled() {
+    void returnDataBufferAfterEnoughGasAtPrecompiled() {
         doCallToPrecompiledEnoughGas(true, 0);
     }
 
     @Test
-    public void beforeIrisReturnDataBufferAfterEnoughGasAtPrecompiled() {
+    void beforeIrisReturnDataBufferAfterEnoughGasAtPrecompiled() {
         doCallToPrecompiledEnoughGas(false, 32);
     }
 
@@ -425,7 +411,7 @@ public class VMTest {
     }
 
     @Test
-    public void testReturnDataCopyChargesCorrectGas() {
+    void testReturnDataCopyChargesCorrectGas() {
         invoke = new ProgramInvokeMockImpl(compile("" +
                 " PUSH1 0x01 PUSH1 0x02 SUB PUSH1 0x00 MSTORE" +
                 " PUSH1 0x20 PUSH1 0x00 RETURN"
@@ -469,16 +455,16 @@ public class VMTest {
 
         // i should expected 32 bytes to store the value
         // and then 32 to copy the value in return data copy.
-        assertEquals("good program has 64 mem", 64, goodProgram.getMemSize());
-        assertEquals("bad program has 64 mem", 64, badProgram.getMemSize());
+        assertEquals(64, goodProgram.getMemSize(), "good program has 64 mem");
+        assertEquals(64, badProgram.getMemSize(), "bad program has 64 mem");
         // bad program is trying to put a word of memory on the last byte of memory,
         // but should not be successful. we should not charge for gas that was not used!
-        assertEquals("good program uses 3 more gas than the bad one",
-                goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
+        assertEquals(goodProgram.getResult().getGasUsed(),
+                badProgram.getResult().getGasUsed() + 3, "good program uses 3 more gas than the bad one");
     }
 
     @Test
-    public void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
+    void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
         // just a first run to initialize the precompiled contract
         // and then compare the bad and good programs
         Program initContract = getProgram(compile(
@@ -517,14 +503,14 @@ public class VMTest {
         vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
-                good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
-        Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
-                bad.getMemSize() + 32);
+        Assertions.assertEquals(good.getResult().getGasUsed(),
+                bad.getResult().getGasUsed() + GasCost.MEMORY, "good program will asign a new word of memory, so will charge 3 more");
+        Assertions.assertEquals(good.getMemSize(), bad.getMemSize() + 32,
+                "good program will have more memory, as it paid for it");
     }
 
     @Test
-    public void testCallDataCopyDoesNotExpandMemoryForFree() {
+    void testCallDataCopyDoesNotExpandMemoryForFree() {
         invoke = new ProgramInvokeMockImpl(compile(
                 " PUSH1 0x00 PUSH1 0x00 MSTORE " +
                         " PUSH1 0x20 PUSH1 0x00 RETURN"
@@ -566,7 +552,7 @@ public class VMTest {
     }
 
     @Test
-    public void getFreeMemoryUsingPrecompiledContractAndSettingFarOffOffset() {
+    void getFreeMemoryUsingPrecompiledContractAndSettingFarOffOffset() {
         // just a first run to initialize the precompiled contract
         // and then compare the bad and good programs
         Program initContract = getProgram(compile(
@@ -605,13 +591,13 @@ public class VMTest {
         vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
-        Assert.assertEquals(good.getMemSize(), bad.getMemSize());
+        Assertions.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
+        Assertions.assertEquals(good.getMemSize(), bad.getMemSize());
     }
 
 
-    @Test(expected = EmptyStackException.class)
-    public void testSTATICCALLWithStatusOneFailsWithOldCode() {
+    @Test
+    void testSTATICCALLWithStatusOneFailsWithOldCode() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
@@ -623,11 +609,11 @@ public class VMTest {
 
         program.fullTrace();
 
-        vm.steps(program, Long.MAX_VALUE);
+        Assertions.assertThrows(EmptyStackException.class, () -> vm.steps(program, Long.MAX_VALUE));
     }
 
     @Test
-    public void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingPreFixStaticCall() {
+    void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingPreFixStaticCall() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
@@ -646,7 +632,7 @@ public class VMTest {
     }
 
     @Test
-    public void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingFixStaticCallLeavesValueInStack() {
+    void testSTATICCALLWithStatusOneAndAdditionalValueInStackUsingFixStaticCallLeavesValueInStack() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
         program = getProgram(compile("PUSH1 0x2a" +
                 " PUSH1 0x00" +
@@ -667,7 +653,7 @@ public class VMTest {
     }
 
     @Test  // PUSH1 OP
-    public void testPUSH1() {
+    void testPUSH1() {
 
         program = getProgram(compile("PUSH1 0xa0"));
         String expected = "00000000000000000000000000000000000000000000000000000000000000A0";
@@ -679,7 +665,7 @@ public class VMTest {
     }
 
     @Test  // PUSH2 OP
-    public void testPUSH2() {
+    void testPUSH2() {
 
         program = getProgram(compile("PUSH2 0xa0b0"));
         String expected = "000000000000000000000000000000000000000000000000000000000000A0B0";
@@ -691,7 +677,7 @@ public class VMTest {
     }
 
     @Test  // PUSH3 OP
-    public void testPUSH3() {
+    void testPUSH3() {
 
         program = getProgram(compile("PUSH3 0xA0B0C0"));
         String expected = "0000000000000000000000000000000000000000000000000000000000A0B0C0";
@@ -703,7 +689,7 @@ public class VMTest {
     }
 
     @Test  // PUSH4 OP
-    public void testPUSH4() {
+    void testPUSH4() {
 
         program = getProgram(compile("PUSH4 0xA0B0C0D0"));
         String expected = "00000000000000000000000000000000000000000000000000000000A0B0C0D0";
@@ -715,7 +701,7 @@ public class VMTest {
     }
 
     @Test  // PUSH5 OP
-    public void testPUSH5() {
+    void testPUSH5() {
 
         program = getProgram(compile("PUSH5 0xA0B0C0D0E0"));
         String expected = "000000000000000000000000000000000000000000000000000000A0B0C0D0E0";
@@ -727,7 +713,7 @@ public class VMTest {
     }
 
     @Test  // PUSH6 OP
-    public void testPUSH6() {
+    void testPUSH6() {
 
         program = getProgram(compile("PUSH6 0xA0B0C0D0E0F0"));
         String expected = "0000000000000000000000000000000000000000000000000000A0B0C0D0E0F0";
@@ -739,7 +725,7 @@ public class VMTest {
     }
 
     @Test  // PUSH7 OP
-    public void testPUSH7() {
+    void testPUSH7() {
 
         program = getProgram(compile("PUSH7 0xA0B0C0D0E0F0A1"));
         String expected = "00000000000000000000000000000000000000000000000000A0B0C0D0E0F0A1";
@@ -751,7 +737,7 @@ public class VMTest {
     }
 
     @Test  // PUSH8 OP
-    public void testPUSH8() {
+    void testPUSH8() {
 
         program = getProgram(compile("PUSH8 0xA0B0C0D0E0F0A1B1"));
         String expected = "000000000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1";
@@ -763,7 +749,7 @@ public class VMTest {
     }
 
     @Test  // PUSH9 OP
-    public void testPUSH9() {
+    void testPUSH9() {
 
         program = getProgram(compile("PUSH9 0xA0B0C0D0E0F0A1B1C1"));
         String expected = "0000000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1";
@@ -776,7 +762,7 @@ public class VMTest {
 
 
     @Test  // PUSH10 OP
-    public void testPUSH10() {
+    void testPUSH10() {
 
         program = getProgram(compile("PUSH10 0xA0B0C0D0E0F0A1B1C1D1"));
         String expected = "00000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1";
@@ -788,7 +774,7 @@ public class VMTest {
     }
 
     @Test  // PUSH11 OP
-    public void testPUSH11() {
+    void testPUSH11() {
 
         program = getProgram(compile("PUSH11 0xA0B0C0D0E0F0A1B1C1D1E1"));
         String expected = "000000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1";
@@ -800,7 +786,7 @@ public class VMTest {
     }
 
     @Test  // PUSH12 OP
-    public void testPUSH12() {
+    void testPUSH12() {
 
         program = getProgram(compile("PUSH12 0xA0B0C0D0E0F0A1B1C1D1E1F1"));
         String expected = "0000000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1";
@@ -812,7 +798,7 @@ public class VMTest {
     }
 
     @Test  // PUSH13 OP
-    public void testPUSH13() {
+    void testPUSH13() {
 
         program = getProgram(compile("PUSH13 0xA0B0C0D0E0F0A1B1C1D1E1F1A2"));
         String expected = "00000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2";
@@ -824,7 +810,7 @@ public class VMTest {
     }
 
     @Test  // PUSH14 OP
-    public void testPUSH14() {
+    void testPUSH14() {
 
         program = getProgram(compile("PUSH14 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2"));
         String expected = "000000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2";
@@ -836,7 +822,7 @@ public class VMTest {
     }
 
     @Test  // PUSH15 OP
-    public void testPUSH15() {
+    void testPUSH15() {
 
         program = getProgram(compile("PUSH15 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2"));
         String expected = "0000000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2";
@@ -848,7 +834,7 @@ public class VMTest {
     }
 
     @Test  // PUSH16 OP
-    public void testPUSH16() {
+    void testPUSH16() {
 
         program = getProgram(compile("PUSH16 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2"));
         String expected = "00000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2";
@@ -860,7 +846,7 @@ public class VMTest {
     }
 
     @Test  // PUSH17 OP
-    public void testPUSH17() {
+    void testPUSH17() {
 
         program = getProgram(compile("PUSH17 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2"));
         String expected = "000000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2";
@@ -872,7 +858,7 @@ public class VMTest {
     }
 
     @Test  // PUSH18 OP
-    public void testPUSH18() {
+    void testPUSH18() {
 
         program = getProgram(compile("PUSH18 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2"));
         String expected = "0000000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2";
@@ -884,7 +870,7 @@ public class VMTest {
     }
 
     @Test  // PUSH19 OP
-    public void testPUSH19() {
+    void testPUSH19() {
 
         program = getProgram(compile("PUSH19 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3"));
         String expected = "00000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3";
@@ -896,7 +882,7 @@ public class VMTest {
     }
 
     @Test  // PUSH20 OP
-    public void testPUSH20() {
+    void testPUSH20() {
 
         program = getProgram(compile("PUSH20 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3"));
         String expected = "000000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3";
@@ -908,7 +894,7 @@ public class VMTest {
     }
 
     @Test  // PUSH21 OP
-    public void testPUSH21() {
+    void testPUSH21() {
 
         program = getProgram(compile("PUSH21 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3"));
         String expected = "0000000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3";
@@ -920,7 +906,7 @@ public class VMTest {
     }
 
     @Test  // PUSH22 OP
-    public void testPUSH22() {
+    void testPUSH22() {
 
         program = getProgram(compile("PUSH22 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3"));
         String expected = "00000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3";
@@ -932,7 +918,7 @@ public class VMTest {
     }
 
     @Test  // PUSH23 OP
-    public void testPUSH23() {
+    void testPUSH23() {
 
         program = getProgram(compile("PUSH23 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3"));
         String expected = "000000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3";
@@ -944,7 +930,7 @@ public class VMTest {
     }
 
     @Test  // PUSH24 OP
-    public void testPUSH24() {
+    void testPUSH24() {
 
         program = getProgram(compile("PUSH24 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3"));
         String expected = "0000000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3";
@@ -956,7 +942,7 @@ public class VMTest {
     }
 
     @Test  // PUSH25 OP
-    public void testPUSH25() {
+    void testPUSH25() {
 
         program = getProgram(compile("PUSH25 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4"));
         String expected = "00000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4";
@@ -968,7 +954,7 @@ public class VMTest {
     }
 
     @Test  // PUSH26 OP
-    public void testPUSH26() {
+    void testPUSH26() {
 
         program = getProgram(compile("PUSH26 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4"));
         String expected = "000000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4";
@@ -980,7 +966,7 @@ public class VMTest {
     }
 
     @Test  // PUSH27 OP
-    public void testPUSH27() {
+    void testPUSH27() {
 
         program = getProgram(compile("PUSH27 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4"));
         String expected = "0000000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4";
@@ -992,7 +978,7 @@ public class VMTest {
     }
 
     @Test  // PUSH28 OP
-    public void testPUSH28() {
+    void testPUSH28() {
 
         program = getProgram(compile("PUSH28 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4"));
         String expected = "00000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4";
@@ -1004,7 +990,7 @@ public class VMTest {
     }
 
     @Test  // PUSH29 OP
-    public void testPUSH29() {
+    void testPUSH29() {
 
         program = getProgram(compile("PUSH29 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4"));
         String expected = "000000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4";
@@ -1016,7 +1002,7 @@ public class VMTest {
     }
 
     @Test  // PUSH30 OP
-    public void testPUSH30() {
+    void testPUSH30() {
 
         program = getProgram(compile("PUSH30 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4"));
         String expected = "0000A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4";
@@ -1028,7 +1014,7 @@ public class VMTest {
     }
 
     @Test  // PUSH31 OP
-    public void testPUSH31() {
+    void testPUSH31() {
 
         program = getProgram(compile("PUSH31 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1"));
         String expected = "00A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1";
@@ -1040,7 +1026,7 @@ public class VMTest {
     }
 
     @Test  // PUSH32 OP
-    public void testPUSH32() {
+    void testPUSH32() {
 
         program = getProgram(compile("PUSH32 0xA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B1"));
         String expected = "A0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B1";
@@ -1052,7 +1038,7 @@ public class VMTest {
     }
 
     @Test // PUSHN OP not enough data
-    public void testPUSHN_1() {
+    void testPUSHN_1() {
 
         program = getProgram(Hex.decode("61AA"));
         //getProgram("61AA");
@@ -1066,7 +1052,7 @@ public class VMTest {
     }
 
     @Test // PUSHN OP not enough data
-    public void testPUSHN_2() {
+    void testPUSHN_2() {
 
         program = getProgram("7fAABB");
         String expected = "AABB000000000000000000000000000000000000000000000000000000000000";
@@ -1080,7 +1066,7 @@ public class VMTest {
     }
 
     @Test  // AND OP
-    public void testAND_1() {
+    void testAND_1() {
 
         program = getProgram("600A600A16");
 
@@ -1094,7 +1080,7 @@ public class VMTest {
     }
 
     @Test  // AND OP
-    public void testAND_2() {
+    void testAND_2() {
 
         program = getProgram("60C0600A16");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1106,21 +1092,21 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = RuntimeException.class)  // AND OP mal data
-    public void testAND_3() {
-
+    @Test  // AND OP mal data
+    void testAND_3() {
         program = getProgram("60C016");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(RuntimeException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test  // OR OP
-    public void testOR_1() {
+    void testOR_1() {
 
         program = getProgram("60F0600F17");
         String expected = "00000000000000000000000000000000000000000000000000000000000000FF";
@@ -1133,7 +1119,7 @@ public class VMTest {
     }
 
     @Test  // OR OP
-    public void testOR_2() {
+    void testOR_2() {
 
         program = getProgram("60C3603C17");
         String expected = "00000000000000000000000000000000000000000000000000000000000000FF";
@@ -1145,21 +1131,16 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = RuntimeException.class)  // OR OP mal data
-    public void testOR_3() {
-
+    @Test  // OR OP mal data
+    void testOR_3() {
         program = getProgram("60C017");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(RuntimeException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // XOR OP
-    public void testXOR_1() {
+    void testXOR_1() {
 
         program = getProgram("60FF60FF18");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1172,7 +1153,7 @@ public class VMTest {
     }
 
     @Test  // XOR OP
-    public void testXOR_2() {
+    void testXOR_2() {
 
         program = getProgram("600F60F018");
         String expected = "00000000000000000000000000000000000000000000000000000000000000FF";
@@ -1185,21 +1166,16 @@ public class VMTest {
     }
 
 
-    @Test(expected = RuntimeException.class)  // XOR OP mal data
-    public void testXOR_3() {
-
+    @Test  // XOR OP mal data
+    void testXOR_3() {
         program = getProgram("60C018");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(RuntimeException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // BYTE OP
-    public void testBYTE_1() {
+    void testBYTE_1() {
 
         program = getProgram("65AABBCCDDEEFF601E1A");
         String expected = "00000000000000000000000000000000000000000000000000000000000000EE";
@@ -1212,7 +1188,7 @@ public class VMTest {
     }
 
     @Test  // BYTE OP
-    public void testBYTE_2() {
+    void testBYTE_2() {
 
         program = getProgram("65AABBCCDDEEFF60201A");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1225,7 +1201,7 @@ public class VMTest {
     }
 
     @Test  // BYTE OP
-    public void testBYTE_3() {
+    void testBYTE_3() {
 
         program = getProgram("65AABBCCDDEE3A601F1A");
         String expected = "000000000000000000000000000000000000000000000000000000000000003A";
@@ -1238,21 +1214,22 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class)  // BYTE OP mal data
-    public void testBYTE_4() {
+    @Test  // BYTE OP mal data
+    void testBYTE_4() {
 
         program = getProgram("65AABBCCDDEE3A1A");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test  // ISZERO OP
-    public void testISZERO_1() {
+    void testISZERO_1() {
 
         program = getProgram("600015");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1264,7 +1241,7 @@ public class VMTest {
     }
 
     @Test  // ISZERO OP
-    public void testISZERO_2() {
+    void testISZERO_2() {
 
         program = getProgram("602A15");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1275,21 +1252,20 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // ISZERO OP mal data
-    public void testISZERO_3() {
-
+    @Test  // ISZERO OP mal data
+    void testISZERO_3() {
         program = getProgram("15");
         try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> {
+                vm.step(program);
+            });
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test  // EQ OP
-    public void testEQ_1() {
+    void testEQ_1() {
 
         program = getProgram("602A602A14");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1302,7 +1278,7 @@ public class VMTest {
     }
 
     @Test  // EQ OP
-    public void testEQ_2() {
+    void testEQ_2() {
 
         program = getProgram("622A3B4C622A3B4C14");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1315,7 +1291,7 @@ public class VMTest {
     }
 
     @Test  // EQ OP
-    public void testEQ_3() {
+    void testEQ_3() {
 
         program = getProgram("622A3B5C622A3B4C14");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1327,21 +1303,20 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // EQ OP mal data
-    public void testEQ_4() {
+    @Test  // EQ OP mal data
+    void testEQ_4() {
 
         program = getProgram("622A3B4C14");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test  // GT OP
-    public void testGT_1() {
+    void testGT_1() {
 
         program = getProgram("6001600211");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1354,7 +1329,7 @@ public class VMTest {
     }
 
     @Test  // GT OP
-    public void testGT_2() {
+    void testGT_2() {
 
         program = getProgram("6001610F0011");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1367,7 +1342,7 @@ public class VMTest {
     }
 
     @Test  // GT OP
-    public void testGT_3() {
+    void testGT_3() {
 
         program = getProgram("6301020304610F0011");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1379,21 +1354,20 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // GT OP mal data
-    public void testGT_4() {
+    @Test  // GT OP mal data
+    void testGT_4() {
 
         program = getProgram("622A3B4C11");
         try {
             vm.step(program);
-            vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test  // SGT OP
-    public void testSGT_1() {
+    void testSGT_1() {
 
         program = getProgram("6001600213");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1406,7 +1380,7 @@ public class VMTest {
     }
 
     @Test  // SGT OP
-    public void testSGT_2() {
+    void testSGT_2() {
 
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
@@ -1421,7 +1395,7 @@ public class VMTest {
     }
 
     @Test  // SGT OP
-    public void testSGT_3() {
+    void testSGT_3() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
@@ -1435,22 +1409,17 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // SGT OP mal
-    public void testSGT_4() {
-
+    @Test  // SGT OP mal
+    void testSGT_4() {
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "13");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // LT OP
-    public void testLT_1() {
+    void testLT_1() {
 
         program = getProgram("6001600210");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1463,7 +1432,7 @@ public class VMTest {
     }
 
     @Test  // LT OP
-    public void testLT_2() {
+    void testLT_2() {
 
         program = getProgram("6001610F0010");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1476,7 +1445,7 @@ public class VMTest {
     }
 
     @Test  // LT OP
-    public void testLT_3() {
+    void testLT_3() {
 
         program = getProgram("6301020304610F0010");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1488,21 +1457,16 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // LT OP mal data
-    public void testLT_4() {
-
+    @Test  // LT OP mal data
+    void testLT_4() {
         program = getProgram("622A3B4C10");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // SLT OP
-    public void testSLT_1() {
+    void testSLT_1() {
 
         program = getProgram("6001600212");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1515,7 +1479,7 @@ public class VMTest {
     }
 
     @Test  // SLT OP
-    public void testSLT_2() {
+    void testSLT_2() {
 
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
@@ -1530,7 +1494,7 @@ public class VMTest {
     }
 
     @Test  // SLT OP
-    public void testSLT_3() {
+    void testSLT_3() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF57" + // -169
@@ -1544,22 +1508,17 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // SLT OP mal
-    public void testSLT_4() {
-
+    @Test  // SLT OP mal
+    void testSLT_4() {
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "12");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test  // NOT OP
-    public void testNOT_1() {
+    void testNOT_1() {
 
         program = getProgram("600119");
         String expected = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE";
@@ -1571,7 +1530,7 @@ public class VMTest {
     }
 
     @Test  // NOT OP
-    public void testNOT_2() {
+    void testNOT_2() {
 
         program = getProgram("61A00319");
         String expected = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5FFC";
@@ -1583,20 +1542,17 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class)  // BNOT OP
-    public void testBNOT_4() {
-
+    @Test  // BNOT OP
+    void testBNOT_4() {
         program = getProgram("1a");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+
+        assertTrue(program.isStopped());
     }
 
     @Test  // NOT OP test from real failure
-    public void testNOT_5() {
+    void testNOT_5() {
 
         program = getProgram("600019");
         String expected = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
@@ -1609,7 +1565,7 @@ public class VMTest {
 
 
     @Test // POP OP
-    public void testPOP_1() {
+    void testPOP_1() {
 
         program = getProgram("61000060016200000250");
         String expected = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -1623,7 +1579,7 @@ public class VMTest {
     }
 
     @Test // POP OP
-    public void testPOP_2() {
+    void testPOP_2() {
 
         program = getProgram("6100006001620000025050");
         String expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1637,8 +1593,8 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // POP OP mal data
-    public void testPOP_3() {
+    @Test  // POP OP mal data
+    void testPOP_3() {
 
         program = getProgram("61000060016200000250505050");
         try {
@@ -1648,14 +1604,14 @@ public class VMTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // DUP1...DUP16 OP
-    public void testDUPS() {
+    void testDUPS() {
         for (int i = 1; i < 17; i++) {
             testDUPN_1(i);
         }
@@ -1684,24 +1640,24 @@ public class VMTest {
         assertEquals(expectedLen, program.getStack().toArray().length);
         assertEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
         for (int i = 0; i < expectedLen - 2; i++) {
-            assertNotEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
+            Assertions.assertNotEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
         }
         assertEquals(expected, ByteUtil.toHexString(program.stackPop().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class)  // DUPN OP mal data
-    public void testDUPN_2() {
+    @Test  // DUPN OP mal data
+    void testDUPN_2() {
 
         program = getProgram("80");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // SWAP1...SWAP16 OP
-    public void testSWAPS() {
+    void testSWAPS() {
         for (int i = 1; i < 17; ++i) {
             testSWAPN_1(i);
         }
@@ -1735,20 +1691,20 @@ public class VMTest {
         assertEquals(top, ByteUtil.toHexString(program.stackPop().getData()));
     }
 
-    @Test(expected = StackTooSmallException.class)  // SWAPN OP mal data
-    public void testSWAPN_2() {
+    @Test  // SWAPN OP mal data
+    void testSWAPN_2() {
 
         program = getProgram("90");
 
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // MSTORE OP
-    public void testMSTORE_1() {
+    void testMSTORE_1() {
 
         program = getProgram("611234600052");
         String expected = "0000000000000000000000000000000000000000000000000000000000001234";
@@ -1879,7 +1835,7 @@ public class VMTest {
 
 
     @Test // MSTORE OP
-    public void testMSTORE_2() {
+    void testMSTORE_2() {
 
         program = getProgram("611234600052615566602052");
         String expected = "0000000000000000000000000000000000000000000000000000000000001234" +
@@ -1896,7 +1852,7 @@ public class VMTest {
     }
 
     @Test // MSTORE OP
-    public void testMSTORE_3() {
+    void testMSTORE_3() {
 
         program = getProgram("611234600052615566602052618888600052");
         String expected = "0000000000000000000000000000000000000000000000000000000000008888" +
@@ -1916,7 +1872,7 @@ public class VMTest {
     }
 
     @Test // MSTORE OP
-    public void testMSTORE_4() {
+    void testMSTORE_4() {
 
         program = getProgram("61123460A052");
         String expected = "" +
@@ -1934,20 +1890,20 @@ public class VMTest {
         assertEquals(expected, ByteUtil.toHexString(program.getMemory()));
     }
 
-    @Test(expected = StackTooSmallException.class) // MSTORE OP
-    public void testMSTORE_5() {
+    @Test // MSTORE OP
+    void testMSTORE_5() {
 
         program = getProgram("61123452");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // MLOAD OP
-    public void testMLOAD_1() {
+    void testMLOAD_1() {
 
         program = getProgram("600051");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -1961,7 +1917,7 @@ public class VMTest {
     }
 
     @Test // MLOAD OP
-    public void testMLOAD_2() {
+    void testMLOAD_2() {
 
         program = getProgram("602251");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -1978,7 +1934,7 @@ public class VMTest {
 
 
     @Test // MLOAD OP
-    public void testMLOAD_3() {
+    void testMLOAD_3() {
 
         program = getProgram("602051");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -1993,7 +1949,7 @@ public class VMTest {
     }
 
     @Test // MLOAD OP
-    public void testMLOAD_4() {
+    void testMLOAD_4() {
 
         program = getProgram("611234602052602051");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -2011,7 +1967,7 @@ public class VMTest {
     }
 
     @Test // MLOAD OP
-    public void testMLOAD_5() {
+    void testMLOAD_5() {
 
         program = getProgram("611234602052601F51");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -2030,7 +1986,7 @@ public class VMTest {
 
     // Testes the versioning header, specifying version 0
     @Test
-    public void testVersioning_1() {
+    void testVersioning_1() {
 
         program = getProgram("FC010100" // this is the header
                 + "611234602052601F51");
@@ -2044,15 +2000,15 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(program.getExeVersion(), 1);
-        assertEquals(program.getScriptVersion(), 1);
+        assertEquals(1, program.getExeVersion());
+        assertEquals(1, program.getScriptVersion());
         assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()));
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
     // Test for currectness of extra header length when over 128 (negative byte)
     @Test
-    public void testVersioning_2() {
+    void testVersioning_2() {
 
         byte[] header = Hex.decode("FC810180"); // test negative exeVersion also, 0x80 byte to skip
 
@@ -2067,7 +2023,7 @@ public class VMTest {
             outputStream.write(tail);
         } catch (IOException e) {
             e.printStackTrace();
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         }
 
         byte code[] = outputStream.toByteArray();
@@ -2075,7 +2031,7 @@ public class VMTest {
         program = getProgram(code);
         // no negative values allowed. Currently values over 127 are limited
         // in the future exeversion and scriptversion can be made of size int.
-        Assert.assertEquals(program.getExeVersion(), 127);
+        Assertions.assertEquals(127, program.getExeVersion());
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
                 "0000000000000000000000000000000000000000000000000000000000001234";
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000012";
@@ -2090,28 +2046,26 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testInvalidOpcodes_1() {
-
+    @Test
+    void testInvalidOpcodes_1() {
         program = getProgram("A5");
 
-        vm.step(program);
-
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
     }
 
-    @Test(expected = StackTooSmallException.class) // MLOAD OP mal data
-    public void testMLOAD_6() {
+    @Test // MLOAD OP mal data
+    void testMLOAD_6() {
 
         program = getProgram("51");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // MSTORE8 OP
-    public void testMSTORE8_1() {
+    void testMSTORE8_1() {
 
         program = getProgram("6011600053");
         String m_expected = "1100000000000000000000000000000000000000000000000000000000000000";
@@ -2125,7 +2079,7 @@ public class VMTest {
 
 
     @Test // MSTORE8 OP
-    public void testMSTORE8_2() {
+    void testMSTORE8_2() {
 
         program = getProgram("6022600153");
         String m_expected = "0022000000000000000000000000000000000000000000000000000000000000";
@@ -2138,7 +2092,7 @@ public class VMTest {
     }
 
     @Test // MSTORE8 OP
-    public void testMSTORE8_3() {
+    void testMSTORE8_3() {
 
         program = getProgram("6022602153");
         String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -2151,20 +2105,20 @@ public class VMTest {
         assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()));
     }
 
-    @Test(expected = StackTooSmallException.class) // MSTORE8 OP mal
-    public void testMSTORE8_4() {
+    @Test // MSTORE8 OP mal
+    void testMSTORE8_4() {
 
         program = getProgram("602253");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // SSTORE OP
-    public void testSSTORE_1() {
+    void testSSTORE_1() {
 
         program = getProgram("602260AA55");
         String s_expected_key = "00000000000000000000000000000000000000000000000000000000000000AA";
@@ -2181,7 +2135,7 @@ public class VMTest {
     }
 
     @Test // SSTORE OP
-    public void testSSTORE_2() {
+    void testSSTORE_2() {
 
         program = getProgram("602260AA55602260BB55");
         String s_expected_key = "00000000000000000000000000000000000000000000000000000000000000BB";
@@ -2201,20 +2155,20 @@ public class VMTest {
         assertEquals(s_expected_val, ByteUtil.toHexString(val.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SSTORE OP
-    public void testSSTORE_3() {
+    @Test // SSTORE OP
+    void testSSTORE_3() {
 
         program = getProgram("602255");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // SLOAD OP
-    public void testSLOAD_1() {
+    void testSLOAD_1() {
 
         program = getProgram("60AA54");
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -2226,7 +2180,7 @@ public class VMTest {
     }
 
     @Test // SLOAD OP
-    public void testSLOAD_2() {
+    void testSLOAD_2() {
 
         program = getProgram("602260AA5560AA54");
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000022";
@@ -2241,7 +2195,7 @@ public class VMTest {
     }
 
     @Test // SLOAD OP
-    public void testSLOAD_3() {
+    void testSLOAD_3() {
 
         program = getProgram("602260AA55603360CC5560CC54");
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000033";
@@ -2258,19 +2212,19 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SLOAD OP
-    public void testSLOAD_4() {
+    @Test // SLOAD OP
+    void testSLOAD_4() {
 
         program = getProgram("56");
         try {
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
     @Test // PC OP
-    public void testPC_1() {
+    void testPC_1() {
 
         program = getProgram("58");
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -2282,7 +2236,7 @@ public class VMTest {
 
 
     @Test // PC OP
-    public void testPC_2() {
+    void testPC_2() {
 
         program = getProgram("602260AA5260AA5458");
         String s_expected = "0000000000000000000000000000000000000000000000000000000000000008";
@@ -2297,38 +2251,28 @@ public class VMTest {
         assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
-    public void testJUMP_1() {
-
+    @Test // JUMP OP mal data
+    void testJUMP_1() {
         program = getProgram("60AA60BB600E5660CC60DD60EE5B60FF");
-        String s_expected = "00000000000000000000000000000000000000000000000000000000000000FF";
 
         vm.step(program);
         vm.step(program);
         vm.step(program);
-        vm.step(program);
-        vm.step(program);
-
-        assertEquals(s_expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
-    public void testJUMP_2() {
-
+    @Test // JUMP OP mal data
+    void testJUMP_2() {
         program = getProgram("600C600C905660CC60DD60EE60FF");
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        vm.step(program);
+        vm.step(program);
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // JUMPI OP
-    public void testJUMPI_1() {
+    void testJUMPI_1() {
 
         program = getProgram("60016005575B60CC");
         String s_expected = "00000000000000000000000000000000000000000000000000000000000000CC";
@@ -2344,7 +2288,7 @@ public class VMTest {
 
 
     @Test // JUMPI OP
-    public void testJUMPI_2() {
+    void testJUMPI_2() {
 
         program = getProgram("630000000060445760CC60DD");
         String s_expected_1 = "00000000000000000000000000000000000000000000000000000000000000DD";
@@ -2363,20 +2307,20 @@ public class VMTest {
         assertEquals(s_expected_2, ByteUtil.toHexString(item2.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // JUMPI OP mal
-    public void testJUMPI_3() {
+    @Test // JUMPI OP mal
+    void testJUMPI_3() {
 
         program = getProgram("600157");
         try {
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMPI OP mal
-    public void testJUMPI_4() {
+    @Test // JUMPI OP mal
+    void testJUMPI_4() {
 
         program = getProgram("60016022909057");
         try {
@@ -2384,35 +2328,25 @@ public class VMTest {
             vm.step(program);
             vm.step(program);
             vm.step(program);
-            vm.step(program);
+            Assertions.assertThrows(BadJumpDestinationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
 
-    @Test(expected = BadJumpDestinationException.class) // JUMP OP mal data
-    public void testJUMPDEST_1() {
-
+    @Test // JUMP OP mal data
+    void testJUMPDEST_1() {
         program = getProgram("602360085660015b600255");
 
-        String s_expected_key = "0000000000000000000000000000000000000000000000000000000000000002";
-        String s_expected_val = "0000000000000000000000000000000000000000000000000000000000000023";
-
         vm.step(program);
         vm.step(program);
-        vm.step(program);
-        vm.step(program);
-        vm.step(program);
-
-        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
-        DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
-
-        assertTrue(program.isStopped());
-        assertEquals(s_expected_val, ByteUtil.toHexString(val.getData()).toUpperCase());
+        Assertions.assertThrows(BadJumpDestinationException.class, () -> {
+            vm.step(program);
+        });
     }
 
     @Test // JUMPDEST OP for JUMPI
-    public void testJUMPDEST_2() {
+    void testJUMPDEST_2() {
 
         program = getProgram("6023600160095760015b600255");
 
@@ -2435,7 +2369,7 @@ public class VMTest {
     }
 
     @Test // ADD OP mal
-    public void testADD_1() {
+    void testADD_1() {
 
         program = getProgram("6002600201");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000004";
@@ -2449,7 +2383,7 @@ public class VMTest {
     }
 
     @Test // ADD OP
-    public void testADD_2() {
+    void testADD_2() {
 
         program = getProgram("611002600201");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000001004";
@@ -2463,7 +2397,7 @@ public class VMTest {
     }
 
     @Test // ADD OP
-    public void testADD_3() {
+    void testADD_3() {
 
         program = getProgram("6110026512345678900901");
         String s_expected_1 = "000000000000000000000000000000000000000000000000000012345678A00B";
@@ -2476,20 +2410,17 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // ADD OP mal
-    public void testADD_4() {
+    @Test // ADD OP mal
+    void testADD_4() {
 
         program = getProgram("61123401");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // ADDMOD OP mal
-    public void testADDMOD_1() {
+    void testADDMOD_1() {
         program = getProgram("60026002600308");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000001";
 
@@ -2504,7 +2435,7 @@ public class VMTest {
     }
 
     @Test // ADDMOD OP
-    public void testADDMOD_2() {
+    void testADDMOD_2() {
         program = getProgram("6110006002611002086000");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000004";
 
@@ -2519,7 +2450,7 @@ public class VMTest {
     }
 
     @Test // ADDMOD OP
-    public void testADDMOD_3() {
+    void testADDMOD_3() {
         program = getProgram("61100265123456789009600208");
         String s_expected_1 = "000000000000000000000000000000000000000000000000000000000000093B";
 
@@ -2533,19 +2464,16 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // ADDMOD OP mal
-    public void testADDMOD_4() {
+    @Test // ADDMOD OP mal
+    void testADDMOD_4() {
         program = getProgram("61123408");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // MUL OP
-    public void testMUL_1() {
+    void testMUL_1() {
         program = getProgram("6003600202");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000006";
 
@@ -2558,7 +2486,7 @@ public class VMTest {
     }
 
     @Test // MUL OP
-    public void testMUL_2() {
+    void testMUL_2() {
         program = getProgram("62222222600302");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000666666";
 
@@ -2571,7 +2499,7 @@ public class VMTest {
     }
 
     @Test // MUL OP
-    public void testMUL_3() {
+    void testMUL_3() {
 
         program = getProgram("622222226233333302");
         String s_expected_1 = "000000000000000000000000000000000000000000000000000006D3A05F92C6";
@@ -2584,20 +2512,17 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MUL OP mal
-    public void testMUL_4() {
+    @Test // MUL OP mal
+    void testMUL_4() {
 
         program = getProgram("600102");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // MULMOD OP
-    public void testMULMOD_1() {
+    void testMULMOD_1() {
         program = getProgram("60036002600409");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000002";
 
@@ -2611,7 +2536,7 @@ public class VMTest {
     }
 
     @Test // MULMOD OP
-    public void testMULMOD_2() {
+    void testMULMOD_2() {
         program = getProgram("622222226003600409");
         String s_expected_1 = "000000000000000000000000000000000000000000000000000000000000000C";
 
@@ -2625,7 +2550,7 @@ public class VMTest {
     }
 
     @Test // MULMOD OP
-    public void testMULMOD_3() {
+    void testMULMOD_3() {
         program = getProgram("62222222623333336244444409");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -2638,19 +2563,16 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MULMOD OP mal
-    public void testMULMOD_4() {
+    @Test // MULMOD OP mal
+    void testMULMOD_4() {
         program = getProgram("600109");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // DIV OP
-    public void testDIV_1() {
+    void testDIV_1() {
 
         program = getProgram("6002600404");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000002";
@@ -2664,7 +2586,7 @@ public class VMTest {
     }
 
     @Test // DIV OP
-    public void testDIV_2() {
+    void testDIV_2() {
 
         program = getProgram("6033609904");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000003";
@@ -2679,7 +2601,7 @@ public class VMTest {
 
 
     @Test // DIV OP
-    public void testDIV_3() {
+    void testDIV_3() {
 
         program = getProgram("6022609904");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000004";
@@ -2693,7 +2615,7 @@ public class VMTest {
     }
 
     @Test // DIV OP
-    public void testDIV_4() {
+    void testDIV_4() {
 
         program = getProgram("6015609904");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000007";
@@ -2708,7 +2630,7 @@ public class VMTest {
 
 
     @Test // DIV OP
-    public void testDIV_5() {
+    void testDIV_5() {
 
         program = getProgram("6004600704");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -2721,20 +2643,17 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // DIV OP
-    public void testDIV_6() {
+    @Test // DIV OP
+    void testDIV_6() {
 
         program = getProgram("600704");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // SDIV OP
-    public void testSDIV_1() {
+    void testSDIV_1() {
 
         program = getProgram("6103E87FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFC1805" +
                 "");
@@ -2749,7 +2668,7 @@ public class VMTest {
     }
 
     @Test // SDIV OP
-    public void testSDIV_2() {
+    void testSDIV_2() {
 
         program = getProgram("60FF60FF05");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -2763,7 +2682,7 @@ public class VMTest {
     }
 
     @Test // SDIV OP
-    public void testSDIV_3() {
+    void testSDIV_3() {
 
 
         program = getProgram("600060FF05");
@@ -2777,21 +2696,18 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SDIV OP mal
-    public void testSDIV_4() {
+    @Test // SDIV OP mal
+    void testSDIV_4() {
 
         program = getProgram("60FF05");
 
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // SUB OP
-    public void testSUB_1() {
+    void testSUB_1() {
 
         program = getProgram("6004600603");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000002";
@@ -2805,7 +2721,7 @@ public class VMTest {
     }
 
     @Test // SUB OP
-    public void testSUB_2() {
+    void testSUB_2() {
 
         program = getProgram("61444461666603");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000002222";
@@ -2819,7 +2735,7 @@ public class VMTest {
     }
 
     @Test // SUB OP
-    public void testSUB_3() {
+    void testSUB_3() {
 
         program = getProgram("614444639999666603");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000099992222";
@@ -2832,20 +2748,17 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SUB OP mal
-    public void testSUB_4() {
+    @Test // SUB OP mal
+    void testSUB_4() {
 
         program = getProgram("639999666603");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // MSIZE OP
-    public void testMSIZE_1() {
+    void testMSIZE_1() {
 
 
         program = getProgram("59");
@@ -2858,7 +2771,7 @@ public class VMTest {
     }
 
     @Test // MSIZE OP
-    public void testMSIZE_2() {
+    void testMSIZE_2() {
 
 
         program = getProgram("602060305259");
@@ -2875,7 +2788,7 @@ public class VMTest {
 
 
     @Test // STOP OP
-    public void testSTOP_1() {
+    void testSTOP_1() {
 
 
         program = getProgram("60206030601060306011602300");
@@ -2891,7 +2804,7 @@ public class VMTest {
     }
 
     @Test
-    public void testEXP_1() {
+    void testEXP_1() {
 
 
         program = getProgram("600360020a");
@@ -2909,7 +2822,7 @@ public class VMTest {
     }
 
     @Test
-    public void testEXP_2() {
+    void testEXP_2() {
 
 
         program = getProgram("6000621234560a");
@@ -2927,7 +2840,7 @@ public class VMTest {
     }
 
     @Test
-    public void testEXP_3() {
+    void testEXP_3() {
 
 
         program = getProgram("61112260010a");
@@ -2945,21 +2858,16 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // EXP OP mal
-    public void testEXP_4() {
-
-
+    @Test // EXP OP mal
+    void testEXP_4() {
         program = getProgram("621234560a");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // RETURN OP
-    public void testRETURN_1() {
+    void testRETURN_1() {
 
 
         program = getProgram("61123460005260206000F3");
@@ -2978,7 +2886,7 @@ public class VMTest {
 
 
     @Test // RETURN OP
-    public void testRETURN_2() {
+    void testRETURN_2() {
 
 
         program = getProgram("6112346000526020601FF3");
@@ -2996,7 +2904,7 @@ public class VMTest {
     }
 
     @Test // RETURN OP
-    public void testRETURN_3() {
+    void testRETURN_3() {
 
 
         program = getProgram("7FA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B160005260206000F3");
@@ -3015,7 +2923,7 @@ public class VMTest {
 
 
     @Test // RETURN OP
-    public void testRETURN_4() {
+    void testRETURN_4() {
 
 
         program = getProgram("7FA0B0C0D0E0F0A1B1C1D1E1F1A2B2C2D2E2F2A3B3C3D3E3F3A4B4C4D4E4F4A1B160005260206010F3");
@@ -3032,9 +2940,9 @@ public class VMTest {
         assertTrue(program.isStopped());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // CODECOPY OP
-    public void testCODECOPY_1() {
+    void testCODECOPY_1() {
         program = getProgram("60036007600039123456");
         String m_expected_1 = "1234560000000000000000000000000000000000000000000000000000000000";
 
@@ -3048,9 +2956,9 @@ public class VMTest {
         assertEquals(6, gas);
     }
 
-    @Ignore //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // CODECOPY OP
-    public void testCODECOPY_2() {
+    void testCODECOPY_2() {
         program = getProgram("605E60076000396000605f556014600054601e60205463abcddcba6040545b51602001" +
                 "600a5254516040016014525451606001601e5254516080016028525460a05254601660" +
                 "4860003960166000f26000603f556103e75660005460005360200235602054");
@@ -3069,9 +2977,9 @@ public class VMTest {
         assertEquals(10, gas);
     }
 
-    @Ignore //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // CODECOPY OP
-    public void testCODECOPY_3() {
+    void testCODECOPY_3() {
         // cost for that:
         // 94 - data copied
         // 95 - new bytes allocated
@@ -3089,9 +2997,9 @@ public class VMTest {
         assertEquals(10, program.getResult().getGasUsed());
     }
 
-    @Ignore //TODO #POC9
+    @Disabled("//TODO #POC9")
     @Test // CODECOPY OP
-    public void testCODECOPY_4() {
+    void testCODECOPY_4() {
         program = getProgram("605E60076000396000605f556014600054601e60205463abcddcba6040545b51602001600a5254" +
                 "516040016014525451606001601e5254516080016028525460a052546016604860003960166000f260006" +
                 "03f556103e756600054600053602002351234");
@@ -3106,7 +3014,7 @@ public class VMTest {
 
 
     @Test // CODECOPY OP
-    public void testCODECOPY_5() {
+    void testCODECOPY_5() {
         program = getProgram("611234600054615566602054607060006020396000605f556014600054601e6020546" +
                 "3abcddcba6040545b51602001600a5254516040016014525451606001601e5254516080016028525460a05" +
                 "2546016604860003960166000f26000603f556103e756600054600053602002351234");
@@ -3126,23 +3034,20 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // CODECOPY OP mal
-    public void testCODECOPY_6() {
+    @Test // CODECOPY OP mal
+    void testCODECOPY_6() {
         program = getProgram("605E6007396000605f556014600054601e60205463abcddcba604054" +
                 "5b51602001600a5254516040016014525451606001601e5254516080016028525460a" +
                 "052546016604860003960166000f26000603f556103e756600054600053602002351234");
 
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // EXTCODECOPY OP
-    public void testEXTCODECOPY_1() {
+    void testEXTCODECOPY_1() {
         program = getProgram("60036007600073471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C123456");
         String m_expected_1 = "6000600000000000000000000000000000000000000000000000000000000000";
 
@@ -3156,7 +3061,7 @@ public class VMTest {
     }
 
     @Test // EXTCODECOPY OP
-    public void testEXTCODECOPY_2() {
+    void testEXTCODECOPY_2() {
         program = getProgram("603E6007600073471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C6000605f556014" +
                 "600054601e60205463abcddcba6040545b51602001600a5254516040016014525451606001601e52545160" +
                 "80016028525460a052546016604860003960166000f26000603f556103e75660005460005360200235602054");
@@ -3174,7 +3079,7 @@ public class VMTest {
     }
 
     @Test // EXTCODECOPY OP
-    public void testEXTCODECOPY_3() {
+    void testEXTCODECOPY_3() {
         program = getProgram("605E6007600073471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C60" +
                 "00605f556014600054601e60205463abcddcba6040545b51602001600a525451604001601452545160" +
                 "6001601e5254516080016028525460a052546016604860003960166000f26000603f556103e75660005460005360200235");
@@ -3193,7 +3098,7 @@ public class VMTest {
     }
 
     @Test // EXTCODECOPY OP
-    public void testEXTCODECOPY_4() {
+    void testEXTCODECOPY_4() {
         program = getProgram("611234600054615566602054603E6000602073471FD3AD3E9EEADEEC4608B9" +
                 "2D16CE6B500704CC3C6000605f556014600054601e60205463abcddcba6040545b51602001600a5" +
                 "254516040016014525451606001601e5254516080016028525460a0525460166" +
@@ -3215,23 +3120,20 @@ public class VMTest {
     }
 
 
-    @Test(expected = StackTooSmallException.class) // EXTCODECOPY OP mal
-    public void testEXTCODECOPY_5() {
+    @Test // EXTCODECOPY OP mal
+    void testEXTCODECOPY_5() {
         program = getProgram("605E600773471FD3AD3E9EEADEEC4608B92D16CE6B500704CC3C");
 
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        vm.step(program);
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
 
     @Test // CODESIZE OP
-    public void testCODESIZE_1() {
+    void testCODESIZE_1() {
         program = getProgram("385E60076000396000605f556014600054601e60205463abcddcba6040545b51602" +
                 "001600a5254516040016014525451606001601e5254516080016028525460a05254601660486" +
                 "0003960166000f26000603f556103e75660005460005360200235");
@@ -3244,9 +3146,9 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Ignore // todo: test is not testing EXTCODESIZE
+    @Disabled("// todo: test is not testing EXTCODESIZE")
     @Test // EXTCODESIZE OP
-    public void testEXTCODESIZE_1() {
+    void testEXTCODESIZE_1() {
         // Push address on the stack and perform EXTCODECOPY
         program = getProgram("73471FD3AD3E9EEADEEC4608B92D16CE6B500704CC395E60076000396000605f55" +
                 "6014600054601e60205463abcddcba6040545b51602001600a5254516040016014525451606001" +
@@ -3261,7 +3163,7 @@ public class VMTest {
     }
 
     @Test // MOD OP
-    public void testMOD_1() {
+    void testMOD_1() {
         program = getProgram("6003600406");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000001";
 
@@ -3274,7 +3176,7 @@ public class VMTest {
     }
 
     @Test // MOD OP
-    public void testMOD_2() {
+    void testMOD_2() {
 
         program = getProgram("61012C6101F406");
         String s_expected_1 = "00000000000000000000000000000000000000000000000000000000000000C8";
@@ -3288,7 +3190,7 @@ public class VMTest {
     }
 
     @Test // MOD OP
-    public void testMOD_3() {
+    void testMOD_3() {
 
         program = getProgram("6004600206");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000002";
@@ -3301,23 +3203,17 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // MOD OP mal
-    public void testMOD_4() {
-
-
+    @Test // MOD OP mal
+    void testMOD_4() {
         program = getProgram("600406");
 
-        try {
-            vm.step(program);
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test // SMOD OP
-    public void testSMOD_1() {
+    void testSMOD_1() {
 
         program = getProgram("6003600407");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -3331,7 +3227,7 @@ public class VMTest {
     }
 
     @Test // SMOD OP
-    public void testSMOD_2() {
+    void testSMOD_2() {
 
         program = getProgram("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE2" + //  -30
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
@@ -3347,7 +3243,7 @@ public class VMTest {
     }
 
     @Test // SMOD OP
-    public void testSMOD_3() {
+    void testSMOD_3() {
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
                 "7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF56" + // -170
                 "07");
@@ -3361,27 +3257,25 @@ public class VMTest {
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Test(expected = StackTooSmallException.class) // SMOD OP mal
-    public void testSMOD_4() {
+    @Test // SMOD OP mal
+    void testSMOD_4() {
         program = getProgram("7F000000000000000000000000000000000000000000000000000000000000001E" + //   30
                 "07");
-        try {
-            vm.step(program);
-            vm.step(program);
-        } finally {
-            assertTrue(program.isStopped());
-        }
+        vm.step(program);
+        Assertions.assertThrows(StackTooSmallException.class, () -> vm.step(program));
+        assertTrue(program.isStopped());
     }
 
     @Test
-    public void regression1Test() {
+    void regression1Test() {
         // testing that we are working fine with unknown 0xFE bytecode produced by Serpent compiler
         String code2 = "60006116bf537c01000000000000000000000000000000000000000000000000000000006000350463b041b2858114156101c257600435604052780100000000000000000000000000000000000000000000000060606060599059016000905260028152604051816020015260008160400152809050205404606052606051151561008f57600060a052602060a0f35b66040000000000015460c052600760e0525b60605178010000000000000000000000000000000000000000000000006060606059905901600090526002815260c05181602001526000816040015280905020540413156101b0575b60e05160050a60605178010000000000000000000000000000000000000000000000006060606059905901600090526002815260c05181602001526000816040015280905020540403121561014457600060e05113610147565b60005b1561015a57600160e0510360e0526100ea565b7c010000000000000000000000000000000000000000000000000000000060e05160200260020a6060606059905901600090526002815260c051816020015260018160400152809050205402045460c0526100a1565b60405160c05114610160526020610160f35b63720f60f58114156102435760043561018052601c60445990590160009052016305215b2f601c820352790100000000000000000000000000000000000000000000000000600482015260206101c0602483600061018051602d5a03f1506101c05190506604000000000003556604000000000003546101e05260206101e0f35b63b8c48f8c8114156104325760043560c05260243561020052604435610220526000660400000000000254141515610286576000610240526020610240f3610292565b60016604000000000002555b60c0516604000000000001556060606059905901600090526002815260c051816020015260008160400152809050205461026052610260610200518060181a82538060191a600183015380601a1a600283015380601b1a600383015380601c1a600483015380601d1a600583015380601e1a600683015380601f1a60078301535050610260516060606059905901600090526002815260c05181602001526000816040015280905020556060606059905901600090526002815260c051816020015260008160400152809050205461030052601061030001610220518060101a82538060111a60018301538060121a60028301538060131a60038301538060141a60048301538060151a60058301538060161a60068301538060171a60078301538060181a60088301538060191a600983015380601a1a600a83015380601b1a600b83015380601c1a600c83015380601d1a600d83015380601e1a600e83015380601f1a600f8301535050610300516060606059905901600090526002815260c051816020015260008160400152809050205560016103a05260206103a0f35b632b861629811415610eed57365990590160009052366004823760043560208201016103e0525060483580601f1a6104405380601e1a6001610440015380601d1a6002610440015380601c1a6003610440015380601b1a6004610440015380601a1a600561044001538060191a600661044001538060181a600761044001538060171a600861044001538060161a600961044001538060151a600a61044001538060141a600b61044001538060131a600c61044001538060121a600d61044001538060111a600e61044001538060101a600f610440015380600f1a6010610440015380600e1a6011610440015380600d1a6012610440015380600c1a6013610440015380600b1a6014610440015380600a1a601561044001538060091a601661044001538060081a601761044001538060071a601861044001538060061a601961044001538060051a601a61044001538060041a601b61044001538060031a601c61044001538060021a601d61044001538060011a601e61044001538060001a601f6104400153506104405161040052700100000000000000000000000000000000700100000000000000000000000000000000606060605990590160009052600281526104005181602001526000816040015280905020540204610460526104605161061b57005b6103e05160208103516020599059016000905260208183856000600287604801f15080519050905090506104a0526020599059016000905260208160206104a0600060026068f1508051905080601f1a6105605380601e1a6001610560015380601d1a6002610560015380601c1a6003610560015380601b1a6004610560015380601a1a600561056001538060191a600661056001538060181a600761056001538060171a600861056001538060161a600961056001538060151a600a61056001538060141a600b61056001538060131a600c61056001538060121a600d61056001538060111a600e61056001538060101a600f610560015380600f1a6010610560015380600e1a6011610560015380600d1a6012610560015380600c1a6013610560015380600b1a6014610560015380600a1a601561056001538060091a601661056001538060081a601761056001538060071a601861056001538060061a601961056001538060051a601a61056001538060041a601b61056001538060031a601c61056001538060021a601d61056001538060011a601e61056001538060001a601f6105600153506105605160c0527001000000000000000000000000000000007001000000000000000000000000000000006060606059905901600090526002815260c05181602001526000816040015280905020540204610580526000610580511415156108345760006105c05260206105c0f35b608c3563010000008160031a02620100008260021a026101008360011a028360001a01010190506105e05263010000006105e051046106405262ffffff6105e0511661066052600361064051036101000a610660510261062052600060c05113156108a6576106205160c051126108a9565b60005b15610ee05760c05160c05160c051660400000000000054556060606059905901600090526002815260c0518160200152600081604001528090502054610680526008610680016604000000000000548060181a82538060191a600183015380601a1a600283015380601b1a600383015380601c1a600483015380601d1a600583015380601e1a600683015380601f1a60078301535050610680516060606059905901600090526002815260c05181602001526000816040015280905020556001660400000000000054016604000000000000556060606059905901600090526002815260c051816020015260008160400152809050205461072052610720600178010000000000000000000000000000000000000000000000006060606059905901600090526002815261040051816020015260008160400152809050205404018060181a82538060191a600183015380601a1a600283015380601b1a600383015380601c1a600483015380601d1a600583015380601e1a600683015380601f1a60078301535050610720516060606059905901600090526002815260c051816020015260008160400152809050205560006107e052780100000000000000000000000000000000000000000000000068010000000000000000606060605990590160009052600281526104005181602001526000816040015280905020540204610800526107e06108005180601c1a825380601d1a600183015380601e1a600283015380601f1a600383015350506001610880525b6008610880511215610c07576108805160050a6108a05260016108a05178010000000000000000000000000000000000000000000000006060606059905901600090526002815260c051816020015260008160400152809050205404071415610b7957610880516004026107e0016108005180601c1a825380601d1a600183015380601e1a600283015380601f1a60038301535050610bf7565b610880516004026107e0017c01000000000000000000000000000000000000000000000000000000006108805160200260020a60606060599059016000905260028152610400518160200152600181604001528090502054020480601c1a825380601d1a600183015380601e1a600283015380601f1a600383015350505b6001610880510161088052610adf565b6107e0516060606059905901600090526002815260c051816020015260018160400152809050205550506080608059905901600090526002815260c051816020015260028160400152600081606001528090502060005b6002811215610c8057806020026103e051015182820155600181019050610c5e565b700100000000000000000000000000000000600003816020026103e051015116828201555050610620517bffff000000000000000000000000000000000000000000000000000005610a00526060606059905901600090526002815260c0518160200152600081604001528090502054610a20526010610a2001610a005161046051018060101a82538060111a60018301538060121a60028301538060131a60038301538060141a60048301538060151a60058301538060161a60068301538060171a60078301538060181a60088301538060191a600983015380601a1a600a83015380601b1a600b83015380601c1a600c83015380601d1a600d83015380601e1a600e83015380601f1a600f8301535050610a20516060606059905901600090526002815260c05181602001526000816040015280905020557001000000000000000000000000000000007001000000000000000000000000000000006060606059905901600090526002815260c051816020015260008160400152809050205402046105805266040000000000025461058051121515610e965760c05166040000000000015561058051660400000000000255601c606459905901600090520163c86a90fe601c8203526103e860048201523260248201526020610ae06044836000660400000000000354602d5a03f150610ae051905015610e95576103e8660400000000000454016604000000000004555b5b78010000000000000000000000000000000000000000000000006060606059905901600090526002815260c051816020015260008160400152809050205404610b00526020610b00f35b6000610b40526020610b40f35b63c6605beb811415611294573659905901600090523660048237600435610b6052602435610b80526044356020820101610ba0526064356040525067016345785d8a00003412151515610f47576000610bc0526020610bc0f35b601c6044599059016000905201633d73b705601c82035260405160048201526020610be0602483600030602d5a03f150610be05190508015610f895780610fc1565b601c604459905901600090520163b041b285601c82035260405160048201526020610c20602483600030602d5a03f150610c20519050155b905015610fd5576000610c40526020610c40f35b6060601c61014c59905901600090520163b7129afb601c820352610b60516004820152610b80516024820152610ba05160208103516020026020018360448401526020820360a4840152806101088401528084019350505081600401599059016000905260648160648460006004601cf161104c57fe5b6064810192506101088201518080858260a487015160006004600a8705601201f161107357fe5b508084019350508083036020610d008284600030602d5a03f150610d00519050905090509050610c60526080608059905901600090526002815260405181602001526002816040015260008160600152809050207c010000000000000000000000000000000000000000000000000000000060028201540464010000000060018301540201610d805250610d805180601f1a610de05380601e1a6001610de0015380601d1a6002610de0015380601c1a6003610de0015380601b1a6004610de0015380601a1a6005610de001538060191a6006610de001538060181a6007610de001538060171a6008610de001538060161a6009610de001538060151a600a610de001538060141a600b610de001538060131a600c610de001538060121a600d610de001538060111a600e610de001538060101a600f610de0015380600f1a6010610de0015380600e1a6011610de0015380600d1a6012610de0015380600c1a6013610de0015380600b1a6014610de0015380600a1a6015610de001538060091a6016610de001538060081a6017610de001538060071a6018610de001538060061a6019610de001538060051a601a610de001538060041a601b610de001538060031a601c610de001538060021a601d610de001538060011a601e610de001538060001a601f610de0015350610de051610d4052610d4051610c60511415611286576001610e00526020610e00f3611293565b6000610e20526020610e20f35b5b638f6b104c8114156115195736599059016000905236600482376004356020820101610e4052602435610b6052604435610b80526064356020820101610ba05260843560405260a435610e60525060016080601c6101ac59905901600090520163c6605beb601c820352610b60516004820152610b80516024820152610ba05160208103516020026020018360448401526020820360c48401528061014884015280840193505050604051606482015281600401599059016000905260848160848460006004601ff161136357fe5b6084810192506101488201518080858260c487015160006004600a8705601201f161138a57fe5b508084019350508083036020610e80828434306123555a03f150610e8051905090509050905014156114b3576040601c60ec59905901600090520163f0cf1ff4601c820352610e40516020601f6020830351010460200260200183600484015260208203604484015280608884015280840193505050610b60516024820152816004015990590160009052604481604484600060046018f161142857fe5b604481019250608882015180808582604487015160006004600a8705601201f161144e57fe5b508084019350508083036020610ec082846000610e6051602d5a03f150610ec0519050905090509050610ea0526040599059016000905260018152610ea051602082015260208101905033602082035160200282a150610ea051610f20526020610f20f35b604059905901600090526001815261270f600003602082015260208101905033602082035160200282a150604059905901600090526001815261270f6000036020820152602081019050610e6051602082035160200282a1506000610f80526020610f80f35b6309dd0e8181141561153957660400000000000154610fa0526020610fa0f35b630239487281141561159557780100000000000000000000000000000000000000000000000060606060599059016000905260028152660400000000000154816020015260008160400152809050205404610fc0526020610fc0f35b6361b919a68114156116045770010000000000000000000000000000000070010000000000000000000000000000000060606060599059016000905260028152660400000000000154816020015260008160400152809050205402046110005261100051611040526020611040f35b63a7cc63c28114156118b55766040000000000015460c0527001000000000000000000000000000000007001000000000000000000000000000000006060606059905901600090526002815260c05181602001526000816040015280905020540204611060526000610880525b600a610880511215611853576080608059905901600090526002815260c05181602001526002816040015260008160600152809050207c0100000000000000000000000000000000000000000000000000000000600182015404640100000000825402016110c052506110c05180601f1a6111205380601e1a6001611120015380601d1a6002611120015380601c1a6003611120015380601b1a6004611120015380601a1a600561112001538060191a600661112001538060181a600761112001538060171a600861112001538060161a600961112001538060151a600a61112001538060141a600b61112001538060131a600c61112001538060121a600d61112001538060111a600e61112001538060101a600f611120015380600f1a6010611120015380600e1a6011611120015380600d1a6012611120015380600c1a6013611120015380600b1a6014611120015380600a1a601561112001538060091a601661112001538060081a601761112001538060071a601861112001538060061a601961112001538060051a601a61112001538060041a601b61112001538060031a601c61112001538060021a601d61112001538060011a601e61112001538060001a601f6111200153506111205160c0526001610880510161088052611671565b7001000000000000000000000000000000007001000000000000000000000000000000006060606059905901600090526002815260c0518160200152600081604001528090502054020461114052611140516110605103611180526020611180f35b63b7129afb811415611e35573659905901600090523660048237600435610b6052602435610b80526044356020820101610ba05250610b60516111a0526020610ba05103516111c0526000610880525b6111c051610880511215611e0c5761088051602002610ba05101516111e0526002610b805107611200526001611200511415611950576111e051611220526111a0516112405261196e565b600061120051141561196d576111a051611220526111e051611240525b5b604059905901600090526112205180601f1a6112805380601e1a6001611280015380601d1a6002611280015380601c1a6003611280015380601b1a6004611280015380601a1a600561128001538060191a600661128001538060181a600761128001538060171a600861128001538060161a600961128001538060151a600a61128001538060141a600b61128001538060131a600c61128001538060121a600d61128001538060111a600e61128001538060101a600f611280015380600f1a6010611280015380600e1a6011611280015380600d1a6012611280015380600c1a6013611280015380600b1a6014611280015380600a1a601561128001538060091a601661128001538060081a601761128001538060071a601861128001538060061a601961128001538060051a601a61128001538060041a601b61128001538060031a601c61128001538060021a601d61128001538060011a601e61128001538060001a601f6112800153506112805181526112405180601f1a6112e05380601e1a60016112e0015380601d1a60026112e0015380601c1a60036112e0015380601b1a60046112e0015380601a1a60056112e001538060191a60066112e001538060181a60076112e001538060171a60086112e001538060161a60096112e001538060151a600a6112e001538060141a600b6112e001538060131a600c6112e001538060121a600d6112e001538060111a600e6112e001538060101a600f6112e0015380600f1a60106112e0015380600e1a60116112e0015380600d1a60126112e0015380600c1a60136112e0015380600b1a60146112e0015380600a1a60156112e001538060091a60166112e001538060081a60176112e001538060071a60186112e001538060061a60196112e001538060051a601a6112e001538060041a601b6112e001538060031a601c6112e001538060021a601d6112e001538060011a601e6112e001538060001a601f6112e00153506112e051602082015260205990590160009052602081604084600060026088f1508051905061130052602059905901600090526020816020611300600060026068f1508051905080601f1a6113805380601e1a6001611380015380601d1a6002611380015380601c1a6003611380015380601b1a6004611380015380601a1a600561138001538060191a600661138001538060181a600761138001538060171a600861138001538060161a600961138001538060151a600a61138001538060141a600b61138001538060131a600c61138001538060121a600d61138001538060111a600e61138001538060101a600f611380015380600f1a6010611380015380600e1a6011611380015380600d1a6012611380015380600c1a6013611380015380600b1a6014611380015380600a1a601561138001538060091a601661138001538060081a601761138001538060071a601861138001538060061a601961138001538060051a601a61138001538060041a601b61138001538060031a601c61138001538060021a601d61138001538060011a601e61138001538060001a601f6113800153506113805190506111a0526002610b805105610b80526001610880510161088052611905565b6111a0511515611e265760016000036113a05260206113a0f35b6111a0516113c05260206113c0f35b633d73b7058114156120625760043560405266040000000000015460c0526000610880525b60066108805112156120555760c0516040511415611e7f5760016113e05260206113e0f35b6080608059905901600090526002815260c05181602001526002816040015260008160600152809050207c01000000000000000000000000000000000000000000000000000000006001820154046401000000008254020161142052506114205180601f1a6114805380601e1a6001611480015380601d1a6002611480015380601c1a6003611480015380601b1a6004611480015380601a1a600561148001538060191a600661148001538060181a600761148001538060171a600861148001538060161a600961148001538060151a600a61148001538060141a600b61148001538060131a600c61148001538060121a600d61148001538060111a600e61148001538060101a600f611480015380600f1a6010611480015380600e1a6011611480015380600d1a6012611480015380600c1a6013611480015380600b1a6014611480015380600a1a601561148001538060091a601661148001538060081a601761148001538060071a601861148001538060061a601961148001538060051a601a61148001538060041a601b61148001538060031a601c61148001538060021a601d61148001538060011a601e61148001538060001a601f6114800153506114805160c0526001610880510161088052611e5a565b60006114a05260206114a0f35b6391cf0e96811415612105576004356114c052601c60845990590160009052016367eae672601c8203523360048201526114c051602482015230604482015260206114e06064836000660400000000000354602d5a03f1506114e051905015612104576604000000000004546114c05130310205611500526114c0516604000000000004540366040000000000045560006000600060006115005133611388f1505b5b6313f955e18114156122985736599059016000905236600482376004356020820101611520526024356115405250605061156052600061158052611560516115a0526000610880525b611540516108805112156122895761158051806115a051038080602001599059016000905281815260208101905090508180828286611520510160006004600a8705601201f161219a57fe5b50809050905090506115c0526020601c608c599059016000905201632b861629601c8203526115c0516020601f6020830351010460200260200183600484015260208203602484015280604884015280840193505050816004015990590160009052602481602484600060046015f161220f57fe5b602481019250604882015180808582602487015160006004600a8705601201f161223557fe5b5080840193505080830360206116808284600030602d5a03f150611680519050905090509050610ea05261156051611580510161158052611560516115a051016115a052600161088051016108805261214e565b610ea0516116a05260206116a0f35b50";
         String result = stringifyMultiline(Hex.decode(code2));
+        Assertions.assertNotNull(result);
     }
 
     @Test
-    public void regression2Test() {
+    void regression2Test() {
         // testing that we are working fine with unknown 0xFE bytecode produced by Serpent compiler
         String code2 = "6060604052604051602080603f8339016040526060805190602001505b806000600050819055505b50600a8060356000396000f30060606040526008565b000000000000000000000000000000000000000000000000000000000000000021";
         String result = stringifyMultiline(Hex.decode(code2));
@@ -3389,7 +3283,7 @@ public class VMTest {
     }
 
     @Test
-    public void decompileDupnSwapn() {
+    void decompileDupnSwapn() {
         String code = "6060a8a962";
         String result = stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("PUSH1 0x60 (96)"));
@@ -3398,7 +3292,7 @@ public class VMTest {
     }
 
     @Test
-    public void decompileTxindex() {
+    void decompileTxindex() {
         String code = "aa";
         String result = stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("TXINDEX"));
@@ -3407,12 +3301,12 @@ public class VMTest {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testScriptVersion0() {
+    @Test
+    void testScriptVersion0() {
 
         program = getProgram("FC");
         try {
-            vm.step(program);
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3421,22 +3315,21 @@ public class VMTest {
     // Testing FC code with scriptVersion ==0.
     // The header is valid
     // Should produce invalidop exception
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testScriptVersion1() {
+    @Test
+    void testScriptVersion1() {
         program = getProgram("FC000000" + //header
                 "FC");
         try {
             // Only one step needs to be exeecuted because header is not.
-            vm.step(program);
-
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
     }
     // Under scriptVersion == 1, opHEADER in a program is still an invalid code.
 
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testScriptVersion2() {
+    @Test
+    void testScriptVersion2() {
 
         program = getProgram(
                 "FC010100" + //header
@@ -3444,8 +3337,7 @@ public class VMTest {
         );
         try {
             // Only one step needs to be exaecuted because header is not.
-            vm.step(program);
-
+            Assertions.assertThrows(Program.IllegalOperationException.class, () -> vm.step(program));
         } finally {
             assertTrue(program.isStopped());
         }
@@ -3453,7 +3345,7 @@ public class VMTest {
 
     // This is a long header with additional data that is skipped
     @Test
-    public void testScriptVersion3() {
+    void testScriptVersion3() {
         program = getProgram(
                 "FC01010A" + //header with 10 additional bytes
                         "0102030405060708090A" + // additional header bytes
@@ -3679,98 +3571,13 @@ public class VMTest {
 // TODO: considering: G_TXDATA + G_TRANSACTION
 
 /**
- * TODO:
- * <p>
- * 22) CREATE:
- * 23) CALL:
- * <p>
- * <p>
- * <p>
- * <p>
- * contract creation (gas usage)
- * -----------------------------
- * G_TRANSACTION =                                (500)
- * 60016000546006601160003960066000f261778e600054 (115)
- * PUSH1    6001 (1)
- * PUSH1    6000 (1)
- * MSTORE   54   (1 + 1)
- * PUSH1    6006 (1)
- * PUSH1    6011 (1)
- * PUSH1    6000 (1)
- * CODECOPY 39   (1)
- * PUSH1    6006 (1)
- * PUSH1    6000 (1)
- * RETURN   f2   (1)
- * 61778e600054
- * <p>
- * <p>
- * contract creation (gas usage)
- * -----------------------------
- * G_TRANSACTION =                                (500)
- * 60016000546006601160003960066000f261778e600054 (115)
- * PUSH1    6001 (1)
- * PUSH1    6000 (1)
- * MSTORE   54   (1 + 1)
- * PUSH1    6006 (1)
- * PUSH1    6011 (1)
- * PUSH1    6000 (1)
- * CODECOPY 39   (1)
- * PUSH1    6006 (1)
- * PUSH1    6000 (1)
- * RETURN   f2   (1)
- * 61778e600054
- * <p>
- * <p>
- * contract creation (gas usage)
- * -----------------------------
- * G_TRANSACTION =                                (500)
- * 60016000546006601160003960066000f261778e600054 (115)
- * PUSH1    6001 (1)
- * PUSH1    6000 (1)
- * MSTORE   54   (1 + 1)
- * PUSH1    6006 (1)
- * PUSH1    6011 (1)
- * PUSH1    6000 (1)
- * CODECOPY 39   (1)
- * PUSH1    6006 (1)
- * PUSH1    6000 (1)
- * RETURN   f2   (1)
- * 61778e600054
- * <p>
- * <p>
- * contract creation (gas usage)
- * -----------------------------
- * G_TRANSACTION =                                (500)
- * 60016000546006601160003960066000f261778e600054 (115)
- * PUSH1    6001 (1)
- * PUSH1    6000 (1)
- * MSTORE   54   (1 + 1)
- * PUSH1    6006 (1)
- * PUSH1    6011 (1)
- * PUSH1    6000 (1)
- * CODECOPY 39   (1)
- * PUSH1    6006 (1)
- * PUSH1    6000 (1)
- * RETURN   f2   (1)
- * 61778e600054
- * <p>
- * <p>
- * contract creation (gas usage)
- * -----------------------------
- * G_TRANSACTION =                                (500)
- * 60016000546006601160003960066000f261778e600054 (115)
- * PUSH1    6001 (1)
- * PUSH1    6000 (1)
- * MSTORE   54   (1 + 1)
- * PUSH1    6006 (1)
- * PUSH1    6011 (1)
- * PUSH1    6000 (1)
- * CODECOPY 39   (1)
- * PUSH1    6006 (1)
- * PUSH1    6000 (1)
- * RETURN   f2   (1)
- * 61778e600054
- */
+ *   TODO:
+ *
+ *   22) CREATE:
+ *   23) CALL:
+ *
+ *
+ **/
 
 /**
 

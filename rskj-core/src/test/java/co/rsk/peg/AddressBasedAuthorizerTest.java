@@ -21,8 +21,8 @@ package co.rsk.peg;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -30,9 +30,9 @@ import java.util.Arrays;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AddressBasedAuthorizerTest {
+class AddressBasedAuthorizerTest {
     @Test
-    public void numberOfKeys_one() {
+    void numberOfKeys_one() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -40,12 +40,12 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ONE);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(1, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(1, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
-    public void numberOfKeys_majority() {
+    void numberOfKeys_majority() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -53,12 +53,12 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(3, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(3, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
-    public void numberOfKeys_all() {
+    void numberOfKeys_all() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
@@ -66,12 +66,12 @@ public class AddressBasedAuthorizerTest {
                 mock(ECKey.class)
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.ALL);
 
-        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
-        Assert.assertEquals(4, auth.getRequiredAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assertions.assertEquals(4, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
-    public void isAuthorized() {
+    void isAuthorized() {
         AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 ECKey.fromPrivate(BigInteger.valueOf(100L)),
                 ECKey.fromPrivate(BigInteger.valueOf(101L)),
@@ -81,13 +81,13 @@ public class AddressBasedAuthorizerTest {
         for (long n = 100L; n <= 102L; n++) {
             Transaction mockedTx = mock(Transaction.class);
             when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
-            Assert.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
-            Assert.assertTrue(auth.isAuthorized(mockedTx));
+            Assertions.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
+            Assertions.assertTrue(auth.isAuthorized(mockedTx));
         }
 
-        Assert.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
+        Assertions.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
-        Assert.assertFalse(auth.isAuthorized(mockedTx));
+        Assertions.assertFalse(auth.isAuthorized(mockedTx));
     }
 }

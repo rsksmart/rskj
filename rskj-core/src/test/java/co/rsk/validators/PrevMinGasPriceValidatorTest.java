@@ -23,21 +23,21 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
  * Created by mario on 26/12/16.
  */
-public class PrevMinGasPriceValidatorTest {
+class PrevMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
     private static final Coin PARENT_BLOCK_MGP = Coin.valueOf(1000L);
     private static final byte[] PARENT_HASH = TestUtils.randomBytes(32);
 
     @Test
-    public void noParentBlock() {
+    void noParentBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -47,11 +47,11 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, null));
+        Assertions.assertFalse(pmgpv.isValid(header, null));
     }
 
     @Test
-    public void genesisBlock() {
+    void genesisBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -61,11 +61,11 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertTrue(pmgpv.isValid(header, null));
+        Assertions.assertTrue(pmgpv.isValid(header, null));
     }
 
     @Test
-    public void noMinGasPrice() {
+    void noMinGasPrice() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -76,11 +76,11 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
     }
 
     @Test
-    public void outOfValidMGPRangeBlock() {
+    void outOfValidMGPRangeBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -92,12 +92,12 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
 
     }
 
     @Test
-    public void validMGPInNewBlock() {
+    void validMGPInNewBlock() {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
@@ -109,6 +109,6 @@ public class PrevMinGasPriceValidatorTest {
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
-        Assert.assertFalse(pmgpv.isValid(header, parent));
+        Assertions.assertFalse(pmgpv.isValid(header, parent));
     }
 }

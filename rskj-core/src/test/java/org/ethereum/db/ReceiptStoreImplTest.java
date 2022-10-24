@@ -26,17 +26,19 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.*;
 import org.ethereum.vm.LogInfo;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -44,61 +46,37 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 3/1/2016.
  */
-@RunWith(Parameterized.class)
-public class ReceiptStoreImplTest {
+class ReceiptStoreImplTest {
 
-    enum StoreImpl {
-        V1, V2
-    }
-
-    @Parameterized.Parameters(name = "Receipt store impl: {0}")
-    public static Object[] data() {
-        return StoreImpl.values();
-    }
-
-    private final KeyValueDataSource baseDataSource;
-    private final ReceiptStore store;
-
-    public ReceiptStoreImplTest(StoreImpl impl) {
-        this.baseDataSource = spy(new HashMapDB());
-
-        switch (impl) {
-            case V1:
-                this.store = new ReceiptStoreImpl(this.baseDataSource);
-                break;
-            case V2:
-                this.store = new ReceiptStoreImplV2(this.baseDataSource);
-                break;
-            default:
-                throw new IllegalArgumentException();
-        }
-    }
-
-    @Test
-    public void flushDataSource() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void flushDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         store.flush();
 
         verify(baseDataSource, times(1)).flush();
     }
 
-    @Test
-    public void closeDataSource() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void closeDataSource(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         store.close();
 
         verify(baseDataSource, times(1)).close();
     }
 
-    @Test
-    public void getUnknownKey() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void getUnknownKey(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         byte[] key = new byte[]{0x01, 0x02};
 
         Optional<TransactionInfo> result = store.get(key, key);
 
-        Assert.assertFalse(result.isPresent());
+        Assertions.assertFalse(result.isPresent());
     }
 
-    @Test
-    public void addAndGetTransaction() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addAndGetTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -106,15 +84,16 @@ public class ReceiptStoreImplTest {
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(42, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash, result.getBlockHash());
+        Assertions.assertEquals(42, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addAndGetTransactionWith128AsIndex() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addAndGetTransactionWith128AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -122,15 +101,16 @@ public class ReceiptStoreImplTest {
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(128, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash, result.getBlockHash());
+        Assertions.assertEquals(128, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addAndGetTransactionWith238AsIndex() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addAndGetTransactionWith238AsIndex(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -138,15 +118,16 @@ public class ReceiptStoreImplTest {
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(238, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash, result.getBlockHash());
+        Assertions.assertEquals(238, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addTwoTransactionsAndGetLastTransaction() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addTwoTransactionsAndGetLastTransaction(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -159,15 +140,16 @@ public class ReceiptStoreImplTest {
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
 
-        Assert.assertNotNull(result);
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(42, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash, result.getBlockHash());
+        Assertions.assertEquals(42, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addTwoTransactionsAndGetAllTransactions() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addTwoTransactionsAndGetAllTransactions(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -180,36 +162,38 @@ public class ReceiptStoreImplTest {
 
         Optional<TransactionInfo> txInfo0 = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0);
 
-        Assert.assertTrue(txInfo0.isPresent());
+        Assertions.assertTrue(txInfo0.isPresent());
 
-        Assert.assertNotNull(txInfo0.get().getBlockHash());
-        Assert.assertArrayEquals(blockHash0, txInfo0.get().getBlockHash());
-        Assert.assertEquals(3, txInfo0.get().getIndex());
-        Assert.assertArrayEquals(receipt0.getEncoded(), txInfo0.get().getReceipt().getEncoded());
+        Assertions.assertNotNull(txInfo0.get().getBlockHash());
+        Assertions.assertArrayEquals(blockHash0, txInfo0.get().getBlockHash());
+        Assertions.assertEquals(3, txInfo0.get().getIndex());
+        Assertions.assertArrayEquals(receipt0.getEncoded(), txInfo0.get().getReceipt().getEncoded());
 
         Optional<TransactionInfo> txInfo = store.get(receipt.getTransaction().getHash().getBytes(), blockHash);
 
-        Assert.assertTrue(txInfo.isPresent());
+        Assertions.assertTrue(txInfo.isPresent());
 
-        Assert.assertNotNull(txInfo.get().getBlockHash());
-        Assert.assertArrayEquals(blockHash, txInfo.get().getBlockHash());
-        Assert.assertEquals(42, txInfo.get().getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), txInfo.get().getReceipt().getEncoded());
+        Assertions.assertNotNull(txInfo.get().getBlockHash());
+        Assertions.assertArrayEquals(blockHash, txInfo.get().getBlockHash());
+        Assertions.assertEquals(42, txInfo.get().getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), txInfo.get().getReceipt().getEncoded());
     }
 
-    @Test
-    public void getUnknownTransactionByBlock() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void getUnknownTransactionByBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash = TestUtils.randomHash();
 
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes());
 
-        Assert.assertFalse(resultOpt.isPresent());
+        Assertions.assertFalse(resultOpt.isPresent());
     }
 
-    @Test
-    public void getTransactionByUnknownBlock() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void getTransactionByUnknownBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash0 = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
@@ -219,11 +203,12 @@ public class ReceiptStoreImplTest {
 
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0.getBytes());
 
-        Assert.assertFalse(resultOpt.isPresent());
+        Assertions.assertFalse(resultOpt.isPresent());
     }
 
-    @Test
-    public void addTwoTransactionsAndGetTransactionByFirstBlock() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addTwoTransactionsAndGetTransactionByFirstBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
@@ -237,14 +222,15 @@ public class ReceiptStoreImplTest {
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0.getBytes());
         TransactionInfo result = resultOpt.get();
 
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash0.getBytes(), result.getBlockHash());
-        Assert.assertEquals(3, result.getIndex());
-        Assert.assertArrayEquals(receipt0.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash0.getBytes(), result.getBlockHash());
+        Assertions.assertEquals(3, result.getIndex());
+        Assertions.assertArrayEquals(receipt0.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addTwoTransactionsAndGetTransactionBySecondBlock() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addTwoTransactionsAndGetTransactionBySecondBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
@@ -258,14 +244,15 @@ public class ReceiptStoreImplTest {
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes());
         TransactionInfo result = resultOpt.get();
 
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
-        Assert.assertEquals(42, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        Assertions.assertNotNull(result.getBlockHash());
+        Assertions.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
+        Assertions.assertEquals(42, result.getIndex());
+        Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    @Test
-    public void addFourTransactionsAndGetReceiptByBlockHashAndBestInChain() {
+    @ParameterizedTest(name = "{index}: {0}")
+    @ArgumentsSource(ReceiptStoreArgumentsProvider.class)
+    void addFourTransactionsAndGetReceiptByBlockHashAndBestInChain(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         for (int i = 0; i < 4; i++) {
             TransactionReceipt receipt = createReceipt(i);
             Keccak256 blockHash = new Keccak256("01020304050607080900000000000000000000000000000000000000000000" + String.format("%02d" , i));
@@ -283,23 +270,23 @@ public class ReceiptStoreImplTest {
 
             TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes()).orElse(null);
 
-            Assert.assertNotNull(result);
-            Assert.assertNotNull(result.getBlockHash());
-            Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
-            Assert.assertEquals(i, result.getIndex());
-            Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+            Assertions.assertNotNull(result);
+            Assertions.assertNotNull(result.getBlockHash());
+            Assertions.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
+            Assertions.assertEquals(i, result.getIndex());
+            Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-            when(blockStore.getBlockByHash(eq(blockHash.getBytes()))).thenReturn(block);
+            when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
             when(blockStore.getChainBlockByNumber(1)).thenReturn(block);
             when(block.getHash()).thenReturn(blockHash);
 
             result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore).orElse(null);
 
-            Assert.assertNotNull(result);
-            Assert.assertNotNull(result.getBlockHash());
-            Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
-            Assert.assertEquals(i, result.getIndex());
-            Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+            Assertions.assertNotNull(result);
+            Assertions.assertNotNull(result.getBlockHash());
+            Assertions.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
+            Assertions.assertEquals(i, result.getIndex());
+            Assertions.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
         }
     }
 
@@ -328,5 +315,18 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
         receipt.setTransaction(Transaction.builder().build());
         return receipt;
+    }
+
+    private static class ReceiptStoreArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            KeyValueDataSource baseDataSourceV1 = spy(new HashMapDB());
+            KeyValueDataSource baseDataSourceV2 = spy(new HashMapDB());
+            return Stream.of(
+                    Arguments.of("V1", baseDataSourceV1, new ReceiptStoreImpl(baseDataSourceV1)),
+                    Arguments.of("V2", baseDataSourceV2, new ReceiptStoreImplV2(baseDataSourceV2))
+            );
+        }
     }
 }

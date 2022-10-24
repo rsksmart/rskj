@@ -4,17 +4,17 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SelectionRuleTest {
+class SelectionRuleTest {
 
     @Test
-    public void smallerBlockHashTest() {
+    void smallerBlockHashTest() {
         byte[] lowerHash = new byte[]{0};
         byte[] biggerHash = new byte[]{1};
 
@@ -23,7 +23,7 @@ public class SelectionRuleTest {
     }
 
     @Test
-    public void addBlockTest() {
+    void addBlockTest() {
         Blockchain blockchain = createBlockchain();
 
 

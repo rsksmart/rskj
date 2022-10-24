@@ -1,14 +1,14 @@
 package org.ethereum.solidity;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-public class SolidityTypeTest {
+class SolidityTypeTest {
 
     @Test
-    public void TestDynamicArrayTypeWithInvalidDataSize() {
+    void TestDynamicArrayTypeWithInvalidDataSize() {
         SolidityType.DynamicArrayType dat = new SolidityType.DynamicArrayType("string[]");
         // Not leaving room for any data
         byte[] input = new byte[32];
@@ -17,7 +17,7 @@ public class SolidityTypeTest {
 
         try {
             dat.decode(input, 0);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
@@ -36,7 +36,7 @@ public class SolidityTypeTest {
 
         try {
             dat.decode(input, 0);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
@@ -61,7 +61,7 @@ public class SolidityTypeTest {
 
         try {
             dat.decode(input, 0);
-            Assert.fail();
+            Assertions.fail();
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
@@ -70,7 +70,7 @@ public class SolidityTypeTest {
     }
 
     @Test
-    public void TestDynamicArrayTypeWithValidDataSize() {
+    void TestDynamicArrayTypeWithValidDataSize() {
         SolidityType.DynamicArrayType dat = new SolidityType.DynamicArrayType("string[]");
 
         byte[] input = new byte[231];
@@ -97,17 +97,17 @@ public class SolidityTypeTest {
         input[230] = 0x75;
 
         Object[] ret = (Object[])dat.decode(input, 0);
-        Assert.assertTrue(ret.length == 3);
-        Assert.assertTrue(ret[0].toString().contains("hi"));
-        Assert.assertTrue(ret[1].toString().contains("ih"));
-        Assert.assertTrue(ret[2].toString().contains("hu"));
+        Assertions.assertEquals(3, ret.length);
+        Assertions.assertTrue(ret[0].toString().contains("hi"));
+        Assertions.assertTrue(ret[1].toString().contains("ih"));
+        Assertions.assertTrue(ret[2].toString().contains("hu"));
     }
 
     @Test
-    public void TestStaticArrayTypeWithInvalidSize() {
+    void TestStaticArrayTypeWithInvalidSize() {
+        SolidityType.StaticArrayType dat = new SolidityType.StaticArrayType("string[2]");
 
         try {
-            SolidityType.StaticArrayType dat = new SolidityType.StaticArrayType("string[2]");
             byte[] input = new byte[34];
 
             input[31] = 0x02; // indicating we have 2 characters should work
@@ -115,13 +115,15 @@ public class SolidityTypeTest {
             input[32] = 0x68;
             input[33] = 0x69;
             dat.decode(input, 0);
-            Assert.fail("should have failed");
+            Assertions.fail("should have failed");
         }
         catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
+
+        dat = new SolidityType.StaticArrayType("string[1]");
+
         try {
-            SolidityType.StaticArrayType dat = new SolidityType.StaticArrayType("string[1]");
             byte[] input = new byte[34];
 
             input[31] = 0x03; // indicating we have 2 characters should work
@@ -129,7 +131,7 @@ public class SolidityTypeTest {
             input[32] = 0x68;
             input[33] = 0x69;
             dat.decode(input, 0);
-            Assert.fail("should have failed");
+            Assertions.fail("should have failed");
         }
         catch (IllegalArgumentException e) {
             // Only acceptable exception
@@ -137,7 +139,7 @@ public class SolidityTypeTest {
     }
 
     @Test
-    public void TestStaticArrayType() {
+    void TestStaticArrayType() {
         SolidityType.StaticArrayType dat = new SolidityType.StaticArrayType("string[1]");
 
         byte[] input = new byte[164];
@@ -148,17 +150,17 @@ public class SolidityTypeTest {
         input[33] = 0x69;
 
         Object[] ret = dat.decode(input, 0);
-        Assert.assertTrue(ret.length == 1);
-        Assert.assertTrue(ret[0].toString().contains("hi"));
+        Assertions.assertEquals(1, ret.length);
+        Assertions.assertTrue(ret[0].toString().contains("hi"));
     }
 
     @Test
-    public void TestIntType() {
+    void TestIntType() {
         // Should fail, the array is smaller than the offset we define
         try {
             byte[] input = new byte[] {0x4f, 0x4f};
             SolidityType.IntType.decodeInt(input, 12);
-            Assert.fail("should have failed to deserialize the array");
+            Assertions.fail("should have failed to deserialize the array");
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
@@ -167,27 +169,27 @@ public class SolidityTypeTest {
         // Should get a valid number
         input[31] = 0x01;
         BigInteger value = SolidityType.IntType.decodeInt(input, 0);
-        Assert.assertTrue(value.intValue() == 1);
+        Assertions.assertEquals(1, value.intValue());
 
         // Should get a valid number
         value = SolidityType.IntType.decodeInt(input, 32);
-        Assert.assertTrue(value.intValue() == 0);
+        Assertions.assertEquals(0, value.intValue());
     }
 
     @Test
-    public void TestSafeAddition() {
+    void TestSafeAddition() {
         // valid additions
-        Assert.assertEquals(0, Math.addExact(0, 0));
-        Assert.assertEquals(2, Math.addExact(1, 1));
-        Assert.assertEquals(1234, Math.addExact(617, 617));
-        Assert.assertEquals(Integer.MAX_VALUE, Math.addExact(Integer.MAX_VALUE - 1, 1));
-        Assert.assertEquals(0, Math.addExact(-1, 1));
-        Assert.assertEquals(-2, Math.addExact(-1, -1));
+        Assertions.assertEquals(0, Math.addExact(0, 0));
+        Assertions.assertEquals(2, Math.addExact(1, 1));
+        Assertions.assertEquals(1234, Math.addExact(617, 617));
+        Assertions.assertEquals(Integer.MAX_VALUE, Math.addExact(Integer.MAX_VALUE - 1, 1));
+        Assertions.assertEquals(0, Math.addExact(-1, 1));
+        Assertions.assertEquals(-2, Math.addExact(-1, -1));
 
         // invalid additions
         try {
             Math.addExact(Integer.MAX_VALUE, 1);
-            Assert.fail("should have failed");
+            Assertions.fail("should have failed");
         }
         catch (ArithmeticException e) {
             // This is the only exception that this method should throw

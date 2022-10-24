@@ -19,31 +19,31 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class AutoMinerClientTest {
+class AutoMinerClientTest {
 
     private AutoMinerClient autoMinerClient;
     private MinerServer minerServer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         minerServer = mock(MinerServer.class);
         autoMinerClient = new AutoMinerClient(minerServer);
     }
 
     @Test
-    public void byDefaultIsDisabled() {
+    void byDefaultIsDisabled() {
         assertThat(autoMinerClient.isMining(), is(false));
     }
 
     @Test
-    public void minesBlock() {
+    void minesBlock() {
         MinerWork work = mock(MinerWork.class);
         when(work.getBlockHashForMergedMining()).thenReturn("0x404142");
         when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
@@ -56,7 +56,7 @@ public class AutoMinerClientTest {
     }
 
     @Test
-    public void disablesMining() {
+    void disablesMining() {
         autoMinerClient.start();
         autoMinerClient.stop();
 

@@ -24,47 +24,47 @@ import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class ExtractPublicKeyFromExtendedPublicKeyTest {
+class ExtractPublicKeyFromExtendedPublicKeyTest {
     private ExtractPublicKeyFromExtendedPublicKey method;
 
-    @Before
-    public void createMethod() {
+    @BeforeEach
+    void createMethod() {
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         HDWalletUtilsHelper helper = new HDWalletUtilsHelper();
         method = new ExtractPublicKeyFromExtendedPublicKey(executionEnvironment, helper);
     }
 
     @Test
-    public void functionSignatureOk() {
+    void functionSignatureOk() {
         CallTransaction.Function fn = method.getFunction();
-        Assert.assertEquals("extractPublicKeyFromExtendedPublicKey", fn.name);
+        Assertions.assertEquals("extractPublicKeyFromExtendedPublicKey", fn.name);
 
-        Assert.assertEquals(1, fn.inputs.length);
-        Assert.assertEquals(SolidityType.getType("string").getName(), fn.inputs[0].type.getName());
+        Assertions.assertEquals(1, fn.inputs.length);
+        Assertions.assertEquals(SolidityType.getType("string").getName(), fn.inputs[0].type.getName());
 
-        Assert.assertEquals(1, fn.outputs.length);
-        Assert.assertEquals(SolidityType.getType("bytes").getName(), fn.outputs[0].type.getName());
+        Assertions.assertEquals(1, fn.outputs.length);
+        Assertions.assertEquals(SolidityType.getType("bytes").getName(), fn.outputs[0].type.getName());
     }
 
     @Test
-    public void shouldBeEnabled() {
-        Assert.assertTrue(method.isEnabled());
+    void shouldBeEnabled() {
+        Assertions.assertTrue(method.isEnabled());
     }
 
     @Test
-    public void shouldAllowAnyTypeOfCall() {
-        Assert.assertFalse(method.onlyAllowsLocalCalls());
+    void shouldAllowAnyTypeOfCall() {
+        Assertions.assertFalse(method.onlyAllowsLocalCalls());
     }
 
     @Test
-    public void executes() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+    void executes() throws NativeContractIllegalArgumentException {
+        Assertions.assertEquals(
                 "02be517550b9e3be7fe42c80932d51e88e698663b4926e598b269d050e87e34d8c",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
                     "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712",
@@ -72,42 +72,42 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     }
 
     @Test
-    public void validatesExtendedPublicKeyFormat() {
+    void validatesExtendedPublicKeyFormat() {
         try {
             method.execute(new Object[]{
                     "this-is-not-an-xpub",
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
     }
 
     @Test
-    public void failsUponInvalidPublicKey() {
+    void failsUponInvalidPublicKey() {
         try {
             method.execute(new Object[]{
                     "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1s",
             });
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
     }
 
     @Test
-    public void failsUponNull() {
+    void failsUponNull() {
         try {
             method.execute(null);
-            Assert.fail();
+            Assertions.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
+            Assertions.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
     }
 
     @Test
-    public void gasIsCorrect() {
-        Assert.assertEquals(11_300, method.getGas(new Object[]{
+    void gasIsCorrect() {
+        Assertions.assertEquals(11_300, method.getGas(new Object[]{
                 "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712"
         }, new byte[]{}));
     }

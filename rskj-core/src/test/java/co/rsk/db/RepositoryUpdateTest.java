@@ -5,8 +5,8 @@ import co.rsk.trie.Trie;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * Created by SerAdmin on 9/26/2018.
  */
-public class RepositoryUpdateTest {
+class RepositoryUpdateTest {
 
     private static RskAddress address = new RskAddress("0101010101010101010101010101010101010101");
 
@@ -26,7 +26,7 @@ public class RepositoryUpdateTest {
     }
 
     @Test
-    public void putDataWordWithoutLeadingZeroes() {
+    void putDataWordWithoutLeadingZeroes() {
         ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -36,14 +36,14 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getStorageBytes(address,DataWord.ONE);
 
-        Assert.assertNotNull(value);
-        Assert.assertEquals(1, value.length);
-        Assert.assertEquals(42, value[0]);
-        Assert.assertEquals(1, details.getStorageSize());
+        Assertions.assertNotNull(value);
+        Assertions.assertEquals(1, value.length);
+        Assertions.assertEquals(42, value[0]);
+        Assertions.assertEquals(1, details.getStorageSize());
     }
 
     @Test
-    public void putDataWordZeroAsDeleteValue() {
+    void putDataWordZeroAsDeleteValue() {
         ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -55,11 +55,11 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
+        Assertions.assertNull(value);
+        Assertions.assertEquals(0, details.getStorageSize());
     }
     @Test
-    public void putNullValueAsDeleteValue() {
+    void putNullValueAsDeleteValue() {
         ContractDetailsImpl details = buildContractDetails();
 
         details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
@@ -71,12 +71,12 @@ public class RepositoryUpdateTest {
 
         byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
-        Assert.assertNull(value);
-        Assert.assertEquals(0, details.getStorageSize());
+        Assertions.assertNull(value);
+        Assertions.assertEquals(0, details.getStorageSize());
     }
 
     @Test
-    public void getStorageRoot() {
+    void getStorageRoot() {
         ContractDetailsImpl details = buildContractDetails();
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
@@ -85,7 +85,7 @@ public class RepositoryUpdateTest {
         Repository repo = new MutableRepository(new MutableTrieImpl(null, new Trie()));
         updateContractDetails(repo, address, details);
 
-        Assert.assertNotNull(repo.getTrie().getHash().getBytes());
+        Assertions.assertNotNull(repo.getTrie().getHash().getBytes());
     }
 
     private static void updateContractDetails(Repository repository, RskAddress addr, ContractDetailsImpl contractDetails) {

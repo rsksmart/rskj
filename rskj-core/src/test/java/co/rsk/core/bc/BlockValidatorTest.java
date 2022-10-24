@@ -41,8 +41,8 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 04/08/2016.
  */
-public class BlockValidatorTest {
+class BlockValidatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
@@ -61,7 +61,7 @@ public class BlockValidatorTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void validEmptyUnclesHash() {
+    void validEmptyUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -70,11 +70,11 @@ public class BlockValidatorTest {
                 .addBlockUnclesValidationRule(null)
                 .build();
 
-        Assert.assertTrue(validator.isValid(block1));
+        Assertions.assertTrue(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUnclesHash() {
+    void invalidUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -84,11 +84,11 @@ public class BlockValidatorTest {
                 .addBlockUnclesValidationRule(null)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void getBlockOneAncestorSet() {
+    void getBlockOneAncestorSet() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -96,13 +96,13 @@ public class BlockValidatorTest {
         Block block = new BlockGenerator().createChildBlock(genesis);
 
         Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
-        Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(genesis.getHash()));
-        Assert.assertFalse(ancestors.contains(block.getHash()));
+        Assertions.assertFalse(ancestors.isEmpty());
+        Assertions.assertTrue(ancestors.contains(genesis.getHash()));
+        Assertions.assertFalse(ancestors.contains(block.getHash()));
     }
 
     @Test
-    public void getThreeAncestorSet() {
+    void getThreeAncestorSet() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -120,18 +120,18 @@ public class BlockValidatorTest {
         store.saveBlock(block5, TEST_DIFFICULTY, true);
 
         Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
-        Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(genesis.getHash()));
-        Assert.assertFalse(ancestors.contains(block1.getHash()));
-        Assert.assertTrue(ancestors.contains(block2.getHash()));
-        Assert.assertTrue(ancestors.contains(block3.getHash()));
-        Assert.assertTrue(ancestors.contains(block4.getHash()));
-        Assert.assertFalse(ancestors.contains(block5.getHash()));
+        Assertions.assertFalse(ancestors.isEmpty());
+        Assertions.assertEquals(3, ancestors.size());
+        Assertions.assertFalse(ancestors.contains(genesis.getHash()));
+        Assertions.assertFalse(ancestors.contains(block1.getHash()));
+        Assertions.assertTrue(ancestors.contains(block2.getHash()));
+        Assertions.assertTrue(ancestors.contains(block3.getHash()));
+        Assertions.assertTrue(ancestors.contains(block4.getHash()));
+        Assertions.assertFalse(ancestors.contains(block5.getHash()));
     }
 
     @Test
-    public void getUsedUncles() {
+    void getUsedUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -164,19 +164,19 @@ public class BlockValidatorTest {
 
         Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
-        Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(block3.getHash()));
-        Assert.assertFalse(used.contains(block2.getHash()));
-        Assert.assertTrue(used.contains(uncle2a.getHash()));
-        Assert.assertTrue(used.contains(uncle2b.getHash()));
-        Assert.assertFalse(used.contains(block1.getHash()));
-        Assert.assertTrue(used.contains(uncle1a.getHash()));
-        Assert.assertTrue(used.contains(uncle1b.getHash()));
-        Assert.assertFalse(used.contains(genesis.getHash()));
+        Assertions.assertFalse(used.isEmpty());
+        Assertions.assertFalse(used.contains(block3.getHash()));
+        Assertions.assertFalse(used.contains(block2.getHash()));
+        Assertions.assertTrue(used.contains(uncle2a.getHash()));
+        Assertions.assertTrue(used.contains(uncle2b.getHash()));
+        Assertions.assertFalse(used.contains(block1.getHash()));
+        Assertions.assertTrue(used.contains(uncle1a.getHash()));
+        Assertions.assertTrue(used.contains(uncle1b.getHash()));
+        Assertions.assertFalse(used.contains(genesis.getHash()));
     }
 
     @Test
-    public void invalidUncleTransactionsRoot() {
+    void invalidUncleTransactionsRoot() {
         Block block = new BlockGenerator().createBlock(2, 10);
 
         block.getHeader().setTransactionsRoot(new byte[]{0x01});
@@ -185,11 +185,11 @@ public class BlockValidatorTest {
                 .addBlockRootValidationRule()
                 .build();
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
     }
 
     @Test
-    public void validUncles() {
+    void validUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -215,11 +215,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertTrue(validator.isValid(block1));
+        Assertions.assertTrue(validator.isValid(block1));
     }
 
     @Test
-    public void invalidSiblingUncles() {
+    void invalidSiblingUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -242,11 +242,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUnclesUncleIncludedMultipeTimes () {
+    void invalidUnclesUncleIncludedMultipeTimes () {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -267,11 +267,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidPOWUncles() {
+    void invalidPOWUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -295,11 +295,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUncleIsAncestor() {
+    void invalidUncleIsAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -320,11 +320,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUncleHasNoSavedParent() {
+    void invalidUncleHasNoSavedParent() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -343,11 +343,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUncleHasNoCommonAncestor() {
+    void invalidUncleHasNoCommonAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -380,11 +380,11 @@ public class BlockValidatorTest {
                 .blockStore(store)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block1));
+        Assertions.assertFalse(validator.isValid(block1));
     }
 
     @Test
-    public void invalidUncleHasParentThatIsNotAncestor() {
+    void invalidUncleHasParentThatIsNotAncestor() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -412,11 +412,11 @@ public class BlockValidatorTest {
                 .addBlockUnclesValidationRule(store)
                 .blockStore(store).build();
 
-        Assert.assertFalse(validator.isValid(block3));
+        Assertions.assertFalse(validator.isValid(block3));
     }
 
     @Test
-    public void invalidUncleAlreadyUsed() {
+    void invalidUncleAlreadyUsed() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -450,11 +450,11 @@ public class BlockValidatorTest {
                 .addBlockUnclesValidationRule(store)
                 .blockStore(store).build();
 
-        Assert.assertFalse(validator.isValid(block3));
+        Assertions.assertFalse(validator.isValid(block3));
     }
 
     @Test
-    public void tooManyUncles() {
+    void tooManyUncles() {
         IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -489,11 +489,11 @@ public class BlockValidatorTest {
                 .addBlockUnclesValidationRule(store)
                 .blockStore(store).build();
 
-        Assert.assertFalse(validator.isValid(block2));
+        Assertions.assertFalse(validator.isValid(block2));
     }
 
     @Test
-    public void processBlockWithInvalidMGPTxs() {
+    void processBlockWithInvalidMGPTxs() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -525,11 +525,11 @@ public class BlockValidatorTest {
                 .blockStore(blockStore)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
     }
 
     @Test
-    public void processBlockWithInvalidPrevMGP() {
+    void processBlockWithInvalidPrevMGP() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -548,11 +548,11 @@ public class BlockValidatorTest {
                 .blockStore(blockStore)
                 .build();
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
     }
 
     @Test
-    public void processValidMGPBlock() {
+    void processValidMGPBlock() {
         BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
         Repository repository = mock(Repository.class);
 
@@ -586,11 +586,11 @@ public class BlockValidatorTest {
                 .blockStore(blockStore)
                 .build();
 
-        Assert.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block));
     }
 
     @Test
-    public void noRemascTx() {
+    void noRemascTx() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -613,17 +613,17 @@ public class BlockValidatorTest {
                 .addRemascValidationRule()
                 .build();
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
 
         block = new BlockBuilder(null, null, null).parent(genesis).transactions(null).build();
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
 
         block = new BlockBuilder(null, null, null).parent(genesis).transactions(new ArrayList<>()).build();
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
     }
 
     @Test
-    public void remascTxNotInLastPosition() {
+    void remascTxNotInLastPosition() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -649,11 +649,11 @@ public class BlockValidatorTest {
                 .addRemascValidationRule()
                 .build();
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
     }
 
     @Test
-    public void remascTx() {
+    void remascTx() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -676,11 +676,11 @@ public class BlockValidatorTest {
                 .addRemascValidationRule()
                 .build();
 
-        Assert.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block));
     }
 
     @Test
-    public void blockInTheFuture() {
+    void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         byte[] bitcoinMergedMiningHeader = new byte[0];
@@ -734,16 +734,16 @@ public class BlockValidatorTest {
         when(header.getTimestamp())
                 .thenReturn(baseTimeStamp + 2 * validPeriod);
 
-        Assert.assertFalse(validator.isValid(block));
+        Assertions.assertFalse(validator.isValid(block));
 
         when(header.getTimestamp())
                 .thenReturn(baseTimeStamp + validPeriod);
 
-        Assert.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block));
     }
 
     @Test
-    public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
+    void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -759,12 +759,12 @@ public class BlockValidatorTest {
                 .addBlockTimeStampValidationRule(validPeriod)
                 .build();
 
-        Assert.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block));
 
         when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
-        Assert.assertTrue(validator.isValid(block));
+        Assertions.assertTrue(validator.isValid(block));
     }
 }
 

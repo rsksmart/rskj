@@ -23,67 +23,67 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.Utils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 8/7/2016.
  */
-public class WorldTest {
+class WorldTest {
     @Test
-    public void getUnknownBlockByName() {
+    void getUnknownBlockByName() {
         World world = new World();
 
-        Assert.assertNull(world.getBlockByName("foo"));
+        Assertions.assertNull(world.getBlockByName("foo"));
     }
 
     @Test
-    public void saveAndGetBlock() {
+    void saveAndGetBlock() {
         World world = new World();
 
         Block block = new BlockGenerator().getBlock(1);
 
         world.saveBlock("b01", block);
-        Assert.assertSame(block, world.getBlockByName("b01"));
+        Assertions.assertSame(block, world.getBlockByName("b01"));
     }
 
     @Test
-    public void getGenesisBlock() {
+    void getGenesisBlock() {
         World world = new World();
 
         Block genesis = world.getBlockByName("g00");
 
-        Assert.assertNotNull(genesis);
-        Assert.assertEquals(0, genesis.getNumber());
+        Assertions.assertNotNull(genesis);
+        Assertions.assertEquals(0, genesis.getNumber());
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        Assert.assertNotNull(best);
-        Assert.assertEquals(0, best.getNumber());
-        Assert.assertEquals(genesis.getHash(), best.getHash());
+        Assertions.assertNotNull(best);
+        Assertions.assertEquals(0, best.getNumber());
+        Assertions.assertEquals(genesis.getHash(), best.getHash());
     }
 
     @Test
-    public void getBlockChain() {
+    void getBlockChain() {
         World world = new World();
 
-        Assert.assertNotNull(world.getBlockChain());
+        Assertions.assertNotNull(world.getBlockChain());
     }
 
     @Test
-    public void getUnknownAccountByName() {
+    void getUnknownAccountByName() {
         World world = new World();
 
-        Assert.assertNull(world.getAccountByName("foo"));
+        Assertions.assertNull(world.getAccountByName("foo"));
     }
 
     @Test
-    public void saveAndGetAccount() {
+    void saveAndGetAccount() {
         World world = new World();
 
         Account account = new Account(new ECKey(Utils.getRandom()));
 
         world.saveAccount("acc1", account);
-        Assert.assertSame(account, world.getAccountByName("acc1"));
+        Assertions.assertSame(account, world.getAccountByName("acc1"));
     }
 }

@@ -19,60 +19,60 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 20/04/2017.
  */
-public class CorsConfigurationTest {
+class CorsConfigurationTest {
 
     public static final String EXPECTED_CORS_CONFIG = "*.rsk.co";
 
     @Test
-    public void hasNoHeaderIfHeaderIsNull() {
+    void hasNoHeaderIfHeaderIsNull() {
         CorsConfiguration config = new CorsConfiguration(null);
 
-        Assert.assertNull(config.getHeader());
-        Assert.assertFalse(config.hasHeader());
+        Assertions.assertNull(config.getHeader());
+        Assertions.assertFalse(config.hasHeader());
     }
 
     @Test
-    public void hasNoHeaderIfHeaderIsEmpty() {
+    void hasNoHeaderIfHeaderIsEmpty() {
         CorsConfiguration config = new CorsConfiguration("");
 
-        Assert.assertEquals("", config.getHeader());
-        Assert.assertFalse(config.hasHeader());
+        Assertions.assertEquals("", config.getHeader());
+        Assertions.assertFalse(config.hasHeader());
     }
 
     @Test
-    public void hasHeaderFromTestConfig() {
+    void hasHeaderFromTestConfig() {
         CorsConfiguration config = new CorsConfiguration(new TestSystemProperties().corsDomains());
 
-        Assert.assertNotNull(config.getHeader());
-        Assert.assertEquals(EXPECTED_CORS_CONFIG, config.getHeader());
-        Assert.assertTrue(config.hasHeader());
+        Assertions.assertNotNull(config.getHeader());
+        Assertions.assertEquals(EXPECTED_CORS_CONFIG, config.getHeader());
+        Assertions.assertTrue(config.hasHeader());
     }
 
     @Test
-    public void raisedIfHeaderContainsCarriageReturn() {
+    void raisedIfHeaderContainsCarriageReturn() {
         try {
             new CorsConfiguration("host1\rhost2");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ex) {
-            Assert.assertEquals("corsheader", ex.getMessage());
+            Assertions.assertEquals("corsheader", ex.getMessage());
         }
     }
 
     @Test
-    public void raisedIfHeaderContainsNewLine() {
+    void raisedIfHeaderContainsNewLine() {
         try {
             new CorsConfiguration("host1\nhost2");
-            Assert.fail();
+            Assertions.fail();
         }
         catch (IllegalArgumentException ex) {
-            Assert.assertEquals("corsheader", ex.getMessage());
+            Assertions.assertEquals("corsheader", ex.getMessage());
         }
     }
 }

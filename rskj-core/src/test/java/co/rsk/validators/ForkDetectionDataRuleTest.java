@@ -25,34 +25,33 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ForkDetectionDataRuleTest {
+class ForkDetectionDataRuleTest {
 
     private ActivationConfig activationConfig;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         activationConfig = mock(ActivationConfig.class);
     }
 
     @Test
-    public void validForBlocksBeforeRskip110UsingMethodThatReceivesBlockAsParameter() {
+    void validForBlocksBeforeRskip110UsingMethodThatReceivesBlockAsParameter() {
         long blockNumber = 4242;
         ForkDetectionDataRule rule = new ForkDetectionDataRule(
                 activationConfig,
@@ -71,7 +70,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForBlocksBeforeRskip110() {
+    void validForBlocksBeforeRskip110() {
         long blockNumber = 4242;
         ForkDetectionDataRule rule = new ForkDetectionDataRule(
                 activationConfig,
@@ -87,7 +86,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveButForkDetectionData() {
+    void invalidForRskip110ActiveButForkDetectionData() {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -106,7 +105,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForRskip110ActiveButNoForkDetectionDataBecauseNoEnoughBlocksToCalculateIt() {
+    void validForRskip110ActiveButNoForkDetectionDataBecauseNoEnoughBlocksToCalculateIt() {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -125,7 +124,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveAndForkDetectionDataButMissingBlocksForCalculation() {
+    void invalidForRskip110ActiveAndForkDetectionDataButMissingBlocksForCalculation() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -153,7 +152,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void validForRskip110ActiveAndForkDetectionData() {
+    void validForRskip110ActiveAndForkDetectionData() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
@@ -188,7 +187,7 @@ public class ForkDetectionDataRuleTest {
     }
 
     @Test
-    public void invalidForRskip110ActiveAndForkDetectionDataBecauseDataDoesNotMatch() {
+    void invalidForRskip110ActiveAndForkDetectionDataBecauseDataDoesNotMatch() {
         long blockNumber = 4242;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 

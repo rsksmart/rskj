@@ -42,16 +42,16 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.util.BuildInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class Web3EthModuleTest {
+class Web3EthModuleTest {
 
     @Test
-    public void eth_chainId() {
+    void eth_chainId() {
         EthModule ethModule = mock(EthModule.class);
         when(ethModule.chainId()).thenReturn("0x21");
         Web3EthModule web3 = new Web3RskImpl(

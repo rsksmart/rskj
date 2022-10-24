@@ -33,9 +33,9 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 
-public class NativeContractTest {
+class NativeContractTest {
 
     private ActivationConfig activationConfig;
     private NativeContract contract;
@@ -56,47 +56,47 @@ public class NativeContractTest {
     private ReceiptStore receiptStore;
     private List<LogInfo> logs;
 
-    @Before
-    public void beforeTests() {
+    @BeforeEach
+    void beforeTests() {
         activationConfig = ActivationConfigsForTest.all();
         contract = spy(new EmptyNativeContract(activationConfig));
     }
 
     @Test
-    public void createsExecutionEnvironmentUponInit() {
-        Assert.assertNull(contract.getExecutionEnvironment());
+    void createsExecutionEnvironmentUponInit() {
+        Assertions.assertNull(contract.getExecutionEnvironment());
 
         doInit();
 
         ExecutionEnvironment executionEnvironment = contract.getExecutionEnvironment();
-        Assert.assertNotNull(executionEnvironment);
-        Assert.assertEquals(tx, executionEnvironment.getTransaction());
-        Assert.assertEquals(block, executionEnvironment.getBlock());
-        Assert.assertEquals(repository, executionEnvironment.getRepository());
-        Assert.assertEquals(blockStore, executionEnvironment.getBlockStore());
-        Assert.assertEquals(receiptStore, executionEnvironment.getReceiptStore());
-        Assert.assertEquals(logs, executionEnvironment.getLogs());
+        Assertions.assertNotNull(executionEnvironment);
+        Assertions.assertEquals(tx, executionEnvironment.getTransaction());
+        Assertions.assertEquals(block, executionEnvironment.getBlock());
+        Assertions.assertEquals(repository, executionEnvironment.getRepository());
+        Assertions.assertEquals(blockStore, executionEnvironment.getBlockStore());
+        Assertions.assertEquals(receiptStore, executionEnvironment.getReceiptStore());
+        Assertions.assertEquals(logs, executionEnvironment.getLogs());
     }
 
     @Test
-    public void getGasForDataFailsWhenNoInit() {
+    void getGasForDataFailsWhenNoInit() {
         assertFails(() -> contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
-    public void getGasForDataZeroWhenNullData() {
+    void getGasForDataZeroWhenNullData() {
         doInit();
-        Assert.assertEquals(0L, contract.getGasForData(null));
+        Assertions.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
-    public void getGasForDataZeroWhenEmptyData() {
+    void getGasForDataZeroWhenEmptyData() {
         doInit();
-        Assert.assertEquals(0L, contract.getGasForData(null));
+        Assertions.assertEquals(0L, contract.getGasForData(null));
     }
 
     @Test
-    public void getGasForNullDataAndDefaultMethod() {
+    void getGasForNullDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         contract = new EmptyNativeContract(activationConfig) {
@@ -106,11 +106,11 @@ public class NativeContractTest {
             }
         };
         doInit();
-        Assert.assertEquals(10L, contract.getGasForData(null));
+        Assertions.assertEquals(10L, contract.getGasForData(null));
     }
 
     @Test
-    public void getGasForEmptyDataAndDefaultMethod() {
+    void getGasForEmptyDataAndDefaultMethod() {
         NativeMethod method = mock(NativeMethod.class);
         when(method.getGas(any(), any())).thenReturn(10L);
         contract = new EmptyNativeContract(activationConfig) {
@@ -120,23 +120,23 @@ public class NativeContractTest {
             }
         };
         doInit();
-        Assert.assertEquals(10L, contract.getGasForData(new byte[]{}));
+        Assertions.assertEquals(10L, contract.getGasForData(new byte[]{}));
     }
 
     @Test
-    public void getGasForDataZeroWhenInvalidSignature() {
+    void getGasForDataZeroWhenInvalidSignature() {
         doInit();
-        Assert.assertEquals(0L, contract.getGasForData(Hex.decode("aabb")));
+        Assertions.assertEquals(0L, contract.getGasForData(Hex.decode("aabb")));
     }
 
     @Test
-    public void getGasForDataZeroWhenNoMappedMethod() {
+    void getGasForDataZeroWhenNoMappedMethod() {
         doInit();
-        Assert.assertEquals(0L, contract.getGasForData(Hex.decode("aabbccdd")));
+        Assertions.assertEquals(0L, contract.getGasForData(Hex.decode("aabbccdd")));
     }
 
     @Test
-    public void getGasForDataZeroWhenMethodDisabled() {
+    void getGasForDataZeroWhenMethodDisabled() {
         doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
@@ -145,11 +145,11 @@ public class NativeContractTest {
         when(method.getGas(any(), any())).thenReturn(123L);
         when(method.isEnabled()).thenReturn(false);
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
-        Assert.assertEquals(0L, contract.getGasForData(Hex.decode("00112233")));
+        Assertions.assertEquals(0L, contract.getGasForData(Hex.decode("00112233")));
     }
 
     @Test
-    public void getGasForDataNonZeroWhenMethodMatches() {
+    void getGasForDataNonZeroWhenMethodMatches() {
         doInit();
         NativeMethod method = mock(NativeMethod.class);
         CallTransaction.Function fn = mock(CallTransaction.Function.class);
@@ -158,11 +158,11 @@ public class NativeContractTest {
         when(method.getGas(any(), any())).thenReturn(123L);
         when(method.isEnabled()).thenReturn(true);
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
-        Assert.assertEquals(123L, contract.getGasForData(Hex.decode("00112233")));
+        Assertions.assertEquals(123L, contract.getGasForData(Hex.decode("00112233")));
     }
 
     @Test
-    public void getGasForDataNonZeroWhenMethodMatchesMoreThanOne() {
+    void getGasForDataNonZeroWhenMethodMatchesMoreThanOne() {
         doInit();
 
         NativeMethod method1 = mock(NativeMethod.class);
@@ -179,19 +179,19 @@ public class NativeContractTest {
         when(method2.getGas(any(), any())).thenReturn(456L);
         when(method2.isEnabled()).thenReturn(true);
         when(contract.getMethods()).thenReturn(Arrays.asList(method1, method2));
-        Assert.assertEquals(123L, contract.getGasForData(Hex.decode("00112233")));
-        Assert.assertEquals(456L, contract.getGasForData(Hex.decode("44556677")));
+        Assertions.assertEquals(123L, contract.getGasForData(Hex.decode("00112233")));
+        Assertions.assertEquals(456L, contract.getGasForData(Hex.decode("44556677")));
     }
 
     @Test
-    public void executeThrowsWhenNoInit() {
+    void executeThrowsWhenNoInit() {
         assertContractExecutionFails("aabbccdd");
         verify(contract, never()).before();
         verify(contract, never()).after();
     }
 
     @Test
-    public void executeThrowsWhenNoTransaction() {
+    void executeThrowsWhenNoTransaction() {
         doInit(null);
         assertContractExecutionFails("aabbccdd");
         verify(contract, never()).before();
@@ -199,7 +199,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenInvalidSignature() {
+    void executeThrowsWhenInvalidSignature() {
         doInit();
         assertContractExecutionFails("aa");
         verify(contract, never()).before();
@@ -207,7 +207,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodDisabled() {
+    void executeThrowsWhenMethodDisabled() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -223,7 +223,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodMatchesButArgumentsInvalid() {
+    void executeThrowsWhenMethodMatchesButArgumentsInvalid() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -240,7 +240,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeThrowsWhenMethodMatchesButNoLocalCallsAllowed() {
+    void executeThrowsWhenMethodMatchesButNoLocalCallsAllowed() {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -258,7 +258,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValid() throws VMException {
+    void executeRunsWhenMethodMatchesAndArgumentsValid() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -270,21 +270,21 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         when(method.execute(any())).thenAnswer((InvocationOnMock m) -> {
             Object[] arguments = m.getArgument(0);
-            Assert.assertEquals(2, arguments.length);
-            Assert.assertEquals("arg1", arguments[0]);
-            Assert.assertEquals("arg2", arguments[1]);
+            Assertions.assertEquals(2, arguments.length);
+            Assertions.assertEquals("arg1", arguments[0]);
+            Assertions.assertEquals("arg2", arguments[1]);
             return "execution-result";
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertEquals("aabbccddeeff112233", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
+        Assertions.assertEquals("aabbccddeeff112233", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
         verify(method, times(1)).execute(any());
         verify(contract, times(1)).before();
         verify(contract, times(1)).after();
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() throws NativeContractIllegalArgumentException {
+    void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() throws NativeContractIllegalArgumentException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -297,9 +297,9 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         when(method.execute(any())).thenAnswer((InvocationOnMock m) -> {
             Object[] arguments = m.getArgument(0);
-            Assert.assertEquals(2, arguments.length);
-            Assert.assertEquals("arg1", arguments[0]);
-            Assert.assertEquals("arg2", arguments[1]);
+            Assertions.assertEquals(2, arguments.length);
+            Assertions.assertEquals("arg1", arguments[0]);
+            Assertions.assertEquals("arg2", arguments[1]);
             throw new Exception("something hapened");
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
@@ -311,7 +311,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNullResult() throws VMException {
+    void executeWithNullResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -322,14 +322,14 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         when(method.execute(any())).thenAnswer((InvocationOnMock m) -> {
             Object[] arguments = m.getArgument(0);
-            Assert.assertEquals(2, arguments.length);
-            Assert.assertEquals("arg1", arguments[0]);
-            Assert.assertEquals("arg2", arguments[1]);
+            Assertions.assertEquals(2, arguments.length);
+            Assertions.assertEquals("arg1", arguments[0]);
+            Assertions.assertEquals("arg2", arguments[1]);
             return null;
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertNull(contract.execute(Hex.decode("00112233")));
+        Assertions.assertNull(contract.execute(Hex.decode("00112233")));
         verify(method, times(1)).execute(any());
         verify(fn, never()).encodeOutputs(any());
         verify(contract, times(1)).before();
@@ -337,7 +337,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithEmptyOptionalResult() throws VMException {
+    void executeWithEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -348,14 +348,14 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         when(method.execute(any())).thenAnswer((InvocationOnMock m) -> {
             Object[] arguments = m.getArgument(0);
-            Assert.assertEquals(2, arguments.length);
-            Assert.assertEquals("arg1", arguments[0]);
-            Assert.assertEquals("arg2", arguments[1]);
+            Assertions.assertEquals(2, arguments.length);
+            Assertions.assertEquals("arg1", arguments[0]);
+            Assertions.assertEquals("arg2", arguments[1]);
             return Optional.empty();
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertNull(contract.execute(Hex.decode("00112233")));
+        Assertions.assertNull(contract.execute(Hex.decode("00112233")));
         verify(method, times(1)).execute(any());
         verify(fn, never()).encodeOutputs(any());
         verify(contract, times(1)).before();
@@ -363,7 +363,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNonEmptyOptionalResult() throws VMException {
+    void executeWithNonEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -375,14 +375,14 @@ public class NativeContractTest {
         when(method.isEnabled()).thenReturn(true);
         when(method.execute(any())).thenAnswer((InvocationOnMock m) -> {
             Object[] arguments = m.getArgument(0);
-            Assert.assertEquals(2, arguments.length);
-            Assert.assertEquals("arg1", arguments[0]);
-            Assert.assertEquals("arg2", arguments[1]);
+            Assertions.assertEquals(2, arguments.length);
+            Assertions.assertEquals("arg1", arguments[0]);
+            Assertions.assertEquals("arg2", arguments[1]);
             return Optional.of("another-result");
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertEquals("ffeeddccbb", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
+        Assertions.assertEquals("ffeeddccbb", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
         verify(method, times(1)).execute(any());
         verify(contract, times(1)).before();
         verify(contract, times(1)).after();
@@ -409,7 +409,7 @@ public class NativeContractTest {
         } catch (RuntimeException e) {
             failed = true;
         }
-        Assert.assertTrue(failed);
+        Assertions.assertTrue(failed);
     }
 
     private void assertFailsExecution(RunnableExecution statement) {
@@ -419,7 +419,7 @@ public class NativeContractTest {
         } catch (VMException e) {
             failed = true;
         }
-        Assert.assertTrue(failed);
+        Assertions.assertTrue(failed);
     }
 
     private void assertContractExecutionFails(String hexData) {

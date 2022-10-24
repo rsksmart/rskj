@@ -21,12 +21,12 @@ package co.rsk.rpc.modules.trace;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class TraceTransformerTest {
+class TraceTransformerTest {
     @Test
-    public void getActionFromInvokeData() {
+    void getActionFromInvokeData() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -48,18 +48,18 @@ public class TraceTransformerTest {
 
         TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null);
 
-        Assert.assertNotNull(action);
+        Assertions.assertNotNull(action);
 
-        Assert.assertEquals("call", action.getCallType());
-        Assert.assertEquals("0x0000000000000000000000000000000000000001", action.getTo());
-        Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
-        Assert.assertEquals("0x01020304", action.getInput());
-        Assert.assertEquals("0xf4240", action.getGas());
-        Assert.assertEquals("0x186a0", action.getValue());
+        Assertions.assertEquals("call", action.getCallType());
+        Assertions.assertEquals("0x0000000000000000000000000000000000000001", action.getTo());
+        Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
+        Assertions.assertEquals("0x01020304", action.getInput());
+        Assertions.assertEquals("0xf4240", action.getGas());
+        Assertions.assertEquals("0x186a0", action.getValue());
     }
 
     @Test
-    public void getActionFromInvokeDataWithCreationData() {
+    void getActionFromInvokeDataWithCreationData() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -81,19 +81,19 @@ public class TraceTransformerTest {
 
         TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null);
 
-        Assert.assertNotNull(action);
+        Assertions.assertNotNull(action);
 
-        Assert.assertNull(action.getCallType());
-        Assert.assertNull(action.getTo());
-        Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
-        Assert.assertEquals("0x01020304", action.getInit());
-        Assert.assertNull(action.getCreationMethod());
-        Assert.assertEquals("0xf4240", action.getGas());
-        Assert.assertEquals("0x186a0", action.getValue());
+        Assertions.assertNull(action.getCallType());
+        Assertions.assertNull(action.getTo());
+        Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
+        Assertions.assertEquals("0x01020304", action.getInit());
+        Assertions.assertNull(action.getCreationMethod());
+        Assertions.assertEquals("0xf4240", action.getGas());
+        Assertions.assertEquals("0x186a0", action.getValue());
     }
 
     @Test
-    public void getActionFromInvokeDataWithCreationDataUsingCreationMethod() {
+    void getActionFromInvokeDataWithCreationDataUsingCreationMethod() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -115,14 +115,14 @@ public class TraceTransformerTest {
 
         TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null);
 
-        Assert.assertNotNull(action);
+        Assertions.assertNotNull(action);
 
-        Assert.assertNull(action.getCallType());
-        Assert.assertNull(action.getTo());
-        Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
-        Assert.assertEquals("0x01020304", action.getInit());
-        Assert.assertEquals("create2", action.getCreationMethod());
-        Assert.assertEquals("0xf4240", action.getGas());
-        Assert.assertEquals("0x186a0", action.getValue());
+        Assertions.assertNull(action.getCallType());
+        Assertions.assertNull(action.getTo());
+        Assertions.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
+        Assertions.assertEquals("0x01020304", action.getInit());
+        Assertions.assertEquals("create2", action.getCreationMethod());
+        Assertions.assertEquals("0xf4240", action.getGas());
+        Assertions.assertEquals("0x186a0", action.getValue());
     }
 }

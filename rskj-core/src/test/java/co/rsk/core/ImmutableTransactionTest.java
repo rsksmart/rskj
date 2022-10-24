@@ -5,24 +5,24 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 03/08/2017.
  */
-public class ImmutableTransactionTest {
+class ImmutableTransactionTest {
     @Test
-    public void tryingToSignImmutableTransaction() {
+    void tryingToSignImmutableTransaction() {
         Transaction tx = createImmutableTransaction();
 
         try {
             tx.sign(new byte[32]);
         }
         catch (ImmutableTransaction.ImmutableTransactionException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Immutable transaction: trying to sign"));
+            Assertions.assertTrue(ex.getMessage().contains("Immutable transaction: trying to sign"));
         }
     }
 

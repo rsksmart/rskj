@@ -29,22 +29,21 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-@Ignore
-public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+@Disabled
+class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
     private EnvironmentBuilder environmentBuilder;
 
-    @Before
-    public void setFunctionAndBuilder() {
+    @BeforeEach
+    void setFunctionAndBuilder() {
         function = new GetMultisigScriptHash(null).getFunction();
         environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
             HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
@@ -55,7 +54,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Weighed() throws VMException {
+    void getMultisigScriptHash_Weighed() throws VMException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-weighed", function.name));
@@ -68,7 +67,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Even() throws VMException {
+    void getMultisigScriptHash_Even() throws VMException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-even", function.name));
@@ -119,9 +118,9 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(byte[].class, decodedResult[0].getClass());
+                    Assertions.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexHash = ByteUtil.toHexString((byte[]) decodedResult[0]);
-                    Assert.assertEquals(expectedHashHex, hexHash);
+                    Assertions.assertEquals(expectedHashHex, hexHash);
                 }
         );
 

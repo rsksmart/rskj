@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -54,19 +54,19 @@ public class Exec {
             "origin" : "cd1722f3947def4cf144679da39c4c32bdc35681",
             "value" : 1000000000000000000
    */
-    public Exec(JSONObject exec) {
+    public Exec(JsonNode exec) {
 
-        String address = exec.get("address").toString();
-        String caller = exec.get("caller").toString();
+        String address = exec.get("address").asText();
+        String caller = exec.get("caller").asText();
 
-        String code = exec.get("code").toString();
-        String data = exec.get("data").toString();
+        String code = exec.get("code").asText();
+        String data = exec.get("data").asText();
 
-        String gas = exec.get("gas").toString();
-        String gasPrice = exec.get("gasPrice").toString();
-        String origin = exec.get("origin").toString();
+        String gas = exec.get("gas").asText();
+        String gasPrice = exec.get("gasPrice").asText();
+        String origin = exec.get("origin").asText();
 
-        String value = exec.get("value").toString();
+        String value = exec.get("value").asText();
 
         this.address = Hex.decode(address);
         this.caller = Hex.decode(caller);

@@ -22,15 +22,15 @@ package org.ethereum.core.genesis;
 import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 /**
  * Created by mario on 03/01/17.
  */
-public class GenesisJsonTest {
+class GenesisJsonTest {
 
     private static final String GENESIS_JSON = "{ " +
             "\"alloc\": { " +
@@ -52,23 +52,23 @@ public class GenesisJsonTest {
             "}";
 
     @Test
-    public void generateGenesisJson() throws IOException {
+    void generateGenesisJson() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().constructType(GenesisJson.class);
 
         GenesisJson genesisJson = new ObjectMapper().readValue(GENESIS_JSON, type);
 
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getMinimumGasPrice()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getParentHash()));
-        Assert.assertTrue(genesisJson.getAlloc().size() > 0);
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningCoinbaseTransaction()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningHeader()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningMerkleProof()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getCoinbase()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getDifficulty()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getExtraData()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getMixhash()));
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getTimestamp()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getMinimumGasPrice()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getParentHash()));
+        Assertions.assertTrue(genesisJson.getAlloc().size() > 0);
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningCoinbaseTransaction()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningHeader()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningMerkleProof()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getCoinbase()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getDifficulty()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getExtraData()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getMixhash()));
+        Assertions.assertTrue(StringUtils.isNotBlank(genesisJson.getTimestamp()));
 
     }
 

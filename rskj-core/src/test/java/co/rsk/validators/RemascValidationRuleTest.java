@@ -24,8 +24,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -35,18 +35,18 @@ import java.util.List;
 /**
  * Created by mario on 30/12/16.
  */
-public class RemascValidationRuleTest {
+class RemascValidationRuleTest {
 
     @Test
-    public void noTxInTheBlock() {
+    void noTxInTheBlock() {
         Block b = Mockito.mock(Block.class);
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
-    public void noRemascTxInTheBlock() {
+    void noRemascTxInTheBlock() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
@@ -66,11 +66,11 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
-    public void remascTxIsNotTheLastOne() {
+    void remascTxIsNotTheLastOne() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
@@ -91,11 +91,11 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b));
     }
 
     @Test
-    public void remascTxInBlock() {
+    void remascTxInBlock() {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
@@ -116,6 +116,6 @@ public class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assert.assertTrue(rule.isValid(b));
+        Assertions.assertTrue(rule.isValid(b));
     }
 }

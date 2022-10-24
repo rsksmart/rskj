@@ -35,13 +35,14 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
@@ -54,7 +55,7 @@ import static org.junit.Assert.*;
  * revert, because we are taking care of the call, and the result its not handled.
  *
  */
-public class NestedContractsTest {
+class NestedContractsTest {
 
     private static final CallTransaction.Function BUY_FUNCTION = CallTransaction.Function.fromSignature("buy", "uint");
     private static final String TX_CONTRACTRR = "tx01";
@@ -71,8 +72,8 @@ public class NestedContractsTest {
     /** ------------------------ **
      *  SETUP
      ** ------------------------ **/
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         world = new World();
         processor = new WorldDslProcessor(world);
         ethModule = buildEthModule(world);
@@ -83,7 +84,7 @@ public class NestedContractsTest {
      ** ------------------------ **/
 
     @Test
-    public void testNested_interfaceCall_require() throws FileNotFoundException, DslProcessorException {
+    void testNested_interfaceCall_require() throws FileNotFoundException, DslProcessorException {
         processor.processCommands(DslParser.fromResource("dsl/contract_call/contract_nested_interface_calls.txt"));
 
         assertFalse(world.getTransactionReceiptByName("tx04").isSuccessful());
@@ -111,7 +112,7 @@ public class NestedContractsTest {
             ethModule.call(args, "latest");
             fail();
         } catch (RskJsonRpcRequestException e) {
-            assertThat(e.getMessage(), Matchers.containsString("Negative value"));
+            MatcherAssert.assertThat(e.getMessage(), Matchers.containsString("Negative value"));
         }
 
         //Success Call -> 2 > 0
@@ -121,7 +122,7 @@ public class NestedContractsTest {
     }
 
     @Test
-    public void testNested_ABICall_require() throws FileNotFoundException, DslProcessorException {
+    void testNested_ABICall_require() throws FileNotFoundException, DslProcessorException {
         processor.processCommands(DslParser.fromResource("dsl/contract_call/contract_nested_abi_calls.txt"));
         world.getRepository().commit();
 

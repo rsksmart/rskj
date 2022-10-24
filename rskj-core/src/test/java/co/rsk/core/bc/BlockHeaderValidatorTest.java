@@ -21,46 +21,46 @@ package co.rsk.core.bc;
 import co.rsk.crypto.Keccak256;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHeaderValidatorTest {
+class BlockHeaderValidatorTest {
 
     private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
 
     private final BlockHeaderValidatorImpl blockRelayValidator = new BlockHeaderValidatorImpl(blockHeaderValidator);
 
     @Test
-    public void genesisCheck() {
+    void genesisCheck() {
         Block block = mock(Block.class);
         when(block.isGenesis()).thenReturn(true);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator, never()).isValid(any());
     }
 
     @Test
-    public void blockHeaderValidatorCheck() {
+    void blockHeaderValidatorCheck() {
         Block block = mock(Block.class);
 
         when(blockHeaderValidator.isValid(any())).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator).isValid(any());
     }
 
     @Test
-    public void allValidatorsCheck() {
+    void allValidatorsCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
 
@@ -69,7 +69,7 @@ public class BlockHeaderValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertTrue(actualResult);
+        Assertions.assertTrue(actualResult);
 
         verify(block).isGenesis();
         verify(blockHeaderValidator).isValid(any());

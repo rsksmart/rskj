@@ -41,8 +41,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -52,197 +52,197 @@ import java.util.Random;
 /**
  * Created by ajlopez on 12/07/2017.
  */
-public class Web3ImplScoringTest {
+class Web3ImplScoringTest {
     private static Random random = new Random();
 
     @Test
-    public void addBannedAddressUsingIPV4() throws UnknownHostException {
+    void addBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateNonLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress());
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void addBannedAddressWithInvalidMask() {
+    void addBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         RskJsonRpcRequestException ex = TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> web3.sco_banAddress("192.168.56.1/a"));
-        Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
+        Assertions.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
 
     }
 
     @Test
-    public void removeBannedAddressWithInvalidMask() {
+    void removeBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         RskJsonRpcRequestException ex = TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> web3.sco_unbanAddress("192.168.56.1/a"));
-        Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
+        Assertions.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
     }
 
     @Test
-    public void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
+    void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateNonLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress() + "/8");
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
         InetAddress address = generateNonLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress());
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_unbanAddress(address.getHostAddress());
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
+    void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
         InetAddress address = generateLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         RskJsonRpcRequestException e =
                 TestUtils.assertThrows(RskJsonRpcRequestException.class,
                         () -> {
                             web3.sco_banAddress(address.getHostAddress());
                         });
-        Assert.assertEquals(-32602, (int) e.getCode());
+        Assertions.assertEquals(-32602, (int) e.getCode());
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
         InetAddress address = generateNonLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress() + "/8");
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_unbanAddress(address.getHostAddress() + "/8");
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
+    void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
         InetAddress address = generateLocalIPAddressV4();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         RskJsonRpcRequestException exception = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> web3.sco_banAddress(address.getHostAddress() + "/8"));
-        Assert.assertEquals(-32602, (int) exception.getCode());
+        Assertions.assertEquals(-32602, (int) exception.getCode());
     }
 
     @Test
-    public void addBannedAddressUsingIPV6() throws UnknownHostException {
+    void addBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress());
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+    void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress() + "/64");
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress());
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_unbanAddress(address.getHostAddress());
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+    void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV6();
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_banAddress(address.getHostAddress() + "/64");
 
-        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertFalse(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_unbanAddress(address.getHostAddress() + "/64");
 
-        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+        Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
     @Test
-    public void getEmptyPeerList() {
+    void getEmptyPeerList() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
 
         Web3Impl web3 = createWeb3(peerScoringManager);
         PeerScoringInformation[] result = web3.sco_peerList();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
-    public void getPeerList() throws UnknownHostException {
+    void getPeerList() throws UnknownHostException {
         NodeID node = generateNodeID();
         InetAddress address = generateNonLocalIPAddressV4();
         PeerScoringManager peerScoringManager = createPeerScoringManager();
@@ -253,63 +253,63 @@ public class Web3ImplScoringTest {
         Web3Impl web3 = createWeb3(peerScoringManager);
         PeerScoringInformation[] result = web3.sco_peerList();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
 
         PeerScoringInformation info = result[0];
-        Assert.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
-        Assert.assertEquals(2, info.getValidBlocks());
-        Assert.assertEquals(0, info.getInvalidBlocks());
-        Assert.assertEquals(1, info.getValidTransactions());
-        Assert.assertEquals(0, info.getInvalidTransactions());
-        Assert.assertTrue(info.getScore() > 0);
-        Assert.assertEquals(0, info.getPunishedUntil());
+        Assertions.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assertions.assertEquals(2, info.getValidBlocks());
+        Assertions.assertEquals(0, info.getInvalidBlocks());
+        Assertions.assertEquals(1, info.getValidTransactions());
+        Assertions.assertEquals(0, info.getInvalidTransactions());
+        Assertions.assertTrue(info.getScore() > 0);
+        Assertions.assertEquals(0, info.getPunishedUntil());
 
         info = result[1];
-        Assert.assertEquals(address.getHostAddress(), info.getId());
-        Assert.assertEquals(2, info.getValidBlocks());
-        Assert.assertEquals(0, info.getInvalidBlocks());
-        Assert.assertEquals(1, info.getValidTransactions());
-        Assert.assertEquals(0, info.getInvalidTransactions());
-        Assert.assertTrue(info.getScore() > 0);
-        Assert.assertEquals(0, info.getPunishedUntil());
+        Assertions.assertEquals(address.getHostAddress(), info.getId());
+        Assertions.assertEquals(2, info.getValidBlocks());
+        Assertions.assertEquals(0, info.getInvalidBlocks());
+        Assertions.assertEquals(1, info.getValidTransactions());
+        Assertions.assertEquals(0, info.getInvalidTransactions());
+        Assertions.assertTrue(info.getScore() > 0);
+        Assertions.assertEquals(0, info.getPunishedUntil());
 
         // punishment started
         peerScoringManager.recordEvent(node, address, EventType.INVALID_BLOCK);
         result = web3.sco_peerList();
         info = result[0];
-        Assert.assertEquals(1, info.getInvalidBlocks());
-        Assert.assertTrue(info.getScore() < 0);
-        Assert.assertTrue(info.getPunishedUntil() > 0);
-        Assert.assertFalse(info.getGoodReputation());
+        Assertions.assertEquals(1, info.getInvalidBlocks());
+        Assertions.assertTrue(info.getScore() < 0);
+        Assertions.assertTrue(info.getPunishedUntil() > 0);
+        Assertions.assertFalse(info.getGoodReputation());
     }
 
     @Test
-    public void getEmptyBannedAddressList() {
+    void getEmptyBannedAddressList() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         String[] result = web3.sco_bannedAddresses();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
-    public void getAddressListWithOneElement() {
+    void getAddressListWithOneElement() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         web3.sco_banAddress("192.168.56.1");
         String[] result = web3.sco_bannedAddresses();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("192.168.56.1", result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals("192.168.56.1", result[0]);
     }
 
     @Test
-    public void getAddressListWithTwoElements() {
+    void getAddressListWithTwoElements() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
@@ -317,28 +317,28 @@ public class Web3ImplScoringTest {
         web3.sco_banAddress("192.168.56.2");
         String[] result = web3.sco_bannedAddresses();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
 
-        Assert.assertTrue("192.168.56.1".equals(result[0]) || "192.168.56.1".equals(result[1]));
-        Assert.assertTrue("192.168.56.2".equals(result[0]) || "192.168.56.2".equals(result[1]));
+        Assertions.assertTrue("192.168.56.1".equals(result[0]) || "192.168.56.1".equals(result[1]));
+        Assertions.assertTrue("192.168.56.2".equals(result[0]) || "192.168.56.2".equals(result[1]));
     }
 
     @Test
-    public void getAddressListWithOneElementUsingMask() {
+    void getAddressListWithOneElementUsingMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         web3.sco_banAddress("192.168.56.1/16");
         String[] result = web3.sco_bannedAddresses();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("192.168.56.1/16", result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals("192.168.56.1/16", result[0]);
     }
 
     @Test
-    public void clearPeerScoring() throws UnknownHostException {
+    void clearPeerScoring() throws UnknownHostException {
         NodeID node = generateNodeID();
         InetAddress address = generateNonLocalIPAddressV4();
         PeerScoringManager peerScoringManager = createPeerScoringManager();
@@ -349,22 +349,22 @@ public class Web3ImplScoringTest {
         Web3Impl web3 = createWeb3(peerScoringManager);
         PeerScoringInformation[] result = web3.sco_peerList();
 
-        Assert.assertEquals(2, result.length);
-        Assert.assertTrue(ByteUtil.toHexString(node.getID()).startsWith(result[0].getId()));
-        Assert.assertEquals(address.getHostAddress(), result[1].getId());
+        Assertions.assertEquals(2, result.length);
+        Assertions.assertTrue(ByteUtil.toHexString(node.getID()).startsWith(result[0].getId()));
+        Assertions.assertEquals(address.getHostAddress(), result[1].getId());
 
         // clear by nodeId
         web3.sco_clearPeerScoring(ByteUtil.toHexString(node.getID()));
 
         result = web3.sco_peerList();
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(address.getHostAddress(), result[0].getId());
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(address.getHostAddress(), result[0].getId());
 
         // clear by address
         web3.sco_clearPeerScoring(address.getHostAddress());
 
         result = web3.sco_peerList();
-        Assert.assertEquals(0, result.length);
+        Assertions.assertEquals(0, result.length);
     }
 
     private static InetAddress generateNonLocalIPAddressV4() throws UnknownHostException {

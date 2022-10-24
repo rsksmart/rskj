@@ -24,8 +24,8 @@ import co.rsk.scoring.PeerScoringManager;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by mario on 22/02/17.
  */
-public class NodeChallengeManagerTest {
+class NodeChallengeManagerTest {
 
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
     private static final String HOST_1 = "localhost";
@@ -55,7 +55,7 @@ public class NodeChallengeManagerTest {
     private static final long CLEAN = 60000;
 
     @Test
-    public void startChallenge() {
+    void startChallenge() {
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
         ECKey key3 = ECKey.fromPrivate(Hex.decode(KEY_3)).decompress();
@@ -71,14 +71,14 @@ public class NodeChallengeManagerTest {
         NodeChallengeManager manager = new NodeChallengeManager();
         NodeChallenge challenge = manager.startChallenge(node2, node3, peerExplorer);
 
-        Assert.assertNotNull(challenge);
-        Assert.assertEquals(challenge.getChallengedNode(), node2);
-        Assert.assertEquals(challenge.getChallenger(), node3);
+        Assertions.assertNotNull(challenge);
+        Assertions.assertEquals(challenge.getChallengedNode(), node2);
+        Assertions.assertEquals(challenge.getChallenger(), node3);
 
         NodeChallenge anotherChallenge = manager.removeChallenge(UUID.randomUUID().toString());
-        Assert.assertNull(anotherChallenge);
+        Assertions.assertNull(anotherChallenge);
 
         anotherChallenge = manager.removeChallenge(challenge.getChallengeId());
-        Assert.assertEquals(challenge, anotherChallenge);
+        Assertions.assertEquals(challenge, anotherChallenge);
     }
 }

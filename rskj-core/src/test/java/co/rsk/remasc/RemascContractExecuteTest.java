@@ -24,19 +24,20 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class RemascContractExecuteTest {
+class RemascContractExecuteTest {
 
     private static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
     private RemascContract remasc;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         remasc = new RemascContract(
                 PrecompiledContracts.REMASC_ADDR,
                 remascConfig,
@@ -45,21 +46,18 @@ public class RemascContractExecuteTest {
         );
     }
 
-    @Test(expected = VMException.class)
-    public void executeWithFunctionSignatureLengthTooShort() throws Exception{
-        remasc.execute(new byte[3]);
-        fail("Expected OutOfGasException");
+    @Test
+    void executeWithFunctionSignatureLengthTooShort(){
+        Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[3]));
     }
 
-    @Test(expected = VMException.class)
-    public void executeWithInexistentFunction() throws Exception{
-        remasc.execute(new byte[4]);
-        fail("Expected OutOfGasException");
+    @Test
+    void executeWithInexistentFunction(){
+        Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[4]));
     }
 
-    @Test(expected = VMException.class)
-    public void executeWithDataLengthTooLong() throws Exception{
-        remasc.execute(new byte[6]);
-        fail("Expected OutOfGasException");
+    @Test
+    void executeWithDataLengthTooLong() {
+        Assertions.assertThrows(VMException.class, () -> remasc.execute(new byte[6]));
     }
 }

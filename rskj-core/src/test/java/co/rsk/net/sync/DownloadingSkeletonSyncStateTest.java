@@ -21,9 +21,8 @@ package co.rsk.net.sync;
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
-import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,7 +30,7 @@ import java.net.UnknownHostException;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
-public class DownloadingSkeletonSyncStateTest {
+class DownloadingSkeletonSyncStateTest {
 
     // TODO Test other logic
 
@@ -40,8 +39,8 @@ public class DownloadingSkeletonSyncStateTest {
     private PeersInformation peersInformation;
     private Peer selectedPeer;
 
-    @Before
-    public void setUp () throws UnknownHostException {
+    @BeforeEach
+    void setUp () throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         peersInformation = mock(PeersInformation.class);
@@ -52,7 +51,7 @@ public class DownloadingSkeletonSyncStateTest {
     }
 
     @Test
-    public void onMessageTimeOut() {
+    void onMessageTimeOut() {
         DownloadingSkeletonSyncState target = new DownloadingSkeletonSyncState(
                 syncConfiguration,
                 syncEventsHandler,

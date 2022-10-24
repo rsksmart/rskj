@@ -18,198 +18,198 @@
 
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-public class ListArrayUtilTest {
+class ListArrayUtilTest {
 
     @Test
-    public void testAsByteList() {
+    void testAsByteList() {
         byte[] array = new byte[]{'a','b','c','d'};
 
         List<Byte> result = ListArrayUtil.asByteList(array);
 
         for(int i = 0; i < array.length; i++) {
-            Assert.assertEquals(array[i], result.get(i).byteValue());
+            Assertions.assertEquals(array[i], result.get(i).byteValue());
         }
     }
 
     @Test
-    public void testNullIsEmpty() {
-        Assert.assertTrue(ListArrayUtil.isEmpty(null));
+    void testNullIsEmpty() {
+        Assertions.assertTrue(ListArrayUtil.isEmpty(null));
     }
 
     @Test
-    public void testEmptyIsEmpty() {
-        Assert.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
+    void testEmptyIsEmpty() {
+        Assertions.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
     }
 
     @Test
-    public void testNotEmptyIsEmpty() {
-        Assert.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
+    void testNotEmptyIsEmpty() {
+        Assertions.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
     }
 
     @Test
-    public void testNullToEmpty() {
-        Assert.assertNotNull(ListArrayUtil.nullToEmpty(null));
+    void testNullToEmpty() {
+        Assertions.assertNotNull(ListArrayUtil.nullToEmpty(null));
     }
 
     @Test
-    public void testNonNullToEmpty() {
+    void testNonNullToEmpty() {
         byte[] array = new byte[1];
-        Assert.assertSame(array, ListArrayUtil.nullToEmpty(array));
+        Assertions.assertSame(array, ListArrayUtil.nullToEmpty(array));
     }
 
     @Test
-    public void testNullGetLength() {
-        Assert.assertEquals(0, ListArrayUtil.getLength(null));
+    void testNullGetLength() {
+        Assertions.assertEquals(0, ListArrayUtil.getLength(null));
     }
 
     @Test
-    public void testNonNullGetLength() {
+    void testNonNullGetLength() {
         byte[] array = new byte[1];
-        Assert.assertEquals(1, ListArrayUtil.getLength(array));
+        Assertions.assertEquals(1, ListArrayUtil.getLength(array));
     }
 
     @Test
-    public void testLastIndexOfSublistEmptyArrays() {
+    void testLastIndexOfSublistEmptyArrays() {
         byte[] source = new byte[] {};
         byte[] target = new byte[] {};
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals( 0, res);
+        Assertions.assertEquals( 0, res);
     }
 
     @Test
-    public void testLastIndexOfSublistSearchEmpty() {
+    void testLastIndexOfSublistSearchEmpty() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(5, res);
+        Assertions.assertEquals(5, res);
     }
 
     @Test
-    public void testLastIndexOfSublistFindsMatch1() {
+    void testLastIndexOfSublistFindsMatch1() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 3, 4 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(2, res);
+        Assertions.assertEquals(2, res);
     }
 
     @Test
-    public void testLastIndexOfSublistFindsMatch2() {
+    void testLastIndexOfSublistFindsMatch2() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 4, 5 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(3, res);
+        Assertions.assertEquals(3, res);
     }
 
     @Test
-    public void testLastIndexOfSublistSameArray() {
+    void testLastIndexOfSublistSameArray() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 1, 2, 3, 4, 5 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(0, res);
+        Assertions.assertEquals(0, res);
     }
 
     @Test
-    public void testLastIndexOfSublistTargetLongerThanSource() {
+    void testLastIndexOfSublistTargetLongerThanSource() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 1, 2, 3, 4, 5, 6 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublistPartialOverlapOnBeginning() {
+    void testLastIndexOfSublistPartialOverlapOnBeginning() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 0, 1, 2 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublistPartialOverlapOnEnd() {
+    void testLastIndexOfSublistPartialOverlapOnEnd() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 4, 5, 6 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublist6ArraysWithNoSharedElements() {
+    void testLastIndexOfSublist6ArraysWithNoSharedElements() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = new byte[] { 6, 7, 8, 9, 10 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublistNullSource() {
+    void testLastIndexOfSublistNullSource() {
         byte[] source = null;
         byte[] target = new byte[] { 6, 7, 8, 9, 10 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublistNullTarget() {
+    void testLastIndexOfSublistNullTarget() {
         byte[] source = new byte[] { 1, 2, 3, 4, 5 };
         byte[] target = null;
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(-1, res);
+        Assertions.assertEquals(-1, res);
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesSecondOcurrence() {
+    void testLastIndexOfSublistMatchesSecondOcurrence() {
         byte[] source = new byte[] { 3, 4, 5, 3, 4, 5 };
         byte[] target = new byte[] { 3, 4, 5 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(3, res);
+        Assertions.assertEquals(3, res);
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesThirdOcurrence() {
+    void testLastIndexOfSublistMatchesThirdOcurrence() {
         byte[] source = new byte[] { 1, 2, 3, 1, 2, 3, 1, 2, 3 };
         byte[] target = new byte[] { 1, 2, 3 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(6, res);
+        Assertions.assertEquals(6, res);
     }
 
     @Test
-    public void testLastIndexOfSublistMatchesLastOcurrence() {
+    void testLastIndexOfSublistMatchesLastOcurrence() {
         byte[] source = new byte[] { 1, 2, 3, 3, 4, 5, 1, 2, 3 };
         byte[] target = new byte[] { 1, 2, 3 };
 
         int res = ListArrayUtil.lastIndexOfSubList(source, target);
 
-        Assert.assertEquals(6, res);
+        Assertions.assertEquals(6, res);
     }
 }

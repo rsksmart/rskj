@@ -11,9 +11,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -22,7 +22,7 @@ import java.util.Random;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class BridgeSupportRSKIP220NewMethodsTest {
+class BridgeSupportRSKIP220NewMethodsTest {
     private static Random random = new Random();
 
     private BridgeConstants bridgeConstants;
@@ -38,8 +38,8 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     private BtcBlock btcBlock;
     private BridgeSupport bridgeSupport;
 
-    @Before
-    public void setUpOnEachTest() throws BlockStoreException {
+    @BeforeEach
+    void setUpOnEachTest() throws BlockStoreException {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
@@ -73,21 +73,21 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
+    void getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
         byte[] result = bridgeSupport.getBtcBlockchainBestBlockHeader();
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHash() throws BlockStoreException, IOException {
+    void getBtcBlockchainBlockHeaderByHash() throws BlockStoreException, IOException {
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(hash);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
+    void getBtcBlockchainBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
         byte[] unknownHashBytes = new byte[32];
         random.nextBytes(unknownHashBytes);
         Sha256Hash unknownHash = Sha256Hash.wrap(unknownHashBytes);
@@ -96,21 +96,21 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(unknownHash);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHeight() throws BlockStoreException, IOException {
+    void getBtcBlockchainBlockHeaderByHeight() throws BlockStoreException, IOException {
         when(btcBlockStore.getStoredBlockAtMainChainHeight(20)).thenReturn(storedBlock);
 
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHeight(20);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBtcBlockchainParentBlockHeaderByHash() throws BlockStoreException, IOException {
+    void getBtcBlockchainParentBlockHeaderByHash() throws BlockStoreException, IOException {
         byte[] parentHashBytes = new byte[32];
         random.nextBytes(parentHashBytes);
         Sha256Hash parentHash = Sha256Hash.wrap(parentHashBytes);
@@ -124,17 +124,17 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
 
-        Assert.assertArrayEquals(header, result);
+        Assertions.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBtcBlockchainParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
+    void getBtcBlockchainParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
         when(btcBlockStore.get(hash)).thenReturn(null);
 
         byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants,

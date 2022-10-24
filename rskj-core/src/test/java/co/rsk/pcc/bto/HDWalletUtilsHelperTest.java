@@ -21,36 +21,36 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class HDWalletUtilsHelperTest {
+class HDWalletUtilsHelperTest {
     private HDWalletUtilsHelper helper;
 
-    @Before
-    public void createHelper() {
+    @BeforeEach
+    void createHelper() {
         helper = new HDWalletUtilsHelper();
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+    void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
+        Assertions.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething")
         );
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals(
+    void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
+        Assertions.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething")
         );
     }
 
-    @Test(expected = NativeContractIllegalArgumentException.class)
-    public void validateAndExtractNetworkFromExtendedPublicKeyInvalid() throws NativeContractIllegalArgumentException {
-        helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff");
+    @Test
+    void validateAndExtractNetworkFromExtendedPublicKeyInvalid() {
+        Assertions.assertThrows(NativeContractIllegalArgumentException.class, () -> helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff"));
     }
 }

@@ -28,7 +28,6 @@ import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -45,9 +44,9 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.util.List;
@@ -57,7 +56,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Created by ajlopez on 15/04/2017.
  */
-public class Web3ImplSnapshotTest {
+class Web3ImplSnapshotTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private RskTestFactory factory;
@@ -65,8 +64,8 @@ public class Web3ImplSnapshotTest {
     private MiningMainchainView mainchainView;
     private BlockFactory blockFactory;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         mainchainView = factory.getMiningMainchainView();
@@ -74,89 +73,89 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void takeFirstSnapshot() {
+    void takeFirstSnapshot() {
         Web3Impl web3 = createWeb3();
 
         String result = web3.evm_snapshot();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("0x1", result);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("0x1", result);
     }
 
     @Test
-    public void takeSecondSnapshot() {
+    void takeSecondSnapshot() {
         Web3Impl web3 = createWeb3();
 
         web3.evm_snapshot();
         String result = web3.evm_snapshot();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("0x2", result);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("0x2", result);
     }
 
     @Test
-    public void revertToSnapshot() {
+    void revertToSnapshot() {
         Web3Impl web3 = createWeb3();
 
         Blockchain blockchain = this.blockchain;
         addBlocks(blockchain, 10);
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
         BlockChainStatus status = blockchain.getStatus();
 
         String snapshotId = web3.evm_snapshot();
 
         addBlocks(blockchain, 10);
 
-        Assert.assertEquals(20, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(20, blockchain.getBestBlock().getNumber());
 
-        Assert.assertTrue(web3.evm_revert(snapshotId));
+        Assertions.assertTrue(web3.evm_revert(snapshotId));
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
-        Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
+        Assertions.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assertions.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 
     @Test
-    public void resetSnapshots() {
+    void resetSnapshots() {
         Web3Impl web3 = createWeb3();
         Blockchain blockchain = this.blockchain;
         BlockChainStatus status = blockchain.getStatus();
 
         addBlocks(blockchain, 10);
 
-        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
         web3.evm_reset();
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
-        Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
+        Assertions.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assertions.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 
     @Test
-    public void revertToUnknownSnapshot() {
+    void revertToUnknownSnapshot() {
         Web3Impl web3 = createWeb3();
 
-        Assert.assertFalse(web3.evm_revert("0x2a"));
+        Assertions.assertFalse(web3.evm_revert("0x2a"));
     }
 
     @Test
-    public void mine() {
+    void mine() {
         SimpleEthereum ethereum = new SimpleEthereum();
         Web3Impl web3 = createWeb3(ethereum);
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         web3.evm_mine();
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
 

@@ -18,18 +18,18 @@
 package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class JsonRpcBooleanResultTest {
+class JsonRpcBooleanResultTest {
     private ObjectMapper serializer = new ObjectMapper();
 
     @Test
-    public void serializeTrue() throws IOException {
+    void serializeTrue() throws IOException {
         assertThat(
                 serializer.writeValueAsString(
                         new JsonRpcBooleanResult(true)
@@ -39,7 +39,7 @@ public class JsonRpcBooleanResultTest {
     }
 
     @Test
-    public void serializeFalse() throws IOException {
+    void serializeFalse() throws IOException {
         assertThat(
                 serializer.writeValueAsString(
                         new JsonRpcBooleanResult(false)

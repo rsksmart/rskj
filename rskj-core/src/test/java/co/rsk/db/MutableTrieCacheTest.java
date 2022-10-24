@@ -28,17 +28,17 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by SerAdmin on 9/26/2018.
  */
-public class MutableTrieCacheTest {
+class MutableTrieCacheTest {
 
     private byte[] toBytes(String x) {
         return x.getBytes(StandardCharsets.UTF_8);
@@ -69,7 +69,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testPuts() {
+    void testPuts() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
 
         // First put some strings in the base
@@ -103,7 +103,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testAccountBehavior(){
+    void testAccountBehavior(){
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
@@ -126,7 +126,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testNestedCaches() {
+    void testNestedCaches() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
@@ -180,7 +180,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStorageKeysMixOneLevel() {
+    void testStorageKeysMixOneLevel() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -236,7 +236,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStorageKeysNoCache() {
+    void testStorageKeysNoCache() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -263,7 +263,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStorageKeysNoTrie() {
+    void testStorageKeysNoTrie() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -293,7 +293,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStorageKeysDeletedAccount() {
+    void testStorageKeysDeletedAccount() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -329,7 +329,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStoreValueOnTrieAndGetSize() {
+    void testStoreValueOnTrieAndGetSize() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
 
         // First put some strings in the base
@@ -352,7 +352,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStoreEmptyValueOnTrieAndGetSize() {
+    void testStoreEmptyValueOnTrieAndGetSize() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
 
         byte[] emptyValue = new byte[0];
@@ -373,13 +373,13 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testGetValueNotStoredAndGetSize() {
+    void testGetValueNotStoredAndGetSize() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
 
         // First put some strings in the base
 
         byte[] wrongKey = toBytes("BOB");
-        
+
         Uint24 valueLength = baseMutableTrie.getValueLength(wrongKey);
         assertEquals(Uint24.ZERO, valueLength);
 
@@ -390,7 +390,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStoreValueOnTrieAndGetHash() {
+    void testStoreValueOnTrieAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
@@ -408,7 +408,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStoreEmptyValueOnTrieAndGetHash() {
+    void testStoreEmptyValueOnTrieAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
@@ -426,7 +426,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testGetValueNotStoredAndGetHash() {
+    void testGetValueNotStoredAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 

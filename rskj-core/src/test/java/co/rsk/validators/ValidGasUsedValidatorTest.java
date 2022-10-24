@@ -20,9 +20,9 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -30,45 +30,45 @@ import java.math.BigInteger;
 /**
  * Created by martin.medina on 07/02/17.
  */
-public class ValidGasUsedValidatorTest {
+class ValidGasUsedValidatorTest {
 
     private BlockHeader blockHeader;
     private Block block;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
     }
 
     @Test
-    public void blockWithValidGasUsed() {
+    void blockWithValidGasUsed() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(20L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertTrue(gasUsedRule.isValid(block));
+        Assertions.assertTrue(gasUsedRule.isValid(block));
     }
 
     @Test
-    public void blockWithInvalidGasUsedBiggerThanGasLimit() {
+    void blockWithInvalidGasUsedBiggerThanGasLimit() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block));
     }
 
     @Test
-    public void blockWithInvalidGasUsedLessThanZero() {
+    void blockWithInvalidGasUsedLessThanZero() {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(-120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assert.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block));
     }
 }

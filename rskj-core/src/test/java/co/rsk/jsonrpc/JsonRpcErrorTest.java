@@ -18,18 +18,18 @@
 package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class JsonRpcErrorTest {
+class JsonRpcErrorTest {
     private ObjectMapper serializer = new ObjectMapper();
 
     @Test
-    public void serializeErrorWithCodeAndMessage() throws IOException {
+    void serializeErrorWithCodeAndMessage() throws IOException {
         String message = "{\"code\":-230,\"message\":\"a message\"}";
         assertThat(
                 serializer.writeValueAsString(

@@ -29,7 +29,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -39,13 +40,13 @@ import java.util.List;
 /**
  * Created by SDL on 12/5/2017.
  */
-public class BlockEncodingTest {
+class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
-    @Test(expected = ArithmeticException.class)
-    public void testBadBlockEncoding1() {
+    @Test
+    void testBadBlockEncoding1() {
 
         List<Transaction> txs = new ArrayList<>();
 
@@ -87,10 +88,11 @@ public class BlockEncodingTest {
         );
 
         // Now decode, and re-encode
-        Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
-        // must throw java.lang.ArithmeticException
-        parsedBlock.getGasLimit(); // forced parse
+        byte[] encoded = fblock.getEncoded();
 
+        Assertions.assertThrows(ArithmeticException.class, () -> {
+            blockFactory.decodeBlock(encoded); // forced parse
+        });
     }
 
 }

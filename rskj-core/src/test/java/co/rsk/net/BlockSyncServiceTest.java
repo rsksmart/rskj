@@ -25,41 +25,41 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
-public class BlockSyncServiceTest {
+class BlockSyncServiceTest {
     @Test
-    public void sendBlockMessagesAndAddThemToBlockchain() {
+    void sendBlockMessagesAndAddThemToBlockchain() {
         for (int i = 0; i < 50; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
             NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
             BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
-            Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
             for (Block block : extendedChain) {
                 blockSyncService.processBlock(block, null, false);
-                Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
-                Assert.assertEquals(block.getHash(), blockchain.getBestBlock().getHash());
+                Assertions.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
+                Assertions.assertEquals(block.getHash(), blockchain.getBestBlock().getHash());
             }
         }
     }
 
     @Test
-    public void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
+    void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
         for (int i = 1; i < 52; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
             NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
             BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
-            Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             Block initialBestBlock = blockchain.getBestBlock();
             List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
@@ -68,21 +68,21 @@ public class BlockSyncServiceTest {
                 Block block = extendedChain.get(j);
                 blockSyncService.processBlock(block, null, false);
                 // we don't have all the parents, so we wait to update the best chain
-                Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-                Assert.assertEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
+                Assertions.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+                Assertions.assertEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
             }
 
             // the chain is complete, we have a new best block
             Block closingBlock = extendedChain.get(extendedChain.size() - 1);
             Block newBestBlock = extendedChain.get(0);
             blockSyncService.processBlock(closingBlock, null, false);
-            Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-            Assert.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
+            Assertions.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
     }
 
     @Test
-    public void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
+    void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -90,7 +90,7 @@ public class BlockSyncServiceTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
         Block initialBestBlock = blockchain.getBestBlock();
-        Assert.assertEquals(10, initialBestBlock.getNumber());
+        Assertions.assertEquals(10, initialBestBlock.getNumber());
         Block branchingPoint = blockchain.getBlockByNumber(7);
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -99,8 +99,8 @@ public class BlockSyncServiceTest {
         for (int i = 0; i < extendedChain.size(); i++) {
             Block newBestBlock = extendedChain.get(i);
             blockSyncService.processBlock(newBestBlock, null, false);
-            Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-            Assert.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
+            Assertions.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
     }
 }

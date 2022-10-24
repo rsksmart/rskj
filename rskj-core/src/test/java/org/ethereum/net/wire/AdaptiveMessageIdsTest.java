@@ -25,14 +25,14 @@ import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.rlpx.MessageCodesResolver;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import static org.ethereum.net.eth.EthVersion.*;
 
@@ -40,18 +40,18 @@ import static org.ethereum.net.eth.EthVersion.*;
  * @author Roman Mandeleil
  * @since 15.10.2014
  */
-@Ignore
-public class AdaptiveMessageIdsTest {
+@Disabled
+class AdaptiveMessageIdsTest {
 
     private MessageCodesResolver messageCodesResolver;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         messageCodesResolver = new MessageCodesResolver();
     }
 
     @Test
-    public void test1() {
+    void test1() {
 
         assertEquals(7, P2pMessageCodes.values().length);
 
@@ -65,7 +65,7 @@ public class AdaptiveMessageIdsTest {
     }
 
     @Test
-    public void test2() {
+    void test2() {
 
         assertEquals(8, EthMessageCodes.values(V62).length);
 
@@ -92,7 +92,7 @@ public class AdaptiveMessageIdsTest {
 
 
     @Test
-    public void test4() {
+    void test4() {
 
         List<Capability> capabilities = Arrays.asList(
                 new Capability(Capability.RSK, EthVersion.V62.getCode()));
@@ -111,7 +111,7 @@ public class AdaptiveMessageIdsTest {
     }
 
     @Test // Capabilities should be read in alphabetical order
-    public void test5() {
+    void test5() {
 
         List<Capability> capabilities = Arrays.asList(
                 new Capability(Capability.RSK, EthVersion.V62.getCode()));

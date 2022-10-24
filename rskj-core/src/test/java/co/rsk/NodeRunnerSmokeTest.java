@@ -19,36 +19,36 @@
 package co.rsk;
 
 import org.ethereum.util.RskTestContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NodeRunnerSmokeTest {
+class NodeRunnerSmokeTest {
     @Test
-    public void mainnetSmokeTest() {
+    void mainnetSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[0]);
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
-    public void testnetSmokeTest() {
+    void testnetSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--testnet" });
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
-    public void regtestSmokeTest() {
+    void regtestSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();
     }
 
     @Test
-    public void contextRecreationSmokeTest() {
+    void contextRecreationSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
         assertThat(rskContext.getNodeRunner(), notNullValue());
         rskContext.close();

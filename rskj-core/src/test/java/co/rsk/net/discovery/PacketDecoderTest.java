@@ -21,8 +21,8 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -33,13 +33,13 @@ import java.util.UUID;
 /**
  * Created by mario on 15/02/17.
  */
-public class PacketDecoderTest {
+class PacketDecoderTest {
 
     private static final int NETWORK_ID = 1;
     private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
 
     @Test
-    public void decode() throws Exception {
+    void decode() throws Exception {
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
@@ -72,12 +72,12 @@ public class PacketDecoderTest {
     private void assertDecodedMessage(DiscoveryEvent event,
                                       InetSocketAddress sender,
                                       DiscoveryMessageType messageType) {
-        Assert.assertEquals(messageType, event.getMessage().getMessageType());
-        Assert.assertEquals(sender, event.getAddress());
-        Assert.assertNotNull(event.getMessage().getPacket());
-        Assert.assertNotNull(event.getMessage().getMdc());
-        Assert.assertNotNull(event.getMessage().getSignature());
-        Assert.assertNotNull(event.getMessage().getType());
-        Assert.assertNotNull(event.getMessage().getData());
+        Assertions.assertEquals(messageType, event.getMessage().getMessageType());
+        Assertions.assertEquals(sender, event.getAddress());
+        Assertions.assertNotNull(event.getMessage().getPacket());
+        Assertions.assertNotNull(event.getMessage().getMdc());
+        Assertions.assertNotNull(event.getMessage().getSignature());
+        Assertions.assertNotNull(event.getMessage().getType());
+        Assertions.assertNotNull(event.getMessage().getData());
     }
 }

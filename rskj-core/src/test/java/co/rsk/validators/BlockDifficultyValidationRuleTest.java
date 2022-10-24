@@ -27,9 +27,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -37,14 +37,14 @@ import java.math.BigInteger;
 /**
  * Created by sergio on 23/01/17.
  */
-public class BlockDifficultyValidationRuleTest {
+class BlockDifficultyValidationRuleTest {
 
     private BlockFactory blockFactory;
     private ActivationConfig activationConfig;
     private Constants networkConstants;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         activationConfig = ActivationConfigsForTest.all();
         networkConstants = Constants.regtest();
         blockFactory = new BlockFactory(activationConfig);
@@ -60,7 +60,7 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     @Test
-    public void testDifficulty() {
+    void testDifficulty() {
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
@@ -96,7 +96,7 @@ public class BlockDifficultyValidationRuleTest {
         Mockito.when(parent.getTimestamp())
                 .thenReturn(parentTimestamp);
 
-        Assert.assertEquals(validationRule.isValid(block,parent),true);
+        Assertions.assertEquals(true,validationRule.isValid(block,parent));
     }
 
 }

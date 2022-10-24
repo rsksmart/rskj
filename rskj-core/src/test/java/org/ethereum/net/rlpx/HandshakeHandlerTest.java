@@ -34,18 +34,18 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.net.client.Capability.RSK;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class HandshakeHandlerTest {
+class HandshakeHandlerTest {
 
     private HandshakeHandler handler;
     private ECKey hhKey;
@@ -53,8 +53,8 @@ public class HandshakeHandlerTest {
     private EmbeddedChannel ch;
     private ChannelHandlerContext ctx;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();
         handler = new HandshakeHandler(
@@ -75,21 +75,21 @@ public class HandshakeHandlerTest {
     }
 
     @Test
-    public void shouldActivateEthIfHandshakeIsSuccessful() throws Exception {
+    void shouldActivateEthIfHandshakeIsSuccessful() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(RSK, (byte) 62)));
         verify(channel, times(1)).activateEth(ctx, EthVersion.V62);
         assertTrue(ch.isOpen());
     }
 
     @Test
-    public void shouldDisconnectIfNoCapabilityIsPresent() throws Exception {
+    void shouldDisconnectIfNoCapabilityIsPresent() throws Exception {
         simulateHandshakeStartedByPeer(Collections.emptyList());
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());
     }
 
     @Test
-    public void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
+    void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 62)));
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());

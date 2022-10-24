@@ -19,8 +19,8 @@
 
 package org.ethereum.jsontestsuite;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -38,7 +38,7 @@ public class Helper {
 
     private static Logger logger = LoggerFactory.getLogger("misc");
 
-    public static byte[] parseDataArray(JSONArray valArray) {
+    public static byte[] parseDataArray(ArrayNode valArray) {
 
         // value can be:
         //   1. 324234 number

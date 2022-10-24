@@ -20,8 +20,8 @@ package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +29,10 @@ import java.util.List;
 /**
  * Created by ajlopez on 03/04/2017.
  */
-public class SecureTrieKeyValueTest {
+class SecureTrieKeyValueTest {
 
     @Test
-    public void zeroKeyWhenTwoKeysHasNoSharedPath() {
+    void zeroKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -41,12 +41,12 @@ public class SecureTrieKeyValueTest {
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
-        Assert.assertNull(trie.get(oneKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assertions.assertNull(trie.get(oneKey));
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasNoSharedPath() {
+    void oneKeyWhenTwoKeysHasNoSharedPath() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
@@ -55,12 +55,12 @@ public class SecureTrieKeyValueTest {
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
-        Assert.assertNull(trie.get(zeroKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assertions.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
@@ -69,12 +69,12 @@ public class SecureTrieKeyValueTest {
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
-        Assert.assertNull(trie.get(zeroKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assertions.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void testRecursivelyDelete(){
+    void testRecursivelyDelete(){
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -100,22 +100,22 @@ public class SecureTrieKeyValueTest {
 
         // Now check that all values are there
         for (int i = 0; i < keys.size(); i++) {
-            Assert.assertArrayEquals(trie.get(keys.get(i)), values.get(i));
+            Assertions.assertArrayEquals(trie.get(keys.get(i)), values.get(i));
         }
 
         trie = trie.deleteRecursive(key1);
 
         // Now only key0 must remain
         for (int i = 1; i < keys.size() ; i++) {
-            Assert.assertNull(trie.get(keys.get(i)));
+            Assertions.assertNull(trie.get(keys.get(i)));
         }
 
         // Now check the tree size and make sure it's the original
-        Assert.assertEquals(trieSize,trie.trieSize());
+        Assertions.assertEquals(trieSize,trie.trieSize());
     }
 
     @Test
-    public void testRecursivelyDeleteCollapses(){
+    void testRecursivelyDeleteCollapses(){
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -144,7 +144,7 @@ public class SecureTrieKeyValueTest {
 
         // Now check that all values are there
         for (int i = 0; i < keys.size(); i++) {
-            Assert.assertArrayEquals(trie.get(keys.get(i)), values.get(i));
+            Assertions.assertArrayEquals(trie.get(keys.get(i)), values.get(i));
         }
 
         trie = trie.deleteRecursive(key1);
@@ -152,31 +152,31 @@ public class SecureTrieKeyValueTest {
 
         // Now only key0 must remain
         for (int i = 1; i < keys.size() ; i++) {
-            Assert.assertNull(trie.get(keys.get(i)));
+            Assertions.assertNull(trie.get(keys.get(i)));
         }
 
         // Now check the tree size and make sure it's the original
-        Assert.assertEquals(trieSize, trie.trieSize());
+        Assertions.assertEquals(trieSize, trie.trieSize());
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
         Trie trie = new Trie();
         byte[] msgZero ="So, first of all, let me assert my firm belief that".getBytes();
         trie = trie.put(zeroKey,msgZero );
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
 
         trie = trie.put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
 
         trie = trie.delete(oneKey);
 
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
-        Assert.assertNull(trie.get(oneKey));
+        Assertions.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
+        Assertions.assertNull(trie.get(oneKey));
     }
 }

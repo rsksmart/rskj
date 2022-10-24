@@ -6,15 +6,15 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class ProgramResultTest {
+class ProgramResultTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void add_internal_tx_one_level_Ok() {
+    void add_internal_tx_one_level_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
         InternalTransaction internalTx = programResult.addInternalTransaction(
@@ -30,12 +30,12 @@ public class ProgramResultTest {
             ""
         );
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getOriginHash());
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getParentHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getOriginHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx.getParentHash());
     }
 
     @Test
-    public void add_interenal_tx_two_levels_Ok() {
+    void add_interenal_tx_two_levels_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
         InternalTransaction internalTx1 = programResult.addInternalTransaction(
@@ -63,12 +63,12 @@ public class ProgramResultTest {
             ""
         );
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), internalTx2.getOriginHash());
-        Assert.assertArrayEquals(internalTx1.getHash().getBytes(), internalTx2.getParentHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), internalTx2.getOriginHash());
+        Assertions.assertArrayEquals(internalTx1.getHash().getBytes(), internalTx2.getParentHash());
     }
 
     @Test
-    public void add_interenal_tx_many_levels_Ok() {
+    void add_interenal_tx_many_levels_Ok() {
         Transaction originTx = getOriginTransaction();
         ProgramResult programResult = new ProgramResult();
 
@@ -89,7 +89,7 @@ public class ProgramResultTest {
         }
         InternalTransaction result = (InternalTransaction)internalTxN;
 
-        Assert.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
+        Assertions.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
     }
 
     private Transaction getOriginTransaction() {

@@ -28,8 +28,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +39,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class DetailedProgramTraceProcessorTest {
+class DetailedProgramTraceProcessorTest {
 
     private static final String FLD_CONTRACT_ADDRESS = "contractAddress";
     private static final String FLD_INIT_STORAGE = "initStorage";
@@ -53,7 +53,7 @@ public class DetailedProgramTraceProcessorTest {
     );
 
     @Test
-    public void getUnknownTrace() {
+    void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
@@ -61,12 +61,12 @@ public class DetailedProgramTraceProcessorTest {
         DetailedProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
         processor.processProgramTrace(trace, hash);
 
-        Assert.assertNull(processor.getProgramTrace(otherHash));
-        Assert.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
+        Assertions.assertNull(processor.getProgramTrace(otherHash));
+        Assertions.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
     }
 
     @Test
-    public void getEmptyTrace() {
+    void getEmptyTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
@@ -76,14 +76,14 @@ public class DetailedProgramTraceProcessorTest {
 
         JsonNode jsonNode = processor.getProgramTracesAsJsonNode(Collections.singletonList(otherHash));
 
-        Assert.assertNotNull(jsonNode);
-        Assert.assertTrue(jsonNode.isArray());
+        Assertions.assertNotNull(jsonNode);
+        Assertions.assertTrue(jsonNode.isArray());
         ArrayNode arrNode = (ArrayNode) jsonNode;
-        Assert.assertEquals(0, arrNode.size());
+        Assertions.assertEquals(0, arrNode.size());
     }
 
     @Test
-    public void setAndGetTrace() {
+    void setAndGetTrace() {
         Keccak256 hash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
@@ -93,12 +93,12 @@ public class DetailedProgramTraceProcessorTest {
 
         ProgramTrace result = processor.getProgramTrace(hash);
 
-        Assert.assertNotNull(result);
-        Assert.assertSame(trace, result);
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(trace, result);
     }
 
     @Test
-    public void setAndGetTraceAsJsonNode() {
+    void setAndGetTraceAsJsonNode() {
         Keccak256 hash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
@@ -117,28 +117,28 @@ public class DetailedProgramTraceProcessorTest {
 
         JsonNode jsonNode = processor.getProgramTraceAsJsonNode(hash);
 
-        Assert.assertNotNull(jsonNode);
-        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jsonNode.get(FLD_CONTRACT_ADDRESS).asText());
+        Assertions.assertNotNull(jsonNode);
+        Assertions.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jsonNode.get(FLD_CONTRACT_ADDRESS).asText());
 
         String jsonText = jsonNode.toString();
-        Assert.assertNotNull(jsonText);
-        EXPECTED_FIELDS.forEach(fld -> Assert.assertTrue(jsonText.contains("\"" + fld + "\"")));
+        Assertions.assertNotNull(jsonText);
+        EXPECTED_FIELDS.forEach(fld -> Assertions.assertTrue(jsonText.contains("\"" + fld + "\"")));
 
         jsonNode = processor.getProgramTracesAsJsonNode(Arrays.asList(hash, hash2));
 
-        Assert.assertNotNull(jsonNode);
-        Assert.assertTrue(jsonNode.isArray());
+        Assertions.assertNotNull(jsonNode);
+        Assertions.assertTrue(jsonNode.isArray());
         ArrayNode arrNode = (ArrayNode) jsonNode;
-        Assert.assertEquals(2, arrNode.size());
+        Assertions.assertEquals(2, arrNode.size());
         arrNode.forEach(jn -> {
             DataWord owner = ownerDWList.poll();
-            Assert.assertNotNull(owner);
-            Assert.assertNotNull(jn);
-            Assert.assertEquals(ByteUtil.toHexString(owner.getLast20Bytes()), jn.get(FLD_CONTRACT_ADDRESS).asText());
+            Assertions.assertNotNull(owner);
+            Assertions.assertNotNull(jn);
+            Assertions.assertEquals(ByteUtil.toHexString(owner.getLast20Bytes()), jn.get(FLD_CONTRACT_ADDRESS).asText());
 
             String jsonStr = jn.toString();
-            Assert.assertNotNull(jsonStr);
-            EXPECTED_FIELDS.forEach(fld -> Assert.assertTrue(jsonStr.contains("\"" + fld + "\"")));
+            Assertions.assertNotNull(jsonStr);
+            EXPECTED_FIELDS.forEach(fld -> Assertions.assertTrue(jsonStr.contains("\"" + fld + "\"")));
         });
     }
 

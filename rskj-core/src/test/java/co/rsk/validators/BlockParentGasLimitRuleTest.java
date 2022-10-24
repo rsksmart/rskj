@@ -21,24 +21,30 @@ package co.rsk.validators;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.math.BigInteger;
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockParentGasLimitRuleTest {
+class BlockParentGasLimitRuleTest {
     private Block parent;
     private BlockHeader parentHeader;
     private Block block;
     private BlockHeader blockHeader;
     private BlockParentGasLimitRule rule;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
@@ -47,59 +53,24 @@ public class BlockParentGasLimitRuleTest {
         when(block.getHeader()).thenReturn(blockHeader);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void cantConstructRuleWithZeroGasLimitBoundDivisor() {
-        whenGasLimitBoundDivisor(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void cantConstructRuleWithNegativeGasLimitBoundDivisor() {
-        whenGasLimitBoundDivisor(-1);
+    @Test
+    void cantConstructRuleWithZeroGasLimitBoundDivisor() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> whenGasLimitBoundDivisor(0));
     }
 
     @Test
-    public void validWhenGasIsTheSame() {
-        whenGasLimitBoundDivisor(10);
-        whenGasLimit(parentHeader, 1000);
-        whenGasLimit(blockHeader, 1000);
-
-        Assert.assertTrue(rule.isValid(block, parent));
+    void cantConstructRuleWithNegativeGasLimitBoundDivisor() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> whenGasLimitBoundDivisor(-1));
     }
 
-    @Test
-    public void validWhenGasIsOnLeftLimit() {
-        whenGasLimitBoundDivisor(10);
-        whenGasLimit(parentHeader, 1000);
-        whenGasLimit(blockHeader, 900);
+    @ParameterizedTest(name = "when gas {0} (divisor {1} and limits [{2}, {3}]) then expect valid {4}")
+    @ArgumentsSource(GasLimitsArgumentsProvider.class)
+    void validityWhenGas(String situation, int gasLimitBoundDivisor, int gasLimitParent, int gasLimit, boolean valid) {
+        whenGasLimitBoundDivisor(gasLimitBoundDivisor);
+        whenGasLimit(parentHeader, gasLimitParent);
+        whenGasLimit(blockHeader, gasLimit);
 
-        Assert.assertTrue(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void validWhenGasIsOnRightLimit() {
-        whenGasLimitBoundDivisor(20);
-        whenGasLimit(parentHeader, 1000);
-        whenGasLimit(blockHeader, 1050);
-
-        Assert.assertTrue(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void invalidWhenGasIsOnLeftLimit() {
-        whenGasLimitBoundDivisor(10);
-        whenGasLimit(parentHeader, 1000);
-        whenGasLimit(blockHeader, 899);
-
-        Assert.assertFalse(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void invalidWhenGasIsOnRightLimit() {
-        whenGasLimitBoundDivisor(20);
-        whenGasLimit(parentHeader, 1000);
-        whenGasLimit(blockHeader, 1051);
-
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertEquals(valid, rule.isValid(block, parent));
     }
 
     private void whenGasLimitBoundDivisor(int gasLimitBoundDivisor) {
@@ -108,5 +79,19 @@ public class BlockParentGasLimitRuleTest {
 
     private void whenGasLimit(BlockHeader header, long gasLimit) {
         when(header.getGasLimit()).thenReturn(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasLimit)));
+    }
+
+    private static class GasLimitsArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of("is the same", 10, 1000, 1000, true),
+                    Arguments.of("on left limit", 10, 1000, 900, true),
+                    Arguments.of("on right limit", 20, 1000, 1050, true),
+                    Arguments.of("on left limit", 10, 1000, 899, false),
+                    Arguments.of("on right limit", 20, 1000, 1051, false)
+            );
+        }
     }
 }

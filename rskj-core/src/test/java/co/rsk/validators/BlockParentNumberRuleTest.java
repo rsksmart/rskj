@@ -20,22 +20,28 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockParentNumberRuleTest {
+class BlockParentNumberRuleTest {
     private Block parent;
     private BlockHeader parentHeader;
     private Block block;
     private BlockHeader blockHeader;
     private BlockParentNumberRule rule;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         parent = mock(Block.class);
         parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
@@ -45,39 +51,29 @@ public class BlockParentNumberRuleTest {
         rule = new BlockParentNumberRule();
     }
 
-    @Test
-    public void validWhenNumberIsOneMore() {
+    @ParameterizedTest(name = "isValid: for parent 451 and child {0} then expect validity {1}")
+    @ArgumentsSource(RuleArgumentsProvider.class)
+    void isValid(int blockNumber, boolean validity) {
         whenBlockNumber(parentHeader, 451);
-        whenBlockNumber(blockHeader, 452);
+        whenBlockNumber(blockHeader, blockNumber);
 
-        Assert.assertTrue(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void invalidWhenNumberIsTheSame() {
-        whenBlockNumber(parentHeader, 451);
-        whenBlockNumber(blockHeader, 451);
-
-        Assert.assertFalse(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void invalidWhenNumberIsLess() {
-        whenBlockNumber(parentHeader, 451);
-        whenBlockNumber(blockHeader, 450);
-
-        Assert.assertFalse(rule.isValid(block, parent));
-    }
-
-    @Test
-    public void invalidWhenNumberIsMoreThanOne() {
-        whenBlockNumber(parentHeader, 451);
-        whenBlockNumber(blockHeader, 999);
-
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertEquals(validity, rule.isValid(block, parent));
     }
 
     private void whenBlockNumber(BlockHeader header, long number) {
         when(header.getNumber()).thenReturn(number);
+    }
+
+    private static class RuleArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of(452, true),
+                    Arguments.of(451, false),
+                    Arguments.of(450, false),
+                    Arguments.of(999, false)
+            );
+        }
     }
 }

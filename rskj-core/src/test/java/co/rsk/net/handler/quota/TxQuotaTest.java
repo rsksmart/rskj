@@ -23,27 +23,27 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.util.TimeProvider;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TxQuotaTest {
+class TxQuotaTest {
 
     private static final long MAX_GAS_PER_SECOND = Math.round(6_800_000 * 0.9);
     private static final long MAX_QUOTA = MAX_GAS_PER_SECOND * 2000;
 
     private TimeProvider timeProvider;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         timeProvider = mock(TimeProvider.class);
     }
 
     @Test
-    public void acceptVirtualGasConsumption() {
+    void acceptVirtualGasConsumption() {
         Transaction tx = mock(Transaction.class);
         Keccak256 txHash = TestUtils.randomHash();
         when(tx.getHash()).thenReturn(txHash);
@@ -58,7 +58,7 @@ public class TxQuotaTest {
     }
 
     @Test
-    public void forceVirtualGasSubtraction() {
+    void forceVirtualGasSubtraction() {
         Transaction tx = mock(Transaction.class);
         Keccak256 txHash = TestUtils.randomHash();
         when(tx.getHash()).thenReturn(txHash);
@@ -73,7 +73,7 @@ public class TxQuotaTest {
     }
 
     @Test
-    public void refresh() {
+    void refresh() {
         long currentTime = System.currentTimeMillis();
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime);
 
@@ -84,19 +84,19 @@ public class TxQuotaTest {
         RskAddress address = TestUtils.randomAddress();
 
         TxQuota txQuota = TxQuota.createNew(address, tx.getHash(), MAX_QUOTA, timeProvider);
-        assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, tx, 10));
-        assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1, tx, 10));
+        assertFalse(txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, tx, 10), "should reject tx over initial limit");
+        assertTrue(txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1, tx, 10), "should accept tx below initial limit");
 
         long timeElapsed = 1;
         double accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(address, MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertFalse("should reject tx over refreshed limit (not enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000, tx, 10));
+        assertFalse(txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000, tx, 10), "should reject tx over refreshed limit (not enough quiet time)");
 
         timeElapsed = 30;
         accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(address, MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertTrue("should accept tx when enough gas accumulated (enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox, tx, 10));
+        assertTrue(txQuota.acceptVirtualGasConsumption(accumulatedGasApprox, tx, 10), "should accept tx when enough gas accumulated (enough quiet time)");
     }
 }

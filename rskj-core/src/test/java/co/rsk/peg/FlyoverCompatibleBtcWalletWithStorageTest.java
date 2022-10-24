@@ -24,11 +24,11 @@ import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class FlyoverCompatibleBtcWalletWithStorageTest {
+class FlyoverCompatibleBtcWalletWithStorageTest {
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
@@ -40,8 +40,8 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
     private List<Federation> federationList;
     private List<Federation> erpFederationList;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -67,7 +67,7 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_no_flyoverInformation_in_storage_call_super() {
+    void findRedeemDataFromScriptHash_with_no_flyoverInformation_in_storage_call_super() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getFlyoverFederationInformation(any(byte[].class))).thenReturn(Optional.empty());
 
@@ -77,12 +77,12 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash());
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(federation.getRedeemScript(), redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(federation.getRedeemScript(), redeemData.redeemScript);
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
@@ -107,12 +107,12 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
 
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(flyoverFederationP2SH);
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage_and_erp_fed() {
+    void findRedeemDataFromScriptHash_with_flyoverInformation_in_storage_and_erp_fed() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
@@ -144,12 +144,12 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         RedeemData redeemData = flyoverCompatibleBtcWalletWithStorage
             .findRedeemDataFromScriptHash(flyoverFederationP2SH);
 
-        Assert.assertNotNull(redeemData);
-        Assert.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
+        Assertions.assertNotNull(redeemData);
+        Assertions.assertEquals(flyoverRedeemScript, redeemData.redeemScript);
     }
 
     @Test
-    public void findRedeemDataFromScriptHash_null_destination_federation() {
+    void findRedeemDataFromScriptHash_null_destination_federation() {
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(2);
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
@@ -165,11 +165,11 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         FlyoverCompatibleBtcWalletWithStorage flyoverCompatibleBtcWalletWithStorage =
             new FlyoverCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
 
-        Assert.assertNull(flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
+        Assertions.assertNull(flyoverCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
     }
 
     @Test
-    public void getFlyoverFederationInformation_data_on_storage() {
+    void getFlyoverFederationInformation_data_on_storage() {
         byte[] flyoverScriptHash = new byte[1];
         FlyoverFederationInformation flyoverFederationInformation =
             new FlyoverFederationInformation(
@@ -188,12 +188,12 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(flyoverScriptHash);
 
-        Assert.assertTrue(result.isPresent());
-        Assert.assertEquals(flyoverFederationInformation, result.get());
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(flyoverFederationInformation, result.get());
     }
 
     @Test
-    public void getFlyoverFederationInformation_no_data_on_storage() {
+    void getFlyoverFederationInformation_no_data_on_storage() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getFlyoverFederationInformation(any(byte[].class))).thenReturn(
             Optional.empty()
@@ -205,6 +205,6 @@ public class FlyoverCompatibleBtcWalletWithStorageTest {
         Optional<FlyoverFederationInformation> result = flyoverCompatibleBtcWalletWithStorage.
             getFlyoverFederationInformation(new byte[1]);
 
-        Assert.assertEquals(Optional.empty(), result);
+        Assertions.assertEquals(Optional.empty(), result);
     }
 }

@@ -21,7 +21,7 @@ package org.ethereum.util;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
@@ -30,7 +30,8 @@ import java.util.ArrayList;
  */
 public class RLPDump {
     @Test
-    public void dumpTest() {
+    @SuppressWarnings("squid:S2699")
+    void dumpTest() {
         System.out.println(ByteUtil.toHexString(new ECKey().getPubKey()));
         String hexRlp = "f872f870845609a1ba64c0b8660480136e573eb81ac4a664f8f76e4887ba927f791a053ec5ff580b1037a8633320ca70f8ec0cdea59167acaa1debc07bc0a0b3a5b41bdf0cb4346c18ddbbd2cf222f54fed795dde94417d2e57f85a580d87238efc75394ca4a92cfe6eb9debcc3583c26fee8580";
         System.out.println(dump(RLP.decode2(Hex.decode(hexRlp)), 0));

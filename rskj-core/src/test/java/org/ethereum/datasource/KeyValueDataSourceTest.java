@@ -3,67 +3,41 @@ package org.ethereum.datasource;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
 
-@RunWith(Parameterized.class)
-public class KeyValueDataSourceTest {
+class KeyValueDataSourceTest {
 
     private static final int CACHE_SIZE = 100;
 
-    private final KeyValueDataSource keyValueDataSource;
-    private final boolean withFlush;
-
-    public KeyValueDataSourceTest(KeyValueDataSource keyValueDataSource, String testName, boolean withFlush) {
-        this.keyValueDataSource = keyValueDataSource;
-        this.withFlush = withFlush;
-    }
-
-    @Parameterized.Parameters(name = "{1}, flush = {2}")
-    public static Collection<Object[]> data() throws IOException {
-        Path tmpDir = Files.createTempDirectory("rskj");
-        return Arrays.asList(new Object[][]{
-                {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), true},
-                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true},
-                {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
-                {new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true},
-                {new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), RocksDbDataSource.class.getSimpleName(), false},
-                {new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false},
-                {new DataSourceWithCache(new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false}
-        });
-    }
-
-    @Before
-    public void setup() {
-        keyValueDataSource.init();
-    }
-
-    @Test
-    public void put() {
-        byte[] randomKey = "testing-key".getBytes();
-        byte[] randomValue = "testing-value".getBytes();
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void put(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        byte[] randomKey = TestUtils.randomBytes(20);
+        byte[] randomValue = TestUtils.randomBytes(20);
 
         keyValueDataSource.put(randomKey, randomValue);
         if (withFlush) {
             keyValueDataSource.flush();
         }
-        assertThat(keyValueDataSource.get(randomKey), is(randomValue));
+        MatcherAssert.assertThat(keyValueDataSource.get(randomKey), is(randomValue));
 
         try (DataSourceKeyIterator iterator = keyValueDataSource.keyIterator()) {
-            assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
 
             byte[] expectedValue = null;
 
@@ -74,23 +48,25 @@ public class KeyValueDataSourceTest {
                 }
             }
 
-            assertArrayEquals(expectedValue, randomKey);
+            Assertions.assertArrayEquals(expectedValue, randomKey);
         } catch (Exception e) {
             if (!withFlush && keyValueDataSource instanceof DataSourceWithCache) {
-                assertEquals(e.getMessage(), "There are uncommitted keys");
+                Assertions.assertEquals("There are uncommitted keys", e.getMessage());
             } else {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         }
     }
 
-    @Test(expected = NullPointerException.class)
-    public void getNull() {
-        keyValueDataSource.get(null);
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void getNull(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
+        Assertions.assertThrows(NullPointerException.class, () -> keyValueDataSource.get(null));
     }
 
-    @Test
-    public void delete() {
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void delete(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
         byte[] randomKey = TestUtils.randomBytes(20);
         byte[] randomValue = TestUtils.randomBytes(20);
 
@@ -99,11 +75,12 @@ public class KeyValueDataSourceTest {
         if (withFlush) {
             keyValueDataSource.flush();
         }
-        assertThat(keyValueDataSource.get(randomKey), is(nullValue()));
+        MatcherAssert.assertThat(keyValueDataSource.get(randomKey), is(nullValue()));
     }
 
-    @Test
-    public void updateBatch() {
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void updateBatch(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
 
         keyValueDataSource.updateBatch(updatedValues, Collections.emptySet());
@@ -112,12 +89,13 @@ public class KeyValueDataSourceTest {
             keyValueDataSource.flush();
         }
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
-            assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(updatedValue.getValue()));
+            MatcherAssert.assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(updatedValue.getValue()));
         }
     }
 
-    @Test
-    public void updateBatchWithKeysToRemove() {
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void updateBatchWithKeysToRemove(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
         keyValueDataSource.updateBatch(updatedValues, Collections.emptySet());
         keyValueDataSource.updateBatch(Collections.emptyMap(), updatedValues.keySet());
@@ -127,24 +105,26 @@ public class KeyValueDataSourceTest {
         }
 
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
-            assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(nullValue()));
+            MatcherAssert.assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(nullValue()));
         }
     }
 
-    @Test(expected = RuntimeException.class)
-    public void putNullValue() {
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void putNullValue(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
         byte[] randomKey = TestUtils.randomBytes(20);
-
-        keyValueDataSource.put(randomKey, null);
+        Assertions.assertThrows(RuntimeException.class, () -> keyValueDataSource.put(randomKey, null)); ;
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void updateBatchWithNulls() {
+    @ParameterizedTest(name = "{1}, flush = {2}")
+    @ArgumentsSource(DatasourceArgumentsProvider.class)
+    void updateBatchWithNulls(KeyValueDataSource keyValueDataSource, String className, boolean withFlush) {
         Map<ByteArrayWrapper, byte[]> updatedValues = generateRandomValuesToUpdate(CACHE_SIZE);
         ByteArrayWrapper keyToNull = updatedValues.keySet().iterator().next();
         updatedValues.put(keyToNull, null);
 
-        keyValueDataSource.updateBatch(updatedValues, Collections.emptySet());
+        Set<ByteArrayWrapper> keysToRemove = Collections.emptySet();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> keyValueDataSource.updateBatch(updatedValues, keysToRemove));
     }
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
@@ -155,5 +135,53 @@ public class KeyValueDataSourceTest {
             updatedValues.put(ByteUtil.wrap(TestUtils.randomBytes(20)), TestUtils.randomBytes(20));
         }
         return updatedValues;
+    }
+
+    private static class DatasourceArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws IOException {
+            Path tmpDir = Files.createTempDirectory("rskj");
+            return Stream.of(
+                    Arguments.of(initHashmapDB(), HashMapDB.class.getSimpleName(), true),
+                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true),
+                    Arguments.of(initRocksDBDatasource(tmpDir), RocksDbDataSource.class.getSimpleName(), true),
+                    Arguments.of(initHashmapDBWithCache(), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true),
+                    Arguments.of(initDatasourceWithCache(tmpDir), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), true),
+                    Arguments.of(initHashmapDB(), HashMapDB.class.getSimpleName(), false),
+                    Arguments.of(initLevelDBDatasource(tmpDir), LevelDbDataSource.class.getSimpleName(), true),
+                    Arguments.of(initRocksDBDatasource(tmpDir), RocksDbDataSource.class.getSimpleName(), false),
+                    Arguments.of(initHashmapDBWithCache(), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false),
+                    Arguments.of(initDatasourceWithCache(tmpDir), String.format("Cache with %s", RocksDbDataSource.class.getSimpleName()), false)
+            );
+        }
+
+        private static HashMapDB initHashmapDB() {
+            return new HashMapDB();
+        }
+
+        private static LevelDbDataSource initLevelDBDatasource(Path tmpDir) throws IOException {
+            LevelDbDataSource levelDbDataSource = new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString());
+            levelDbDataSource.init();
+            return levelDbDataSource;
+        }
+
+        private static RocksDbDataSource initRocksDBDatasource(Path tmpDir) throws IOException {
+            RocksDbDataSource rocksDbDataSource = new RocksDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString());
+            rocksDbDataSource.init();
+            return rocksDbDataSource;
+        }
+
+        private static DataSourceWithCache initDatasourceWithCache(Path tmpDir) throws IOException {
+            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initRocksDBDatasource(tmpDir), CACHE_SIZE);
+            dataSourceWithCache.init();
+            return dataSourceWithCache;
+        }
+
+        private static DataSourceWithCache initHashmapDBWithCache() {
+            DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(initHashmapDB(), CACHE_SIZE);
+            dataSourceWithCache.init();
+            return dataSourceWithCache;
+        }
     }
 }

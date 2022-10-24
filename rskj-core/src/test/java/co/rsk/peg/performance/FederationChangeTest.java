@@ -26,9 +26,9 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -38,8 +38,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Ignore
-public class FederationChangeTest extends BridgePerformanceTestCase {
+@Disabled
+class FederationChangeTest extends BridgePerformanceTestCase {
     // regtest constants
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
             "auth-a",
@@ -54,11 +54,11 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     private BtcECKey votedFederatorPublicKey;
 
     @Test
-    public void createFederation() throws VMException {
+    void createFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("createFederation");
         createFederation_noWinner(200, stats);
         createFederation_winner(200, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void createFederation_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -86,11 +86,11 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void addFederatorPublicKey() throws VMException {
+    void addFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("addFederatorPublicKey");
         addFederatorPublicKey_noWinner(200, stats);
         addFederatorPublicKey_winner(200, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -121,11 +121,11 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void commitFederation() throws VMException {
+    void commitFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("commitFederation");
         commitFederation_noWinner(200, stats);
         commitFederation_winner(200, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void commitFederation_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -153,11 +153,11 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void rollbackFederation() throws VMException {
+    void rollbackFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("rollbackFederation");
         rollbackFederation_noWinner(200, stats);
         rollbackFederation_winner(200, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void rollbackFederation_noWinner(int times, ExecutionStats stats) throws VMException {

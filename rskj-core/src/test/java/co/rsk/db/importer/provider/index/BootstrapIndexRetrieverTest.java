@@ -5,8 +5,8 @@ import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataIndex;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URL;
@@ -19,21 +19,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BootstrapIndexRetrieverTest {
+class BootstrapIndexRetrieverTest {
 
     @Test
-    public void retrieveEmpty() {
+    void retrieveEmpty() {
         BootstrapIndexRetriever bootstrapIndexRetriever = new BootstrapIndexRetriever(
                 new ArrayList<>(),
                 mock(BootstrapURLProvider.class),
                 mock(ObjectMapper.class)
         );
         List<BootstrapDataIndex> indices = bootstrapIndexRetriever.retrieve();
-        Assert.assertTrue(indices.isEmpty());
+        Assertions.assertTrue(indices.isEmpty());
     }
 
     @Test
-    public void retrievePublicKey() throws IOException {
+    void retrievePublicKey() throws IOException {
         ObjectMapper objectMapper = mock(ObjectMapper.class);
         BootstrapDataIndex bdi = new BootstrapDataIndex(Collections.singletonList(
                 new BootstrapDataEntry(1, "", "db", "hash",
@@ -50,6 +50,6 @@ public class BootstrapIndexRetrieverTest {
                 objectMapper
         );
         List<BootstrapDataIndex> indices = bootstrapIndexRetriever.retrieve();
-        Assert.assertTrue(indices.contains(bdi));
+        Assertions.assertTrue(indices.contains(bdi));
     }
 }

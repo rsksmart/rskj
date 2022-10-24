@@ -19,28 +19,28 @@
 
 package org.ethereum.vm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 15/07/2019.
  */
-public class GasCostTest {
+class GasCostTest {
 
     @Test
-    public void toGas() {
-        Assert.assertEquals(0, GasCost.toGas(new byte[0]));
-        Assert.assertEquals(1, GasCost.toGas(new byte[] { 0x01 }));
-        Assert.assertEquals(255, GasCost.toGas(new byte[] { (byte)0xff }));
-        Assert.assertEquals(
+    void toGas() {
+        Assertions.assertEquals(0, GasCost.toGas(new byte[0]));
+        Assertions.assertEquals(1, GasCost.toGas(new byte[] { 0x01 }));
+        Assertions.assertEquals(255, GasCost.toGas(new byte[] { (byte)0xff }));
+        Assertions.assertEquals(
                 Long.MAX_VALUE, GasCost.toGas(BigInteger.valueOf(Long.MAX_VALUE).toByteArray())
         );
     }
 
     @Test
-    public void toGasOverflowsSlightly() {
+    void toGasOverflowsSlightly() {
         byte[] bytes = new byte[32];
 
         for (int k = 0; k < 17; k++) {
@@ -50,190 +50,189 @@ public class GasCostTest {
         for (int k = 18; k < 32; k++) {
             bytes[k] = (byte)0x00;
         }
-        Assert.assertEquals(GasCost.toGas(bytes), Long.MAX_VALUE);
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(bytes));
     }
 
 
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void toGasGivesNegativeValue() throws GasCost.InvalidGasException {
+    @Test
+    void toGasGivesNegativeValue() throws GasCost.InvalidGasException {
         byte[] negativeBytes = new byte[]{
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)255, (byte)255, (byte)255, (byte)255,
         };
-        GasCost.toGas(negativeBytes);
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(negativeBytes));
     }
 
     @Test
-    public void toGasArrayTooBig() throws GasCost.InvalidGasException {
+    void toGasArrayTooBig() throws GasCost.InvalidGasException {
         byte[] bigArray = new byte[]{
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)255, (byte)255, (byte)255, (byte)255,
                 (byte)255, (byte)255, (byte)255, (byte)255,
         };
-        Assert.assertEquals(GasCost.toGas(bigArray), Long.MAX_VALUE);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void toGasFromLongWithNegativeLong() {
-        GasCost.toGas(-1L);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void toGasFromOverflowedLong() {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.toGas(Long.MAX_VALUE + 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(bigArray));
     }
 
     @Test
-    public void toGasFromLong() {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.toGas(Long.MAX_VALUE));
-        Assert.assertEquals(123L, GasCost.toGas(123L));
+    void toGasFromLongWithNegativeLong() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(-1L));
     }
 
     @Test
-    public void toGasWithBigInteger() {
+    void toGasFromOverflowedLong() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(Long.MAX_VALUE + 1));
+    }
+
+    @Test
+    void toGasFromLong() {
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(Long.MAX_VALUE));
+        Assertions.assertEquals(123L, GasCost.toGas(123L));
+    }
+
+    @Test
+    void toGasWithBigInteger() {
         BigInteger bi = BigInteger.valueOf(Long.MAX_VALUE - 10);
-        Assert.assertEquals(Long.MAX_VALUE - 10, GasCost.toGas(bi));
+        Assertions.assertEquals(Long.MAX_VALUE - 10, GasCost.toGas(bi));
     }
 
     @Test
-    public void toGasWithBigIntegerOverflowing() {
+    void toGasWithBigIntegerOverflowing() {
         BigInteger bi = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(100));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.toGas(bi));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.toGas(bi));
     }
 
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void toGasWithNegativeBigInteger() {
+    @Test
+    void toGasWithNegativeBigInteger() {
         BigInteger bi = BigInteger.valueOf(-1);
-        GasCost.toGas(bi);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void moreNegativeBiToGas() {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.toGas(BigInteger.valueOf(-3512)));
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void mostNegativeBiToGas() {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.toGas(BigInteger.valueOf(-99999999999999L)));
-
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(bi));
     }
 
     @Test
-    public void calculateAddGas() {
-        Assert.assertEquals(1, GasCost.add(1, 0));
-        Assert.assertEquals(2, GasCost.add(1, 1));
-        Assert.assertEquals(1000000, GasCost.add(500000, 500000));
+    void moreNegativeBiToGas() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(BigInteger.valueOf(-3512)));
     }
 
     @Test
-    public void calculateAddGasWithOverflow() {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.add(Long.MAX_VALUE, 1));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.add(1, Long.MAX_VALUE));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.add(Long.MAX_VALUE, Long.MAX_VALUE));
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateAddGasCostWithSecondNegativeInputAndResult() throws GasCost.InvalidGasException {
-        GasCost.add(0, -1);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateAddGasCostWithFirstNegativeInputAndResult() throws GasCost.InvalidGasException {
-        GasCost.add(-1, 1);
+    void mostNegativeBiToGas() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.toGas(BigInteger.valueOf(-99999999999999L)));
     }
 
     @Test
-    public void calculateSubtractGasCost() {
-        Assert.assertEquals(1, GasCost.subtract(1, 0));
-        Assert.assertEquals(0, GasCost.subtract(1, 1));
-        Assert.assertEquals(1000000, GasCost.subtract(1500000, 500000));
-        Assert.assertEquals(0, GasCost.subtract(Long.MAX_VALUE, Long.MAX_VALUE));
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateSubtractWithNegativeInput() throws GasCost.InvalidGasException {
-        GasCost.subtract(1, -1);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateSubtractWithExtremelyNegativeResult() throws GasCost.InvalidGasException {
-        GasCost.subtract(0, Long.MAX_VALUE);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateSubtractGasToInvalidSubtle() throws GasCost.InvalidGasException {
-        GasCost.subtract(1, 2);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateSubtractGasToInvalidObvious() throws GasCost.InvalidGasException  {
-        GasCost.subtract(1, 159);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void multiplyWithNegativeValues() throws GasCost.InvalidGasException {
-        GasCost.multiply(-1, -2);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void multiplyWithXNegative() throws GasCost.InvalidGasException {
-        GasCost.multiply(-1, 123);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void multiplyWithYNegative() throws GasCost.InvalidGasException {
-        GasCost.multiply(1, -9123);
+    void calculateAddGas() {
+        Assertions.assertEquals(1, GasCost.add(1, 0));
+        Assertions.assertEquals(2, GasCost.add(1, 1));
+        Assertions.assertEquals(1000000, GasCost.add(500000, 500000));
     }
 
     @Test
-    public void multiply() {
+    void calculateAddGasWithOverflow() {
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.add(Long.MAX_VALUE, 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.add(1, Long.MAX_VALUE));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.add(Long.MAX_VALUE, Long.MAX_VALUE));
+    }
+
+    @Test
+    void calculateAddGasCostWithSecondNegativeInputAndResult() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.add(0, -1));
+    }
+
+    @Test
+    void calculateAddGasCostWithFirstNegativeInputAndResult() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.add(-1, 1));
+    }
+
+    @Test
+    void calculateSubtractGasCost() {
+        Assertions.assertEquals(1, GasCost.subtract(1, 0));
+        Assertions.assertEquals(0, GasCost.subtract(1, 1));
+        Assertions.assertEquals(1000000, GasCost.subtract(1500000, 500000));
+        Assertions.assertEquals(0, GasCost.subtract(Long.MAX_VALUE, Long.MAX_VALUE));
+    }
+
+    @Test
+    void calculateSubtractWithNegativeInput() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.subtract(1, -1));
+    }
+
+    @Test
+    void calculateSubtractWithExtremelyNegativeResult() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.subtract(0, Long.MAX_VALUE));
+    }
+
+    @Test
+    void calculateSubtractGasToInvalidSubtle() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.subtract(1, 2));
+    }
+
+    @Test
+    void calculateSubtractGasToInvalidObvious()  {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.subtract(1, 159));
+    }
+
+    @Test
+    void multiplyWithNegativeValues() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.multiply(-1, -2));
+    }
+
+    @Test
+    void multiplyWithXNegative() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.multiply(-1, 123));
+    }
+
+    @Test
+    void multiplyWithYNegative() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.multiply(1, -9123));
+    }
+
+    @Test
+    void multiply() {
         long x = (long) Math.pow(2, 62);
         long y = (long) Math.pow(2, 12);
         long overflowed = GasCost.multiply(x, y);
-        Assert.assertEquals("overflowed is coverted to max gas", Long.MAX_VALUE, overflowed);
+        Assertions.assertEquals(Long.MAX_VALUE, overflowed, "overflowed is coverted to max gas");
     }
 
     @Test
-    public void multiplyOverflowing() throws GasCost.InvalidGasException {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.multiply(4611686018427387903L, 4096L));
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void multiplyWithNegativeInput() throws GasCost.InvalidGasException {
-        GasCost.multiply(1, -9123);
+    void multiplyOverflowing() throws GasCost.InvalidGasException {
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.multiply(4611686018427387903L, 4096L));
     }
 
     @Test
-    public void calculateGasCost() throws GasCost.InvalidGasException {
-        Assert.assertEquals(1, GasCost.calculateTotal(1, 0, 0));
-        Assert.assertEquals(2, GasCost.calculateTotal(0, 2, 1));
-        Assert.assertEquals(7, GasCost.calculateTotal(1, 2, 3));
-        Assert.assertEquals(10, GasCost.calculateTotal(4, 3, 2));
-        Assert.assertEquals(GasCost.CREATE + 100 * GasCost.CREATE_DATA, GasCost.calculateTotal(GasCost.CREATE, GasCost.CREATE_DATA, 100));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(Long.MAX_VALUE, Long.MAX_VALUE, 1));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(0, Long.MAX_VALUE, 2));
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateGasCostWithNegativeSecondInputs() throws GasCost.InvalidGasException {
-        GasCost.calculateTotal(1, -1, 1);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateGasCostWithNegativeFirstInput() throws GasCost.InvalidGasException {
-        GasCost.calculateTotal(-1, 1, 1);
-    }
-
-    @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateGasCostWithNegativeThirdInput() throws GasCost.InvalidGasException {
-        GasCost.calculateTotal(1, 1, -1);
+    void multiplyWithNegativeInput() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.multiply(1, -9123));
     }
 
     @Test
-    public void calculateGasCostBeyondMaxGas() throws GasCost.InvalidGasException {
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
-        Assert.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(Long.MAX_VALUE, 1, 1));
+    void calculateGasCost() throws GasCost.InvalidGasException {
+        Assertions.assertEquals(1, GasCost.calculateTotal(1, 0, 0));
+        Assertions.assertEquals(2, GasCost.calculateTotal(0, 2, 1));
+        Assertions.assertEquals(7, GasCost.calculateTotal(1, 2, 3));
+        Assertions.assertEquals(10, GasCost.calculateTotal(4, 3, 2));
+        Assertions.assertEquals(GasCost.CREATE + 100 * GasCost.CREATE_DATA, GasCost.calculateTotal(GasCost.CREATE, GasCost.CREATE_DATA, 100));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(Long.MAX_VALUE, Long.MAX_VALUE, 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(0, Long.MAX_VALUE, 2));
+    }
+
+    @Test
+    void calculateGasCostWithNegativeSecondInputs() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.calculateTotal(1, -1, 1));
+    }
+
+    @Test
+    void calculateGasCostWithNegativeFirstInput() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.calculateTotal(-1, 1, 1));
+    }
+
+    @Test
+    void calculateGasCostWithNegativeThirdInput() {
+        Assertions.assertThrows(GasCost.InvalidGasException.class, () -> GasCost.calculateTotal(1, 1, -1));
+    }
+
+    @Test
+    void calculateGasCostBeyondMaxGas() throws GasCost.InvalidGasException {
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(1, Long.MAX_VALUE, 1));
+        Assertions.assertEquals(Long.MAX_VALUE, GasCost.calculateTotal(Long.MAX_VALUE, 1, 1));
     }
 }

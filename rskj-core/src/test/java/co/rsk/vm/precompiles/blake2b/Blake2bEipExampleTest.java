@@ -8,8 +8,8 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.core.util.TransactionReceiptUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 
@@ -17,10 +17,10 @@ import java.io.FileNotFoundException;
  * Testing EIP-152 provided example
  * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-152.md
  * */
-public class Blake2bEipExampleTest {
+class Blake2bEipExampleTest {
 
     @Test
-    public void runTest() throws FileNotFoundException, DslProcessorException {
+    void runTest() throws FileNotFoundException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
         );
@@ -32,6 +32,6 @@ public class Blake2bEipExampleTest {
 
         TransactionReceipt tx02Receipt = world.getTransactionReceiptByName("tx02");
 
-        Assert.assertEquals(1, TransactionReceiptUtil.getEventCount(tx02Receipt, "ResultOk", null));
+        Assertions.assertEquals(1, TransactionReceiptUtil.getEventCount(tx02Receipt, "ResultOk", null));
     }
 }

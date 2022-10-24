@@ -10,32 +10,32 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.ethereum.vm.exception.VMException;
 
 import java.math.BigInteger;
 
-@Ignore
-public class ReceiveHeaderTest extends BridgePerformanceTestCase {
+@Disabled
+class ReceiveHeaderTest extends BridgePerformanceTestCase {
     private BtcBlock lastBlock;
     private BtcBlock expectedBlock;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void ReceiveHeaderTest() throws VMException {
+    void ReceiveHeaderTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("receiveHeader");
         receiveHeader_success(1000, stats);
         receiveHeader_block_already_saved(500, stats);
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void receiveHeader_success(int times, ExecutionStats stats) throws VMException {
@@ -56,7 +56,7 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
 
                         // Working fine.
                         int result = new BigInteger(executionResult).intValue();
-                        Assert.assertEquals(0, result);
+                        Assertions.assertEquals(0, result);
                         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
                                 (Repository) environment.getBenchmarkedRepository(),
                                 PrecompiledContracts.BRIDGE_ADDR,
@@ -78,9 +78,9 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
                         try {
                             bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
                         } catch (BlockStoreException e) {
-                            Assert.fail(e.getMessage());
+                            Assertions.fail(e.getMessage());
                         }
-                        Assert.assertEquals(expectedBlock.getHash(), bestBlockHash);
+                        Assertions.assertEquals(expectedBlock.getHash(), bestBlockHash);
                     }
             );
         }
@@ -101,7 +101,7 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, executionResult) -> {
                     int result = new BigInteger(executionResult).intValue();
-                    Assert.assertEquals(-4, result);
+                    Assertions.assertEquals(-4, result);
                 }
         );
     }

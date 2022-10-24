@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class EcKeyUtilsTest {
+class EcKeyUtilsTest {
     private final List<BtcECKey> compressedPubKeysList = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
@@ -25,16 +25,16 @@ public class EcKeyUtilsTest {
     }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
     @Test
-    public void getCompressedPubKeysList_compressed_public_keys_list() {
-        Assert.assertEquals(
+    void getCompressedPubKeysList_compressed_public_keys_list() {
+        Assertions.assertEquals(
             compressedPubKeysList,
             EcKeyUtils.getCompressedPubKeysList(compressedPubKeysList)
         );
     }
 
     @Test
-    public void getCompressedPubKeysList_uncompressed_public_keys_list() {
-        Assert.assertEquals(
+    void getCompressedPubKeysList_uncompressed_public_keys_list() {
+        Assertions.assertEquals(
             compressedPubKeysList,
             EcKeyUtils.getCompressedPubKeysList(uncompressedPubKeysList)
         );

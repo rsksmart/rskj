@@ -29,6 +29,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
+import org.junit.jupiter.api.Assertions;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
@@ -37,8 +38,6 @@ import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.*;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
 
 public final class TestUtils {
 
@@ -160,8 +159,8 @@ public final class TestUtils {
             thrownException = e;
         }
 
-        assertNotNull(thrownException);
-        assertEquals(thrownException.getClass(), c);
+        Assertions.assertNotNull(thrownException);
+        Assertions.assertEquals(thrownException.getClass(), c);
         return c.cast(thrownException);
     }
 

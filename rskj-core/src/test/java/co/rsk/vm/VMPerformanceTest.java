@@ -32,10 +32,10 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -50,7 +50,7 @@ import java.util.List;
 
 import static org.ethereum.TestUtils.padLeft;
 import static org.ethereum.TestUtils.padRight;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // Remove junit imports for standalone use
 
@@ -87,13 +87,14 @@ public class VMPerformanceTest {
         vmpt.testVMPerformance1(resultLogger);
     }
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         invoke = new ProgramInvokeMockImpl();
         long million=1000000;
         invoke.setGasLimit(1000*million);
     }
 
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
     public void waitForProfiler() {
         System.out.println("Waiting for profiler to connect..");
 
@@ -107,9 +108,9 @@ public class VMPerformanceTest {
 
     static Boolean shortArg = false;
 
-    @Ignore
+    @Disabled("manual performance test")
     @Test
-    public void testVMPerformance1() {
+    void testVMPerformance1() {
         testVMPerformance1(null);
     }
 
@@ -353,8 +354,8 @@ public class VMPerformanceTest {
                         "| memPerBlk[Kb]: " + padLeft(Long.toString(Math.round(best.deltaUsedMemory*memToBlkMem)), spaces+1));
 
         long memPerBlockMegabytes = Math.round(best.deltaUsedMemory*memToBlkMem/1000);
-        Assert.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
-        Assert.assertTrue(memPerBlockMegabytes <PerformanceTestConstants.maxMegabytesConsumedPerBlock);
+        Assertions.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
+        Assertions.assertTrue(memPerBlockMegabytes <PerformanceTestConstants.maxMegabytesConsumedPerBlock);
 
         if (resultLogger != null) {
             resultLogger.log(opcode, best);
@@ -421,9 +422,9 @@ public class VMPerformanceTest {
 
     }
 
-    @Ignore //
+    @Disabled("manual performance test")
     @Test
-    public void testLongOperation() {
+    void testLongOperation() {
         /* bad example because requires ABI parsing
         contract Fibonacci {
             function fib() returns (uint r) {
@@ -523,9 +524,9 @@ public class VMPerformanceTest {
         }
     }
 
-    @Ignore //
+    @Disabled("manual performance test")
     @Test
-    public void testFibonacciLongTime() {
+    void testFibonacciLongTime() {
         /********************************************************************************************
          *  This is the Solidity contract that was compiled:
 
@@ -601,7 +602,7 @@ public class VMPerformanceTest {
     Avg Time per instructions [ns]: 99
     -----------------------------------------------------------------------------*/
 
-    public void testRunTime(byte[] code, String s_expected) {
+    void testRunTime(byte[] code, String s_expected) {
         program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");

@@ -18,56 +18,58 @@
 
 package co.rsk.core.types.ints;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class Uint8Test {
+class Uint8Test {
     @Test
-    public void encodeDecode0() {
+    void encodeDecode0() {
         Uint8 zero = new Uint8(0);
         assertThat(Uint8.decode(zero.encode(), 0), is(zero));
     }
 
     @Test
-    public void encodeDecodeMax() {
+    void encodeDecodeMax() {
         Uint8 max = Uint8.MAX_VALUE;
         assertThat(Uint8.decode(max.encode(), 0), is(max));
     }
 
     @Test
-    public void encodeDecode243() {
+    void encodeDecode243() {
         Uint8 val = new Uint8(243);
         assertThat(Uint8.decode(val.encode(), 0), is(val));
     }
 
     @Test
-    public void asByteReturnsByteValue() {
+    void asByteReturnsByteValue() {
         Uint8 fortyTwo = new Uint8(42);
         assertThat(fortyTwo.asByte(), is((byte)42));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void instantiateMaxPlusOne() {
-        new Uint8((Uint8.MAX_VALUE.intValue() + 1));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void instantiateNegativeValue() {
-        new Uint8(-1);
+    @Test
+    void instantiateMaxPlusOne() {
+        int maxValue = Uint8.MAX_VALUE.intValue();
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Uint8((maxValue + 1)));
     }
 
     @Test
-    public void decodeOffsettedValue() {
+    void instantiateNegativeValue() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Uint8(-1));
+    }
+
+    @Test
+    void decodeOffsettedValue() {
         byte[] bytes = new byte[] {0x21, 0x53, (byte) 0xf3, (byte) 0xf4, 0x04, 0x55};
         Uint8 decoded = Uint8.decode(bytes, 2);
         assertThat(decoded, is(new Uint8(243)));
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void decodeSmallArray() {
+    @Test
+    void decodeSmallArray() {
         byte[] bytes = new byte[] {0x21, 0x53, (byte) 0xf2};
-        Uint8.decode(bytes, 3);
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> Uint8.decode(bytes, 3));
     }
 }

@@ -23,8 +23,8 @@ import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.UUID;
@@ -32,12 +32,12 @@ import java.util.UUID;
 /**
  * Created by mario on 20/02/17.
  */
-public class PeerDiscoveryRequestTest {
+class PeerDiscoveryRequestTest {
 
     public static final int NETWORK_ID = 1;
 
     @Test
-    public void create() {
+    void create() {
         ECKey key = new ECKey();
         String check = UUID.randomUUID().toString();
         PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
@@ -48,8 +48,8 @@ public class PeerDiscoveryRequestTest {
                 .message(pingPeerMessage).address(address).expectedResponse(DiscoveryMessageType.PONG)
                 .expirationPeriod(1000).attemptNumber(1).build();
 
-        Assert.assertNotNull(request);
-        Assert.assertTrue(request.validateMessageResponse(address, pongPeerMessage));
-        Assert.assertFalse(request.validateMessageResponse(address, pingPeerMessage));
+        Assertions.assertNotNull(request);
+        Assertions.assertTrue(request.validateMessageResponse(address, pongPeerMessage));
+        Assertions.assertFalse(request.validateMessageResponse(address, pingPeerMessage));
     }
 }

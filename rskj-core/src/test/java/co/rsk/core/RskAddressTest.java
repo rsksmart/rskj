@@ -18,92 +18,92 @@
 
 package co.rsk.core;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-public class RskAddressTest {
+class RskAddressTest {
     @Test
-    public void testEquals() {
+    void testEquals() {
         RskAddress senderA = new RskAddress("0000000000000000000000000000000001000006");
         RskAddress senderB = new RskAddress("0000000000000000000000000000000001000006");
         RskAddress senderC = new RskAddress("0000000000000000000000000000000001000008");
         RskAddress senderD = RskAddress.nullAddress();
         RskAddress senderE = new RskAddress("0x00002000f000000a000000330000000001000006");
 
-        Assert.assertEquals(senderA, senderB);
-        Assert.assertNotEquals(senderA, senderC);
-        Assert.assertNotEquals(senderA, senderD);
-        Assert.assertNotEquals(senderA, senderE);
+        Assertions.assertEquals(senderA, senderB);
+        Assertions.assertNotEquals(senderA, senderC);
+        Assertions.assertNotEquals(senderA, senderD);
+        Assertions.assertNotEquals(senderA, senderE);
     }
 
     @Test
-    public void zeroAddress() {
+    void zeroAddress() {
         RskAddress senderA = new RskAddress("0000000000000000000000000000000000000000");
         RskAddress senderB = new RskAddress("0x0000000000000000000000000000000000000000");
         RskAddress senderC = new RskAddress(new byte[20]);
 
-        Assert.assertEquals(senderA, senderB);
-        Assert.assertEquals(senderB, senderC);
-        Assert.assertNotEquals(RskAddress.nullAddress(), senderC);
+        Assertions.assertEquals(senderA, senderB);
+        Assertions.assertEquals(senderB, senderC);
+        Assertions.assertNotEquals(RskAddress.nullAddress(), senderC);
     }
 
     @Test
-    public void nullAddress() {
-        Assert.assertArrayEquals(RskAddress.nullAddress().getBytes(), new byte[0]);
+    void nullAddress() {
+        Assertions.assertArrayEquals(new byte[0], RskAddress.nullAddress().getBytes());
     }
 
     @Test
-    public void jsonString_nullAddress() {
-        Assert.assertNull(RskAddress.nullAddress().toJsonString());
+    void jsonString_nullAddress() {
+        Assertions.assertNull(RskAddress.nullAddress().toJsonString());
     }
 
     @Test
-    public void jsonString_otherAddress() {
+    void jsonString_otherAddress() {
         String address = "0x0000000000000000000000000000000000000001";
         RskAddress rskAddress = new RskAddress(address);
 
-        Assert.assertEquals(address, rskAddress.toJsonString());
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void invalidLongAddress() {
-        new RskAddress("00000000000000000000000000000000010000060");
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void invalidShortAddress() {
-        new RskAddress("0000000000000000000000000000000001006");
+        Assertions.assertEquals(address, rskAddress.toJsonString());
     }
 
     @Test
-    public void oddLengthAddressPaddedWithOneZero() {
-        new RskAddress("000000000000000000000000000000000100006");
+    void invalidLongAddress() {
+        Assertions.assertThrows(RuntimeException.class, () -> new RskAddress("00000000000000000000000000000000010000060"));
     }
 
-    @Test(expected = DecoderException.class)
-    public void invalidHexAddress() {
-        new RskAddress("000000000000000000000000000000000100000X");
+    @Test
+    void invalidShortAddress() {
+        Assertions.assertThrows(RuntimeException.class, () -> new RskAddress("0000000000000000000000000000000001006"));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void invalidNullAddressBytes() {
-        new RskAddress((byte[]) null);
+    @Test
+    void oddLengthAddressPaddedWithOneZero() {
+        Assertions.assertDoesNotThrow(() -> new RskAddress("000000000000000000000000000000000100006"));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void invalidNullAddressString() {
-        new RskAddress((String) null);
+    @Test
+    void invalidHexAddress() {
+        Assertions.assertThrows(DecoderException.class, () -> new RskAddress("000000000000000000000000000000000100000X"));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void invalidShortAddressBytes() {
-        new RskAddress(new byte[19]);
+    @Test
+    void invalidNullAddressBytes() {
+        Assertions.assertThrows(NullPointerException.class, () -> new RskAddress((byte[]) null));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void invalidLongAddressBytes() {
-        new RskAddress(new byte[21]);
+    @Test
+    void invalidNullAddressString() {
+        Assertions.assertThrows(NullPointerException.class, () -> new RskAddress((String) null));
+    }
+
+    @Test
+    void invalidShortAddressBytes() {
+        Assertions.assertThrows(RuntimeException.class, () -> new RskAddress(new byte[19]));
+    }
+
+    @Test
+    void invalidLongAddressBytes() {
+        Assertions.assertThrows(RuntimeException.class, () -> new RskAddress(new byte[21]));
     }
 }

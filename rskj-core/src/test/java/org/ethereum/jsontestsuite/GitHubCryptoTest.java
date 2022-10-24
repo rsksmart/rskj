@@ -21,23 +21,19 @@ package org.ethereum.jsontestsuite;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.HashMap;
 
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
-public class GitHubCryptoTest {
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
+class GitHubCryptoTest {
 
 
     @Test
-    public void testAllInCryptoSute() throws ParseException, IOException {
+    void testAllInCryptoSute() throws IOException {
 
         String json = JSONReader.loadJSON("BasicTests/crypto.json");
 
@@ -52,8 +48,7 @@ public class GitHubCryptoTest {
         for (String key : testSuite.keySet()){
 
             System.out.println("executing: " + key);
-            testSuite.get(key).execute();
-
+            Assertions.assertDoesNotThrow(() -> testSuite.get(key).execute());
         }
     }
 

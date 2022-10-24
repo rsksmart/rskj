@@ -19,11 +19,11 @@
 package co.rsk.mine;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -64,9 +64,11 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.mockito.Mockito;
 
 import co.rsk.TestHelpers.Tx;
@@ -103,9 +105,10 @@ import co.rsk.validators.ProofOfWorkRule;
 /**
  * Created by adrian.eidelman on 3/16/2016.
  */
-public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
+public abstract class MinerServerTest {
 
-    private final DifficultyCalculator difficultyCalculator;
+    private TestSystemProperties config;
+    private DifficultyCalculator difficultyCalculator;
     private MiningMainchainView miningMainchainView;
     private Blockchain standardBlockchain;
     private RepositoryLocator repositoryLocator;
@@ -119,14 +122,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private Repository repository;
     private CompositeEthereumListener compositeEthereumListener;
     private RskTestFactory rskTestContext;
-    
-    public MinerServerTest(TestSystemProperties config) {
-        super(config);
-        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
-    }
 
-    @Before
-    public void setUp() {
+    protected void setUp(TestSystemProperties config) {
+        this.config = config;
+        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         rskTestContext = new RskTestFactory(config) {
             @Override
             protected RepositoryLocator buildRepositoryLocator() {
@@ -149,12 +148,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 rskTestContext.getTransactionExecutorFactory(),
                 signatureCache,
                 10,
-                100, 
-                Mockito.mock(TxQuotaChecker.class), 
+                100,
+                Mockito.mock(TxQuotaChecker.class),
                 Mockito.mock(GasPriceTracker.class));
-        
+
         transactionPool.processBest(standardBlockchain.getBestBlock());
-        
+
         blockFactory = rskTestContext.getBlockFactory();
         blockExecutor = rskTestContext.getBlockExecutor();
         minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
@@ -162,7 +161,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
+    void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
@@ -204,7 +203,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlockTwoTags() {
+    void submitBitcoinBlockTwoTags() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -222,7 +221,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         minerServer.setExtraData(extraData);
         minerServer.buildBlockToMine(false);
         MinerWork work2 = minerServer.getWork(); // only the tag is used
-        Assert.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
+        Assertions.assertNotEquals(work2.getBlockHashForMergedMining(),work.getBlockHashForMergedMining());
 
         BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithTwoTags(work,work2);
 
@@ -231,15 +230,15 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         result = minerServer.submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,true);
 
 
-        Assert.assertEquals("OK", result.getStatus());
-        Assert.assertNotNull(result.getBlockInfo());
-        Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-        Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+        Assertions.assertEquals("OK", result.getStatus());
+        Assertions.assertNotNull(result.getBlockInfo());
+        Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+        Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
         // Submit again the save PoW for a different header
         result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,false);
 
-        Assert.assertEquals("ERROR", result.getStatus());
+        Assertions.assertEquals("ERROR", result.getStatus());
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -248,7 +247,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlock() {
+    void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -266,10 +265,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
             SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-            Assert.assertEquals("OK", result.getStatus());
-            Assert.assertNotNull(result.getBlockInfo());
-            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
             Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -278,7 +277,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
+    void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -299,10 +298,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             List<String> coinbaseReversedHash = Collections.singletonList(Sha256Hash.wrap(coinbase.getHash().getReversedBytes()).toString());
             SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, coinbaseReversedHash, 1);
 
-            Assert.assertEquals("OK", result.getStatus());
-            Assert.assertNotNull(result.getBlockInfo());
-            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
             Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -311,7 +310,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
+    void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -339,10 +338,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             List<String> merkleHashes = Arrays.asList(coinbaseReversedHash, otherTxHashReversed);
             SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, merkleHashes, 2);
 
-            Assert.assertEquals("OK", result.getStatus());
-            Assert.assertNotNull(result.getBlockInfo());
-            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
             Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -351,7 +350,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
+    void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -371,10 +370,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
             SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, Collections.singletonList(coinbase.getHashAsString()));
 
-            Assert.assertEquals("OK", result.getStatus());
-            Assert.assertNotNull(result.getBlockInfo());
-            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
             Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -383,7 +382,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
+    void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -409,10 +408,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             List<String> txs = Arrays.asList(coinbase.getHashAsString(), otherTxHash.toString());
             SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, coinbase, txs);
 
-            Assert.assertEquals("OK", result.getStatus());
-            Assert.assertNotNull(result.getBlockInfo());
-            Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
-            Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
+            Assertions.assertEquals("OK", result.getStatus());
+            Assertions.assertNotNull(result.getBlockInfo());
+            Assertions.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+            Assertions.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
             Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
@@ -421,7 +420,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void workWithNoTransactionsZeroFees() {
+    void workWithNoTransactionsZeroFees() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -440,7 +439,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void initialWorkTurnsNotifyFlagOn() {
+    void initialWorkTurnsNotifyFlagOn() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -459,7 +458,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void secondWorkWithNoChangesTurnsNotifyFlagOff() {
+    void secondWorkWithNoChangesTurnsNotifyFlagOff() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -482,7 +481,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void gasUnitInDollarsIsInitializedOkAtConstructor() {
+    void gasUnitInDollarsIsInitializedOkAtConstructor() {
         Block block1 = mock(Block.class);
         when(block1.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(10)));
         when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
@@ -530,7 +529,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void secondBuildBlockToMineTurnsNotifyFlagOff() {
+    void secondBuildBlockToMineTurnsNotifyFlagOff() {
         Ethereum ethereum = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
@@ -555,7 +554,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void submitTwoBitcoinBlocksAtSameTimeWithoutRateLimit() {
+    void submitTwoBitcoinBlocksAtSameTimeWithoutRateLimit() {
         Ethereum ethereum = mock(EthereumImpl.class);
         when(ethereum.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -573,14 +572,14 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         findNonce(work, bitcoinMergedMiningBlock);
 
         SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
-        Assert.assertEquals("OK", result.getStatus());
+        Assertions.assertEquals("OK", result.getStatus());
 
         result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
-        Assert.assertEquals("OK", result.getStatus());
+        Assertions.assertEquals("OK", result.getStatus());
     }
 
     @Test
-    public void submitTwoBitcoinBlocksAtSameTimeWithRateLimit() {
+    void submitTwoBitcoinBlocksAtSameTimeWithRateLimit() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
@@ -598,20 +597,20 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         doReturn(false).when(submissionRateLimitHandler).isSubmissionAllowed();
         SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
-        Assert.assertEquals("ERROR", result.getStatus());
+        Assertions.assertEquals("ERROR", result.getStatus());
 
         verify(submissionRateLimitHandler, atLeastOnce()).isSubmissionAllowed();
         verify(submissionRateLimitHandler, never()).onSubmit();
 
         doReturn(true).when(submissionRateLimitHandler).isSubmissionAllowed();
         result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
-        Assert.assertEquals("OK", result.getStatus());
+        Assertions.assertEquals("OK", result.getStatus());
 
         verify(submissionRateLimitHandler, times(1)).onSubmit();
     }
 
     @Test
-    public void extraDataNotInitializedWithClientData() {
+    void extraDataNotInitializedWithClientData() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -639,7 +638,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void extraDataWithClientData() {
+    void extraDataWithClientData() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -673,7 +672,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void extraDataWithClientDataMoreThan32Bytes() {
+    void extraDataWithClientDataMoreThan32Bytes() {
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 null,
@@ -714,7 +713,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void onBestBlockBuildBlockToMine() {
+    void onBestBlockBuildBlockToMine() {
 
         // prepare for miner server
         Ethereum ethereum = mock(EthereumImpl.class);
@@ -722,50 +721,50 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         BlockProcessor blockProcessor = mock(NodeBlockProcessor.class);
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-        
+
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
-        
+
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        
+
         // create miner server
         MinerServer minerServer = spy(makeMinerServer(ethereum, blockProcessor, unclesValidationRule, clock, transactionPool));
         minerServer.start();
-   
+
         // create listener
         MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer::buildBlockToMine, blockProcessor, true);
-        
+
         Block block = mock(Block.class);
         when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
-        
+
         // call best block
         listener.onBestBlock(block, null);
-     
-        // assert the event was received and build block was called 
+
+        // assert the event was received and build block was called
         // it need to be 2 because the minerServer.start() calls it once
         verify(minerServer, times(2)).buildBlockToMine(false);
-        
+
         minerServer.stop();
     }
 
     @Test
-    public void onNewTxBuildBlockToMine() throws InterruptedException {
- 
+    void onNewTxBuildBlockToMine() throws InterruptedException {
+
         // prepare for miner server
         Ethereum ethereum = spy(new EthereumImpl(null, null, compositeEthereumListener, standardBlockchain, Mockito.mock(GasPriceTracker.class)) );
         doReturn(ImportResult.IMPORTED_BEST).when(ethereum).addNewMinedBlock(any());
-        
+
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
-        
+
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
 
         BlockProcessor blockProcessor = mock(NodeBlockProcessor.class);
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-                
+
         // create the transaction
         World world = new World((BlockChainImpl) standardBlockchain, blockStore, rskTestContext.getReceiptStore(), rskTestContext.getTrieStore(), repository, transactionPool, (Genesis)null);
-        
+
         Account sender = new AccountBuilder(world).name("sender").balance(new Coin(BigInteger.valueOf(2000))).build();
         Account receiver = new AccountBuilder(world).name("receiver").build();
 
@@ -775,34 +774,34 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 .nonce(0)
                 .value(BigInteger.valueOf(1000))
                 .build();
-        
+
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx));
-                
-                
+
+
         // create miner server
         MinerServer minerServer = spy(makeMinerServer(ethereum, blockProcessor, unclesValidationRule, clock, transactionPool));
         minerServer.start();
-   
+
         // create listener
         MinerServerImpl.NewBlockTxListener listener = new MinerServerImpl.NewBlockTxListener(this.miningMainchainView, minerServer::buildBlockToMine, blockProcessor, true);
-        
+
         Block block = mock(Block.class);
         when(block.getHeader()).thenReturn(this.miningMainchainView.get().get(0));
-        
+
         // call best block
         listener.onPendingTransactionsReceived(txs);
-     
-        // assert the event was received and build block was called 
+
+        // assert the event was received and build block was called
         // it need to be 2 because the minerServer.start() calls it once
         verify(minerServer, times(2)).buildBlockToMine(false);
-        
+
         minerServer.stop();
-        
-        
-        
+
+
+
     }
-    
-    
+
+
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {
         return getMergedMiningBlock(work, Collections.emptyList());
     }
@@ -852,7 +851,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             MinerClock clock, TransactionPool transactionPool) {
         return makeMinerServer(ethereum, null, unclesValidationRule, clock, transactionPool);
     }
-        
+
     private MinerServer makeMinerServer(Ethereum ethereum, BlockProcessor blockProcessor, BlockUnclesValidationRule unclesValidationRule,
                                             MinerClock clock, TransactionPool transactionPool) {
         return new MinerServerImpl(

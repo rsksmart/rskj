@@ -19,7 +19,7 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -34,13 +34,13 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.HexUtils;
 
-public class LogsNotificationTest {
+class LogsNotificationTest {
 
     private static final String QUANTITY_JSON_HEX = HexUtils.toQuantityJsonHex(42);
     private static Random random = new Random();
@@ -50,8 +50,8 @@ public class LogsNotificationTest {
     private Transaction transaction;
     private LogInfo logInfo;
 
-    @Before
-    public void createLogNotification() {
+    @BeforeEach
+    void createLogNotification() {
         block = mock(Block.class);
         transaction = mock(Transaction.class);
         logInfo = mock(LogInfo.class);
@@ -66,18 +66,18 @@ public class LogsNotificationTest {
     }
 
     @Test
-    public void getLogIndex() {
+    void getLogIndex() {
         assertThat(logsNotification.getLogIndex(), is(QUANTITY_JSON_HEX));
     }
 
     @Test
-    public void getBlockNumber() {
+    void getBlockNumber() {
         doReturn(42L).when(block).getNumber();
         assertThat(logsNotification.getBlockNumber(), is(QUANTITY_JSON_HEX));
     }
 
     @Test
-    public void getBlockHash() {
+    void getBlockHash() {
         Keccak256 blockHash = TestUtils.randomHash();
         doReturn(blockHash).when(block).getHash();
         doCallRealMethod().when(block).getHashJsonString();
@@ -85,7 +85,7 @@ public class LogsNotificationTest {
     }
 
     @Test
-    public void getTransactionHash() {
+    void getTransactionHash() {
         Keccak256 transactionHash = TestUtils.randomHash();
         doReturn(transactionHash).when(transaction).getHash();
         assertThat(logsNotification.getTransactionHash(), is(HexUtils.toUnformattedJsonHex(transactionHash.getBytes())));
@@ -93,26 +93,26 @@ public class LogsNotificationTest {
     }
 
     @Test
-    public void getTransactionIndex() {
+    void getTransactionIndex() {
         assertThat(logsNotification.getTransactionIndex(), is(QUANTITY_JSON_HEX));
     }
 
     @Test
-    public void getAddress() {
+    void getAddress() {
         byte[] logSender = TestUtils.randomAddress().getBytes();
         doReturn(logSender).when(logInfo).getAddress();
         assertThat(logsNotification.getAddress(), is(HexUtils.toJsonHex(logSender)));
     }
 
     @Test
-    public void getData() {
+    void getData() {
         byte[] logData = TestUtils.randomBytes(random.nextInt(1024));
         doReturn(logData).when(logInfo).getData();
         assertThat(logsNotification.getData(), is(HexUtils.toJsonHex(logData)));
     }
 
     @Test
-    public void getTopics() {
+    void getTopics() {
         List<DataWord> logTopics = IntStream.range(0, random.nextInt(1024)).mapToObj(i -> TestUtils.randomDataWord()).collect(Collectors.toList());
         doReturn(logTopics).when(logInfo).getTopics();
         for (int i = 0; i < logTopics.size(); i++) {

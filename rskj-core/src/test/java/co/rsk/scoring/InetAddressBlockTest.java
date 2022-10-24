@@ -1,7 +1,7 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -10,59 +10,59 @@ import java.util.Random;
 /**
  * Created by ajlopez on 11/07/2017.
  */
-public class InetAddressBlockTest {
+class InetAddressBlockTest {
     private static Random random = new Random();
 
     @Test
-    public void recognizeIPV4AddressMask8Bits() throws UnknownHostException {
+    void recognizeIPV4AddressMask8Bits() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
-        Assert.assertTrue(mask.contains(address));
+        Assertions.assertTrue(mask.contains(address));
     }
 
     @Test
-    public void containsIPV4() throws UnknownHostException {
+    void containsIPV4() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 3);
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
-        Assert.assertTrue(mask.contains(address2));
+        Assertions.assertTrue(mask.contains(address2));
     }
 
     @Test
-    public void doesNotContainIPV4WithAlteredByte() throws UnknownHostException {
+    void doesNotContainIPV4WithAlteredByte() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 2);
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
-        Assert.assertFalse(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address2));
     }
 
     @Test
-    public void doesNotContainIPV6() throws UnknownHostException {
+    void doesNotContainIPV6() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = generateIPAddressV6();
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
-        Assert.assertFalse(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address2));
     }
 
     @Test
-    public void using16BitsMask() throws UnknownHostException {
+    void using16BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 2);
 
         InetAddressBlock mask = new InetAddressBlock(address, 16);
 
-        Assert.assertTrue(mask.contains(address2));
+        Assertions.assertTrue(mask.contains(address2));
     }
 
     @Test
-    public void usingIPV4With9BitsMask() throws UnknownHostException {
+    void usingIPV4With9BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         byte[] bytes = address.getAddress();
         bytes[2] ^= 1;
@@ -72,12 +72,12 @@ public class InetAddressBlockTest {
 
         InetAddressBlock mask = new InetAddressBlock(address, 9);
 
-        Assert.assertTrue(mask.contains(address2));
-        Assert.assertFalse(mask.contains(address3));
+        Assertions.assertTrue(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address3));
     }
 
     @Test
-    public void usingIPV6With9BitsMask() throws UnknownHostException {
+    void usingIPV6With9BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         byte[] bytes = address.getAddress();
         bytes[14] ^= 1;
@@ -87,12 +87,12 @@ public class InetAddressBlockTest {
 
         InetAddressBlock mask = new InetAddressBlock(address, 9);
 
-        Assert.assertTrue(mask.contains(address2));
-        Assert.assertFalse(mask.contains(address3));
+        Assertions.assertTrue(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address3));
     }
 
     @Test
-    public void usingIPV4With18BitsMask() throws UnknownHostException {
+    void usingIPV4With18BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         byte[] bytes = address.getAddress();
         bytes[1] ^= 2;
@@ -102,12 +102,12 @@ public class InetAddressBlockTest {
 
         InetAddressBlock mask = new InetAddressBlock(address, 18);
 
-        Assert.assertTrue(mask.contains(address2));
-        Assert.assertFalse(mask.contains(address3));
+        Assertions.assertTrue(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address3));
     }
 
     @Test
-    public void usingIPV6With18BitsMask() throws UnknownHostException {
+    void usingIPV6With18BitsMask() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         byte[] bytes = address.getAddress();
         bytes[13] ^= 2;
@@ -117,22 +117,22 @@ public class InetAddressBlockTest {
 
         InetAddressBlock mask = new InetAddressBlock(address, 18);
 
-        Assert.assertTrue(mask.contains(address2));
-        Assert.assertFalse(mask.contains(address3));
+        Assertions.assertTrue(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address3));
     }
 
     @Test
-    public void doesNotContainIPV4() throws UnknownHostException {
+    void doesNotContainIPV4() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         InetAddress address2 = generateIPAddressV4();
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
-        Assert.assertFalse(mask.contains(address2));
+        Assertions.assertFalse(mask.contains(address2));
     }
 
     @Test
-    public void equals() throws UnknownHostException {
+    void equals() throws UnknownHostException {
         InetAddress address1 = generateIPAddressV4();
         InetAddress address2 = alterByte(address1, 0);
         InetAddress address3 = generateIPAddressV6();
@@ -143,23 +143,23 @@ public class InetAddressBlockTest {
         InetAddressBlock block4 = new InetAddressBlock(address1, 8);
         InetAddressBlock block5 = new InetAddressBlock(address3, 8);
 
-        Assert.assertTrue(block1.equals(block1));
-        Assert.assertTrue(block2.equals(block2));
-        Assert.assertTrue(block3.equals(block3));
-        Assert.assertTrue(block4.equals(block4));
-        Assert.assertTrue(block5.equals(block5));
+        Assertions.assertEquals(block1, block1);
+        Assertions.assertEquals(block2, block2);
+        Assertions.assertEquals(block3, block3);
+        Assertions.assertEquals(block4, block4);
+        Assertions.assertEquals(block5, block5);
 
-        Assert.assertTrue(block1.equals(block4));
-        Assert.assertTrue(block4.equals(block1));
+        Assertions.assertEquals(block1, block4);
+        Assertions.assertEquals(block4, block1);
 
-        Assert.assertFalse(block1.equals(block2));
-        Assert.assertFalse(block1.equals(block3));
-        Assert.assertFalse(block1.equals(block5));
+        Assertions.assertNotEquals(block1, block2);
+        Assertions.assertNotEquals(block1, block3);
+        Assertions.assertNotEquals(block1, block5);
 
-        Assert.assertFalse(block1.equals(null));
-        Assert.assertFalse(block1.equals("block"));
+        Assertions.assertNotEquals(null, block1);
+        Assertions.assertNotEquals("block", block1);
 
-        Assert.assertEquals(block1.hashCode(), block4.hashCode());
+        Assertions.assertEquals(block1.hashCode(), block4.hashCode());
     }
 
     private static InetAddress generateIPAddressV4() throws UnknownHostException {

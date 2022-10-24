@@ -19,22 +19,22 @@
 
 package org.ethereum.util;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.ethereum.util.BIUtil.isIn20PercentRange;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Mikhail Kalinin
  * @since 15.10.2015
  */
-public class BIUtilTest {
+class BIUtilTest {
 
     @Test
-    public void testIsIn20PercentRange() {
+    void testIsIn20PercentRange() {
 
         assertTrue(isIn20PercentRange(BigInteger.valueOf(20000), BigInteger.valueOf(24000)));
 
@@ -56,7 +56,7 @@ public class BIUtilTest {
     }
 
     @Test // test isIn20PercentRange
-    public void test1() {
+    void test1() {
         assertFalse(isIn20PercentRange(BigInteger.ONE, BigInteger.valueOf(5)));
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.ONE));
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.valueOf(6)));

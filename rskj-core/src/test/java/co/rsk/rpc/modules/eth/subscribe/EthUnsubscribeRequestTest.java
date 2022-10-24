@@ -22,7 +22,8 @@ import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcMethod;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,13 +31,13 @@ import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class EthUnsubscribeRequestTest {
+class EthUnsubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
-    public void deserializeUnsubscribe() throws IOException {
+    void deserializeUnsubscribe() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":100,\"method\":\"eth_unsubscribe\",\"params\":[\"0x0204\"]}";
         ByteArrayInputStream bais = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));
         RskJsonRpcRequest request = serializer.deserializeRequest(bais);
@@ -45,12 +46,10 @@ public class EthUnsubscribeRequestTest {
         EthUnsubscribeRequest unsubscribeRequest = (EthUnsubscribeRequest) request;
         assertThat(unsubscribeRequest.getParams().getSubscriptionId(), is(new SubscriptionId("0x0204")));
     }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void unsubscribe_withWrongParameter_thenThrowException() {
-    	
-    	new EthUnsubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_SUBSCRIBE, "test", null);
-    	
+
+    @Test
+    void unsubscribe_withWrongParameter_thenThrowException() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new EthUnsubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_SUBSCRIBE, "test", null));
     }
-    
+
 }

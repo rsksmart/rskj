@@ -21,20 +21,20 @@ package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class SkeletonResponseMessageTest {
+class SkeletonResponseMessageTest {
 
     @Test
-    public void createMessage() {
+    void createMessage() {
 
         long someId = 42;
         List<BlockIdentifier> identifiers = Arrays.asList(
@@ -53,7 +53,7 @@ public class SkeletonResponseMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
         SkeletonResponseMessage message = new SkeletonResponseMessage(1, blockIdentifiers);
 

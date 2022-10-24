@@ -22,9 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.ethereum.jsontestsuite.RLPTestCase;
-import org.json.simple.parser.ParseException;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,18 +40,18 @@ import java.util.Set;
  * @author Angel J Lopez
  * @since 02.24.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class LocalRLPTest {
+@TestMethodOrder(MethodOrderer.MethodName.class)
+class LocalRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
     private static HashMap<String , RLPTestCase> TEST_SUITE;
 
-    @BeforeClass
-    public static void init() throws ParseException, IOException {
+    @BeforeAll
+     static void init() throws IOException {
         logger.info("    Initializing RLP tests...");
         String json = getJSON("rlptest");
 
-        Assume.assumeFalse("Local test is not available", json.equals(""));
+        Assumptions.assumeFalse(json.equals(""), "Local test is not available");
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
@@ -58,19 +61,19 @@ public class LocalRLPTest {
     }
 
     @Test
-    public void rlpEncodeTest() throws Exception {
+    void rlpEncodeTest() throws Exception {
         logger.info("    Testing RLP encoding...");
 
         for (String key : TEST_SUITE.keySet()) {
             logger.info("    " + key);
             RLPTestCase testCase = TEST_SUITE.get(key);
             testCase.doEncode();
-            Assert.assertEquals(testCase.getExpected(), testCase.getComputed());
+            Assertions.assertEquals(testCase.getExpected(), testCase.getComputed());
         }
     }
 
     @Test
-    public void rlpDecodeTest() throws Exception {
+    void rlpDecodeTest() throws Exception {
         logger.info("    Testing RLP decoding...");
 
         Set<String> excluded = new HashSet<>();
@@ -86,7 +89,7 @@ public class LocalRLPTest {
 
             RLPTestCase testCase = TEST_SUITE.get(key);
             testCase.doDecode();
-            Assert.assertEquals(testCase.getExpected(), testCase.getComputed());
+            Assertions.assertEquals(testCase.getExpected(), testCase.getComputed());
         }
     }
 

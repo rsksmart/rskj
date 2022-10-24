@@ -29,33 +29,33 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-public class LocalBasicTest {
+class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final Constants networkConstants = Constants.mainnet();
     private ActivationConfig activationConfig = ActivationConfigsForTest.allBut();
 
     @Test
-    public void runDifficultyTestBeforeRSKIP156() throws IOException {
+    void runDifficultyTestBeforeRSKIP156() throws IOException {
         activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP156);
         String jsonName = "difficultyBeforeRSKIP156";
         runJsonTest(jsonName);
     }
 
     @Test
-    public void runDifficultyTestBeforeRSKIP290() throws IOException {
+    void runDifficultyTestBeforeRSKIP290() throws IOException {
         activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP290);
         Constants networkConstants = Constants.testnet(activationConfig);
         String jsonName = "difficulty";
@@ -63,7 +63,7 @@ public class LocalBasicTest {
     }
 
     @Test
-    public void runDifficultyTestAfterRSKIP290() throws IOException {
+    void runDifficultyTestAfterRSKIP290() throws IOException {
         activationConfig = ActivationConfigsForTest.all();
         Constants networkConstants = Constants.testnet(activationConfig);
         String jsonName = "difficulty1";
@@ -71,7 +71,7 @@ public class LocalBasicTest {
     }
 
     @Test
-    public void runDifficultyTest() throws IOException {
+    void runDifficultyTest() throws IOException {
         String jsonName = "difficulty";
         runJsonTest(jsonName);
     }

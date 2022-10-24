@@ -19,8 +19,9 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -31,20 +32,20 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
-public class BridgeTest {
+class BridgeTest {
 
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
 
-    @Before
-    public void resetConfigToRegTest() {
+    @BeforeEach
+    void resetConfigToRegTest() {
         config = spy(new TestSystemProperties());
         constants = Constants.regtest();
         when(config.getNetworkConstants()).thenReturn(constants);
@@ -53,7 +54,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getActivePowpegRedeemScript_before_RSKIP293_activation() throws VMException {
+    void getActivePowpegRedeemScript_before_RSKIP293_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP293), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -65,7 +66,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
+    void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP293), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -82,7 +83,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockingCap_before_RSKIP134_activation() throws VMException {
+    void getLockingCap_before_RSKIP134_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -94,7 +95,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockingCap_after_RSKIP134_activation() throws VMException {
+    void getLockingCap_after_RSKIP134_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -111,7 +112,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_before_RSKIP134_activation() throws VMException {
+    void increaseLockingCap_before_RSKIP134_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -123,7 +124,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_after_RSKIP134_activation() throws VMException {
+    void increaseLockingCap_after_RSKIP134_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -146,7 +147,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_invalidParameter() throws VMException {
+    void increaseLockingCap_invalidParameter() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -177,7 +178,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_before_RSKIP143_activation() throws VMException {
+    void registerBtcCoinbaseTransaction_before_RSKIP143_activation() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -193,7 +194,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws VMException {
+    void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -210,7 +211,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() throws VMException {
+    void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -231,7 +232,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransaction_beforeRskip199_rejectsExternalCalls()
+    void registerBtcTransaction_beforeRskip199_rejectsExternalCalls()
         throws VMException, IOException, BlockStoreException {
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
@@ -272,7 +273,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember()
+    void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember()
         throws VMException, IOException, BlockStoreException {
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
@@ -313,7 +314,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransaction_afterRskip199_acceptsExternalCalls()
+    void registerBtcTransaction_afterRskip199_acceptsExternalCalls()
         throws VMException, IOException, BlockStoreException {
 
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
@@ -337,7 +338,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() throws VMException {
+    void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP186), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -349,7 +350,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getActiveFederationCreationBlockHeight_after_RSKIP186_activation() throws VMException {
+    void getActiveFederationCreationBlockHeight_after_RSKIP186_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP186), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -367,7 +368,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_before_RSKIP176_activation() throws VMException {
+    void registerFlyoverBtcTransaction_before_RSKIP176_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -392,7 +393,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_before_RSKIP284_activation_fails()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
@@ -460,7 +461,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_p2sh_refund_address_after_RSKIP284_activation_ok()
         throws VMException, IOException, BlockStoreException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
@@ -528,7 +529,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_after_RSKIP176_activation_generic_error()
+    void registerFlyoverBtcTransaction_after_RSKIP176_activation_generic_error()
         throws VMException, IOException, BlockStoreException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
@@ -572,7 +573,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+    void registerFlyoverBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -590,7 +591,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void receiveHeader_before_RSKIP200() throws VMException {
+    void receiveHeader_before_RSKIP200() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -616,7 +617,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void receiveHeader_empty_parameter() throws VMException {
+    void receiveHeader_empty_parameter() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -631,7 +632,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void receiveHeader_after_RSKIP200_Ok() throws VMException {
+    void receiveHeader_after_RSKIP200_Ok() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -651,12 +652,12 @@ public class BridgeTest {
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
         byte[] result = bridge.execute(data);
-        verify(bridge, times(1)).receiveHeader(eq(parameters));
+        verify(bridge, times(1)).receiveHeader(eq(parameters)); // NOSONAR: eq is needed
         assertEquals(BigInteger.valueOf(0), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
     }
 
-    @Test(expected = VMException.class)
-    public void receiveHeader_bridgeSupport_Exception() throws VMException, IOException, BlockStoreException {
+    @Test
+    void receiveHeader_bridgeSupport_Exception() throws IOException, BlockStoreException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -677,11 +678,11 @@ public class BridgeTest {
         Object[] parameters = new Object[]{block.bitcoinSerialize()};
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
-        bridge.execute(data);
+        Assertions.assertThrows(VMException.class, () -> bridge.execute(data));
     }
 
     @Test
-    public void receiveHeaders_after_RSKIP200_notFederation() {
+    void receiveHeaders_after_RSKIP200_notFederation() {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
 
@@ -703,7 +704,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void receiveHeaders_after_RSKIP200_header_wrong_size() throws VMException, IOException {
+    void receiveHeaders_after_RSKIP200_header_wrong_size() throws VMException, IOException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP200), anyLong());
         // It is used to check the size of the header
@@ -719,7 +720,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_afterRskip220() {
+    void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_afterRskip220() {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP220), anyLong());
 
@@ -729,7 +730,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_beforeRskip220() {
+    void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_beforeRskip220() {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP220), anyLong());
 
@@ -739,7 +740,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
                 null,
@@ -765,7 +766,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
                 null,
@@ -794,7 +795,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void activeAndRetiringFederationOnly_activeFederationIsFromFederateMember_OK() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsFromFederateMember_OK() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor decorate = mock(
                 BridgeMethods.BridgeMethodExecutor.class
@@ -822,7 +823,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsFromFederateMember_OK() throws Exception {
+    void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsFromFederateMember_OK() throws Exception {
         // Given
         BridgeMethods.BridgeMethodExecutor decorate = mock(
                 BridgeMethods.BridgeMethodExecutor.class
@@ -852,7 +853,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
+    void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -864,7 +865,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() throws VMException {
+    void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -882,7 +883,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
+    void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -894,7 +895,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getQueuedPegoutsCount_after_RSKIP271_activation() throws VMException, IOException {
+    void getQueuedPegoutsCount_after_RSKIP271_activation() throws VMException, IOException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -912,7 +913,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
+    void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -924,7 +925,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws VMException, IOException {
+    void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws VMException, IOException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);

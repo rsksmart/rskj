@@ -19,17 +19,18 @@
 package co.rsk.core;
 
 import org.ethereum.util.RLP;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class BlockDifficultyTest {
+class BlockDifficultyTest {
     @Test
-    public void bytesZeroDifficulty() {
+    void bytesZeroDifficulty() {
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(BigInteger.ZERO.toByteArray());
         assertThat(difficulty.asBigInteger(), is(BigInteger.ZERO));
         assertThat(difficulty, is(new BlockDifficulty(BigInteger.ZERO)));
@@ -37,7 +38,7 @@ public class BlockDifficultyTest {
     }
 
     @Test
-    public void bytesOneDifficulty() {
+    void bytesOneDifficulty() {
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(BigInteger.ONE.toByteArray());
         assertThat(difficulty.asBigInteger(), is(BigInteger.ONE));
         assertThat(difficulty, is(new BlockDifficulty(BigInteger.ONE)));
@@ -45,7 +46,7 @@ public class BlockDifficultyTest {
     }
 
     @Test
-    public void bytesLargeDifficulty() {
+    void bytesLargeDifficulty() {
         BigInteger largeValue = BigInteger.valueOf(1532098739382974L);
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(largeValue.toByteArray());
         assertThat(difficulty.asBigInteger(), is(largeValue));
@@ -54,40 +55,41 @@ public class BlockDifficultyTest {
     }
 
     @Test
-    public void bytesNullIsNull() {
+    void bytesNullIsNull() {
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(null);
         assertThat(difficulty, nullValue());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void bytesNegativeDifficultyFails() {
+    @Test
+    void bytesNegativeDifficultyFails() {
         BigInteger negativeValue = BigInteger.valueOf(-1532098739382974L);
-        RLP.parseBlockDifficulty(negativeValue.toByteArray());
+        byte[] bytes = negativeValue.toByteArray();
+        Assertions.assertThrows(RuntimeException.class, () -> RLP.parseBlockDifficulty(bytes));
     }
 
     @Test
-    public void addOneToZero() {
+    void addOneToZero() {
         BlockDifficulty d1 = new BlockDifficulty(BigInteger.ZERO);
         BlockDifficulty d2 = new BlockDifficulty(BigInteger.ONE);
         assertThat(d1.add(d2), is(d2));
     }
 
     @Test
-    public void addOneToOne() {
+    void addOneToOne() {
         BlockDifficulty d1 = new BlockDifficulty(BigInteger.ONE);
         BlockDifficulty d2 = new BlockDifficulty(BigInteger.ONE);
         assertThat(d1.add(d2), is(new BlockDifficulty(BigInteger.valueOf(2))));
     }
 
     @Test
-    public void addLargeValues() {
+    void addLargeValues() {
         BlockDifficulty d1 = new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE));
         BlockDifficulty d2 = new BlockDifficulty(BigInteger.valueOf(Integer.MAX_VALUE));
         assertThat(d1.add(d2), is(new BlockDifficulty(new BigInteger("9223372039002259454"))));
     }
 
     @Test
-    public void testComparable() {
+    void testComparable() {
         BlockDifficulty zero = BlockDifficulty.ZERO;
         BlockDifficulty d1 = new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE));
         BlockDifficulty d2 = new BlockDifficulty(BigInteger.valueOf(Integer.MAX_VALUE));

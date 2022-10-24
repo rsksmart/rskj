@@ -13,16 +13,16 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Ignore
-public class LockingCapTest extends BridgePerformanceTestCase {
+@Disabled
+class LockingCapTest extends BridgePerformanceTestCase {
 
     private static final ECKey authorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("da6a5451bfd74829307ec6d4a8c55174d4859169f162a8ed8fcba8f7636e77cc"));
     private static final ECKey unauthorizedLockingCapChanger = ECKey.fromPrivate(Hex.decode("f18ad1e830dd746ba350f4a43b3067e85634b5138a8515246441a453ec7460e9"));
@@ -31,14 +31,14 @@ public class LockingCapTest extends BridgePerformanceTestCase {
 
     private ECKey sender;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getLockingCap() throws VMException {
+    void getLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("getLockingCap");
         executeTestCase(
@@ -46,13 +46,13 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 "getLockingCap",
                 2000,
                 stats,
-                (environment, callResult) -> Assert.assertEquals(INITIAL_LOCKING_CAP, getCoinFromResult(callResult))
+                (environment, callResult) -> Assertions.assertEquals(INITIAL_LOCKING_CAP, getCoinFromResult(callResult))
         );
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
-    public void increaseLockingCap() throws VMException {
+    void increaseLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap");
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -66,14 +66,14 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, callResult) -> {
                     long currentLockingCap = ((Bridge)environment.getContract()).getLockingCap(null);
-                    Assert.assertEquals(newValue.get().longValue(), currentLockingCap);
+                    Assertions.assertEquals(newValue.get().longValue(), currentLockingCap);
                 }
         );
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
-    public void increaseLockingCap_unauthorized() throws VMException {
+    void increaseLockingCap_unauthorized() throws VMException {
         sender = unauthorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap_unauthorized");
         executeTestCase(
@@ -86,7 +86,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 stats,
                 (environment, callResult) -> {
                     Coin currentLockingCap = Coin.valueOf(((Bridge)environment.getContract()).getLockingCap(null));
-                    Assert.assertEquals(INITIAL_LOCKING_CAP, currentLockingCap);
+                    Assertions.assertEquals(INITIAL_LOCKING_CAP, currentLockingCap);
                 }
         );
         BridgePerformanceTest.addStats(stats);

@@ -19,42 +19,42 @@
 package co.rsk.blockchain.utils;
 
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockGeneratorTest {
+class BlockGeneratorTest {
     @Test
-    public void getBlocks() {
+    void getBlocks() {
         Block block;
         BlockGenerator blockGenerator = new BlockGenerator();
 
         for (int k = 0; k <= 4; k++) {
             block = blockGenerator.getBlock(k);
 
-            Assert.assertNotNull(block);
-            Assert.assertEquals(k, block.getNumber());
+            Assertions.assertNotNull(block);
+            Assertions.assertEquals(k, block.getNumber());
         }
     }
 
     @Test
-    public void getBlockChain() {
+    void getBlockChain() {
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> chain = blockGenerator.getBlockChain(blockGenerator.getBlock(2), 10);
 
-        Assert.assertNotNull(chain);
-        Assert.assertEquals(10, chain.size());
+        Assertions.assertNotNull(chain);
+        Assertions.assertEquals(10, chain.size());
 
         Block parent = blockGenerator.getBlock(2);
 
         for (Block b : chain) {
-            Assert.assertNotNull(b);
-            Assert.assertEquals(parent.getHash(), b.getParentHash());
-            Assert.assertEquals(parent.getNumber() + 1, b.getNumber());
+            Assertions.assertNotNull(b);
+            Assertions.assertEquals(parent.getHash(), b.getParentHash());
+            Assertions.assertEquals(parent.getNumber() + 1, b.getNumber());
             parent = b;
         }
     }

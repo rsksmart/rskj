@@ -20,37 +20,37 @@ package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 13/04/2017.
  */
-public class SiblingTest {
+class SiblingTest {
     @Test
-    public void siblingSerializeWithGenesis() {
+    void siblingSerializeWithGenesis() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
         Sibling sibling = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
 
         byte[] bytes = sibling.getEncoded();
 
-        Assert.assertNotNull(bytes);
+        Assertions.assertNotNull(bytes);
 
         Sibling result = Sibling.create(bytes);
 
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
 
-        Assert.assertArrayEquals(sibling.getHash(), result.getHash());
-        Assert.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
-        Assert.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
+        Assertions.assertArrayEquals(sibling.getHash(), result.getHash());
+        Assertions.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
+        Assertions.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
 
-        Assert.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());
-        Assert.assertEquals(sibling.getPaidFees(), result.getPaidFees());
+        Assertions.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());
+        Assertions.assertEquals(sibling.getPaidFees(), result.getPaidFees());
     }
 
     @Test
-    public void siblingSerializeWithBlock() {
+    void siblingSerializeWithBlock() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block = blockGenerator.createChildBlock(genesis);
@@ -59,17 +59,17 @@ public class SiblingTest {
 
         byte[] bytes = sibling.getEncoded();
 
-        Assert.assertNotNull(bytes);
+        Assertions.assertNotNull(bytes);
 
         Sibling result = Sibling.create(bytes);
 
-        Assert.assertNotNull(result);
+        Assertions.assertNotNull(result);
 
-        Assert.assertArrayEquals(sibling.getHash(), result.getHash());
-        Assert.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
-        Assert.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
+        Assertions.assertArrayEquals(sibling.getHash(), result.getHash());
+        Assertions.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
+        Assertions.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
 
-        Assert.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());
-        Assert.assertEquals(sibling.getPaidFees(), result.getPaidFees());
+        Assertions.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());
+        Assertions.assertEquals(sibling.getPaidFees(), result.getPaidFees());
     }
 }

@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.math.BigInteger;
 
@@ -51,7 +51,7 @@ public class Transaction {
 }
 */
 
-    public Transaction(JSONObject callCreateJSON) {
+    public Transaction(JsonNode callCreateJSON) {
 
         String dataStr = callCreateJSON.get("data").toString();
         String gasLimitStr = org.ethereum.json.Utils.parseUnidentifiedBase(callCreateJSON.get("gasLimit").toString());

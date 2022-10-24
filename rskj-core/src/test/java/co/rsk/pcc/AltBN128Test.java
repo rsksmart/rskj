@@ -38,26 +38,31 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.math.BigInteger;
 import java.util.HashSet;
 
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Sebastian Sicardi
  * @since 10.09.2019
  */
-@RunWith(MockitoJUnitRunner.class)
-public class AltBN128Test {
+@ExtendWith(MockitoExtension.class)
+// to avoid Junit5 unnecessary stub error due to different activation codes being called
+@MockitoSettings(strictness = Strictness.LENIENT)
+class AltBN128Test {
 
     private TestSystemProperties config;
     private PrecompiledContracts precompiledContracts;
@@ -66,8 +71,8 @@ public class AltBN128Test {
     private static final int ADD_GAS_COST = 150;
     private static final int MUL_GAS_COST = 6000;
 
-    @Before
-    public void init() {
+    @BeforeEach
+    void init() {
         config = new TestSystemProperties();
         precompiledContracts = new PrecompiledContracts(config, null);
         activations = mock(ActivationConfig.ForBlock.class);
@@ -77,7 +82,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testCorrectAddressForALTBN128Contracts() {
+    void testCorrectAddressForALTBN128Contracts() {
         DataWord altBN128AddAddr = PrecompiledContracts.ALT_BN_128_ADD_DW;
         DataWord altBN128MulAddr = PrecompiledContracts.ALT_BN_128_MUL_DW;
         DataWord altBN128PairAddr = PrecompiledContracts.ALT_BN_128_PAIRING_DW;
@@ -86,17 +91,17 @@ public class AltBN128Test {
         PrecompiledContracts.PrecompiledContract altBN128Mul = precompiledContracts.getContractForAddress(activations, altBN128MulAddr);
         PrecompiledContracts.PrecompiledContract altBN128Pair = precompiledContracts.getContractForAddress(activations, altBN128PairAddr);
 
-        assertThat(altBN128Add, notNullValue());
-        assertThat(altBN128Mul, notNullValue());
-        assertThat(altBN128Pair, notNullValue());
+        MatcherAssert.assertThat(altBN128Add, notNullValue());
+        MatcherAssert.assertThat(altBN128Mul, notNullValue());
+        MatcherAssert.assertThat(altBN128Pair, notNullValue());
 
-        assertThat(altBN128Add, instanceOf(BN128Addition.class));
-        assertThat(altBN128Mul, instanceOf(BN128Multiplication.class));
-        assertThat(altBN128Pair, instanceOf(BN128Pairing.class));
+        MatcherAssert.assertThat(altBN128Add, instanceOf(BN128Addition.class));
+        MatcherAssert.assertThat(altBN128Mul, instanceOf(BN128Multiplication.class));
+        MatcherAssert.assertThat(altBN128Pair, instanceOf(BN128Pairing.class));
     }
 
     @Test
-    public void testALTBN128ShouldFailOnNotActivatedHardFork() {
+    void testALTBN128ShouldFailOnNotActivatedHardFork() {
         /*
             Test should return null on those contract addresses because
             RSKIP is not activated
@@ -111,13 +116,13 @@ public class AltBN128Test {
         PrecompiledContracts.PrecompiledContract altBN128Mul = precompiledContracts.getContractForAddress(activations, altBN128MulAddr);
         PrecompiledContracts.PrecompiledContract altBN128Pair = precompiledContracts.getContractForAddress(activations, altBN128PairAddr);
 
-        assertThat(altBN128Add, nullValue());
-        assertThat(altBN128Mul, nullValue());
-        assertThat(altBN128Pair, nullValue());
+        MatcherAssert.assertThat(altBN128Add, nullValue());
+        MatcherAssert.assertThat(altBN128Mul, nullValue());
+        MatcherAssert.assertThat(altBN128Pair, nullValue());
     }
 
     @Test
-    public void testALTBN128AddTwoPoints() throws VMException {
+    void testALTBN128AddTwoPoints() throws VMException {
         /*
          Test should return correct result (taken from parity impl)
          */
@@ -135,7 +140,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddZeroPointsShouldBeZero() throws VMException {
+    void testALTBN128AddZeroPointsShouldBeZero() throws VMException {
         /*
          Test should return zero
          */
@@ -155,7 +160,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddEmptyInputShouldBeZero() throws VMException {
+    void testALTBN128AddEmptyInputShouldBeZero() throws VMException {
         /*
          Test should return zero
          */
@@ -172,7 +177,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddPointPlusInfinityIsPoint() throws VMException {
+    void testALTBN128AddPointPlusInfinityIsPoint() throws VMException {
         /*
          Test should return same point
          */
@@ -190,7 +195,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddInfinityPlusPointIsPoint() throws VMException {
+    void testALTBN128AddInfinityPlusPointIsPoint() throws VMException {
         /*
          Test should return same point
          */
@@ -208,7 +213,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddPointNotOnCurveShouldFail() throws VMException {
+    void testALTBN128AddPointNotOnCurveShouldFail() throws VMException {
         /*
          Test should return empty byte array because point is not on curve
          */
@@ -237,7 +242,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnInfinityOnIdenticalInputPointValuesOfX() throws VMException {
+    void shouldReturnInfinityOnIdenticalInputPointValuesOfX() throws VMException {
         BigInteger p0x = new BigInteger(
                 "10744596414106452074759370245733544594153395043370666422502510773307029471145");
         BigInteger p0y = new BigInteger(
@@ -254,7 +259,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueAddAndComputeSlope() throws VMException {
+    void shouldReturnTrueAddAndComputeSlope() throws VMException {
         BigInteger p0x = new BigInteger(
                 "10744596414106452074759370245733544594153395043370666422502510773307029471145");
         BigInteger p0y = new BigInteger(
@@ -273,7 +278,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueMultiplyScalarAndPoint() throws VMException {
+    void shouldReturnTrueMultiplyScalarAndPoint() throws VMException {
         BigInteger x = BigInteger.valueOf(1);
         BigInteger y = BigInteger.valueOf(2);
 
@@ -287,7 +292,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnIdentityWhenMultipliedByScalarValueOne() throws VMException {
+    void shouldReturnIdentityWhenMultipliedByScalarValueOne() throws VMException {
         BigInteger x = new BigInteger("11999875504842010600789954262886096740416429265635183817701593963271973497827");
         BigInteger y = new BigInteger("11843594000332171325303933275547366297934113019079887694534126289021216356598");
 
@@ -300,7 +305,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueMultiplyPointByScalar() throws VMException {
+    void shouldReturnTrueMultiplyPointByScalar() throws VMException {
         BigInteger x = BigInteger.valueOf(1);
         BigInteger y = BigInteger.valueOf(2);
 
@@ -313,7 +318,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnSumMultiplyPointByScalar() throws VMException {
+    void shouldReturnSumMultiplyPointByScalar() throws VMException {
         BigInteger x = new BigInteger("11999875504842010600789954262886096740416429265635183817701593963271973497827");
         BigInteger y = new BigInteger("11843594000332171325303933275547366297934113019079887694534126289021216356598");
 
@@ -325,7 +330,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldFailForPointNotOnCurve() throws VMException {
+    void shouldFailForPointNotOnCurve() throws VMException {
         String input = "1111111111111111111111111111111111111111111111111111111111111111" +
                 "1111111111111111111111111111111111111111111111111111111111111111" +
                 "1111111111111111111111111111111111111111111111111111111111111111";
@@ -344,7 +349,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void mulShouldFailForNotEnoughParams() throws VMException {
+    void mulShouldFailForNotEnoughParams() throws VMException {
         String input = "1111111111111111111111111111111111111111111111111111111111111111" +
                 "1111111111111111111111111111111111111111111111111111111111111111";
 
@@ -362,7 +367,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void mulShouldFailEmptyParams() throws VMException {
+    void mulShouldFailEmptyParams() throws VMException {
         /*
          * Behaviour on empty params establishes that correct output is zero byte array
          */
@@ -382,7 +387,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueForNullInput() throws VMException {
+    void shouldReturnTrueForNullInput() throws VMException {
         /*
         Null acts as empty input so it should return true
          */
@@ -400,7 +405,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueForValidPointsPairing() throws VMException {
+    void shouldReturnTrueForValidPointsPairing() throws VMException {
         final String g1Point0 = "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000002";
 
@@ -424,7 +429,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void parityBenchmarkTenPointMatchValidInput() throws VMException {
+    void parityBenchmarkTenPointMatchValidInput() throws VMException {
         final String input = "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000002" +
                 "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2" +
@@ -492,7 +497,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void invalidInputForPairing() throws VMException {
+    void invalidInputForPairing() throws VMException {
         String input = "11";
 
         String expectedOutput = "";
@@ -508,7 +513,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void emptyInputForPairing() throws VMException {
+    void emptyInputForPairing() throws VMException {
         String input = "";
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -523,7 +528,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnEmptyForPairingPointsNotOnCurve() throws VMException {
+    void shouldReturnEmptyForPairingPointsNotOnCurve() throws VMException {
         String g1Point0 = "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000002";
         String g2Point0 = "1382cd45e5674247f9c900b5c6f6cabbc189c2fabe2df0bf5acd84c97818f508" +
@@ -551,7 +556,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnFalseForValidPointsPairing() throws VMException {
+    void shouldReturnFalseForValidPointsPairing() throws VMException {
         String inputString = "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59" +
                 "3034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41" +
                 "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf7" +
@@ -578,7 +583,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddFromVM() {
+    void testALTBN128AddFromVM() {
         BigInteger p0x = new BigInteger("1");
         BigInteger p0y = new BigInteger("2");
         BigInteger p1x = new BigInteger("0");
@@ -596,7 +601,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddTwoPointsFromVM() {
+    void testALTBN128AddTwoPointsFromVM() {
         /*
          Test should return correct result (taken from parity impl)
          */
@@ -618,7 +623,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueForValidPointsPairingFromVM() {
+    void shouldReturnTrueForValidPointsPairingFromVM() {
         String[] inputs = {
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "0000000000000000000000000000000000000000000000000000000000000002",
@@ -642,7 +647,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnSumMultiplyPointByScalarFromVM() {
+    void shouldReturnSumMultiplyPointByScalarFromVM() {
         BigInteger multiplicandX = new BigInteger("11999875504842010600789954262886096740416429265635183817701593963271973497827");
         BigInteger multiplicandY = new BigInteger("11843594000332171325303933275547366297934113019079887694534126289021216356598");
         BigInteger multiplier = BigInteger.valueOf(2);
@@ -677,8 +682,8 @@ public class AltBN128Test {
         byte[] input = inputString == null ? null : Hex.decode(inputString);
         byte[] output = contract.execute(input);
 
-        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
-        assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
+        MatcherAssert.assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
+        MatcherAssert.assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
     }
 
     private void runAndAssertError(String inputString, String errorMessage, BN128PrecompiledContract contract, long gasCost) {
@@ -689,7 +694,7 @@ public class AltBN128Test {
         } catch (VMException e) {
             assertEquals(errorMessage, e.getMessage());
         }
-        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
+        MatcherAssert.assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
     }
 
     private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) throws VMException {
@@ -771,15 +776,15 @@ public class AltBN128Test {
         Program program = executeCode(code);
         Stack stack = program.getStack();
 
-        assertThat(stack.size(), is(1 + expect.length));
+        MatcherAssert.assertThat(stack.size(), is(1 + expect.length));
 
         for (int j = expect.length - 1; j >= 0; j--) {
             DataWord output = stack.pop();
-            assertThat(DataWord.valueFromHex(expect[j]), is(output));
+            MatcherAssert.assertThat(DataWord.valueFromHex(expect[j]), is(output));
         }
 
         DataWord contractIsSuccessful = stack.pop();
-        assertThat(DataWord.valueOf(1), is(contractIsSuccessful));
+        MatcherAssert.assertThat(DataWord.valueOf(1), is(contractIsSuccessful));
     }
 
     private Program executeCode(String code) {
@@ -808,7 +813,7 @@ public class AltBN128Test {
             return new BN128Pairing(activations, javaAltbn128);
         }
 
-        Assert.fail("this is unexpected");
+        Assertions.fail("this is unexpected");
 
         return null;
     }

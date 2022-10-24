@@ -74,8 +74,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -83,13 +83,13 @@ import java.time.Clock;
 
 import static org.mockito.Mockito.mock;
 
-public class TransactionModuleTest {
+class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private TransactionExecutorFactory transactionExecutorFactory;
 
     @Test
-    public void sendTransactionMustNotBeMined() {
+    void sendTransactionMustNotBeMined() {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
@@ -107,16 +107,16 @@ public class TransactionModuleTest {
 
         String tx = sendTransaction(web3, repository);
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
 
         Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
 
         //Transaction tx must not be in block
-        Assert.assertNull(txInBlock);
+        Assertions.assertNull(txInBlock);
     }
 
     @Test
-    public void sendTransactionMustBeMined() {
+    void sendTransactionMustBeMined() {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
@@ -135,20 +135,20 @@ public class TransactionModuleTest {
 
         String tx = sendTransaction(web3, repository);
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
 
         Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
 
         //Transaction tx must be in the block mined.
-        Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
+        Assertions.assertEquals(tx, txInBlock.getHash().toJsonString());
     }
 
     /**
      * This test send a several transactions, and should be mine 1 transaction in each block.
      */
     @Test
-    public void sendSeveralTransactionsWithAutoMining() {
+    void sendSeveralTransactionsWithAutoMining() {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
@@ -173,14 +173,14 @@ public class TransactionModuleTest {
             // to mainchain view object that is used by miner server to build new blocks.
             mainchainView.addBest(blockchain.getBestBlock().getHeader());
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
-            Assert.assertEquals(i, blockchain.getBestBlock().getNumber());
-            Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
-            Assert.assertEquals(tx, txInBlock.getHash().toJsonString());
+            Assertions.assertEquals(i, blockchain.getBestBlock().getNumber());
+            Assertions.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
+            Assertions.assertEquals(tx, txInBlock.getHash().toJsonString());
         }
     }
 
     @Test
-    public void sendRawTransactionWithAutoMining() throws Exception {
+    void sendRawTransactionWithAutoMining() throws Exception {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -199,17 +199,17 @@ public class TransactionModuleTest {
 
         String txHash = sendRawTransaction(web3);
 
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
+        Assertions.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(2, blockchain.getBestBlock().getTransactionsList().size());
 
         Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, txHash);
 
         //Transaction tx must be in the block mined.
-        Assert.assertEquals(txHash, txInBlock.getHash().toJsonString());
+        Assertions.assertEquals(txHash, txInBlock.getHash().toJsonString());
     }
 
     @Test
-    public void sendRawTransactionWithoutAutoMining() {
+    void sendRawTransactionWithoutAutoMining() {
 
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -228,13 +228,13 @@ public class TransactionModuleTest {
 
         String txHash = sendRawTransaction(web3);
 
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-        Assert.assertEquals(1, transactionPool.getPendingTransactions().size());
-        Assert.assertEquals(txHash, transactionPool.getPendingTransactions().get(0).getHash().toJsonString());
+        Assertions.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assertions.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assertions.assertEquals(txHash, transactionPool.getPendingTransactions().get(0).getHash().toJsonString());
     }
 
     @Test
-    public void testGasEstimation() {
+    void testGasEstimation() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
 
@@ -288,12 +288,12 @@ public class TransactionModuleTest {
         // differentiate between OOG and success.
         int consumed2 = checkEstimateGas(callCallWithValue, 33472 + GasCost.STIPEND_CALL, consumed + 1, srcAddr, contractAddress, web3, repository);
 
-        Assert.assertEquals(consumed, consumed2);
+        Assertions.assertEquals(consumed, consumed2);
 
         consumed = checkEstimateGas(callUnfill, 46942, gasLimit, srcAddr, contractAddress, web3, repository);
         consumed2 = checkEstimateGas(callUnfill, 46942, consumed + 1, srcAddr, contractAddress, web3, repository);
 
-        Assert.assertEquals(consumed, consumed2);
+        Assertions.assertEquals(consumed, consumed2);
     }
 
     // We check that the transaction does not fail!
@@ -303,15 +303,15 @@ public class TransactionModuleTest {
                                 RskAddress srcAddr, RskAddress contractAddress, Web3Impl web3, RepositorySnapshot repository) {
         // If expected value given is the gasLimit we must fail because estimateGas cannot
         // differentiate between transaction failure (OOG) and success.
-        Assert.assertNotEquals(expectedValue, gasLimit);
+        Assertions.assertNotEquals(expectedValue, gasLimit);
 
         CallArguments args = getContractCallTransactionParameters(method, gasLimit, srcAddr, contractAddress, repository);
         String gas = web3.eth_estimateGas(args);
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
         BigInteger gasReturned = BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
         int gasReturnedInt = gasReturned.intValueExact();
-        Assert.assertNotEquals(gasReturnedInt, gasLimit);
-        Assert.assertEquals(expectedValue, gasReturnedInt);
+        Assertions.assertNotEquals(gasReturnedInt, gasLimit);
+        Assertions.assertEquals(expectedValue, gasReturnedInt);
         return gasReturnedInt;
     }
 

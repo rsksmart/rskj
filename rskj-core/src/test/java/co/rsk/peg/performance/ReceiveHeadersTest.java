@@ -33,20 +33,21 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-@Ignore
-public class ReceiveHeadersTest extends BridgePerformanceTestCase {
+@Disabled
+class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBestBlock;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -66,8 +67,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         test.teardownCpuTime();
     }
 
-    @Before
-    public void warmup() throws VMException {
+    @BeforeEach
+    void warmup() throws VMException {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
         doReceiveHeaders("warmup", 100, 1, 0);
@@ -76,12 +77,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersSingleBlock() throws VMException {
+    void receiveHeadersSingleBlock() throws VMException {
         BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
     }
 
     @Test
-    public void receiveHeadersInterpolation() throws VMException {
+    void receiveHeadersInterpolation() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
 
         stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
@@ -91,7 +92,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersIncremental() throws VMException {
+    void receiveHeadersIncremental() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
@@ -102,7 +103,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersWithForking() throws VMException {
+    void receiveHeadersWithForking() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {
@@ -147,9 +148,9 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
                     } catch (BlockStoreException e) {
-                        Assert.fail(e.getMessage());
+                        Assertions.fail(e.getMessage());
                     }
-                    Assert.assertEquals(expectedBestBlock.getHash(), bestBlockHash);
+                    Assertions.assertEquals(expectedBestBlock.getHash(), bestBlockHash);
                 }
         );
     }

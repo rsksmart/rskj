@@ -6,9 +6,10 @@ import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -17,17 +18,16 @@ import static org.mockito.Mockito.*;
  * Created by Nazaret García on 15/01/2021
  */
 
-public class PersonalModuleWalletEnabledTest {
+class PersonalModuleWalletEnabledTest {
 
-    @Test(expected = DecoderException.class)
-    public void importRawKey_KeyIsNull_ThrowsNullPointerException() {
+    @Test
+    void importRawKey_KeyIsNull_ThrowsNullPointerException() {
         PersonalModuleWalletEnabled personalModuleWalletEnabled = createPersonalModuleWalletEnabled(null);
-
-        personalModuleWalletEnabled.importRawKey(null, "passphrase1");
+        Assertions.assertThrows(DecoderException.class, () -> personalModuleWalletEnabled.importRawKey(null, "passphrase1"));
     }
 
     @Test
-    public void importRawKey_KeyContains0xPrefix_OK() {
+    void importRawKey_KeyContains0xPrefix_OK() {
         ECKey eckey = new ECKey();
         String rawKey = ByteUtil.toHexString(eckey.getPrivKeyBytes());
         String passphrase = "passphrase1";
@@ -51,7 +51,7 @@ public class PersonalModuleWalletEnabledTest {
     }
 
     @Test
-    public void importRawKey_KeyDoesNotContains0xPrefix_OK() {
+    void importRawKey_KeyDoesNotContains0xPrefix_OK() {
         ECKey eckey = new ECKey();
         String rawKey = ByteUtil.toHexString(eckey.getPrivKeyBytes());
         String passphrase = "passphrase1";

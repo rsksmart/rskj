@@ -37,9 +37,9 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
 import static co.rsk.peg.PegTestUtils.createRandomP2PKHBtcAddress;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
@@ -67,9 +67,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
-    @Before
-    public void setUpOnEachTest() {
+class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
+    @BeforeEach
+    void setUpOnEachTest() {
         activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
@@ -204,7 +204,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -346,7 +346,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -504,7 +504,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
             // assert the new balance of the Lbc address is correct
-            Assert.assertEquals(
+            Assertions.assertEquals(
                 expectedBalance,
                 postCallLbcAddressBalance
             );
@@ -787,7 +787,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
             assertEquals(1, releaseTxs.size());
             BtcTransaction releaseTx = releaseTxs.get(0);
-            Assert.assertEquals(1, releaseTx.getOutputs().size());
+            Assertions.assertEquals(1, releaseTx.getOutputs().size());
 
             Coin amountSent = BridgeUtils.getAmountSentToAddresses(activations,
                 bridgeConstants.getBtcParams(),
@@ -809,45 +809,45 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             Coin estimatedFee = amountSent.divide(10);
             Coin estimatedAmountToRefund = amountSent.minus(estimatedFee);
 
-            Assert.assertTrue("Pegout value should be bigger than the estimated amount to refund(" + estimatedAmountToRefund + ") and " +
-                "smaller than the amount sent(" + amountSent + ")", amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
-                amountToRefund.isLessThan(amountSent)
+            Assertions.assertTrue(amountToRefund.isGreaterThan(estimatedAmountToRefund) &&
+                amountToRefund.isLessThan(amountSent), "Pegout value should be bigger than the estimated amount to refund(" + estimatedAmountToRefund + ") and " +
+                "smaller than the amount sent(" + amountSent + ")"
             );
         }
 
         return result;
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
-        sendFundsToAnyAddress(
-            bridgeConstantsRegtest,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                return tx;
-            }
-        );
-    }
-
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
-        sendFundsToAnyAddress(
-            bridgeConstantsMainnet,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                return tx;
-            }
-        );
+    @Test
+    void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_regtest() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsRegtest,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    return tx;
+                }
+        ));
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_bech32_after_RSKIP293_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_bech32_before_RSKIP293_mainnet() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsMainnet,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    return tx;
+                }
+        ));
+    }
+
+    @Test
+    void registerFlyoverBtcTransaction_output_to_bech32_after_RSKIP293_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsRegtest,
@@ -868,7 +868,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_bech32_after_RSKIP293_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_bech32_after_RSKIP293_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsMainnet,
@@ -889,7 +889,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_P2PKH_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_P2PKH_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
 
         BigInteger result = sendFundsToAnyAddress(
@@ -911,7 +911,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_P2PKH_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_P2PKH_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
 
         BigInteger result = sendFundsToAnyAddress(
@@ -933,7 +933,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_P2SH_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_P2SH_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
 
         BigInteger result = sendFundsToAnyAddress(
@@ -955,7 +955,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_P2SH_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_P2SH_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN;
 
         BigInteger result = sendFundsToAnyAddress(
@@ -977,7 +977,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_different_address_type_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_different_address_type_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(2);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1001,7 +1001,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_output_to_different_address_type_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_output_to_different_address_type_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(2);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1025,7 +1025,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_the_same_address_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_the_same_address_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(4);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1049,7 +1049,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_the_same_address_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_the_same_address_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(4);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1073,7 +1073,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_different_addresses_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_different_addresses_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(5);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1107,7 +1107,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_different_addresses_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_different_addresses_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin expectedValue = Coin.COIN.multiply(5);
 
         BigInteger result = sendFundsToAnyAddress(
@@ -1141,7 +1141,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_random_addresses_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_random_addresses_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsRegtest,
             true,
@@ -1167,7 +1167,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_random_addresses_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_multiple_output_to_random_addresses_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsMainnet,
             true,
@@ -1192,27 +1192,27 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_regtest() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        sendFundsToAnyAddress(
-            bridgeConstantsRegtest,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+    @Test
+    void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_regtest() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsRegtest,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                tx.addOutput(valueToSend, activeFederationAddress);
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(valueToSend, activeFederationAddress);
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                return tx;
-            }
-        );
+                    return tx;
+                }
+        ));
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_after_RSKIP293_regtest() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_after_RSKIP293_regtest() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin expectedValue = Coin.COIN;
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsRegtest,
@@ -1236,27 +1236,27 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
     }
 
-    @Test(expected = ScriptException.class)
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_mainnet() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        sendFundsToAnyAddress(
-            bridgeConstantsMainnet,
-            false,
-            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
-                Coin valueToSend = Coin.COIN;
-                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+    @Test
+    void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_before_RSKIP293_mainnet() {
+        Assertions.assertThrows(ScriptException.class, () -> sendFundsToAnyAddress(
+                bridgeConstantsMainnet,
+                false,
+                (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                    Coin valueToSend = Coin.COIN;
+                    BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-                tx.addOutput(valueToSend, activeFederationAddress);
-                tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
-                tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(valueToSend, activeFederationAddress);
+                    tx.addOutput(createBech32Output(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2pkhOutput(bridgeConstants.getBtcParams(), valueToSend));
+                    tx.addOutput(createP2shOutput(bridgeConstants.getBtcParams(), valueToSend));
 
-                return tx;
-            }
-        );
+                    return tx;
+                }
+        ));
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_after_RSKIP293_mainnet() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_multiple_output_to_all_address_type_after_RSKIP293_mainnet() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin expectedValue = Coin.COIN;
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsMainnet,
@@ -1281,18 +1281,18 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_before_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_before_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).minus(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             false,
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueBelowMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).minus(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
@@ -1300,13 +1300,13 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueBelowMinimum
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             FlyoverTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
             , result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sent_multiple_output_and_one_with_amount_below_minimum_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_sent_multiple_output_and_one_with_amount_below_minimum_mainnet() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsMainnet,
             true,
@@ -1335,7 +1335,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sent_multiple_output_and_one_with_amount_below_minimum_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_sent_multiple_output_and_one_with_amount_below_minimum_regtest() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BigInteger result = sendFundsToAnyAddress(
             bridgeConstantsRegtest,
             true,
@@ -1364,7 +1364,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_amount_sent_is_equal_to_minimum()
+    void registerFlyoverBtcTransaction_amount_sent_is_equal_to_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
@@ -1373,13 +1373,13 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             minimumPegInTxValue
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             co.rsk.core.Coin.fromBitcoin(minimumPegInTxValue).asBigInteger()
             , result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_amount_sent_is_over_minimum()
+    void registerFlyoverBtcTransaction_amount_sent_is_over_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueOverMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).add(Coin.CENT);
@@ -1388,13 +1388,13 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueOverMinimum
         );
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             co.rsk.core.Coin.fromBitcoin(valueOverMinimum).asBigInteger()
             , result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_current_retiring_fed_before_RSKIP293_activation()
+    void registerFlyoverBtcTransaction_funds_sent_to_current_retiring_fed_before_RSKIP293_activation()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
 
         Coin valueToSend = Coin.COIN;
@@ -1403,11 +1403,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_before_RSKIP293_activation() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_before_RSKIP293_activation() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Coin valueToSend = Coin.COIN;
         // should send funds to both federation but only the active federation must receive it
         BigInteger result = sendFundsToActiveAndRetiringFederation(
@@ -1415,11 +1415,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         // send funds to both federations, the active federation and current retiring federation
         BigInteger result = sendFundsToActiveAndRetiringFederation(
@@ -1427,33 +1427,33 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_active_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_active_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         BigInteger result  = sendFundsToActiveFederation(
             true,
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_retiring_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_retiring_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         BigInteger result = sendFundsToRetiringFederation(
             true,
             valueToSend
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_no_refund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_no_refund() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             false,
             Coin.FIFTY_COINS,
@@ -1465,11 +1465,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.FIFTY_COINS.div(2)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.FIFTY_COINS.div(2)).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_LP() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_LP() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             false,
             Coin.FIFTY_COINS,
@@ -1481,11 +1481,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_user() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_before_RSKIP293_only_funds_sent_to_active_fed_should_be_refunded_to_user() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             false,
             Coin.FIFTY_COINS,
@@ -1497,11 +1497,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_should_refund_user_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_should_refund_user_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             true,
             Coin.FIFTY_COINS,
@@ -1512,11 +1512,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_should_refund_lp_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_sum_of_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_should_refund_lp_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             true,
             Coin.FIFTY_COINS,
@@ -1528,11 +1528,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             true
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sum_of_all_utxos_surpass_locking_cap_but_not_funds_sent_to_fed_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_sum_of_all_utxos_surpass_locking_cap_but_not_funds_sent_to_fed_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             true,
             Coin.FIFTY_COINS,
@@ -1545,11 +1545,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2, 0)).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2, 0)).asBigInteger(), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_funds_sent_to_random_addresses_surpass_locking_cap_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    void registerFlyoverBtcTransaction_funds_sent_to_random_addresses_surpass_locking_cap_should_not_refund_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
             true,
             Coin.FIFTY_COINS,
@@ -1561,11 +1561,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             },
             false
         );
-        Assert.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
+        Assertions.assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_with_witness_already_saved_in_storage()
+    void registerFlyoverBtcTransaction_failed_when_tx_with_witness_already_saved_in_storage()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
@@ -1698,7 +1698,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
@@ -1747,7 +1747,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_with_witness_surpassing_locking_already_saved_in_storage()
+    void registerFlyoverBtcTransaction_failed_when_tx_with_witness_surpassing_locking_already_saved_in_storage()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -1891,7 +1891,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -1940,7 +1940,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_with_witness_surpassing_locking_already_saved_in_storage_and_then_send_same_without_witness()
+    void registerFlyoverBtcTransaction_failed_when_tx_with_witness_surpassing_locking_already_saved_in_storage_and_then_send_same_without_witness()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -2084,7 +2084,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction includes a witness making its txId != wTxId
-        Assert.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertNotEquals(btcTx.getHash(), btcTx.getHash(true));
 
         // The verified derivation hash should be the computed one
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(true), derivationHash);
@@ -2124,7 +2124,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2133,7 +2133,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_without_witness_surpassing_locking_already_saved_in_storage()
+    void registerFlyoverBtcTransaction_failed_when_tx_without_witness_surpassing_locking_already_saved_in_storage()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -2263,7 +2263,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2299,7 +2299,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_without_witness_surpassing_locking_already_saved_in_storage_and_then_send_same_tx_with_witness()
+    void registerFlyoverBtcTransaction_failed_when_tx_without_witness_surpassing_locking_already_saved_in_storage_and_then_send_same_tx_with_witness()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
@@ -2429,7 +2429,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2481,7 +2481,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_failed_when_tx_without_witness_already_saved_in_storage()
+    void registerFlyoverBtcTransaction_failed_when_tx_without_witness_already_saved_in_storage()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
@@ -2601,7 +2601,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger(), result);
 
         // Transaction does not include a witness making its txId == wTxId
-        Assert.assertEquals(btcTx.getHash(), btcTx.getHash(true));
+        Assertions.assertEquals(btcTx.getHash(), btcTx.getHash(true));
 
         verify(provider).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationHash);
         verify(provider, never()).isFlyoverDerivationHashUsed(btcTx.getHash(false), derivationArgumentsHash);
@@ -2638,7 +2638,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_is_not_contract()
+    void registerFlyoverBtcTransaction_is_not_contract()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BridgeSupport bridgeSupport = bridgeSupportBuilder.withBridgeConstants(bridgeConstantsRegtest).build();
         Transaction rskTxMock = mock(Transaction.class);
@@ -2657,11 +2657,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_NOT_CONTRACT_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_sender_is_not_lbc()
+    void registerFlyoverBtcTransaction_sender_is_not_lbc()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2702,11 +2702,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_validationsForRegisterBtcTransaction_returns_false()
+    void registerFlyoverBtcTransaction_validationsForRegisterBtcTransaction_returns_false()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2752,11 +2752,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_amount_sent_is_0()
+    void registerFlyoverBtcTransaction_amount_sent_is_0()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2816,11 +2816,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_true()
+    void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_true()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2899,11 +2899,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_LP_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_false()
+    void registerFlyoverBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_false()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2984,11 +2984,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_surpasses_locking_cap_and_tries_to_register_again()
+    void registerFlyoverBtcTransaction_surpasses_locking_cap_and_tries_to_register_again()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3075,7 +3075,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.REFUNDED_USER_ERROR.value()), result);
 
         // Update repository
         bridgeSupport.save();
@@ -3092,11 +3092,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
     }
 
     @Test
-    public void registerFlyoverBtcTransaction_OK()
+    void registerFlyoverBtcTransaction_OK()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -3175,24 +3175,24 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
         co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(Coin.COIN)),
             postCallLbcAddressBalance
         );
 
         bridgeSupport.save();
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
             provider.isFlyoverDerivationHashUsed(
                 tx.getHash(),
                 bridgeSupport.getFlyoverDerivationHash(PegTestUtils.createHash3(0), btcAddress, btcAddress, lbcAddress)
             )
         );
-        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
 
         // Trying to register the same transaction again fails
         result = bridgeSupport.registerFlyoverBtcTransaction(
@@ -3207,11 +3207,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             true
         );
 
-        Assert.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
+        Assertions.assertEquals(BigInteger.valueOf(FlyoverTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value()), result);
     }
 
     @Test
-    public void createFlyoverFederationInformation_OK() {
+    void createFlyoverFederationInformation_OK() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -3250,14 +3250,14 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         FlyoverFederationInformation obtainedFlyoverFedInfo =
             bridgeSupport.createFlyoverFederationInformation(derivationHash);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
             expectedFlyoverFederationInformation.getFlyoverFederationAddress(bridgeConstantsRegtest.getBtcParams()),
             obtainedFlyoverFedInfo.getFlyoverFederationAddress(bridgeConstantsRegtest.getBtcParams())
         );
     }
 
     @Test
-    public void getFlyoverWallet_ok() {
+    void getFlyoverWallet_ok() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -3308,11 +3308,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
         Wallet obtainedWallet = bridgeSupport.getFlyoverWallet(btcContext, utxoList, Collections.singletonList(flyoverFederationInformation));
 
-        Assert.assertEquals(Coin.COIN, obtainedWallet.getBalance());
+        Assertions.assertEquals(Coin.COIN, obtainedWallet.getBalance());
     }
 
     @Test
-    public void getFlyoverDerivationHash_ok() {
+    void getFlyoverDerivationHash_ok() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
@@ -3344,11 +3344,11 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             new RskAddress(lbcAddress)
         );
 
-        Assert.assertArrayEquals(HashUtil.keccak256(result), flyoverDerivationHash.getBytes());
+        Assertions.assertArrayEquals(HashUtil.keccak256(result), flyoverDerivationHash.getBytes());
     }
 
     @Test
-    public void saveFlyoverDataInStorage_OK() throws IOException {
+    void saveFlyoverDataInStorage_OK() throws IOException {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3378,19 +3378,19 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         UTXO utxo = new UTXO(utxoHash, 0, Coin.COIN.multiply(2), 0, false, new Script(new byte[]{}));
         utxos.add(utxo);
 
-        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         bridgeSupport.saveFlyoverActiveFederationDataInStorage(btcTxHash, derivationHash, flyoverFederationInformation, utxos);
 
         bridgeSupport.save();
 
-        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
         assertEquals(utxo, provider.getNewFederationBtcUTXOs().get(0));
-        Assert.assertTrue(provider.isFlyoverDerivationHashUsed(btcTxHash, derivationHash));
+        Assertions.assertTrue(provider.isFlyoverDerivationHashUsed(btcTxHash, derivationHash));
         Optional<FlyoverFederationInformation> optionalFlyoverFederationInformation = provider.getFlyoverFederationInformation(flyoverScriptHash);
-        Assert.assertTrue(optionalFlyoverFederationInformation.isPresent());
+        Assertions.assertTrue(optionalFlyoverFederationInformation.isPresent());
         FlyoverFederationInformation obtainedFlyoverFederationInformation = optionalFlyoverFederationInformation.get();
-        Assert.assertEquals(flyoverFederationInformation.getDerivationHash(), obtainedFlyoverFederationInformation.getDerivationHash());
-        Assert.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
+        Assertions.assertEquals(flyoverFederationInformation.getDerivationHash(), obtainedFlyoverFederationInformation.getDerivationHash());
+        Assertions.assertArrayEquals(flyoverFederationInformation.getFederationRedeemScriptHash(), obtainedFlyoverFederationInformation.getFederationRedeemScriptHash());
     }
 
     private Address getFlyoverFederationAddress() {

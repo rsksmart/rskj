@@ -5,23 +5,23 @@ import co.rsk.peg.BridgeMethods;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.exception.VMException;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-@Ignore
-public class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
+@Disabled
+class PowpegRedeemScriptTest extends BridgePerformanceTestCase {
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getActivePowpegRedeemScriptTest() throws VMException {
+    void getActivePowpegRedeemScriptTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getActivePowpegRedeemScript");
         ABIEncoder abiEncoder = (int executionIndex) -> BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode();
         executeAndAverage(

@@ -22,27 +22,27 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 17/01/2018.
  */
-public class PendingTransactionFilterTest {
+class PendingTransactionFilterTest {
     @Test
-    public void noEvents() {
+    void noEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.length);
     }
 
     @Test
-    public void oneTransactionAndEvents() {
+    void oneTransactionAndEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Account sender = new AccountBuilder().name("sender").build();
@@ -58,13 +58,13 @@ public class PendingTransactionFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("0x" + tx.getHash().toHexString(), result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals("0x" + tx.getHash().toHexString(), result[0]);
     }
 
     @Test
-    public void twoTransactionsAndEvents() {
+    void twoTransactionsAndEvents() {
         PendingTransactionFilter filter = new PendingTransactionFilter();
 
         Account sender = new AccountBuilder().name("sender").build();
@@ -87,9 +87,9 @@ public class PendingTransactionFilterTest {
 
         Object[] result = filter.getEvents();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
-        Assert.assertEquals("0x" + tx1.getHash().toHexString(), result[0]);
-        Assert.assertEquals("0x" + tx2.getHash().toHexString(), result[1]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
+        Assertions.assertEquals("0x" + tx1.getHash().toHexString(), result[0]);
+        Assertions.assertEquals("0x" + tx2.getHash().toHexString(), result[1]);
     }
 }

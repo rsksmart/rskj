@@ -20,8 +20,8 @@ package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.util.HexUtils;
@@ -29,42 +29,42 @@ import co.rsk.util.HexUtils;
 /**
  * Created by martin.medina on 3/7/17.
  */
-public class CallArgumentsToByteArrayTest {
+class CallArgumentsToByteArrayTest {
 
     private TestSystemProperties config = new TestSystemProperties();
 
     @Test
-    public void getGasPriceWhenValueIsNull() throws Exception {
+    void getGasPriceWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertArrayEquals(new byte[] {0}, byteArrayArgs.getGasPrice());
+        Assertions.assertArrayEquals(new byte[] {0}, byteArrayArgs.getGasPrice());
     }
 
     @Test
-    public void getGasPriceWhenValueIsEmpty() throws Exception {
+    void getGasPriceWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setGasPrice("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertArrayEquals(new byte[] {0}, byteArrayArgs.getGasPrice());
+        Assertions.assertArrayEquals(new byte[] {0}, byteArrayArgs.getGasPrice());
     }
 
     @Test
-    public void getGasLimitWhenValueIsNull() throws Exception {
+    void getGasLimitWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         String maxGasLimit = "0x5AF3107A4000";
         byte[] expectedGasLimit = HexUtils.stringHexToByteArray(maxGasLimit);
-        Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
+        Assertions.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 
     @Test
-    public void getGasLimitWhenValueIsEmpty() throws Exception {
+    void getGasLimitWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setGas("");
 
@@ -72,81 +72,81 @@ public class CallArgumentsToByteArrayTest {
 
         String maxGasLimit = "0x5AF3107A4000";
         byte[] expectedGasLimit = HexUtils.stringHexToByteArray(maxGasLimit);
-        Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
+        Assertions.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 
     @Test
-    public void getToAddressWhenValueIsNull() throws Exception {
+    void getToAddressWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertNull(byteArrayArgs.getToAddress());
+        Assertions.assertNull(byteArrayArgs.getToAddress());
     }
 
     @Test
-    public void getValueWhenValueIsNull() throws Exception {
+    void getValueWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertArrayEquals(new byte[] {0}, byteArrayArgs.getValue());
+        Assertions.assertArrayEquals(new byte[] {0}, byteArrayArgs.getValue());
     }
 
     @Test
-    public void getValueWhenValueIsEmpty() throws Exception {
+    void getValueWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setValue("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertArrayEquals(new byte[] {0}, byteArrayArgs.getValue());
+        Assertions.assertArrayEquals(new byte[] {0}, byteArrayArgs.getValue());
     }
 
     @Test
-    public void getDataWhenValueIsNull() throws Exception {
+    void getDataWhenValueIsNull() throws Exception {
         CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertNull(byteArrayArgs.getData());
+        Assertions.assertNull(byteArrayArgs.getData());
     }
 
     @Test
-    public void getDataWhenValueIsEmpty() throws Exception {
+    void getDataWhenValueIsEmpty() throws Exception {
         CallArguments args = new CallArguments();
         args.setData("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
-        Assert.assertNull(byteArrayArgs.getData());
+        Assertions.assertNull(byteArrayArgs.getData());
     }
 
     @Test
-    public void gasLimitForGasEstimationExceedingGasCap() {
+    void gasLimitForGasEstimationExceedingGasCap() {
         long hugeAmountOfGas = 900000000000000l;
         long gasEstimationCap = config.getGasEstimationCap();
 
         CallArguments callArguments = new CallArguments();
         callArguments.setGas(HexUtils.toQuantityJsonHex(hugeAmountOfGas));
 
-        Assert.assertEquals(hugeAmountOfGas, Long.decode(callArguments.getGas()).longValue());
+        Assertions.assertEquals(hugeAmountOfGas, Long.decode(callArguments.getGas()).longValue());
 
         CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
 
-        Assert.assertEquals(hugeAmountOfGas, ByteUtil.byteArrayToLong(callArgumentsToByteArray.getGasLimit()));
-        Assert.assertEquals(gasEstimationCap, ByteUtil.byteArrayToLong(
+        Assertions.assertEquals(hugeAmountOfGas, ByteUtil.byteArrayToLong(callArgumentsToByteArray.getGasLimit()));
+        Assertions.assertEquals(gasEstimationCap, ByteUtil.byteArrayToLong(
                 callArgumentsToByteArray.gasLimitForGasEstimation(gasEstimationCap)));
     }
 
     @Test
-    public void gasLimitForGasEstimationBelowGasCap() {
+    void gasLimitForGasEstimationBelowGasCap() {
         CallArguments callArguments = new CallArguments();
         callArguments.setGas(HexUtils.toQuantityJsonHex(1));
 
         CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
 
-        Assert.assertEquals(1, ByteUtil.byteArrayToLong(
+        Assertions.assertEquals(1, ByteUtil.byteArrayToLong(
                 callArgumentsToByteArray.gasLimitForGasEstimation(config.getGasEstimationCap())));
     }
 }

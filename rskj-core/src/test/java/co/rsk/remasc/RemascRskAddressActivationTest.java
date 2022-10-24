@@ -29,18 +29,18 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class RemascRskAddressActivationTest {
+class RemascRskAddressActivationTest {
 
     @Test
-    public void testActivation() {
+    void testActivation() {
         final RskAddress rskLabsAddress = new RskAddress("14d3065c8Eb89895f4df12450EC6b130049F8034");
         final RskAddress rskLabsAddressRskip218 = new RskAddress("dcb12179ba4697350f66224c959bdd9c282818df");
 
@@ -66,18 +66,18 @@ public class RemascRskAddressActivationTest {
 
         RskAddress actualAddress = remasc.getRskLabsAddress();
 
-        Assert.assertEquals(rskLabsAddress, actualAddress);
-        Assert.assertEquals(blockMock.getNumber(), 1L);
-        Assert.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
+        Assertions.assertEquals(rskLabsAddress, actualAddress);
+        Assertions.assertEquals(1L, blockMock.getNumber());
+        Assertions.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddress();
 
         when(blockMock.getNumber()).thenReturn(2L);
 
         actualAddress = remasc.getRskLabsAddress();
 
-        Assert.assertEquals(rskLabsAddressRskip218, actualAddress);
-        Assert.assertEquals(blockMock.getNumber(), 2L);
-        Assert.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
+        Assertions.assertEquals(rskLabsAddressRskip218, actualAddress);
+        Assertions.assertEquals(2L, blockMock.getNumber());
+        Assertions.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddressRskip218();
     }
 }

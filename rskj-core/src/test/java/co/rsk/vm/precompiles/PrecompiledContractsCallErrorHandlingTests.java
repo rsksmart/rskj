@@ -12,8 +12,8 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,13 +35,13 @@ import java.util.stream.Stream;
  * - PrecompiledSuccess(address) => d1c48ee5d8b9dfbcca9046f456364548ef0b27b0a39faf92aa1c253abf816482
  * - PrecompiledFailure(address) => aa679a624a231df95e2bd73419c633e47abb959a4d3bbfd245a07c036c38202e
  * */
-public class PrecompiledContractsCallErrorHandlingTests {
+class PrecompiledContractsCallErrorHandlingTests {
     public static final String DSL_PRECOMPILED_CALL_ERROR_HANDLING_TXT = "dsl/contract_call/precompiled_error_handling.txt";
 
     private World world;
 
     @Test
-    public void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
+    void handleErrorOnFailedPrecompiledContractCall_beforeIris() throws IOException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
         );
@@ -72,7 +72,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
     }
 
     @Test
-    public void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
+    void handleErrorOnFailedPrecompiledContractCall_afterIris() throws IOException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
         );
@@ -133,14 +133,14 @@ public class PrecompiledContractsCallErrorHandlingTests {
                                    int expectedPrecompiledFailureEventCount, boolean expectedTransactionStatus) throws IOException {
         Transaction transaction = world.getTransactionByName(tx);
 
-        Assert.assertNotNull(transaction);
+        Assertions.assertNotNull(transaction);
 
         TransactionReceipt transactionReceipt = world.getTransactionReceiptByName(tx);
 
         assertExpectedData(transactionReceipt.getTransaction(), precompiledAddress);
 
-        Assert.assertNotNull(transactionReceipt);
-        Assert.assertEquals(expectedTransactionStatus, transactionReceipt.isSuccessful());
+        Assertions.assertNotNull(transactionReceipt);
+        Assertions.assertEquals(expectedTransactionStatus, transactionReceipt.isSuccessful());
 
         assertEvents(transactionReceipt, "PrecompiledSuccess", expectedPrecompiledSuccessEventCount);
         assertEvents(transactionReceipt, "PrecompiledFailure", expectedPrecompiledFailureEventCount);
@@ -150,7 +150,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         // there are 12 precompiledContracts and one contract creation (that's why +1)
         int expectedTransactionCount = PrecompiledContracts.GENESIS_ADDRESSES.size() +
                 PrecompiledContracts.CONSENSUS_ENABLED_ADDRESSES.size() + 1;
-        Assert.assertEquals(expectedTransactionCount, transactionCount);
+        Assertions.assertEquals(expectedTransactionCount, transactionCount);
     }
 
     /**
@@ -170,7 +170,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         expectedData.write(signature);
         expectedData.write(params);
 
-        Assert.assertArrayEquals(expectedData.toByteArray(), transaction.getData());
+        Assertions.assertArrayEquals(expectedData.toByteArray(), transaction.getData());
     }
 
     /**
@@ -185,7 +185,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         List<String> eventsSignature = events.filter(event -> isExpectedEventSignature(event, eventSignature, params))
                 .collect(Collectors.toList());
 
-        Assert.assertEquals(times, eventsSignature.size());
+        Assertions.assertEquals(times, eventsSignature.size());
     }
 
     private static String eventSignature(LogInfo logInfo) {

@@ -19,24 +19,25 @@
 package co.rsk.peg.performance;
 
 import co.rsk.vm.VMPerformanceTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"squid:S2187"}) // extended by subclasses
 public class PrecompiledContractPerformanceTest {
     private static List<ExecutionStats> statsList;
     private static boolean running = false;
     private static Mean averageNanosecondsPerGasUnit;
 
-    @BeforeClass
-    public static void setRunning() {
+    @BeforeAll
+     static void setRunning() {
         running = true;
     }
 
-    @BeforeClass
-    public static void estimateReferenceCost() {
+    @BeforeAll
+     static void estimateReferenceCost() {
         // Run VM tests and average
         averageNanosecondsPerGasUnit = new Mean();
         VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
@@ -55,8 +56,8 @@ public class PrecompiledContractPerformanceTest {
         ));
     }
 
-    @AfterClass
-    public static void printStats() {
+    @AfterAll
+    static void printStats() {
         for (ExecutionStats stats : statsList) {
             System.out.println(stats.getPrintable());
         }

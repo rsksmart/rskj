@@ -19,17 +19,17 @@
 
 package co.rsk.rpc.modules.debug;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TraceOptionsTest {
+class TraceOptionsTest {
 
     @Test
-    public void testTraceOptions_allFieldsSetAsDisabled_disabledFieldsShouldReturnAllFields() {
+    void testTraceOptions_allFieldsSetAsDisabled_disabledFieldsShouldReturnAllFields() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorage", "true");
@@ -40,14 +40,14 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(3, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertTrue(options.getDisabledFields().contains("memory"));
-        Assert.assertTrue(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(3, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertTrue(options.getDisabledFields().contains("stack"));
     }
 
     @Test
-    public void testTraceOptions_anyFieldsSetAsDisabled_disabledFieldsShouldReturnEmptySet() {
+    void testTraceOptions_anyFieldsSetAsDisabled_disabledFieldsShouldReturnEmptySet() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorages", "false");
@@ -58,14 +58,14 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertFalse(options.getDisabledFields().contains("storage"));
-        Assert.assertFalse(options.getDisabledFields().contains("memory"));
-        Assert.assertFalse(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertFalse(options.getDisabledFields().contains("storage"));
+        Assertions.assertFalse(options.getDisabledFields().contains("memory"));
+        Assertions.assertFalse(options.getDisabledFields().contains("stack"));
     }
 
     @Test
-    public void testTraceOptions_someFieldsSetAsDisabled_disabledFieldsShouldReturnDisabledOnes() {
+    void testTraceOptions_someFieldsSetAsDisabled_disabledFieldsShouldReturnDisabledOnes() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableStorage", "true");
@@ -76,34 +76,34 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertFalse(options.getDisabledFields().contains("memory"));
-        Assert.assertTrue(options.getDisabledFields().contains("stack"));
+        Assertions.assertEquals(2, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertFalse(options.getDisabledFields().contains("memory"));
+        Assertions.assertTrue(options.getDisabledFields().contains("stack"));
     }
 
     @Test
-    public void testTraceOptions_nullTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
+    void testTraceOptions_nullTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
         // When
         TraceOptions options = new TraceOptions(null);
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertEquals(0, options.getUnsupportedOptions().size());
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertEquals(0, options.getUnsupportedOptions().size());
     }
 
     @Test
-    public void testTraceOptions_emptyTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
+    void testTraceOptions_emptyTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
         // When
         TraceOptions options = new TraceOptions(Collections.emptyMap());
 
         // Then
-        Assert.assertEquals(0, options.getDisabledFields().size());
-        Assert.assertEquals(0, options.getUnsupportedOptions().size());
+        Assertions.assertEquals(0, options.getDisabledFields().size());
+        Assertions.assertEquals(0, options.getUnsupportedOptions().size());
     }
 
     @Test
-    public void testTraceOptions_unsupportedOptionsGiven_unsupportedOptionsShouldReturnAllOfThem() {
+    void testTraceOptions_unsupportedOptionsGiven_unsupportedOptionsShouldReturnAllOfThem() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("unsupportedOption.1", "1");
@@ -113,13 +113,13 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getUnsupportedOptions().size());
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
+        Assertions.assertEquals(2, options.getUnsupportedOptions().size());
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
     }
 
     @Test
-    public void testTraceOptions_mixOfSupportedAndUnsupportedOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnOK() {
+    void testTraceOptions_mixOfSupportedAndUnsupportedOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnOK() {
         // Given
         Map<String, String> traceOptions = new HashMap<>();
         traceOptions.put("disableMemory", "true");
@@ -131,13 +131,13 @@ public class TraceOptionsTest {
         TraceOptions options = new TraceOptions(traceOptions);
 
         // Then
-        Assert.assertEquals(2, options.getDisabledFields().size());
-        Assert.assertTrue(options.getDisabledFields().contains("storage"));
-        Assert.assertTrue(options.getDisabledFields().contains("memory"));
+        Assertions.assertEquals(2, options.getDisabledFields().size());
+        Assertions.assertTrue(options.getDisabledFields().contains("storage"));
+        Assertions.assertTrue(options.getDisabledFields().contains("memory"));
 
-        Assert.assertEquals(2, options.getUnsupportedOptions().size());
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
-        Assert.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
+        Assertions.assertEquals(2, options.getUnsupportedOptions().size());
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.1"));
+        Assertions.assertTrue(options.getUnsupportedOptions().contains("unsupportedOption.2"));
     }
 
 }

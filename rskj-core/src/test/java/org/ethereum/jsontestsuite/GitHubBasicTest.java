@@ -23,25 +23,24 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.MethodOrderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
-public class GitHubBasicTest {
+@TestMethodOrder(MethodOrderer.MethodName.class)
+@Disabled
+class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
@@ -50,7 +49,7 @@ public class GitHubBasicTest {
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
     @Test
-    public void runDifficultyTest() throws IOException, ParseException {
+    void runDifficultyTest() throws IOException {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
@@ -69,7 +68,7 @@ public class GitHubBasicTest {
     }
 
     @Test
-    public void runDifficultyFrontierTest() throws IOException, ParseException {
+    void runDifficultyFrontierTest() throws IOException {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
@@ -89,7 +88,7 @@ public class GitHubBasicTest {
     }
 
     @Test
-    public void runDifficultyHomesteadTest() throws IOException, ParseException {
+    void runDifficultyHomesteadTest() throws IOException {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 

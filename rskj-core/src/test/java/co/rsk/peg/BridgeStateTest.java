@@ -28,17 +28,17 @@ import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 /**
  * Created by ajlopez on 16/04/2017.
  */
-public class BridgeStateTest {
+class BridgeStateTest {
     @Test
-    public void recreateFromEmptyStorageProvider() throws IOException {
+    void recreateFromEmptyStorageProvider() throws IOException {
         TestSystemProperties config = new TestSystemProperties();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
@@ -52,10 +52,10 @@ public class BridgeStateTest {
 
         BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded(), null);
 
-        Assert.assertNotNull(clone);
-        Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());
-        Assert.assertEquals(0, clone.getNextPegoutCreationBlockNumber());
-        Assert.assertTrue(clone.getActiveFederationBtcUTXOs().isEmpty());
-        Assert.assertTrue(clone.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertNotNull(clone);
+        Assertions.assertEquals(42, clone.getBtcBlockchainBestChainHeight());
+        Assertions.assertEquals(0, clone.getNextPegoutCreationBlockNumber());
+        Assertions.assertTrue(clone.getActiveFederationBtcUTXOs().isEmpty());
+        Assertions.assertTrue(clone.getRskTxsWaitingForSignatures().isEmpty());
     }
 }

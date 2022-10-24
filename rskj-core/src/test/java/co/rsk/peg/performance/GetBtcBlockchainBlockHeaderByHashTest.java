@@ -8,23 +8,22 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 
-@Ignore
-public class GetBtcBlockchainBlockHeaderByHashTest extends BridgePerformanceTestCase {
+@Disabled
+class GetBtcBlockchainBlockHeaderByHashTest extends BridgePerformanceTestCase {
     private BtcBlock expectedBlock;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void getBtcBlockchainBlockHeaderByHashTest() throws VMException {
+    void getBtcBlockchainBlockHeaderByHashTest() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockHeaderByHash");
         getBtcBlockchainBlockHeaderByHashTest_success(1000, stats);
         BridgePerformanceTest.addStats(stats);
@@ -47,7 +46,7 @@ public class GetBtcBlockchainBlockHeaderByHashTest extends BridgePerformanceTest
                 stats,
                 (environment, executionResult) -> {
                     BtcBlock btcBlock = byteArrayToBlockHeader(getByteFromResult(executionResult));
-                    Assert.assertEquals(btcBlock.getHash(), expectedBlock.getHash());
+                    Assertions.assertEquals(btcBlock.getHash(), expectedBlock.getHash());
                 }
         );
     }

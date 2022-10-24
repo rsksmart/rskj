@@ -26,9 +26,9 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -36,14 +36,14 @@ import java.util.Arrays;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockTxsValidationRuleTest {
+class BlockTxsValidationRuleTest {
 
     private BlockTxsValidationRule rule;
     private RepositorySnapshot repositorySnapshot;
     private Block parent;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         parent = mock(Block.class);
         BlockHeader parentHeader = mock(BlockHeader.class);
         when(parent.getHeader()).thenReturn(parentHeader);
@@ -56,37 +56,37 @@ public class BlockTxsValidationRuleTest {
     }
 
     @Test
-    public void validNonceSame() {
+    void validNonceSame() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 42));
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
-    public void invalidNonceLower() {
+    void invalidNonceLower() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 41));
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
-    public void invalidNonceHigher() {
+    void invalidNonceHigher() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 43));
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
-    public void validTransactionsWithSameNonceAndDifferentSenders() {
+    void validTransactionsWithSameNonceAndDifferentSenders() {
         RskAddress sender1 = TestUtils.randomAddress();
         initialNonce(sender1, 64);
         RskAddress sender2 = TestUtils.randomAddress();
@@ -94,37 +94,37 @@ public class BlockTxsValidationRuleTest {
 
         Block block = block(transaction(sender1, 64), transaction(sender2, 64));
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
-    public void validConsecutiveTransactionsFromSameSender() {
+    void validConsecutiveTransactionsFromSameSender() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 42), transaction(sender, 43));
 
-        Assert.assertTrue(rule.isValid(block, parent));
+        Assertions.assertTrue(rule.isValid(block, parent));
     }
 
     @Test
-    public void invalidTransactionsFromSameSenderWithSkippedNonce() {
+    void invalidTransactionsFromSameSenderWithSkippedNonce() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 42), transaction(sender, 44));
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     @Test
-    public void invalidTransactionsWithSameNonceAndSameSender() {
+    void invalidTransactionsWithSameNonceAndSameSender() {
         RskAddress sender = TestUtils.randomAddress();
         initialNonce(sender, 42);
 
         Block block = block(transaction(sender, 42), transaction(sender, 42));
 
-        Assert.assertFalse(rule.isValid(block, parent));
+        Assertions.assertFalse(rule.isValid(block, parent));
     }
 
     private void initialNonce(RskAddress sender, int nonce) {

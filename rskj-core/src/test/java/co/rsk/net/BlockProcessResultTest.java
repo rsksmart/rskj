@@ -24,8 +24,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -33,20 +33,20 @@ import java.util.Map;
 import java.util.Random;
 import org.mockito.Mockito;
 
-public class BlockProcessResultTest {
+class BlockProcessResultTest {
     @Test
-    public void buildSimpleLogMessage() {
+    void buildSimpleLogMessage() {
         String blockHash = "0x01020304";
         Duration processingTime = Duration.ofNanos(123_000_000L);
 
         String result = BlockProcessResult.buildLogMessage(blockHash, processingTime, null);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("[MESSAGE PROCESS] Block[0x01020304] After[0.123000] seconds, process result. No block connections were made", result);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("[MESSAGE PROCESS] Block[0x01020304] After[0.123000] seconds, process result. No block connections were made", result);
     }
 
     @Test
-    public void buildLogMessageWithConnections() {
+    void buildLogMessageWithConnections() {
         String blockHash = "0x01020304";
         Duration processingTime = Duration.ofNanos(123_000_000L);
         Map<Keccak256, ImportResult> connections = new HashMap<>();
@@ -61,12 +61,12 @@ public class BlockProcessResultTest {
 
         String result = BlockProcessResult.buildLogMessage(blockHash, processingTime, connections);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("[MESSAGE PROCESS] Block[0x01020304] After[0.123000] seconds, process result. Connections attempts: 1 | " + hash.toHexString() + " - IMPORTED_BEST | ", result);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals("[MESSAGE PROCESS] Block[0x01020304] After[0.123000] seconds, process result. Connections attempts: 1 | " + hash.toHexString() + " - IMPORTED_BEST | ", result);
     }
 
     @Test
-    public void factoryMethodForIgnoredBlock() {
+    void factoryMethodForIgnoredBlock() {
         Block mock = Mockito.mock(Block.class);
         BlockProcessResult result = BlockProcessResult.ignoreBlockResult(
                 mock, Instant.now()
@@ -75,7 +75,7 @@ public class BlockProcessResultTest {
     }
 
     @Test
-    public void factoryMethodForValidBlock() {
+    void factoryMethodForValidBlock() {
         Block mock = Mockito.mock(Block.class);
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         connectionsResult.put(mock.getHash(), ImportResult.IMPORTED_BEST);

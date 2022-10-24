@@ -18,10 +18,10 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.
  */
-public class VMSpecificOpcodesPerformanceTest {
+class VMSpecificOpcodesPerformanceTest {
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
@@ -53,9 +53,9 @@ public class VMSpecificOpcodesPerformanceTest {
         return padZeroesLeft(Long.toHexString(loopCount), 4);
     }
 
-    @Ignore
+    @Disabled("manual performance test")
     @Test
-    public void testCallsToExistentAccounts() {
+    void testCallsToExistentAccounts() {
         int gasCostPerCALLLoop = 755;
         RskAddress shortAddress = new RskAddress("0000000000000000000000000000000000100000");
         invoke.addAccount(shortAddress,new Coin(BigInteger.valueOf(1)));
@@ -98,15 +98,15 @@ public class VMSpecificOpcodesPerformanceTest {
         //
         long gasUsed =program.getResult().getGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
-        Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
+        Assertions.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 
 
         printResults(stopWatch,gasCostPerCALLLoop);
     }
 
-    @Ignore
+    @Disabled("manual performance test")
     @Test
-    public void testCallsToNonExistingContracts() {
+    void testCallsToNonExistingContracts() {
         // IMPORTANT NODE
         // in RSK calling a non-existent contract IMMEDIATELY CREATES IT.
         // This does not depend on the value transferred.
@@ -160,7 +160,7 @@ public class VMSpecificOpcodesPerformanceTest {
         //
         long gasUsed =program.getResult().getGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
-        Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
+        Assertions.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 
         printResults(stopWatch,gasCostPerCALLLoop);
     }
@@ -179,7 +179,7 @@ public class VMSpecificOpcodesPerformanceTest {
         String nsPerGasUnit = String.format("%.02f", CALLloopNanos *1.0/ gasCostPerCALLLoop);
         System.out.println("Time/gas for CALL lopp [ns]: " +nsPerGasUnit);
         // A block should take less than 400 msec to process
-        Assert.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
+        Assertions.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
@@ -212,8 +212,8 @@ public class VMSpecificOpcodesPerformanceTest {
         return new VM(vmConfig, precompiledContracts);
     }
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();
         invoke.setGas(500*1000*1000); //

@@ -3,8 +3,8 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +12,9 @@ import java.util.List;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class BlockHeadersByHashMessageTest {
+class BlockHeadersByHashMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         List<BlockHeader> blocks = new ArrayList<>();
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -27,12 +27,12 @@ public class BlockHeadersByHashMessageTest {
 
         BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(1, blocks);
 
-        Assert.assertEquals(1, message.getId());
+        Assertions.assertEquals(1, message.getId());
         List<BlockHeader> mblocks = message.getBlockHeaders();
 
-        Assert.assertEquals(mblocks.size(), blocks.size());
+        Assertions.assertEquals(mblocks.size(), blocks.size());
 
         for (int i = 0; i < blocks.size(); i++)
-            Assert.assertEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
+            Assertions.assertEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
     }
 }

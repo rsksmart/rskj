@@ -1,8 +1,8 @@
 package co.rsk.net;
 
 import co.rsk.net.sync.SyncPeerStatus;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -10,29 +10,31 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by ajlopez on 17/09/2017.
  */
-public class SyncPeerStatusTest {
+class SyncPeerStatusTest {
     @Test
-    public void justCreatedIsNotExpired() {
+    void justCreatedIsNotExpired() {
         SyncPeerStatus status = new SyncPeerStatus();
 
-        Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
+        Assertions.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 
     @Test
-    public void isExpiredAfterTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void isExpiredAfterTimeout() throws InterruptedException {
         SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(1000);
 
-        Assert.assertTrue(status.isExpired(Duration.ofMillis(100)));
+        Assertions.assertTrue(status.isExpired(Duration.ofMillis(100)));
     }
 
     @Test
-    public void isNotExpiredAfterShortTimeout() throws InterruptedException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void isNotExpiredAfterShortTimeout() throws InterruptedException {
         SyncPeerStatus status = new SyncPeerStatus();
 
         TimeUnit.MILLISECONDS.sleep(100);
 
-        Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
+        Assertions.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 }

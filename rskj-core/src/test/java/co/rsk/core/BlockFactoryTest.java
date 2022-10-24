@@ -20,52 +20,50 @@ package co.rsk.core;
 
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
-import org.junit.Before;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockFactoryTest {
+class BlockFactoryTest {
 
     private ActivationConfig activationConfig;
     private BlockFactory factory;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         activationConfig = mock(ActivationConfig.class);
         factory = new BlockFactory(activationConfig);
     }
 
     @Test
-    public void decodeGenesisBlock() {
+    void decodeGenesisBlock() {
         enableRulesAt(0L, RSKIP92);
-        assertThat(factory.decodeBlock(genesisRaw()).getHash().getBytes(), is(genesisRawHash()));
+        MatcherAssert.assertThat(factory.decodeBlock(genesisRaw()).getHash().getBytes(), is(genesisRawHash()));
     }
 
     @Test
-    public void newHeaderWithNoForkDetectionDataAndRskip110On() {
+    void newHeaderWithNoForkDetectionDataAndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
@@ -74,11 +72,11 @@ public class BlockFactoryTest {
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
 
-        assertThat(hash.getBytes(), is(hashForMergedMining));
+        MatcherAssert.assertThat(hash.getBytes(), is(hashForMergedMining));
     }
 
     @Test
-    public void decodeBlockPriorToHeight449AndRskip110On() {
+    void decodeBlockPriorToHeight449AndRskip110On() {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
@@ -86,15 +84,15 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
-    public void decodeBlockPriorToHeight449AndRskip110Off() {
+    void decodeBlockPriorToHeight449AndRskip110Off() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -102,15 +100,15 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
-    public void decodeBlockAfterHeight449AndRskip110OFF() {
+    void decodeBlockAfterHeight449AndRskip110OFF() {
         long number = 457L;
         enableRulesAt(number, RSKIP92);
 
@@ -118,15 +116,15 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
-    public void decodeBlockAfterHeight449AndRskip110On() {
+    void decodeBlockAfterHeight449AndRskip110On() {
         long number = 457L;
         enableRulesAt(number, RSKIP92, RSKIP110);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
@@ -142,11 +140,11 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
     /**
@@ -154,7 +152,7 @@ public class BlockFactoryTest {
      * and prior to the RSKIP 110 activation.
      */
     @Test
-    public void decodeWithNoMergedMiningDataAndRskip110OffAndNoForkDetectionData() {
+    void decodeWithNoMergedMiningDataAndRskip110OffAndNoForkDetectionData() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -162,10 +160,10 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(16));
+        MatcherAssert.assertThat(headerRLP.size(), is(16));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
     /**
@@ -174,7 +172,7 @@ public class BlockFactoryTest {
      *  This case should not happen in real life.
      */
     @Test
-    public void decodeWithNoMergedMiningDataAndRskip110OffAndForkDetectionData() {
+    void decodeWithNoMergedMiningDataAndRskip110OffAndForkDetectionData() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
@@ -183,14 +181,14 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(16));
+        MatcherAssert.assertThat(headerRLP.size(), is(16));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsValidUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsValidUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -199,16 +197,16 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(17));
+        MatcherAssert.assertThat(headerRLP.size(), is(17));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsEmptyUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsEmptyUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -216,16 +214,16 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(17));
+        MatcherAssert.assertThat(headerRLP.size(), is(17));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
+    @Test
+    void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -235,16 +233,13 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(16));
+        MatcherAssert.assertThat(headerRLP.size(), is(16));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-
-        assertThat(decodedHeader.getHash(), is(header.getHash()));
-        assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader));
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsValidUMMRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsValidUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -253,16 +248,16 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(20));
+        MatcherAssert.assertThat(headerRLP.size(), is(20));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
     @Test
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsEmptyUmmRoot() {
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsEmptyUmmRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -270,16 +265,16 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(20));
+        MatcherAssert.assertThat(headerRLP.size(), is(20));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
-        assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+        MatcherAssert.assertThat(header.getHash(), is(decodedHeader.getHash()));
+        MatcherAssert.assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
+    @Test
+    void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
@@ -289,12 +284,9 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        MatcherAssert.assertThat(headerRLP.size(), is(19));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
-
-        assertThat(decodedHeader.getHash(), is(header.getHash()));
-        assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader));
     }
 
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {

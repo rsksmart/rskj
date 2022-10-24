@@ -41,21 +41,21 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
  * Created by usuario on 13/04/2017.
  */
-public class RemascStorageProviderTest {
+class RemascStorageProviderTest {
 
     private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
     private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
@@ -95,17 +95,17 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void getDefautRewardBalance() {
+    void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Coin.ZERO, provider.getRewardBalance());
+        Assertions.assertEquals(Coin.ZERO, provider.getRewardBalance());
     }
 
     @Test
-    public void setAndGetRewardBalance() {
+    void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -113,11 +113,11 @@ public class RemascStorageProviderTest {
 
         provider.setRewardBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(Coin.valueOf(1), provider.getRewardBalance());
+        Assertions.assertEquals(Coin.valueOf(1), provider.getRewardBalance());
     }
 
     @Test
-    public void setSaveRetrieveAndGetRewardBalance() throws IOException {
+    void setSaveRetrieveAndGetRewardBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -129,21 +129,21 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Coin.valueOf(255), newProvider.getRewardBalance());
+        Assertions.assertEquals(Coin.valueOf(255), newProvider.getRewardBalance());
     }
 
     @Test
-    public void getDefautBurnedBalance() {
+    void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Coin.ZERO, provider.getBurnedBalance());
+        Assertions.assertEquals(Coin.ZERO, provider.getBurnedBalance());
     }
 
     @Test
-    public void setAndGetBurnedBalance() {
+    void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -151,11 +151,11 @@ public class RemascStorageProviderTest {
 
         provider.setBurnedBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(Coin.valueOf(1), provider.getBurnedBalance());
+        Assertions.assertEquals(Coin.valueOf(1), provider.getBurnedBalance());
     }
 
     @Test
-    public void setSaveRetrieveAndGetBurnedBalance() throws IOException {
+    void setSaveRetrieveAndGetBurnedBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -167,21 +167,21 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Coin.valueOf(255), newProvider.getBurnedBalance());
+        Assertions.assertEquals(Coin.valueOf(255), newProvider.getBurnedBalance());
     }
 
     @Test
-    public void getDefaultBrokenSelectionRule() {
+    void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Boolean.FALSE, provider.getBrokenSelectionRule());
+        Assertions.assertEquals(Boolean.FALSE, provider.getBrokenSelectionRule());
     }
 
     @Test
-    public void setAndGetBrokenSelectionRule() {
+    void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
         Repository repository = createRepository();
 
@@ -189,11 +189,11 @@ public class RemascStorageProviderTest {
 
         provider.setBrokenSelectionRule(Boolean.TRUE);
 
-        Assert.assertEquals(Boolean.TRUE, provider.getBrokenSelectionRule());
+        Assertions.assertEquals(Boolean.TRUE, provider.getBrokenSelectionRule());
     }
 
     @Test
-    public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
+    void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
         RskAddress accountAddress = randomAddress();
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -205,11 +205,11 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(Boolean.TRUE, newProvider.getBrokenSelectionRule());
+        Assertions.assertEquals(Boolean.TRUE, newProvider.getBrokenSelectionRule());
     }
 
     @Test
-    public void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
         long minerFee = 21000;
@@ -231,7 +231,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
+    void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
         long minerFee = 21000;
         long txValue = 10000;
 
@@ -256,7 +256,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void alwaysPaysBeforeRFS() throws IOException {
+    void alwaysPaysBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -278,7 +278,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void alwaysPaysFedBeforeRFS() throws IOException {
+    void alwaysPaysFedBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -303,7 +303,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -329,7 +329,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
+    void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -352,7 +352,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -380,7 +380,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
+    void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -405,7 +405,7 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
+    void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
@@ -460,7 +460,7 @@ public class RemascStorageProviderTest {
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
-            Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
+            Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
             RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
             long blockNumber = blockchain.getBestBlock().getNumber();

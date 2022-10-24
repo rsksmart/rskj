@@ -23,9 +23,9 @@ import co.rsk.config.BridgeConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -33,11 +33,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FederationSupportTest {
+class FederationSupportTest {
 
     private FederationSupport federationSupport;
     private BridgeConstants bridgeConstants;
@@ -45,8 +45,8 @@ public class FederationSupportTest {
     private Block executionBlock;
 
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
@@ -54,7 +54,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
+    void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
         Federation genesisFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
                 .thenReturn(null);
@@ -65,7 +65,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
+    void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
         Federation newFederation = getNewFakeFederation(100);
         when(provider.getNewFederation())
                 .thenReturn(newFederation);
@@ -76,7 +76,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
+    void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(75);
         Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
@@ -92,7 +92,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
+    void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(65);
         Federation oldFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
@@ -108,7 +108,7 @@ public class FederationSupportTest {
     }
 
     @Test
-    public void getFederatorPublicKeys() {
+    void getFederatorPublicKeys() {
         BtcECKey btcKey0 = BtcECKey.fromPublicOnly(Hex.decode("020000000000000000001111111111111111111122222222222222222222333333"));
         ECKey rskKey0 = new ECKey();
         ECKey mstKey0 = new ECKey();
@@ -126,21 +126,21 @@ public class FederationSupportTest {
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), btcKey0.getPubKey()));
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC), btcKey1.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC), btcKey0.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC), btcKey1.getPubKey()));
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorBtcPublicKey(0), btcKey0.getPubKey()));
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorBtcPublicKey(1), btcKey1.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorBtcPublicKey(0), btcKey0.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorBtcPublicKey(1), btcKey1.getPubKey()));
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), rskKey0.getPubKey(true)));
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK), rskKey1.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK), rskKey0.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK), rskKey1.getPubKey(true)));
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), mstKey0.getPubKey(true)));
-        Assert.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.MST), mstKey1.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(0, FederationMember.KeyType.MST), mstKey0.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getFederatorPublicKeyOfType(1, FederationMember.KeyType.MST), mstKey1.getPubKey(true)));
     }
 
     @Test
-    public void getMemberPublicKeyOfType() {
+    void getMemberPublicKeyOfType() {
         BtcECKey btcKey0 = new BtcECKey();
         ECKey rskKey0 = new ECKey();
         ECKey mstKey0 = new ECKey();
@@ -154,18 +154,18 @@ public class FederationSupportTest {
                 new FederationMember(btcKey1, rskKey1, mstKey1)
         );
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.BTC, "a prefix"), btcKey0.getPubKey()));
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.BTC, "a prefix"), btcKey1.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.BTC, "a prefix"), btcKey0.getPubKey()));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.BTC, "a prefix"), btcKey1.getPubKey()));
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.RSK, "a prefix"), rskKey0.getPubKey(true)));
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.RSK, "a prefix"), rskKey1.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.RSK, "a prefix"), rskKey0.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.RSK, "a prefix"), rskKey1.getPubKey(true)));
 
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.MST, "a prefix"), mstKey0.getPubKey(true)));
-        Assert.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.MST, "a prefix"), mstKey1.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.MST, "a prefix"), mstKey0.getPubKey(true)));
+        Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 1, FederationMember.KeyType.MST, "a prefix"), mstKey1.getPubKey(true)));
     }
 
     @Test
-    public void getMemberPublicKeyOfType_OutOfBounds() {
+    void getMemberPublicKeyOfType_OutOfBounds() {
         List<FederationMember> members = Arrays.asList(
                 new FederationMember(new BtcECKey(), new ECKey(), new ECKey()),
                 new FederationMember(new BtcECKey(), new ECKey(), new ECKey())
@@ -173,16 +173,16 @@ public class FederationSupportTest {
 
         try {
             federationSupport.getMemberPublicKeyOfType(members,2, FederationMember.KeyType.BTC, "a prefix");
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
-            Assert.assertTrue(e.getMessage().startsWith("a prefix"));
+            Assertions.assertTrue(e.getMessage().startsWith("a prefix"));
         }
 
         try {
             federationSupport.getMemberPublicKeyOfType(members,-1, FederationMember.KeyType.MST, "another prefix");
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
-            Assert.assertTrue(e.getMessage().startsWith("another prefix"));
+            Assertions.assertTrue(e.getMessage().startsWith("another prefix"));
         }
     }
 

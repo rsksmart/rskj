@@ -7,8 +7,8 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -17,9 +17,9 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class BodyResponseMessageTest {
+class BodyResponseMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -38,20 +38,20 @@ public class BodyResponseMessageTest {
 
         BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
-        Assert.assertEquals(100, message.getId());
+        Assertions.assertEquals(100, message.getId());
 
-        Assert.assertNotNull(message.getTransactions());
-        Assert.assertEquals(transactions.size(), message.getTransactions().size());
+        Assertions.assertNotNull(message.getTransactions());
+        Assertions.assertEquals(transactions.size(), message.getTransactions().size());
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 transactions,
                 message.getTransactions());
 
-        Assert.assertNotNull(message.getUncles());
-        Assert.assertEquals(uncles.size(), message.getUncles().size());
+        Assertions.assertNotNull(message.getUncles());
+        Assertions.assertEquals(uncles.size(), message.getUncles().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {
@@ -65,7 +65,7 @@ public class BodyResponseMessageTest {
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 

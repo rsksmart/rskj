@@ -27,19 +27,19 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-public class ReversibleTransactionExecutorTest {
+class ReversibleTransactionExecutorTest {
 
     private final RskTestFactory factory = new RskTestFactory();
     private final ContractRunner contractRunner = new ContractRunner(factory);
     private final ReversibleTransactionExecutor reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
 
     @Test
-    public void executeTransactionHello() {
+    void executeTransactionHello() {
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
         RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
@@ -62,14 +62,14 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"chinchilla"},
                 helloFn.decodeResult(result.getHReturn()));
     }
 
     @Test
-    public void executeTransactionGreeter() {
+    void executeTransactionGreeter() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
 
@@ -80,14 +80,14 @@ public class ReversibleTransactionExecutorTest {
                 true
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"greet me"},
                 greeterFn.decodeResult(result.getHReturn()));
     }
 
     @Test
-    public void executeTransactionGreeterOtherSender() {
+    void executeTransactionGreeterOtherSender() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
         RskAddress contractAddress = contractRunner.addContract(greeter.runtimeBytecode);
@@ -110,11 +110,11 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertTrue(result.isRevert());
+        Assertions.assertTrue(result.isRevert());
     }
 
     @Test
-    public void executeTransactionCountCallsMultipleTimes() {
+    void executeTransactionCountCallsMultipleTimes() {
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
         RskAddress contractAddress = contractRunner.addContract(countcalls.runtimeBytecode);
@@ -137,8 +137,8 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result.getHReturn()));
 
@@ -153,8 +153,8 @@ public class ReversibleTransactionExecutorTest {
                 from
         );
 
-        Assert.assertNull(result2.getException());
-        Assert.assertArrayEquals(
+        Assertions.assertNull(result2.getException());
+        Assertions.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result2.getHReturn()));
     }

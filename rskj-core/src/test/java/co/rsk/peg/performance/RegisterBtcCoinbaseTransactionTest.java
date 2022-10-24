@@ -30,31 +30,31 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Ignore
-public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
+@Disabled
+class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction coinbaseTx;
     private co.rsk.bitcoinj.core.BtcBlock registerHeader;
     private PartialMerkleTree pmtWithoutWitness;
     private Sha256Hash witnessRoot;
     private Sha256Hash witnessReservedValue;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws VMException {
+    void registerBtcCoinbaseTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerBtcCoinbaseTransaction");
         registerBtcCoinbaseTransaction_success(5000, stats);
         BridgePerformanceTest.addStats(stats);
@@ -75,7 +75,7 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
-                    Assert.assertEquals(witnessRoot, bsp.getCoinbaseInformation(registerHeader.getHash()).getWitnessMerkleRoot());
+                    Assertions.assertEquals(witnessRoot, bsp.getCoinbaseInformation(registerHeader.getHash()).getWitnessMerkleRoot());
                 });
     }
 

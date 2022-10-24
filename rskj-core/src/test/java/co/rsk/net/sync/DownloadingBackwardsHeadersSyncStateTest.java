@@ -25,8 +25,8 @@ import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.net.InetAddress;
@@ -34,18 +34,18 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class DownloadingBackwardsHeadersSyncStateTest {
+class DownloadingBackwardsHeadersSyncStateTest {
 
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
     private BlockStore blockStore;
     private Peer selectedPeer;
 
-    @Before
-    public void setUp() throws UnknownHostException {
+    @BeforeEach
+    void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
@@ -56,7 +56,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     }
 
     @Test
-    public void onEnter() {
+    void onEnter() {
         when(blockStore.getMinNumber()).thenReturn(50L);
         Block child = mock(Block.class);
         Keccak256 hash = new Keccak256(new byte[32]);
@@ -81,7 +81,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     }
 
     @Test
-    public void newHeaders() {
+    void newHeaders() {
         when(blockStore.getMinNumber()).thenReturn(50L);
         Block child = mock(Block.class);
         Keccak256 hash = new Keccak256(new byte[32]);
@@ -99,11 +99,11 @@ public class DownloadingBackwardsHeadersSyncStateTest {
         target.newBlockHeaders(receivedHeaders);
 
 
-        verify(syncEventsHandler).backwardDownloadBodies(eq(child), eq(receivedHeaders), eq(selectedPeer));
+        verify(syncEventsHandler).backwardDownloadBodies(child, receivedHeaders, selectedPeer);
     }
 
     @Test
-    public void onMessageTimeOut() {
+    void onMessageTimeOut() {
         DownloadingBackwardsHeadersSyncState target = new DownloadingBackwardsHeadersSyncState(
                 syncConfiguration,
                 syncEventsHandler,

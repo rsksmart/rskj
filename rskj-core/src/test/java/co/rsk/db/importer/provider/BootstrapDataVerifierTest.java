@@ -3,24 +3,25 @@ package co.rsk.db.importer.provider;
 import co.rsk.db.importer.BootstrapImportException;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class BootstrapDataVerifierTest {
+class BootstrapDataVerifierTest {
 
     @Test
-    public void verifyFileEmpty() {
+    void verifyFileEmpty() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         assertEquals(0, bootstrapDataVerifier.verifyEntries(new HashMap<>()));
     }
 
     @Test
-    public void verifyFileMany() {
+    void verifyFileMany() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         HashMap<String, BootstrapDataEntry> entries = new HashMap<>();
         List<String> keys = new ArrayList<>();
@@ -44,8 +45,8 @@ public class BootstrapDataVerifierTest {
         assertEquals(2, bootstrapDataVerifier.verifyEntries(entries));
     }
 
-    @Test(expected = BootstrapImportException.class)
-    public void doNotVerifyForDifferentHashes() {
+    @Test
+    void doNotVerifyForDifferentHashes() {
         BootstrapDataVerifier bootstrapDataVerifier = new BootstrapDataVerifier();
         HashMap<String, BootstrapDataEntry> entries = new HashMap<>();
         List<String> keys = new ArrayList<>();
@@ -68,7 +69,7 @@ public class BootstrapDataVerifierTest {
         entries.put(keys.get(1), new BootstrapDataEntry(1, "", "dbPath", hash2, new BootstrapDataSignature(r2, s2)));
         entries.put(keys.get(2), new BootstrapDataEntry(1, "", "dbPath", hash3, new BootstrapDataSignature(r3, s3)));
 
-        bootstrapDataVerifier.verifyEntries(entries);
+        Assertions.assertThrows(BootstrapImportException.class, () -> bootstrapDataVerifier.verifyEntries(entries));
     }
 
 

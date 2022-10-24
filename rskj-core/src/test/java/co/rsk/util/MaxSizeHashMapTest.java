@@ -1,17 +1,17 @@
 package co.rsk.util;
 
 import org.ethereum.TestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class MaxSizeHashMapTest {
+class MaxSizeHashMapTest {
 
     @Test
-    public void maxSizeMap_Test() {
+    void maxSizeMap_Test() {
         int maxSize = 50_000;
         Map<Integer, Integer> maxSizeMap = new MaxSizeHashMap<>(maxSize, true);
 

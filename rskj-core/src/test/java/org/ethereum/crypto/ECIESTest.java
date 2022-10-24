@@ -20,8 +20,8 @@
 package org.ethereum.crypto;
 
 import org.ethereum.ConcatKDFBytesGenerator;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -42,11 +42,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.security.Security;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class ECIESTest {
+class ECIESTest {
     public static final int KEY_SIZE = 128;
     static Logger log = LoggerFactory.getLogger("test");
     private static ECDomainParameters curve;
@@ -58,13 +57,13 @@ public class ECIESTest {
         return curve.getG().multiply(d);
     }
 
-    @BeforeClass
-    public static void beforeAll() {
+    @BeforeAll
+     static void beforeAll() {
         curve = new ECDomainParameters(IES_CURVE_PARAM.getCurve(), IES_CURVE_PARAM.getG(), IES_CURVE_PARAM.getN(), IES_CURVE_PARAM.getH());
     }
 
     @Test
-    public void testKDF() {
+    void testKDF() {
         ConcatKDFBytesGenerator kdf = new ConcatKDFBytesGenerator(new SHA256Digest());
         kdf.init(new KDFParameters("Hello".getBytes(), new byte[0]));
         byte[] bytes = new byte[2];
@@ -73,7 +72,7 @@ public class ECIESTest {
     }
 
     @Test
-    public void testDecryptTestVector() throws IOException, InvalidCipherTextException {
+    void testDecryptTestVector() throws IOException, InvalidCipherTextException {
         ECPoint pub1 = pub(PRIVATE_KEY1);
         byte[] ciphertext = Hex.decode(CIPHERTEXT1);
         byte[] plaintext = decrypt(PRIVATE_KEY1, ciphertext);
@@ -81,7 +80,7 @@ public class ECIESTest {
     }
 
     @Test
-    public void testRoundTrip() throws InvalidCipherTextException, IOException {
+    void testRoundTrip() throws InvalidCipherTextException, IOException {
         ECPoint pub1 = pub(PRIVATE_KEY1);
         byte[] plaintext = "Hello world".getBytes();
         byte[] ciphertext = encrypt(pub1, plaintext);

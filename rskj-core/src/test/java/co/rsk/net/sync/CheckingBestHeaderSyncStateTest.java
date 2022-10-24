@@ -24,8 +24,8 @@ import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetAddress;
@@ -34,7 +34,7 @@ import java.util.Collections;
 
 import static org.mockito.Mockito.*;
 
-public class CheckingBestHeaderSyncStateTest {
+class CheckingBestHeaderSyncStateTest {
 
     private static final byte[] HASH_1 = HashUtil.sha256(new byte[]{1});
 
@@ -43,8 +43,8 @@ public class CheckingBestHeaderSyncStateTest {
     private BlockHeaderValidationRule blockHeaderValidationRule;
     private CheckingBestHeaderSyncState state;
 
-    @Before
-    public void setUp() throws UnknownHostException {
+    @BeforeEach
+    void setUp() throws UnknownHostException {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockHeaderValidationRule = mock(BlockHeaderValidationRule.class);
@@ -56,14 +56,14 @@ public class CheckingBestHeaderSyncStateTest {
     }
 
     @Test
-    public void onEnterContinue() {
+    void onEnterContinue() {
         state.onEnter();
         ChunkDescriptor chunk = new ChunkDescriptor(HASH_1, 1);
-        verify(syncEventsHandler, times(1)).sendBlockHeadersRequest(eq(peer), eq(chunk));
+        verify(syncEventsHandler, times(1)).sendBlockHeadersRequest(peer, chunk);
     }
 
     @Test
-    public void newBlockHeadersWhenValidHeaderContinue() {
+    void newBlockHeadersWhenValidHeaderContinue() {
         BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
         when(header.getHash().getBytes()).thenReturn(HASH_1);
         when(blockHeaderValidationRule.isValid(header)).thenReturn(true);
@@ -74,7 +74,7 @@ public class CheckingBestHeaderSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenInValidHeaderOnErrorSyncing() {
+    void newBlockHeadersWhenInValidHeaderOnErrorSyncing() {
         BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
         when(header.getHash().getBytes()).thenReturn(HASH_1);
         when(blockHeaderValidationRule.isValid(header)).thenReturn(false);
@@ -87,7 +87,7 @@ public class CheckingBestHeaderSyncStateTest {
     }
 
     @Test
-    public void newBlockHeadersWhenDifferentHeaderOnErrorSyncing() {
+    void newBlockHeadersWhenDifferentHeaderOnErrorSyncing() {
         BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
         when(header.getHash().getBytes()).thenReturn(HashUtil.sha256(new byte[]{5}));
         when(blockHeaderValidationRule.isValid(header)).thenReturn(true);
@@ -100,7 +100,7 @@ public class CheckingBestHeaderSyncStateTest {
     }
 
     @Test
-    public void onMessageTimeOut() {
+    void onMessageTimeOut() {
         state.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,

@@ -19,14 +19,15 @@
 package co.rsk.pcc.blockheader;
 
 import co.rsk.peg.performance.PrecompiledContractPerformanceTest;
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.jupiter.api.Disabled;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+@Suite
+@SelectClasses({
         GetCoinbasePerformanceTestCase.class,
 })
-@Ignore
-public class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {
+@Disabled("manual performance tests")
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {
 }

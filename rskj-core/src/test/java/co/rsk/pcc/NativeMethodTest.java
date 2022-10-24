@@ -22,20 +22,20 @@ package co.rsk.pcc;
 import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 
-public class NativeMethodTest {
+class NativeMethodTest {
     private ExecutionEnvironment executionEnvironment;
     private CallTransaction.Function function;
     private NativeMethod method;
     private NativeMethod.WithArguments withArguments;
 
-    @Before
-    public void createMethodAndArguments() {
+    @BeforeEach
+    void createMethodAndArguments() {
         executionEnvironment = mock(ExecutionEnvironment.class);
         function = mock(CallTransaction.Function.class);
         method = new NativeMethod(executionEnvironment) {
@@ -63,39 +63,39 @@ public class NativeMethodTest {
     }
 
     @Test
-    public void executionEnvironmentGetter() {
-        Assert.assertEquals(executionEnvironment, method.getExecutionEnvironment());
+    void executionEnvironmentGetter() {
+        Assertions.assertEquals(executionEnvironment, method.getExecutionEnvironment());
     }
 
     @Test
-    public void getGasWithNullData() {
-        Assert.assertEquals(0L, method.getGas(null, null));
+    void getGasWithNullData() {
+        Assertions.assertEquals(0L, method.getGas(null, null));
     }
 
     @Test
-    public void getGasWithNonNullData() {
-        Assert.assertEquals(6L, method.getGas(null, Hex.decode("aabbcc")));
-        Assert.assertEquals(10L, method.getGas(null, Hex.decode("aabbccddee")));
+    void getGasWithNonNullData() {
+        Assertions.assertEquals(6L, method.getGas(null, Hex.decode("aabbcc")));
+        Assertions.assertEquals(10L, method.getGas(null, Hex.decode("aabbccddee")));
     }
 
     @Test
-    public void getName() {
+    void getName() {
         function.name = "a-method-name";
-        Assert.assertEquals("a-method-name", method.getName());
+        Assertions.assertEquals("a-method-name", method.getName());
     }
 
     @Test
-    public void withArgumentsGetsMethod() {
-        Assert.assertEquals(method, withArguments.getMethod());
+    void withArgumentsGetsMethod() {
+        Assertions.assertEquals(method, withArguments.getMethod());
     }
 
     @Test
-    public void withArgumentsGetsGas() {
-        Assert.assertEquals(6L, withArguments.getGas());
+    void withArgumentsGetsGas() {
+        Assertions.assertEquals(6L, withArguments.getGas());
     }
 
     @Test
-    public void withArgumentsExecutesMethod() throws NativeContractIllegalArgumentException {
-        Assert.assertEquals("execution-result", withArguments.execute());
+    void withArgumentsExecutesMethod() throws NativeContractIllegalArgumentException {
+        Assertions.assertEquals("execution-result", withArguments.execute());
     }
 }

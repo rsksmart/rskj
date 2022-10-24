@@ -28,26 +28,32 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BlockHeaderBuilderTest {
+class BlockHeaderBuilderTest {
     private static final byte[] EMPTY_UNCLES_LIST_HASH = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private BlockHeaderBuilder blockHeaderBuilder;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         blockHeaderBuilder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
     }
 
     @Test
-    public void createsHeaderWithParentHash() {
+    void createsHeaderWithParentHash() {
         Keccak256 parentHash = TestUtils.randomHash();
 
         BlockHeader header = blockHeaderBuilder
@@ -58,7 +64,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithUnclesHash() {
+    void createsHeaderWithUnclesHash() {
         byte[] unclesHash = TestUtils.randomHash().getBytes();
 
         BlockHeader header = blockHeaderBuilder
@@ -69,16 +75,16 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyUnclesHash() {
+    void createsHeaderWithEmptyUnclesHash() {
         BlockHeader header = blockHeaderBuilder
                 .setEmptyUnclesHash()
                 .build();
 
-        assertTrue(Arrays.equals(EMPTY_UNCLES_LIST_HASH, header.getUnclesHash()));
+        assertArrayEquals(EMPTY_UNCLES_LIST_HASH, header.getUnclesHash());
     }
 
     @Test
-    public void createsHeaderWithCoinbase() {
+    void createsHeaderWithCoinbase() {
         RskAddress coinbase = TestUtils.randomAddress();
 
         BlockHeader header = blockHeaderBuilder
@@ -89,7 +95,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithStateRoot() {
+    void createsHeaderWithStateRoot() {
         byte[] stateRoot = TestUtils.randomHash().getBytes();
 
         BlockHeader header = blockHeaderBuilder
@@ -100,14 +106,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyStateRoot() {
+    void createsHeaderWithEmptyStateRoot() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(HashUtil.EMPTY_TRIE_HASH, header.getStateRoot());
     }
 
     @Test
-    public void createsHeaderWithTxTrieRoot() {
+    void createsHeaderWithTxTrieRoot() {
         byte[] txTrieRoot = TestUtils.randomHash().getBytes();
 
         BlockHeader header = blockHeaderBuilder
@@ -118,14 +124,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyTxTrieRoot() {
+    void createsHeaderWithEmptyTxTrieRoot() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(HashUtil.EMPTY_TRIE_HASH, header.getTxTrieRoot());
     }
 
     @Test
-    public void createsHeaderWithReceiptTrieRoot() {
+    void createsHeaderWithReceiptTrieRoot() {
         byte[] receiptTrieRoot = TestUtils.randomHash().getBytes();
 
         BlockHeader header = blockHeaderBuilder
@@ -136,14 +142,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyReceiptTrieRoot() {
+    void createsHeaderWithEmptyReceiptTrieRoot() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(HashUtil.EMPTY_TRIE_HASH, header.getReceiptsRoot());
     }
 
     @Test
-    public void createsHeaderWithLogsBloom() {
+    void createsHeaderWithLogsBloom() {
         byte[] logsBloom = TestUtils.randomHash().getBytes();
 
         BlockHeader header = blockHeaderBuilder
@@ -154,14 +160,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyLogsBloom() {
+    void createsHeaderWithEmptyLogsBloom() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(new Bloom().getData(), header.getLogsBloom());
     }
 
     @Test
-    public void createsHeaderWithDifficulty() {
+    void createsHeaderWithDifficulty() {
         BlockDifficulty bDiff = new BlockDifficulty(BigInteger.valueOf(10));
 
         BlockHeader header = blockHeaderBuilder
@@ -172,7 +178,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithDifficultyFromBytes() {
+    void createsHeaderWithDifficultyFromBytes() {
         byte[] bDiffData = new byte[] { 0, 16 };
 
         BlockHeader header = blockHeaderBuilder
@@ -184,7 +190,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithPaidFees() {
+    void createsHeaderWithPaidFees() {
         Coin fees = new Coin(BigInteger.valueOf(10));
 
         BlockHeader header = blockHeaderBuilder
@@ -195,14 +201,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyPaidFees() {
+    void createsHeaderWithEmptyPaidFees() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertEquals(Coin.valueOf(0), header.getPaidFees());
     }
 
     @Test
-    public void createsHeaderWithMininmumGasPrice() {
+    void createsHeaderWithMininmumGasPrice() {
         Coin minGasPrice = new Coin(BigInteger.valueOf(10));
 
         BlockHeader header = blockHeaderBuilder
@@ -213,14 +219,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyMinimumGasPrice() {
+    void createsHeaderWithEmptyMinimumGasPrice() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertEquals(Coin.valueOf(0), header.getMinimumGasPrice());
     }
 
     @Test
-    public void createsHeaderWithMiningFields() {
+    void createsHeaderWithMiningFields() {
         byte[] btcCoinbase = TestUtils.randomBytes(128);
         byte[] btcHeader = TestUtils.randomBytes(80);
         byte[] merkleProof = TestUtils.randomBytes(32);
@@ -233,79 +239,43 @@ public class BlockHeaderBuilderTest {
                 .setExtraData(extraData)
                 .build();
 
-        assertTrue(Arrays.equals(btcCoinbase, header.getBitcoinMergedMiningCoinbaseTransaction()));
-        assertTrue(Arrays.equals(btcHeader, header.getBitcoinMergedMiningHeader()));
-        assertTrue(Arrays.equals(merkleProof, header.getBitcoinMergedMiningMerkleProof()));
-        assertTrue(Arrays.equals(extraData, header.getExtraData()));
+        assertArrayEquals(btcCoinbase, header.getBitcoinMergedMiningCoinbaseTransaction());
+        assertArrayEquals(btcHeader, header.getBitcoinMergedMiningHeader());
+        assertArrayEquals(merkleProof, header.getBitcoinMergedMiningMerkleProof());
+        assertArrayEquals(extraData, header.getExtraData());
     }
 
     @Test
-    public void createsHeaderWithEmptyMergedMiningFields() {
+    void createsHeaderWithEmptyMergedMiningFields() {
         BlockHeader header = blockHeaderBuilder.build();
 
-        assertTrue(Arrays.equals(new byte[0], header.getBitcoinMergedMiningMerkleProof()));
-        assertTrue(Arrays.equals(new byte[0], header.getBitcoinMergedMiningHeader()));
-        assertTrue(Arrays.equals(new byte[0], header.getBitcoinMergedMiningCoinbaseTransaction()));
-        assertTrue(Arrays.equals(new byte[0], header.getExtraData()));
+        assertArrayEquals(new byte[0], header.getBitcoinMergedMiningMerkleProof());
+        assertArrayEquals(new byte[0], header.getBitcoinMergedMiningHeader());
+        assertArrayEquals(new byte[0], header.getBitcoinMergedMiningCoinbaseTransaction());
+        assertArrayEquals(new byte[0], header.getExtraData());
     }
 
-    @Test
-    public void createsHeaderWithUseRRSKIP92EncodingOn() {
+    @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} then expectedSize {2}")
+    @ArgumentsSource(CreateHeaderArgumentsProvider.class)
+    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, int expectedSize) {
         byte[] btcCoinbase = TestUtils.randomBytes(128);
         byte[] btcHeader = TestUtils.randomBytes(80);
         byte[] merkleProof = TestUtils.randomBytes(32);
 
         BlockHeader header = blockHeaderBuilder
-                .setCreateConsensusCompliantHeader(false)
+                .setCreateConsensusCompliantHeader(createConsensusCompliantHeader)
                 .setBitcoinMergedMiningHeader(btcHeader)
                 .setBitcoinMergedMiningMerkleProof(merkleProof)
                 .setBitcoinMergedMiningCoinbaseTransaction(btcCoinbase)
-                .setUseRskip92Encoding(true)
+                .setUseRskip92Encoding(useRskip92Encoding)
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(18, rlpList.size());
+        assertEquals(expectedSize, rlpList.size());
     }
 
     @Test
-    public void createsHeaderWithUseRRSKIP92EncodingOff() {
-        byte[] btcCoinbase = TestUtils.randomBytes(128);
-        byte[] btcHeader = TestUtils.randomBytes(80);
-        byte[] merkleProof = TestUtils.randomBytes(32);
-
-        BlockHeader header = blockHeaderBuilder
-                .setCreateConsensusCompliantHeader(false)
-                .setBitcoinMergedMiningHeader(btcHeader)
-                .setBitcoinMergedMiningMerkleProof(merkleProof)
-                .setBitcoinMergedMiningCoinbaseTransaction(btcCoinbase)
-                .setUseRskip92Encoding(false)
-                .build();
-
-        RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(20, rlpList.size());
-    }
-
-    @Test
-    public void createsHeaderWithUseRRSKIP92EncodingOffButConsensusCompliantOn() {
-        byte[] btcCoinbase = TestUtils.randomBytes(128);
-        byte[] btcHeader = TestUtils.randomBytes(80);
-        byte[] merkleProof = TestUtils.randomBytes(32);
-
-        BlockHeader header = blockHeaderBuilder
-                .setCreateConsensusCompliantHeader(true)
-                .setBitcoinMergedMiningHeader(btcHeader)
-                .setBitcoinMergedMiningMerkleProof(merkleProof)
-                .setBitcoinMergedMiningCoinbaseTransaction(btcCoinbase)
-                .setUseRskip92Encoding(false)
-                .build();
-
-        // the useRskip92Field should be true, hence the merkle proof and coinbase are not included
-        RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(18, rlpList.size());
-    }
-
-    @Test
-    public void createsHeaderWithIncludeForkDetectionDataOn() {
+    void createsHeaderWithIncludeForkDetectionDataOn() {
         byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
@@ -321,7 +291,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithIncludeForkDetectionDataOff() {
+    void createsHeaderWithIncludeForkDetectionDataOff() {
         byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
@@ -337,7 +307,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithIncludeForkDetectionDataOffButConsensusCompliantOn() {
+    void createsHeaderWithIncludeForkDetectionDataOffButConsensusCompliantOn() {
         byte[] expectedForkDetectionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
         BlockHeader header = blockHeaderBuilder
@@ -353,7 +323,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyMergedMiningForkDetectionData() {
+    void createsHeaderWithEmptyMergedMiningForkDetectionData() {
         BlockHeader header = blockHeaderBuilder
                 .setEmptyMergedMiningForkDetectionData()
                 .build();
@@ -362,7 +332,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithUmmRoot() {
+    void createsHeaderWithUmmRoot() {
         byte[] ummRoot = TestUtils.randomBytes(20);
         BlockHeader header = blockHeaderBuilder
                 .setUmmRoot(ummRoot)
@@ -372,14 +342,14 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyUmmRootAndRskipUmmOn() {
+    void createsHeaderWithEmptyUmmRootAndRskipUmmOn() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(new byte[0], header.getUmmRoot());
     }
 
     @Test
-    public void createsHeaderWithEmptyUmmRootAndRskipUmmOff() {
+    void createsHeaderWithEmptyUmmRootAndRskipUmmOff() {
         BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
         BlockHeader header = builder.build();
 
@@ -387,7 +357,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOn() {
+    void createsHeaderWithNullUmmrootButUmmCompliantHeaderOn() {
         BlockHeader header = blockHeaderBuilder
                 .setCreateUmmCompliantHeader(true)
                 .setUmmRoot(null)
@@ -397,7 +367,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOff() {
+    void createsHeaderWithNullUmmrootButUmmCompliantHeaderOff() {
         BlockHeader header = blockHeaderBuilder
                 .setCreateUmmCompliantHeader(false)
                 .setUmmRoot(null)
@@ -407,7 +377,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOnAndRskipUmmOff() {
+    void createsHeaderWithNullUmmrootButUmmCompliantHeaderOnAndRskipUmmOff() {
         BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
 
         BlockHeader header = builder
@@ -419,7 +389,7 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOffAndRskipUmmOff() {
+    void createsHeaderWithNullUmmrootButUmmCompliantHeaderOffAndRskipUmmOff() {
         BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
 
         BlockHeader header = builder
@@ -428,5 +398,17 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         assertArrayEquals(null, header.getUmmRoot());
+    }
+
+    private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
+            return Stream.of(
+                    Arguments.of(false, false, 20),
+                    Arguments.of(false, true, 18),
+                    Arguments.of(true, false, 18)
+            );
+        }
     }
 }

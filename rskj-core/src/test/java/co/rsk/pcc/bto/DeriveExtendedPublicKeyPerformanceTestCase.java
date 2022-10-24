@@ -29,22 +29,22 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-@Ignore
-public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+@Disabled
+class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     private static final int MAX_CHILD = (2 << 30) - 1;
 
     private CallTransaction.Function function;
 
     @Test
-    public void deriveExtendedPublicKey() throws VMException {
+    void deriveExtendedPublicKey() throws VMException {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -106,9 +106,9 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
-                    Assert.assertEquals(String.class, decodedResult[0].getClass());
+                    Assertions.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
-                    Assert.assertTrue(address.startsWith("xpub"));
+                    Assertions.assertTrue(address.startsWith("xpub"));
                 }
         );
 

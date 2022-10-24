@@ -2,15 +2,15 @@ package co.rsk.net.discovery.message;
 
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.ethereum.util.RLP;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static org.ethereum.util.ByteUtil.*;
 
-public class PingPeerMessageTest {
+class PingPeerMessageTest {
 
     private static final int NETWORK_ID = 1;
     private static final String HOST = "localhost";
@@ -21,33 +21,33 @@ public class PingPeerMessageTest {
     private static final byte[] signaturePingPeerMessage = new byte[]{-69, 20, -38, -122, -33, -110, -118, -126, -12, -85, 20, 91, 44, 44, -5, 79, -101, -53, 124, -57, -29, 118, -81, -48, -89, -99, -29, -93, 8, -17, 113, -87, 100, -123, -124, -77, -99, 76, -51, 54, 4, -78, -41, 116, 84, -116, 35, -35, -30, -12, 16, -87, 23, -32, -73, 124, 71, -26, -105, -28, -14, 91, 122, -114, 1};
 
     @Test
-    public void parseInvalidMessageId() {
+    void parseInvalidMessageId() {
         try {
             createPingPeerMessageWithCheck("http://fake-uuid.com/run");
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
     @Test
-    public void parseUUIDV1MessageId() {
+    void parseUUIDV1MessageId() {
         try {
             String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
             createPingPeerMessageWithCheck(uuidV1);
-            Assert.fail("Invalid messageId exception should've been thrown");
+            Assertions.fail("Invalid messageId exception should've been thrown");
         } catch (PeerDiscoveryException pde) {
-            Assert.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+            Assertions.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
         }
     }
 
     @Test
-    public void parseValidMessageId() {
+    void parseValidMessageId() {
         try {
             PingPeerMessage message = createPingPeerMessageWithCheck(UUID.randomUUID().toString());
-            Assert.assertNotNull(message);
+            Assertions.assertNotNull(message);
         } catch (PeerDiscoveryException pde) {
-            Assert.fail(PingPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
+            Assertions.fail(PingPeerMessage.class.getSimpleName() + " should've worked with valid messageId");
         }
     }
 

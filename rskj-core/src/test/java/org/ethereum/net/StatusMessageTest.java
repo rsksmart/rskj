@@ -22,19 +22,19 @@ package org.ethereum.net;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class StatusMessageTest {
+class StatusMessageTest {
 
     /* STATUS_MESSAGE */
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     @Test // Eth 60
-    public void test1() {
+    void test1() {
 
         byte[] payload = Hex.decode("f84927808425c60144a0832056d3c93ff2739ace7199952e5365aa29f18805be05634c4db125c5340216a0955f36d073ccb026b78ab3424c15cf966a7563aa270413859f78702b9e8e22cb");
         StatusMessage statusMessage = new StatusMessage(payload);

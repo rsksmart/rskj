@@ -28,17 +28,17 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageCodec;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 /**
  * Created by Anton Nashatyrev on 16.10.2015.
  */
-public class NettyTest {
+class NettyTest {
     @Test
-    public void pipelineTest() {
+    void pipelineTest() {
 
         final int[] int2 = new int[1];
         final boolean[] exception = new boolean[1];
@@ -118,17 +118,17 @@ public class NettyTest {
         buffer.writeInt(0x12345678);
         buffer.writeInt(0xabcdefff);
         channel.writeInbound(buffer);
-        Assert.assertEquals(0xabcdefff, int2[0]);
+        Assertions.assertEquals(0xabcdefff, int2[0]);
 
         channel.writeInbound(Unpooled.buffer().writeInt(0));
-        Assert.assertTrue(exception[0]);
+        Assertions.assertTrue(exception[0]);
 
         // Need the following for the exception in outbound handler to be fired
         // ctx.writeAndFlush(msg).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 
 //        exception[0] = false;
 //        channel.writeOutbound("outMsg");
-//        Assert.assertTrue(exception[0]);
+//        Assertions.assertTrue(exception[0]);
     }
 
 }

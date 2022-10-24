@@ -19,72 +19,72 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by mario on 22/12/16.
  */
-public class MinimumGasPriceCalculatorTest {
+class MinimumGasPriceCalculatorTest {
 
     @Test
-    public void increaseMgp() {
+    void increaseMgp() {
         Coin target = Coin.valueOf(2000L);
         Coin prev = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(prev);
-        Assert.assertEquals(Coin.valueOf(1010), mgp);
+        Assertions.assertEquals(Coin.valueOf(1010), mgp);
     }
 
     @Test
-    public void decreaseMGP() {
+    void decreaseMGP() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(900L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(prev);
-        Assert.assertEquals(Coin.valueOf(990), mgp);
+        Assertions.assertEquals(Coin.valueOf(990), mgp);
     }
 
     @Test
-    public void mgpOnRage() {
+    void mgpOnRage() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(995L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(prev);
-        Assert.assertEquals(target, mgp);
+        Assertions.assertEquals(target, mgp);
     }
 
     @Test
-    public void previousMgpEqualsTarget() {
+    void previousMgpEqualsTarget() {
         Coin prev = Coin.valueOf(1000L);
         Coin target = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(prev);
-        Assert.assertEquals(target, mgp);
+        Assertions.assertEquals(target, mgp);
     }
 
     @Test
-    public void previousValueIsZero() {
+    void previousValueIsZero() {
         Coin target = Coin.valueOf(1000L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(Coin.ZERO);
-        Assert.assertEquals(Coin.valueOf(1L), mgp);
+        Assertions.assertEquals(Coin.valueOf(1L), mgp);
     }
 
     @Test
-    public void previousValueIsSmallTargetIsZero() {
+    void previousValueIsSmallTargetIsZero() {
         Coin target = Coin.ZERO;
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         Coin mgp = mgpCalculator.calculate(Coin.valueOf(1L));
-        Assert.assertEquals(Coin.ZERO, mgp);
+        Assertions.assertEquals(Coin.ZERO, mgp);
     }
 
     @Test
-    public void cantGetMGPtoBeNegative() {
+    void cantGetMGPtoBeNegative() {
         Coin previous = Coin.ZERO;
         Coin target = Coin.valueOf(-100L);
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator(target);
         previous = mgpCalculator.calculate(previous);
-        Assert.assertTrue(previous.compareTo(Coin.valueOf(-1)) > 0);
+        Assertions.assertTrue(previous.compareTo(Coin.valueOf(-1)) > 0);
     }
 }

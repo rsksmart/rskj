@@ -1,23 +1,23 @@
 package co.rsk.core;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class CoinTest {
+class CoinTest {
 
     private static final Coin ONE_COIN = Coin.valueOf(1L);
     private static final Coin TWO_COINS = Coin.valueOf(2L);
 
     @Test
-    public void zeroGetBytes() {
+    void zeroGetBytes() {
         assertThat(Coin.ZERO.getBytes(), is(new byte[]{0}));
     }
 
     @Test
-    public void maxOfTwoCoins() {
+    void maxOfTwoCoins() {
         Coin actualResult = Coin.max(TWO_COINS, ONE_COIN);
         assertEquals(TWO_COINS, actualResult);
 

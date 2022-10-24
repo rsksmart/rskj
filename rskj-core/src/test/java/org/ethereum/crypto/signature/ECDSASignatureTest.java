@@ -21,81 +21,81 @@ package org.ethereum.crypto.signature;
 
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ECDSASignatureTest {
+class ECDSASignatureTest {
 
     private final String exampleMessage = "This is an example of a signed message.";
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
     @Test
-    public void testValidateComponents() {
+    void testValidateComponents() {
 
         // Valid components.
         // valid v
-        assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).validateComponents());
-        assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 28).validateComponents());
+        Assertions.assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).validateComponents());
+        Assertions.assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 28).validateComponents());
         //valid r
-        assertTrue(new ECDSASignature(SECP256K1N.subtract(BigInteger.ONE), BigInteger.ONE, (byte) 28).validateComponents());
+        Assertions.assertTrue(new ECDSASignature(SECP256K1N.subtract(BigInteger.ONE), BigInteger.ONE, (byte) 28).validateComponents());
         //valid s
-        assertTrue(new ECDSASignature(BigInteger.ONE, SECP256K1N.subtract(BigInteger.ONE), (byte) 28).validateComponents());
+        Assertions.assertTrue(new ECDSASignature(BigInteger.ONE, SECP256K1N.subtract(BigInteger.ONE), (byte) 28).validateComponents());
 
         // Not Valid components.
         //invalid "r"
-        assertFalse(new ECDSASignature(BigInteger.ZERO, BigInteger.ONE, (byte) 27).validateComponents());
-        assertFalse(new ECDSASignature(SECP256K1N, BigInteger.ONE, (byte) 27).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(BigInteger.ZERO, BigInteger.ONE, (byte) 27).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(SECP256K1N, BigInteger.ONE, (byte) 27).validateComponents());
 
         //invalid "s"
-        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ZERO, (byte) 27).validateComponents());
-        assertFalse(new ECDSASignature(BigInteger.ONE, SECP256K1N, (byte) 27).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ZERO, (byte) 27).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(BigInteger.ONE, SECP256K1N, (byte) 27).validateComponents());
 
         //invalid "v"
-        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 29).validateComponents());
-        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 26).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 29).validateComponents());
+        Assertions.assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 26).validateComponents());
     }
 
     @Test
-    public void testEquals() {
+    void testEquals() {
         ECDSASignature expected = new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27);
 
         //same instance
-        assertEquals(expected, expected);
+        Assertions.assertEquals(expected, expected);
 
         //same values
-        assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), expected.getV()));
+        Assertions.assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), expected.getV()));
 
         //same values - but diff v
-        assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), (byte) 0));
+        Assertions.assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), (byte) 0));
 
         // null
-        assertNotEquals(expected, null);
+        Assertions.assertNotEquals(null, expected);
 
         //dif classes
-        assertNotEquals(expected, BigInteger.ZERO);
+        Assertions.assertNotEquals(BigInteger.ZERO, expected);
 
         //diff r
-        assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27));
+        Assertions.assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27));
 
         //diff s
-        assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.ONE, BigInteger.TEN, (byte) 27));
+        Assertions.assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.ONE, BigInteger.TEN, (byte) 27));
 
     }
 
     @Test
-    public void testValidateComponents_SignedMsg() {
+    void testValidateComponents_SignedMsg() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
-        assertTrue(signature.validateComponents());
+        Assertions.assertTrue(signature.validateComponents());
     }
 
     @Test
-    public void fromComponentsWithRecoveryCalculation() {
+    void fromComponentsWithRecoveryCalculation() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.randomHash();
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
@@ -108,9 +108,9 @@ public class ECDSASignatureTest {
                 key.getPubKey(false)
         );
 
-        Assert.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
-        Assert.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
-        Assert.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
+        Assertions.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
+        Assertions.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
+        Assertions.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
 
         // With compressed public key
         signatureWithCalculatedV = ECDSASignature.fromComponentsWithRecoveryCalculation(
@@ -120,8 +120,8 @@ public class ECDSASignatureTest {
                 key.getPubKey(true)
         );
 
-        Assert.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
-        Assert.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
-        Assert.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
+        Assertions.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
+        Assertions.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
+        Assertions.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
     }
 }

@@ -19,13 +19,13 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
 import java.util.Set;
 
-public class BlockNodeInformationTest {
+class BlockNodeInformationTest {
 
     // createBlockHash is a convenience function to create a ByteArrayWrapper wrapping an int.
     private Keccak256 createBlockHash(int i) {
@@ -38,7 +38,7 @@ public class BlockNodeInformationTest {
     }
 
     @Test
-    public void blockEvictionPolicy() {
+    void blockEvictionPolicy() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final NodeID nodeID1 = new NodeID(new byte[]{2});
 
@@ -48,11 +48,11 @@ public class BlockNodeInformationTest {
             nodeInformation.addBlockToNode(hash1, nodeID1);
         }
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(300)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(300)).contains(nodeID1));
 
         // Add more blocks, exceeding MAX_NODES. All previous blocks should be evicted.
         // Except from block 10, which is being constantly accessed.
@@ -63,29 +63,29 @@ public class BlockNodeInformationTest {
             nodeInformation.getNodesByBlock(createBlockHash(10));
         }
 
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(1)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(700)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(1)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(700)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1900)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(10)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1900)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(10)).contains(nodeID1));
 
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(25)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(70)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(25)).contains(nodeID1));
+        Assertions.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(70)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1901)).contains(nodeID1));
+        Assertions.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1901)).contains(nodeID1));
     }
 
     @Test
-    public void getIsEmptyIfNotPresent() {
+    void getIsEmptyIfNotPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
 
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
-        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
+        Assertions.assertEquals(0, nodeInformation.getNodesByBlock(createBlockHash(0)).size());
+        Assertions.assertEquals(0, nodeInformation.getNodesByBlock(createBlockHash(0)).size());
     }
 
     @Test
-    public void getIsNotEmptyIfPresent() {
+    void getIsNotEmptyIfPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
@@ -96,16 +96,16 @@ public class BlockNodeInformationTest {
         nodeInformation.addBlockToNode(hash1, nodeID1);
 
         Set<NodeID> nodes = nodeInformation.getNodesByBlock(hash1);
-        Assert.assertTrue(nodes.size() == 1);
-        Assert.assertTrue(nodes.contains(nodeID1));
-        Assert.assertFalse(nodes.contains(badNode));
+        Assertions.assertEquals(1, nodes.size());
+        Assertions.assertTrue(nodes.contains(nodeID1));
+        Assertions.assertFalse(nodes.contains(badNode));
 
         nodes = nodeInformation.getNodesByBlock(badHash);
-        Assert.assertTrue(nodes.size() == 0);
+        Assertions.assertEquals(0, nodes.size());
     }
 
     @Test
-    public void twoNodesTwoBlocks() {
+    void twoNodesTwoBlocks() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
         final NodeID nodeID1 = new NodeID(new byte[]{2});
@@ -120,13 +120,13 @@ public class BlockNodeInformationTest {
         Set<NodeID> nodes1 = nodeInformation.getNodesByBlock(hash1);
         Set<NodeID> nodes2 = nodeInformation.getNodesByBlock(hash2);
 
-        Assert.assertTrue(nodes1.size() == 1);
-        Assert.assertTrue(nodes2.size() == 2);
+        Assertions.assertEquals(1, nodes1.size());
+        Assertions.assertEquals(2, nodes2.size());
 
 
-        Assert.assertTrue(nodes1.contains(nodeID1));
-        Assert.assertTrue(nodes2.contains(nodeID1));
-        Assert.assertTrue(nodes2.contains(nodeID2));
+        Assertions.assertTrue(nodes1.contains(nodeID1));
+        Assertions.assertTrue(nodes2.contains(nodeID1));
+        Assertions.assertTrue(nodes2.contains(nodeID2));
     }
 
 }

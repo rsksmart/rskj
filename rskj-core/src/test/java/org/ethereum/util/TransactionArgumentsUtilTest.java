@@ -17,8 +17,6 @@
  */
 
 package org.ethereum.util;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
 
@@ -26,32 +24,34 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 
-public class TransactionArgumentsUtilTest {
+import static org.junit.jupiter.api.Assertions.*;
+
+class TransactionArgumentsUtilTest {
 
 	@Test
-	public void processArguments() {
+	void processArguments() {
 
 		Constants constants = Constants.regtest();
-		
+
 		Wallet wallet = new Wallet(new HashMapDB());
 		RskAddress sender = wallet.addAccount();
 		RskAddress receiver = wallet.addAccount();
-		
+
 		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-		
+
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, null, wallet.getAccount(sender), constants.getChainId());
-		
+
 		assertEquals(txArgs.getValue(), BigInteger.valueOf(100000L));
 		assertEquals(txArgs.getGasPrice(), BigInteger.valueOf(10000000000000L));
 		assertEquals(txArgs.getGasLimit(), BigInteger.valueOf(30400L));
-		assertEquals(txArgs.getChainId(), 33);
-		assertEquals(txArgs.getNonce(), BigInteger.ONE);
-		assertEquals(txArgs.getData(), null);
+		assertEquals(33, txArgs.getChainId());
+		assertEquals(BigInteger.ONE, txArgs.getNonce());
+		assertNull(txArgs.getData());
 		assertArrayEquals(txArgs.getTo(), receiver.getBytes());
 
 	}

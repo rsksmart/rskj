@@ -27,8 +27,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -37,55 +37,55 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class NetBlockStoreTest {
+class NetBlockStoreTest {
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void getUnknownBlockAsNull() {
+    void getUnknownBlockAsNull() {
         NetBlockStore store = new NetBlockStore();
-        Assert.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
+        Assertions.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
     }
 
     @Test
-    public void minimalAndMaximumHeightInEmptyStore() {
+    void minimalAndMaximumHeightInEmptyStore() {
         NetBlockStore store = new NetBlockStore();
 
-        Assert.assertEquals(0, store.minimalHeight());
-        Assert.assertEquals(0, store.maximumHeight());
+        Assertions.assertEquals(0, store.minimalHeight());
+        Assertions.assertEquals(0, store.maximumHeight());
     }
 
     @Test
-    public void saveAndGetBlockByHash() {
+    void saveAndGetBlockByHash() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getGenesisBlock();
 
         store.saveBlock(block);
 
-        Assert.assertSame(block, store.getBlockByHash(block.getHash().getBytes()));
-        Assert.assertEquals(0, store.minimalHeight());
-        Assert.assertEquals(0, store.maximumHeight());
+        Assertions.assertSame(block, store.getBlockByHash(block.getHash().getBytes()));
+        Assertions.assertEquals(0, store.minimalHeight());
+        Assertions.assertEquals(0, store.maximumHeight());
     }
 
     @Test
-    public void saveRemoveAndGetBlockByHash() {
+    void saveRemoveAndGetBlockByHash() {
         NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getBlock(1);
 
         store.saveBlock(block);
 
-        Assert.assertEquals(1, store.minimalHeight());
-        Assert.assertEquals(1, store.maximumHeight());
+        Assertions.assertEquals(1, store.minimalHeight());
+        Assertions.assertEquals(1, store.maximumHeight());
 
         store.removeBlock(block);
 
-        Assert.assertNull(store.getBlockByHash(block.getHash().getBytes()));
-        Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
-        Assert.assertEquals(0, store.size());
+        Assertions.assertNull(store.getBlockByHash(block.getHash().getBytes()));
+        Assertions.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
+        Assertions.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
+        Assertions.assertEquals(0, store.size());
     }
 
     @Test
-    public void saveRemoveAndGetBlockByHashWithUncles() {
+    void saveRemoveAndGetBlockByHashWithUncles() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
@@ -97,20 +97,20 @@ public class NetBlockStoreTest {
         store.saveBlock(son2);
         store.saveBlock(grandson);
 
-        Assert.assertEquals(1, store.minimalHeight());
-        Assert.assertEquals(2, store.maximumHeight());
+        Assertions.assertEquals(1, store.minimalHeight());
+        Assertions.assertEquals(2, store.maximumHeight());
 
         store.removeBlock(grandson);
 
-        Assert.assertNull(store.getBlockByHash(grandson.getHash().getBytes()));
-        Assert.assertTrue(store.getBlocksByNumber(grandson.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(son1.getHash()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(son2.getHash()).isEmpty());
-        Assert.assertEquals(2, store.size());
+        Assertions.assertNull(store.getBlockByHash(grandson.getHash().getBytes()));
+        Assertions.assertTrue(store.getBlocksByNumber(grandson.getNumber()).isEmpty());
+        Assertions.assertTrue(store.getBlocksByParentHash(son1.getHash()).isEmpty());
+        Assertions.assertTrue(store.getBlocksByParentHash(son2.getHash()).isEmpty());
+        Assertions.assertEquals(2, store.size());
     }
 
     @Test
-    public void saveTwoBlocksRemoveOne() {
+    void saveTwoBlocksRemoveOne() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
@@ -120,38 +120,38 @@ public class NetBlockStoreTest {
         store.saveBlock(adam);
         store.saveBlock(eve);
 
-        Assert.assertEquals(1, store.minimalHeight());
-        Assert.assertEquals(2, store.maximumHeight());
+        Assertions.assertEquals(1, store.minimalHeight());
+        Assertions.assertEquals(2, store.maximumHeight());
 
         store.removeBlock(adam);
 
-        Assert.assertNull(store.getBlockByHash(adam.getHash().getBytes()));
-        Assert.assertEquals(1, store.size());
-        Assert.assertEquals(2, store.minimalHeight());
-        Assert.assertEquals(2, store.maximumHeight());
+        Assertions.assertNull(store.getBlockByHash(adam.getHash().getBytes()));
+        Assertions.assertEquals(1, store.size());
+        Assertions.assertEquals(2, store.minimalHeight());
+        Assertions.assertEquals(2, store.maximumHeight());
 
         List<Block> childrenByNumber = store.getBlocksByNumber(eve.getNumber());
 
-        Assert.assertNotNull(childrenByNumber);
-        Assert.assertEquals(1, childrenByNumber.size());
+        Assertions.assertNotNull(childrenByNumber);
+        Assertions.assertEquals(1, childrenByNumber.size());
 
-        Assert.assertEquals(eve.getHash(), childrenByNumber.get(0).getHash());
+        Assertions.assertEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
         List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
 
-        Assert.assertNotNull(childrenByParent);
-        Assert.assertEquals(1, childrenByParent.size());
+        Assertions.assertNotNull(childrenByParent);
+        Assertions.assertEquals(1, childrenByParent.size());
 
-        Assert.assertEquals(eve.getHash(), childrenByParent.get(0).getHash());
+        Assertions.assertEquals(eve.getHash(), childrenByParent.get(0).getHash());
 
         Block daugther = store.getBlockByHash(eve.getHash().getBytes());
 
-        Assert.assertNotNull(daugther);
-        Assert.assertEquals(eve.getHash(), daugther.getHash());
+        Assertions.assertNotNull(daugther);
+        Assertions.assertEquals(eve.getHash(), daugther.getHash());
     }
 
     @Test
-    public void saveAndGetBlocksByNumber() {
+    void saveAndGetBlocksByNumber() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -163,15 +163,15 @@ public class NetBlockStoreTest {
 
         List<Block> blocks = store.getBlocksByNumber(1);
 
-        Assert.assertTrue(blocks.contains(block1));
-        Assert.assertTrue(blocks.contains(block2));
-        Assert.assertEquals(2, store.size());
-        Assert.assertEquals(1, store.minimalHeight());
-        Assert.assertEquals(1, store.maximumHeight());
+        Assertions.assertTrue(blocks.contains(block1));
+        Assertions.assertTrue(blocks.contains(block2));
+        Assertions.assertEquals(2, store.size());
+        Assertions.assertEquals(1, store.minimalHeight());
+        Assertions.assertEquals(1, store.maximumHeight());
     }
 
     @Test
-    public void releaseRange() {
+    void releaseRange() {
         NetBlockStore store = new NetBlockStore();
         final BlockGenerator generator = new BlockGenerator();
         Block genesis = generator.getGenesisBlock();
@@ -184,15 +184,15 @@ public class NetBlockStoreTest {
         for (Block b : blocks2)
             store.saveBlock(b);
 
-        Assert.assertEquals(2000, store.size());
+        Assertions.assertEquals(2000, store.size());
 
         store.releaseRange(1, 1000);
 
-        Assert.assertEquals(0, store.size());
+        Assertions.assertEquals(0, store.size());
     }
 
     @Test
-    public void saveAndGetBlocksByParentHash() {
+    void saveAndGetBlocksByParentHash() {
         NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -204,23 +204,23 @@ public class NetBlockStoreTest {
 
         List<Block> blocks = store.getBlocksByParentHash(genesis.getHash());
 
-        Assert.assertTrue(blocks.contains(block1));
-        Assert.assertTrue(blocks.contains(block2));
-        Assert.assertEquals(2, store.size());
+        Assertions.assertTrue(blocks.contains(block1));
+        Assertions.assertTrue(blocks.contains(block2));
+        Assertions.assertEquals(2, store.size());
     }
 
     @Test
-    public void getNoBlocksByNumber() {
+    void getNoBlocksByNumber() {
         NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = store.getBlocksByNumber(42);
 
-        Assert.assertNotNull(blocks);
-        Assert.assertEquals(0, blocks.size());
+        Assertions.assertNotNull(blocks);
+        Assertions.assertEquals(0, blocks.size());
     }
 
     @Test
-    public void saveHeader() {
+    void saveHeader() {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
@@ -230,11 +230,11 @@ public class NetBlockStoreTest {
                 .build();
 
         store.saveHeader(blockHeader);
-        Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
+        Assertions.assertTrue(store.hasHeader(blockHeader.getHash()));
     }
 
     @Test
-    public void removeHeader() {
+    void removeHeader() {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
@@ -245,7 +245,7 @@ public class NetBlockStoreTest {
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);
-        Assert.assertFalse(store.hasHeader(blockHeader.getHash()));
+        Assertions.assertFalse(store.hasHeader(blockHeader.getHash()));
     }
 }
 

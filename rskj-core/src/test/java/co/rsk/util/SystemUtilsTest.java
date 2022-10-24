@@ -18,24 +18,23 @@
 
 package co.rsk.util;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SystemUtilsTest {
+@ExtendWith(MockitoExtension.class)
+class SystemUtilsTest {
 
     @Captor
     private ArgumentCaptor<String> formatCaptor;
@@ -44,17 +43,17 @@ public class SystemUtilsTest {
     private ArgumentCaptor<Object> argCaptor;
 
     @Test
-    public void testPrintSystemInfo() {
+    void testPrintSystemInfo() {
         Logger logger = mock(Logger.class);
 
         SystemUtils.printSystemInfo(logger);
 
         verify(logger).info(formatCaptor.capture(), argCaptor.capture());
 
-        assertEquals("System info:\r  {}", formatCaptor.getValue());
+        Assertions.assertEquals("System info:\r  {}", formatCaptor.getValue());
 
         Object arg = argCaptor.getValue();
-        assertTrue(arg instanceof String);
+        Assertions.assertTrue(arg instanceof String);
 
         String stringArg = (String) arg;
 
@@ -62,18 +61,18 @@ public class SystemUtilsTest {
                 .map(s -> s.trim().split(": "))
                 .collect(Collectors.toMap(a -> a[0], a -> a[1]));
 
-        assertTrue(params.containsKey("java.version"));
-        assertTrue(params.containsKey("java.runtime.name"));
-        assertTrue(params.containsKey("java.runtime.version"));
-        assertTrue(params.containsKey("java.vm.name"));
-        assertTrue(params.containsKey("java.vm.version"));
-        assertTrue(params.containsKey("java.vm.vendor"));
-        assertTrue(params.containsKey("os.name"));
-        assertTrue(params.containsKey("os.version"));
-        assertTrue(params.containsKey("os.arch"));
-        assertTrue(params.containsKey("processors"));
-        assertTrue(params.containsKey("memory.free"));
-        assertTrue(params.containsKey("memory.max"));
-        assertTrue(params.containsKey("memory.total"));
+        Assertions.assertTrue(params.containsKey("java.version"));
+        Assertions.assertTrue(params.containsKey("java.runtime.name"));
+        Assertions.assertTrue(params.containsKey("java.runtime.version"));
+        Assertions.assertTrue(params.containsKey("java.vm.name"));
+        Assertions.assertTrue(params.containsKey("java.vm.version"));
+        Assertions.assertTrue(params.containsKey("java.vm.vendor"));
+        Assertions.assertTrue(params.containsKey("os.name"));
+        Assertions.assertTrue(params.containsKey("os.version"));
+        Assertions.assertTrue(params.containsKey("os.arch"));
+        Assertions.assertTrue(params.containsKey("processors"));
+        Assertions.assertTrue(params.containsKey("memory.free"));
+        Assertions.assertTrue(params.containsKey("memory.max"));
+        Assertions.assertTrue(params.containsKey("memory.total"));
     }
 }

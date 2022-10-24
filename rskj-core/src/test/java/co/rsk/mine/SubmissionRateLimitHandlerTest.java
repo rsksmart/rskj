@@ -19,37 +19,37 @@ package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
 import co.rsk.util.TimeProvider;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class SubmissionRateLimitHandlerTest {
+class SubmissionRateLimitHandlerTest {
 
     @Test
-    public void ofMiningConfig_WhenRateLimitIsZero_ThenHandlerShouldBeDisabled() {
+    void ofMiningConfig_WhenRateLimitIsZero_ThenHandlerShouldBeDisabled() {
         MiningConfig miningConfig = mock(MiningConfig.class);
         doReturn(0L).when(miningConfig).getWorkSubmissionRateLimitInMills();
         assertFalse(SubmissionRateLimitHandler.ofMiningConfig(miningConfig).isEnabled());
     }
 
     @Test
-    public void ofMiningConfig_WhenRateLimitIsNegative_ThenHandlerShouldBeDisabled() {
+    void ofMiningConfig_WhenRateLimitIsNegative_ThenHandlerShouldBeDisabled() {
         MiningConfig miningConfig = mock(MiningConfig.class);
         doReturn(-1L).when(miningConfig).getWorkSubmissionRateLimitInMills();
         assertFalse(SubmissionRateLimitHandler.ofMiningConfig(miningConfig).isEnabled());
     }
 
     @Test
-    public void ofMiningConfig_WhenRateLimitIsPositive_ThenHandlerShouldBeEnabled() {
+    void ofMiningConfig_WhenRateLimitIsPositive_ThenHandlerShouldBeEnabled() {
         MiningConfig miningConfig = mock(MiningConfig.class);
         doReturn(1L).when(miningConfig).getWorkSubmissionRateLimitInMills();
         assertTrue(SubmissionRateLimitHandler.ofMiningConfig(miningConfig).isEnabled());
     }
 
     @Test
-    public void isSubmissionAllowed_WhenDisabled_ThenShouldReturnTrue() {
+    void isSubmissionAllowed_WhenDisabled_ThenShouldReturnTrue() {
         TimeProvider timeProvider = mock(TimeProvider.class);
         SubmissionRateLimitHandler handler = new SubmissionRateLimitHandler(0L, timeProvider);
         assertTrue(handler.isSubmissionAllowed());
@@ -57,7 +57,7 @@ public class SubmissionRateLimitHandlerTest {
     }
 
     @Test
-    public void isSubmissionAllowed_WhenEnabledAndLimitNotExceeded_ThenShouldReturnTrue() {
+    void isSubmissionAllowed_WhenEnabledAndLimitNotExceeded_ThenShouldReturnTrue() {
         TimeProvider timeProvider = mock(TimeProvider.class);
         SubmissionRateLimitHandler handler = new SubmissionRateLimitHandler(1L, timeProvider);
         doReturn(1L).when(timeProvider).currentTimeMillis();
@@ -70,7 +70,7 @@ public class SubmissionRateLimitHandlerTest {
     }
 
     @Test
-    public void isSubmissionAllowed_WhenEnabledAndLimitExceeded_ThenShouldReturnFalse() {
+    void isSubmissionAllowed_WhenEnabledAndLimitExceeded_ThenShouldReturnFalse() {
         TimeProvider timeProvider = mock(TimeProvider.class);
         SubmissionRateLimitHandler handler = new SubmissionRateLimitHandler(1L, timeProvider);
         doReturn(1L).when(timeProvider).currentTimeMillis();

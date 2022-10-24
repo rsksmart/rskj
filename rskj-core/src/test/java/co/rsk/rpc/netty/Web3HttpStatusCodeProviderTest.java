@@ -2,23 +2,24 @@ package co.rsk.rpc.netty;
 
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Web3HttpStatusCodeProviderTest {
+class Web3HttpStatusCodeProviderTest {
 
     private HttpStatusCodeProvider httpStatusCodeProvider;
 
-    @Before
-    public void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         httpStatusCodeProvider = new Web3HttpStatusCodeProvider();
     }
 
     @Test
-    public void getHttpStatusCodeReturnsExpectedHttpStatusCodes() {
+    void getHttpStatusCodeReturnsExpectedHttpStatusCodes() {
         assertThatOkHttpStatusIsReturnedWhenExpected(httpStatusCodeProvider);
         assertThatBadRequestHttpStatusIsReturnedWhenExpected(httpStatusCodeProvider);
     }
@@ -43,8 +44,8 @@ public class Web3HttpStatusCodeProviderTest {
         assertEquals(expectedHttpStatusCode, httpStatusCode);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void getJsonRpcCodeThrowsUnsupportedOperationException() {
-        httpStatusCodeProvider.getJsonRpcCode(INVALID_REQUEST.code);
+    @Test
+    void getJsonRpcCodeThrowsUnsupportedOperationException() {
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> httpStatusCodeProvider.getJsonRpcCode(INVALID_REQUEST.code));
     }
 }

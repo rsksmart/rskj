@@ -29,8 +29,8 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.spy;
 /**
  * Created by ajlopez on 9/3/2017.
  */
-public class TwoAsyncNodeUsingSyncProcessorTest {
+class TwoAsyncNodeUsingSyncProcessorTest {
 
     private static Block getGenesis() {
         final World world = new World();
@@ -49,7 +49,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainAndSynchronize() {
+    void buildBlockchainAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -62,19 +62,19 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(100, node1.getBestBlock().getNumber());
-        Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(100, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(100, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void buildBlockchainAndSynchronize400Blocks() {
+    void buildBlockchainAndSynchronize400Blocks() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -87,19 +87,19 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(400, node1.getBestBlock().getNumber());
-        Assert.assertEquals(400, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(400, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(400, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void buildBlockchainWithUnclesAndSynchronize() {
+    void buildBlockchainWithUnclesAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -114,19 +114,19 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(10, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(10, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void buildBlockchainPartialAndSynchronize() {
+    void buildBlockchainPartialAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
@@ -143,8 +143,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
             }
         }
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(5, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(10, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(5, node2.getBestBlock().getNumber());
 
         node1.sendFullStatusTo(node2);
         // find connection point
@@ -161,23 +161,23 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(10, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(10, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void sendNewBlock() throws InterruptedException {
+    void sendNewBlock() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
 
         node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash().getBytes()));
 
@@ -189,16 +189,16 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(1, node1.getBestBlock().getNumber());
-        Assert.assertEquals(1, node2.getBestBlock().getNumber());
-        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assertions.assertEquals(1, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(1, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void stopSyncingAfter5SkeletonChunks() {
+    void stopSyncingAfter5SkeletonChunks() {
         int longSyncLimit = SyncConfiguration.IMMEDIATE_FOR_TESTING.getLongSyncLimit();
         int fiveChunksSize = 960;
         int b1Size = 30;
@@ -217,8 +217,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        Assert.assertEquals(b1Size, node1.getBestBlock().getNumber());
-        Assert.assertEquals(b2Size, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(b1Size, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(b2Size, node2.getBestBlock().getNumber());
 
         node2.sendFullStatusTo(node1);
         // sync setup
@@ -226,21 +226,21 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         // request bodies
         node1.waitExactlyNTasksWithTimeout(b2Size - b1Size - longSyncLimit + 1);
 
-        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertEquals(fiveChunksSize, node1.getBestBlock().getNumber());
-        Assert.assertEquals(b2Size, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(fiveChunksSize, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(b2Size, node2.getBestBlock().getNumber());
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
     @Test
-    public void syncInMultipleStepsWithLongBlockchain() {
+    void syncInMultipleStepsWithLongBlockchain() {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain b1 = builder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
@@ -248,8 +248,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING, builder.getBlockStore());
         SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        Assert.assertEquals(300, node1.getBestBlock().getNumber());
-        Assert.assertEquals(4300, node2.getBestBlock().getNumber());
+        Assertions.assertEquals(300, node1.getBestBlock().getNumber());
+        Assertions.assertEquals(4300, node2.getBestBlock().getNumber());
 
         for (int i = 0; i < 5; i++) {
             int skippedChunks = 300 / 192;
@@ -264,11 +264,11 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
             // request bodies
             node1.waitExactlyNTasksWithTimeout(blocksToDownload);
 
-            Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
-            Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+            Assertions.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+            Assertions.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-            Assert.assertEquals(expectedBestBlockNumber, node1.getBestBlock().getNumber());
-            Assert.assertEquals(4300, node2.getBestBlock().getNumber());
+            Assertions.assertEquals(expectedBestBlockNumber, node1.getBestBlock().getNumber());
+            Assertions.assertEquals(4300, node2.getBestBlock().getNumber());
 
             // this prevents node2's queue to get full
             node2.clearQueue();
@@ -277,8 +277,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assertions.assertFalse(node2.getSyncProcessor().isSyncing());
     }
 
 }

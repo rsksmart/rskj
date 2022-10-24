@@ -20,51 +20,51 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
  * @author martin.medina
  * @since 07.02.2017
  */
-public class ExtraDataRuleTests {
+class ExtraDataRuleTests {
 
     private BlockHeader blockHeader;
     private Block block;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
     }
 
     @Test
-    public void blockWithValidExtraData() {
+    void blockWithValidExtraData() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[32]);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
-    public void blockWithValidNullExtraData() {
+    void blockWithValidNullExtraData() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(null);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block));
     }
 
     @Test
-    public void blockWithValidLongerExtraDataThanAccepted() {
+    void blockWithValidLongerExtraDataThanAccepted() {
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[43]);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assert.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block));
     }
 }

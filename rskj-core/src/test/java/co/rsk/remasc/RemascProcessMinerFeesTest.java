@@ -48,18 +48,18 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class RemascProcessMinerFeesTest {
+class RemascProcessMinerFeesTest {
 
     private static RemascConfig remascConfig;
     private static TestSystemProperties config;
@@ -84,8 +84,8 @@ public class RemascProcessMinerFeesTest {
     private StateRootHandler stateRootHandler;
     private BlockFactory blockFactory;
 
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+     static void setUpBeforeClass() {
         config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
@@ -97,8 +97,8 @@ public class RemascProcessMinerFeesTest {
         accountsAddressesUpToD.add(coinbaseD.getBytes());
     }
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
         stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchainBuilder = new BlockChainBuilder()
@@ -109,7 +109,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithoutRequiredMaturity() {
+    void processMinersFeesWithoutRequiredMaturity() {
         List<Block> blocks = createSimpleBlocks(genesisBlock, 1);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, Collections.emptyList(), minerFee, 0, txValue, cowKey);
         blocks.add(blockWithOneTx);
@@ -124,7 +124,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithoutMinimumSyntheticSpan() {
+    void processMinersFeesWithoutMinimumSyntheticSpan() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -164,7 +164,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithNoSiblings() {
+    void processMinersFeesWithNoSiblings() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -214,7 +214,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithOneSibling() {
+    void processMinersFeesWithOneSibling() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -281,7 +281,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithHigherFees() {
+    void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithHigherFees() {
         processMinersFeesWithOneSiblingBrokenSelectionRule("higherFees");
     }
 
@@ -289,12 +289,12 @@ public class RemascProcessMinerFeesTest {
      * From RSKIP15, one of the three selection rules hash
      */
     @Test
-    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithLowerHash() {
+    void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithLowerHash() {
         processMinersFeesWithOneSiblingBrokenSelectionRule("lowerHash");
     }
 
     @Test
-    public void siblingThatBreaksSelectionRuleGetsPunished() {
+    void siblingThatBreaksSelectionRuleGetsPunished() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -431,7 +431,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() {
+    void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -605,7 +605,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesFromTxThatIsNotTheLatestTx() {
+    void processMinersFeesFromTxThatIsNotTheLatestTx() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -667,7 +667,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesFromTxInvokedByAnotherContract() {
+    void processMinersFeesFromTxInvokedByAnotherContract() {
         Blockchain blockchain = blockchainBuilder.build();
         BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
@@ -757,7 +757,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void siblingIncludedOneBlockLater() {
+    void siblingIncludedOneBlockLater() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -787,7 +787,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void oneSiblingIncludedOneBlockLaterAndAnotherIncludedRightAfter() {
+    void oneSiblingIncludedOneBlockLaterAndAnotherIncludedRightAfter() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -823,7 +823,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void siblingIncludedSevenBlocksLater() {
+    void siblingIncludedSevenBlocksLater() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -858,7 +858,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void siblingsFeeForMiningBlockMustBeRoundedAndTheRoundedSurplusBurned() {
+    void siblingsFeeForMiningBlockMustBeRoundedAndTheRoundedSurplusBurned() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -902,7 +902,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void unclesPublishingFeeMustBeRoundedAndTheRoundedSurplusBurned() {
+    void unclesPublishingFeeMustBeRoundedAndTheRoundedSurplusBurned() {
         RskSystemProperties config = spy(new TestSystemProperties());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP85));
 
@@ -992,7 +992,7 @@ public class RemascProcessMinerFeesTest {
 
         for(Map.Entry<byte[], Coin> entry : otherAccountsBalance.entrySet()) {
             Coin actualBalance = RemascTestRunner.getAccountBalance(repository, entry.getKey());
-            assertEquals("Failed for: " + ByteUtil.toHexString(entry.getKey()), entry.getValue(), actualBalance);
+            assertEquals(entry.getValue(), actualBalance, "Failed for: " + ByteUtil.toHexString(entry.getKey()));
         }
     }
 

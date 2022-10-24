@@ -28,16 +28,16 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class RskWebSocketJsonRpcHandlerTest {
+class RskWebSocketJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_1 = new SubscriptionId("0x3075");
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_2 = new SubscriptionId("0x4075");
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID_3 = new SubscriptionId("0x5075");
@@ -46,15 +46,15 @@ public class RskWebSocketJsonRpcHandlerTest {
     private EthSubscriptionNotificationEmitter emitter;
     private JsonRpcSerializer serializer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
         handler = new RskWebSocketJsonRpcHandler(emitter);
     }
 
     @Test
-    public void visitUnsubscribe() {
+    void visitUnsubscribe() {
         EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_UNSUBSCRIBE,
@@ -73,7 +73,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void visitSubscribe() {
+    void visitSubscribe() {
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
@@ -100,10 +100,10 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void handlerDeserializesAndHandlesRequest() throws Exception {
-    	
+    void handlerDeserializesAndHandlesRequest() throws Exception {
+
     	String json = "{\"jsonrpc\":\"2.0\",\"id\":\"teste\",\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
-    	
+
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
@@ -120,7 +120,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     }
 
     @Test
-    public void handlerPassesRequestToNextHandlerOnException() throws Exception {
+    void handlerPassesRequestToNextHandlerOnException() throws Exception {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
 
         when(serializer.deserializeRequest(any()))

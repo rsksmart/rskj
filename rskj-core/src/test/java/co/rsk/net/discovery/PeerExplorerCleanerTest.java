@@ -18,14 +18,14 @@
 
 package co.rsk.net.discovery;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.*;
 
-public class PeerExplorerCleanerTest {
+class PeerExplorerCleanerTest {
 
     private final PeerExplorer peerExplorer = mock(PeerExplorer.class);
     private final ScheduledExecutorService executorService = mock(ScheduledExecutorService.class);
@@ -33,7 +33,7 @@ public class PeerExplorerCleanerTest {
     private final PeerExplorerCleaner peerExplorerCleaner = new PeerExplorerCleaner(10L, 20L, peerExplorer, executorService);
 
     @Test
-    public void cleanerNotRunning_WhenRun_ThenShouldScheduleUpdateAndCleaning() {
+    void cleanerNotRunning_WhenRun_ThenShouldScheduleUpdateAndCleaning() {
         peerExplorerCleaner.start();
 
         verify(executorService, times(1)).scheduleAtFixedRate(any(), eq(10L), eq(10L), eq(TimeUnit.MILLISECONDS));
@@ -41,7 +41,7 @@ public class PeerExplorerCleanerTest {
     }
 
     @Test
-    public void cleanerRunning_WhenRun_ThenShouldIgnore() {
+    void cleanerRunning_WhenRun_ThenShouldIgnore() {
         peerExplorerCleaner.start();
 
         verify(executorService, times(1)).scheduleAtFixedRate(any(), eq(10L), eq(10L), eq(TimeUnit.MILLISECONDS));
@@ -53,7 +53,7 @@ public class PeerExplorerCleanerTest {
     }
 
     @Test
-    public void cleanerRunning_WhenDispose_ThenShouldShutdown() {
+    void cleanerRunning_WhenDispose_ThenShouldShutdown() {
         peerExplorerCleaner.start();
         peerExplorerCleaner.dispose();
 
@@ -61,14 +61,14 @@ public class PeerExplorerCleanerTest {
     }
 
     @Test
-    public void cleanerNotRunning_WhenDispose_ThenShouldBeDisposed() {
+    void cleanerNotRunning_WhenDispose_ThenShouldBeDisposed() {
         peerExplorerCleaner.dispose();
 
         verify(executorService, times(1)).shutdown();
     }
 
     @Test
-    public void cleanerAlreadyDisposed_WhenDispose_ThenShouldIgnoreSecondCall() {
+    void cleanerAlreadyDisposed_WhenDispose_ThenShouldIgnoreSecondCall() {
         peerExplorerCleaner.start();
         peerExplorerCleaner.dispose();
 

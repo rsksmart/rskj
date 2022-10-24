@@ -35,23 +35,23 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class TransactionTest {
+class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final byte chainId = config.getNetworkConstants().getChainId();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test  /* achieve public key of the sender */
-    public void test2() throws Exception {
+    void test2() throws Exception {
         if (chainId != 0)
             return;
 
@@ -100,7 +100,7 @@ public class TransactionTest {
     }
 
     @Test  /* achieve public key of the sender */
-    public void testSenderShouldChangeWhenReSigningTx() throws Exception {
+    void testSenderShouldChangeWhenReSigningTx() throws Exception {
         BigInteger value = new BigInteger("1000000000000000000000");
 
         byte[] privateKey = HashUtil.keccak256("cat".getBytes());
@@ -144,7 +144,7 @@ public class TransactionTest {
     }
 
     @Test
-    public void constantCallConflictTest() throws Exception {
+    void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
 
@@ -284,11 +284,11 @@ public class TransactionTest {
                 return super.executeTransaction(tx);
             }
         }.setstateTestUSeREMASC(true).runImpl();
-        if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
+        Assertions.assertTrue(res.isEmpty(), res.toString());
     }
 
     @Test
-    public void testEip155() {
+    void testEip155() {
         // Test to match the example provided in https://github.com/ethereum/eips/issues/155
         // Note that vitalik's tx encoded raw hash is wrong and kvhnuke fixes that in a comment
         Transaction tx = Transaction
@@ -303,15 +303,15 @@ public class TransactionTest {
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
-        Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
+        Assertions.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
         String strhash = ByteUtil.toHexString(hash);
-        Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
+        Assertions.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
     }
 
     @Test
-    public void testTransaction() {
+    void testTransaction() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.valueOf(9L))
@@ -324,24 +324,24 @@ public class TransactionTest {
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
-        Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
+        Assertions.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
         String strhash = ByteUtil.toHexString(hash);
-        Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
+        Assertions.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsNull() {
+    void isContractCreationWhenReceiveAddressIsNull() {
         Transaction tx = Transaction
                 .builder()
                 .destination(RskAddress.nullAddress())
                 .build();
-        Assert.assertTrue(tx.isContractCreation());
+        Assertions.assertTrue(tx.isContractCreation());
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsEmptyString() {
+    void isContractCreationWhenReceiveAddressIsEmptyString() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -351,23 +351,26 @@ public class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assert.assertTrue(tx.isContractCreation());
+        Assertions.assertTrue(tx.isContractCreation());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction
+    @Test
+    void isContractCreationWhenReceiveAddressIs00() {
+        TransactionBuilder builder = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000L))
-                .destination(Hex.decode("00"))
                 .chainId(chainId)
                 .value(BigInteger.ONE);
+
+        byte[] zeroAddress = Hex.decode("00");
+
+        Assertions.assertThrows(RuntimeException.class, () -> builder.destination(zeroAddress));
     }
 
     @Test
-    public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
+    void isContractCreationWhenReceiveAddressIsFortyZeroes() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -377,11 +380,11 @@ public class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assert.assertFalse(tx.isContractCreation());
+        Assertions.assertFalse(tx.isContractCreation());
     }
 
     @Test
-    public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
+    void isNotContractCreationWhenReceiveAddressIsCowAddress() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -391,11 +394,11 @@ public class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assert.assertFalse(tx.isContractCreation());
+        Assertions.assertFalse(tx.isContractCreation());
     }
 
     @Test
-    public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
+    void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
         Transaction tx = Transaction
                 .builder()
                 .nonce(BigInteger.TEN)
@@ -405,11 +408,11 @@ public class TransactionTest {
                 .chainId(chainId)
                 .value(BigInteger.ONE)
                 .build();
-        Assert.assertFalse(tx.isContractCreation());
+        Assertions.assertFalse(tx.isContractCreation());
     }
 
     @Test
-    public void createEncodeAndDecodeTransactionWithChainId() {
+    void createEncodeAndDecodeTransactionWithChainId() {
         Transaction originalTransaction = CallTransaction.createCallTransaction(
                 0, 0, 100000000000000L,
                 new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
@@ -423,14 +426,14 @@ public class TransactionTest {
 
         byte[] vData = rlpList.get(6).getRLPData();
 
-        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
-        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
+        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
+        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
 
         Transaction transaction = new ImmutableTransaction(encoded);
 
-        Assert.assertEquals(chainId, transaction.getChainId());
-        Assert.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
-        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
+        Assertions.assertEquals(chainId, transaction.getChainId());
+        Assertions.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
+        Assertions.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
     }
 }
 

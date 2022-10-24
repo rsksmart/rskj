@@ -23,12 +23,12 @@ import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockRelayValidatorTest {
+class BlockRelayValidatorTest {
 
     private final BlockStore blockStore = mock(BlockStore.class);
     private final BlockHeaderParentDependantValidationRule blockParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
@@ -37,13 +37,13 @@ public class BlockRelayValidatorTest {
     private final BlockRelayValidatorImpl blockRelayValidator = new BlockRelayValidatorImpl(blockStore, blockParentValidator, blockValidator);
 
     @Test
-    public void genesisCheck() {
+    void genesisCheck() {
         Block block = mock(Block.class);
         when(block.isGenesis()).thenReturn(true);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator, never()).isValid(any());
@@ -51,14 +51,14 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void blockValidatorCheck() {
+    void blockValidatorCheck() {
         Block block = mock(Block.class);
 
         when(blockValidator.isValid(any())).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
@@ -66,7 +66,7 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void blockParentValidatorCheck() {
+    void blockParentValidatorCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
         Block parentBlock = mock(Block.class);
@@ -78,7 +78,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertFalse(actualResult);
+        Assertions.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());
@@ -86,7 +86,7 @@ public class BlockRelayValidatorTest {
     }
 
     @Test
-    public void allValidatorsCheck() {
+    void allValidatorsCheck() {
         Block block = mock(Block.class);
         Keccak256 parentHash = mock(Keccak256.class);
         Block parentBlock = mock(Block.class);
@@ -98,7 +98,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertTrue(actualResult);
+        Assertions.assertTrue(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator).isValid(any());

@@ -27,8 +27,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +38,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ECKeyTest {
+class ECKeyTest {
     private static final Logger log = LoggerFactory.getLogger(ECKeyTest.class);
 
     private String privString = "3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4";
@@ -60,12 +60,12 @@ public class ECKeyTest {
     byte v = 28;
 
     @Test
-    public void testHashCode() {
-        Assert.assertEquals(1866897155, ECKey.fromPrivate(privateKey).hashCode());
+    void testHashCode() {
+        Assertions.assertEquals(1866897155, ECKey.fromPrivate(privateKey).hashCode());
     }
 
     @Test
-    public void testECKey() {
+    void testECKey() {
         ECKey key = new ECKey();
         assertTrue(key.isPubKeyCanonical());
         assertNotNull(key.getPubKey());
@@ -75,21 +75,20 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testFromPrivateKey() {
+    void testFromPrivateKey() {
         ECKey key = ECKey.fromPrivate(privateKey).decompress();
         assertTrue(key.isPubKeyCanonical());
         assertTrue(key.hasPrivKey());
         assertArrayEquals(pubKey, key.getPubKey());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testPrivatePublicKeyBytesNoArg() {
-        new ECKey(null, null);
-        fail("Expecting an IllegalArgumentException for using only null-parameters");
+    @Test
+    void testPrivatePublicKeyBytesNoArg() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new ECKey(null, null), "Expecting an IllegalArgumentException for using only null-parameters");
     }
 
     @Test
-    public void testIsPubKeyOnly() {
+    void testIsPubKeyOnly() {
         ECKey key = ECKey.fromPublicOnly(pubKey);
         assertTrue(key.isPubKeyCanonical());
         assertTrue(key.isPubKeyOnly());
@@ -98,31 +97,31 @@ public class ECKeyTest {
 
 
     @Test
-    public void testPublicKeyFromPrivate() {
+    void testPublicKeyFromPrivate() {
         byte[] pubFromPriv = ECKey.publicKeyFromPrivate(privateKey, false);
         assertArrayEquals(pubKey, pubFromPriv);
     }
 
     @Test
-    public void testPublicKeyFromPrivateCompressed() {
+    void testPublicKeyFromPrivateCompressed() {
         byte[] pubFromPriv = ECKey.publicKeyFromPrivate(privateKey, true);
         assertArrayEquals(compressedPubKey, pubFromPriv);
     }
 
     @Test
-    public void testGetAddress() {
+    void testGetAddress() {
         ECKey key = ECKey.fromPublicOnly(pubKey);
         assertArrayEquals(Hex.decode(address), key.getAddress());
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         ECKey key = ECKey.fromPrivate(BigInteger.TEN); // An example private key.
         assertEquals("pub:04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7", key.toString());
     }
 
     @Test
-    public void testEthereumSign() throws IOException {
+    void testEthereumSign() throws IOException {
         // TODO: Understand why key must be decompressed for this to work
         ECKey key = ECKey.fromPrivate(privateKey).decompress();
         System.out.println("Secret\t: " + ByteUtil.toHexString(key.getPrivKeyBytes()));
@@ -137,7 +136,7 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testSValue() throws Exception {
+    void testSValue() throws Exception {
         // Check that we never generate an S value that is larger than half the curve order. This avoids a malleability
         // issue that can allow someone to change a transaction [hash] without invalidating the signature.
         final int ITERATIONS = 10;
@@ -163,7 +162,7 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testIsPubKeyCanonicalCorect() {
+    void testIsPubKeyCanonicalCorect() {
         // Test correct prefix 4, right length 65
         byte[] canonicalPubkey1 = new byte[65];
         canonicalPubkey1[0] = 0x04;
@@ -179,7 +178,7 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testIsPubKeyCanonicalWrongLength() {
+    void testIsPubKeyCanonicalWrongLength() {
         // Test correct prefix 4, but wrong length !65
         byte[] nonCanonicalPubkey1 = new byte[64];
         nonCanonicalPubkey1[0] = 0x04;
@@ -195,7 +194,7 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testIsPubKeyCanonicalWrongPrefix() {
+    void testIsPubKeyCanonicalWrongPrefix() {
         // Test wrong prefix 4, right length 65
         byte[] nonCanonicalPubkey4 = new byte[65];
         assertFalse(ECKey.isPubKeyCanonical(nonCanonicalPubkey4));
@@ -208,28 +207,28 @@ public class ECKeyTest {
     }
 
     @Test
-    public void testGetPrivKeyBytes() {
+    void testGetPrivKeyBytes() {
         ECKey key = new ECKey();
         assertNotNull(key.getPrivKeyBytes());
         assertEquals(32, key.getPrivKeyBytes().length);
     }
 
     @Test
-    public void testEqualsObject() {
+    void testEqualsObject() {
         ECKey key0 = new ECKey();
         ECKey key1 = ECKey.fromPrivate(privateKey);
         ECKey key2 = ECKey.fromPrivate(privateKey);
 
-        assertFalse(key0.equals(key1));
-        assertTrue(key1.equals(key1));
-        assertTrue(key1.equals(key2));
+        assertNotEquals(key0, key1);
+        assertEquals(key1, key1);
+        assertEquals(key1, key2);
     }
 
     @Test
-    public void decryptAECSIC(){
+    void decryptAECSIC() {
         ECKey key = ECKey.fromPrivate(Hex.decode("abb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f"));
         byte[] payload = key.decryptAES(Hex.decode("84a727bc81fa4b13947dc9728b88fd08"));
-        System.out.println(ByteUtil.toHexString(payload));
+        Assertions.assertDoesNotThrow(() -> ByteUtil.toHexString(payload));
     }
 
 }

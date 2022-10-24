@@ -22,7 +22,7 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -30,16 +30,16 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-public class ConsensusValidationMainchainViewImplTest {
+class ConsensusValidationMainchainViewImplTest {
 
     @Test
-    public void getWithHeightZeroReturnsEmpty() {
+    void getWithHeightZeroReturnsEmpty() {
         BlockStore blockStore = mock(BlockStore.class);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
@@ -50,7 +50,7 @@ public class ConsensusValidationMainchainViewImplTest {
     }
 
     @Test
-    public void getThatFindsAllBlocksOnBlockStore() {
+    void getThatFindsAllBlocksOnBlockStore() {
         BlockStore blockStore = createBlockStore(10);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
@@ -76,7 +76,7 @@ public class ConsensusValidationMainchainViewImplTest {
     }
 
     @Test
-    public void getAllBlocksOnBlockStoreAreAllRequestedBlocks() {
+    void getAllBlocksOnBlockStoreAreAllRequestedBlocks() {
         BlockStore blockStore = createBlockStore(5);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
@@ -102,7 +102,7 @@ public class ConsensusValidationMainchainViewImplTest {
     }
 
     @Test
-    public void getWithMissingBlockInTheMiddleOfChain() {
+    void getWithMissingBlockInTheMiddleOfChain() {
         BlockStore blockStore = createBlockStore(10);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
@@ -121,7 +121,7 @@ public class ConsensusValidationMainchainViewImplTest {
     }
 
     @Test
-    public void getAsksForMoreBlocksThanExist() {
+    void getAsksForMoreBlocksThanExist() {
         BlockStore blockStore = createBlockStore(10);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
@@ -140,7 +140,7 @@ public class ConsensusValidationMainchainViewImplTest {
     }
 
     @Test
-    public void getThatFindsBlocksOnBlockStoreAndPendingHeaders() {
+    void getThatFindsBlocksOnBlockStoreAndPendingHeaders() {
         BlockStore blockStore = createBlockStore(10);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 

@@ -18,14 +18,15 @@
 
 package co.rsk.peg.performance;
 
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.jupiter.api.Disabled;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+@Suite
+@SelectClasses({
         IdentityPerformanceTestCase.class,
 })
-@Ignore
-public class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {
+@Disabled("manual performance tests")
+@SuppressWarnings({"squid:S2187"}) // used from another class
+class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {
 }

@@ -24,19 +24,20 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class TxValidatorMaximumGasPriceValidatorTest {
+@ExtendWith(MockitoExtension.class)
+class TxValidatorMaximumGasPriceValidatorTest {
 
     private static final long BEST_BLOCK_NUMBER = 100L;
 
@@ -52,8 +53,8 @@ public class TxValidatorMaximumGasPriceValidatorTest {
 
     private TxValidatorMaximumGasPriceValidator validator;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         lenient().when(block.getMinimumGasPrice()).thenReturn(MIN_GAS_PRICE);
 
@@ -61,31 +62,31 @@ public class TxValidatorMaximumGasPriceValidatorTest {
     }
 
     @Test
-    public void validate_whenRskip252DisabledThenTxValidRegardlessGasPrice() {
+    void validate_whenRskip252DisabledThenTxValidRegardlessGasPrice() {
         when(activationConfig.isActive(ConsensusRule.RSKIP252, BEST_BLOCK_NUMBER)).thenReturn(false);
 
         Transaction txLessGasPriceThanCap = Mockito.mock(Transaction.class);
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         lenient().when(txLessGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP - 1));
-        Assert.assertTrue(validator.validate(txLessGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
+        Assertions.assertTrue(validator.validate(txLessGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
 
         Transaction txMoreGasPriceThanCap = Mockito.mock(Transaction.class);
         // lenient to avoid "unnecessary Mockito stubbing", if ever called
         lenient().when(txMoreGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP + 1_000_000_000_000L));
-        Assert.assertTrue(validator.validate(txMoreGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
+        Assertions.assertTrue(validator.validate(txMoreGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
     }
 
     @Test
-    public void validate_whenRskip252EnabledThenTxWithMoreGasPriceThanCapInvalid() {
+    void validate_whenRskip252EnabledThenTxWithMoreGasPriceThanCapInvalid() {
         when(activationConfig.isActive(ConsensusRule.RSKIP252, BEST_BLOCK_NUMBER)).thenReturn(true);
 
         Transaction txLessGasPriceThanCap = Mockito.mock(Transaction.class);
         when(txLessGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP - 1));
-        Assert.assertTrue(validator.validate(txLessGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
+        Assertions.assertTrue(validator.validate(txLessGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
 
         Transaction txMoreGasPriceThanCap = Mockito.mock(Transaction.class);
         when(txMoreGasPriceThanCap.getGasPrice()).thenReturn(Coin.valueOf(GAS_PRICE_CAP + 1));
-        Assert.assertFalse(validator.validate(txMoreGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
+        Assertions.assertFalse(validator.validate(txMoreGasPriceThanCap, null, null, MIN_GAS_PRICE, BEST_BLOCK_NUMBER, false).transactionIsValid());
     }
 
 }

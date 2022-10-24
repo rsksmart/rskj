@@ -20,33 +20,33 @@ package co.rsk.net.messages;
 
 import co.rsk.net.utils.TransactionUtils;
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class TransactionsMessageTest {
+class TransactionsMessageTest {
     @Test
-    public void getMessageType() {
+    void getMessageType() {
         TransactionsMessage message = new TransactionsMessage(null);
-        Assert.assertEquals(MessageType.TRANSACTIONS, message.getMessageType());
+        Assertions.assertEquals(MessageType.TRANSACTIONS, message.getMessageType());
     }
 
     @Test
-    public void setAndGetTransactions() {
+    void setAndGetTransactions() {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
         TransactionsMessage message = new TransactionsMessage(txs);
 
-        Assert.assertNotNull(message.getTransactions());
-        Assert.assertEquals(10, message.getTransactions().size());
-        Assert.assertSame(txs, message.getTransactions());
+        Assertions.assertNotNull(message.getTransactions());
+        Assertions.assertEquals(10, message.getTransactions().size());
+        Assertions.assertSame(txs, message.getTransactions());
     }
 
     @Test
-    public void accept() {
+    void accept() {
         List<Transaction> txs = new LinkedList<>();
         TransactionsMessage message = new TransactionsMessage(txs);
 

@@ -20,20 +20,20 @@ package org.ethereum.util;
 
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.security.DigestOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class MapSnapshotTest {
+class MapSnapshotTest {
 
     @Test
-    public void readSnapshot_WhenRead_PopulateMap() throws IOException {
+    void readSnapshot_WhenRead_PopulateMap() throws IOException {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
 
@@ -49,13 +49,13 @@ public class MapSnapshotTest {
 
         inSnapshot.read(map);
 
-        assertFalse(map.isEmpty());
-        assertArrayEquals(key, map.keySet().stream().findFirst().orElseThrow(IllegalStateException::new).getData());
-        assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
+        Assertions.assertFalse(map.isEmpty());
+        Assertions.assertArrayEquals(key, map.keySet().stream().findFirst().orElseThrow(IllegalStateException::new).getData());
+        Assertions.assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
     }
 
-    @Test(expected = IOException.class)
-    public void readSnapshot_WhenMismatchedChecksums_ThrowError() throws IOException {
+    @Test
+    void readSnapshot_WhenMismatchedChecksums_ThrowError() {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
 
@@ -71,43 +71,46 @@ public class MapSnapshotTest {
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         Map<ByteArrayWrapper, byte[]> map = new HashMap<>();
 
-        inSnapshot.read(map);
+        Assertions.assertThrows(IOException.class, () -> inSnapshot.read(map));
 
-        assertFalse(map.isEmpty());
-        assertArrayEquals(key, map.keySet().stream().findFirst().orElseThrow(IllegalStateException::new).getData());
-        assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void readSnapshot_WhenNull_ThrowError() throws IOException {
-        InputStream inputStream = makeInputStream(out -> {});
-        MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-
-        //noinspection ConstantConditions
-        inSnapshot.read(null);
-    }
-
-    @Test(expected = IOException.class)
-    public void readSnapshot_WhenEmptyStream_ThrowError() throws IOException {
-        InputStream inputStream = makeInputStream(out -> {});
-        MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        inSnapshot.read(new HashMap<>());
+//        Assertions.assertFalse(map.isEmpty());
+//        Assertions.assertArrayEquals(key, map.keySet().stream().findFirst().orElseThrow(IllegalStateException::new).getData());
+//        Assertions.assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
     }
 
     @Test
-    public void readSnapshot_WhenInvalidCount_ThrowError() {
+    void readSnapshot_WhenNull_ThrowError() {
+        InputStream inputStream = makeInputStream(out -> {});
+        MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
+
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            //noinspection ConstantConditions
+            inSnapshot.read(null);
+        });
+    }
+
+    @Test
+    void readSnapshot_WhenEmptyStream_ThrowError() {
+        InputStream inputStream = makeInputStream(out -> {});
+        MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
+
+        Assertions.assertThrows(IOException.class, () -> inSnapshot.read(new HashMap<>()));
+    }
+
+    @Test
+    void readSnapshot_WhenInvalidCount_ThrowError() {
         InputStream inputStream = makeInputStream(out -> out.writeInt(0));
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         try {
             inSnapshot.read(new HashMap<>());
-            fail();
+            Assertions.fail();
         } catch (IOException e) {
-            assertEquals("Invalid data: number of entries", e.getMessage());
+            Assertions.assertEquals("Invalid data: number of entries", e.getMessage());
         }
     }
 
     @Test
-    public void readSnapshot_WhenInvalidKeySize_ThrowError() {
+    void readSnapshot_WhenInvalidKeySize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(-1);
@@ -115,24 +118,25 @@ public class MapSnapshotTest {
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         try {
             inSnapshot.read(new HashMap<>());
-            fail();
+            Assertions.fail();
         } catch (IOException e) {
-            assertEquals("Invalid data: key size", e.getMessage());
+            Assertions.assertEquals("Invalid data: key size", e.getMessage());
         }
     }
 
-    @Test(expected = EOFException.class)
-    public void readSnapshot_WhenInvalidKeyLength_ThrowError() throws IOException {
+    @Test
+    void readSnapshot_WhenInvalidKeyLength_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        inSnapshot.read(new HashMap<>());
+
+        Assertions.assertThrows(EOFException.class, () -> inSnapshot.read(new HashMap<>()));
     }
 
     @Test
-    public void readSnapshot_WhenInvalidValueSize_ThrowError() {
+    void readSnapshot_WhenInvalidValueSize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -142,14 +146,14 @@ public class MapSnapshotTest {
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         try {
             inSnapshot.read(new HashMap<>());
-            fail();
+            Assertions.fail();
         } catch (IOException e) {
-            assertEquals("Invalid data: value size", e.getMessage());
+            Assertions.assertEquals("Invalid data: value size", e.getMessage());
         }
     }
 
-    @Test(expected = EOFException.class)
-    public void readSnapshot_WhenInvalidValueLength_ThrowError() throws IOException {
+    @Test
+    void readSnapshot_WhenInvalidValueLength_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -157,11 +161,11 @@ public class MapSnapshotTest {
             out.writeInt(1);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        inSnapshot.read(new HashMap<>());
+        Assertions.assertThrows(EOFException.class, () -> inSnapshot.read(new HashMap<>()));
     }
 
     @Test
-    public void closeInputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
+    void closeInputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
         InputStream inputStream = mock(InputStream.class);
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
 
@@ -171,7 +175,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void writeSnapshot_WhenWrite_ShouldPopulateOutputStream() throws IOException {
+    void writeSnapshot_WhenWrite_ShouldPopulateOutputStream() throws IOException {
         byte[] key = new byte[] {0, 1, 2, 3, 4};
         byte[] value = new byte[] {5, 6, 7, 8, 9};
         Map<ByteArrayWrapper, byte[]> outMap = new HashMap<>();
@@ -194,11 +198,11 @@ public class MapSnapshotTest {
 
         outSnapshot.write(outMap);
 
-        assertArrayEquals(expectedOutputStream.toByteArray(), outputStream.toByteArray());
+        Assertions.assertArrayEquals(expectedOutputStream.toByteArray(), outputStream.toByteArray());
     }
 
     @Test
-    public void closeOutputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
+    void closeOutputSnapshot_WhenClose_ShouldTriggerCloseOfNestedStream() throws IOException {
         OutputStream outputStream = mock(OutputStream.class);
         MapSnapshot.Out outSnapshot = new MapSnapshot.Out(outputStream);
 
@@ -208,7 +212,7 @@ public class MapSnapshotTest {
     }
 
     @Test
-    public void writeAndReadSnapshot_WhenReadWritten_ShouldMatch() throws IOException {
+    void writeAndReadSnapshot_WhenReadWritten_ShouldMatch() throws IOException {
         Map<ByteArrayWrapper, byte[]> outMap = new HashMap<>();
         outMap.put(ByteUtil.wrap(new byte[0]), new byte[0]); // empty-byte keys and values are allowed
         for (int i = 0; i < 10; i++) {
@@ -228,9 +232,9 @@ public class MapSnapshotTest {
             inSnapshot.read(inMap);
         }
 
-        assertEquals(11, inMap.size());
+        Assertions.assertEquals(11, inMap.size());
         for (Map.Entry<ByteArrayWrapper, byte[]> entry : inMap.entrySet()) {
-            assertArrayEquals(entry.getValue(), outMap.get(entry.getKey()));
+            Assertions.assertArrayEquals(entry.getValue(), outMap.get(entry.getKey()));
         }
     }
 

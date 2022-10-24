@@ -23,8 +23,8 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class OneNodeTest {
+class OneNodeTest {
     private static Block getGenesis() {
         final World world = new World();
 
@@ -40,7 +40,7 @@ public class OneNodeTest {
     }
 
     @Test
-    public void buildBlockchain() {
+    void buildBlockchain() {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -48,12 +48,12 @@ public class OneNodeTest {
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 
     @Test
-    public void buildBlockchainInReverse() {
+    void buildBlockchainInReverse() {
         SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -65,7 +65,7 @@ public class OneNodeTest {
         for (Block block : reverse)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
-        Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assertions.assertEquals(blocks.size(), node.getBestBlock().getNumber());
+        Assertions.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
     }
 }

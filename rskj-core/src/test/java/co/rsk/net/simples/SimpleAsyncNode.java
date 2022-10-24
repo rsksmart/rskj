@@ -36,7 +36,7 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.concurrent.*;
 
@@ -92,7 +92,7 @@ public class SimpleAsyncNode extends SimpleNode {
             }
         } catch (ExecutionException ex) {
             ex.printStackTrace();
-            Assert.fail();
+            Assertions.fail();
         } catch (InterruptedException ignored) {
         }
     }

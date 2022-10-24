@@ -33,19 +33,20 @@ import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ProgramTest {
+@ExtendWith(MockitoExtension.class)
+class ProgramTest {
 
     static final int TOTAL_GAS = 10000;
     protected static final int STACK_STATE_SUCCESS = 1;
@@ -62,8 +63,8 @@ public class ProgramTest {
     protected long gasCost;
     protected Program program;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         final ActivationConfig.ForBlock activations = getBlockchainConfig();
         precompiledContract = spy(precompiledContracts.getContractForAddress(activations, PrecompiledContracts.ECRECOVER_ADDR_DW));
         gasCost = precompiledContract.getGasForData(DataWord.ONE.getData());
@@ -116,7 +117,7 @@ public class ProgramTest {
     }
 
     @Test
-    public void testCallToPrecompiledAddress_success() throws VMException {
+    void testCallToPrecompiledAddress_success() throws VMException {
         when(precompiledContract.execute(any())).thenReturn(new byte[]{1});
 
         program.callToPrecompiledAddress(msg, precompiledContract);
@@ -128,17 +129,14 @@ public class ProgramTest {
     }
 
 
-    @Test(expected = RuntimeException.class)
-    public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
+    @Test
+    void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
-
-        program.callToPrecompiledAddress(msg, precompiledContract);
-
-        fail("It should throw a RE.");
+        Assertions.assertThrows(RuntimeException.class, () -> program.callToPrecompiledAddress(msg, precompiledContract));
     }
 
     @Test
-    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
+    void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new VMException("Revert exception"));
 
         program.callToPrecompiledAddress(msg, precompiledContract);
@@ -148,7 +146,7 @@ public class ProgramTest {
     }
 
     @Test
-    public void testCallToPrecompiledAddress_with_logs_success() throws VMException {
+    void testCallToPrecompiledAddress_with_logs_success() throws VMException {
         Bridge bridge = mock(Bridge.class);
         when(bridge.execute(any())).thenReturn(new byte[]{1});
 

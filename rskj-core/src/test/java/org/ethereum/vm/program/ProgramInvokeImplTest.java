@@ -5,17 +5,17 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ProgramInvokeImplTest {
+class ProgramInvokeImplTest {
 
     @Test
-    public void testEquals_OK() {
+    void testEquals_OK() {
 
         byte[] address1 = new byte[]{1};
         byte[] origin1 = new byte[]{2};
@@ -63,7 +63,7 @@ public class ProgramInvokeImplTest {
 
         // An object must be different from null
 
-        assertNotEquals(programInvokeA, null);
+        assertNotEquals(null, programInvokeA);
 
         // Same property values make objects to be equal
 
@@ -86,7 +86,7 @@ public class ProgramInvokeImplTest {
     }
 
     @Test
-    public void testHashcode_OK() {
+    void testHashcode_OK() {
 
         byte[] address1 = new byte[]{1};
         byte[] origin1 = new byte[]{2};

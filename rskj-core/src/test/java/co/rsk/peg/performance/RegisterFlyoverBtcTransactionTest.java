@@ -15,18 +15,18 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Ignore
-public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
+@Disabled
+class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcTransaction btcTx;
     private int blockWithTxHeight;
     private boolean shouldTransferToContract =  true;
@@ -34,8 +34,8 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
     private PartialMerkleTree pmt;
     private Coin totalAmount;
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -58,7 +58,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
     }
 
     @Test
-    public void registerFlyoverBtcTransaction() throws VMException {
+    void registerFlyoverBtcTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerFlyoverBtcTransaction");
         registerFlyoverBtcTransaction_success(5000, stats);
         registerFlyoverBtcTransaction_surpasses_locking_cap(1000, stats);
@@ -85,7 +85,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
                 stats,
                 (environment, executionResult) -> {
                     long totalAmount = new BigInteger(executionResult).longValueExact();
-                    Assert.assertTrue(totalAmount > 0);
+                    Assertions.assertTrue(totalAmount > 0);
                 }
         );
     }
@@ -111,7 +111,7 @@ public class RegisterFlyoverBtcTransactionTest extends BridgePerformanceTestCase
                 stats,
                 (environment, executionResult) -> {
                     long errorResult = new BigInteger(executionResult).longValueExact();
-                    Assert.assertEquals(surpassesLockinCapError, errorResult);
+                    Assertions.assertEquals(surpassesLockinCapError, errorResult);
                 }
         );
     }

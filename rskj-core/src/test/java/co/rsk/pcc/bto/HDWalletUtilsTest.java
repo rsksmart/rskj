@@ -24,9 +24,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
@@ -34,11 +34,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class HDWalletUtilsTest {
+class HDWalletUtilsTest {
     private HDWalletUtils contract;
 
-    @Before
-    public void createContract() {
+    @BeforeEach
+    void createContract() {
         RskSystemProperties config = new TestSystemProperties();
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
         contract = spy(new HDWalletUtils(config.getActivationConfig(), new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
@@ -46,38 +46,38 @@ public class HDWalletUtilsTest {
     }
 
     @Test
-    public void hasNoDefaultMethod() {
-        Assert.assertFalse(contract.getDefaultMethod().isPresent());
+    void hasNoDefaultMethod() {
+        Assertions.assertFalse(contract.getDefaultMethod().isPresent());
     }
 
     @Test
-    public void hasFourMethods() {
-        Assert.assertEquals(4, contract.getMethods().size());
+    void hasFourMethods() {
+        Assertions.assertEquals(4, contract.getMethods().size());
     }
 
     @Test
-    public void hasToBase58Check() {
+    void hasToBase58Check() {
         assertHasMethod(ToBase58Check.class);
     }
 
     @Test
-    public void hasDeriveExtendedPublicKey() {
+    void hasDeriveExtendedPublicKey() {
         assertHasMethod(DeriveExtendedPublicKey.class);
     }
 
     @Test
-    public void hasExtractPublicKeyFromExtendedPublicKey() {
+    void hasExtractPublicKeyFromExtendedPublicKey() {
         assertHasMethod(ExtractPublicKeyFromExtendedPublicKey.class);
     }
 
     @Test
-    public void hasGetMultisigScriptHash() {
+    void hasGetMultisigScriptHash() {
         assertHasMethod(GetMultisigScriptHash.class);
     }
 
     private void assertHasMethod(Class clazz) {
         Optional<NativeMethod> method = contract.getMethods().stream()
                 .filter(m -> m.getClass() == clazz).findFirst();
-        Assert.assertTrue(method.isPresent());
+        Assertions.assertTrue(method.isPresent());
     }
 }

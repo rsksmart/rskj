@@ -19,27 +19,27 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockRequestMessageTest {
+class BlockRequestMessageTest {
     @Test
-    public void createWithBlockHash() {
+    void createWithBlockHash() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
-        Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(100, message.getId());
+        Assertions.assertArrayEquals(hash, message.getBlockHash());
+        Assertions.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
     }
 
     @Test
-    public void accept() {
+    void accept() {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 

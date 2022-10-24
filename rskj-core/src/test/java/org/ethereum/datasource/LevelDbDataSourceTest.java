@@ -21,25 +21,27 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.ethereum.TestUtils.randomBytes;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class LevelDbDataSourceTest {
+class LevelDbDataSourceTest {
 
-    @Rule
-    public TemporaryFolder databaseDir = new TemporaryFolder();
+    @TempDir
+    public Path databaseDir;
 
     @Test
-    public void testBatchUpdating() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+    void testBatchUpdating() throws IOException {
+        Path traceFilePath = databaseDir.resolve(UUID.randomUUID().toString());
+        traceFilePath.toFile().mkdir();
+
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", traceFilePath.toString());
         dataSource.init();
 
         final int batchSize = 100;
@@ -53,15 +55,18 @@ public class LevelDbDataSourceTest {
             assertTrue(iterator.hasNext());
             assertNotNull(iterator.next());
         } catch (Exception e) {
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
 
         dataSource.close();
     }
 
     @Test
-    public void testPutting() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+    void testPutting() throws IOException {
+        Path traceFilePath = databaseDir.resolve(UUID.randomUUID().toString());
+        traceFilePath.toFile().mkdir();
+
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", traceFilePath.toString());
         dataSource.init();
 
         byte[] key = randomBytes(32);

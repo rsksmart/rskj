@@ -19,20 +19,20 @@
 package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.Transaction;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class TxValidatorNotNullValidatorTest {
+class TxValidatorNotNullValidatorTest {
     @Test
-    public void nullTx() {
+    void nullTx() {
         TxNotNullValidator validator = new TxNotNullValidator();
-        Assert.assertFalse(validator.validate(null, null, null, null, 0, false).transactionIsValid());
+        Assertions.assertFalse(validator.validate(null, null, null, null, 0, false).transactionIsValid());
     }
 
     @Test
-    public void tx() {
+    void tx() {
         TxNotNullValidator validator = new TxNotNullValidator();
-        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false).transactionIsValid());
+        Assertions.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false).transactionIsValid());
     }
 }

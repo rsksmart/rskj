@@ -25,26 +25,26 @@ import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore
-public class PendingFederationTest extends BridgePerformanceTestCase {
+@Disabled
+class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 
     @Test
-    public void getPendingFederationHash() throws VMException {
+    void getPendingFederationHash() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_HASH);
     }
 
     @Test
-    public void getPendingFederationSize() throws VMException {
+    void getPendingFederationSize() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getPendingFederatorPublicKey() throws VMException {
+    void getPendingFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getPendingFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getBtcPublicKeys().size()-1)});
@@ -52,7 +52,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getPendingFederatorPublicKey", false,200, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws VMException {
@@ -60,7 +60,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(fn,true,200, stats);
         executeTestCaseSection(fn,false,200, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {

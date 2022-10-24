@@ -18,9 +18,9 @@
 package co.rsk.rpc.netty;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.ethereum.rpc.Web3;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -59,7 +59,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.rpc.ModuleDescription;
 import okio.Buffer;
 
-public class Web3WebSocketServerTest {
+class Web3WebSocketServerTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -69,28 +69,28 @@ public class Web3WebSocketServerTest {
 
     private ExecutorService wsExecutor;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         wsExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Test
-    public void smokeTest() throws Exception {
+    void smokeTest() throws Exception {
         smokeTest(getJsonRpcDummyMessage("value"));
     }
 
     @Test
-    public void smokeTestWithBigJson() throws Exception {
+    void smokeTestWithBigJson() throws Exception {
         smokeTest(getJsonRpcBigMessage());
     }
 
     @Test
-    public void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
+    void smokeTestWithBigJsonUsingAnotherServerPath() throws Exception {
         smokeTest(getJsonRpcBigMessage(), "/");
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         wsExecutor.shutdown();
     }
 

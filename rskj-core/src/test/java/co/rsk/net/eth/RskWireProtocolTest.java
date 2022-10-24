@@ -23,14 +23,14 @@ import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
 import static org.mockito.Mockito.*;
 
-public class RskWireProtocolTest {
+class RskWireProtocolTest {
 
     private RskSystemProperties config;
     private RskWireProtocol target;
@@ -44,8 +44,8 @@ public class RskWireProtocolTest {
     private Channel channel;
     private ChannelHandlerContext ctx;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         config = mock(RskSystemProperties.class);
         peerScoringManager = mock(PeerScoringManager.class);
         messageHandler = mock(MessageHandler.class);
@@ -73,7 +73,7 @@ public class RskWireProtocolTest {
 
 
     @Test
-    public void channelRead0_old_status_incompatible_protocol() throws Exception {
+    void channelRead0_old_status_incompatible_protocol() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -89,11 +89,11 @@ public class RskWireProtocolTest {
                 new byte[32]);
         target.channelRead0(ctx, message);
 
-        verify(messageQueue).disconnect(eq(ReasonCode.INCOMPATIBLE_PROTOCOL));
+        verify(messageQueue).disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
     }
 
     @Test
-    public void channelRead0_old_status_invalid_network() throws Exception {
+    void channelRead0_old_status_invalid_network() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -108,11 +108,11 @@ public class RskWireProtocolTest {
                 new byte[32]);
         target.channelRead0(ctx, message);
 
-        verify(messageQueue).disconnect(eq(ReasonCode.NULL_IDENTITY));
+        verify(messageQueue).disconnect(ReasonCode.NULL_IDENTITY);
     }
 
     @Test
-    public void channelRead0_old_status_unexpected_genesis() throws Exception {
+    void channelRead0_old_status_unexpected_genesis() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -127,11 +127,11 @@ public class RskWireProtocolTest {
                 new byte[32]);
         target.channelRead0(ctx, message);
 
-        verify(messageQueue).disconnect(eq(ReasonCode.UNEXPECTED_GENESIS));
+        verify(messageQueue).disconnect(ReasonCode.UNEXPECTED_GENESIS);
     }
 
     @Test
-    public void channelRead0_get_block_message() throws Exception {
+    void channelRead0_get_block_message() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -144,11 +144,11 @@ public class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(eq(channel), eq(message));
+        verify(messageHandler).postMessage(channel, message);
     }
 
     @Test
-    public void channelRead0_block_message() throws Exception {
+    void channelRead0_block_message() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -163,11 +163,11 @@ public class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(eq(channel), eq(message));
+        verify(messageHandler).postMessage(channel, message);
     }
 
     @Test
-    public void channelRead0_status_message() throws Exception {
+    void channelRead0_status_message() throws Exception {
 
         NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
         NodeStatistics nodeStatistics = mock(NodeStatistics.class);
@@ -182,11 +182,11 @@ public class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(eq(channel), eq(message));
+        verify(messageHandler).postMessage(channel, message);
     }
 
     @Test
-    public void activate_sendStatus() {
+    void activate_sendStatus() {
         BlockDifficulty blockDifficulty = new BlockDifficulty(BigInteger.valueOf(20));
         Status status = mock(Status.class);
         when(status.getTotalDifficulty()).thenReturn(blockDifficulty);

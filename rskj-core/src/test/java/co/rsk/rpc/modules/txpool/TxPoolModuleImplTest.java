@@ -31,9 +31,9 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.Web3Mocks;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -42,15 +42,15 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 
-public class TxPoolModuleImplTest {
+class TxPoolModuleImplTest {
 
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private TxPoolModule txPoolModule;
     private TransactionPool transactionPool;
     private Map<Integer, Account> accountMap;
 
-    @Before
-    public void setup(){
+    @BeforeEach
+    void setup(){
         transactionPool = Web3Mocks.getMockTransactionPool();
         txPoolModule = new TxPoolModuleImpl(transactionPool);
         accountMap = new HashMap();
@@ -109,28 +109,28 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_basic() {
+    void txpool_content_basic() {
         JsonNode node = txPoolModule.content();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_inspect_basic() {
+    void txpool_inspect_basic() {
         JsonNode node = txPoolModule.inspect();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_status_basic() {
+    void txpool_status_basic() {
         JsonNode node = txPoolModule.status();
         checkFieldIsNumber(node,"pending");
         checkFieldIsNumber(node,"queued");
     }
 
     @Test
-    public void txpool_content_oneTx() {
+    void txpool_content_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.content();
@@ -143,7 +143,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_oneTx_no_receiver() {
+    void txpool_content_oneTx_no_receiver() {
         Transaction tx = createSampleTransactionWithoutReceiver();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.content();
@@ -156,7 +156,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_oneTx() {
+    void txpool_inspect_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.inspect();
@@ -169,7 +169,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameNonce() {
+    void txpool_content_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -191,7 +191,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameNonce() {
+    void txpool_inspect_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -213,7 +213,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameSender() {
+    void txpool_content_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -234,7 +234,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameSender() {
+    void txpool_inspect_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -255,7 +255,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_manyTxs() {
+    void txpool_content_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -279,7 +279,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_manyTxs() {
+    void txpool_inspect_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -303,19 +303,19 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_oneTx() {
+    void txpool_status_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.status();
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
-        Assert.assertEquals(0, queuedNode.asInt());
-        Assert.assertEquals(1, pendingNode.asInt());
+        Assertions.assertEquals(0, queuedNode.asInt());
+        Assertions.assertEquals(1, pendingNode.asInt());
     }
 
     @Test
-    public void txpool_status_manyPending() {
+    void txpool_status_manyPending() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -325,12 +325,12 @@ public class TxPoolModuleImplTest {
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
-        Assert.assertEquals(0, queuedNode.asInt());
-        Assert.assertEquals(transactions.size(), pendingNode.asInt());
+        Assertions.assertEquals(0, queuedNode.asInt());
+        Assertions.assertEquals(transactions.size(), pendingNode.asInt());
     }
 
     @Test
-    public void txpool_status_manyTxs() {
+    void txpool_status_manyTxs() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -344,8 +344,8 @@ public class TxPoolModuleImplTest {
 
         JsonNode queuedNode = checkFieldIsNumber(node, "queued");
         JsonNode pendingNode = checkFieldIsNumber(node, "pending");
-        Assert.assertEquals(txs.size(), queuedNode.asInt());
-        Assert.assertEquals(transactions.size(), pendingNode.asInt());
+        Assertions.assertEquals(txs.size(), queuedNode.asInt());
+        Assertions.assertEquals(transactions.size(), pendingNode.asInt());
     }
 
     private interface JsonNodeVerifier {
@@ -370,67 +370,67 @@ public class TxPoolModuleImplTest {
     }
 
     private JsonNode checkFieldIsArray(JsonNode node, String fieldName) {
-        Assert.assertTrue(node.has(fieldName));
+        Assertions.assertTrue(node.has(fieldName));
         JsonNode fieldNode = node.get(fieldName);
-        Assert.assertTrue(fieldNode.isArray());
+        Assertions.assertTrue(fieldNode.isArray());
         return fieldNode;
     }
 
     private JsonNode checkFieldIsObject(JsonNode node, String fieldName) {
-        Assert.assertTrue(node.has(fieldName));
+        Assertions.assertTrue(node.has(fieldName));
         JsonNode fieldNode = node.get(fieldName);
-        Assert.assertTrue(fieldNode.isObject());
+        Assertions.assertTrue(fieldNode.isObject());
         return fieldNode;
     }
 
     private JsonNode checkFieldIsNumber(JsonNode node, String fieldName) {
-        Assert.assertTrue(node.has(fieldName));
+        Assertions.assertTrue(node.has(fieldName));
         JsonNode fieldNode = node.get(fieldName);
-        Assert.assertTrue(fieldNode.isNumber());
+        Assertions.assertTrue(fieldNode.isNumber());
         return fieldNode;
     }
 
     private void checkFieldIsEmpty(JsonNode node, String fieldName) {
-        Assert.assertTrue(node.has(fieldName));
+        Assertions.assertTrue(node.has(fieldName));
         JsonNode fieldNode = node.get(fieldName);
-        Assert.assertTrue(fieldNode.isObject());
-        Assert.assertFalse(fieldNode.fields().hasNext());
+        Assertions.assertTrue(fieldNode.isObject());
+        Assertions.assertFalse(fieldNode.fields().hasNext());
     }
 
     private void assertFullTransaction(Transaction tx, JsonNode transactionNode) {
-        Assert.assertTrue(transactionNode.has("blockHash"));
-        Assert.assertEquals(transactionNode.get("blockHash").asText(), "0x0000000000000000000000000000000000000000000000000000000000000000");
-        Assert.assertTrue(transactionNode.has("blockNumber"));
-        Assert.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
-        Assert.assertTrue(transactionNode.has("from"));
-        Assert.assertEquals(transactionNode.get("from").asText(), HexUtils.toJsonHex(tx.getSender().getBytes()));
-        Assert.assertTrue(transactionNode.has("gas"));
-        Assert.assertEquals(transactionNode.get("gas").asText(), HexUtils.toQuantityJsonHex(tx.getGasLimitAsInteger()));
-        Assert.assertTrue(transactionNode.has("gasPrice"));
-        Assert.assertEquals(transactionNode.get("gasPrice").asText(), HexUtils.toJsonHex(tx.getGasPrice().getBytes()));
-        Assert.assertTrue(transactionNode.has("hash"));
-        Assert.assertEquals(transactionNode.get("hash").asText(), HexUtils.toJsonHex(tx.getHash().toHexString()));
-        Assert.assertTrue(transactionNode.has("input"));
-        Assert.assertEquals(transactionNode.get("input").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
-        Assert.assertTrue(transactionNode.has("nonce"));
-        Assert.assertEquals(transactionNode.get("nonce").asText(), HexUtils.toQuantityJsonHex(tx.getNonceAsInteger()));
-        Assert.assertTrue(transactionNode.has("to"));
-        Assert.assertEquals(transactionNode.get("to").asText(), HexUtils.toJsonHex(tx.getReceiveAddress().getBytes()));
-        Assert.assertTrue(transactionNode.has("transactionIndex"));
-        Assert.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
-        Assert.assertTrue(transactionNode.has("value"));
-        Assert.assertEquals(transactionNode.get("value").asText(), HexUtils.toJsonHex(tx.getValue().getBytes()));
+        Assertions.assertTrue(transactionNode.has("blockHash"));
+        Assertions.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000000", transactionNode.get("blockHash").asText());
+        Assertions.assertTrue(transactionNode.has("blockNumber"));
+        Assertions.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
+        Assertions.assertTrue(transactionNode.has("from"));
+        Assertions.assertEquals(transactionNode.get("from").asText(), HexUtils.toJsonHex(tx.getSender().getBytes()));
+        Assertions.assertTrue(transactionNode.has("gas"));
+        Assertions.assertEquals(transactionNode.get("gas").asText(), HexUtils.toQuantityJsonHex(tx.getGasLimitAsInteger()));
+        Assertions.assertTrue(transactionNode.has("gasPrice"));
+        Assertions.assertEquals(transactionNode.get("gasPrice").asText(), HexUtils.toJsonHex(tx.getGasPrice().getBytes()));
+        Assertions.assertTrue(transactionNode.has("hash"));
+        Assertions.assertEquals(transactionNode.get("hash").asText(), HexUtils.toJsonHex(tx.getHash().toHexString()));
+        Assertions.assertTrue(transactionNode.has("input"));
+        Assertions.assertEquals(transactionNode.get("input").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
+        Assertions.assertTrue(transactionNode.has("nonce"));
+        Assertions.assertEquals(transactionNode.get("nonce").asText(), HexUtils.toQuantityJsonHex(tx.getNonceAsInteger()));
+        Assertions.assertTrue(transactionNode.has("to"));
+        Assertions.assertEquals(transactionNode.get("to").asText(), HexUtils.toJsonHex(tx.getReceiveAddress().getBytes()));
+        Assertions.assertTrue(transactionNode.has("transactionIndex"));
+        Assertions.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
+        Assertions.assertTrue(transactionNode.has("value"));
+        Assertions.assertEquals(transactionNode.get("value").asText(), HexUtils.toJsonHex(tx.getValue().getBytes()));
 
         if (tx.getData() != null && tx.getData().length > 0) {
-            Assert.assertTrue(transactionNode.has("data"));
-            Assert.assertEquals(transactionNode.get("data").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
+            Assertions.assertTrue(transactionNode.has("data"));
+            Assertions.assertEquals(transactionNode.get("data").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
         }
         else {
-            Assert.assertFalse(transactionNode.has("data"));
+            Assertions.assertFalse(transactionNode.has("data"));
         }
     }
 
     private void assertSummaryTransaction(Transaction tx, JsonNode summaryNode) {
-        Assert.assertEquals(tx.getReceiveAddress().toString() + ": " + tx.getValue().toString() + " wei + " + tx.getGasLimitAsInteger().toString() + " x " + tx.getGasPrice().toString() + " gas", summaryNode.asText());
+        Assertions.assertEquals(tx.getReceiveAddress().toString() + ": " + tx.getValue().toString() + " wei + " + tx.getGasLimitAsInteger().toString() + " x " + tx.getGasPrice().toString() + " gas", summaryNode.asText());
     }
 }

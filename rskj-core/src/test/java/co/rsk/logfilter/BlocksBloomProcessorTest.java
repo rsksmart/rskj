@@ -5,24 +5,24 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by ajlopez on 29/09/2020.
  */
-public class BlocksBloomProcessorTest {
+class BlocksBloomProcessorTest {
     @Test
-    public void noBlocksBloomInProcessAtTheBeginning() {
+    void noBlocksBloomInProcessAtTheBeginning() {
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
         BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, null);
 
-        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
+        Assertions.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
     }
 
     @Test
-    public void processFirstNewBlock() {
+    void processFirstNewBlock() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -35,15 +35,15 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.fromBlock());
-        Assert.assertEquals(2, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.fromBlock());
+        Assertions.assertEquals(2, result.toBlock());
 
-        Assert.assertTrue(dataSource.keys().isEmpty());
+        Assertions.assertTrue(dataSource.keys().isEmpty());
     }
 
     @Test
-    public void avoidProcessWithNoEnoughConfirmations() {
+    void avoidProcessWithNoEnoughConfirmations() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -54,11 +54,11 @@ public class BlocksBloomProcessorTest {
 
         blocksBloomProcessor.processNewBlockNumber(4);
 
-        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
+        Assertions.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
     }
 
     @Test
-    public void avoidProcessNegativeBlockNumber() {
+    void avoidProcessNegativeBlockNumber() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -69,11 +69,11 @@ public class BlocksBloomProcessorTest {
 
         blocksBloomProcessor.processNewBlockNumber(-2);
 
-        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
+        Assertions.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
     }
 
     @Test
-    public void processFirstNewBlockInSecondRange() {
+    void processFirstNewBlockInSecondRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -86,15 +86,15 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(4, result.fromBlock());
-        Assert.assertEquals(5, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(4, result.fromBlock());
+        Assertions.assertEquals(5, result.toBlock());
 
-        Assert.assertTrue(dataSource.keys().isEmpty());
+        Assertions.assertTrue(dataSource.keys().isEmpty());
     }
 
     @Test
-    public void processFirstNewBlockInSecondRangeWithOnlyOneBlock() {
+    void processFirstNewBlockInSecondRangeWithOnlyOneBlock() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -107,15 +107,15 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(4, result.fromBlock());
-        Assert.assertEquals(4, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(4, result.fromBlock());
+        Assertions.assertEquals(4, result.toBlock());
 
-        Assert.assertTrue(dataSource.keys().isEmpty());
+        Assertions.assertTrue(dataSource.keys().isEmpty());
     }
 
     @Test
-    public void processBlocksInSecondRangeOnly() {
+    void processBlocksInSecondRangeOnly() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -129,15 +129,15 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(4, result.fromBlock());
-        Assert.assertEquals(4, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(4, result.fromBlock());
+        Assertions.assertEquals(4, result.toBlock());
 
-        Assert.assertTrue(dataSource.keys().isEmpty());
+        Assertions.assertTrue(dataSource.keys().isEmpty());
     }
 
     @Test
-    public void processNewBlockTwice() {
+    void processNewBlockTwice() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -151,15 +151,15 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.fromBlock());
-        Assert.assertEquals(2, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(0, result.fromBlock());
+        Assertions.assertEquals(2, result.toBlock());
 
-        Assert.assertTrue(dataSource.keys().isEmpty());
+        Assertions.assertTrue(dataSource.keys().isEmpty());
     }
 
     @Test
-    public void processBlocksToFillRange() {
+    void processBlocksToFillRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -173,14 +173,14 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNull(result);
+        Assertions.assertNull(result);
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(1, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(1, dataSource.keys().size());
     }
 
     @Test
-    public void processBlocksToFillRangeAndStartTheNextOne() {
+    void processBlocksToFillRangeAndStartTheNextOne() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, 8, false, false);
@@ -194,11 +194,11 @@ public class BlocksBloomProcessorTest {
 
         BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(4, result.fromBlock());
-        Assert.assertEquals(4, result.toBlock());
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(4, result.fromBlock());
+        Assertions.assertEquals(4, result.toBlock());
 
-        Assert.assertFalse(dataSource.keys().isEmpty());
-        Assert.assertEquals(1, dataSource.keys().size());
+        Assertions.assertFalse(dataSource.keys().isEmpty());
+        Assertions.assertEquals(1, dataSource.keys().size());
     }
 }

@@ -65,15 +65,18 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -89,13 +92,15 @@ import java.util.stream.Stream;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/9/2016.
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
+// to avoid Junit5 unnecessary stub error due to some setup generalizations
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class BridgeSupportTestIntegration {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
@@ -113,15 +118,15 @@ public class BridgeSupportTestIntegration {
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
 
-    @Before
-    public void setUpOnEachTest() {
+    @BeforeEach
+    void setUpOnEachTest() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
     }
 
     @Test
-    public void testInitialChainHeadWithoutBtcCheckpoints() throws Exception {
+    void testInitialChainHeadWithoutBtcCheckpoints() throws Exception {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -133,12 +138,12 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.getBtcBlockchainBestChainHeight();
 
         StoredBlock chainHead = bridgeSupport.getBtcBlockStore().getChainHead();
-        Assert.assertEquals(0, chainHead.getHeight());
-        Assert.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
+        Assertions.assertEquals(0, chainHead.getHeight());
+        Assertions.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
     }
 
     @Test
-    public void testInitialChainHeadWithBtcCheckpoints() throws Exception {
+    void testInitialChainHeadWithBtcCheckpoints() throws Exception {
         BridgeConstants bridgeConstants = BridgeTestNetConstants.getInstance();
 
         Repository repository = createRepository();
@@ -156,11 +161,11 @@ public class BridgeSupportTestIntegration {
         long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L; // The magic number is a substraction CheckpointManager does when getting the checkpoints.
         StoredBlock checkpoint = manager.getCheckpointBefore(time);
 
-        Assert.assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
+        Assertions.assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
     }
 
     @Test
-    public void feePerKbFromStorageProvider() {
+    void feePerKbFromStorageProvider() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -172,11 +177,11 @@ public class BridgeSupportTestIntegration {
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track);
 
-        Assert.assertEquals(expected, bridgeSupport.getFeePerKb());
+        Assertions.assertEquals(expected, bridgeSupport.getFeePerKb());
     }
 
     @Test
-    public void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
+    void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -188,27 +193,27 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.getBtcBlockchainBestChainHeight();
 
         StoredBlock chainHead = bridgeSupport.getBtcBlockStore().getChainHead();
-        Assert.assertEquals(0, chainHead.getHeight());
-        Assert.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
+        Assertions.assertEquals(0, chainHead.getHeight());
+        Assertions.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
-        Assert.assertEquals(1, locator.size());
-        Assert.assertEquals(btcParams.getGenesisBlock().getHash(), locator.get(0));
+        Assertions.assertEquals(1, locator.size());
+        Assertions.assertEquals(btcParams.getGenesisBlock().getHash(), locator.get(0));
 
         List<BtcBlock> blocks = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
         bridgeSupport.receiveHeaders(blocks.toArray(new BtcBlock[]{}));
         locator = bridgeSupport.getBtcBlockchainBlockLocator();
-        Assert.assertEquals(6, locator.size());
-        Assert.assertEquals(blocks.get(9).getHash(), locator.get(0));
-        Assert.assertEquals(blocks.get(8).getHash(), locator.get(1));
-        Assert.assertEquals(blocks.get(7).getHash(), locator.get(2));
-        Assert.assertEquals(blocks.get(5).getHash(), locator.get(3));
-        Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
-        Assert.assertEquals(btcParams.getGenesisBlock().getHash(), locator.get(5));
+        Assertions.assertEquals(6, locator.size());
+        Assertions.assertEquals(blocks.get(9).getHash(), locator.get(0));
+        Assertions.assertEquals(blocks.get(8).getHash(), locator.get(1));
+        Assertions.assertEquals(blocks.get(7).getHash(), locator.get(2));
+        Assertions.assertEquals(blocks.get(5).getHash(), locator.get(3));
+        Assertions.assertEquals(blocks.get(1).getHash(), locator.get(4));
+        Assertions.assertEquals(btcParams.getGenesisBlock().getHash(), locator.get(5));
     }
 
     @Test
-    public void testGetBtcBlockchainBlockLocatorWithBtcCheckpoints() throws Exception {
+    void testGetBtcBlockchainBlockLocatorWithBtcCheckpoints() throws Exception {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -237,23 +242,23 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.getBtcBlockchainBestChainHeight();
 
         StoredBlock chainHead = bridgeSupport.getBtcBlockStore().getChainHead();
-        Assert.assertEquals(10, chainHead.getHeight());
-        Assert.assertEquals(checkpoints.get(9), chainHead.getHeader());
+        Assertions.assertEquals(10, chainHead.getHeight());
+        Assertions.assertEquals(checkpoints.get(9), chainHead.getHeader());
 
         List<Sha256Hash> locator = bridgeSupport.getBtcBlockchainBlockLocator();
-        Assert.assertEquals(1, locator.size());
-        Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(0));
+        Assertions.assertEquals(1, locator.size());
+        Assertions.assertEquals(checkpoints.get(9).getHash(), locator.get(0));
 
         List<BtcBlock> blocks = createBtcBlocks(btcParams, checkpoints.get(9), 10);
         bridgeSupport.receiveHeaders(blocks.toArray(new BtcBlock[]{}));
         locator = bridgeSupport.getBtcBlockchainBlockLocator();
-        Assert.assertEquals(6, locator.size());
-        Assert.assertEquals(blocks.get(9).getHash(), locator.get(0));
-        Assert.assertEquals(blocks.get(8).getHash(), locator.get(1));
-        Assert.assertEquals(blocks.get(7).getHash(), locator.get(2));
-        Assert.assertEquals(blocks.get(5).getHash(), locator.get(3));
-        Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
-        Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
+        Assertions.assertEquals(6, locator.size());
+        Assertions.assertEquals(blocks.get(9).getHash(), locator.get(0));
+        Assertions.assertEquals(blocks.get(8).getHash(), locator.get(1));
+        Assertions.assertEquals(blocks.get(7).getHash(), locator.get(2));
+        Assertions.assertEquals(blocks.get(5).getHash(), locator.get(3));
+        Assertions.assertEquals(blocks.get(1).getHash(), locator.get(4));
+        Assertions.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
     }
 
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
@@ -308,7 +313,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void callUpdateCollectionsGenerateEventLog() throws IOException {
+    void callUpdateCollectionsGenerateEventLog() throws IOException {
         Repository track = createRepository().startTracking();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -342,7 +347,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
+    void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -404,17 +409,17 @@ public class BridgeSupportTestIntegration {
         // reusing same bridge storage configuration as the height doesn't affect it for releases
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
-        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        Assert.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
+        Assertions.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
-        Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
-    public void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
+    void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -486,15 +491,15 @@ public class BridgeSupportTestIntegration {
         // reusing same bridge storage configuration as it doesn't affect the release transactions
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check the wallet has not been emptied
-        Assert.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
-    public void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
+    void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -567,15 +572,15 @@ public class BridgeSupportTestIntegration {
         // keeping same bridge storage configuration
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
-        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check the wallet has not been emptied
-        Assert.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
-    public void minimumProcessFundsMigrationValue() throws IOException {
+    void minimumProcessFundsMigrationValue() throws IOException {
         Federation oldFederation = bridgeConstants.getGenesisFederation();
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
@@ -665,7 +670,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
+    void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -735,17 +740,17 @@ public class BridgeSupportTestIntegration {
         // reusing same bridge storage configuration
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
-        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
-        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(BridgeSupport.BURN_ADDRESS));
+        Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600))), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assertions.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.valueOf(2600)), repository.getBalance(BridgeSupport.BURN_ADDRESS));
         // Check the wallet has been emptied
-        Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
-    public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException {
+    void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException {
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
             // Fake wallet returned every time
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class), anyBoolean(), any())).thenReturn(mock(Wallet.class));
@@ -819,14 +824,14 @@ public class BridgeSupportTestIntegration {
 
             BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertEquals(1, provider2.getRskTxsWaitingForSignatures().size());
+            Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+            Assertions.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
+            Assertions.assertEquals(1, provider2.getRskTxsWaitingForSignatures().size());
         }
     }
 
     @Test
-    public void sendOrphanBlockHeader() throws IOException, BlockStoreException {
+    void sendOrphanBlockHeader() throws IOException, BlockStoreException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -862,11 +867,11 @@ public class BridgeSupportTestIntegration {
 
         track.commit();
 
-        Assert.assertNull(btcBlockStore.get(block.getHash()));
+        Assertions.assertNull(btcBlockStore.get(block.getHash()));
     }
 
     @Test
-    public void addBlockHeaderToBlockchain() throws IOException, BlockStoreException {
+    void addBlockHeaderToBlockchain() throws IOException, BlockStoreException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -904,11 +909,11 @@ public class BridgeSupportTestIntegration {
 
         track.commit();
 
-        Assert.assertNotNull(btcBlockStore.get(block.getHash()));
+        Assertions.assertNotNull(btcBlockStore.get(block.getHash()));
     }
 
     @Test
-    public void releaseBtcWithDustOutput() throws AddressFormatException, IOException {
+    void releaseBtcWithDustOutput() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -935,13 +940,13 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
     @Test
-    public void releaseBtc() throws AddressFormatException, IOException {
+    void releaseBtc() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -968,13 +973,13 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
     @Test
-    public void releaseBtcFromContract() throws AddressFormatException, IOException {
+    void releaseBtcFromContract() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1001,11 +1006,11 @@ public class BridgeSupportTestIntegration {
         } catch (Program.OutOfGasException e) {
             return;
         }
-        Assert.fail();
+        Assertions.fail();
     }
 
     @Test
-    public void registerBtcTransactionOfAlreadyProcessedTransaction() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionOfAlreadyProcessedTransaction() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1023,15 +1028,15 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
-    public void registerBtcTransactionOfTransactionNotInMerkleTree() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionOfTransactionNotInMerkleTree() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1055,15 +1060,15 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
-    public void registerBtcTransactionOfTransactionInMerkleTreeWithNegativeHeight() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionOfTransactionInMerkleTreeWithNegativeHeight() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1087,15 +1092,15 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
-    public void registerBtcTransactionOfTransactionInMerkleTreeWithNotEnoughtHeight() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionOfTransactionInMerkleTreeWithNotEnoughtHeight() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1119,15 +1124,15 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
-    @Test(expected = VerificationException.EmptyInputsOrOutputs.class)
-    public void registerBtcTransactionWithoutInputs() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    @Test
+    void registerBtcTransactionWithoutInputs() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BtcTransaction noInputsTx = new BtcTransaction(btcParams);
 
@@ -1161,11 +1166,11 @@ public class BridgeSupportTestIntegration {
                 mockFactory
         );
 
-        bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize());
+        Assertions.assertThrows(VerificationException.EmptyInputsOrOutputs.class, () -> bridgeSupport.registerBtcTransaction(mock(Transaction.class), noInputsTx.bitcoinSerialize(), btcTxHeight, pmt.bitcoinSerialize()));
     }
 
     @Test
-    public void registerBtcTransactionTxNotLockNorReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionTxNotLockNorReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -1219,16 +1224,16 @@ public class BridgeSupportTestIntegration {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
 
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
-    public void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = createRepository();
@@ -1317,21 +1322,21 @@ public class BridgeSupportTestIntegration {
 
         track.commit();
 
-        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assertions.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assertions.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
 
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
-    public void registerBtcTransactionMigrationTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    void registerBtcTransactionMigrationTx() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
         NetworkParameters parameters = bridgeConstants.getBtcParams();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
@@ -1443,7 +1448,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void registerBtcTransactionWithCrossFederationsChange() throws Exception {
+    void registerBtcTransactionWithCrossFederationsChange() throws Exception {
         NetworkParameters params = RegTestParams.get();
         Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         Context btcContext = new Context(params);
@@ -1550,7 +1555,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void registerBtcTransactionLockTxWhitelisted() throws Exception {
+    void registerBtcTransactionLockTxWhitelisted() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
@@ -1661,9 +1666,9 @@ public class BridgeSupportTestIntegration {
         bridgeSupport.save();
 
         track.commit();
-        Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
-        Assert.assertThat(whitelist.isWhitelisted(address2), is(false));
-        Assert.assertThat(whitelist.isWhitelisted(address3), is(false));
+        MatcherAssert.assertThat(whitelist.isWhitelisted(address1), is(false));
+        MatcherAssert.assertThat(whitelist.isWhitelisted(address2), is(false));
+        MatcherAssert.assertThat(whitelist.isWhitelisted(address3), is(false));
 
         co.rsk.core.Coin amountToHaveBeenCreditedToSrc1 = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
         co.rsk.core.Coin amountToHaveBeenCreditedToSrc2 = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(10, 0));
@@ -1675,50 +1680,50 @@ public class BridgeSupportTestIntegration {
         RskAddress srcKey2RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress());
         RskAddress srcKey3RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress());
 
-        Assert.assertEquals(amountToHaveBeenCreditedToSrc1, repository.getBalance(srcKey1RskAddress));
-        Assert.assertEquals(amountToHaveBeenCreditedToSrc2, repository.getBalance(srcKey2RskAddress));
-        Assert.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
-        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assertions.assertEquals(amountToHaveBeenCreditedToSrc1, repository.getBalance(srcKey1RskAddress));
+        Assertions.assertEquals(amountToHaveBeenCreditedToSrc2, repository.getBalance(srcKey2RskAddress));
+        Assertions.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
+        Assertions.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
-        Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(2), provider2.getNewFederationBtcUTXOs().get(1).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getOldFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getOldFederationBtcUTXOs().get(1).getValue());
+        Assertions.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
+        Assertions.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assertions.assertEquals(Coin.COIN.multiply(2), provider2.getNewFederationBtcUTXOs().get(1).getValue());
+        Assertions.assertEquals(Coin.COIN.multiply(10), provider2.getOldFederationBtcUTXOs().get(0).getValue());
+        Assertions.assertEquals(Coin.COIN.multiply(3), provider2.getOldFederationBtcUTXOs().get(1).getValue());
 
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
+        Assertions.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
+        Assertions.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
     }
 
     @Test
-    public void isBtcTxHashAlreadyProcessed() throws IOException, BlockStoreException {
+    void isBtcTxHashAlreadyProcessed() throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = getBridgeSupport(getBridgeStorageProviderMockWithProcessedHashes(), null);
 
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())));
+            Assertions.assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())));
         }
-        Assert.assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of("anything".getBytes())));
+        Assertions.assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of("anything".getBytes())));
     }
 
     @Test
-    public void getBtcTxHashProcessedHeight() throws IOException, BlockStoreException {
+    void getBtcTxHashProcessedHeight() throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = getBridgeSupport(getBridgeStorageProviderMockWithProcessedHashes(), null);
 
         for (int i = 0; i < 10; i++) {
-            Assert.assertEquals(i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
+            Assertions.assertEquals(i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
         }
-        Assert.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
+        Assertions.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
     }
 
     @Test
-    public void getFederationMethods_genesis() throws IOException {
+    void getFederationMethods_genesis() throws IOException {
         Federation activeFederation = new Federation(
                 FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
@@ -1733,20 +1738,20 @@ public class BridgeSupportTestIntegration {
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
 
-        Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
-        Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
-        Assert.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
+        Assertions.assertEquals(6, bridgeSupport.getFederationSize().intValue());
+        Assertions.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
+        Assertions.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
     @Test
-    public void getFederationMethods_active() throws IOException {
+    void getFederationMethods_active() throws IOException {
         Federation activeFederation = new Federation(
                 FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
@@ -1769,20 +1774,20 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
-        Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
-        Assert.assertEquals(activeFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
+        Assertions.assertEquals(3, bridgeSupport.getFederationSize().intValue());
+        Assertions.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
+        Assertions.assertEquals(activeFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(3);
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
     @Test
-    public void getFederationMethods_newActivated() throws IOException {
+    void getFederationMethods_newActivated() throws IOException {
         Federation newFederation = new Federation(
                 FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
@@ -1809,20 +1814,20 @@ public class BridgeSupportTestIntegration {
                 mockedBlock
         );
 
-        Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
-        Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
-        Assert.assertEquals(newFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
+        Assertions.assertEquals(3, bridgeSupport.getFederationSize().intValue());
+        Assertions.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
+        Assertions.assertEquals(newFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(3);
         for (int i = 0; i < 3; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
     @Test
-    public void getFederationMethods_newNotActivated() throws IOException {
+    void getFederationMethods_newNotActivated() throws IOException {
         Federation newFederation = new Federation(
                 FederationTestUtils.getFederationMembers(3),
                 Instant.ofEpochMilli(1000),
@@ -1849,33 +1854,33 @@ public class BridgeSupportTestIntegration {
                 mockedBlock
         );
 
-        Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
-        Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
-        Assert.assertEquals(oldFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
+        Assertions.assertEquals(6, bridgeSupport.getFederationSize().intValue());
+        Assertions.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
+        Assertions.assertEquals(oldFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(6);
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
 
         }
     }
 
     @Test
-    public void getRetiringFederationMethods_none() throws IOException {
+    void getRetiringFederationMethods_none() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null, null);
 
-        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
-        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
+        Assertions.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
+        Assertions.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
-    public void getRetiringFederationMethods_presentNewInactive() throws IOException {
+    void getRetiringFederationMethods_presentNewInactive() throws IOException {
         Federation mockedNewFederation = new Federation(
                 FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
@@ -1903,16 +1908,16 @@ public class BridgeSupportTestIntegration {
                 mockedBlock
         );
 
-        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
-        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
-        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
+        Assertions.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
+        Assertions.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assertions.assertNull(bridgeSupport.getRetiringFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
-    public void getRetiringFederationMethods_presentNewActive() throws IOException {
+    void getRetiringFederationMethods_presentNewActive() throws IOException {
         Federation mockedNewFederation = new Federation(
                 FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
@@ -1940,47 +1945,47 @@ public class BridgeSupportTestIntegration {
                 mockedBlock
         );
 
-        Assert.assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
-        Assert.assertEquals(3, bridgeSupport.getRetiringFederationThreshold().intValue());
-        Assert.assertEquals(1000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
-        Assert.assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
+        Assertions.assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
+        Assertions.assertEquals(3, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assertions.assertEquals(1000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
+        Assertions.assertEquals(mockedOldFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(4);
         for (int i = 0; i < 4; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getRetiringFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
     @Test
-    public void getPendingFederationMethods_none() throws IOException {
+    void getPendingFederationMethods_none() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null, null);
 
-        Assert.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
-        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
-        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
-        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
+        Assertions.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
+        Assertions.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC));
+        Assertions.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK));
+        Assertions.assertNull(bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST));
     }
 
     @Test
-    public void getPendingFederationMethods_present() throws IOException {
+    void getPendingFederationMethods_present() throws IOException {
         PendingFederation mockedPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembers(5));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null, null);
 
-        Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
         List<FederationMember> members = FederationTestUtils.getFederationMembers(5);
         for (int i = 0; i < 5; i++) {
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
-            Assert.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getBtcPublicKey().getPubKey(), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.BTC)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getRskPublicKey().getPubKey(true), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.RSK)));
+            Assertions.assertTrue(Arrays.equals(members.get(i).getMstPublicKey().getPubKey(true), bridgeSupport.getPendingFederatorPublicKeyOfType(i, FederationMember.KeyType.MST)));
         }
     }
 
     @Test
-    public void voteFederationChange_methodNotAllowed() throws IOException, BridgeIllegalArgumentException {
+    void voteFederationChange_methodNotAllowed() throws IOException, BridgeIllegalArgumentException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -1991,11 +1996,11 @@ public class BridgeSupportTestIntegration {
                 null
         );
         ABICallSpec spec = new ABICallSpec("a-random-method", new byte[][]{});
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mock(Transaction.class), spec));
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mock(Transaction.class), spec));
     }
 
     @Test
-    public void voteFederationChange_notAuthorized() throws IOException, BridgeIllegalArgumentException {
+    void voteFederationChange_notAuthorized() throws IOException, BridgeIllegalArgumentException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -2008,7 +2013,7 @@ public class BridgeSupportTestIntegration {
         ABICallSpec spec = new ABICallSpec("create", new byte[][]{});
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress()));
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
     }
 
     private class VotingMocksProvider {
@@ -2067,7 +2072,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void createFederation_ok() throws IOException, BridgeIllegalArgumentException {
+    void createFederation_ok() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2080,17 +2085,17 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         // Vote with no winner
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertTrue(Arrays.equals(
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertTrue(Arrays.equals(
                 new PendingFederation(Collections.emptyList()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash())
         );
@@ -2099,7 +2104,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void createFederation_pendingExists() throws IOException, BridgeIllegalArgumentException {
+    void createFederation_pendingExists() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2112,12 +2117,12 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertTrue(Arrays.equals(
+        Assertions.assertTrue(Arrays.equals(
                 new PendingFederation(Collections.emptyList()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash()
         ));
-        Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
-        Assert.assertTrue(Arrays.equals(
+        Assertions.assertEquals(-1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertTrue(Arrays.equals(
                 new PendingFederation(Collections.emptyList()).getHash().getBytes(),
                 bridgeSupport.getPendingFederationHash()
         ));
@@ -2127,7 +2132,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void createFederation_withPendingActivation() throws IOException, BridgeIllegalArgumentException {
+    void createFederation_withPendingActivation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
 
         Federation mockedNewFederation = new Federation(
@@ -2159,16 +2164,16 @@ public class BridgeSupportTestIntegration {
         );
         ((BridgeStorageProvider) TestUtils.getInternalState(bridgeSupport, "provider")).getOldFederationBtcUTXOs().add(mock(UTXO.class));
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void createFederation_withExistingRetiringFederation() throws IOException, BridgeIllegalArgumentException {
+    void createFederation_withExistingRetiringFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
 
         Federation mockedNewFederation = new Federation(
@@ -2200,16 +2205,16 @@ public class BridgeSupportTestIntegration {
         );
         ((BridgeStorageProvider) TestUtils.getInternalState(bridgeSupport, "provider")).getOldFederationBtcUTXOs().add(mock(UTXO.class));
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-3, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-3, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_okNoKeys() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_okNoKeys() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")
         }, true);
@@ -2225,27 +2230,27 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
         // Vote with no winner
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
 
     @Test
-    public void addFederatorPublicKey_okKeys() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_okKeys() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
                 Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")
         }, true);
@@ -2263,33 +2268,33 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         // Vote with no winner
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKey(0)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
 
-        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKey(1)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.MST)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKey(1)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.MST)));
 
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
 
     @Test
-    public void addFederatorPublicKey_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
                 Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")
         }, false);
@@ -2304,16 +2309,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_keyExists() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_keyExists() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")
         }, false);
@@ -2331,16 +2336,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_invalidKey() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_invalidKey() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
                 Hex.decode("aabbccdd")
         }, false);
@@ -2355,16 +2360,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_okNoKeys() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_okNoKeys() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
                 Hex.decode("026289413837ab836eb76428406a3b4f200418d31d99c259a0532b8e435f35153b"),
@@ -2382,26 +2387,26 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
         // Vote with no winner
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("026289413837ab836eb76428406a3b4f200418d31d99c259a0532b8e435f35153b"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("03e12efa1146037bc9325574b0f15749ba6dc0eec360b1670b05029eead511a6ff"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertTrue(Arrays.equals(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("026289413837ab836eb76428406a3b4f200418d31d99c259a0532b8e435f35153b"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("03e12efa1146037bc9325574b0f15749ba6dc0eec360b1670b05029eead511a6ff"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_okKeys() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_okKeys() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
                 Hex.decode("03f64d2c022bca70f3ff0b1e95336be2c1507daa2ad37a484e0b66cbda86cfc6c5"),
@@ -2423,31 +2428,31 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         // Vote with no winner
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertTrue(Arrays.equals(Hex.decode("02ebd9e8b2caff48b10e661e69fe107d6986d2df1ce7e377f2ef927f3194a61b99"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("02a23343f50363dc9a4c29f0c0a8386780cc8bf469211f4de51d50f8c0f274e9a7"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("030dd584c286275ab2ce249096d0d7e6c78853e0902db061b14f2e39df068f95bc"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertTrue(Arrays.equals(Hex.decode("02ebd9e8b2caff48b10e661e69fe107d6986d2df1ce7e377f2ef927f3194a61b99"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("02a23343f50363dc9a4c29f0c0a8386780cc8bf469211f4de51d50f8c0f274e9a7"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("030dd584c286275ab2ce249096d0d7e6c78853e0902db061b14f2e39df068f95bc"), bridgeSupport.getPendingFederatorPublicKeyOfType(0, FederationMember.KeyType.MST)));
 
-        Assert.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("03f64d2c022bca70f3ff0b1e95336be2c1507daa2ad37a484e0b66cbda86cfc6c5"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK)));
-        Assert.assertTrue(Arrays.equals(Hex.decode("03eed62698319f754407a31fde9a51da8b2be0ab40e9c4c695bb057757729be37f"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.MST)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.BTC)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("03f64d2c022bca70f3ff0b1e95336be2c1507daa2ad37a484e0b66cbda86cfc6c5"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.RSK)));
+        Assertions.assertTrue(Arrays.equals(Hex.decode("03eed62698319f754407a31fde9a51da8b2be0ab40e9c4c695bb057757729be37f"), bridgeSupport.getPendingFederatorPublicKeyOfType(1, FederationMember.KeyType.MST)));
 
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"),
                 Hex.decode("0259323a848372c51673622b29298b6e5854b28d45de297fe7cff67915ad900a59"),
@@ -2464,16 +2469,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_btcKeyExists() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_btcKeyExists() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
                 Hex.decode("02cf0dec68ca34502e4ebd35c40a0e66ff47ba520f0418bcd7388717b12ab4b053"),
@@ -2495,16 +2500,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_rskKeyExists() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_rskKeyExists() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
                 Hex.decode("02cf0dec68ca34502e4ebd35c40a0e66ff47ba520f0418bcd7388717b12ab4b053"),
@@ -2526,16 +2531,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKeyMultikey_mstKeyExists() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKeyMultikey_mstKeyExists() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"),
                 Hex.decode("02cf0dec68ca34502e4ebd35c40a0e66ff47ba520f0418bcd7388717b12ab4b053"),
@@ -2557,16 +2562,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_invalidBtcKey() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_invalidBtcKey() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("aabbccdd"),
                 Hex.decode("0245db19d3d4b8c3567a47189ae60588e18e1305f3473a7fe99b6ef559bb1d1dc6"),
@@ -2583,16 +2588,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_invalidRskKey() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_invalidRskKey() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("0245db19d3d4b8c3567a47189ae60588e18e1305f3473a7fe99b6ef559bb1d1dc6"),
                 Hex.decode("aabbccdd"),
@@ -2609,16 +2614,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void addFederatorPublicKey_invalidMstKey() throws IOException, BridgeIllegalArgumentException {
+    void addFederatorPublicKey_invalidMstKey() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add-multi", new byte[][]{
                 Hex.decode("0245db19d3d4b8c3567a47189ae60588e18e1305f3473a7fe99b6ef559bb1d1dc6"),
                 Hex.decode("029664581b2e8dc9ba7885696a03134aaebe4be834ce0049d62f80499bbe130206"),
@@ -2635,16 +2640,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void rollbackFederation_ok() throws IOException, BridgeIllegalArgumentException {
+    void rollbackFederation_ok() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("rollback", new byte[][]{}, true);
 
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
@@ -2662,22 +2667,22 @@ public class BridgeSupportTestIntegration {
         );
 
         // Vote with no winner
-        Assert.assertNotNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNotNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNotNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNotNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), times(1)).clear();
     }
 
     @Test
-    public void rollbackFederation_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
+    void rollbackFederation_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("rollback", new byte[][]{}, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2690,16 +2695,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void commitFederation_ok() throws IOException, BridgeIllegalArgumentException {
+    void commitFederation_ok() throws IOException, BridgeIllegalArgumentException {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
@@ -2752,33 +2757,33 @@ public class BridgeSupportTestIntegration {
 
         // Currently active federation
         Federation oldActiveFederation = provider.getNewFederation();
-        Assert.assertNotNull(oldActiveFederation);
+        Assertions.assertNotNull(oldActiveFederation);
 
         // Vote with no winner
-        Assert.assertNotNull(provider.getPendingFederation());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNotNull(provider.getPendingFederation());
+        Assertions.assertNotNull(provider.getPendingFederation());
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNotNull(provider.getPendingFederation());
 
-        Assert.assertEquals(oldActiveFederation, provider.getNewFederation());
-        Assert.assertNull(provider.getOldFederation());
+        Assertions.assertEquals(oldActiveFederation, provider.getNewFederation());
+        Assertions.assertNull(provider.getOldFederation());
 
         // Vote with winner
         mocksProvider.setWinner(mocksProvider.getSpec());
-        Assert.assertEquals(1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertEquals(1, mocksProvider.execute(bridgeSupport));
 
-        Assert.assertNull(provider.getPendingFederation());
+        Assertions.assertNull(provider.getPendingFederation());
 
         Federation retiringFederation = provider.getOldFederation();
         Federation activeFederation = provider.getNewFederation();
 
-        Assert.assertEquals(expectedFederation, activeFederation);
-        Assert.assertEquals(retiringFederation, oldActiveFederation);
+        Assertions.assertEquals(expectedFederation, activeFederation);
+        Assertions.assertEquals(retiringFederation, oldActiveFederation);
 
-        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
-        Assert.assertEquals(5, provider.getOldFederationBtcUTXOs().size());
+        Assertions.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        Assertions.assertEquals(5, provider.getOldFederationBtcUTXOs().size());
         for (int i = 0; i < 5; i++) {
-            Assert.assertEquals(i, provider.getOldFederationBtcUTXOs().get(i).getIndex());
-            Assert.assertEquals(Coin.valueOf((i + 1) * 1000), provider.getOldFederationBtcUTXOs().get(i).getValue());
+            Assertions.assertEquals(i, provider.getOldFederationBtcUTXOs().get(i).getIndex());
+            Assertions.assertEquals(Coin.valueOf((i + 1) * 1000), provider.getOldFederationBtcUTXOs().get(i).getValue());
         }
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), times(1)).clear();
@@ -2788,7 +2793,7 @@ public class BridgeSupportTestIntegration {
     }
 
     @Test
-    public void commitFederation_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
+    void commitFederation_noPendingFederation() throws IOException, BridgeIllegalArgumentException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
                 new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
@@ -2802,16 +2807,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(-1, mocksProvider.execute(bridgeSupport));
-        Assert.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
+        Assertions.assertEquals(-1, mocksProvider.execute(bridgeSupport));
+        Assertions.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void commitFederation_incompleteFederation() throws IOException, BridgeIllegalArgumentException {
+    void commitFederation_incompleteFederation() throws IOException, BridgeIllegalArgumentException {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         })));
@@ -2830,16 +2835,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
-        Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
-        Assert.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
+        Assertions.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
+        Assertions.assertEquals(-2, mocksProvider.execute(bridgeSupport));
+        Assertions.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void commitFederation_hashMismatch() throws IOException, BridgeIllegalArgumentException {
+    void commitFederation_hashMismatch() throws IOException, BridgeIllegalArgumentException {
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
                 BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12"))
@@ -2859,16 +2864,16 @@ public class BridgeSupportTestIntegration {
                 null
         );
 
-        Assert.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
-        Assert.assertEquals(-3, mocksProvider.execute(bridgeSupport));
-        Assert.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
+        Assertions.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
+        Assertions.assertEquals(-3, mocksProvider.execute(bridgeSupport));
+        Assertions.assertTrue(Arrays.equals(pendingFederation.getHash().getBytes(), bridgeSupport.getPendingFederationHash()));
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
     @Test
-    public void getActiveFederationWallet() throws IOException {
+    void getActiveFederationWallet() throws IOException {
         Federation expectedFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
@@ -2890,18 +2895,18 @@ public class BridgeSupportTestIntegration {
         final Wallet expectedWallet = mock(Wallet.class);
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
-                Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
-                Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
-                Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
+                Assertions.assertEquals(m.<Context>getArgument(0), expectedContext);
+                Assertions.assertEquals(m.<Federation>getArgument(1), expectedFederation);
+                Assertions.assertEquals(m.<Object>getArgument(2), expectedUtxos);
                 return expectedWallet;
             });
 
-            Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet(false));
+            Assertions.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet(false));
         }
     }
 
     @Test
-    public void getRetiringFederationWallet_nonEmpty() throws IOException {
+    void getRetiringFederationWallet_nonEmpty() throws IOException {
         Federation mockedNewFederation = new Federation(
                 FederationTestUtils.getFederationMembers(2),
                 Instant.ofEpochMilli(2000),
@@ -2934,18 +2939,18 @@ public class BridgeSupportTestIntegration {
         final Wallet expectedWallet = mock(Wallet.class);
         try (MockedStatic<BridgeUtils> bridgeUtilsMocked = mockStatic(BridgeUtils.class)) {
             bridgeUtilsMocked.when(() -> BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
-                Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
-                Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
-                Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
+                Assertions.assertEquals(m.<Context>getArgument(0), expectedContext);
+                Assertions.assertEquals(m.<Federation>getArgument(1), expectedFederation);
+                Assertions.assertEquals(m.<Object>getArgument(2), expectedUtxos);
                 return expectedWallet;
             });
 
-            Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet(false));
+            Assertions.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet(false));
         }
     }
 
     @Test
-    public void getLockWhitelistMethods() {
+    void getLockWhitelistMethods() {
         NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
@@ -2958,19 +2963,19 @@ public class BridgeSupportTestIntegration {
         }
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(4, bridgeSupport.getLockWhitelistSize().intValue());
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
+        Assertions.assertEquals(4, bridgeSupport.getLockWhitelistSize().intValue());
+        Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
+        Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
+        Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
+        Assertions.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
         for (int i = 0; i < 4; i++) {
-            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByIndex(i));
-            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()));
+            Assertions.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByIndex(i));
+            Assertions.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()));
         }
     }
 
     @Test
-    public void addLockWhitelistAddress_ok() {
+    void addLockWhitelistAddress_ok() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -2983,15 +2988,15 @@ public class BridgeSupportTestIntegration {
 
         when(mockedWhitelist.put(any(Address.class), any(OneOffWhiteListEntry.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assertions.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
 
-        Assert.assertEquals(1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        Assertions.assertEquals(1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
     }
 
     @Test
-    public void addLockWhitelistAddress_addFails() {
+    void addLockWhitelistAddress_addFails() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3005,13 +3010,13 @@ public class BridgeSupportTestIntegration {
         ArgumentCaptor<Address> argument = ArgumentCaptor.forClass(Address.class);
         when(mockedWhitelist.isWhitelisted(any(Address.class))).thenReturn(true);
 
-        Assert.assertEquals(-1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        Assertions.assertEquals(-1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist).isWhitelisted(argument.capture());
-        Assert.assertThat(argument.getValue().toBase58(), is("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN"));
+        MatcherAssert.assertThat(argument.getValue().toBase58(), is("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN"));
     }
 
     @Test
-    public void addLockWhitelistAddress_notAuthorized() {
+    void addLockWhitelistAddress_notAuthorized() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3019,12 +3024,12 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        Assertions.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void addLockWhitelistAddress_invalidAddress() throws IOException {
+    void addLockWhitelistAddress_invalidAddress() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3033,12 +3038,12 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(-2, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "i-am-invalid", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        Assertions.assertEquals(-2, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "i-am-invalid", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_ok() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_ok() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3060,12 +3065,12 @@ public class BridgeSupportTestIntegration {
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
 
-        Assert.assertEquals(1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, times(1)).setDisableBlockHeight(disableBlockDelayBI.intValue() + bestChainHeight);
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_negativeDisableBlockBI() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_negativeDisableBlockBI() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3087,12 +3092,12 @@ public class BridgeSupportTestIntegration {
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(-2);
 
-        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
-    @Test(expected = ArithmeticException.class)
-    public void setLockWhitelistDisableBlockDelay_disableBlockDelayBIBiggerThanInt() throws IOException, BlockStoreException {
+    @Test
+    void setLockWhitelistDisableBlockDelay_disableBlockDelayBIBiggerThanInt() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3107,12 +3112,13 @@ public class BridgeSupportTestIntegration {
         //Duplicate Int Max Value by 2 because its signed and add 1 to pass the limit
         BigInteger disableBlockDelayBI = BigInteger.valueOf((long) Integer.MAX_VALUE * 2 + 1);
 
-        bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI);
+        Assertions.assertThrows(ArithmeticException.class, () -> bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI));
+
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_overflow() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_overflow() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3134,12 +3140,12 @@ public class BridgeSupportTestIntegration {
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(Integer.MAX_VALUE / 2);
 
-        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_maxIntValueDisableBlockBI() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_maxIntValueDisableBlockBI() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3161,12 +3167,12 @@ public class BridgeSupportTestIntegration {
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(Integer.MAX_VALUE);
 
-        Assert.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(-2, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_disabled() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_disabled() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3179,12 +3185,12 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
-        Assert.assertEquals(-1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(-1, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay_notAuthorized() throws IOException, BlockStoreException {
+    void setLockWhitelistDisableBlockDelay_notAuthorized() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3193,12 +3199,12 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
         BigInteger disableBlockDelayBI = BigInteger.valueOf(100);
-        Assert.assertEquals(-10, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
+        Assertions.assertEquals(-10, bridgeSupport.setLockWhitelistDisableBlockDelay(mockedTx, disableBlockDelayBI).intValue());
         verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
-    public void removeLockWhitelistAddress_ok() {
+    void removeLockWhitelistAddress_ok() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3211,15 +3217,15 @@ public class BridgeSupportTestIntegration {
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assertions.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
 
-        Assert.assertEquals(1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Assertions.assertEquals(1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
     }
 
     @Test
-    public void removeLockWhitelistAddress_removeFails() {
+    void removeLockWhitelistAddress_removeFails() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3232,15 +3238,15 @@ public class BridgeSupportTestIntegration {
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assertions.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return false;
         });
 
-        Assert.assertEquals(-1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Assertions.assertEquals(-1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
     }
 
     @Test
-    public void removeLockWhitelistAddress_notAuthorized() {
+    void removeLockWhitelistAddress_notAuthorized() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3248,12 +3254,12 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Assertions.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
         verify(mockedWhitelist, never()).remove(any());
     }
 
     @Test
-    public void removeLockWhitelistAddress_invalidAddress() {
+    void removeLockWhitelistAddress_invalidAddress() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3264,22 +3270,22 @@ public class BridgeSupportTestIntegration {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(-2, bridgeSupport.removeLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
+        Assertions.assertEquals(-2, bridgeSupport.removeLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
         verify(mockedWhitelist, never()).remove(any());
     }
 
     @Test
-    public void getBtcBlockchainInitialBlockHeight() throws IOException {
+    void getBtcBlockchainInitialBlockHeight() throws IOException {
         Repository repository = createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BridgeSupport bridgeSupport = getBridgeSupport(null, repository, btcBlockStoreFactory);
 
         // As we don't have any checkpoint the genesis block at height 0 should be used and returned
-        Assert.assertEquals(0, bridgeSupport.getBtcBlockchainInitialBlockHeight());
+        Assertions.assertEquals(0, bridgeSupport.getBtcBlockchainInitialBlockHeight());
     }
 
     @Test
-    public void getBtcTransactionConfirmations_inexistentBlockHash() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_inexistentBlockHash() throws BlockStoreException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -3307,11 +3313,11 @@ public class BridgeSupportTestIntegration {
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_blockNotInBestChain() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_blockNotInBestChain() throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3349,11 +3355,11 @@ public class BridgeSupportTestIntegration {
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_blockNotInBestChainBlockWithHeightNotFound() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_blockNotInBestChainBlockWithHeightNotFound() throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3389,11 +3395,11 @@ public class BridgeSupportTestIntegration {
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_blockTooOld() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_blockTooOld() throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3428,11 +3434,11 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_heightInconsistency() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_heightInconsistency() throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3468,11 +3474,11 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmations_merkleBranchDoesNotProve() throws BlockStoreException, IOException {
+    void getBtcTransactionConfirmations_merkleBranchDoesNotProve() throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3512,11 +3518,11 @@ public class BridgeSupportTestIntegration {
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, merkleBranch);
 
-        Assert.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE.intValue(), confirmations);
+        Assertions.assertEquals(BridgeSupport.BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE.intValue(), confirmations);
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_ok() throws BlockStoreException {
+    void getBtcTransactionConfirmationsGetCost_ok() throws BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3551,11 +3557,11 @@ public class BridgeSupportTestIntegration {
         args[3] = new Object[]{};
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(27_000 + 10 * 315, cost);
+        Assertions.assertEquals(27_000 + 10 * 315, cost);
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_blockDoesNotExist() throws BlockStoreException {
+    void getBtcTransactionConfirmationsGetCost_blockDoesNotExist() throws BlockStoreException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -3579,11 +3585,11 @@ public class BridgeSupportTestIntegration {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(27_000, cost);
+        Assertions.assertEquals(27_000, cost);
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_getBestChainHeightError() throws BlockStoreException {
+    void getBtcTransactionConfirmationsGetCost_getBestChainHeightError() throws BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3606,11 +3612,11 @@ public class BridgeSupportTestIntegration {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(27_000, cost);
+        Assertions.assertEquals(27_000, cost);
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_blockTooDeep() throws BlockStoreException {
+    void getBtcTransactionConfirmationsGetCost_blockTooDeep() throws BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3635,11 +3641,11 @@ public class BridgeSupportTestIntegration {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(27_000, cost);
+        Assertions.assertEquals(27_000, cost);
     }
 
     @Test
-    public void getBtcBlockchainBlockHashAtDepth() throws Exception {
+    void getBtcBlockchainBlockHashAtDepth() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3660,37 +3666,37 @@ public class BridgeSupportTestIntegration {
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
 
         StoredBlock chainHead = btcBlockStore.getChainHead();
-        Assert.assertEquals(0, chainHead.getHeight());
-        Assert.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
+        Assertions.assertEquals(0, chainHead.getHeight());
+        Assertions.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
 
-        Assert.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(0));
+        Assertions.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(0));
         try {
             bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1);
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
         }
         try {
             bridgeSupport.getBtcBlockchainBlockHashAtDepth(1);
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
         }
 
         List<BtcBlock> blocks = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
         bridgeSupport.receiveHeaders(blocks.toArray(new BtcBlock[]{}));
 
-        Assert.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(10));
+        Assertions.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(10));
         try {
             bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1);
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
         }
         try {
             bridgeSupport.getBtcBlockchainBlockHashAtDepth(11);
-            Assert.fail();
+            Assertions.fail();
         } catch (IndexOutOfBoundsException e) {
         }
         for (int i = 0; i < 10; i++) {
-            Assert.assertEquals(blocks.get(i).getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(9 - i));
+            Assertions.assertEquals(blocks.get(i).getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(9 - i));
         }
     }
 

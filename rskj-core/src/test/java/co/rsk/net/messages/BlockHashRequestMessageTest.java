@@ -18,25 +18,25 @@
 
 package co.rsk.net.messages;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHashRequestMessageTest {
+class BlockHashRequestMessageTest {
     @Test
-    public void createMessage() {
+    void createMessage() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
 
-        Assert.assertEquals(someId, message.getId());
-        Assert.assertEquals(someHeight, message.getHeight());
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(someId, message.getId());
+        Assertions.assertEquals(someHeight, message.getHeight());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
     }
 
     @Test
-    public void accept() {
+    void accept() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);

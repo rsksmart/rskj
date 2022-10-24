@@ -28,9 +28,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,17 +41,17 @@ import java.util.Random;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class MessageTest {
+class MessageTest {
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
     private BlockGenerator blockGenerator;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.all());
     }
 
     @Test
-    public void encodeDecodeGetBlockMessage() {
+    void encodeDecodeGetBlockMessage() {
         Block block = blockGenerator.getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
 
@@ -59,17 +59,17 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.GET_BLOCK_MESSAGE, result.getMessageType());
 
         GetBlockMessage newmessage = (GetBlockMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test
-    public void encodeDecodeBlockRequestMessage() {
+    void encodeDecodeBlockRequestMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockRequestMessage message = new BlockRequestMessage(100, block.getHash().getBytes());
 
@@ -77,18 +77,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, result.getMessageType());
 
         BlockRequestMessage newmessage = (BlockRequestMessage) result;
 
-        Assert.assertEquals(100, newmessage.getId());
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assertions.assertEquals(100, newmessage.getId());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test
-    public void encodeDecodeStatusMessage() {
+    void encodeDecodeStatusMessage() {
         Block block = blockGenerator.getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
@@ -97,20 +97,20 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
-        Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
-        Assert.assertNull(newmessage.getStatus().getBestBlockParentHash());
-        Assert.assertNull(newmessage.getStatus().getTotalDifficulty());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assertions.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
+        Assertions.assertNull(newmessage.getStatus().getBestBlockParentHash());
+        Assertions.assertNull(newmessage.getStatus().getTotalDifficulty());
     }
 
     @Test
-    public void encodeDecodeStatusMessageWithCompleteArguments() {
+    void encodeDecodeStatusMessageWithCompleteArguments() {
         Block block = blockGenerator.getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
         StatusMessage message = new StatusMessage(status);
@@ -119,18 +119,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
-        Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assertions.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
     }
 
     @Test
-    public void encodeDecodeStatusMessageUsingGenesisBlock() {
+    void encodeDecodeStatusMessageUsingGenesisBlock() {
         Block block = blockGenerator.getBlock(0);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
@@ -139,18 +139,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
-        Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assertions.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
     }
 
     @Test
-    public void encodeDecodeBlockMessage() {
+    void encodeDecodeBlockMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockMessage message = new BlockMessage(block);
 
@@ -158,42 +158,42 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, result.getMessageType());
 
         BlockMessage newmessage = (BlockMessage) result;
 
-        Assert.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
-        Assert.assertEquals(block.getHash(), newmessage.getBlock().getHash());
-        Assert.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
+        Assertions.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
+        Assertions.assertEquals(block.getHash(), newmessage.getBlock().getHash());
+        Assertions.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
     }
 
     @Test
-    public void encodeDecodeBlockResponseMessage() {
+    void encodeDecodeBlockResponseMessage() {
         Block block = blockGenerator.getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         byte[] encoded = message.getEncoded();
 
-        Assert.assertNotNull(encoded);
+        Assertions.assertNotNull(encoded);
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, result.getMessageType());
 
         BlockResponseMessage newmessage = (BlockResponseMessage) result;
 
-        Assert.assertEquals(100, newmessage.getId());
-        Assert.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
-        Assert.assertEquals(block.getHash(), newmessage.getBlock().getHash());
-        Assert.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
+        Assertions.assertEquals(100, newmessage.getId());
+        Assertions.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
+        Assertions.assertEquals(block.getHash(), newmessage.getBlock().getHash());
+        Assertions.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
     }
 
     @Test
-    public void encodeDecodeBlockHeadersResponseMessage() {
+    void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
@@ -203,29 +203,29 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Assert.assertNotNull(encoded);
+        Assertions.assertNotNull(encoded);
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, result.getMessageType());
 
         BlockHeadersResponseMessage newmessage = (BlockHeadersResponseMessage) result;
 
-        Assert.assertEquals(100, newmessage.getId());
+        Assertions.assertEquals(100, newmessage.getId());
 
-        Assert.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
+        Assertions.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
 
         for (int k = 0; k < headers.size(); k++) {
-            Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
-            Assert.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assert.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
+            Assertions.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
+            Assertions.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
+            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
         }
     }
 
     @Test
-    public void encodeDecodeNewBlockHashesMessage() {
+    void encodeDecodeNewBlockHashesMessage() {
         List<Block> blocks = blockGenerator.getBlockChain(10);
         Block b1 = blocks.get(5);
         Block b2 = blocks.get(7);
@@ -239,25 +239,25 @@ public class MessageTest {
         byte[] encoded = message.getEncoded();
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.NEW_BLOCK_HASHES, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.NEW_BLOCK_HASHES, result.getMessageType());
 
         NewBlockHashesMessage decodedMessage = (NewBlockHashesMessage) result;
 
-        Assert.assertNotNull(decodedMessage.getBlockIdentifiers());
+        Assertions.assertNotNull(decodedMessage.getBlockIdentifiers());
 
         List<BlockIdentifier> decodedIdentifiers = decodedMessage.getBlockIdentifiers();
 
-        Assert.assertEquals(identifiers.size(), decodedIdentifiers.size());
+        Assertions.assertEquals(identifiers.size(), decodedIdentifiers.size());
         for (int i = 0; i < identifiers.size(); i ++) {
-            Assert.assertEquals(identifiers.get(i).getNumber(), decodedIdentifiers.get(i).getNumber());
-            Assert.assertArrayEquals(identifiers.get(i).getHash(), decodedIdentifiers.get(i).getHash());
+            Assertions.assertEquals(identifiers.get(i).getNumber(), decodedIdentifiers.get(i).getNumber());
+            Assertions.assertArrayEquals(identifiers.get(i).getHash(), decodedIdentifiers.get(i).getHash());
         }
     }
 
     @Test
-    public void encodeDecodeTransactionsMessage() {
+    void encodeDecodeTransactionsMessage() {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
         TransactionsMessage message = new TransactionsMessage(txs);
 
@@ -265,25 +265,25 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.TRANSACTIONS, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.TRANSACTIONS, result.getMessageType());
 
         TransactionsMessage newmessage = (TransactionsMessage) result;
 
-        Assert.assertNotNull(newmessage.getTransactions());
-        Assert.assertEquals(10, newmessage.getTransactions().size());
+        Assertions.assertNotNull(newmessage.getTransactions());
+        Assertions.assertEquals(10, newmessage.getTransactions().size());
 
         for (int k = 0; k < 10; k++) {
             Transaction tx1 = txs.get(k);
             Transaction tx2 = newmessage.getTransactions().get(k);
 
-            Assert.assertEquals(tx1.getHash(), tx2.getHash());
+            Assertions.assertEquals(tx1.getHash(), tx2.getHash());
         }
     }
 
     @Test
-    public void encodeDecodeBlockHashRequestMessage() {
+    void encodeDecodeBlockHashRequestMessage() {
         long someId = 42;
         long someHeight = 99;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
@@ -292,18 +292,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
 
         BlockHashRequestMessage newMessage = (BlockHashRequestMessage) result;
 
-        Assert.assertEquals(someId, newMessage.getId());
-        Assert.assertEquals(someHeight, newMessage.getHeight());
+        Assertions.assertEquals(someId, newMessage.getId());
+        Assertions.assertEquals(someHeight, newMessage.getHeight());
     }
 
     @Test
-    public void encodeDecodeBlockHashRequestMessageWithHighHeight() {
+    void encodeDecodeBlockHashRequestMessageWithHighHeight() {
         long someId = 42;
         long someHeight = 200000;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
@@ -312,18 +312,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
 
         BlockHashRequestMessage newMessage = (BlockHashRequestMessage) result;
 
-        Assert.assertEquals(someId, newMessage.getId());
-        Assert.assertEquals(someHeight, newMessage.getHeight());
+        Assertions.assertEquals(someId, newMessage.getId());
+        Assertions.assertEquals(someHeight, newMessage.getHeight());
     }
 
     @Test
-    public void encodeDecodeBlockHashResponseMessage() {
+    void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
         byte[] hash = new byte[32];
         Random random = new Random();
@@ -335,18 +335,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, result.getMessageType());
 
         BlockHashResponseMessage newMessage = (BlockHashResponseMessage) result;
 
-        Assert.assertEquals(id, newMessage.getId());
-        Assert.assertArrayEquals(hash, newMessage.getHash());
+        Assertions.assertEquals(id, newMessage.getId());
+        Assertions.assertArrayEquals(hash, newMessage.getHash());
     }
 
     @Test
-    public void encodeDecodeBlockHeadersRequestMessage() {
+    void encodeDecodeBlockHeadersRequestMessage() {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
@@ -354,19 +354,19 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, result.getMessageType());
 
         BlockHeadersRequestMessage newmessage = (BlockHeadersRequestMessage) result;
 
-        Assert.assertEquals(1, newmessage.getId());
-        Assert.assertArrayEquals(hash, newmessage.getHash());
-        Assert.assertEquals(100, newmessage.getCount());
+        Assertions.assertEquals(1, newmessage.getId());
+        Assertions.assertArrayEquals(hash, newmessage.getHash());
+        Assertions.assertEquals(100, newmessage.getCount());
     }
 
     @Test
-    public void encodeDecodeSkeletonResponseMessage() {
+    void encodeDecodeSkeletonResponseMessage() {
         long someId = 42;
         List<Block> blocks = blockGenerator.getBlockChain(10);
         Block b1 = blocks.get(5);
@@ -382,26 +382,26 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, result.getMessageType());
 
         SkeletonResponseMessage newMessage = (SkeletonResponseMessage) result;
 
-        Assert.assertEquals(someId, newMessage.getId());
+        Assertions.assertEquals(someId, newMessage.getId());
 
         List<BlockIdentifier> newIds = newMessage.getBlockIdentifiers();
         for (int i = 0; i < ids.size(); i++) {
             BlockIdentifier id = ids.get(i);
             BlockIdentifier newId = newIds.get(i);
 
-            Assert.assertEquals(id.getNumber(), newId.getNumber());
-            Assert.assertArrayEquals(id.getHash(), newId.getHash());
+            Assertions.assertEquals(id.getNumber(), newId.getNumber());
+            Assertions.assertArrayEquals(id.getHash(), newId.getHash());
         }
     }
 
     @Test
-    public void encodeDecodeSkeletonRequestMessage() {
+    void encodeDecodeSkeletonRequestMessage() {
         long someId = 42;
         long someStartNumber = 99;
         SkeletonRequestMessage message = new SkeletonRequestMessage(someId, someStartNumber);
@@ -410,18 +410,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, result.getMessageType());
 
         SkeletonRequestMessage newMessage = (SkeletonRequestMessage) result;
 
-        Assert.assertEquals(someId, newMessage.getId());
-        Assert.assertEquals(someStartNumber, newMessage.getStartNumber());
+        Assertions.assertEquals(someId, newMessage.getId());
+        Assertions.assertEquals(someStartNumber, newMessage.getStartNumber());
     }
 
     @Test
-    public void encodeDecodeNewBlockHashMessage() {
+    void encodeDecodeNewBlockHashMessage() {
         byte[] hash = HashUtil.randomHash();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
@@ -429,17 +429,17 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, result.getMessageType());
 
         NewBlockHashMessage newMessage = (NewBlockHashMessage) result;
 
-        Assert.assertArrayEquals(hash, newMessage.getBlockHash());
+        Assertions.assertArrayEquals(hash, newMessage.getBlockHash());
     }
 
     @Test
-    public void encodeDecodeBodyRequestMessage() {
+    void encodeDecodeBodyRequestMessage() {
         Block block = blockGenerator.getBlock(1);
         BodyRequestMessage message = new BodyRequestMessage(100, block.getHash().getBytes());
 
@@ -447,18 +447,18 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BODY_REQUEST_MESSAGE, result.getMessageType());
 
         BodyRequestMessage newmessage = (BodyRequestMessage) result;
 
-        Assert.assertEquals(100, newmessage.getId());
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assertions.assertEquals(100, newmessage.getId());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
     }
 
     @Test
-    public void encodeDecodeBodyResponseMessage() {
+    void encodeDecodeBodyResponseMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -481,26 +481,26 @@ public class MessageTest {
 
         Message result = Message.create(blockFactory, encoded);
 
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, result.getMessageType());
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, result.getMessageType());
 
         BodyResponseMessage newmessage = (BodyResponseMessage)result;
 
-        Assert.assertNotNull(newmessage);
+        Assertions.assertNotNull(newmessage);
 
-        Assert.assertEquals(100, newmessage.getId());
+        Assertions.assertEquals(100, newmessage.getId());
 
-        Assert.assertNotNull(newmessage.getTransactions());
-        Assert.assertEquals(transactions.size(), newmessage.getTransactions().size());
+        Assertions.assertNotNull(newmessage.getTransactions());
+        Assertions.assertEquals(transactions.size(), newmessage.getTransactions().size());
 
-        Assert.assertEquals(transactions, newmessage.getTransactions());
+        Assertions.assertEquals(transactions, newmessage.getTransactions());
 
-        Assert.assertNotNull(newmessage.getUncles());
-        Assert.assertEquals(uncles.size(), newmessage.getUncles().size());
+        Assertions.assertNotNull(newmessage.getUncles());
+        Assertions.assertEquals(uncles.size(), newmessage.getUncles().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+            Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {

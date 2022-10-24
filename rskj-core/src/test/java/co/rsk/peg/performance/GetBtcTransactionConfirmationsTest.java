@@ -14,7 +14,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 
 import java.math.BigInteger;
@@ -24,8 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
-@Ignore
-public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
+@Disabled
+class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
     private Sha256Hash blockHash;
     private Sha256Hash txHash;
     private int merkleBranchPath;
@@ -33,8 +34,8 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private int expectedConfirmations;
 
 
-    @BeforeClass
-    public static void setupA() {
+    @BeforeAll
+     static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
@@ -59,8 +60,8 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         }
     }
 
-    @Before
-    public void setRskipToTrue() throws VMException {
+    @BeforeEach
+    void setRskipToTrue() throws VMException {
         warmUp();
     }
 
@@ -76,7 +77,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Cache() throws VMException {
+    void getBtcTransactionConfirmations_Weighed_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -93,7 +94,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Disk() throws VMException {
+    void getBtcTransactionConfirmations_Weighed_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -110,7 +111,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Cache() throws VMException {
+    void getBtcTransactionConfirmations_Even_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -125,7 +126,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Disk() throws VMException {
+    void getBtcTransactionConfirmations_Even_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -140,7 +141,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Zero() throws VMException {
+    void getBtcTransactionConfirmations_Zero() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-zero",
                 2000, 0, 750, 3000, true
@@ -153,7 +154,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Hundred() throws VMException {
+    void getBtcTransactionConfirmations_Hundred() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-hundred",
                 2000, 100, 750, 3000, true
@@ -191,7 +192,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 stats,
                 (environment, executionResult) -> {
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
-                    Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
+                    Assertions.assertEquals(expectedConfirmations, numberOfConfirmations);
                 },
                 (EnvironmentBuilder.Environment environment) -> {
                     if (!useCache) {
@@ -298,7 +299,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
             // Build the merkle branch, and make sure calculations are sound
             MerkleBranch merkleBranch = buildMerkleBranch(merkleTree, numberOfTransactions, targetTxPosition);
-            Assert.assertEquals(merkleRoot, merkleBranch.reduceFrom(targetTx.getHash()));
+            Assertions.assertEquals(merkleRoot, merkleBranch.reduceFrom(targetTx.getHash()));
 
             // Parameters to the actual bridge method
             blockHash = blockWithTx.getHash();

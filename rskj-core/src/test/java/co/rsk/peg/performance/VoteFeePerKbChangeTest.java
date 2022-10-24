@@ -24,19 +24,19 @@ import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Ignore
-public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
+@Disabled
+class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test
-    public void voteFeePerKbChange() throws VMException {
+    void voteFeePerKbChange() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -62,14 +62,14 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 ((environment, callResult) -> {
-                    Assert.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                    Assertions.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
                 }));
 
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
-    public void voteFeePerKbChange_unauthorized() throws VMException {
+    void voteFeePerKbChange_unauthorized() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         Coin genesisFeePerKB = BridgeRegTestConstants.getInstance().getGenesisFeePerKb();
@@ -92,7 +92,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 ((environment, callResult) -> {
-                    Assert.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                    Assertions.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
                 })
         );
 

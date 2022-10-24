@@ -22,8 +22,8 @@ import co.rsk.net.discovery.message.PingPeerMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
@@ -33,21 +33,21 @@ import java.util.UUID;
 /**
  * Created by mario on 15/02/17.
  */
-public class UDPChannelTest {
+class UDPChannelTest {
 
     private static final int NETWORK_ID = 1;
 
     @Test
-    public void create() {
+    void create() {
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
         UDPChannel udpChannel = new UDPChannel(channel, peerExplorer);
 
-        Assert.assertNotNull(udpChannel);
+        Assertions.assertNotNull(udpChannel);
     }
 
     @Test
-    public void channelRead0() throws Exception {
+    void channelRead0() throws Exception {
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
         UDPChannel udpChannel = new UDPChannel(channel, peerExplorer);
@@ -59,7 +59,7 @@ public class UDPChannelTest {
     }
 
     @Test
-    public void write() {
+    void write() {
         String check = UUID.randomUUID().toString();
         ECKey key = new ECKey();
         PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
@@ -75,7 +75,7 @@ public class UDPChannelTest {
     }
 
     @Test
-    public void channelActive() throws Exception {
+    void channelActive() throws Exception {
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
         UDPChannel udpChannel = new UDPChannel(channel, peerExplorer);

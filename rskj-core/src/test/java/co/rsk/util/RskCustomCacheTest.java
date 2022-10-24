@@ -20,15 +20,15 @@ package co.rsk.util;
 
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.ByteArrayWrapper;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
  * Created by mario on 09/09/2016.
  */
-public class RskCustomCacheTest {
+class RskCustomCacheTest {
 
     private static Long TIME_TO_LIVE = 2000L;
     private static Long WAIT_PERIOD = 1000L;
@@ -38,35 +38,36 @@ public class RskCustomCacheTest {
 
 
     @Test
-    public void createBlockHeaderCache() {
-        Assert.assertNotNull(new RskCustomCache(TIME_TO_LIVE));
+    void createBlockHeaderCache() {
+        Assertions.assertNotNull(new RskCustomCache(TIME_TO_LIVE));
     }
 
     @Test
-    public void addElement() {
+    void addElement() {
         RskCustomCache cache = new RskCustomCache(TIME_TO_LIVE);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
         cache.put(KEY, header1);
 
-        Assert.assertNotNull(cache.get(KEY));
-        Assert.assertEquals(header1, cache.get(KEY));
+        Assertions.assertNotNull(cache.get(KEY));
+        Assertions.assertEquals(header1, cache.get(KEY));
     }
 
     @Test
-    public void getElement() {
+    void getElement() {
         RskCustomCache cache = new RskCustomCache(TIME_TO_LIVE);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
         cache.put(KEY, header1);
 
-        Assert.assertNotNull(cache.get(KEY));
-        Assert.assertNull(cache.get(OTHER_KEY));
+        Assertions.assertNotNull(cache.get(KEY));
+        Assertions.assertNull(cache.get(OTHER_KEY));
     }
 
     @Test
-    @Ignore
-    public void elementExpiration() throws InterruptedException{
+    @Disabled("???")
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void elementExpiration() throws InterruptedException{
         RskCustomCache cache = new RskCustomCache(800L);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
@@ -74,20 +75,20 @@ public class RskCustomCacheTest {
         BlockHeader header2 = Mockito.mock(BlockHeader.class);
         cache.put(OTHER_KEY, header2);
 
-        Assert.assertEquals(header1, cache.get(KEY));
-        Assert.assertEquals(header2, cache.get(OTHER_KEY));
+        Assertions.assertEquals(header1, cache.get(KEY));
+        Assertions.assertEquals(header2, cache.get(OTHER_KEY));
         cache.get(OTHER_KEY);
         Thread.sleep(700);
-        Assert.assertEquals(header2, cache.get(OTHER_KEY));
+        Assertions.assertEquals(header2, cache.get(OTHER_KEY));
         Thread.sleep(400);
 
         //header2 should not be removed, it was accessed
-        Assert.assertNotNull(cache.get(OTHER_KEY));
-        Assert.assertNull(cache.get(KEY));
+        Assertions.assertNotNull(cache.get(OTHER_KEY));
+        Assertions.assertNull(cache.get(KEY));
 
         Thread.sleep(2*WAIT_PERIOD);
         //header2 should be removed, it was not accessed
-        Assert.assertNull(cache.get(OTHER_KEY));
+        Assertions.assertNull(cache.get(OTHER_KEY));
     }
 
 

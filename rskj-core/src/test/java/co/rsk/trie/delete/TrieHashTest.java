@@ -19,18 +19,18 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 /**
  * Created by martin.medina on 11/01/2017.
  */
-public class TrieHashTest {
+class TrieHashTest {
 
     @Test
-    public void removeOrNeverInsertShouldBringSameHash() {
+    void removeOrNeverInsertShouldBringSameHash() {
         Trie trie1 = new Trie().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
                 .put("roosevilt", "42".getBytes())
@@ -39,14 +39,14 @@ public class TrieHashTest {
         Trie trie2 = new Trie().put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevilt", "42".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevilt"), "42".getBytes()));
-        Assert.assertNull(trie1.get("roosevelt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevilt"), "42".getBytes()));
+        Assertions.assertNull(trie1.get("roosevelt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
@@ -55,14 +55,14 @@ public class TrieHashTest {
         Trie trie2 = new Trie().put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndOnlyOneSonShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -75,15 +75,15 @@ public class TrieHashTest {
                 .put("roose", "42".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevaltroosevalt", "424344".getBytes())
@@ -94,15 +94,15 @@ public class TrieHashTest {
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .put("roosevaltroosevaltroosevaltroosevalt", "42434445".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndOnlyOneSonWithSonsShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -117,16 +117,16 @@ public class TrieHashTest {
                 .put("roosevaltroosevalt", "424344".getBytes())
                 .put("roosevaltroosevaltroosevaltroosevalt", "42434445".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "424344".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevaltroosevaltroosevalt"), "42434445".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashBaseCase() {
+    void sonWithNoSiblingsAndTwoSonsShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie().put("roose", "42".getBytes())
                 .put("roosevalt", "4243".getBytes())
                 .put("roosevalt0oosevalt", "424344".getBytes())
@@ -137,15 +137,15 @@ public class TrieHashTest {
                 .put("roosevalt0oosevalt", "424344".getBytes())
                 .put("roosevalt1oosevalt", "42434445".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithNoSiblingsAndTwoSonsShouldBringSameHashRecursionCase() {
+    void sonWithNoSiblingsAndTwoSonsShouldBringSameHashRecursionCase() {
         Trie trie1 = new Trie()
                 .put("ro", "4".getBytes())
                 .put("roose", "42".getBytes())
@@ -160,16 +160,16 @@ public class TrieHashTest {
                 .put("roosevalt0oosevalt", "424344".getBytes())
                 .put("roosevalt1oosevalt", "42434445".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("ro"), "4".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roose"), "42".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevalt0oosevalt"), "424344".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevalt1oosevalt"), "42434445".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
-    public void sonWithSiblingAndOnlyOneGrandsonShouldBringSameHashBaseCase() {
+    void sonWithSiblingAndOnlyOneGrandsonShouldBringSameHashBaseCase() {
         Trie trie1 = new Trie()
                 .put("roosevalt", "4243".getBytes())
                 .put("rooseval_", "424344".getBytes())
@@ -180,9 +180,9 @@ public class TrieHashTest {
                 .put("rooseval_", "424344".getBytes())
                 .put("roosevaltroosevalt", "42434445".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("rooseval_"), "424344".getBytes()));
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "42434445".getBytes()));
-        Assert.assertNull(trie1.get("roosevalt"));
-        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        Assertions.assertTrue(Arrays.equals(trie1.get("rooseval_"), "424344".getBytes()));
+        Assertions.assertTrue(Arrays.equals(trie1.get("roosevaltroosevalt"), "42434445".getBytes()));
+        Assertions.assertNull(trie1.get("roosevalt"));
+        Assertions.assertEquals(trie1.getHash(), trie2.getHash());
     }
 }

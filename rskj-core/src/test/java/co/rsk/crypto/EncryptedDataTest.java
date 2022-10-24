@@ -19,22 +19,22 @@
 package co.rsk.crypto;
 
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class EncryptedDataTest {
+class EncryptedDataTest {
 
     @Test
-    public void testEncryptedData() {
+    void testEncryptedData() {
         EncryptedData ed = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
         EncryptedData ed2 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
         EncryptedData ed3 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,7});
-        Assert.assertEquals(ed.toString(), ed2.toString());
-        Assert.assertEquals(ed.hashCode(), ed2.hashCode());
-        Assert.assertEquals(ed, ed);
-        Assert.assertEquals(ed, ed2);
-        Assert.assertFalse(ed.equals(null));
-        Assert.assertFalse(ed.equals("aa"));
-        Assert.assertFalse(ed.equals(ed3));
+        Assertions.assertEquals(ed.toString(), ed2.toString());
+        Assertions.assertEquals(ed.hashCode(), ed2.hashCode());
+        Assertions.assertEquals(ed, ed); // NOSONAR testing EncryptedData#equals
+        Assertions.assertEquals(ed, ed2);
+        Assertions.assertNotEquals(null, ed);
+        Assertions.assertNotEquals("aa", ed.toString());
+        Assertions.assertNotEquals(ed, ed3);
     }
 }

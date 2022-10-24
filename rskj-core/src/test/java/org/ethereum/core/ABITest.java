@@ -23,25 +23,25 @@ import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * @author Anton Nashatyrev
  */
-public class ABITest {
+class ABITest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     @Test
-    public void testTransactionCreate() {
+    void testTransactionCreate() {
         // demo only
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
         Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000,
                 1_000_000_000, new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID, "1234567890abcdef1234567890abcdef12345678");
-        ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
+        Assertions.assertDoesNotThrow(() -> ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes())));
     }
 
     static String funcJson1 = "{ \n" +
@@ -54,24 +54,24 @@ public class ABITest {
     static {funcJson1 = funcJson1.replaceAll("'", "\"");}
 
     @Test
-    public void testSimple1() {
+    void testSimple1() {
 
         logger.info("\n{}", funcJson1);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
 
-        Assert.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
+        Assertions.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
                 ByteUtil.toHexString(function.encode("1234567890abcdef1234567890abcdef12345678")));
-        Assert.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
+        Assertions.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
                 ByteUtil.toHexString(function.encode("0x1234567890abcdef1234567890abcdef12345678")));
         try {
             ByteUtil.toHexString(function.encode("0xa1234567890abcdef1234567890abcdef12345678"));
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         } catch (Exception e) {}
 
         try {
             ByteUtil.toHexString(function.encode("blabla"));
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         } catch (Exception e) {}
     }
 
@@ -85,7 +85,7 @@ public class ABITest {
     static {funcJson2 = funcJson2.replaceAll("'", "\"");}
 
     @Test
-    public void testSimple2() {
+    void testSimple2() {
 
         logger.info("\n{}", funcJson2);
 
@@ -94,7 +94,7 @@ public class ABITest {
                 new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID);
         ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
 
-        Assert.assertEquals("91888f2e", ByteUtil.toHexString(ctx.getData()));
+        Assertions.assertEquals("91888f2e", ByteUtil.toHexString(ctx.getData()));
     }
 
     static String funcJson3 = "{\n" +
@@ -113,13 +113,13 @@ public class ABITest {
     static {funcJson3 = funcJson3.replaceAll("'", "\"");}
 
     @Test
-    public void test3() {
+    void test3() {
 
         logger.info("\n{}", funcJson3);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson3);
 
-        Assert.assertEquals("a4f72f5a" +
+        Assertions.assertEquals("a4f72f5a" +
                 "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb2e" +
                 "00000000000000000000000000000000000000000000000000000000000004d2" +
                 "000000000000000000000000000000000000000000000000000000000000007b61" +
@@ -139,18 +139,18 @@ public class ABITest {
 
 
     @Test
-    public void test4() {
+    void test4() {
 
         logger.info("\n{}", funcJson4);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson4);
-        Assert.assertEquals("d383b9f6" +
+        Assertions.assertEquals("d383b9f6" +
                         "0000000000000000000000000000000000000000000000000000000000000001" +
                         "0000000000000000000000000000000000000000000000000000000000000002" +
                         "0000000000000000000000000000000000000000000000000000000000000003",
                 ByteUtil.toHexString(function.encode(new int[] {1,2,3})));
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "d383b9f60000000000000000000000000000000000000000000000000000000000000001" +
                         "0000000000000000000000000000000000000000000000000000000000000002" +
                         "0000000000000000000000000000000000000000000000000000000000000003" +
@@ -174,13 +174,13 @@ public class ABITest {
     static {funcJson5 = funcJson5.replaceAll("'", "\"");};
 
     @Test
-    public void test5() {
+    void test5() {
 
         logger.info("\n{}", funcJson5);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson5);
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "3ed2792b000000000000000000000000000000000000000000000000000000000000006f" +
                         "0000000000000000000000000000000000000000000000000000000000000060" +
                         "00000000000000000000000000000000000000000000000000000000000000de" +
@@ -191,7 +191,7 @@ public class ABITest {
     }
 
     @Test
-    public void decodeDynamicTest1() {
+    void decodeDynamicTest1() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[{'name':'i','type':'int'}, \n" +
@@ -211,12 +211,12 @@ public class ABITest {
 
         Object[] objects = function.decodeResult(encoded);
 //        System.out.println(Arrays.toString(objects));
-        Assert.assertEquals(((Number) objects[0]).intValue(), 111);
-        Assert.assertArrayEquals((byte[]) objects[1], bytes);
-        Assert.assertEquals(((Number) objects[2]).intValue(), 222);
+        Assertions.assertEquals(111, ((Number) objects[0]).intValue());
+        Assertions.assertArrayEquals(bytes, (byte[]) objects[1]);
+        Assertions.assertEquals(222, ((Number) objects[2]).intValue());
     }
     @Test
-    public void decodeDynamicTest2() {
+    void decodeDynamicTest2() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[{'name':'i','type':'int'}, \n" +
@@ -235,13 +235,13 @@ public class ABITest {
         byte[] encoded = function.encodeArguments(111, strings, 222);
         Object[] objects = function.decodeResult(encoded);
 //        System.out.println(Arrays.toString(objects));
-        Assert.assertEquals(((Number) objects[0]).intValue(), 111);
-        Assert.assertArrayEquals((Object[]) objects[1], strings);
-        Assert.assertEquals(((Number) objects[2]).intValue(), 222);
+        Assertions.assertEquals(111, ((Number) objects[0]).intValue());
+        Assertions.assertArrayEquals((Object[]) objects[1], strings);
+        Assertions.assertEquals(222, ((Number) objects[2]).intValue());
     }
 
     @Test
-    public void encodeArrayWithInvalidInputShouldFail() {
+    void encodeArrayWithInvalidInputShouldFail() {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[" +
@@ -257,19 +257,19 @@ public class ABITest {
         try {
             String[] strings = new String[] {"aaa", "long string: 123456789012345678901234567890", "ccc"}; // but my input is a smaller array
             function.encodeArguments("a", strings);
-            Assert.fail("should have thrown an exception");
+            Assertions.fail("should have thrown an exception");
         }
         catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("List size"));
+            Assertions.assertTrue(e.getMessage().contains("List size"));
         }
 
         try {
             String[] strings = new String[] {"aaa", "long string: 123456789012345678901234567890", "ccc", "ddd", "eee"}; // but my input is a bigger array
             function.encodeArguments("a", strings);
-            Assert.fail("should have thrown an exception");
+            Assertions.fail("should have thrown an exception");
         }
         catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("List size"));
+            Assertions.assertTrue(e.getMessage().contains("List size"));
         }
     }
 

@@ -4,7 +4,8 @@ import co.rsk.db.importer.BootstrapImportException;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,10 +14,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BootstrapDataProviderTest {
+class BootstrapDataProviderTest {
 
-    @Test(expected = BootstrapImportException.class)
-    public void retrieveDataInsufficientsSources() {
+    @Test
+    void retrieveDataInsufficientsSources() {
         BootstrapDataVerifier bootstrapDataVerifier = mock(BootstrapDataVerifier.class);
         when(bootstrapDataVerifier.verifyEntries(any())).thenReturn(1);
 
@@ -32,12 +33,12 @@ public class BootstrapDataProviderTest {
                 mock(BootstrapIndexRetriever.class),
                 2
         );
-        bootstrapDataProvider.retrieveData();
 
+        Assertions.assertThrows(BootstrapImportException.class, () -> bootstrapDataProvider.retrieveData());
     }
 
     @Test
-    public void retrieveData() {
+    void retrieveData() {
         BootstrapDataVerifier bootstrapDataVerifier = mock(BootstrapDataVerifier.class);
         when(bootstrapDataVerifier.verifyEntries(any())).thenReturn(2);
 

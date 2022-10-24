@@ -28,8 +28,8 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskMockFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -37,10 +37,10 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class PeerAndModeDecidingSyncStateTest {
+class PeerAndModeDecidingSyncStateTest {
 
     @Test
-    public void startsSyncingWith5Peers() {
+    void startsSyncingWith5Peers() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
 
@@ -61,15 +61,15 @@ public class PeerAndModeDecidingSyncStateTest {
         when(peersInformation.getPeer(any())).thenReturn(bpStatus);
 
         for (int i = 0; i < 5; i++) {
-            Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+            Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
             syncState.newPeerStatus();
         }
 
-        Assert.assertTrue(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertTrue(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
-    public void doesntStartSyncingWithNoPeersAfter2Minutes() {
+    void doesntStartSyncingWithNoPeersAfter2Minutes() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
 
@@ -80,11 +80,11 @@ public class PeerAndModeDecidingSyncStateTest {
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
 
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
-    public void startsSyncingWith1PeerAfter2Minutes() {
+    void startsSyncingWith1PeerAfter2Minutes() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
 
@@ -116,7 +116,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void doesntStartSyncingWith1PeerBeforeTimeout() {
+    void doesntStartSyncingWith1PeerBeforeTimeout() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -125,16 +125,16 @@ public class PeerAndModeDecidingSyncStateTest {
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
                 syncConfiguration, blockchain, peerScoringManager);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
-    public void doesntStartSyncingIfAllPeersHaveLowerDifficulty() {
+    void doesntStartSyncingIfAllPeersHaveLowerDifficulty() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -144,18 +144,18 @@ public class PeerAndModeDecidingSyncStateTest {
                 syncConfiguration, blockchain, peerScoringManager);
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
-    public void doesntStartSyncingIfAllPeersHaveBadReputation() {
+    void doesntStartSyncingIfAllPeersHaveBadReputation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
@@ -166,18 +166,18 @@ public class PeerAndModeDecidingSyncStateTest {
 
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
         knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
-        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+        Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
 
     @Test
-    public void backwardsSynchronization_genesisNotConnected_withMinBlock() {
+    void backwardsSynchronization_genesisNotConnected_withMinBlock() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -199,7 +199,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void backwardsSynchronization_genesisConnected() {
+    void backwardsSynchronization_genesisConnected() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -223,7 +223,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void forwardsSynchronization_genesisIsConnected() {
+    void forwardsSynchronization_genesisIsConnected() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);
@@ -255,7 +255,7 @@ public class PeerAndModeDecidingSyncStateTest {
     }
 
     @Test
-    public void forwardsSynchronization() {
+    void forwardsSynchronization() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         PeersInformation peersInformation = mock(PeersInformation.class);
         SyncEventsHandler syncEventsHandler = mock(SyncEventsHandler.class);

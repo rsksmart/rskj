@@ -25,23 +25,23 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Block;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class BlockHeaderNotificationEmitterTest {
+class BlockHeaderNotificationEmitterTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);
 
     private BlockHeaderNotificationEmitter emitter;
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
         emitter = new BlockHeaderNotificationEmitter(ethereum, serializer);
@@ -52,7 +52,7 @@ public class BlockHeaderNotificationEmitterTest {
     }
 
     @Test
-    public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
@@ -65,7 +65,7 @@ public class BlockHeaderNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSucceedsForExistingSubscriptionId() {
+    void unsubscribeSucceedsForExistingSubscriptionId() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
@@ -75,7 +75,7 @@ public class BlockHeaderNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeChannelThenNothingIsEmitted() {
+    void unsubscribeChannelThenNothingIsEmitted() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);

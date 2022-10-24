@@ -28,8 +28,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -38,7 +38,7 @@ import java.util.*;
 
 import static org.mockito.Mockito.*;
 
-public class DownloadingBodiesSyncStateTest {
+class DownloadingBodiesSyncStateTest {
 
     // TODO Test missing logic
 
@@ -51,8 +51,8 @@ public class DownloadingBodiesSyncStateTest {
     private BlockSyncService blockSyncService;
     private Peer peer;
 
-    @Before
-    public void setUp() throws UnknownHostException {
+    @BeforeEach
+    void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         peersInformation = mock(PeersInformation.class);
@@ -67,7 +67,7 @@ public class DownloadingBodiesSyncStateTest {
     }
 
     @Test
-    public void newBodyWhenUnexpectedMessageLogEvent() {
+    void newBodyWhenUnexpectedMessageLogEvent() {
         DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
@@ -93,7 +93,7 @@ public class DownloadingBodiesSyncStateTest {
     }
 
     @Test
-    public void newBodyWhenUnexpectedMessageFromPeerLogEvent() {
+    void newBodyWhenUnexpectedMessageFromPeerLogEvent() {
         DownloadingBodiesSyncState state = new DownloadingBodiesSyncState(syncConfiguration,
                 syncEventsHandler,
                 peersInformation,
@@ -119,7 +119,7 @@ public class DownloadingBodiesSyncStateTest {
     }
 
     @Test
-    public void tickOnTimeoutLogEvent() {
+    void tickOnTimeoutLogEvent() {
         Deque<BlockHeader> headers = new ArrayDeque<>();
         headers.add(mock(BlockHeader.class));
 

@@ -17,9 +17,9 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 
-public class ExtCodeHashTest {
+class ExtCodeHashTest {
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private ActivationConfig.ForBlock activationConfig;
     private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
@@ -46,47 +46,47 @@ public class ExtCodeHashTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         activationConfig = mock(ActivationConfig.ForBlock.class);
         when(activationConfig.isActive(RSKIP140)).thenReturn(true);
     }
 
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testDoEXTCODEHASHWithHardForkDeactivated() {
+    @Test
+    void testDoEXTCODEHASHWithHardForkDeactivated() {
         when(activationConfig.isActive(RSKIP140)).thenReturn(false);
-        executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 0,
-                null);
+        Assertions.assertThrows(Program.IllegalOperationException.class, () -> executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 0,
+                null));
     }
 
     @Test
-    public void testDoEXTCODEHASHToContractAndGetTheCodeHash() {
+    void testDoEXTCODEHASHToContractAndGetTheCodeHash() {
         byte[] resultCode = invoke.getRepository().getCode(invoke.getContractAddress());
         executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 403,
                 Keccak256Helper.keccak256(resultCode));
     }
 
     @Test
-    public void testDoEXTCODEHASHToAccountAndGetEmptyHash() {
+    void testDoEXTCODEHASHToAccountAndGetEmptyHash() {
         executeExtCodeHash("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826", 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
 
     }
 
     @Test
-    public void testDoEXTCODEHASHToNonExistentAccountAndGetZero() {
+    void testDoEXTCODEHASHToNonExistentAccountAndGetZero() {
         executeExtCodeHash("0x1111111111222222222233333333334444444444", 403,
                 ByteUtil.intToBytes(0));
     }
 
     @Test
-    public void testDoEXTCODEHASHToPrecompiledContractAndGetEmptyHash() {
+    void testDoEXTCODEHASHToPrecompiledContractAndGetEmptyHash() {
         executeExtCodeHash("0x"+precompiledContracts.BRIDGE_ADDR.toHexString(), 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     }
 
     @Test
-    public void testDoEXTCODEHASHWithoutArguments() {
+    void testDoEXTCODEHASHWithoutArguments() {
         int gasExpected = 1000000;
 
         String stringCode = " EXTCODEHASH";
@@ -99,8 +99,8 @@ public class ExtCodeHashTest {
                 vm.step(program);
             }
         } catch(Program.StackTooSmallException e) {
-             Assert.assertEquals(0, program.getStack().size());
-             Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+             Assertions.assertEquals(0, program.getStack().size());
+             Assertions.assertEquals(gasExpected, program.getResult().getGasUsed());
          }
     }
 
@@ -117,14 +117,14 @@ public class ExtCodeHashTest {
             vm.step(program);
         }
 
-        Assert.assertEquals(1, program.getStack().size());
+        Assertions.assertEquals(1, program.getStack().size());
 
         DataWord dataWordResult = program.stackPop();
-        Assert.assertEquals(DataWord.valueOf(codeHashExpected), dataWordResult);
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assertions.assertEquals(DataWord.valueOf(codeHashExpected), dataWordResult);
+        Assertions.assertEquals(gasExpected, program.getResult().getGasUsed());
     }
 
-    
+
     private static Transaction createTransaction() {
         int number = 0;
         AccountBuilder acbuilder = new AccountBuilder();

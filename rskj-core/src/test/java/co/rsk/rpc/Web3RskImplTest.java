@@ -27,19 +27,19 @@ import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
-public class Web3RskImplTest {
+class Web3RskImplTest {
 
     @Test
-    public void web3_LogFilterElementNullAddress_toString() {
+    void web3_LogFilterElementNullAddress_toString() {
         LogInfo logInfo = mock(LogInfo.class);
         byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
         Mockito.when(logInfo.getData()).thenReturn(valueToTest);
@@ -63,7 +63,7 @@ public class Web3RskImplTest {
     }
 
     @Test
-    public void web3_LogFilterElementNullData_toString() {
+    void web3_LogFilterElementNullData_toString() {
         LogInfo logInfo = mock(LogInfo.class);
         byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
         Mockito.when(logInfo.getData()).thenReturn(null);
@@ -87,7 +87,7 @@ public class Web3RskImplTest {
     }
 
     @Test
-    public void web3_CallArguments_toString() {
+    void web3_CallArguments_toString() {
         CallArguments callArguments = new CallArguments();
 
         callArguments.setFrom("0x1");
@@ -105,7 +105,7 @@ public class Web3RskImplTest {
     }
 
     @Test
-    public void web3_FilterRequest_toString() {
+    void web3_FilterRequest_toString() {
         FilterRequest filterRequest = new FilterRequest();
 
         filterRequest.setFromBlock("1");
@@ -114,6 +114,6 @@ public class Web3RskImplTest {
         filterRequest.setTopics(new Object[]{"2"});
         filterRequest.setBlockHash("0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2");
 
-        assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2], blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2'}");
+        assertEquals("FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2], blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2'}", filterRequest.toString());
     }
 }

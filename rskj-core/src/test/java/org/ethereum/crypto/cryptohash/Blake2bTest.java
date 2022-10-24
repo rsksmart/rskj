@@ -1,16 +1,16 @@
 package org.ethereum.crypto.cryptohash;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
  * Created by bakaking on 25/10/2019.
  */
-public class Blake2bTest {
+class Blake2bTest {
 
     @Test
-    public void testF() {
+    void testF() {
         long[] h = {
                 0x6a09e667f2bdc948L, 0xbb67ae8584caa73bL,
                 0x3c6ef372fe94f82bL, 0xa54ff53a5f1d36f1L,

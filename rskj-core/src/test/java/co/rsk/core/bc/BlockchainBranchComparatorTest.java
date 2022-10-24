@@ -27,8 +27,8 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -37,13 +37,13 @@ import java.util.List;
 /**
  * Created by ajlopez on 09/08/2016.
  */
-public class BlockchainBranchComparatorTest {
+class BlockchainBranchComparatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
-    public void calculateParentChild() {
+    void calculateParentChild() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -56,15 +56,15 @@ public class BlockchainBranchComparatorTest {
 
         BlockFork fork = comparator.calculateFork(genesis, block);
 
-        Assert.assertSame(genesis, fork.getCommonAncestor());
-        Assert.assertTrue(fork.getOldBlocks().isEmpty());
-        Assert.assertFalse(fork.getNewBlocks().isEmpty());
-        Assert.assertEquals(1, fork.getNewBlocks().size());
-        Assert.assertSame(block, fork.getNewBlocks().get(0));
+        Assertions.assertSame(genesis, fork.getCommonAncestor());
+        Assertions.assertTrue(fork.getOldBlocks().isEmpty());
+        Assertions.assertFalse(fork.getNewBlocks().isEmpty());
+        Assertions.assertEquals(1, fork.getNewBlocks().size());
+        Assertions.assertSame(block, fork.getNewBlocks().get(0));
     }
 
     @Test
-    public void calculateForkLengthTwo() {
+    void calculateForkLengthTwo() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -80,21 +80,21 @@ public class BlockchainBranchComparatorTest {
 
         BlockFork fork = comparator.calculateFork(oldBranch.get(1), newBranch.get(1));
 
-        Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assertions.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
-        Assert.assertFalse(fork.getOldBlocks().isEmpty());
-        Assert.assertEquals(2, fork.getOldBlocks().size());
-        Assert.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
+        Assertions.assertFalse(fork.getOldBlocks().isEmpty());
+        Assertions.assertEquals(2, fork.getOldBlocks().size());
+        Assertions.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
+        Assertions.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
 
-        Assert.assertFalse(fork.getNewBlocks().isEmpty());
-        Assert.assertEquals(2, fork.getNewBlocks().size());
-        Assert.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
+        Assertions.assertFalse(fork.getNewBlocks().isEmpty());
+        Assertions.assertEquals(2, fork.getNewBlocks().size());
+        Assertions.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
+        Assertions.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
     }
 
     @Test
-    public void calculateForkLengthTwoOldThreeNew() {
+    void calculateForkLengthTwoOldThreeNew() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -110,22 +110,22 @@ public class BlockchainBranchComparatorTest {
 
         BlockFork fork = comparator.calculateFork(oldBranch.get(1), newBranch.get(2));
 
-        Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assertions.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
-        Assert.assertFalse(fork.getOldBlocks().isEmpty());
-        Assert.assertEquals(2, fork.getOldBlocks().size());
-        Assert.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
+        Assertions.assertFalse(fork.getOldBlocks().isEmpty());
+        Assertions.assertEquals(2, fork.getOldBlocks().size());
+        Assertions.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
+        Assertions.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
 
-        Assert.assertFalse(fork.getNewBlocks().isEmpty());
-        Assert.assertEquals(3, fork.getNewBlocks().size());
-        Assert.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
-        Assert.assertEquals(newBranch.get(2).getHash(), fork.getNewBlocks().get(2).getHash());
+        Assertions.assertFalse(fork.getNewBlocks().isEmpty());
+        Assertions.assertEquals(3, fork.getNewBlocks().size());
+        Assertions.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
+        Assertions.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
+        Assertions.assertEquals(newBranch.get(2).getHash(), fork.getNewBlocks().get(2).getHash());
     }
 
     @Test
-    public void calculateForkLengthThreeOldTwoNew() {
+    void calculateForkLengthThreeOldTwoNew() {
         BlockStore store = createBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -141,18 +141,18 @@ public class BlockchainBranchComparatorTest {
 
         BlockFork fork = comparator.calculateFork(oldBranch.get(2), newBranch.get(1));
 
-        Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assertions.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
-        Assert.assertFalse(fork.getOldBlocks().isEmpty());
-        Assert.assertEquals(3, fork.getOldBlocks().size());
-        Assert.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
-        Assert.assertEquals(oldBranch.get(2).getHash(), fork.getOldBlocks().get(2).getHash());
+        Assertions.assertFalse(fork.getOldBlocks().isEmpty());
+        Assertions.assertEquals(3, fork.getOldBlocks().size());
+        Assertions.assertEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
+        Assertions.assertEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
+        Assertions.assertEquals(oldBranch.get(2).getHash(), fork.getOldBlocks().get(2).getHash());
 
-        Assert.assertFalse(fork.getNewBlocks().isEmpty());
-        Assert.assertEquals(2, fork.getNewBlocks().size());
-        Assert.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
+        Assertions.assertFalse(fork.getNewBlocks().isEmpty());
+        Assertions.assertEquals(2, fork.getNewBlocks().size());
+        Assertions.assertEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
+        Assertions.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
     }
 
     private static List<Block> makeChain(Block parent, int length, BlockStore store, BlockGenerator blockGenerator) {

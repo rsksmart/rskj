@@ -24,8 +24,8 @@ import co.rsk.net.NetBlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -35,9 +35,9 @@ import java.util.Set;
 /**
  * Created by ajlopez on 19/08/2016.
  */
-public class BlockUtilsTest {
+class BlockUtilsTest {
     @Test
-    public void blockInSomeBlockChain() {
+    void blockInSomeBlockChain() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
@@ -53,15 +53,15 @@ public class BlockUtilsTest {
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
-        Assert.assertTrue(BlockUtils.blockInSomeBlockChain(genesis, blockChain));
-        Assert.assertTrue(BlockUtils.blockInSomeBlockChain(block1, blockChain));
-        Assert.assertTrue(BlockUtils.blockInSomeBlockChain(block1b, blockChain));
-        Assert.assertFalse(BlockUtils.blockInSomeBlockChain(block2, blockChain));
-        Assert.assertTrue(BlockUtils.blockInSomeBlockChain(block3, blockChain));
+        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(genesis, blockChain));
+        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block1, blockChain));
+        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block1b, blockChain));
+        Assertions.assertFalse(BlockUtils.blockInSomeBlockChain(block2, blockChain));
+        Assertions.assertTrue(BlockUtils.blockInSomeBlockChain(block3, blockChain));
     }
 
     @Test
-    public void unknowAncestorsHashes() {
+    void unknowAncestorsHashes() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         NetBlockStore store = new NetBlockStore();
 
@@ -74,41 +74,41 @@ public class BlockUtilsTest {
 
         store.saveBlock(block3);
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assertions.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        Assertions.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
         Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertNotNull(hashes);
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertNotNull(hashes);
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertNotNull(hashes);
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertFalse(hashes.isEmpty());
-        Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getHash()));
+        Assertions.assertNotNull(hashes);
+        Assertions.assertFalse(hashes.isEmpty());
+        Assertions.assertEquals(1, hashes.size());
+        Assertions.assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertFalse(hashes.isEmpty());
-        Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getHash()));
+        Assertions.assertNotNull(hashes);
+        Assertions.assertFalse(hashes.isEmpty());
+        Assertions.assertEquals(1, hashes.size());
+        Assertions.assertTrue(hashes.contains(block2.getHash()));
     }
 
     @Test
-    public void unknowAncestorsHashesUsingUncles() {
+    void unknowAncestorsHashesUsingUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         Genesis genesis = (Genesis) blockChain.getBestBlock();
@@ -136,46 +136,46 @@ public class BlockUtilsTest {
 
         Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertNotNull(hashes);
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertNotNull(hashes);
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
+        Assertions.assertNotNull(hashes);
 
-        Assert.assertTrue(hashes.isEmpty());
+        Assertions.assertTrue(hashes.isEmpty());
 
         hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertFalse(hashes.isEmpty());
-        Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getHash()));
+        Assertions.assertNotNull(hashes);
+        Assertions.assertFalse(hashes.isEmpty());
+        Assertions.assertEquals(1, hashes.size());
+        Assertions.assertTrue(hashes.contains(block2.getHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
-        Assert.assertNotNull(hashes);
-        Assert.assertFalse(hashes.isEmpty());
-        Assert.assertEquals(3, hashes.size());
-        Assert.assertTrue(hashes.contains(block2.getHash()));
-        Assert.assertTrue(hashes.contains(uncle1.getHash()));
-        Assert.assertTrue(hashes.contains(uncle2.getHash()));
+        Assertions.assertNotNull(hashes);
+        Assertions.assertFalse(hashes.isEmpty());
+        Assertions.assertEquals(3, hashes.size());
+        Assertions.assertTrue(hashes.contains(block2.getHash()));
+        Assertions.assertTrue(hashes.contains(uncle1.getHash()));
+        Assertions.assertTrue(hashes.contains(uncle2.getHash()));
     }
 
     @Test
-    public void tooMuchProcessTime() {
-        Assert.assertFalse(BlockUtils.tooMuchProcessTime(0));
-        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1000));
-        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));
-        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000_000L));
-        Assert.assertFalse(BlockUtils.tooMuchProcessTime(60_000_000_000L));
+    void tooMuchProcessTime() {
+        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(0));
+        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1000));
+        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));
+        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000_000L));
+        Assertions.assertFalse(BlockUtils.tooMuchProcessTime(60_000_000_000L));
 
-        Assert.assertTrue(BlockUtils.tooMuchProcessTime(60_000_000_001L));
-        Assert.assertTrue(BlockUtils.tooMuchProcessTime(1_000_000_000_000L));
+        Assertions.assertTrue(BlockUtils.tooMuchProcessTime(60_000_000_001L));
+        Assertions.assertTrue(BlockUtils.tooMuchProcessTime(1_000_000_000_000L));
     }
 }

@@ -22,8 +22,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,14 +31,14 @@ import java.util.Set;
 
 import static org.mockito.Mockito.*;
 
-public class TransactionGatewayTest {
+class TransactionGatewayTest {
     private ChannelManager channelManager;
     private TransactionPool transactionPool;
     private TransactionGateway gateway;
     private Transaction tx;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         this.channelManager = mock(ChannelManager.class);
         this.transactionPool = mock(TransactionPool.class);
         this.tx = mock(Transaction.class);
@@ -48,7 +48,7 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receiveTranasctionsFrom_newTransactions_shouldAddAndBroadcast() {
+    void receiveTranasctionsFrom_newTransactions_shouldAddAndBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
         List<Transaction> transactionPoolAddResult = transactions;
 
@@ -62,7 +62,7 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receiveTransactionsFrom_transactionsAlreadyAdded_shouldntAddAndShouldntBroadcast() {
+    void receiveTransactionsFrom_transactionsAlreadyAdded_shouldntAddAndShouldntBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
         List<Transaction> transactionPoolAddResult = Collections.emptyList();
 
@@ -76,7 +76,7 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
+    void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
         TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult
                 .okPendingTransactions(Collections.singletonList(tx));
 
@@ -84,7 +84,7 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receiveTransaction_alreadyAddedTransaction_shouldntAddAndShouldntBroadcast() {
+    void receiveTransaction_alreadyAddedTransaction_shouldntAddAndShouldntBroadcast() {
         TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.withError("Not added");
         receiveTransactionAndVerifyCalls(transactionPoolAddResult, 0);
     }

@@ -41,7 +41,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 
 import org.ethereum.vm.program.InternalTransaction;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -53,8 +53,8 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
     protected static BridgeConstants bridgeConstants;
     protected static BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
-    @BeforeClass
-    public static void setupB() {
+    @BeforeAll
+     static void setupB() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
         btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);

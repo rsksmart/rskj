@@ -19,7 +19,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -43,8 +43,8 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.LogInfo;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,15 +59,15 @@ import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-public class LogsNotificationEmitterTest {
+class LogsNotificationEmitterTest {
     private LogsNotificationEmitter emitter;
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
     private ReceiptStore receiptStore;
     private BlockchainBranchComparator comparator;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
         receiptStore = mock(ReceiptStore.class);
@@ -80,7 +80,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -95,7 +95,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
+    void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
         SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
         SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
         Channel channel1 = mock(Channel.class);
@@ -120,7 +120,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void filterEmittedLog() throws JsonProcessingException {
+    void filterEmittedLog() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -146,7 +146,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void emitsNewAndRemovedLogs() throws JsonProcessingException {
+    void emitsNewAndRemovedLogs() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -175,7 +175,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeSucceedsForExistingSubscriptionId() {
+    void unsubscribeSucceedsForExistingSubscriptionId() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -186,7 +186,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void unsubscribeChannelThenNothingIsEmitted() {
+    void unsubscribeChannelThenNothingIsEmitted() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);

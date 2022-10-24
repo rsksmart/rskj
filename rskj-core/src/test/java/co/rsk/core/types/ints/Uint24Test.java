@@ -18,50 +18,52 @@
 
 package co.rsk.core.types.ints;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class Uint24Test {
+class Uint24Test {
     @Test
-    public void encodeDecode0() {
+    void encodeDecode0() {
         Uint24 zero = new Uint24(0);
         assertThat(Uint24.decode(zero.encode(), 0), is(zero));
     }
 
     @Test
-    public void encodeDecodeMax() {
+    void encodeDecodeMax() {
         Uint24 max = Uint24.MAX_VALUE;
         assertThat(Uint24.decode(max.encode(), 0), is(max));
     }
 
     @Test
-    public void encodeDecode15922180() {
+    void encodeDecode15922180() {
         Uint24 val = new Uint24(15922180);
         assertThat(Uint24.decode(val.encode(), 0), is(val));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void instantiateMaxPlusOne() {
-        new Uint24(Uint24.MAX_VALUE.intValue() + 1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void instantiateNegativeValue() {
-        new Uint24(-1);
+    @Test
+    void instantiateMaxPlusOne() {
+        int value = Uint24.MAX_VALUE.intValue() + 1;
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Uint24(value));
     }
 
     @Test
-    public void decodeOffsettedValue() {
+    void instantiateNegativeValue() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Uint24(-1));
+    }
+
+    @Test
+    void decodeOffsettedValue() {
         byte[] bytes = new byte[] {0x21, 0x53, (byte) 0xf2, (byte) 0xf4, 0x04, 0x55};
         Uint24 decoded = Uint24.decode(bytes, 2);
         assertThat(decoded, is(new Uint24(15922180)));
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void decodeSmallArray() {
+    @Test
+    void decodeSmallArray() {
         byte[] bytes = new byte[] {0x21, 0x53, (byte) 0xf2};
-        Uint24.decode(bytes, 2);
+        Assertions.assertThrows(ArrayIndexOutOfBoundsException.class, () -> Uint24.decode(bytes, 2));
     }
 }

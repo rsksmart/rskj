@@ -25,9 +25,9 @@ import co.rsk.peg.BridgeStorageProvider;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -36,27 +36,27 @@ import java.util.Random;
 // Everything related to locking that is not
 // registerBtcTransaction, which has its own
 // test case given its complexity
-@Ignore
-public class LockTest extends BridgePerformanceTestCase {
+@Disabled
+class LockTest extends BridgePerformanceTestCase {
     private Sha256Hash randomHashInMap;
 
     @Test
-    public void getMinimumLockTxValue() throws IOException, VMException {
+    void getMinimumLockTxValue() throws IOException, VMException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
         ExecutionStats stats = new ExecutionStats("getMinimumLockTxValue");
         executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10), stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    public void isBtcTxHashAlreadyProcessed() throws IOException, VMException {
+    void isBtcTxHashAlreadyProcessed() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("isBtcTxHashAlreadyProcessed");
         isBtcTxHashAlreadyProcessed_yes(100, stats);
         isBtcTxHashAlreadyProcessed_no(100, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void isBtcTxHashAlreadyProcessed_yes(int times, ExecutionStats stats) throws VMException {
@@ -73,12 +73,12 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcTxHashProcessedHeight() throws VMException {
+    void getBtcTxHashProcessedHeight() throws VMException {
         ExecutionStats stats = new ExecutionStats("getBtcTxHashProcessedHeight");
         getBtcTxHashProcessedHeight_processed(100, stats);
         getBtcTxHashProcessedHeight_notProcessed(100, stats);
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+        Assertions.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void getBtcTxHashProcessedHeight_processed(int times, ExecutionStats stats) throws VMException {

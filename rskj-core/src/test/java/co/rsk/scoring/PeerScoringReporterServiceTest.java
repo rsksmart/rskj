@@ -1,52 +1,52 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 
-public class PeerScoringReporterServiceTest {
+class PeerScoringReporterServiceTest {
 
     private TestPeerScoringReporterService peerScoringReporterService;
     private PeerScoringManager peerScoringManager;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         peerScoringManager = mock(PeerScoringManager.class);
         peerScoringReporterService = TestPeerScoringReporterService.withScheduler(3000L, peerScoringManager);
     }
 
     @Test
-    public void shouldStopOnStop() {
+    void shouldStopOnStop() {
         testStart();
 
         peerScoringReporterService.stop();
 
-        Assert.assertFalse(peerScoringReporterService.isRunning());
+        Assertions.assertFalse(peerScoringReporterService.isRunning());
     }
 
     @Test
-    public void shouldStartOnStart() {
+    void shouldStartOnStart() {
         testStart();
     }
 
-    public void testStart() {
+    void testStart() {
         when(peerScoringManager.getPeersInformation()).thenReturn(mock(List.class));
 
         peerScoringReporterService.start();
 
-        Assert.assertTrue(peerScoringReporterService.isRunning());
+        Assertions.assertTrue(peerScoringReporterService.isRunning());
     }
 
     @Test
-    public void shouldStopOnException() {
+    void shouldStopOnException() {
         when(peerScoringManager.getPeersInformation()).thenThrow(new RuntimeException());
 
         peerScoringReporterService.start();
 
-        Assert.assertFalse(peerScoringReporterService.isRunning());
+        Assertions.assertFalse(peerScoringReporterService.isRunning());
     }
 }

@@ -22,18 +22,18 @@ package org.ethereum.net.rlpx;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.security.SecureRandom;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by devrandom on 2015-04-11.
  */
-public class RlpxConnectionTest {
+class RlpxConnectionTest {
     private FrameCodec iCodec;
     private FrameCodec rCodec;
     private EncryptionHandshake initiator;
@@ -44,8 +44,8 @@ public class RlpxConnectionTest {
     private PipedInputStream from;
     private PipedOutputStream fromOut;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         ECKey remoteKey = new ECKey();
         ECKey myKey = new ECKey();
         initiator = new EncryptionHandshake(remoteKey.getPubKeyPoint());
@@ -74,7 +74,7 @@ public class RlpxConnectionTest {
     }
 
     @Test
-    public void testFrame() throws Exception {
+    void testFrame() throws Exception {
         byte[] payload = new byte[123];
         new SecureRandom().nextBytes(payload);
         FrameCodec.Frame frame = new FrameCodec.Frame(12345, 123, new ByteArrayInputStream(payload));
@@ -88,18 +88,17 @@ public class RlpxConnectionTest {
     }
 
     @Test
-    public void testMessageEncoding() throws IOException {
+    void testMessageEncoding() throws IOException {
         byte[] wire = iMessage.encode();
         HandshakeMessage message1 = HandshakeMessage.parse(wire);
         assertEquals(123, message1.version);
         assertEquals("abcd", message1.name);
         assertEquals(3333, message1.listenPort);
-        assertArrayEquals(message1.nodeId, message1.nodeId);
         assertEquals(iMessage.caps, message1.caps);
     }
 
     @Test
-    public void testHandshake() throws IOException {
+    void testHandshake() throws IOException {
         RlpxConnection iConn =  new RlpxConnection(initiator.getSecrets(), from, toOut);
         RlpxConnection rConn =  new RlpxConnection(responder.getSecrets(), to, fromOut);
         iConn.sendProtocolHandshake(iMessage);

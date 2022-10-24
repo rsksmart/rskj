@@ -9,19 +9,19 @@ import co.rsk.db.RepositorySnapshot;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class Web3InformationRetrieverTest {
+class Web3InformationRetrieverTest {
 
     private static final int INVALID_PARAM_ERROR_CODE = -32602;
 
@@ -31,8 +31,8 @@ public class Web3InformationRetrieverTest {
     private RepositoryLocator locator;
     private ExecutionBlockRetriever executionBlockRetriever;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         txPool = mock(TransactionPool.class);
         blockchain = mock(Blockchain.class);
         locator = mock(RepositoryLocator.class);
@@ -41,7 +41,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_pending() {
+    void getBlock_pending() {
         Block pendingBlock = mock(Block.class);
         BlockResult pendingBlockResult = mock(BlockResult.class);
         when(pendingBlockResult.getBlock()).thenReturn(pendingBlock);
@@ -53,7 +53,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_invalidIdentifier() {
+    void getBlock_invalidIdentifier() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock("pending2"));
 
@@ -61,7 +61,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_latest() {
+    void getBlock_latest() {
         Block bestBlock = mock(Block.class);
         when(blockchain.getBestBlock()).thenReturn(bestBlock);
         Optional<Block> result = target.getBlock("latest");
@@ -71,7 +71,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_earliest() {
+    void getBlock_earliest() {
         Block earliestBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(0)).thenReturn(earliestBlock);
         Optional<Block> result = target.getBlock("earliest");
@@ -81,7 +81,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_number() {
+    void getBlock_number() {
         Block secondBlock = mock(Block.class);
         when(blockchain.getBlockByNumber(2)).thenReturn(secondBlock);
         Optional<Block> result = target.getBlock("0x2");
@@ -91,13 +91,13 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getBlock_notFound() {
+    void getBlock_notFound() {
         Optional<Block> result = target.getBlock("0x2");
         assertFalse(result.isPresent());
     }
 
     @Test
-    public void getTransactions_pending() {
+    void getTransactions_pending() {
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
@@ -110,7 +110,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getTransactions_earliest() {
+    void getTransactions_earliest() {
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
@@ -126,7 +126,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getTransactions_latest() {
+    void getTransactions_latest() {
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
@@ -142,7 +142,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getTransactions_number() {
+    void getTransactions_number() {
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
@@ -158,7 +158,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getTransactions_blockNotFound() {
+    void getTransactions_blockNotFound() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.getTransactions("0x3"));
 
@@ -166,7 +166,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getState_pending() {
+    void getState_pending() {
         PendingState aip = mock(PendingState.class);
         when(txPool.getPendingState()).thenReturn(aip);
 
@@ -176,49 +176,49 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getState_earliest() {
+    void getState_earliest() {
         Block block = mock(Block.class);
         BlockHeader header = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(header);
 
         when(blockchain.getBlockByNumber(0)).thenReturn(block);
         RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
-        when(locator.findSnapshotAt(eq(header))).thenReturn(Optional.of(snapshot));
+        when(locator.findSnapshotAt(header)).thenReturn(Optional.of(snapshot));
         AccountInformationProvider result = target.getInformationProvider("earliest");
 
         assertEquals(snapshot, result);
     }
 
     @Test
-    public void getState_latest() {
+    void getState_latest() {
         Block block = mock(Block.class);
         BlockHeader header = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(header);
 
         when(blockchain.getBestBlock()).thenReturn(block);
         RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
-        when(locator.findSnapshotAt(eq(header))).thenReturn(Optional.of(snapshot));
+        when(locator.findSnapshotAt(header)).thenReturn(Optional.of(snapshot));
         AccountInformationProvider result = target.getInformationProvider("latest");
 
         assertEquals(snapshot, result);
     }
 
     @Test
-    public void getState_number() {
+    void getState_number() {
         Block block = mock(Block.class);
         BlockHeader header = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(header);
 
         when(blockchain.getBlockByNumber(4)).thenReturn(block);
         RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
-        when(locator.findSnapshotAt(eq(header))).thenReturn(Optional.of(snapshot));
+        when(locator.findSnapshotAt(header)).thenReturn(Optional.of(snapshot));
         AccountInformationProvider result = target.getInformationProvider("0x4");
 
         assertEquals(snapshot, result);
     }
 
     @Test
-    public void getState_blockNotFound() {
+    void getState_blockNotFound() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.getInformationProvider("0x4"));
 
@@ -226,7 +226,7 @@ public class Web3InformationRetrieverTest {
     }
 
     @Test
-    public void getTransactions_stateNotFound() {
+    void getTransactions_stateNotFound() {
         Block block = mock(Block.class);
         BlockHeader header = mock(BlockHeader.class);
         when(block.getHeader()).thenReturn(header);

@@ -45,9 +45,9 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
@@ -62,13 +62,13 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class NodeMessageHandlerTest {
+class NodeMessageHandlerTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void processBlockMessageUsingProcessor() {
+    void processBlockMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -78,29 +78,29 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
-        Assert.assertSame(block, sbp.getBlocks().get(0));
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(1, sbp.getBlocks().size());
+        Assertions.assertSame(block, sbp.getBlocks().get(0));
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assertions.assertFalse(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
 
         pscoring = scoring.getPeerScoring(sender.getAddress());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
     }
 
     @Test
-    public void skipProcessGenesisBlock() throws UnknownHostException {
+    void skipProcessGenesisBlock() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -110,18 +110,18 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
-        Assert.assertTrue(scoring.isEmpty());
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(0, sbp.getBlocks().size());
+        Assertions.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertTrue(pscoring.isEmpty());
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertTrue(pscoring.isEmpty());
     }
 
     @Test
-    public void skipAdvancedBlock() throws UnknownHostException {
+    void skipAdvancedBlock() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -132,18 +132,18 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
-        Assert.assertTrue(scoring.isEmpty());
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(0, sbp.getBlocks().size());
+        Assertions.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertTrue(pscoring.isEmpty());
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertTrue(pscoring.isEmpty());
     }
 
     @Test
-    public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
+    void postBlockMessageTwice() {
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -157,14 +157,15 @@ public class NodeMessageHandlerTest {
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.REPEATED_MESSAGE));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.REPEATED_MESSAGE));
     }
 
     @Test
-    public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
+    @SuppressWarnings("squid:S2925") // Thread.sleep() used
+    void postBlockMessageUsingProcessor() throws InterruptedException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -178,13 +179,13 @@ public class NodeMessageHandlerTest {
 
         processor.stop();
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
-        Assert.assertSame(block, sbp.getBlocks().get(0));
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(1, sbp.getBlocks().size());
+        Assertions.assertSame(block, sbp.getBlocks().get(0));
     }
 
     @Test
-    public void postBlockMessageFromBannedMiner() {
+    void postBlockMessageFromBannedMiner() {
         RskSystemProperties config = spy(this.config);
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
@@ -200,11 +201,11 @@ public class NodeMessageHandlerTest {
 
         nodeMessageHandler.postMessage(sender, message);
 
-        Assert.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
+        Assertions.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
     }
 
     @Test
-    public void postBlockMessageFromNonBannedMiner() {
+    void postBlockMessageFromNonBannedMiner() {
         RskSystemProperties config = spy(this.config);
         Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
@@ -214,7 +215,7 @@ public class NodeMessageHandlerTest {
 
         RskAddress coinbase = block.getCoinbase();
         RskAddress bannedMiner = new RskAddress("0000000000000000000000000000000000000023");
-        Assert.assertNotEquals(coinbase, bannedMiner);
+        Assertions.assertNotEquals(coinbase, bannedMiner);
 
         doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
 
@@ -223,13 +224,12 @@ public class NodeMessageHandlerTest {
 
         nodeMessageHandler.postMessage(sender, message);
 
-        Assert.assertEquals(1, nodeMessageHandler.getMessageQueueSize());
+        Assertions.assertEquals(1, nodeMessageHandler.getMessageQueueSize());
     }
 
     // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times fail
-    // This should be executed in a special mode where difficulty is high.
-    @Ignore
-    public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
+    @Disabled("This should be executed in a special mode where difficulty is high")
+    public void processInvalidPoWMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -242,21 +242,21 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(0, sbp.getBlocks().size());
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assertions.assertFalse(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_BLOCK));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
-    public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
+    void processMissingPoWBlockMessageUsingProcessor() {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -271,22 +271,22 @@ public class NodeMessageHandlerTest {
         Message message = new BlockMessage(block);
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(1, sbp.getBlocks().size());
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assertions.assertFalse(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
-        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assertions.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
-    public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
+    void processFutureBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -295,12 +295,12 @@ public class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         processor.processMessage(sender, message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        Assertions.assertNotNull(sbp.getBlocks());
+        Assertions.assertEquals(0, sbp.getBlocks().size());
     }
 
-    @Test @Ignore("This should be reviewed with sync processor or deleted")
-    public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
+    @Test @Disabled("This should be reviewed with sync processor or deleted")
+    void processStatusMessageUsingNodeBlockProcessor() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -319,20 +319,20 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(sender.getGetBlockMessages());
-        Assert.assertEquals(1, sender.getGetBlockMessages().size());
+        Assertions.assertNotNull(sender.getGetBlockMessages());
+        Assertions.assertEquals(1, sender.getGetBlockMessages().size());
 
         final Message msg = sender.getGetBlockMessages().get(0);
 
-        Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, msg.getMessageType());
+        Assertions.assertEquals(MessageType.GET_BLOCK_MESSAGE, msg.getMessageType());
 
         final GetBlockMessage gbMessage = (GetBlockMessage) msg;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), gbMessage.getBlockHash());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), gbMessage.getBlockHash());
     }
 
-    @Test()
-    public void processStatusMessageUsingSyncProcessor() {
+    @Test
+    void processStatusMessageUsingSyncProcessor() {
         final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -346,12 +346,12 @@ public class NodeMessageHandlerTest {
         final Message message = new StatusMessage(status);
         handler.processMessage(sender, message);
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
     }
 
     @Test
-    public void processStatusMessageWithKnownBestBlock() {
+    void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -389,11 +389,11 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(sender.getMessages());
+        Assertions.assertNotNull(sender.getMessages());
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
+    void processGetBlockMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
@@ -414,20 +414,20 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
+    void processGetBlockMessageUsingBlockInBlockchain() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -449,20 +449,20 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash().getBytes()));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         BlockMessage bmessage = (BlockMessage) message;
 
-        Assert.assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
+        Assertions.assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
     }
 
     @Test
-    public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
+    void processGetBlockMessageUsingEmptyStore() {
         final Block block = new BlockGenerator().getBlock(3);
 
         final World world = new World();
@@ -480,11 +480,11 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        Assertions.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
-    public void processBlockHeaderRequestMessageUsingBlockInStore() throws UnknownHostException {
+    void processBlockHeaderRequestMessageUsingBlockInStore() {
         final Block block = new BlockGenerator().getBlock(3);
 
         final World world = new World();
@@ -505,20 +505,20 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assertions.assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
-    public void processBlockHeaderRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
+    void processBlockHeaderRequestMessageUsingBlockInBlockchain() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -540,20 +540,20 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assertions.assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
-    public void processNewBlockHashesMessage() throws UnknownHostException {
+    void processNewBlockHashesMessage() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -638,13 +638,13 @@ public class NodeMessageHandlerTest {
             handler.processMessage(sender, testCase.message);
 
             if (testCase.expected == null) {
-                Assert.assertTrue(sender.getMessages().isEmpty());
+                Assertions.assertTrue(sender.getMessages().isEmpty());
                 continue;
             }
 
-            Assert.assertEquals(testCase.expected.size(), sender.getMessages().size());
+            Assertions.assertEquals(testCase.expected.size(), sender.getMessages().size());
 
-            Assert.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
+            Assertions.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
 
             List<Keccak256> msgs = sender.getMessages().stream()
                     .map(m -> (GetBlockMessage) m)
@@ -658,22 +658,20 @@ public class NodeMessageHandlerTest {
                     .collect(Collectors.toSet());
 
             for (Keccak256 h : msgs) {
-                Assert.assertTrue(expected.contains(h));
+                Assertions.assertTrue(expected.contains(h));
             }
 
             for (Keccak256 h : expected) {
-                Assert.assertTrue(
-                        msgs.stream()
-                                .filter(h1 -> h.equals(h1))
-                                .count() == 1
-                );
+                Assertions.assertEquals(1, msgs.stream()
+                        .filter(h1 -> h.equals(h1))
+                        .count());
             }
 
         }
     }
 
     @Test
-    public void processNewBlockHashesMessageDoesNothingBecauseNodeIsSyncing() {
+    void processNewBlockHashesMessageDoesNothingBecauseNodeIsSyncing() {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
@@ -691,7 +689,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processTransactionsMessage() throws UnknownHostException {
+    void processTransactionsMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
@@ -714,25 +712,25 @@ public class NodeMessageHandlerTest {
 
         Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, Collections.singleton(sender2.getPeerNodeID()));
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assertions.assertFalse(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(10, pscoring.getTotalEventCounter());
-        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(10, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
 
         pscoring = scoring.getPeerScoring(sender2.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(10, pscoring.getTotalEventCounter());
-        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
+        Assertions.assertEquals(10, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
     }
 
     @Test
-    public void processRejectedTransactionsMessage() throws UnknownHostException {
+    void processRejectedTransactionsMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
@@ -749,21 +747,21 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(channelManager.getTransactions());
-        Assert.assertEquals(0, channelManager.getTransactions().size());
+        Assertions.assertNotNull(channelManager.getTransactions());
+        Assertions.assertEquals(0, channelManager.getTransactions().size());
 
-        Assert.assertTrue(scoring.isEmpty());
+        Assertions.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertTrue(pscoring.isEmpty());
-        Assert.assertEquals(0, pscoring.getTotalEventCounter());
-        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertTrue(pscoring.isEmpty());
+        Assertions.assertEquals(0, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
     }
 
     @Test
-    public void processTooMuchGasTransactionMessage() throws UnknownHostException {
+    void processTooMuchGasTransactionMessage() {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
@@ -786,22 +784,22 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(channelManager.getTransactions());
-        Assert.assertEquals(0, channelManager.getTransactions().size());
+        Assertions.assertNotNull(channelManager.getTransactions());
+        Assertions.assertEquals(0, channelManager.getTransactions().size());
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assertions.assertFalse(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
-        Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
+        Assertions.assertNotNull(pscoring);
+        Assertions.assertFalse(pscoring.isEmpty());
         // besides this
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        Assertions.assertEquals(1, pscoring.getTotalEventCounter());
+        Assertions.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
     }
 
     @Test
-    public void processTransactionsMessageUsingTransactionPool() throws UnknownHostException {
+    void processTransactionsMessageUsingTransactionPool() {
         TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
@@ -825,7 +823,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
+    void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));
@@ -834,12 +832,12 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(new SimplePeer(), message);
 
-        Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
+        Assertions.assertEquals(100, sbp.getRequestId());
+        Assertions.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
+    void processBlockHeadersRequestMessageUsingProcessor() {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
@@ -848,8 +846,8 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(new SimplePeer(), message);
 
-        Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(hash, sbp.getHash());
+        Assertions.assertEquals(100, sbp.getRequestId());
+        Assertions.assertArrayEquals(hash, sbp.getHash());
     }
 
     private static PeerScoringManager createPeerScoringManager() {
@@ -864,7 +862,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void fillMessageQueue_thenBlockNewMessages() throws UnknownHostException {
+    void fillMessageQueue_thenBlockNewMessages() {
 
     	TransactionGateway transactionGateway = mock(TransactionGateway.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
@@ -886,7 +884,7 @@ public class NodeMessageHandlerTest {
         }
 
         // assert that the surplus was not added
-        Assert.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
+        Assertions.assertEquals(config.getMessageQueueMaxSize(), (Integer) handler.getMessageQueueSize(sender));
 
     }
 }

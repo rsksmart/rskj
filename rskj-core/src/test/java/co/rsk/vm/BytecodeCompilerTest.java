@@ -18,105 +18,105 @@
 
 package co.rsk.vm;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
 /**
  * Created by ajlopez on 25/01/2017.
  */
-public class BytecodeCompilerTest {
+class BytecodeCompilerTest {
     @Test
-    public void compileSimpleOpcode() {
+    void compileSimpleOpcode() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(1, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileSimpleOpcodeWithSpaces() {
+    void compileSimpleOpcodeWithSpaces() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile(" ADD ");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(1, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileTwoOpcodes() {
+    void compileTwoOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD SUB");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
-        Assert.assertEquals(1, result[0]);
-        Assert.assertEquals(3, result[1]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
+        Assertions.assertEquals(1, result[0]);
+        Assertions.assertEquals(3, result[1]);
     }
 
     @Test
-    public void compileFourOpcodes() {
+    void compileFourOpcodes() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("ADD MUL SUB DIV");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(4, result.length);
-        Assert.assertEquals(1, result[0]);
-        Assert.assertEquals(2, result[1]);
-        Assert.assertEquals(3, result[2]);
-        Assert.assertEquals(4, result[3]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(4, result.length);
+        Assertions.assertEquals(1, result[0]);
+        Assertions.assertEquals(2, result[1]);
+        Assertions.assertEquals(3, result[2]);
+        Assertions.assertEquals(4, result[3]);
     }
 
     @Test
-    public void compileHexadecimalValueOneByte() {
+    void compileHexadecimalValueOneByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("0x01");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(1, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileHexadecimalValueTwoByte() {
+    void compileHexadecimalValueTwoByte() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("0x0102");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(2, result.length);
-        Assert.assertEquals(1, result[0]);
-        Assert.assertEquals(2, result[1]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(2, result.length);
+        Assertions.assertEquals(1, result[0]);
+        Assertions.assertEquals(2, result[1]);
     }
 
     @Test
-    public void compileSimpleOpcodeInLowerCase() {
+    void compileSimpleOpcodeInLowerCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("add");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(1, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(1, result[0]);
     }
 
     @Test
-    public void compileSimpleOpcodeInMixedCase() {
+    void compileSimpleOpcodeInMixedCase() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
         byte[] result = compiler.compile("Add");
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals(1, result[0]);
+        Assertions.assertNotNull(result);
+        Assertions.assertEquals(1, result.length);
+        Assertions.assertEquals(1, result[0]);
     }
 }

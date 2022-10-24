@@ -21,23 +21,23 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AccountStateTest {
+class AccountStateTest {
 
     @Test
-    public void testGetEncoded() {
+    void testGetEncoded() {
         String expected = "dc809a0100000000000000000000000000000000000000000000000000";
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         assertEquals(expected, ByteUtil.toHexString(acct.getEncoded()));
     }
 
     @Test
-    public void encodeDecodeStateWithZeroInStateFlags() {
+    void encodeDecodeStateWithZeroInStateFlags() {
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         AccountState result = new AccountState(acct.getEncoded());
 
@@ -47,7 +47,7 @@ public class AccountStateTest {
     }
 
     @Test
-    public void encodeDecodeStateWith128InStateFlags() {
+    void encodeDecodeStateWith128InStateFlags() {
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(128);
         AccountState result = new AccountState(acct.getEncoded());
@@ -58,7 +58,7 @@ public class AccountStateTest {
     }
 
     @Test
-    public void encodeDecodeStateWith238InStateFlags() {
+    void encodeDecodeStateWith238InStateFlags() {
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(238);
         AccountState result = new AccountState(acct.getEncoded());

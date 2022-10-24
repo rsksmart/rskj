@@ -21,44 +21,44 @@ package co.rsk.validators;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-public class GasLimitRuleTests {
+class GasLimitRuleTests {
     private GasLimitRule rule = new GasLimitRule(3000000);
 
     private BlockHeader blockHeader;
     private Block block;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         blockHeader = Mockito.mock(BlockHeader.class);
         block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
     }
 
     @Test // pass rule
-    public void gasLimitGreaterThanMinimumGasLimit() {
+    void gasLimitGreaterThanMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 + 1).getData());
         assertTrue(rule.isValid(block));
     }
 
     @Test // pass rule
-    public void gasLimitEqualMinimumGasLimit() {
+    void gasLimitEqualMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000).getData());
         assertTrue(rule.isValid(block));
     }
 
     @Test // no pass rule
-    public void gasLimitLessThanMinimumGasLimit() {
+    void gasLimitLessThanMinimumGasLimit() {
         Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 - 1).getData());
         assertFalse(rule.isValid(block));
     }

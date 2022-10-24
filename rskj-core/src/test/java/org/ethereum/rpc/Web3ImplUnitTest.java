@@ -1,6 +1,6 @@
 package org.ethereum.rpc;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -30,8 +30,8 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
@@ -53,15 +53,15 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.HexUtils;
 
-public class Web3ImplUnitTest {
+class Web3ImplUnitTest {
 
     private Blockchain blockchain;
 
     private Web3Impl target;
     private Web3InformationRetriever retriever;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         blockchain = mock(Blockchain.class);
         Block firstBlock = mock(Block.class);
         when(blockchain.getBestBlock()).thenReturn(firstBlock);
@@ -96,25 +96,25 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getBalance_stateCannotBeRetrieved() {
+    void eth_getBalance_stateCannotBeRetrieved() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
 
-        when(retriever.getInformationProvider(eq(id)))
+        when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> target.eth_getBalance(addr, id));
     }
 
     @Test
-    public void eth_getBalance() {
+    void eth_getBalance() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
-        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
-        when(aip.getBalance(eq(expectedAddress)))
+        when(retriever.getInformationProvider(id)).thenReturn(aip);
+        when(aip.getBalance(expectedAddress))
                 .thenReturn(new Coin(BigInteger.ONE));
 
         String result = target.eth_getBalance(addr, id);
@@ -123,7 +123,7 @@ public class Web3ImplUnitTest {
 
     @Test
     //validates invokeByBlockRef call
-    public void eth_getBalanceByBlockRef() {
+    void eth_getBalanceByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -138,12 +138,12 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getStorageAt_stateCannotBeRetrieved() {
+    void eth_getStorageAt_stateCannotBeRetrieved() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
         String storageIdx = "0x01";
 
-        when(retriever.getInformationProvider(eq(id)))
+        when(retriever.getInformationProvider(id))
                 .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
@@ -151,7 +151,7 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getStorageAt() {
+    void eth_getStorageAt() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
@@ -159,8 +159,8 @@ public class Web3ImplUnitTest {
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
-        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
-        when(aip.getStorageValue(eq(expectedAddress), eq(expectedIdx)))
+        when(retriever.getInformationProvider(id)).thenReturn(aip);
+        when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(DataWord.ONE);
 
         String result = target.eth_getStorageAt(addr, storageIdx, id);
@@ -170,7 +170,7 @@ public class Web3ImplUnitTest {
 
     @Test
     //validates invokeByBlockRef call
-    public void  eth_getStorageAtByBlockRef() {
+    void  eth_getStorageAtByBlockRef() {
         final String addr = "0x0011223344556677880011223344556677889900";
         final String storageIdx = "0x01";
         Map<String, String> blockRef = new HashMap<String, String>() {
@@ -188,7 +188,7 @@ public class Web3ImplUnitTest {
 
 
     @Test
-    public void eth_getStorageAtEmptyCell() {
+    void eth_getStorageAtEmptyCell() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
         RskAddress expectedAddress = new RskAddress(addr);
@@ -196,8 +196,8 @@ public class Web3ImplUnitTest {
         DataWord expectedIdx = DataWord.valueOf(HexUtils.stringHexToByteArray(storageIdx));
 
         AccountInformationProvider aip = mock(AccountInformationProvider.class);
-        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
-        when(aip.getStorageValue(eq(expectedAddress), eq(expectedIdx)))
+        when(retriever.getInformationProvider(id)).thenReturn(aip);
+        when(aip.getStorageValue(expectedAddress, expectedIdx))
                 .thenReturn(null);
 
         String result = target.eth_getStorageAt(addr, storageIdx, id);
@@ -206,23 +206,23 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getBlockTransactionCountByNumber_blockNotFound() {
+    void eth_getBlockTransactionCountByNumber_blockNotFound() {
         String id = "id";
 
-        when(retriever.getTransactions(eq(id))).thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
+        when(retriever.getTransactions(id)).thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> target.eth_getBlockTransactionCountByNumber(id));
     }
 
     @Test
-    public void eth_getBlockTransactionCountByNumber() {
+    void eth_getBlockTransactionCountByNumber() {
         String id = "id";
         List<Transaction> txs = new LinkedList<>();
         txs.add(mock(Transaction.class));
         txs.add(mock(Transaction.class));
 
-        when(retriever.getTransactions(eq(id))).thenReturn(txs);
+        when(retriever.getTransactions(id)).thenReturn(txs);
 
         String result = target.eth_getBlockTransactionCountByNumber(id);
 
@@ -231,7 +231,7 @@ public class Web3ImplUnitTest {
 
     @Test
     //validates invokeByBlockRef call
-    public void  eth_getCode() {
+    void  eth_getCode() {
         final String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -248,7 +248,7 @@ public class Web3ImplUnitTest {
 
     @Test
     //validates invokeByBlockRef call
-    public void  eth_callAtByBlockRef() {
+    void  eth_callAtByBlockRef() {
 
         CallArguments argsForCall = new CallArguments();
         argsForCall.setTo("0x0011223344556677880011223344556677889900");
@@ -269,7 +269,7 @@ public class Web3ImplUnitTest {
 
     @Test
     //validates invokeByBlockRef call
-    public void  eth_getBlockTransactionCountByBlockRef() {
+    void  eth_getBlockTransactionCountByBlockRef() {
         String addr = "0x0011223344556677880011223344556677889900";
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -284,11 +284,11 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getUncleCountByBlockHash_blockNotFound() {
+    void eth_getUncleCountByBlockHash_blockNotFound() {
         String hash = "0x4A54";
         byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
 
-        when(blockchain.getBlockByHash(eq(bytesHash))).thenReturn(null);
+        when(blockchain.getBlockByHash(bytesHash)).thenReturn(null);
 
         RskJsonRpcRequestException exception = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.eth_getUncleCountByBlockHash(hash));
@@ -297,7 +297,7 @@ public class Web3ImplUnitTest {
     }
 
     @Test
-    public void eth_getUncleCountByBlockHash() {
+    void eth_getUncleCountByBlockHash() {
 
         String hash = "0x0000000000000000000000000000000000000000000000000000000000004A54";
         byte[] bytesHash = HexUtils.stringHexToByteArray(hash);
@@ -308,23 +308,23 @@ public class Web3ImplUnitTest {
 
         Block block = mock(Block.class);
         when(block.getUncleList()).thenReturn(uncles);
-        when(blockchain.getBlockByHash(eq(bytesHash))).thenReturn(block);
+        when(blockchain.getBlockByHash(bytesHash)).thenReturn(block);
 
         String result = target.eth_getUncleCountByBlockHash(hash);
         assertEquals("0x2", result);
     }
 
     @Test
-    public void eth_getUncleCountByBlockNumber_notFound() {
+    void eth_getUncleCountByBlockNumber_notFound() {
         String identifier = "notFoundable";
-        when(retriever.getBlock(eq(identifier))).thenReturn(Optional.empty());
+        when(retriever.getBlock(identifier)).thenReturn(Optional.empty());
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> target.eth_getUncleCountByBlockNumber(identifier));
     }
 
     @Test
-    public void eth_getUncleCountByBlockNumber() {
+    void eth_getUncleCountByBlockNumber() {
         String identifier = "notFoundable";
         Block block = mock(Block.class);
         List<BlockHeader> uncles = new LinkedList<>();
@@ -332,7 +332,7 @@ public class Web3ImplUnitTest {
         uncles.add(mock(BlockHeader.class));
 
         when(block.getUncleList()).thenReturn(uncles);
-        when(retriever.getBlock(eq(identifier))).thenReturn(Optional.of(block));
+        when(retriever.getBlock(identifier)).thenReturn(Optional.of(block));
 
         String result = target.eth_getUncleCountByBlockNumber(identifier);
 
