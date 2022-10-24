@@ -1,3 +1,0 @@
-#!/bin/sh
-
-./gradlew --no-daemon --refresh-dependencies --write-verification-metadata sha256 assemble

@@ -1,0 +1,4 @@
+#!/bin/sh
+cd ../
+rm gradle/verification-metadata.xml
+./gradlew --no-daemon --refresh-dependencies --write-verification-metadata sha256 assemble
