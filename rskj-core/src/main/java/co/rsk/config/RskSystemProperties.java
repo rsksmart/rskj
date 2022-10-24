@@ -20,8 +20,10 @@ package co.rsk.config;
 
 import co.rsk.core.RskAddress;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.ConfigFileLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
 import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
@@ -31,9 +33,7 @@ import org.ethereum.crypto.HashUtil;
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -52,6 +52,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
+    private static final String PATH_REMAPS_CONFIG = "path-remaps";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -290,6 +291,21 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return configFromFiles.getStringList("messages.recorder.commands");
+    }
+
+    public Map<ConfigFileLoader.ConfigRemap, String> getConfigFilePathRemaps() {
+        if (!configFromFiles.hasPath(PATH_REMAPS_CONFIG)) {
+            return Collections.emptyMap();
+        }
+
+        Map<ConfigFileLoader.ConfigRemap, String> map = new HashMap<>();
+        for (Map.Entry<String, ConfigValue> e : configFromFiles.getConfig(PATH_REMAPS_CONFIG).entrySet()) {
+            ConfigFileLoader.ConfigRemap configRemap = ConfigFileLoader.ConfigRemap.lookUp(e.getKey())
+                    .orElseThrow(() -> new IllegalStateException("Invalid remap: " + e.getKey()));
+            map.put(configRemap, (String) e.getValue().unwrapped());
+        }
+
+        return map;
     }
 
     public long getTargetGasLimit() {

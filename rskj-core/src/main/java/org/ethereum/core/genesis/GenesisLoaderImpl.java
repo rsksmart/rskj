@@ -24,6 +24,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.ConfigFileLoader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -54,6 +55,9 @@ import java.util.Map;
  * 4. Registers the genesis state root in the state root handler
  */
 public class GenesisLoaderImpl implements GenesisLoader {
+
+    private static final ConfigFileLoader.ResourceLoader RESOURCE_LOADER = GenesisLoaderImpl.class::getResourceAsStream;
+
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private static final Logger logger = LoggerFactory.getLogger(GenesisLoaderImpl.class);
@@ -81,7 +85,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 activationConfig,
                 stateRootHandler,
                 trieStore,
-                GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
+                ConfigFileLoader.loadConfigurationFile("/genesis/" + genesisFile, RESOURCE_LOADER, ConfigFileLoader.ConfigRemap.GENESIS),
                 initialNonce,
                 isRsk,
                 useRskip92Encoding,

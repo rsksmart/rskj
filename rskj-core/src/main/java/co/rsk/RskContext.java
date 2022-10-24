@@ -85,6 +85,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.ConfigFileLoader;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -155,6 +156,8 @@ import java.util.stream.Stream;
 public class RskContext implements NodeContext, NodeBootstrapper {
 
     private static final Logger logger = LoggerFactory.getLogger(RskContext.class);
+
+    private static final ConfigFileLoader.ResourceLoader RESOURCE_LOADER = RskContext.class.getClassLoader()::getResourceAsStream;
 
     private static final String CACHE_FILE_NAME = "rskcache";
 
@@ -758,7 +761,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (buildInfo == null) {
             try {
                 Properties props = new Properties();
-                InputStream buildInfoFile = RskContext.class.getClassLoader().getResourceAsStream("build-info.properties");
+                InputStream buildInfoFile = ConfigFileLoader.loadConfigurationFile("build-info.properties", RESOURCE_LOADER, ConfigFileLoader.ConfigRemap.BUILD_INFO);
                 props.load(buildInfoFile);
                 buildInfo = new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
             } catch (IOException | NullPointerException e) {
@@ -1389,7 +1392,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized RskSystemProperties buildRskSystemProperties() {
         checkIfNotClosed();
 
-        return new RskSystemProperties(new ConfigLoader(cliArgs));
+        RskSystemProperties props = new RskSystemProperties(new ConfigLoader(cliArgs));
+        ConfigFileLoader.setRemaps(props.getConfigFilePathRemaps());
+        return props;
     }
 
     protected synchronized SyncConfiguration buildSyncConfiguration() {
