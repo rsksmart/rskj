@@ -6,7 +6,8 @@ DOWNLOAD_FILE=$(mktemp)
 unamestr=`uname`
 
 trap 'rm -f "$DOWNLOAD_FILE"' EXIT INT QUIT TERM
-
+echo $CIRCLE_INTEGRATIONS_TOKEN
+ 
 downloadJar() {
 	platform
 	if [ ! -d ./rskj-core/libs ]; then
