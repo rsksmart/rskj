@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2022 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,16 +18,20 @@
 
 package co.rsk.net;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+public class NodeMsgTraceInfo {
+    private final String messageId;
+    private final String sessionId;
 
-import co.rsk.net.messages.Message;
+    public NodeMsgTraceInfo(String messageId, String sessionId) {
+        this.messageId = messageId;
+        this.sessionId = sessionId;
+    }
 
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
+    public String getMessageId() {
+        return messageId;
+    }
 
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
-
-    long getMessageQueueSize();
+    public String getSessionId() {
+        return sessionId;
+    }
 }

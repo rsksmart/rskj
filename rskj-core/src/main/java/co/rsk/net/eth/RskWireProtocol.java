@@ -20,10 +20,7 @@ package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.MessageHandler;
-import co.rsk.net.NodeID;
-import co.rsk.net.Status;
-import co.rsk.net.StatusResolver;
+import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
@@ -105,57 +102,62 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
-        MDC.put(TraceUtils.RSK_WIRE_TRACE_ID, TraceUtils.getRandomId());
-        loggerNet.debug("Read message: {}", msg);
+        String msgTraceId = TraceUtils.getRandomId();
+        String sessionId = TraceUtils.toId(channel.getPeerId());
+        try (MDC.MDCCloseable msgTrace = MDC.putCloseable(TraceUtils.MSG_ID, msgTraceId);
+             MDC.MDCCloseable sessionTrace = MDC.putCloseable(TraceUtils.SESSION_ID, sessionId)) {
+            loggerNet.debug("Read message: {}", msg);
 
-        if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
-            loggerNet.trace("EthHandler invoke: [{}]", msg.getCommand());
-        }
+            if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
+                loggerNet.trace("EthHandler invoke: [{}]", msg.getCommand());
+            }
 
-        ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
+            ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
 
-        channel.getNodeStatistics().getEthInbound().add();
+            channel.getNodeStatistics().getEthInbound().add();
 
-        msgQueue.receivedMessage(msg);
+            msgQueue.receivedMessage(msg);
 
-        if (this.messageRecorder != null) {
-            this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
-        }
+            if (this.messageRecorder != null) {
+                this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
+            }
 
-        if (!checkGoodReputation(ctx)) {
-            ctx.disconnect();
-            return;
-        }
+            if (!checkGoodReputation(ctx)) {
+                ctx.disconnect();
+                return;
+            }
 
-        switch (msg.getCommand()) {
-            case STATUS:
-                processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
-                break;
-            case RSK_MESSAGE:
-                RskMessage rskmessage = (RskMessage)msg;
-                Message message = rskmessage.getMessage();
+            switch (msg.getCommand()) {
+                case STATUS:
+                    processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
+                    break;
+                case RSK_MESSAGE:
+                    RskMessage rskmessage = (RskMessage) msg;
+                    Message message = rskmessage.getMessage();
 
-                switch (message.getMessageType()) {
-                    case BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage)message).getBlock().getNumber(), ((BlockMessage)message).getBlock().getPrintableHash(), channel.getPeerNodeID());
-                        syncStats.addBlocks(1);
-                        break;
-                    case GET_BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Get Block Message: Block {} from {}", ByteUtil.toHexString(((GetBlockMessage)message).getBlockHash()), channel.getPeerNodeID());
-                        syncStats.getBlock();
-                        break;
-                    case STATUS_MESSAGE:
-                        loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage)message).getStatus().getBestBlockNumber(), ByteUtil.toHexString(((StatusMessage)message).getStatus().getBestBlockHash()), channel.getPeerNodeID());
-                        syncStats.addStatus();
-                        break;
-                }
+                    switch (message.getMessageType()) {
+                        case BLOCK_MESSAGE:
+                            loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage) message).getBlock().getNumber(), ((BlockMessage) message).getBlock().getPrintableHash(), channel.getPeerNodeID());
+                            syncStats.addBlocks(1);
+                            break;
+                        case GET_BLOCK_MESSAGE:
+                            loggerNet.trace("RSK Get Block Message: Block {} from {}", ByteUtil.toHexString(((GetBlockMessage) message).getBlockHash()), channel.getPeerNodeID());
+                            syncStats.getBlock();
+                            break;
+                        case STATUS_MESSAGE:
+                            loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage) message).getStatus().getBestBlockNumber(), ByteUtil.toHexString(((StatusMessage) message).getStatus().getBestBlockHash()), channel.getPeerNodeID());
+                            syncStats.addStatus();
+                            break;
+                    }
 
-                if (this.messageHandler != null) {
-                    this.messageHandler.postMessage(channel, rskmessage.getMessage());
-                }
-                break;
-            default:
-                break;
+                    if (this.messageHandler != null) {
+                        NodeMsgTraceInfo nodeMsgTraceInfo = new NodeMsgTraceInfo(msgTraceId, sessionId);
+                        this.messageHandler.postMessage(channel, message, nodeMsgTraceInfo);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -219,7 +221,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         //TODO(mmarquez): and if not ???
         if (socketAddress instanceof InetSocketAddress) {
 
-            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+            InetAddress address = ((InetSocketAddress) socketAddress).getAddress();
 
             if (!peerScoringManager.hasGoodReputation(address)) {
                 return false;
@@ -238,9 +240,9 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
     private void reportEventToPeerScoring(EventType event) {
         peerScoringManager.recordEvent(
-                        channel.getPeerNodeID(),
-                        channel.getAddress(),
-                        event);
+                channel.getPeerNodeID(),
+                channel.getAddress(),
+                event);
     }
 
 

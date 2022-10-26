@@ -25,7 +25,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import org.slf4j.MDC;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
@@ -58,7 +57,6 @@ public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<W
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
-        MDC.clear();
         ctx.flush();
     }
 }

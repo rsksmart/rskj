@@ -18,21 +18,6 @@
 
 package co.rsk.net;
 
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.server.ChannelManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
@@ -46,6 +31,24 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
 import co.rsk.util.FormatUtils;
+import co.rsk.util.TraceUtils;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.net.server.ChannelManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
 
@@ -134,27 +137,27 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     @Override
-    public void postMessage(Peer sender, Message message) {
+    public void postMessage(Peer sender, Message message, NodeMsgTraceInfo nodeMsgTraceInfo) {
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
         // There's an obvious race condition here, but fear not.
         // receivedMessages and logger are thread-safe
         // cleanMsgTimestamp is a long replaced by the next value, we don't care
         // enough about the precision of the value it takes
         cleanExpiredMessages();
-        tryAddMessage(sender, message);
+        tryAddMessage(sender, message, nodeMsgTraceInfo);
         logger.trace("End post message (queue size {})", this.queue.size());
     }
 
     /**
      * verify if the message is allowed, and if so, add it to the queue
      */
-    private void tryAddMessage(Peer sender, Message message) {
+    private void tryAddMessage(Peer sender, Message message, NodeMsgTraceInfo nodeMsgTraceInfo) {
         double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
         boolean allowed = controlMessageIngress(sender, message, score);
 
         if (allowed) {
-            this.addMessage(sender, message, score);
+            this.addMessage(sender, message, score, nodeMsgTraceInfo);
         }
     }
 
@@ -227,13 +230,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return !contains;
     }
 
-    private void addMessage(Peer sender, Message message, double score) {
+    private void addMessage(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
         // optimistic increment() to ensure it is called before decrement() on processMessage()
         // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
         // also, while queue implementation stays unbounded, offer() will never return false
         messageCounter.increment(sender);
-
-        boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+        MessageTask messageTask = new MessageTask(sender, message, score, nodeMsgTraceInfo);
+        boolean messageAdded = this.queue.offer(messageTask);
         if (!messageAdded) {
             messageCounter.decrement(sender);
             logger.warn("Unexpected path. Is message queue bounded now?");
@@ -295,6 +298,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
                 if (task != null) {
+                    addTracingKeys(task.getNodeMsgTraceInfo());
                     logger.trace("Start task");
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
@@ -311,10 +315,24 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             } catch (IllegalAccessError e) { // Usually this is been thrown by DB instances when closed
                 logger.warn("Message handler got `{}`. Exiting", e.getClass().getSimpleName(), e);
                 return;
+            } finally {
+                removeTracingKeys();
             }
         }
 
         logger.trace("Message handler was finished. Exiting");
+    }
+
+    private void addTracingKeys(NodeMsgTraceInfo nodeMsgTraceInfo) {
+        if (nodeMsgTraceInfo != null) {
+            MDC.put(TraceUtils.MSG_ID, nodeMsgTraceInfo.getMessageId());
+            MDC.put(TraceUtils.SESSION_ID, nodeMsgTraceInfo.getSessionId());
+        }
+    }
+
+    private void removeTracingKeys() {
+        MDC.remove(TraceUtils.MSG_ID);
+        MDC.remove(TraceUtils.SESSION_ID);
     }
 
     private void updateTimedEvents() {
@@ -349,11 +367,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         private final Peer sender;
         private final Message message;
         private final double score;
+        private final NodeMsgTraceInfo nodeMsgTraceInfo;
 
-        public MessageTask(Peer sender, Message message, double score) {
+        public MessageTask(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
             this.sender = sender;
             this.message = message;
             this.score = score;
+            this.nodeMsgTraceInfo = nodeMsgTraceInfo;
         }
 
         public Peer getSender() {
@@ -362,6 +382,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         public Message getMessage() {
             return this.message;
+        }
+
+        public NodeMsgTraceInfo getNodeMsgTraceInfo() {
+            return nodeMsgTraceInfo;
         }
 
         @Override

@@ -25,14 +25,11 @@ import org.slf4j.MDC;
 
 public class LogTracingFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-    public static final String X_TRACE_ID = "X-TRACE-ID";
-
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws InterruptedException {
-        String requestID = request.headers().contains(X_TRACE_ID) ? request.headers().get(X_TRACE_ID)
-                : TraceUtils.getRandomId();
-        MDC.put(TraceUtils.JSON_RPC_REQ_ID, requestID);
         // retain the request so it isn't released automatically by SimpleChannelInboundHandler
-        ctx.fireChannelRead(request.retain());
+        try (MDC.MDCCloseable traceId = MDC.putCloseable(TraceUtils.JSON_RPC_REQ_ID, TraceUtils.getRandomId())) {
+            ctx.fireChannelRead(request.retain());
+        }
     }
 }
