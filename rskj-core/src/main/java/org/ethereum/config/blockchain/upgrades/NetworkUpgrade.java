@@ -29,7 +29,7 @@ public enum NetworkUpgrade {
     TWOTOTHREE("twoToThree"),
     IRIS300("iris300"),
     HOP400("hop400"),
-    HOP500("hop500");
+    HOP401("hop401");
 
     private String name;
 
