@@ -1,5 +1,4 @@
 #!/bin/sh
-cd ../
 set -e
 
 # remove the verification-metadata.xml file with old deps (if any), and replace it with the template
