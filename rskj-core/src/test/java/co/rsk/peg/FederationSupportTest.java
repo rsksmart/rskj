@@ -90,7 +90,7 @@ public class FederationSupportTest {
         when(provider.getNewFederation()).thenReturn(newFederation);
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge(any())).thenReturn(10L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(oldFederation));
     }
@@ -103,7 +103,7 @@ public class FederationSupportTest {
         when(provider.getNewFederation()).thenReturn(newFederation);
         when(provider.getOldFederation()).thenReturn(oldFederation);
         when(executionBlock.getNumber()).thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge(any())).thenReturn(10L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
