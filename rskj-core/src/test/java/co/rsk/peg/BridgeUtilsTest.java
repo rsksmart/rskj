@@ -1161,7 +1161,11 @@ public class BridgeUtilsTest {
         testIsValidPegInTx_fromP2shErpScriptSender(true, randomAddress, false);
     }
 
-    private void testIsValidPegInTx_fromP2shErpScriptSender(boolean isRskip353Active, Address destinationAddress, boolean expectedResult) {
+    private void testIsValidPegInTx_fromP2shErpScriptSender(
+        boolean isRskip353Active,
+        Address destinationAddress,
+        boolean expectedResult) {
+
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
@@ -1195,7 +1199,6 @@ public class BridgeUtilsTest {
             activations)
         );
     }
-
 
     @Test
     public void testTxIsProcessableInLegacyVersion() {
@@ -3594,7 +3597,7 @@ public class BridgeUtilsTest {
         );
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -3634,7 +3637,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -3663,7 +3666,7 @@ public class BridgeUtilsTest {
         Assert.assertTrue(foundUTXOs.isEmpty());
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -3697,7 +3700,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -3744,7 +3747,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
