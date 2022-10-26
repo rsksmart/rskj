@@ -39,7 +39,7 @@ public class ActivationConfigTest {
             "    twoToThree: 0",
             "    iris300: 0",
             "    hop400: 0",
-            "    hop500: 0",
+            "    hop401: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
