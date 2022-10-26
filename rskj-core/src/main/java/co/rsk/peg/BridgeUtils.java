@@ -412,7 +412,8 @@ public class BridgeUtils {
                     // There's no reason for someone to send an actual pegin of this type before the new fed is active.
                     // TODO: Remove this if block after RSKIP353 activation
                     if (!activations.isActive(ConsensusRule.RSKIP353) &&
-                        redeemScriptParser.getMultiSigType() == MultiSigType.P2SH_ERP_FED) {
+                        (redeemScriptParser.getMultiSigType() == MultiSigType.P2SH_ERP_FED ||
+                        redeemScriptParser.getMultiSigType() == MultiSigType.FAST_BRIDGE_P2SH_ERP_FED)) {
                         String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
                         logger.warn("[isValidPegInTx] {}", message);
                         throw new ScriptException(message);
@@ -442,7 +443,7 @@ public class BridgeUtils {
         Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
         boolean isUTXOsOrTxAmountBelowMinimum =
-            activations.isActive(RSKIP293)? isAnyUTXOAmountBelowMinimum(
+            activations.isActive(RSKIP293) ? isAnyUTXOAmountBelowMinimum(
                 activations,
                 bridgeConstants,
                 tx,
