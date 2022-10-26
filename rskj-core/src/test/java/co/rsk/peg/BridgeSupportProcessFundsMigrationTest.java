@@ -43,7 +43,7 @@ public class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
-    public void processFundsMigration_in_migration_age_after_rskip_353_activation_testnet() throws IOException {
+    public void processFundsMigration_in_migration_age_after_rskip_357_activation_testnet() throws IOException {
         test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, true);
     }
 
@@ -58,7 +58,7 @@ public class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
-    public void processFundsMigration_past_migration_age_after_rskip_353_activation_testnet() throws IOException {
+    public void processFundsMigration_past_migration_age_after_rskip_357_activation_testnet() throws IOException {
         test_processFundsMigration(BridgeTestNetConstants.getInstance(), true, true, false);
     }
 
@@ -73,7 +73,7 @@ public class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
-    public void processFundsMigration_in_migration_age_after_rskip_353_activation_mainnet() throws IOException {
+    public void processFundsMigration_in_migration_age_after_rskip_357_activation_mainnet() throws IOException {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, true);
     }
 
@@ -88,19 +88,19 @@ public class BridgeSupportProcessFundsMigrationTest {
     }
 
     @Test
-    public void processFundsMigration_past_migration_age_after_rskip_353_activation_mainnet() throws IOException {
+    public void processFundsMigration_past_migration_age_after_rskip_357_activation_mainnet() throws IOException {
         test_processFundsMigration(BridgeMainNetConstants.getInstance(), true, true, false);
     }
 
     private void test_processFundsMigration(
         BridgeConstants bridgeConstants,
         boolean isRskip146Active,
-        boolean isRskip353Active,
+        boolean isRskip357Active,
         boolean inMigrationAge) throws IOException {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(isRskip146Active);
-        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+        when(activations.isActive(ConsensusRule.RSKIP357)).thenReturn(isRskip357Active);
 
         BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
 
