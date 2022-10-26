@@ -5466,12 +5466,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
     @Test
     public void getTransactionType_pegout_tx() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .build();
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = new Address(
             btcRegTestParams,
-                        Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
+            Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
         );
 
         // Create a tx from the Fed to a random btc address
@@ -5780,6 +5782,103 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         tx.getInput(0).setScriptSig(inputScript);
 
         Assert.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+    }
+
+    @Test
+    public void getTransactionType_sentFromP2SHErpFed_beforeRskip353_pegin() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withActivations(activations)
+            .build();
+
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            bridgeConstantsRegtest.getBtcParams(),
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        tx.addOutput(Coin.COIN, activeFederation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+
+        Assert.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+    }
+
+    @Test
+    public void getTransactionType_sentFromP2SHErpFed_afterRskip353_pegout() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withActivations(activations)
+            .build();
+
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            bridgeConstantsRegtest.getBtcParams(),
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        tx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams()));
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+
+        // Sign it using the federation members
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(activeFederation);
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+        tx.getInput(0).setScriptSig(inputScript);
+
+        Sha256Hash sighash = tx.hashForSignature(
+            0,
+            redeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        for (int i = 0; i < activeFederation.getNumberOfSignaturesRequired(); i++) {
+            BtcECKey federatorPrivKey = federationPrivateKeys.get(i);
+            BtcECKey federatorPublicKey = activeFederation.getBtcPublicKeys().get(i);
+
+            BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
+            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+
+            int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+            inputScript = ScriptBuilder.updateScriptWithSignature(
+                inputScript,
+                txSig.encodeToBitcoin(),
+                sigIndex,
+                1,
+                1
+            );
+        }
+        tx.getInput(0).setScriptSig(inputScript);
+
+        Assert.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
