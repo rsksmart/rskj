@@ -234,6 +234,6 @@ public class FederationSupport {
 
     private boolean shouldFederationBeActive(Federation federation) {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge(activations);
+        return federationAge >= bridgeConstants.getFederationActivationAge();
     }
 }

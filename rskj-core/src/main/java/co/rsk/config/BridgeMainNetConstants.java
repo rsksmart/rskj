@@ -94,7 +94,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         federationActivationAge = 18500L;
-        specialCaseFederationActivationAge = 5_760; // 48 hours considering 1 block every 30 seconds
 
         fundsMigrationAgeSinceActivationBegin = 0L;
         fundsMigrationAgeSinceActivationEnd = 10585L;

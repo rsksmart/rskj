@@ -105,7 +105,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         );
 
         federationActivationAge = 10L;
-        specialCaseFederationActivationAge = 10L;
 
         fundsMigrationAgeSinceActivationBegin = 15L;
         fundsMigrationAgeSinceActivationEnd = 100L;
