@@ -1137,6 +1137,67 @@ public class BridgeUtilsTest {
     }
 
     @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(false, activeFederationAddress, true);
+    }
+
+    // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(false, randomAddress, true);
+    }
+
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(true, activeFederationAddress, false);
+    }
+
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(true, randomAddress, false);
+    }
+
+    private void testIsValidPegInTx_fromP2shErpScriptSender(boolean isRskip353Active, Address destinationAddress, boolean expectedResult) {
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            networkParameters,
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+
+        Assert.assertEquals(expectedResult, BridgeUtils.isValidPegInTx(
+            tx,
+            activeFederation,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations)
+        );
+    }
+
+
+    @Test
     public void testTxIsProcessableInLegacyVersion() {
         // Before hard fork
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);

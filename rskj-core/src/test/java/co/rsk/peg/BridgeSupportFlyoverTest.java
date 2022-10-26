@@ -90,7 +90,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -231,7 +231,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -374,7 +374,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -541,7 +541,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1575,7 +1575,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1758,7 +1758,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -1951,7 +1951,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2144,7 +2144,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2310,7 +2310,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
@@ -2491,7 +2491,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
         // in order to be able to always get the current retiring federation when it's been mock with no need of creating
         // unnecessary blocks when testing on mainnet.
-        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge(activations)).when(bridgeConstants).getFederationActivationAge(activations);
+        doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         Context btcContext = mock(Context.class);
         doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();

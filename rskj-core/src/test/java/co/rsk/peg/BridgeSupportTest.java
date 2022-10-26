@@ -6372,7 +6372,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         Block block = mock(Block.class);
         // Set block right after the migration should start
         long blockNumber = newFed.getCreationBlockNumber() +
-            bridgeConstantsRegtest.getFederationActivationAge(activations) +
+            bridgeConstantsRegtest.getFederationActivationAge() +
             bridgeConstantsRegtest.getFundsMigrationAgeSinceActivationBegin() +
             1;
         when(block.getNumber()).thenReturn(blockNumber);

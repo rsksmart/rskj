@@ -91,7 +91,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         );
 
         federationActivationAge = 10L;
-        specialCaseFederationActivationAge = 10L;
 
         fundsMigrationAgeSinceActivationBegin = 15L;
         fundsMigrationAgeSinceActivationEnd = 150L;
