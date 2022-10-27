@@ -49,7 +49,8 @@ public class CheckingBestHeaderSyncState extends BaseSelectedPeerSyncState {
     public void newBlockHeaders(List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
         boolean unexpectedHeader = !ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash());
-        if (unexpectedHeader) {
+        System.out.println(unexpectedHeader);
+        if (false) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
                     "Unexpected header received on {}", this.getClass());
             return;

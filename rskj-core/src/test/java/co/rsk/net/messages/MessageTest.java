@@ -25,7 +25,9 @@ import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -194,6 +196,10 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockHeadersResponseMessage() {
+        ActivationConfig config = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351);
+        BlockFactory blockFactory = new BlockFactory(config);
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), config);
+
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
@@ -220,7 +226,44 @@ public class MessageTest {
         for (int k = 0; k < headers.size(); k++) {
             Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
             Assert.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assert.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
+            Assert.assertArrayEquals(headers.get(k).getEncodedForHeaderMessage(), newmessage.getBlockHeaders().get(k).getEncodedForHeaderMessage());
+        }
+    }
+
+    // public void encodeDecodeBlockHeadersResponseMessageWithRSKIP351BeforeActivation() {
+
+    @Test
+    public void encodeDecodeBlockHeadersResponseMessageWithRSKIP351AfterActivation() {
+        ActivationConfig config = ActivationConfigsForTest.all();
+        BlockFactory blockFactory = new BlockFactory(config);
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), config);
+
+        List<BlockHeader> headers = new ArrayList<>();
+
+        for (int k = 1; k <= 4; k++)
+            headers.add(blockGenerator.getBlock(k).getHeader());
+
+        BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(100, headers);
+
+        byte[] encoded = message.getEncoded();
+        BlockHeadersResponseMessage result = (BlockHeadersResponseMessage) Message.create(blockFactory, encoded);
+
+        for (int k = 0; k < 4; k++)
+            result.getBlockHeaders().get(k).setExtension(headers.get(k).getExtension());
+
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, result.getMessageType());
+
+        BlockHeadersResponseMessage newmessage =  result;
+
+        Assert.assertEquals(100, newmessage.getId());
+
+        Assert.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
+
+        for (int k = 0; k < headers.size(); k++) {
+            Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
+            Assert.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
+            Assert.assertArrayEquals(headers.get(k).getEncodedForHeaderMessage(), newmessage.getBlockHeaders().get(k).getEncodedForHeaderMessage());
         }
     }
 

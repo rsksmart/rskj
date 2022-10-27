@@ -3,6 +3,8 @@ package org.ethereum.core;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
+import static org.ethereum.crypto.HashUtil.keccak256;
+
 public class BlockHeaderExtension {
     private final byte headerVersion;
     private final byte[] logsBloom;
@@ -27,6 +29,17 @@ public class BlockHeaderExtension {
                 RLP.encodeByte(this.getHeaderVersion()),
                 RLP.encodeElement(this.getLogsBloom())
         );
+    }
+
+    public byte[] getEncodedForHeaderMessage() {
+        if (this.headerVersion == 0x1) {
+            byte[] logsBloomField = new byte[this.logsBloom.length];
+            logsBloomField[0] = this.headerVersion;
+            byte[] logsBloomHash = keccak256(this.logsBloom);
+            System.arraycopy(logsBloomHash, 0, logsBloomField, 1, logsBloomHash.length);
+            return RLP.encodeElement(logsBloomField);
+        }
+        return RLP.encodeElement(this.logsBloom);
     }
 
     public static BlockHeaderExtension fromEncoded(byte[] encoded) {

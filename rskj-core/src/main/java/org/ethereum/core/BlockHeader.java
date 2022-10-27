@@ -174,6 +174,7 @@ public class BlockHeader {
         if (extension.getHeaderVersion() == 0x1) {
             this.logsBloom = extension.getLogsBloom();
         }
+        this.hash = null;
     }
 
     @VisibleForTesting
@@ -328,7 +329,9 @@ public class BlockHeader {
 
     public Keccak256 getHash() {
         if (this.hash == null) {
-            this.hash = new Keccak256(HashUtil.keccak256(getEncoded()));
+            // the hash of the header includes the hash of the header extension
+            // this way including the contents of the extension in the header's hash
+            this.hash = new Keccak256(HashUtil.keccak256(getEncodedForHeaderMessage()));
         }
 
         return this.hash;
@@ -338,6 +341,10 @@ public class BlockHeader {
         // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
         // calculating RSKIP92 block hashes
         return this.getEncoded(true, true);
+    }
+
+    public byte[] getEncodedForHeaderMessage() {
+        return this.getEncoded(true, true, true);
     }
 
     public byte[] getEncoded() {
@@ -351,6 +358,10 @@ public class BlockHeader {
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
+        return getEncoded(withMergedMiningFields, withMerkleProofAndCoinbase, false);
+    }
+
+    private byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean encodeForHeaderMessage) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -370,7 +381,9 @@ public class BlockHeader {
 
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
-        byte[] logsBloom = RLP.encodeElement(this.logsBloom);
+        byte[] logsBloom = !encodeForHeaderMessage
+                ? RLP.encodeElement(this.logsBloom)
+                : BlockHeaderExtension.fromHeader(this).getEncodedForHeaderMessage();
         byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);

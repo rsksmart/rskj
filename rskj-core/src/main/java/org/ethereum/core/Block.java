@@ -74,16 +74,15 @@ public class Block {
     private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, BlockHeaderExtension headerExtension, boolean sealed, boolean checktxs) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
 
-        if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
-            String message = String.format(
-                    "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
-            );
-            panicProcessor.panic("txroot", message);
-            throw new IllegalArgumentException(message);
-        }
+        if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot))
+            panicAndThrow("Transactions trie root validation failed for block %d %s", header);
 
         if (headerExtension != null) {
-            // check hash
+            if (!java.util.Arrays.equals(
+                    BlockHeaderExtension.fromHeader(header).getEncodedForHeaderMessage(),
+                    header.getLogsBloom()
+            )) panicAndThrow("Header extension validation failed for block %d %s", header);
+
             header.setExtension(headerExtension);
         }
 
@@ -91,6 +90,14 @@ public class Block {
         this.transactionsList = ImmutableList.copyOf(transactionsList);
         this.uncleList = ImmutableList.copyOf(uncleList);
         this.sealed = sealed;
+    }
+
+    private void panicAndThrow(String format, BlockHeader header) {
+        String message = String.format(
+                format, header.getNumber(), header.getHash()
+        );
+        panicProcessor.panic("txroot", message);
+        throw new IllegalArgumentException(message);
     }
 
     public void seal() {

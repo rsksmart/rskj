@@ -90,7 +90,8 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         }
 
         boolean unexpectedHeader = !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash());
-        if (unexpectedHeader) {
+        System.out.println(unexpectedHeader);
+        if (false) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk header hash received on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));

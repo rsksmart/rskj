@@ -18,13 +18,22 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 import java.net.InetAddress;
 import java.util.Objects;
+
+import static org.mockito.Mockito.mock;
 
 public class SimpleNodeChannel implements Peer {
     private SimpleNode sender;
@@ -42,7 +51,10 @@ public class SimpleNodeChannel implements Peer {
 
     public void sendMessage(Message message) {
         if (this.receiver != null)
-            this.receiver.receiveMessageFrom(this.sender, message);
+            // this.receiver.receiveMessageFrom(this.sender, message);
+            this.receiver.receiveMessageFrom(this.sender, Message.create(
+                    new BlockFactory(ActivationConfigsForTest.all()), RLP.decodeList(message.getEncoded())
+            ));
     }
 
     public NodeID getPeerNodeID() {
