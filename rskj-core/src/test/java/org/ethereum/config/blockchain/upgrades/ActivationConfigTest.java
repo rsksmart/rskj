@@ -178,6 +178,6 @@ class ActivationConfigTest {
     @Test
     public void headerVersion1() {
         ActivationConfig config = ActivationConfigsForTest.all();
-        Assertions.assertEquals((byte) 0x1,, config.getHeaderVersion(10));
+        Assertions.assertEquals((byte) 0x1, config.getHeaderVersion(10));
     }
 }
