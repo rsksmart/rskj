@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
@@ -11,10 +12,12 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.flyover.FlyoverFederationInformation;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -24,8 +27,12 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.MapSnapshot;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.InternalTransaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -146,6 +153,8 @@ public class PowpegMigrationTest {
         // Create Pending federation (Doing this to avoid voting the pending Federation)
         List<FederationMember> newPowpegMembers = keysTo.stream().map(theseKeys -> new FederationMember(theseKeys.getLeft(), theseKeys.getMiddle(), theseKeys.getRight())).collect(Collectors.toList());
         PendingFederation pendingFederation = new PendingFederation(newPowpegMembers);
+        // Create the Federation just to provide it to utilitary methods
+        Federation newFederation = pendingFederation.buildFederation(Instant.now(), 0, bridgeConstants, activations);
 
         // Set pending powpeg information
         bridgeStorageProvider.setPendingFederation(pendingFederation);
@@ -201,6 +210,8 @@ public class PowpegMigrationTest {
 
         testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, false);
 
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, false);
+
         /***
          * Activation phase
          */
@@ -242,6 +253,8 @@ public class PowpegMigrationTest {
          */
 
         testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, true);
+
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, true);
 
         /***
          * Migration phase
@@ -299,6 +312,8 @@ public class PowpegMigrationTest {
          */
 
         testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, true);
+
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, true);
 
         // Should be migrated
 
@@ -386,6 +401,8 @@ public class PowpegMigrationTest {
 
         testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, false, true);
 
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, false, true);
+
     }
 
     private void testPegins(
@@ -439,6 +456,201 @@ public class PowpegMigrationTest {
         Transaction voteTx = mock(Transaction.class);
         when(voteTx.getSender()).thenReturn(new RskAddress(bridgeConstants.getFederationChangeAuthorizer().authorizedAddresses.get(0)));
         assertEquals(expectedResult, bridgeSupport.voteFederationChange(voteTx, createSpec).intValue());
+    }
+
+    private void testFlyoverPegins(
+            BridgeSupport bridgeSupport,
+            BridgeConstants bridgeConstants,
+            BridgeStorageProvider bridgeStorageProvider,
+            BtcBlockStore btcBlockStore,
+            Federation recipientOldFederation,
+            Federation recipientNewFederation,
+            boolean shouldPeginToOldPowpegWork,
+            boolean shouldPeginToNewPowpegWork
+    ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        Pair<BtcTransaction, Keccak256> flyoverPeginToRetiringPowpeg =
+                createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore, recipientOldFederation, true, true, true);
+
+        assertEquals(
+                shouldPeginToOldPowpegWork,
+                bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                        flyoverPeginToRetiringPowpeg.getLeft().getHash(),
+                        flyoverPeginToRetiringPowpeg.getRight()
+                )
+        );
+        assertEquals(
+                shouldPeginToOldPowpegWork,
+                bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
+        );
+        assertFalse(
+                bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
+        );
+
+        Pair<BtcTransaction, Keccak256> flyoverPeginToNewPowpeg =
+                createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore, recipientNewFederation, true, true, true);
+
+        assertEquals(
+                shouldPeginToNewPowpegWork,
+                bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                        flyoverPeginToNewPowpeg.getLeft().getHash(),
+                        flyoverPeginToNewPowpeg.getRight()
+                )
+        );
+        assertFalse(
+                bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
+        );
+        assertEquals(
+                shouldPeginToNewPowpegWork,
+                bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
+        );
+    }
+
+    private Pair<BtcTransaction, Keccak256> createFlyoverPegin(
+            BridgeSupport bridgeSupport,
+            BridgeConstants bridgeConstants,
+            BtcBlockStore blockStore,
+            Federation recipientFederation,
+            boolean shouldExistInBlockStore,
+            boolean shouldBeConfirmed,
+            boolean shouldHaveValidPmt
+    ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+
+        InternalTransaction flyoverPeginTx = new InternalTransaction(
+                Keccak256.ZERO_HASH.getBytes(),
+                0,
+                0,
+                null,
+                null,
+                null,
+                lbcAddress.getBytes(),
+                null,
+                null,
+                null,
+                null
+        );
+
+        BtcTransaction peginBtcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        // Randomize the input to avoid repeating same Btc tx hash
+        peginBtcTx.addInput(PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1), 0, new Script(new byte[]{}));
+
+        // The derivation arguments will be randomly calculated
+        // The serialization and hashing was extracted from https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP176.md#bridge
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(blockStore.getChainHead().getHeight() + 1);
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Address liquidityProviderBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+
+        byte[] infoToHash = new byte[94];
+        System.arraycopy(
+                derivationArgumentsHash.getBytes(),
+                0,
+                infoToHash,
+                0,
+                32
+        );
+        System.arraycopy(
+                userRefundBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(userRefundBtcAddress.getVersion()) : new byte[]{0},
+                0,
+                infoToHash,
+                32,
+                1
+        );
+        System.arraycopy(
+                userRefundBtcAddress.getHash160(),
+                0,
+                infoToHash,
+                33,
+                20
+        );
+        System.arraycopy(
+                lbcAddress.getBytes(),
+                0,
+                infoToHash,
+                53,
+                20
+        );
+
+        System.arraycopy(
+                liquidityProviderBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(liquidityProviderBtcAddress.getVersion()) : new byte[]{0},
+                0,
+                infoToHash,
+                73,
+                1
+        );
+        System.arraycopy(
+                liquidityProviderBtcAddress.getHash160(),
+                0,
+                infoToHash,
+                74,
+                20
+        );
+        Keccak256 derivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
+
+        Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                recipientFederation.getRedeemScript(),
+                Sha256Hash.wrap(derivationHash.toHexString()) // Parsing to Sha256Hash in order to use helper. Does not change functionality
+        );
+
+        peginBtcTx.addOutput(
+                Coin.COIN,
+                Address.fromP2SHHash(
+                    bridgeConstants.getBtcParams(),
+                    ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript).getPubKeyHash()
+                )
+        );
+
+        int height = 0;
+        if (shouldExistInBlockStore) {
+            StoredBlock chainHead = blockStore.getChainHead();
+            BtcBlock btcBlock = new BtcBlock(
+                    bridgeConstants.getBtcParams(),
+                    1,
+                    chainHead.getHeader().getHash(),
+                    peginBtcTx.getHash(),
+                    0,
+                    0,
+                    0,
+                    Arrays.asList(peginBtcTx)
+            );
+            height = chainHead.getHeight() + 1;
+            StoredBlock storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, height);
+            blockStore.put(storedBlock);
+            blockStore.setChainHead(storedBlock);
+        }
+
+        if (shouldBeConfirmed) {
+            int requiredConfirmations = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+            for (int i = 0; i < requiredConfirmations; i++) {
+                addNewBtcBlockOnTipOfChain(blockStore, bridgeConstants);
+            }
+        }
+
+        PartialMerkleTree pmt = new PartialMerkleTree(
+                bridgeConstants.getBtcParams(),
+                new byte[] { 1 },
+                Arrays.asList(shouldHaveValidPmt ? peginBtcTx.getHash() : Sha256Hash.ZERO_HASH),
+                1
+        );
+
+        bridgeSupport.registerFlyoverBtcTransaction(
+                flyoverPeginTx,
+                peginBtcTx.bitcoinSerialize(),
+                height,
+                pmt.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                liquidityProviderBtcAddress,
+                true
+        );
+
+        bridgeSupport.save();
+
+        return Pair.of(peginBtcTx, derivationHash);
     }
 
     private BtcTransaction createPegin(
@@ -498,6 +710,8 @@ public class PowpegMigrationTest {
                 height,
                 pmt.bitcoinSerialize()
         );
+
+        bridgeSupport.save();
 
         return peginBtcTx;
     }
