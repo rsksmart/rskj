@@ -55,8 +55,7 @@ public class FederationSupportTest {
         federationSupport = new FederationSupport(
             bridgeConstants,
             provider,
-            executionBlock,
-            mock(ActivationConfig.ForBlock.class)
+            executionBlock
         );
     }
 

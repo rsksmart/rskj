@@ -223,7 +223,7 @@ public class BridgeSupportTestPowerMock {
             track,
             null,
             new Context(bridgeConstants.getBtcParams()),
-            new FederationSupport(bridgeConstants, provider, null, mock(ActivationConfig.ForBlock.class)),
+            new FederationSupport(bridgeConstants, provider, null),
             btcBlockStoreFactory,
             mock(ActivationConfig.ForBlock.class)
         ) {
@@ -3987,7 +3987,7 @@ public class BridgeSupportTestPowerMock {
                 track,
                 executionBlock,
                 new Context(constants.getBtcParams()),
-                new FederationSupport(constants, provider, executionBlock, activations),
+                new FederationSupport(constants, provider, executionBlock),
                 blockStoreFactory,
                 activations
         );

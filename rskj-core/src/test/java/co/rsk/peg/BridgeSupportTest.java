@@ -7152,7 +7152,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             track,
             executionBlock,
             new Context(constants.getBtcParams()),
-            new FederationSupport(constants, provider, executionBlock, activations),
+            new FederationSupport(constants, provider, executionBlock),
             blockStoreFactory,
             activations
         );
