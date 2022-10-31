@@ -151,7 +151,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message, any());
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
@@ -170,7 +170,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message, any());
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
@@ -189,7 +189,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message,any());
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
