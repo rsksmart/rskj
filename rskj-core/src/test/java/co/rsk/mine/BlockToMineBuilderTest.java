@@ -210,8 +210,7 @@ class BlockToMineBuilderTest {
     }
 
     private BlockHeader createBlockHeader() {
-        return new BlockHeader(
-                (byte) 0x0,
+        return new BlockHeaderV0(
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress(),
                 EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,

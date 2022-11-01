@@ -36,7 +36,7 @@ class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         Assertions.assertEquals(100, message.getId());
 
@@ -69,7 +69,7 @@ class BodyResponseMessageTest {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 

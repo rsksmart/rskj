@@ -26,6 +26,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
@@ -194,6 +195,8 @@ class MessageTest {
 
     @Test
     void encodeDecodeBlockHeadersResponseMessage() {
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
+        BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
@@ -475,7 +478,7 @@ class MessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
 
         byte[] encoded = message.getEncoded();
 

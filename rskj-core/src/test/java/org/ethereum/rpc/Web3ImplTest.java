@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
@@ -58,6 +59,9 @@ import co.rsk.util.HexUtils;
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -1038,8 +1042,12 @@ class Web3ImplTest {
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(genesis).build();
+        Block block1b = new BlockBuilder(
+                world.getBlockChain(),
+                world.getBridgeSupportFactory(),
+                world.getBlockStore(),
+                new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)))
+                .trieStore(world.getTrieStore()).difficulty(2).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
         Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(11).parent(block1b).build();
@@ -1180,8 +1188,11 @@ class Web3ImplTest {
                 world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue() - 1).parent(genesis).build();
+        Block block1b = new BlockBuilder(
+                world.getBlockChain(),
+                world.getBridgeSupportFactory(),
+                world.getBlockStore(),
+                new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue() - 1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
         Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                 world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();

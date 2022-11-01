@@ -309,8 +309,21 @@ public class BlockHeaderBuilder {
             }
         }
 
-        return new BlockHeader(
-                activationConfig.getHeaderVersion(number),
+        if (activationConfig.getHeaderVersion(number) == 0x1) return new BlockHeaderV1(
+                parentHash, unclesHash, coinbase,
+                stateRoot, txTrieRoot, receiptTrieRoot,
+                logsBloom, difficulty, number,
+                gasLimit, gasUsed, timestamp, extraData, paidFees,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                mergedMiningForkDetectionData,
+                minimumGasPrice, uncleCount,
+                false, useRskip92Encoding,
+                includeForkDetectionData, ummRoot
+        );
+
+        return new BlockHeaderV0(
                 parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot,
                 logsBloom, difficulty, number,

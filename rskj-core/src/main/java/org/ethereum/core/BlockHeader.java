@@ -1,21 +1,3 @@
-/*
- * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 package org.ethereum.core;
 
 import co.rsk.config.RskMiningConstants;
@@ -43,14 +25,20 @@ import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
  * Block header is a value object containing
  * the basic information of a block
  */
-public class BlockHeader {
+public abstract class BlockHeader {
+    /* RSKIP 351 */
+    public abstract byte getVersion();
+    public abstract BlockHeaderExtension getExtension();
+    public abstract void setExtension(BlockHeaderExtension extension);
+    // fields from block header extension
+    public abstract byte[] getLogsBloom();
+    public abstract void setLogsBloom(byte[] logsBloom);
+    // encoding to use in logs bloom field on header response message
+    public abstract byte[] getLogsBloomFieldEncoded();
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
     private static final int UMM_LEAVES_LENGTH = 20;
-
-    /* RSKIP 351 version */
-    private final byte version;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private final byte[] parentHash;
@@ -72,8 +60,6 @@ public class BlockHeader {
      * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
      * of the block */
     private byte[] receiptTrieRoot;
-    /* The bloom filter for the logs of the block */
-    private byte[] logsBloom;
     /**
      * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
@@ -115,10 +101,10 @@ public class BlockHeader {
     private final int uncleCount;
 
     /* Indicates if this block header cannot be changed */
-    private volatile boolean sealed;
+    protected volatile boolean sealed;
 
     /* Holds calculated block hash */
-    private Keccak256 hash;
+    protected Keccak256 hash;
 
     /* Indicates if the block was mined according to RSKIP-92 rules */
     private final boolean useRskip92Encoding;
@@ -126,22 +112,19 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private final boolean includeForkDetectionData;
 
-    public BlockHeader(byte version,
-                       byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
                        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
-        this.version = version;
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
         this.stateRoot = stateRoot;
         this.txTrieRoot = txTrieRoot;
         this.receiptTrieRoot = receiptTrieRoot;
-        this.logsBloom = logsBloom;
         this.difficulty = difficulty;
         this.number = number;
         this.gasLimit = gasLimit;
@@ -161,8 +144,6 @@ public class BlockHeader {
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
-
-    public byte getVersion() { return version; }
 
     @VisibleForTesting
     public boolean isSealed() {
@@ -235,11 +216,6 @@ public class BlockHeader {
         this.txTrieRoot = stateRoot;
     }
 
-
-    public byte[] getLogsBloom() {
-        return logsBloom;
-    }
-
     public BlockDifficulty getDifficulty() {
         // some blocks have zero encoded as null, but if we altered the internal field then re-encoding the value would
         // give a different value than the original.
@@ -304,19 +280,9 @@ public class BlockHeader {
         return extraData;
     }
 
-    public void setLogsBloom(byte[] logsBloom) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter logs bloom");
-        }
-        this.hash = null;
-
-        this.logsBloom = logsBloom;
-    }
-
     public Keccak256 getHash() {
         if (this.hash == null) {
-            this.hash = new Keccak256(HashUtil.keccak256(getEncoded()));
+            this.hash = new Keccak256(HashUtil.keccak256(getEncodedForHash()));
         }
 
         return this.hash;
@@ -325,12 +291,20 @@ public class BlockHeader {
     public byte[] getFullEncoded() {
         // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
         // calculating RSKIP92 block hashes
-        return this.getEncoded(true, true);
+        return this.getEncoded(true, true, false);
     }
 
     public byte[] getEncoded() {
         // the encoded block header used for calculating block hashes including RSKIP92
-        return this.getEncoded(true, !useRskip92Encoding);
+        return this.getEncoded(true, !useRskip92Encoding, false);
+    }
+
+    public byte[] getEncodedForHeaderMessage() {
+        return this.getEncoded(true, true, true);
+    }
+
+    public byte[] getEncodedForHash() {
+        return this.getEncoded(true, !useRskip92Encoding, true);
     }
 
     @Nullable
@@ -338,7 +312,7 @@ public class BlockHeader {
         return this.minimumGasPrice;
     }
 
-    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean useExtensionEncoding) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -358,7 +332,7 @@ public class BlockHeader {
 
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
-        byte[] logsBloom = RLP.encodeElement(this.logsBloom);
+        byte[] logsBloom = useExtensionEncoding ? this.getLogsBloomFieldEncoded() : RLP.encodeElement(this.getLogsBloom());
         byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
@@ -601,7 +575,7 @@ public class BlockHeader {
      * @return The computed hash for merged mining
      */
     private byte[] getBaseHashForMergedMining() {
-        byte[] encodedBlock = getEncoded(false, false);
+        byte[] encodedBlock = getEncoded(false, false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
         if (isUMMBlock()) {

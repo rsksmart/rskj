@@ -131,7 +131,7 @@ class BlockFactoryTest {
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null);
 
-        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
         byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
         coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
@@ -158,7 +158,7 @@ class BlockFactoryTest {
 
         BlockHeader header = createBlockHeader(number, new byte[0], null);
 
-        byte[] encodedHeader = header.getEncoded(false, false);
+        byte[] encodedHeader = header.getEncoded(false, false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         MatcherAssert.assertThat(headerRLP.size(), is(16));
 
@@ -179,7 +179,7 @@ class BlockFactoryTest {
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
         BlockHeader header = createBlockHeader(number, forkDetectionData, null);
 
-        byte[] encodedHeader = header.getEncoded(false, false);
+        byte[] encodedHeader = header.getEncoded(false, false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         MatcherAssert.assertThat(headerRLP.size(), is(16));
 

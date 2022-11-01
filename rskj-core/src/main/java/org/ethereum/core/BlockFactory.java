@@ -195,8 +195,17 @@ public class BlockFactory {
                     stateRoot);
         }
 
-        return new BlockHeader(
-                activationConfig.getHeaderVersion(blockNumber),
+        if (activationConfig.getHeaderVersion(blockNumber) == 1) return new BlockHeaderV1(
+                parentHash, unclesHash, coinbase, stateRoot,
+                txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
+                blockNumber, glBytes, gasUsed, timestamp, extraData,
+                paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction, new byte[0],
+                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                ummRoot
+        );
+
+        return new BlockHeaderV0(
                 parentHash, unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 blockNumber, glBytes, gasUsed, timestamp, extraData,

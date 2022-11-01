@@ -27,6 +27,10 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import co.rsk.blockchain.utils.BlockGenerator;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -1176,7 +1180,7 @@ class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null, blockStore)
+        Block block1 = new BlockBuilder(blockChain, null, blockStore, new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)))
                 .trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }

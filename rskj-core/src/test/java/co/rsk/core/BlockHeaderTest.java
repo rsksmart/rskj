@@ -23,8 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
 import org.ethereum.TestUtils;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Bloom;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -54,7 +53,7 @@ class BlockHeaderTest {
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
-        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
         byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         byte[] hashForMergedMining = concatenate(hashForMergedMiningPrefix, forkDetectionData);
@@ -169,7 +168,7 @@ class BlockHeaderTest {
     void getMiningForkDetectionData() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
-        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
         byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         byte[] coinbase = concatenate(hashForMergedMining, forkDetectionData);
@@ -218,7 +217,7 @@ class BlockHeaderTest {
         byte[] forkDetectionData = new byte[]{20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot, forkDetectionData);
 
-        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] oldHashForMergedMining = HashUtil.keccak256(encodedBlock);
         byte[] leftHash = Arrays.copyOf(oldHashForMergedMining, 20);
         byte[] hashRoot = HashUtil.keccak256(concatenate(leftHash, ummRoot));
@@ -236,7 +235,7 @@ class BlockHeaderTest {
 
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
-        byte[] encodedBlock = header.getEncoded(false, false);
+        byte[] encodedBlock = header.getEncoded(false, false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
         MatcherAssert.assertThat(header.getHashForMergedMining(), is(hashForMergedMining));
@@ -338,6 +337,25 @@ class BlockHeaderTest {
         this.testHeaderVersion((byte) 0x1);
     }
 
+    @Test
+    public void encodeForLogsBloomField() {
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+
+        BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+        header.setLogsBloom(logsBloom);
+
+        byte[] logsBloomField = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
+
+        Assertions.assertEquals(0x1, logsBloomField[0]);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), Arrays.copyOfRange(logsBloomField, 1, 33));
+        for (byte b:Arrays.copyOfRange(logsBloomField, 33, Bloom.BLOOM_BYTES)) Assertions.assertEquals(0x0, b);
+        Assertions.assertEquals(logsBloomField.length, Bloom.BLOOM_BYTES);
+    }
+
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot) {
@@ -392,8 +410,33 @@ class BlockHeaderTest {
         BigInteger gasLimit = BigInteger.valueOf(6800000);
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
-        return new BlockHeader(
-                version,
+        if (version == 0x1) return new BlockHeaderV1(
+                PegTestUtils.createHash3().getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                new RskAddress(TestUtils.randomAddress().getBytes()),
+                HashUtil.EMPTY_TRIE_HASH,
+                "tx_trie_root".getBytes(),
+                HashUtil.EMPTY_TRIE_HASH,
+                new Bloom().getData(),
+                difficulty,
+                number,
+                gasLimit.toByteArray(),
+                3000000,
+                timestamp,
+                new byte[0],
+                Coin.ZERO,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                forkDetectionData,
+                Coin.valueOf(10L),
+                0,
+                sealed,
+                useRskip92Encoding,
+                includeForkDetectionData,
+                ummRoot);
+
+        return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
                 new RskAddress(TestUtils.randomAddress().getBytes()),

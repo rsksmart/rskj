@@ -281,14 +281,13 @@ class RemascTestRunner {
         );
     }
 
-    private static class HardcodedHashBlockHeader extends BlockHeader {
+    private static class HardcodedHashBlockHeader extends BlockHeaderV0 {
         private final Keccak256 blockHash;
 
         public HardcodedHashBlockHeader(
                 Block parentBlock, RskAddress coinbase, Block genesis, List<Transaction> txs,
                 BlockDifficulty finalDifficulty, Coin paidFees, List<BlockHeader> uncles, Keccak256 blockHash) {
             super(
-                    (byte) 0x0,
                     parentBlock.getHash().getBytes(), RemascTestRunner.EMPTY_LIST_HASH, coinbase,
                     genesis.getStateRoot(), BlockHashesHelper.getTxTrieRoot(txs, true),
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,

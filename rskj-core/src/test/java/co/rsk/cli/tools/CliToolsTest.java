@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -266,7 +267,7 @@ class CliToolsTest {
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(receiptStore).when(rskContext).getReceiptStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).when(rskContext).getBlockFactory();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
@@ -320,7 +321,7 @@ class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).when(rskContext).getBlockFactory();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();

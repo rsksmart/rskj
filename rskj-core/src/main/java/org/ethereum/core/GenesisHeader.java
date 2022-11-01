@@ -8,7 +8,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
-public class GenesisHeader extends BlockHeader {
+public class GenesisHeader extends BlockHeaderV0 {
 
     private final byte[] difficulty;
 
@@ -29,7 +29,6 @@ public class GenesisHeader extends BlockHeader {
                          byte[] coinbase,
                          byte[] stateRootHash) {
         super(
-                (byte) 0x0,
                 parentHash,
                 unclesHash,
                 new RskAddress(coinbase),
@@ -73,7 +72,6 @@ public class GenesisHeader extends BlockHeader {
                          boolean useRskip92Encoding,
                          byte[] coinbase) {
         super(
-                (byte) 0x0,
                 parentHash,
                 unclesHash,
                 new RskAddress(coinbase),
