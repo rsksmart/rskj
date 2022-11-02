@@ -71,12 +71,17 @@ public class TxQuota {
      * @return True if there was enough accumulated gas
      */
     public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, Transaction tx, long blockNumber) {
+        return acceptVirtualGasConsumption(virtualGasToConsume, tx, blockNumber, false);
+    }
+
+    private synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, Transaction tx, long blockNumber, boolean forcingAcceptance) {
         // we know getSender() was called previously in the flow, so sender field was already computed and is available
         // we are not adding extra cost here, and it is useful for debugging purposes of transactions that don't get to a block, but we want to analyse
         RskAddress sender = tx.getSender();
 
         if (this.availableVirtualGas < virtualGasToConsume) {
-            logger.warn("NOT enough virtualGas for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
+            String acceptanceNote = forcingAcceptance ? "Forcing tx acceptance" : "NOT enough virtualGas";
+            logger.warn("{} for blockNumber [{}], sender [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", acceptanceNote, blockNumber, sender, tx, this.availableVirtualGas, virtualGasToConsume);
             return false;
         }
 
@@ -97,16 +102,11 @@ public class TxQuota {
      * @return True if there was enough accumulated gas, false otherwise
      */
     public synchronized boolean forceVirtualGasSubtraction(double virtualGasToConsume, Transaction tx, long blockNumber) {
-        // we know getSender() was called previously in the flow, so sender field was already computed and is available
-        // we are not adding extra cost here, and it is useful for debugging purposes of transactions that don't get to a block, but we want to analyse
-        RskAddress sender = tx.getSender();
-
-        boolean wasAccepted = acceptVirtualGasConsumption(virtualGasToConsume, tx, blockNumber);
+        boolean wasAccepted = acceptVirtualGasConsumption(virtualGasToConsume, tx, blockNumber, true);
         if (wasAccepted) {
             return true;
         }
 
-        logger.debug("Forcing acceptance of tx [{}] with sender [{}] at block [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", tx, sender, blockNumber, this.availableVirtualGas, virtualGasToConsume);
         this.availableVirtualGas = 0;
         return false;
     }
