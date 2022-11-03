@@ -111,7 +111,7 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 5);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
         int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
         int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();

@@ -19,6 +19,7 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
+import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,6 +36,7 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +50,15 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
+    public JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
+        this.jsonRpcServer = jsonRpcServer;
+    }
+
+    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, Integer maxBatchRequestsSize) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        List<JsonRpcInterceptor> interceptors = new ArrayList<>();
+        interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));
+        jsonRpcServer.setInterceptorList(interceptors);
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
@@ -59,10 +68,21 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-            
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
+
             responseCode = jsonRpcServer.handleRequest(is, os);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
+            String invalidReqMsg = "Invalid request";
+            LOGGER.error(invalidReqMsg, e);
+            responseContent = buildErrorContent(ErrorResolver.JsonError.INVALID_REQUEST.code, e.getMessage());
+            responseCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
+        } catch (StackOverflowError e) {
+            String stackOverflowErrorMsg = "Stack overflow produced due to complex nested objects detected in request params";
+            LOGGER.error(stackOverflowErrorMsg, e);
+            int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
+            responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
+            responseCode = errorCode;
+        } catch (Error e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
@@ -71,8 +91,8 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         }
 
         ctx.fireChannelRead(new Web3Result(
-            responseContent,
-            responseCode
+                responseContent,
+                responseCode
         ));
     }
 
