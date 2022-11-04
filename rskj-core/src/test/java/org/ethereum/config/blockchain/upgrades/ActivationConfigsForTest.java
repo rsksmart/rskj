@@ -31,13 +31,12 @@ public class ActivationConfigsForTest {
 
     private static final ActivationConfig REGTEST = read("config/regtest");
 
-    public static List<ConsensusRule> getPaidBridgeTxsRskip() {
+    private static List<ConsensusRule> getPaidBridgeTxsRskip() {
         return Arrays.asList(ConsensusRule.ARE_BRIDGE_TXS_PAID);
     }
 
-    public static List<ConsensusRule> getOrchidRskips() {
+    private static List<ConsensusRule> getOrchidRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getPaidBridgeTxsRskip());
         rskips.addAll(Arrays.asList(
                 ConsensusRule.RSKIP85,
                 ConsensusRule.RSKIP87,
@@ -52,17 +51,14 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> getOrchid060Rskips() {
+    private static List<ConsensusRule> getOrchid060Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
         rskips.add(ConsensusRule.RSKIP103);
         return rskips;
     }
 
-    public static List<ConsensusRule> getWasabi100Rskips() {
+    private static List<ConsensusRule> getWasabi100Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
         rskips.addAll(
             Arrays.asList(
                 ConsensusRule.RSKIP103,
@@ -81,32 +77,20 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> getBahamasRskips() {
+    private static List<ConsensusRule> getBahamasRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
         rskips.add(ConsensusRule.RSKIP136);
         return rskips;
     }
 
-    public static List<ConsensusRule> getTwoToThreeRskips() {
+    private static List<ConsensusRule> getTwoToThreeRskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
         rskips.add(ConsensusRule.RSKIP150);
         return rskips;
     }
 
-    public static List<ConsensusRule> getPapyrus200Rskips() {
+    private static List<ConsensusRule> getPapyrus200Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
-        rskips.addAll(getTwoToThreeRskips());
         rskips.addAll(Arrays.asList(
                 ConsensusRule.RSKIP137,
                 ConsensusRule.RSKIP140,
@@ -121,14 +105,8 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> getIris300Rskips() {
+    private static List<ConsensusRule> getIris300Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
-        rskips.addAll(getTwoToThreeRskips());
-        rskips.addAll(getPapyrus200Rskips());
         rskips.addAll(Arrays.asList(
                 ConsensusRule.RSKIP153,
                 ConsensusRule.RSKIP169,
@@ -153,15 +131,8 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> getHop400Rskips() {
+    private static List<ConsensusRule> getHop400Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
-        rskips.addAll(getTwoToThreeRskips());
-        rskips.addAll(getPapyrus200Rskips());
-        rskips.addAll(getIris300Rskips());
         rskips.addAll(Arrays.asList(
                 ConsensusRule.RSKIP271,
                 ConsensusRule.RSKIP284,
@@ -173,16 +144,8 @@ public class ActivationConfigsForTest {
         return rskips;
     }
 
-    public static List<ConsensusRule> getHop401Rskips() {
+    private static List<ConsensusRule> getHop401Rskips() {
         List<ConsensusRule> rskips = new ArrayList<>();
-        rskips.addAll(getOrchidRskips());
-        rskips.addAll(getOrchid060Rskips());
-        rskips.addAll(getWasabi100Rskips());
-        rskips.addAll(getBahamasRskips());
-        rskips.addAll(getTwoToThreeRskips());
-        rskips.addAll(getPapyrus200Rskips());
-        rskips.addAll(getIris300Rskips());
-        rskips.addAll(getHop400Rskips());
         rskips.addAll(Arrays.asList(
                 ConsensusRule.RSKIP353,
                 ConsensusRule.RSKIP357
@@ -195,27 +158,98 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig orchid() {
-        return only(getOrchidRskips());
+        return orchid(Collections.emptyList());
+    }
+
+    public static ActivationConfig orchid(List<ConsensusRule> except) {
+        return enableTheseDisableThose(getOrchidRskips(), except);
     }
 
     public static ActivationConfig wasabi100() {
-        return only(getWasabi100Rskips());
+        return wasabi100(Collections.emptyList());
+    }
+
+    public static ActivationConfig wasabi100(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig papyrus200() {
-        return only(getPapyrus200Rskips());
+        return papyrus200(Collections.emptyList());
+    }
+
+    public static ActivationConfig papyrus200(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig iris300() {
-        return only(getIris300Rskips());
+        return iris300(Collections.emptyList());
+    }
+
+    public static ActivationConfig iris300(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig hop400() {
-        return only(getHop400Rskips());
+        return hop400(Collections.emptyList());
+    }
+
+    public static ActivationConfig hop400(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+        rskips.addAll(getHop400Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig hop401() {
-        return only(getHop401Rskips());
+        return hop401(Collections.emptyList());
+    }
+
+    public static ActivationConfig hop401(List<ConsensusRule> except) {
+        List<ConsensusRule> rskips = new ArrayList<>();
+        rskips.addAll(getPaidBridgeTxsRskip());
+        rskips.addAll(getOrchidRskips());
+        rskips.addAll(getOrchid060Rskips());
+        rskips.addAll(getWasabi100Rskips());
+        rskips.addAll(getBahamasRskips());
+        rskips.addAll(getTwoToThreeRskips());
+        rskips.addAll(getPapyrus200Rskips());
+        rskips.addAll(getIris300Rskips());
+        rskips.addAll(getHop400Rskips());
+        rskips.addAll(getHop401Rskips());
+
+        return enableTheseDisableThose(rskips, except);
     }
 
     public static ActivationConfig regtest() {

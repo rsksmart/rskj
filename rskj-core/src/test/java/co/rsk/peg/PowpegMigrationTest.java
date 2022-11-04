@@ -57,7 +57,7 @@ public class PowpegMigrationTest {
      * Key is BtcTxHash and output index. Value is the address that received the funds
      * I can use this to validate that a certain redeemscript trying to spend this utxo generates the corresponding address
      */
-    private Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
+    private final Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
 
     private void testChangePowpeg(
             FederationType federationTypeFrom,
@@ -1063,10 +1063,9 @@ public class PowpegMigrationTest {
     public void test_change_powpeg__from_p2shErpFederation__with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled__creates_p2shErpFederation() throws Exception {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.enableTheseDisableThose(
-                ActivationConfigsForTest.getHop401Rskips(),
-                Arrays.asList(ConsensusRule.RSKIP357)
-        ).forBlock(0);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest
+                .hop401(Collections.singletonList(ConsensusRule.RSKIP357))
+                .forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(), "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7");
         List<UTXO> utxos = createRandomUtxos(ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
