@@ -18,17 +18,20 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.InternalService;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
-import co.rsk.mine.MinerServer;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.Utils;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -39,28 +42,22 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
  * Encapsulates the logic to retrieve or create an execution block
  * for Web3 calls.
  */
-public class ExecutionBlockRetriever {
+public class ExecutionBlockRetriever implements InternalService {
     private static final String LATEST_ID = "latest";
     private static final String PENDING_ID = "pending";
 
-    private final MiningMainchainView miningMainchainView;
+    private final Object pendingBlockLock = new Object();
     private final Blockchain blockchain;
-    private final MinerServer minerServer;
     private final BlockToMineBuilder builder;
+    private final CompositeEthereumListener emitter;
+    private final EthereumListener listener = new CachedResultCleaner();
 
-    @Nullable
-    private Block cachedBlock;
-    @Nullable
-    private BlockResult cachedResult;
+    private volatile BlockResult cachedResult;
 
-    public ExecutionBlockRetriever(MiningMainchainView miningMainchainView,
-                                   Blockchain blockchain,
-                                   MinerServer minerServer,
-                                   BlockToMineBuilder builder) {
-        this.miningMainchainView = miningMainchainView;
+    public ExecutionBlockRetriever(Blockchain blockchain, BlockToMineBuilder builder, CompositeEthereumListener emitter) {
         this.blockchain = blockchain;
-        this.minerServer = minerServer;
         this.builder = builder;
+        this.emitter = emitter;
     }
 
     public BlockResult retrieveExecutionBlock(String bnOrId) {
@@ -69,27 +66,26 @@ public class ExecutionBlockRetriever {
         }
 
         if (PENDING_ID.equals(bnOrId)) {
-            Optional<Block> latestBlock = minerServer.getLatestBlock();
-            if (latestBlock.isPresent()) {
-                return newBlockResult(latestBlock.get());
+            Block bestBlock = blockchain.getBestBlock();
+            BlockResult result = cachedResult;
+            // optimistic check without the lock
+            if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
+                return result;
             }
 
-            Block bestBlock = blockchain.getBestBlock();
-            if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
-
-                // If the miner server is not running there is no one to update the mining mainchain view,
-                // thus breaking eth_call with 'pending' parameter
-                //
-                // This is just a provisional fix not intended to remain in the long run
-                if (!minerServer.isRunning()) {
-                    miningMainchainView.addBest(bestBlock.getHeader());
+            synchronized (pendingBlockLock) {
+                // build a new pending block, but before that just in case check if one hasn't been built while being locked
+                bestBlock = blockchain.getBestBlock();
+                result = cachedResult;
+                if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
+                    return result;
                 }
 
-                List<BlockHeader> mainchainHeaders = miningMainchainView.get();
-                cachedResult = builder.build(mainchainHeaders, null);
-            }
+                result = builder.buildPending(bestBlock.getHeader());
+                cachedResult = result;
 
-            return cachedResult;
+                return result;
+            }
         }
 
         // Is the block specifier either a hexadecimal or decimal number?
@@ -116,6 +112,11 @@ public class ExecutionBlockRetriever {
                 bnOrId));
     }
 
+    @VisibleForTesting
+    BlockResult getCachedResult() {
+        return cachedResult;
+    }
+
     private static BlockResult newBlockResult(Block block) {
         return new BlockResult(
                 block,
@@ -125,5 +126,31 @@ public class ExecutionBlockRetriever {
                 Coin.ZERO,
                 null
         );
+    }
+
+    @Override
+    public void start() {
+        emitter.addListener(listener);
+    }
+
+    @Override
+    public void stop() {
+        emitter.removeListener(listener);
+    }
+
+    private class CachedResultCleaner extends EthereumListenerAdapter {
+        @Override
+        public void onPendingTransactionsReceived(List<Transaction> transactions) {
+            cleanCachedResult();
+        }
+
+        @Override
+        public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
+            cleanCachedResult();
+        }
+
+        private void cleanCachedResult() {
+            cachedResult = null;
+        }
     }
 }
