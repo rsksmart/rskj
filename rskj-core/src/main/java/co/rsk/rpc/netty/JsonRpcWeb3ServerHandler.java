@@ -22,10 +22,12 @@ import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
+import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
@@ -50,7 +52,8 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
 
-    public JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
+    @VisibleForTesting
+    JsonRpcWeb3ServerHandler(JsonRpcBasicServer jsonRpcServer) {
         this.jsonRpcServer = jsonRpcServer;
     }
 
@@ -71,7 +74,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
              ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
 
             responseCode = jsonRpcServer.handleRequest(is, os);
-        } catch (IllegalArgumentException e) {
+        } catch (JsonRpcRequestPayloadException e) {
             String invalidReqMsg = "Invalid request";
             LOGGER.error(invalidReqMsg, e);
             responseContent = buildErrorContent(ErrorResolver.JsonError.INVALID_REQUEST.code, e.getMessage());

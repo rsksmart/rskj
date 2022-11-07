@@ -70,7 +70,7 @@ public class Web3HttpServer implements InternalService {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpRequestDecoder());
                     p.addLast(new HttpResponseEncoder());
-                    p.addLast(new HttpObjectAggregator(maxPayloadSize.intValue()));
+                    p.addLast(new HttpObjectAggregator(maxPayloadSize));
                     p.addLast(new HttpContentCompressor());
                     if (corsConfiguration.hasHeader()) {
                         p.addLast(new CorsHandler(

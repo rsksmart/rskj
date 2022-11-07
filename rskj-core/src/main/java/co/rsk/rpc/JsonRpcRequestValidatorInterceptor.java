@@ -18,6 +18,7 @@
 
 package co.rsk.rpc;
 
+import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcInterceptor;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
             String msg = String.format("Cannot dispatch batch requests. %s is the max number of supported batch requests", this.maxBatchRequestsSize);
             logger.error(msg);
 
-            throw new IllegalArgumentException(msg);
+            throw new JsonRpcRequestPayloadException(msg);
         }
     }
 
