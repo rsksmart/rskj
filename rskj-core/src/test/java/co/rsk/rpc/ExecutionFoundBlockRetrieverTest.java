@@ -44,7 +44,7 @@ public class ExecutionFoundBlockRetrieverTest {
 
     private static final Keccak256 HASH1 = new Keccak256("133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9");
     private static final Keccak256 HASH2 = new Keccak256("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
-    private final static int INVALID_PARAM_ERROR_CODE = -32602;
+    private static final int INVALID_PARAM_ERROR_CODE = -32602;
 
     private Blockchain blockchain;
     private BlockToMineBuilder builder;
@@ -92,7 +92,7 @@ public class ExecutionFoundBlockRetrieverTest {
         when(builder.buildPending(bestHeader)).thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
         assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(1)).buildPending(any());
     }
@@ -111,9 +111,10 @@ public class ExecutionFoundBlockRetrieverTest {
         when(builder.buildPending(bestHeader)).thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
         retriever.retrieveExecutionBlock("pending");
-        assertEquals(blockResult, retriever.getCachedResult());
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
         assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(1)).buildPending(any());
     }
@@ -134,9 +135,10 @@ public class ExecutionFoundBlockRetrieverTest {
         ArgumentCaptor<EthereumListener> captor = ArgumentCaptor.forClass(EthereumListener.class);
         EthereumListener listener;
 
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
         retriever.retrieveExecutionBlock("pending");
-        assertEquals(blockResult, retriever.getCachedResult());
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
         assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(1)).buildPending(any());
 
@@ -144,7 +146,7 @@ public class ExecutionFoundBlockRetrieverTest {
         verify(emitter, times(1)).addListener(captor.capture());
         listener = captor.getValue();
         listener.onPendingTransactionsReceived(Collections.emptyList());
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
 
         assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(2)).buildPending(any());
@@ -181,9 +183,10 @@ public class ExecutionFoundBlockRetrieverTest {
         ArgumentCaptor<EthereumListener> captor = ArgumentCaptor.forClass(EthereumListener.class);
         EthereumListener listener;
 
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
         retriever.retrieveExecutionBlock("pending");
-        assertEquals(blockResult, retriever.getCachedResult());
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
         assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(1)).buildPending(any());
 
@@ -192,7 +195,7 @@ public class ExecutionFoundBlockRetrieverTest {
         listener = captor.getValue();
         when(blockchain.getBestBlock()).thenReturn(newBestBlock);
         listener.onBestBlock(newBestBlock, Collections.emptyList());
-        assertNull(retriever.getCachedResult());
+        assertNull(retriever.getCachedPendingBlockResult());
 
         assertEquals(anotherBuiltBlock, retriever.retrieveExecutionBlock("pending").getBlock());
         verify(builder, times(2)).buildPending(any());

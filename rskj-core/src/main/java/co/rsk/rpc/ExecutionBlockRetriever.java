@@ -19,9 +19,9 @@
 package co.rsk.rpc;
 
 import co.rsk.config.InternalService;
-import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.mine.BlockToMineBuilder;
+import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -32,9 +32,11 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.Utils;
 
-import java.util.Collections;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
@@ -52,7 +54,7 @@ public class ExecutionBlockRetriever implements InternalService {
     private final CompositeEthereumListener emitter;
     private final EthereumListener listener = new CachedResultCleaner();
 
-    private volatile BlockResult cachedResult;
+    private final AtomicReference<Result> cachedPendingBlockResult = new AtomicReference<>();
 
     public ExecutionBlockRetriever(Blockchain blockchain, BlockToMineBuilder builder, CompositeEthereumListener emitter) {
         this.blockchain = blockchain;
@@ -60,14 +62,14 @@ public class ExecutionBlockRetriever implements InternalService {
         this.emitter = emitter;
     }
 
-    public BlockResult retrieveExecutionBlock(String bnOrId) {
+    public Result retrieveExecutionBlock(String bnOrId) {
         if (LATEST_ID.equals(bnOrId)) {
-            return newBlockResult(blockchain.getBestBlock());
+            return Result.ofBlock(blockchain.getBestBlock());
         }
 
         if (PENDING_ID.equals(bnOrId)) {
             Block bestBlock = blockchain.getBestBlock();
-            BlockResult result = cachedResult;
+            Result result = cachedPendingBlockResult.get();
             // optimistic check without the lock
             if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
                 return result;
@@ -76,13 +78,13 @@ public class ExecutionBlockRetriever implements InternalService {
             synchronized (pendingBlockLock) {
                 // build a new pending block, but before that just in case check if one hasn't been built while being locked
                 bestBlock = blockchain.getBestBlock();
-                result = cachedResult;
+                result = cachedPendingBlockResult.get();
                 if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
                     return result;
                 }
 
-                result = builder.buildPending(bestBlock.getHeader());
-                cachedResult = result;
+                result = Result.ofBlockResult(builder.buildPending(bestBlock.getHeader()));
+                cachedPendingBlockResult.set(result);
 
                 return result;
             }
@@ -102,7 +104,7 @@ public class ExecutionBlockRetriever implements InternalService {
             if (executionBlock == null) {
                 throw invalidParamError(String.format("Invalid block number %d", executionBlockNumber.get()));
             }
-            return newBlockResult(executionBlock);
+            return Result.ofBlock(executionBlock);
         }
 
         // If we got here, the specifier given is unsupported
@@ -113,19 +115,8 @@ public class ExecutionBlockRetriever implements InternalService {
     }
 
     @VisibleForTesting
-    BlockResult getCachedResult() {
-        return cachedResult;
-    }
-
-    private static BlockResult newBlockResult(Block block) {
-        return new BlockResult(
-                block,
-                Collections.emptyList(),
-                Collections.emptyList(),
-                0,
-                Coin.ZERO,
-                null
-        );
+    Result getCachedPendingBlockResult() {
+        return cachedPendingBlockResult.get();
     }
 
     @Override
@@ -136,6 +127,32 @@ public class ExecutionBlockRetriever implements InternalService {
     @Override
     public void stop() {
         emitter.removeListener(listener);
+    }
+
+    public static class Result {
+        private final Block block;
+        private final Trie finalState;
+
+        public Result(@Nonnull Block block, @Nullable Trie finalState) {
+            this.block = block;
+            this.finalState = finalState;
+        }
+
+        static Result ofBlock(Block block) {
+            return new Result(block, null);
+        }
+
+        static Result ofBlockResult(BlockResult blockResult) {
+            return new Result(blockResult.getBlock(), blockResult.getFinalState());
+        }
+
+        public Block getBlock() {
+            return block;
+        }
+
+        public Trie getFinalState() {
+            return finalState;
+        }
     }
 
     private class CachedResultCleaner extends EthereumListenerAdapter {
@@ -150,7 +167,7 @@ public class ExecutionBlockRetriever implements InternalService {
         }
 
         private void cleanCachedResult() {
-            cachedResult = null;
+            cachedPendingBlockResult.set(null);
         }
     }
 }
