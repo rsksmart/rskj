@@ -1,6 +1,7 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.OriginValidator;
+import co.rsk.util.MaxSizeHashMap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,17 +23,19 @@ import java.util.Optional;
 @ChannelHandler.Sharable
 public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
+
     private final List<String> rpcHost;
     private final InetAddress rpcAddress;
     private final List<String> acceptedHosts;
-
     private OriginValidator originValidator;
+    private final MaxSizeHashMap<String, InetAddress> addressCache;
 
     public JsonRpcWeb3FilterHandler(String corsDomains, InetAddress rpcAddress, List<String> rpcHost) {
         this.originValidator = new OriginValidator(corsDomains);
         this.rpcHost = rpcHost;
         this.rpcAddress = rpcAddress;
         this.acceptedHosts = getAcceptedHosts();
+        this.addressCache = new MaxSizeHashMap<>(100, true); // just for RPC calls, seems a reasonable value for size / performance
     }
 
     private List<String> getAcceptedHosts() {
@@ -164,7 +167,8 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         }
 
         try {
-            InetAddress inetAddress = InetAddress.getByName(address);
+            InetAddress inetAddress = getInetAddress(address);
+
             boolean validHostAddress = Optional.ofNullable(inetAddress)
                     .map(ia -> ia.getHostAddress().equals(address))
                     .orElse(false);
@@ -175,5 +179,16 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         }
 
         return isIPv4 || isIPv6;
+    }
+
+    private InetAddress getInetAddress(String address) throws UnknownHostException {
+        InetAddress inetAddress = this.addressCache.get(address);
+        if (inetAddress != null) {
+            return inetAddress;
+        }
+
+        inetAddress = InetAddress.getByName(address);
+        this.addressCache.put(address, inetAddress);
+        return inetAddress;
     }
 }

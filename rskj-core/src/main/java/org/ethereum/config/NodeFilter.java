@@ -23,7 +23,6 @@ import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,12 +61,9 @@ public class NodeFilter {
         }
 
         public boolean accept(Node node) {
-            try {
-                return (nodeId == null || nodeId.equals(node.getId()))
-                        && (hostIpPattern == null || accept(InetAddress.getByName(node.getHost())));
-            } catch (UnknownHostException e) {
-                return false;
-            }
+            InetAddress address = node.getAddress().getAddress();
+            return (nodeId == null || nodeId.equals(node.getId()))
+                    && (hostIpPattern == null || accept(address));
         }
     }
 }

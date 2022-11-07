@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -463,14 +462,7 @@ public class PeerExplorer {
     }
 
     private boolean isBanned(Node node) {
-        InetAddress address;
-        try {
-            address = InetAddress.getByName(node.getHost());
-        } catch (UnknownHostException e) {
-            logger.error("Invalid node host: {}", node.getHost(), e);
-            address = null;
-        }
-
+        InetAddress address = node.getAddress().getAddress();
         return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
     }
 }

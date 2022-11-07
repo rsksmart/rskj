@@ -20,7 +20,7 @@
 package org.ethereum.net.rlpx;
 
 import co.rsk.net.NodeID;
-import co.rsk.net.rlpx.NodeAddressCache;
+import co.rsk.util.MaxSizeHashMap;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -41,18 +41,11 @@ import static org.ethereum.util.ByteUtil.byteArrayToInt;
 public class Node implements Serializable {
     private static final long serialVersionUID = -4267600517925770636L;
 
+    private static final MaxSizeHashMap<String, InetSocketAddress> addressCache = new MaxSizeHashMap<>(40, true); // ~ max active peers + margin
+
     private final byte[] id;
     private final String host;
     private final int port;
-
-    private static NodeAddressCache addressCache;
-
-    public static void setAddressCache(NodeAddressCache cache) {
-        if (addressCache != null) {
-            throw new IllegalStateException("NodeAddressCache already initialised");
-        }
-        addressCache = cache;
-    }
 
     public Node(String enodeURL) {
         try {
@@ -123,23 +116,14 @@ public class Node implements Serializable {
     }
 
     public InetSocketAddress getAddress() {
-        InetSocketAddress address;
-        if (addressCache == null) {
-            return buildAddress();
-        }
-
-        address = addressCache.get(this.getId());
+        InetSocketAddress address = addressCache.get(this.getAddressCacheId());
         if (address != null) {
             return address;
         }
 
-        address = buildAddress();
-        addressCache.set(this.getId(), address);
+        address = new InetSocketAddress(this.getHost(), this.getPort());
+        addressCache.put(this.getAddressCacheId(), address);
         return address;
-    }
-
-    private InetSocketAddress buildAddress() {
-        return new InetSocketAddress(this.getHost(), this.getPort());
     }
 
     public String getAddressAsString() {
@@ -148,7 +132,6 @@ public class Node implements Serializable {
         // addr == null if the hostname can't be resolved
         return (addr == null ? address.getHostString() : addr.getHostAddress()) + ":" + address.getPort();
     }
-
 
     @Override
     public String toString() {
@@ -180,5 +163,10 @@ public class Node implements Serializable {
 
         // TODO(mc): do we need to check host and port too?
         return Arrays.equals(id, ((Node) o).id);
+    }
+
+    private String getAddressCacheId() {
+        // we cannot use NodeId as cache id, currently we allow multiple nodeId connections per host
+        return this.host + ":" + this.port;
     }
 }

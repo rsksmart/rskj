@@ -50,7 +50,6 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.net.rlpx.NodeAddressCache;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -255,8 +254,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
 
-    private NodeAddressCache nodeAddressCache;
-
     private volatile boolean closed;
 
     /***** Constructors ***********************************************************************************************/
@@ -271,7 +268,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         this.cliArgs = cliArgs;
         initializeNativeLibs();
-        Node.setAddressCache(getNodeAddressCache());
     }
 
     /***** Public Methods *********************************************************************************************/
@@ -1450,14 +1446,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return blockTxSignatureCache;
-    }
-
-    private NodeAddressCache getNodeAddressCache() {
-        if (nodeAddressCache == null) {
-            nodeAddressCache = new NodeAddressCache();
-        }
-
-        return nodeAddressCache;
     }
 
     private KeyValueDataSource getBlocksBloomDataSource() {
