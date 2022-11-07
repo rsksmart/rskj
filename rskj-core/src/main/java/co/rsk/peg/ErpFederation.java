@@ -46,6 +46,7 @@ public class ErpFederation extends Federation {
         // using the given public keys and csv value
         getRedeemScript();
         validateRedeemScript();
+        getStandardRedeemScript();
     }
 
     public List<BtcECKey> getErpPubKeys() {

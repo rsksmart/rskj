@@ -3,15 +3,21 @@ package co.rsk.peg;
 import static org.mockito.Mockito.mock;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
+
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,6 +31,40 @@ public class P2shErpFederationTest {
     @Test
     public void getRedeemScript_mainnet() {
         test_getRedeemScript(BridgeMainNetConstants.getInstance());
+    }
+
+    @Test
+    public void getStandardRedeemscript() {
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+                Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
+        );
+        Instant creationTime = Instant.now();
+        int creationBlock = 0;
+        NetworkParameters btcParams = BridgeRegTestConstants.getInstance().getBtcParams();
+
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);
+
+        // Create a legacy powpeg and then a p2sh valid one. Both of them should produce the same standard redeem script
+
+        Federation legacyFed = new Federation(
+                members,
+                creationTime,
+                creationBlock,
+                btcParams
+        );
+
+        P2shErpFederation p2shFed = new P2shErpFederation(
+                members,
+                creationTime,
+                creationBlock,
+                btcParams,
+                Arrays.asList(new BtcECKey(), new BtcECKey()),
+                10_000,
+                activations
+        );
+
+        Assert.assertEquals(legacyFed.getRedeemScript(), p2shFed.getStandardRedeemScript());
+        Assert.assertNotEquals(p2shFed.getRedeemScript(), p2shFed.getStandardRedeemScript());
     }
 
     private void test_getRedeemScript(BridgeConstants bridgeConstants) {
