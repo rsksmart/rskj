@@ -20,6 +20,7 @@
 package org.ethereum.net.rlpx;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.rlpx.NodeAddressCache;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -43,6 +44,15 @@ public class Node implements Serializable {
     private final byte[] id;
     private final String host;
     private final int port;
+
+    private static NodeAddressCache addressCache;
+
+    public static void setAddressCache(NodeAddressCache cache) {
+        if (addressCache != null) {
+            throw new IllegalStateException("NodeAddressCache already initialised");
+        }
+        addressCache = cache;
+    }
 
     public Node(String enodeURL) {
         try {
@@ -113,6 +123,22 @@ public class Node implements Serializable {
     }
 
     public InetSocketAddress getAddress() {
+        InetSocketAddress address;
+        if (addressCache == null) {
+            return buildAddress();
+        }
+
+        address = addressCache.get(this.getId());
+        if (address != null) {
+            return address;
+        }
+
+        address = buildAddress();
+        addressCache.set(this.getId(), address);
+        return address;
+    }
+
+    private InetSocketAddress buildAddress() {
         return new InetSocketAddress(this.getHost(), this.getPort());
     }
 
@@ -135,7 +161,7 @@ public class Node implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, id);
+        return Objects.hash(host, port, Arrays.hashCode(id));
     }
 
     @Override
