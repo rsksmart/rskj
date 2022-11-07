@@ -68,26 +68,7 @@ public class ExecutionBlockRetriever implements InternalService {
         }
 
         if (PENDING_ID.equals(bnOrId)) {
-            Block bestBlock = blockchain.getBestBlock();
-            Result result = cachedPendingBlockResult.get();
-            // optimistic check without the lock
-            if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
-                return result;
-            }
-
-            synchronized (pendingBlockLock) {
-                // build a new pending block, but before that just in case check if one hasn't been built while being locked
-                bestBlock = blockchain.getBestBlock();
-                result = cachedPendingBlockResult.get();
-                if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
-                    return result;
-                }
-
-                result = Result.ofBlockResult(builder.buildPending(bestBlock.getHeader()));
-                cachedPendingBlockResult.set(result);
-
-                return result;
-            }
+            return getPendingBlockResult();
         }
 
         // Is the block specifier either a hexadecimal or decimal number?
@@ -112,6 +93,40 @@ public class ExecutionBlockRetriever implements InternalService {
                 "Unsupported block specifier '%s'. Can only be either 'latest', " +
                         "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
                 bnOrId));
+    }
+
+    @Nonnull
+    private Result getPendingBlockResult() {
+        Block bestBlock = blockchain.getBestBlock();
+
+        // optimistic check without the lock
+        Result result = getCachedResultFor(bestBlock);
+        if (result != null) {
+            return result;
+        }
+
+        synchronized (pendingBlockLock) {
+            // build a new pending block, but before that just in case check if one hasn't been built while being locked
+            bestBlock = blockchain.getBestBlock();
+            result = getCachedResultFor(bestBlock);
+            if (result != null) {
+                return result;
+            }
+
+            result = Result.ofBlockResult(builder.buildPending(bestBlock.getHeader()));
+            cachedPendingBlockResult.set(result);
+
+            return result;
+        }
+    }
+
+    @Nullable
+    private Result getCachedResultFor(@Nonnull Block bestBlock) {
+        Result result = cachedPendingBlockResult.get();
+        if (result != null && result.getBlock().getParentHash().equals(bestBlock.getHash())) {
+            return result;
+        }
+        return null;
     }
 
     @VisibleForTesting
