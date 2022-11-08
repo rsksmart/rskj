@@ -163,7 +163,7 @@ public class ErpFederationTest {
 
         RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
-            Federation erpFederation = new P2shErpFederation(
+            Federation erpFederation = new ErpFederation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 0L,
