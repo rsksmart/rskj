@@ -17,10 +17,10 @@
  */
 
 package co.rsk.rpc.modules.personal;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
@@ -29,9 +29,9 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.junit.jupiter.api.Test;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class PersonalModuleTest {
 
@@ -51,10 +51,12 @@ class PersonalModuleTest {
 		Transaction tx = TransactionFactoryHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
 		String txExpectedResult = tx.getHash().toJsonString();
 
-		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
-		when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
 
-		Ethereum ethereum = mock(Ethereum.class);
+        Ethereum ethereum = mock(Ethereum.class);
+        when(ethereum.submitTransaction(tx)).thenReturn(transactionPoolAddResult);
 
 		PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
 
