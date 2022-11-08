@@ -83,7 +83,7 @@ class NodeTest {
 
         node = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
 
-        address = node.getAddressAsString();
+        address = Node.getAddressAsString(node.getAddress());
         Assertions.assertTrue(StringUtils.isNotBlank(address));
         Assertions.assertTrue(address.startsWith(NODE_HOST_1));
 

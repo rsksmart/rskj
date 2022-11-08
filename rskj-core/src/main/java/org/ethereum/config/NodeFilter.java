@@ -20,7 +20,6 @@
 package org.ethereum.config;
 
 import co.rsk.net.NodeID;
-import org.ethereum.net.rlpx.Node;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -36,8 +35,8 @@ public class NodeFilter {
         entries.add(new Entry(nodeId, hostIpPattern));
     }
 
-    public boolean accept(Node node) {
-        return entries.stream().anyMatch(entry -> entry.accept(node));
+    public boolean accept(NodeID nodeId, InetAddress address) {
+        return entries.stream().anyMatch(entry -> entry.accept(nodeId) && entry.accept(address));
     }
 
     private class Entry {
@@ -57,13 +56,11 @@ public class NodeFilter {
 
         public boolean accept(InetAddress nodeAddr) {
             String ip = nodeAddr.getHostAddress();
-            return hostIpPattern != null && ip.startsWith(hostIpPattern);
+            return hostIpPattern == null || ip.startsWith(hostIpPattern);
         }
 
-        public boolean accept(Node node) {
-            InetAddress address = node.getAddress().getAddress();
-            return (nodeId == null || nodeId.equals(node.getId()))
-                    && (hostIpPattern == null || accept(address));
+        public boolean accept(NodeID candidateNodeId) {
+            return nodeId == null || nodeId.equals(candidateNodeId);
         }
     }
 }

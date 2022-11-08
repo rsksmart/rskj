@@ -26,6 +26,7 @@ import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
 import co.rsk.util.IpUtils;
+import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.ECKey;
@@ -52,6 +53,7 @@ public class PeerExplorer {
     private static final int MAX_NODES_TO_ASK = 24;
     private static final int MAX_NODES_TO_CHECK = 16;
     private static final int RETRIES_COUNT = 3;
+    private static final int MAX_ADDRESS_CACHE_SIZE = 200;
 
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
 
@@ -85,6 +87,8 @@ public class PeerExplorer {
 
     private UDPChannel udpChannel;
 
+    private final Map<String, InetSocketAddress> addressCache;
+
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
@@ -104,6 +108,8 @@ public class PeerExplorer {
 
         this.knownHosts = new ConcurrentHashMap<>();
         this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
+
+        this.addressCache = new MaxSizeHashMap<>(MAX_ADDRESS_CACHE_SIZE, true);
     }
 
     void start() {
@@ -219,7 +225,7 @@ public class PeerExplorer {
         if (connectedNode != null) {
             List<Node> nodesToSend = this.distanceTable.getClosestNodes(nodeId);
             logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexId());
-            this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
+            this.sendNeighbors(getAddress(connectedNode), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
         }
     }
@@ -234,7 +240,7 @@ public class PeerExplorer {
             if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {
                 List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG - 1) : message.getNodes();
                 nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()) && !isBanned(n))
-                        .forEach(node -> this.bootNodes.add(node.getAddress()));
+                        .forEach(node -> this.bootNodes.add(getAddress(node)));
                 this.startConversationWithNewNodes();
             }
             updateEntry(connectedNode);
@@ -256,7 +262,7 @@ public class PeerExplorer {
             return nodeMessage;
         }
 
-        InetSocketAddress localAddress = this.localNode.getAddress();
+        InetSocketAddress localAddress = getAddress(this.localNode);
         String id = UUID.randomUUID().toString();
         nodeMessage = PingPeerMessage.create(
                 localAddress.getAddress().getHostAddress(),
@@ -293,7 +299,7 @@ public class PeerExplorer {
     }
 
     private PongPeerMessage sendPong(InetSocketAddress nodeAddress, PingPeerMessage message) {
-        InetSocketAddress localAddress = this.localNode.getAddress();
+        InetSocketAddress localAddress = getAddress(this.localNode);
         PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(pongPeerMessage, nodeAddress));
 
@@ -302,7 +308,7 @@ public class PeerExplorer {
 
     @VisibleForTesting
     FindNodePeerMessage sendFindNode(Node node) {
-        InetSocketAddress nodeAddress = node.getAddress();
+        InetSocketAddress nodeAddress = getAddress(node);
         String id = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(this.key.getNodeId(), id, this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(findNodePeerMessage, nodeAddress));
@@ -355,7 +361,7 @@ public class PeerExplorer {
 
     private void checkPeersPulse(List<Node> closestNodes) {
         List<Node> nodesToCheck = this.getRandomizeLimitedList(closestNodes, MAX_NODES_TO_CHECK, 10);
-        nodesToCheck.forEach(node -> sendPing(node.getAddress(), 1, node));
+        nodesToCheck.forEach(node -> sendPing(getAddress(node), 1, node));
     }
 
     private void askForMoreNodes(List<Node> closestNodes) {
@@ -393,7 +399,7 @@ public class PeerExplorer {
     private void removeConnection(Node node) {
         this.establishedConnections.remove(node.getId());
         this.distanceTable.removeNode(node);
-        this.knownHosts.remove(node.getAddressAsString());
+        this.knownHosts.remove(Node.getAddressAsString(getAddress(node)));
     }
 
     private void addConnection(PongPeerMessage message, String ip, int port) {
@@ -409,22 +415,35 @@ public class PeerExplorer {
 
         OperationResult result = this.distanceTable.addNode(senderNode);
         if (result.isSuccess()) {
-            this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
+            this.knownHosts.put(Node.getAddressAsString(getAddress(senderNode)), senderNode.getId());
             this.establishedConnections.put(senderNode.getId(), senderNode);
             logger.debug("New Peer found or id changed: ip[{}] port[{}] id [{}]", ip, port, senderNode.getId());
         } else {
-            this.challengeManager.startChallenge(result.getAffectedEntry().getNode(), senderNode, this);
+            this.challengeManager.startChallenge(result.getAffectedEntry().getNode(), senderNode, chn -> this.sendPing(getAddress(chn), 1, chn));
         }
     }
 
     private void disconnectPeerIfDuplicatedByNodeId(Node senderNode, String ip, int port) {
-        NodeID oldNodeIdForHost = this.knownHosts.get(senderNode.getAddressAsString());
+        NodeID oldNodeIdForHost = this.knownHosts.get(Node.getAddressAsString(getAddress(senderNode)));
         boolean existsWithDifferentId = oldNodeIdForHost != null && !oldNodeIdForHost.equals(senderNode.getId());
         if (existsWithDifferentId) {
             logger.warn("Disconnecting peer with old id: ip[{}] port[{}] id [{}]", ip, port, oldNodeIdForHost);
             Node oldNodeForHost = new Node(oldNodeIdForHost.getID(), ip, port);
             removeConnection(oldNodeForHost);
         }
+    }
+
+    private InetSocketAddress getAddress(Node node) {
+        String cacheId = node.getHost() + ":" + node.getPort();
+
+        InetSocketAddress address = this.addressCache.get(cacheId);
+        if (address != null) {
+            return address;
+        }
+
+        address = node.getAddress();
+        this.addressCache.put(cacheId, address);
+        return address;
     }
 
     private void loadInitialBootNodes(List<String> nodes) {
@@ -462,7 +481,7 @@ public class PeerExplorer {
     }
 
     private boolean isBanned(Node node) {
-        InetAddress address = node.getAddress().getAddress();
+        InetAddress address = getAddress(node).getAddress();
         return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
     }
 }

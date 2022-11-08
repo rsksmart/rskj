@@ -20,7 +20,6 @@
 package org.ethereum.net.rlpx;
 
 import co.rsk.net.NodeID;
-import co.rsk.util.MaxSizeHashMap;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -40,8 +39,6 @@ import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
 public class Node implements Serializable {
     private static final long serialVersionUID = -4267600517925770636L;
-
-    private static final MaxSizeHashMap<String, InetSocketAddress> addressCache = new MaxSizeHashMap<>(40, true); // ~ max active peers + margin
 
     private final byte[] id;
     private final String host;
@@ -116,18 +113,10 @@ public class Node implements Serializable {
     }
 
     public InetSocketAddress getAddress() {
-        InetSocketAddress address = addressCache.get(this.getAddressCacheId());
-        if (address != null) {
-            return address;
-        }
-
-        address = new InetSocketAddress(this.getHost(), this.getPort());
-        addressCache.put(this.getAddressCacheId(), address);
-        return address;
+        return new InetSocketAddress(this.getHost(), this.getPort());
     }
 
-    public String getAddressAsString() {
-        InetSocketAddress address = this.getAddress();
+    public static String getAddressAsString(InetSocketAddress address) {
         InetAddress addr = address.getAddress();
         // addr == null if the hostname can't be resolved
         return (addr == null ? address.getHostString() : addr.getHostAddress()) + ":" + address.getPort();
@@ -163,10 +152,5 @@ public class Node implements Serializable {
 
         // TODO(mc): do we need to check host and port too?
         return Arrays.equals(id, ((Node) o).id);
-    }
-
-    private String getAddressCacheId() {
-        // we cannot use NodeId as cache id, currently we allow multiple nodeId connections per host
-        return this.host + ":" + this.port;
     }
 }

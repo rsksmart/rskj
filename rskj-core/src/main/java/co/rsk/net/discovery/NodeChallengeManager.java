@@ -24,6 +24,7 @@ import org.ethereum.net.rlpx.Node;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Created by mario on 22/02/17.
@@ -31,8 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NodeChallengeManager {
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 
-    public NodeChallenge startChallenge(Node challengedNode, Node challenger, PeerExplorer explorer) {
-        PingPeerMessage pingMessage = explorer.sendPing(challengedNode.getAddress(), 1, challengedNode);
+    public NodeChallenge startChallenge(Node challengedNode, Node challenger, Function<Node, PingPeerMessage> challengeFunc) {
+        PingPeerMessage pingMessage = challengeFunc.apply(challengedNode);
         String messageId = pingMessage.getMessageId();
         NodeChallenge challenge = new NodeChallenge(challengedNode, challenger, messageId);
         activeChallenges.put(messageId, challenge);

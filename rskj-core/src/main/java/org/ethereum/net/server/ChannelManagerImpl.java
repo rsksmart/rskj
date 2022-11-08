@@ -143,7 +143,7 @@ public class ChannelManagerImpl implements ChannelManager {
             return ReasonCode.DUPLICATE_PEER;
         }
 
-        if (!channel.isActive() && activePeers.size() >= maxActivePeers && !trustedPeers.accept(channel.getNode())) {
+        if (!channel.isActive() && activePeers.size() >= maxActivePeers && !trustedPeers.accept(channel.getNode().getId(), channel.getAddress())) {
             return ReasonCode.TOO_MANY_PEERS;
         }
 

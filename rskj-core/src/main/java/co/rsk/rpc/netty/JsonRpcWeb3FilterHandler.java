@@ -24,6 +24,8 @@ import java.util.Optional;
 public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
 
+    private static final int MAX_ADDRESS_CACHE_SIZE = 100;
+
     private final List<String> rpcHost;
     private final InetAddress rpcAddress;
     private final List<String> acceptedHosts;
@@ -35,7 +37,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         this.rpcHost = rpcHost;
         this.rpcAddress = rpcAddress;
         this.acceptedHosts = getAcceptedHosts();
-        this.addressCache = new MaxSizeHashMap<>(100, true); // just for RPC calls, seems a reasonable value for size / performance
+        this.addressCache = new MaxSizeHashMap<>(MAX_ADDRESS_CACHE_SIZE, true);
     }
 
     private List<String> getAcceptedHosts() {

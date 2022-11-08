@@ -69,7 +69,7 @@ class NodeChallengeManagerTest {
         peerExplorer.setUDPChannel(mock(UDPChannel.class));
 
         NodeChallengeManager manager = new NodeChallengeManager();
-        NodeChallenge challenge = manager.startChallenge(node2, node3, peerExplorer);
+        NodeChallenge challenge = manager.startChallenge(node2, node3, (chn) -> peerExplorer.sendPing(chn.getAddress(), 1, chn));
 
         Assertions.assertNotNull(challenge);
         Assertions.assertEquals(challenge.getChallengedNode(), node2);
