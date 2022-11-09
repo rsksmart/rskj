@@ -1,9 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeConstants;
@@ -307,15 +305,12 @@ public class PowpegMigrationTest {
         int expectedMigrations = activations.isActive(ConsensusRule.RSKIP294) ? (int)Math.ceil((double)utxosToMigrate.size() / bridgeConstants.getMaxInputsPerPegoutTransaction()): 1;
 
         // Migrate while there are still utxos to migrate
-        while(true) {
+        do {
             updateCollectionsTx = mock(Transaction.class);
             when(updateCollectionsTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
             bridgeSupport.updateCollections(updateCollectionsTx);
 
-            if (bridgeStorageProvider.getOldFederationBtcUTXOs().isEmpty()) {
-                break;
-            }
-        }
+        } while (!bridgeStorageProvider.getOldFederationBtcUTXOs().isEmpty());
         assertEquals(expectedMigrations, bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
         for (ReleaseTransactionSet.Entry pegout: bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
             // This would fail if we were to implement UTXO expansion at some point
@@ -327,6 +322,9 @@ public class PowpegMigrationTest {
                 assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
             }
         }
+
+        verifyPegouts(bridgeStorageProvider);
+
 
         /***
          * peg-in during migration
@@ -352,6 +350,8 @@ public class PowpegMigrationTest {
         }
 
         assertEquals(expectedMigrations + newlyAddedUtxos, bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
+
+        verifyPegouts(bridgeStorageProvider);
 
         /**
          * peg-out during migration
@@ -436,6 +436,51 @@ public class PowpegMigrationTest {
 
     }
 
+    private void verifyPegouts(
+            BridgeStorageProvider bridgeStorageProvider
+    ) throws IOException {
+        Federation activeFederation = bridgeStorageProvider.getNewFederation();
+        Federation retiringFederation = bridgeStorageProvider.getOldFederation();
+
+        for(ReleaseTransactionSet.Entry pegoutEntry: bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+            BtcTransaction pegoutBtcTransaction = pegoutEntry.getTransaction();
+            for(TransactionInput input: pegoutBtcTransaction.getInputs()) {
+                // Each input should contain the right scriptsig
+                List<ScriptChunk> scriptChunks = input.getScriptSig().getChunks();
+                Federation spendingFederation = null;
+                if (Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data, activeFederation.getRedeemScript().getProgram())) {
+                    spendingFederation = activeFederation;
+                } else if (retiringFederation != null &&
+                        Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data, retiringFederation.getRedeemScript().getProgram())) {
+                    spendingFederation = retiringFederation;
+                } else {
+                    // Does not match any? should be a flyover redeem script
+                    ScriptParserResult result = ScriptParser.parseScriptProgram(scriptChunks.get(scriptChunks.size() - 1).data);
+                    assertFalse(result.getException().isPresent());
+                    Script standardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
+                    if (Arrays.equals(standardRedeemScript.getProgram(), activeFederation.getStandardRedeemScript().getProgram())) {
+                        spendingFederation = activeFederation;
+                    } else if (retiringFederation != null &&
+                            Arrays.equals(standardRedeemScript.getProgram(), retiringFederation.getStandardRedeemScript().getProgram())) {
+                        spendingFederation = retiringFederation;
+                    } else {
+                        fail("pegout scriptsig does not match any Federation");
+                    }
+                }
+                assertEquals(ScriptOpCodes.OP_0, scriptChunks.get(0).opcode);
+                for (int i = 1; i <= spendingFederation.getNumberOfSignaturesRequired(); i++) {
+                    assertEquals(ScriptOpCodes.OP_0, scriptChunks.get(i).opcode);
+                }
+                int index = spendingFederation.getNumberOfSignaturesRequired() + 1;
+                if (spendingFederation instanceof ErpFederation) {
+                    // Should include an additional OP_0
+                    assertEquals(ScriptOpCodes.OP_0, scriptChunks.get(index).opcode);
+                }
+                // Won't compare the redeemscript as I've already compared it above
+            }
+        }
+    }
+
     private void testPegouts(
             BridgeSupport bridgeSupport,
             BridgeStorageProvider bridgeStorageProvider,
@@ -500,7 +545,7 @@ public class PowpegMigrationTest {
 
         // The last pegout is the one just created
         ReleaseTransactionSet.Entry lastPegout = null;
-        for (Iterator collectionItr = bridgeStorageProvider.getReleaseTransactionSet().getEntries().stream().iterator(); collectionItr.hasNext(); ) {
+        for (Iterator<ReleaseTransactionSet.Entry> collectionItr = bridgeStorageProvider.getReleaseTransactionSet().getEntries().stream().iterator(); collectionItr.hasNext(); ) {
             lastPegout = (ReleaseTransactionSet.Entry) collectionItr.next();
         }
 
@@ -513,9 +558,11 @@ public class PowpegMigrationTest {
                     assertEquals(powpegAddress, output.getAddressFromP2SH(bridgeConstants.getBtcParams()));
                     break;
                 default:
-                    assertTrue("Unexpected script type", false);
+                    fail("Unexpected script type");
             }
         }
+
+        verifyPegouts(bridgeStorageProvider);
 
         // Confirm the peg-outs
         blockNumber = blockNumber + bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
