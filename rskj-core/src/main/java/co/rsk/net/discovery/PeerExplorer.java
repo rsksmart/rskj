@@ -433,7 +433,8 @@ public class PeerExplorer {
         }
     }
 
-    private InetSocketAddress getAddress(Node node) {
+    @VisibleForTesting
+    InetSocketAddress getAddress(Node node) {
         String cacheId = node.getHost() + ":" + node.getPort();
 
         InetSocketAddress address = this.addressCache.get(cacheId);

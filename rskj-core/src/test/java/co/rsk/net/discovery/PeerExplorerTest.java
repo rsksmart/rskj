@@ -24,10 +24,12 @@ import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
+import co.rsk.util.MaxSizeHashMap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.ByteUtil;
@@ -40,10 +42,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by mario on 15/02/17.
@@ -661,6 +661,49 @@ class PeerExplorerTest {
 
         peerExplorer.start(); // re-start is not allowed
         assertEquals(ExecState.FINISHED, peerExplorer.getState());
+    }
+
+    @Test
+    void testGetAddress() {
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), null, null, null, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class), true);
+        MaxSizeHashMap<String, InetSocketAddress> addressCache = spy(new MaxSizeHashMap<>(1, true));
+        TestUtils.setInternalState(peerExplorer, "addressCache", addressCache);
+
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node node1 = new Node(key.getNodeId(), HOST_1, PORT_1);
+
+        ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
+        Node node2 = new Node(key2.getNodeId(), HOST_2, PORT_2);
+
+        String host1Key = HOST_1 + ":" + PORT_1;
+        InetSocketAddress host1Address = node1.getAddress();
+
+        String host2Key = HOST_2 + ":" + PORT_2;
+        InetSocketAddress host2Address = node2.getAddress();
+
+        assertNull(addressCache.get(host1Key));
+        assertNull(addressCache.get(host2Key));
+
+        verify(addressCache, never()).put(host1Key, host1Address);
+        InetSocketAddress retrievedAddressNode1 = peerExplorer.getAddress(node1);
+
+        assertEquals(retrievedAddressNode1, host1Address);
+        assertEquals(retrievedAddressNode1, addressCache.get(host1Key));
+        // put was called this time, not yet in cache
+        verify(addressCache, times(1)).put(host1Key, host1Address);
+
+        retrievedAddressNode1 = peerExplorer.getAddress(node1);
+        assertEquals(retrievedAddressNode1, host1Address);
+        assertEquals(retrievedAddressNode1, addressCache.get(host1Key));
+        // put was not called this time, already in cache
+        verify(addressCache, times(1)).put(host1Key, host1Address);
+
+        verify(addressCache, never()).put(host2Key, host2Address);
+        InetSocketAddress retrievedAddressNode2 = peerExplorer.getAddress(node2);
+        assertEquals(retrievedAddressNode2, host2Address);
+        assertEquals(retrievedAddressNode2, addressCache.get(host2Key));
+        // put was called this time, not yet in cache as it was full
+        verify(addressCache, times(1)).put(host2Key, host2Address);
     }
 
     private boolean containsNodeId(String nodeId, List<Node> nodes) {

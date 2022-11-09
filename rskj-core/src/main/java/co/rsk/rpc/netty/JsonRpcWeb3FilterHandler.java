@@ -2,6 +2,7 @@ package co.rsk.rpc.netty;
 
 import co.rsk.rpc.OriginValidator;
 import co.rsk.util.MaxSizeHashMap;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -183,7 +184,8 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         return isIPv4 || isIPv6;
     }
 
-    private InetAddress getInetAddress(String address) throws UnknownHostException {
+    @VisibleForTesting
+    InetAddress getInetAddress(String address) throws UnknownHostException {
         InetAddress inetAddress = this.addressCache.get(address);
         if (inetAddress != null) {
             return inetAddress;
