@@ -20,43 +20,45 @@ package co.rsk.rpc;
 
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.BlockToMineBuilder;
-import co.rsk.mine.MinerServer;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 class ExecutionFoundBlockRetrieverTest {
 
-    private MiningMainchainView miningMainchainView;
+    private static final Keccak256 HASH1 = new Keccak256("133e83bb305ef21ea7fc86fcced355db2300887274961a136ca5e8c8763687d9");
+    private static final Keccak256 HASH2 = new Keccak256("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
+    private static final int INVALID_PARAM_ERROR_CODE = -32602;
+
     private Blockchain blockchain;
-    private MinerServer minerServer;
     private BlockToMineBuilder builder;
+    private CompositeEthereumListener emitter;
     private ExecutionBlockRetriever retriever;
-    private final static int INVALID_PARAM_ERROR_CODE = -32602;
 
     @BeforeEach
     void setUp() {
         blockchain = mock(BlockChainImpl.class);
-        miningMainchainView = mock(MiningMainchainView.class);
-        minerServer = mock(MinerServer.class);
         builder = mock(BlockToMineBuilder.class);
-        retriever = new ExecutionBlockRetriever(miningMainchainView, blockchain, minerServer, builder);
+        emitter = mock(CompositeEthereumListener.class);
+        retriever = new ExecutionBlockRetriever(blockchain, builder, emitter);
     }
 
     @Test
@@ -81,119 +83,127 @@ class ExecutionFoundBlockRetrieverTest {
     }
 
     @Test
-    void getPendingUsesMinerServerLatestBlock() {
-        Block latest = mock(Block.class);
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.of(latest));
-
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest));
-    }
-
-    @Test
-    void getPendingUsesMinerServerAndIsUpToDate() {
-        Block latest1 = mock(Block.class);
-        Block latest2 = mock(Block.class);
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.of(latest1))
-                .thenReturn(Optional.of(latest2));
-
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest1));
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest2));
-    }
-
-    @Test
-    void getPendingBuildsPendingBlockIfMinerServerHasNoWork() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty());
-
+    void getPendingBuildsPendingBlockIfNoCachedResult() {
         BlockHeader bestHeader = mock(BlockHeader.class);
         Block bestBlock = mock(Block.class);
         when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock);
-
-        when(miningMainchainView.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
         Block builtBlock = mock(Block.class);
         BlockResult blockResult = mock(BlockResult.class);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader)), null))
-                .thenReturn(blockResult);
+        when(builder.buildPending(bestHeader)).thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock));
+        assertNull(retriever.getCachedPendingBlockResult());
+        assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(1)).buildPending(any());
     }
 
     @Test
-    void getPendingReturnsCachedBlockIfMinerServerHasNoWork() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.empty());
-
+    void getPendingReturnsCachedBlockNextTime() {
         BlockHeader bestHeader = mock(BlockHeader.class);
         Block bestBlock = mock(Block.class);
         when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock)
-                .thenReturn(bestBlock);
+        when(bestBlock.getHash()).thenReturn(HASH1);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
-        List<BlockHeader> mainchainHeaders = new ArrayList<>();
-        mainchainHeaders.add(bestBlock.getHeader());
-        mainchainHeaders.add(bestBlock.getHeader());
-        when(miningMainchainView.get())
-                .thenReturn(mainchainHeaders);
-
-        BlockResult blockResult = mock(BlockResult.class);
         Block builtBlock = mock(Block.class);
-        when(bestBlock.isParentOf(builtBlock))
-                .thenReturn(true);
-        when(builder.build(mainchainHeaders, null))
-                .thenReturn(blockResult);
+        when(builtBlock.getParentHash()).thenReturn(HASH1);
+        BlockResult blockResult = mock(BlockResult.class);
+        when(builder.buildPending(bestHeader)).thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertThat(retriever.retrieveExecutionBlock("pending"), is(blockResult));
-        assertThat(retriever.retrieveExecutionBlock("pending"), is(blockResult));
-        // TODO(mc): the cache doesn't work properly in getExecutionBlock_workaround.
-        //           this is a known bug in version 1.0.1, and should be fixed in master
-        verify(builder, times(2)).build(mainchainHeaders, null);
+        assertNull(retriever.getCachedPendingBlockResult());
+        retriever.retrieveExecutionBlock("pending");
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
+        assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(1)).buildPending(any());
     }
 
     @Test
-    void getPendingDoesntUseCacheIfBestBlockHasChanged() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.empty());
+    void getPendingBuildsNewPendingBlockIfPendingTxsArrive() {
+        BlockHeader bestHeader = mock(BlockHeader.class);
+        Block bestBlock = mock(Block.class);
+        when(bestBlock.getHeader()).thenReturn(bestHeader);
+        when(bestBlock.getHash()).thenReturn(HASH1);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
-        BlockHeader bestHeader1 = mock(BlockHeader.class);
-        Block bestBlock1 = mock(Block.class);
-        when(bestBlock1.getHeader()).thenReturn(bestHeader1);
+        Block builtBlock = mock(Block.class);
+        when(builtBlock.getParentHash()).thenReturn(HASH1);
+        BlockResult blockResult = mock(BlockResult.class);
+        when(builder.buildPending(bestHeader)).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(builtBlock);
+        ArgumentCaptor<EthereumListener> captor = ArgumentCaptor.forClass(EthereumListener.class);
+        EthereumListener listener;
 
-        BlockHeader bestHeader2 = mock(BlockHeader.class);
-        Block bestBlock2 = mock(Block.class);
-        when(bestBlock2.getHeader()).thenReturn(bestHeader2);
+        assertNull(retriever.getCachedPendingBlockResult());
+        retriever.retrieveExecutionBlock("pending");
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
+        assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(1)).buildPending(any());
 
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock1)
-                .thenReturn(bestBlock2);
+        retriever.start();
+        verify(emitter, times(1)).addListener(captor.capture());
+        listener = captor.getValue();
+        listener.onPendingTransactionsReceived(Collections.emptyList());
+        assertNull(retriever.getCachedPendingBlockResult());
 
-        when(miningMainchainView.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader1)))
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
+        assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(2)).buildPending(any());
 
-        Block builtBlock1 = mock(Block.class);
-        when(bestBlock1.isParentOf(builtBlock1)).thenReturn(true);
-        BlockResult blockResult1 = mock(BlockResult.class);
-        when(blockResult1.getBlock()).thenReturn(builtBlock1);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader1)), null)).thenReturn(blockResult1);
+        retriever.stop();
+        verify(emitter, times(1)).removeListener(listener);
+    }
 
-        Block builtBlock2 = mock(Block.class);
-        when(bestBlock2.isParentOf(builtBlock2)).thenReturn(true);
-        BlockResult blockResult2 = mock(BlockResult.class);
-        when(blockResult2.getBlock()).thenReturn(builtBlock2);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null)).thenReturn(blockResult2);
+    @Test
+    void getPendingBuildsNewPendingBlockIfNewBestBlockArrives() {
+        BlockHeader bestHeader = mock(BlockHeader.class);
+        Block bestBlock = mock(Block.class);
+        when(bestBlock.getHeader()).thenReturn(bestHeader);
+        when(bestBlock.getHash()).thenReturn(HASH1);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock1));
-        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock2));
+        BlockHeader newBestHeader = mock(BlockHeader.class);
+        Block newBestBlock = mock(Block.class);
+        when(newBestBlock.getHeader()).thenReturn(newBestHeader);
+        when(newBestBlock.getHash()).thenReturn(HASH2);
+
+        Block builtBlock = mock(Block.class);
+        when(builtBlock.getParentHash()).thenReturn(HASH1);
+        BlockResult blockResult = mock(BlockResult.class);
+        when(builder.buildPending(bestHeader)).thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(builtBlock);
+
+        Block anotherBuiltBlock = mock(Block.class);
+        when(anotherBuiltBlock.getParentHash()).thenReturn(HASH2);
+        BlockResult anotherBlockResult = mock(BlockResult.class);
+        when(builder.buildPending(newBestHeader)).thenReturn(anotherBlockResult);
+        when(anotherBlockResult.getBlock()).thenReturn(anotherBuiltBlock);
+
+        ArgumentCaptor<EthereumListener> captor = ArgumentCaptor.forClass(EthereumListener.class);
+        EthereumListener listener;
+
+        assertNull(retriever.getCachedPendingBlockResult());
+        retriever.retrieveExecutionBlock("pending");
+        assertEquals(blockResult.getBlock(), retriever.getCachedPendingBlockResult().getBlock());
+        assertEquals(blockResult.getFinalState(), retriever.getCachedPendingBlockResult().getFinalState());
+        assertEquals(builtBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(1)).buildPending(any());
+
+        retriever.start();
+        verify(emitter, times(1)).addListener(captor.capture());
+        listener = captor.getValue();
+        when(blockchain.getBestBlock()).thenReturn(newBestBlock);
+        listener.onBestBlock(newBestBlock, Collections.emptyList());
+        assertNull(retriever.getCachedPendingBlockResult());
+
+        assertEquals(anotherBuiltBlock, retriever.retrieveExecutionBlock("pending").getBlock());
+        verify(builder, times(2)).buildPending(any());
+
+        retriever.stop();
+        verify(emitter, times(1)).removeListener(listener);
     }
 
     @Test

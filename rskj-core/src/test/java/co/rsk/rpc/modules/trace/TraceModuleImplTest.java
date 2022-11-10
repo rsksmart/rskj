@@ -18,25 +18,41 @@
 
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.config.GasLimitConfig;
+import co.rsk.config.MiningConfig;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.DifficultyCalculator;
+import co.rsk.mine.*;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.test.World;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.validators.DummyBlockValidationRule;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
+import java.time.Clock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.mockito.Mockito.mock;
 
 class TraceModuleImplTest {
     @Test
@@ -61,6 +77,26 @@ class TraceModuleImplTest {
         JsonNode result = traceModule.traceBlock("0x0001020300010203000102030001020300010203000102030001020300010203");
 
         Assertions.assertNull(result);
+    }
+
+    @Test
+    void retrievePendingBlock() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+        ExecutionBlockRetriever executionBlockRetriever = createExecutionBlockRetriever(world);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever);
+
+        world.getTransactionPool().addTransaction(createSampleTransaction());
+
+        JsonNode result = traceModule.traceBlock("pending");
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode arrResult = (ArrayNode) result;
+
+        Assertions.assertEquals(1, arrResult.size());
     }
 
     @Test
@@ -152,6 +188,7 @@ class TraceModuleImplTest {
         World world = executeMultiContract(receiptStore);
 
         retrieveTraceFilterEmpty(world, receiptStore);
+        retrieveTraceFilterPending(world, receiptStore);
         retrieveTraceFilter1Record(world, receiptStore);
         retrieveTraceFilter3Records(world, receiptStore);
         retrieveTraceFilterNext3RecordsAndOnly1Remains(world, receiptStore);
@@ -362,6 +399,80 @@ class TraceModuleImplTest {
         ArrayNode aresult = (ArrayNode)result;
 
         Assertions.assertEquals(0, aresult.size());
+    }
+
+    private static void retrieveTraceFilterPending(World world, ReceiptStore receiptStore) throws Exception {
+        ExecutionBlockRetriever executionBlockRetriever = createExecutionBlockRetriever(world);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor(), executionBlockRetriever);
+
+        world.getTransactionPool().addTransaction(createSampleTransaction());
+
+        TraceFilterRequest traceFilterRequest = new TraceFilterRequest();
+
+        traceFilterRequest.setFromBlock("pending");
+        traceFilterRequest.setToBlock("pending");
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequest);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.isArray());
+
+        ArrayNode arrResult = (ArrayNode) result;
+
+        Assertions.assertEquals(1, arrResult.size());
+    }
+
+    private static ExecutionBlockRetriever createExecutionBlockRetriever(World world) {
+        RskSystemProperties rskSystemProperties = world.getConfig();
+        MiningConfig miningConfig = new MiningConfig(
+                rskSystemProperties.coinbaseAddress(),
+                rskSystemProperties.minerMinFeesNotifyInDollars(),
+                rskSystemProperties.minerGasUnitInDollars(),
+                rskSystemProperties.minerMinGasPrice(),
+                rskSystemProperties.getNetworkConstants().getUncleListLimit(),
+                rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
+                new GasLimitConfig(
+                        rskSystemProperties.getNetworkConstants().getMinGasLimit(),
+                        rskSystemProperties.getTargetGasLimit(),
+                        rskSystemProperties.getForceTargetGasLimit()
+                ),
+                rskSystemProperties.isMinerServerFixedClock(),
+                rskSystemProperties.workSubmissionRateLimitInMills()
+        );
+        BlockToMineBuilder builder = new BlockToMineBuilder(
+                rskSystemProperties.getActivationConfig(),
+                miningConfig,
+                world.getRepositoryLocator(),
+                world.getBlockStore(),
+                world.getTransactionPool(),
+                new DifficultyCalculator(
+                        rskSystemProperties.getActivationConfig(),
+                        rskSystemProperties.getNetworkConstants()
+                ),
+                new GasLimitCalculator(rskSystemProperties.getNetworkConstants()),
+                new ForkDetectionDataCalculator(),
+                new DummyBlockValidationRule(),
+                new MinerClock(miningConfig.isFixedClock(), Clock.systemUTC()),
+                new BlockFactory(rskSystemProperties.getActivationConfig()),
+                world.getBlockExecutor(),
+                new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                new MinerUtils()
+        );
+
+        return new ExecutionBlockRetriever(world.getBlockChain(), builder, mock(CompositeEthereumListener.class));
+    }
+
+    private static Transaction createSampleTransaction() {
+        Account sender = new AccountBuilder().name("cow").build();
+        Account receiver = new AccountBuilder().name("receiver").build();
+
+        return new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .gasPrice(BigInteger.valueOf(200))
+                .value(BigInteger.TEN)
+                .build();
     }
 
     private static void retrieveTraceFilter1Record(World world, ReceiptStore receiptStore) throws Exception {

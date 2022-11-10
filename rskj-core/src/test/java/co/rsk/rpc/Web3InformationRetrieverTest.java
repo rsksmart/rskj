@@ -43,7 +43,7 @@ class Web3InformationRetrieverTest {
     @Test
     void getBlock_pending() {
         Block pendingBlock = mock(Block.class);
-        BlockResult pendingBlockResult = mock(BlockResult.class);
+        ExecutionBlockRetriever.Result pendingBlockResult = mock(ExecutionBlockRetriever.Result.class);
         when(pendingBlockResult.getBlock()).thenReturn(pendingBlock);
         when(executionBlockRetriever.retrieveExecutionBlock("pending")).thenReturn(pendingBlockResult);
         Optional<Block> result = target.getBlock("pending");

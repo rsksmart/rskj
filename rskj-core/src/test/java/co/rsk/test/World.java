@@ -156,6 +156,10 @@ public class World {
         return world;
     }
 
+    public RskSystemProperties getConfig() {
+        return config;
+    }
+
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
 
     public BlockExecutor getBlockExecutor() {
