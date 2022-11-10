@@ -18,27 +18,21 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyByte;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.core.bc.PendingState;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
@@ -49,28 +43,19 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
-import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.PendingState;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.util.HexUtils;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
 
-    private TestSystemProperties config = new TestSystemProperties();
-    private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void callSmokeTest() {
         CallArguments args = new CallArguments();
-        BlockResult blockResult = mock(BlockResult.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         when(retriever.retrieveExecutionBlock("latest"))
@@ -109,7 +94,7 @@ public class EthModuleTest {
     @Test
     public void callWithoutReturn() {
         CallArguments args = new CallArguments();
-        BlockResult blockResult = mock(BlockResult.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         when(retriever.retrieveExecutionBlock("latest"))
@@ -148,7 +133,7 @@ public class EthModuleTest {
     @Test
     public void test_revertedTransaction() {
         CallArguments args = new CallArguments();
-        BlockResult blockResult = mock(BlockResult.class);
+        ExecutionBlockRetriever.Result blockResult = mock(ExecutionBlockRetriever.Result.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
         when(retriever.retrieveExecutionBlock("latest"))
