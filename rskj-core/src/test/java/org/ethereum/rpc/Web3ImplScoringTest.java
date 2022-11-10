@@ -398,14 +398,13 @@ class Web3ImplScoringTest {
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();
-        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(world.getBlockStore(), 2);
 
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
-                null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
+                null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),

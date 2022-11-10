@@ -18,25 +18,17 @@
 
 package co.rsk.rpc.modules.trace;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -47,7 +39,13 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import co.rsk.util.HexUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TraceModuleImpl implements TraceModule {
 
@@ -203,8 +201,8 @@ public class TraceModuleImpl implements TraceModule {
             return this.blockchain.getBlockByNumber(0);
         } else if (LATEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
+        } else if (PENDING_BLOCK.equalsIgnoreCase(id)) {
+            return executionBlockRetriever.retrieveExecutionBlock(PENDING_BLOCK).getBlock();
         } else {
             try {
                 long blockNumber = HexUtils.stringHexToBigInteger(id).longValue();
@@ -247,7 +245,9 @@ public class TraceModuleImpl implements TraceModule {
 
             for (Transaction tx : txList) {
                 TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                Objects.requireNonNull(txInfo);
+                if (txInfo == null) { // for a pending block we have no receipt, so empty one is being provided
+                    txInfo = new TransactionInfo(new TransactionReceipt(), block.getHash().getBytes(), block.getTransactionsList().indexOf(tx));
+                }
                 txInfo.setTransaction(tx);
 
                 SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
