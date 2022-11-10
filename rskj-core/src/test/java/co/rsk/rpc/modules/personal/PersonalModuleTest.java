@@ -53,7 +53,6 @@ class PersonalModuleTest {
 
         TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
         when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
-        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
 
         Ethereum ethereum = mock(Ethereum.class);
         when(ethereum.submitTransaction(tx)).thenReturn(transactionPoolAddResult);
