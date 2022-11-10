@@ -419,7 +419,8 @@ class RepositoryImplTest {
 
         repository.createAccount(rskAddress);
         repository.setupContract(rskAddress);
-        repository.saveCode(rskAddress, TestUtils.randomBytes(32));
+        byte[] randomCode = TestUtils.generateBytes(RepositoryImplTest.class,"code",32);
+        repository.saveCode(rskAddress, randomCode);
 
         MatcherAssert.assertThat(repository.isContract(rskAddress), is(true));
         MatcherAssert.assertThat(repository.isContract(TestUtils.randomAddress()), is(false));

@@ -24,6 +24,8 @@ import org.awaitility.Awaitility;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBException;
 import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.WriteBatch;
 import org.junit.jupiter.api.AfterEach;
@@ -31,8 +33,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.iq80.leveldb.DB;
-import org.iq80.leveldb.DBException;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -43,8 +43,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static org.ethereum.TestUtils.randomBytes;
-import static org.hamcrest.Matchers.*;
+import static org.ethereum.TestUtils.generateBytes;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.*;
 
 class LevelDbDataSourceTest {
@@ -97,8 +97,8 @@ class LevelDbDataSourceTest {
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
 
-        byte[] keyToDelete1 = TestUtils.generateBytes(this.getClass(), "keyToDelete1", 32);
-        byte[] keyToDelete2 = TestUtils.generateBytes(this.getClass(), "keyToDelete2", 32);
+        byte[] keyToDelete1 = generateBytes(this.getClass(), "keyToDelete1", 32);
+        byte[] keyToDelete2 = generateBytes(this.getClass(), "keyToDelete2", 32);
         Set<ByteArrayWrapper> deleteKeys = ImmutableSet.of(ByteUtil.wrap(keyToDelete1), ByteUtil.wrap(keyToDelete2));
 
         RuntimeException updateException = Assertions.assertThrows(RuntimeException.class, () -> dataSource.updateBatch(batch, deleteKeys));
@@ -114,9 +114,9 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 32);
-            byte[] initialValue = TestUtils.generateBytes(this.getClass(), "initialValue", 32);
-            byte[] updatedValue = TestUtils.generateBytes(this.getClass(), "updatedValue", 32);
+            byte[] key = generateBytes(this.getClass(), "key", 32);
+            byte[] initialValue = generateBytes(this.getClass(), "initialValue", 32);
+            byte[] updatedValue = generateBytes(this.getClass(), "updatedValue", 32);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -151,7 +151,7 @@ class LevelDbDataSourceTest {
         DB db = Mockito.mock(DB.class);
         TestUtils.setInternalState(dataSource, "db", db);
 
-        byte[] key = TestUtils.generateBytes(this.getClass(), "key", 20);
+        byte[] key = generateBytes(this.getClass(), "key", 20);
         DBException fakeException = new DBException("fake exception");
         Mockito.when(db.get(key)).thenThrow(fakeException);
         DBException dbExceptionThrown = Assertions.assertThrows(DBException.class, () -> dataSource.get(key));
@@ -166,8 +166,8 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 20);
-            byte[] value = TestUtils.generateBytes(this.getClass(), "value", 20);
+            byte[] key = generateBytes(this.getClass(), "key", 20);
+            byte[] value = generateBytes(this.getClass(), "value", 20);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -201,8 +201,8 @@ class LevelDbDataSourceTest {
         boolean unlocked = false;
 
         try {
-            byte[] key = TestUtils.generateBytes(this.getClass(), "key", 32);
-            byte[] value = TestUtils.generateBytes(this.getClass(), "value", 32);
+            byte[] key = generateBytes(this.getClass(), "key", 32);
+            byte[] value = generateBytes(this.getClass(), "value", 32);
 
             AtomicBoolean threadStarted = new AtomicBoolean(false);
 
@@ -255,10 +255,10 @@ class LevelDbDataSourceTest {
         lock.writeLock().lock(); // we test write-locking because readLock() would allow multiple "read" access
         boolean unlocked = false;
 
-        byte[] key1 = TestUtils.generateBytes(this.getClass(), "key1", 20);
-        byte[] value1 = TestUtils.generateBytes(this.getClass(), "value1", 20);
-        byte[] key2 = TestUtils.generateBytes(this.getClass(), "key2", 20);
-        byte[] value2 = TestUtils.generateBytes(this.getClass(), "value2", 20);
+        byte[] key1 = generateBytes(this.getClass(), "key1", 20);
+        byte[] value1 = generateBytes(this.getClass(), "value1", 20);
+        byte[] key2 = generateBytes(this.getClass(), "key2", 20);
+        byte[] value2 = generateBytes(this.getClass(), "value2", 20);
 
         dataSource.put(key1, value1);
 
@@ -298,7 +298,7 @@ class LevelDbDataSourceTest {
     private static Map<ByteArrayWrapper, byte[]> createBatch(int batchSize) {
         HashMap<ByteArrayWrapper, byte[]> result = new HashMap<>();
         for (int i = 0; i < batchSize; i++) {
-            result.put(ByteUtil.wrap(randomBytes(32)), randomBytes(32));
+            result.put(ByteUtil.wrap(generateBytes(LevelDbDataSourceTest.class,"key",32)), generateBytes(LevelDbDataSourceTest.class,"value",32));
         }
         return result;
     }

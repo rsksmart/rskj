@@ -151,7 +151,7 @@ class DownloadingHeadersSyncStateTest {
 
         ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
         when(currentChunk.getCount()).thenReturn(2); // different from chunk size
-        byte[] chunkHash = TestUtils.randomBytes(32);
+        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
         when(currentChunk.getHash()).thenReturn(chunkHash);
         when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.of(currentChunk));
 
@@ -182,7 +182,7 @@ class DownloadingHeadersSyncStateTest {
 
         ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
         when(currentChunk.getCount()).thenReturn(1);
-        byte[] chunkHash = TestUtils.randomBytes(32);
+        byte[]chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
         when(currentChunk.getHash()).thenReturn(chunkHash);
         when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.of(currentChunk));
 

@@ -25,13 +25,15 @@ import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Genesis;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -45,7 +47,7 @@ import static org.mockito.Mockito.*;
 
 class DownloadingBackwardsBodiesSyncStateTest {
 
-    private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
+    private final byte[] FAKE_GENERIC_HASH = TestUtils.generateBytes(DownloadingBackwardsBodiesSyncStateTest.class,"fakeHash",32);
 
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
@@ -341,7 +343,8 @@ class DownloadingBackwardsBodiesSyncStateTest {
 
         Block block = mock(Block.class);
         when(block.getNumber()).thenReturn(bodyId);
-        when(block.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32))); // make it differ
+        byte[] randomByteArray = TestUtils.generateBytes(DownloadingBackwardsBodiesSyncStateTest.class, "blockHash", 32);
+        when(block.getHash()).thenReturn(new Keccak256(randomByteArray)); // make it differ
         when(blockFactory.newBlock(header, body.getTransactions(), body.getUncles()))
                 .thenReturn(block);
 

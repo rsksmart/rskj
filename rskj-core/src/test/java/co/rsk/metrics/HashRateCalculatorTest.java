@@ -40,8 +40,8 @@ import java.time.Duration;
 class HashRateCalculatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
-    private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
-    private final byte[] OHTER_FAKE_GENERIC_HASH = TestUtils.randomBytes(32)        ;
+    private final byte[] FAKE_GENERIC_HASH = TestUtils.generateBytes(HashRateCalculatorTest.class,"1",32);
+    private final byte[] OHTER_FAKE_GENERIC_HASH = TestUtils.generateBytes(HashRateCalculatorTest.class,"2",32);
     private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
     private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
 

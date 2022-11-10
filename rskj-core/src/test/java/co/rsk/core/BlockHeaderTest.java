@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigInteger;
@@ -44,7 +43,7 @@ import java.util.function.Consumer;
 
 import static java.lang.System.arraycopy;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mockStatic;
 
 @ExtendWith(MockitoExtension.class)
@@ -105,7 +104,7 @@ class BlockHeaderTest {
 
     @Test
     void getEncodedWithUmmRootWithMergedMiningFields() {
-        byte[] ummRoot = TestUtils.randomBytes(20);
+        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, ummRoot);
 
         byte[] headerEncoded = header.getFullEncoded();
@@ -116,7 +115,7 @@ class BlockHeaderTest {
 
     @Test
     void getEncodedWithUmmRootWithoutMergedMiningFields() {
-        byte[] ummRoot = TestUtils.randomBytes(20);
+        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, ummRoot);
 
         byte[] headerEncoded = header.getFullEncoded();
