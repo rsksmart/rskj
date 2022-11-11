@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.ScriptException;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -33,6 +34,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -81,9 +83,15 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static co.rsk.peg.utils.BridgeStorageProviderUtil.*;
 
-class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
+class BridgeSupportFlyoverTest {
 
+    private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    private final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
+    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    private BridgeSupportBuilder bridgeSupportBuilder;
+    private ActivationConfig.ForBlock activations;
     private SignatureCache signatureCache;
 
     @BeforeEach
