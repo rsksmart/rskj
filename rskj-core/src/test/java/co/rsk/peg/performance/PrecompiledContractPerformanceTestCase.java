@@ -144,7 +144,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
     protected static class Helper {
         public static int randomInRange(int min, int max) {
-            return new Random().nextInt(max - min + 1) + min;
+            return new Random(Helper.class.hashCode()).nextInt(max - min + 1) + min;
         }
 
         public static Transaction buildTx(ECKey sender) {
@@ -174,7 +174,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         }
 
         public static HeightProvider getRandomHeightProvider(int max) {
-            return (int executionIndex) -> new Random().nextInt(max);
+            return (int executionIndex) -> new Random(max).nextInt(max);
         }
 
         public static HeightProvider getRandomHeightProvider(int min, int max) {

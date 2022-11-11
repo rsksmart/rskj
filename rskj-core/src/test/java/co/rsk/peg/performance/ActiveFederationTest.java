@@ -119,7 +119,7 @@ class ActiveFederationTest extends BridgePerformanceTestCase {
 
                 federation = new Federation(
                         members,
-                        Instant.ofEpochMilli(new Random().nextLong()),
+                        Instant.ofEpochMilli(new Random(executionIndex).nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters
                 );

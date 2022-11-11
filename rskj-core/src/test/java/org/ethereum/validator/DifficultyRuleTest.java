@@ -59,11 +59,9 @@ class DifficultyRuleTest {
     private BlockHeader getHeader(long difficultyValue) {
         byte[] difficulty = DataWord.valueOf(difficultyValue).getData();
 
-        BlockHeader header = blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress())
+        return blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress(String.valueOf(difficultyValue)))
                 .setDifficultyFromBytes(difficulty)
                 .build();
-
-        return header;
     }
 }

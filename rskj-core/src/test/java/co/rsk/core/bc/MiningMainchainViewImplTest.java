@@ -19,17 +19,17 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Random;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -368,7 +368,7 @@ class MiningMainchainViewImplTest {
                 blockStore,
                 4);
 
-        Block newBestBlock = createBlock(13, new Keccak256(getRandomHash()));
+        Block newBestBlock = createBlock(13, TestUtils.randomHash("newBestBlock"));
         when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
         when(blockStore.getChainBlockByNumber(13L)).thenReturn(newBestBlock);
 
@@ -432,8 +432,7 @@ class MiningMainchainViewImplTest {
 
         when(header.isGenesis()).thenReturn(Boolean.TRUE);
         when(header.getNumber()).thenReturn(Long.valueOf(0));
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
+        Keccak256 blockHash = TestUtils.randomHash("genesis");
         when(header.getHash()).thenReturn(blockHash);
 
         return header;
@@ -457,20 +456,13 @@ class MiningMainchainViewImplTest {
 
     private BlockHeader createHeader(long number, Keccak256 parentHash){
         BlockHeader header = mock(BlockHeader.class);
+        Keccak256 blockHash = TestUtils.randomHash("hash"+number);
 
         when(header.getNumber()).thenReturn(number);
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
         when(header.getHash()).thenReturn(blockHash);
         when(header.getParentHash()).thenReturn(parentHash);
 
         return header;
     }
 
-    private byte[] getRandomHash() {
-        byte[] byteArray = new byte[32];
-        new Random().nextBytes(byteArray);
-
-        return byteArray;
-    }
 }

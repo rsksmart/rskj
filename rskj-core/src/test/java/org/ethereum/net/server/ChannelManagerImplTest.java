@@ -112,7 +112,7 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransactions_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash("txHash"));
         final List<Transaction> transactions = Collections.singletonList(transaction);
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
@@ -127,7 +127,7 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransactions_skipSender() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash("txHash"));
         final List<Transaction> transactions = Collections.singletonList(transaction);
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final Channel sender = mock(Channel.class);
@@ -145,7 +145,7 @@ class ChannelManagerImplTest {
     @Test
     void broadcastTransaction_broadcastToAllActivePeers() {
         final Transaction transaction = mock(Transaction.class);
-        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash("txHash"));
         final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
         channelManager.setActivePeers(activePeers);

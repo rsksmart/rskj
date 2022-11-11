@@ -18,20 +18,19 @@
 
 package co.rsk.net.messages;
 
+import org.ethereum.TestUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Random;
-
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class BlockHashResponseMessageTest {
     @Test
     void createMessage() {
         long id = 42;
-        byte[] hash = new byte[32];
-        Random random = new Random();
-        random.nextBytes(hash);
+        byte[] hash = TestUtils.generateBytes("hash",32);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 
@@ -43,9 +42,7 @@ class BlockHashResponseMessageTest {
     @Test
     void accept() {
         long someId = 42;
-        byte[] hash = new byte[32];
-        Random random = new Random();
-        random.nextBytes(hash);
+        byte[] hash = TestUtils.generateBytes("accept",32);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(someId, hash);
 

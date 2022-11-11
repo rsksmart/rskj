@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -26,12 +27,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +43,7 @@ class ConsensusValidationMainchainViewImplTest {
         BlockStore blockStore = mock(BlockStore.class);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
-        List<BlockHeader> result = view.get(new Keccak256(getRandomHash()), 0);
+        List<BlockHeader> result = view.get(TestUtils.randomHash("blockStore"), 0);
 
         assertNotNull(result);
         assertThat(result.size(), is(0));
@@ -148,13 +148,13 @@ class ConsensusValidationMainchainViewImplTest {
 
         Map<Keccak256, BlockHeader> pendingHeadersByHash = new ConcurrentHashMap<>();
         BlockHeader headerOnTopOfBestBlock = mock(BlockHeader.class);
-        when(headerOnTopOfBestBlock.getHash()).thenReturn(new Keccak256(getRandomHash()));
+        when(headerOnTopOfBestBlock.getHash()).thenReturn(TestUtils.randomHash("headerOnTopOfBestBlock"));
         Keccak256 bestBlockHash = bestBlock.getHash();
         when(headerOnTopOfBestBlock.getParentHash()).thenReturn(bestBlockHash);
         pendingHeadersByHash.put(headerOnTopOfBestBlock.getHash(), headerOnTopOfBestBlock);
 
         BlockHeader headerOnTopOfHeader = mock(BlockHeader.class);
-        when(headerOnTopOfHeader.getHash()).thenReturn(new Keccak256(getRandomHash()));
+        when(headerOnTopOfHeader.getHash()).thenReturn(TestUtils.randomHash("headerOnTopOfHeader"));
         Keccak256 headerOnTopOfBestBlockHash = headerOnTopOfBestBlock.getHash();
         when(headerOnTopOfHeader.getParentHash()).thenReturn(headerOnTopOfBestBlockHash);
         pendingHeadersByHash.put(headerOnTopOfHeader.getHash(), headerOnTopOfHeader);
@@ -182,7 +182,7 @@ class ConsensusValidationMainchainViewImplTest {
     private BlockStore createBlockStore(int numberOfBlocks) {
         BlockStore blockstore = mock(BlockStore.class);
 
-        Block previousBlock = createBlock(420, new Keccak256(getRandomHash()));
+        Block previousBlock = createBlock(420, TestUtils.randomHash("previousBlock"));
         when(blockstore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
 
         for(long i = 421; i < 420 + numberOfBlocks; i++) {
@@ -202,8 +202,7 @@ class ConsensusValidationMainchainViewImplTest {
     private Block createBlock(long number, Keccak256 parentHash){
         Block block = mock(Block.class);
         when(block.getNumber()).thenReturn(number);
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
+        Keccak256 blockHash = TestUtils.randomHash("blockHash");
         when(block.getHash()).thenReturn(blockHash);
         when(block.getParentHash()).thenReturn(parentHash);
         BlockHeader header = mock(BlockHeader.class);
@@ -214,10 +213,4 @@ class ConsensusValidationMainchainViewImplTest {
         return block;
     }
 
-    private byte[] getRandomHash() {
-        byte[] byteArray = new byte[32];
-        new Random().nextBytes(byteArray);
-
-        return byteArray;
-    }
 }

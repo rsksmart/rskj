@@ -38,40 +38,34 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 5/11/2016.
  */
 public class SimplePeer implements Peer {
-    private static Random random = new Random();
+    private static Random random = new Random(SimplePeer.class.hashCode());
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
     private InetAddress address;
 
     public SimplePeer(NodeID nodeID) {
         this.nodeID = nodeID;
-
-        try {
-            byte[] bytes = new byte[32];
-            byte[] addressBytes = new byte[4];
-            random.nextBytes(bytes);
-            this.address = InetAddress.getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            Assertions.fail("SimplePeer creation failed");
-        }
+        initAddress();
     }
 
     public SimplePeer() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         this.nodeID = new NodeID(bytes);
-
-        try {
-            byte[] addressBytes = new byte[4];
-            random.nextBytes(bytes);
-            this.address = InetAddress.getByAddress(addressBytes);
-        } catch (UnknownHostException e) {
-            Assertions.fail("SimplePeer creation failed");
-        }
+        initAddress();
     }
 
     public SimplePeer(byte[] nodeID) {
         this.nodeID = new NodeID(nodeID);
+    }
+
+    private void initAddress(){
+        try {
+            byte[] addressBytes = new byte[4];
+            this.address = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            Assertions.fail("SimplePeer creation failed");
+        }
     }
 
     public void sendMessage(Message message) {

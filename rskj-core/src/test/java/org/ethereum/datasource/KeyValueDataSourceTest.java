@@ -260,9 +260,9 @@ class KeyValueDataSourceTest {
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
         Map<ByteArrayWrapper, byte[]> updatedValues;
         updatedValues = new HashMap<>();
-
+        Random random = new Random(KeyValueDataSourceTest.class.hashCode());
         for (int i = 0; i < maxValuesToCreate; i++) {
-            updatedValues.put(ByteUtil.wrap(TestUtils.randomBytes(20)), TestUtils.randomBytes(20));
+            updatedValues.put(ByteUtil.wrap(TestUtils.generateBytesFromRandom(random,20)), TestUtils.generateBytesFromRandom(random,20));
         }
         return updatedValues;
     }

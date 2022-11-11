@@ -74,7 +74,7 @@ class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerf
     private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) throws VMException {
         String name = String.format("%s-%d", function.name, pathLength);
         ExecutionStats stats = new ExecutionStats(name);
-        Random rnd = new Random();
+        Random rnd = new Random(DeriveExtendedPublicKeyPerformanceTestCase.class.hashCode());
         byte[] chainCode = new byte[32];
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 

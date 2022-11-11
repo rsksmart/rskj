@@ -72,7 +72,7 @@ class BlockTest {
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHashFromKeccak256(PegTestUtils.createHash3())
                 .setEmptyUnclesHash()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress("newHeaderAddress"))
                 .setEmptyStateRoot()
                 .setTxTrieRoot( BlockHashesHelper.getTxTrieRoot(txs, true))
                 .setEmptyLogsBloom()

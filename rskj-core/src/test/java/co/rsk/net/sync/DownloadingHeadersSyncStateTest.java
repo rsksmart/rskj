@@ -182,13 +182,14 @@ class DownloadingHeadersSyncStateTest {
 
         ChunkDescriptor currentChunk = mock(ChunkDescriptor.class);
         when(currentChunk.getCount()).thenReturn(1);
-        byte[]chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
+        byte[] chunkHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"chunkHash",32);
         when(currentChunk.getHash()).thenReturn(chunkHash);
         when(chunksDownloadHelper.getCurrentChunk()).thenReturn(Optional.of(currentChunk));
 
         List<BlockHeader> chunk = new ArrayList<>();
         BlockHeader header = mock(BlockHeader.class, Mockito.RETURNS_DEEP_STUBS);
-        when(header.getHash().getBytes()).thenReturn(TestUtils.randomBytes(32)); // different from chunkHash
+        byte[] headerHash = TestUtils.generateBytes(DownloadingHeadersSyncStateTest.class,"headerHash",32);
+        when(header.getHash().getBytes()).thenReturn(headerHash);; // different from chunkHash
         chunk.add(header);
         syncState.newBlockHeaders(chunk);
 

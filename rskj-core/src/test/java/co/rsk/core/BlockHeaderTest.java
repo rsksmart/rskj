@@ -367,7 +367,7 @@ class BlockHeaderTest {
         return new BlockHeader(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
-                new RskAddress(TestUtils.randomAddress().getBytes()),
+                TestUtils.randomAddress("address"),
                 HashUtil.EMPTY_TRIE_HASH,
                 "tx_trie_root".getBytes(),
                 HashUtil.EMPTY_TRIE_HASH,

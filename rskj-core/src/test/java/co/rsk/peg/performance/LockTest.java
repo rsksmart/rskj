@@ -66,7 +66,7 @@ class LockTest extends BridgePerformanceTestCase {
     }
 
     private void isBtcTxHashAlreadyProcessed_no(int times, ExecutionStats stats) throws VMException {
-        Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
+        Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random(times).nextLong()).toByteArray());
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
         executeAndAverage("isBtcTxHashAlreadyProcessed-no", times, abiEncoder, buildInitializer(),
                 Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -88,7 +88,7 @@ class LockTest extends BridgePerformanceTestCase {
     }
 
     private void getBtcTxHashProcessedHeight_notProcessed(int times, ExecutionStats stats) throws VMException {
-        Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
+        Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random(times).nextLong()).toByteArray());
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
         executeAndAverage("getBtcTxHashProcessedHeight-notProcessed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10), stats);
@@ -103,7 +103,7 @@ class LockTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             int hashesToGenerate = Helper.randomInRange(minHashes, maxHashes);
             int randomHashIndex = Helper.randomInRange(0, hashesToGenerate-1);
-            Random rnd = new Random();
+            Random rnd = new Random(provider.hashCode());
             for (int i = 0; i < hashesToGenerate; i++) {
                 Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(rnd.nextLong()).toByteArray());
                 long height = Helper.randomInRange(minHeight, maxHeight);

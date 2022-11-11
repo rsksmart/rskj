@@ -30,8 +30,8 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
@@ -39,7 +39,6 @@ import java.util.Arrays;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -304,9 +303,9 @@ class BlockFactoryTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return factory.getBlockHeaderBuilder()
-                .setParentHash(TestUtils.randomHash().getBytes())
+                .setParentHash(TestUtils.randomHash("parentHash"+number).getBytes())
                 .setEmptyUnclesHash()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress("coinbase"+number))
                 .setEmptyStateRoot()
                 .setTxTrieRoot("tx_trie_root".getBytes())
                 .setEmptyLogsBloom()
@@ -337,9 +336,9 @@ class BlockFactoryTest {
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
         return factory.getBlockHeaderBuilder()
-                .setParentHash(TestUtils.randomHash().getBytes())
+                .setParentHash(TestUtils.randomHash("hash"+number).getBytes())
                 .setEmptyUnclesHash()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress("coinbase"+number))
                 .setEmptyStateRoot()
                 .setTxTrieRoot("tx_trie_root".getBytes())
                 .setEmptyLogsBloom()

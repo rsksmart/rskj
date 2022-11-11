@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class BridgeSupportRSKIP220NewMethodsTest {
-    private static Random random = new Random();
+    private static Random random = new Random(BridgeSupportRSKIP220NewMethodsTest.class.hashCode());
 
     private BridgeConstants bridgeConstants;
     private NetworkParameters btcParams;

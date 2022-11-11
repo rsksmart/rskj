@@ -423,14 +423,14 @@ class MessageVisitorTest {
 
         IntStream.range(0, 3).forEach(i -> {
             Transaction tx = mock(Transaction.class);
-            when(tx.getHash()).thenReturn(TestUtils.randomHash());
+            when(tx.getHash()).thenReturn(TestUtils.randomHash("tx"+i));
             when(tx.acceptTransactionSignature(anyByte())).thenReturn(true);
             validTransactions.add(tx);
         });
 
         List<Transaction> invalidTransactions = new LinkedList<>();
         Transaction invalidTx = mock(Transaction.class);
-        when(invalidTx.getHash()).thenReturn(TestUtils.randomHash());
+        when(invalidTx.getHash()).thenReturn(TestUtils.randomHash("invalidTx"));
         when(invalidTx.acceptTransactionSignature(anyByte())).thenReturn(false);
         invalidTransactions.add(invalidTx);
 

@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,7 +61,7 @@ class TransactionBuilderTest {
     @Test
     void buildValidRandomTransactions() {
         List<String> randomTxsHashes = IntStream.range(0, 100)
-                .mapToObj(i -> new TransactionBuilder().buildRandomTransaction().getHash().toJsonString())
+                .mapToObj(i -> new TransactionBuilder().buildRandomTransaction(i).getHash().toJsonString())
                 .collect(Collectors.toList());
 
         Set<String> hashesWithoutDuplicates = randomTxsHashes.stream().collect(Collectors.toSet());

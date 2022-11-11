@@ -59,7 +59,7 @@ class ParentNumberRuleTest {
 
     private static BlockHeader getHeader(long number) {
         return blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress(String.valueOf(number)))
                 .setDifficulty(BlockDifficulty.ZERO)
                 .setNumber(number)
                 .build();

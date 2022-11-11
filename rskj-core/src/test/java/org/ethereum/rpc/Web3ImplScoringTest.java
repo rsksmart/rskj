@@ -35,7 +35,11 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.scoring.*;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockTxSignatureCache;
@@ -49,13 +53,11 @@ import org.junit.jupiter.api.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.Random;
 
 /**
  * Created by ajlopez on 12/07/2017.
  */
 class Web3ImplScoringTest {
-    private static Random random = new Random();
 
     @Test
     void addBannedAddressUsingIPV4() throws UnknownHostException {
@@ -176,7 +178,7 @@ class Web3ImplScoringTest {
     void addBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -189,7 +191,7 @@ class Web3ImplScoringTest {
     void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -202,7 +204,7 @@ class Web3ImplScoringTest {
     void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -219,7 +221,7 @@ class Web3ImplScoringTest {
     void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -370,28 +372,14 @@ class Web3ImplScoringTest {
     }
 
     private static InetAddress generateNonLocalIPAddressV4() throws UnknownHostException {
-        byte[] bytes = generateIPv4AddressBytes();
+        byte[] bytes = TestUtils.generateBytes(Web3ImplScoringTest.class,"nonLocal",4);
         bytes[0] = (byte) 173;
         return InetAddress.getByAddress(bytes);
     }
 
     private static InetAddress generateLocalIPAddressV4() throws UnknownHostException {
-        byte[] bytes = generateIPv4AddressBytes();
+        byte[] bytes = TestUtils.generateBytes(Web3ImplScoringTest.class,"local",4);
         bytes[0] = (byte) 127;
-        return InetAddress.getByAddress(bytes);
-    }
-
-    private static byte[] generateIPv4AddressBytes() {
-        byte[] bytes = new byte[4];
-        random.nextBytes(bytes);
-        return bytes;
-    }
-
-    private static InetAddress generateIPAddressV6() throws UnknownHostException {
-        byte[] bytes = new byte[16];
-
-        random.nextBytes(bytes);
-
         return InetAddress.getByAddress(bytes);
     }
 
@@ -444,9 +432,7 @@ class Web3ImplScoringTest {
     }
 
     private static NodeID generateNodeID() {
-        byte[] bytes = new byte[32];
-
-        random.nextBytes(bytes);
+        byte[] bytes =TestUtils.generateBytes(Web3ImplScoringTest.class.hashCode(),32);
 
         return new NodeID(bytes);
     }

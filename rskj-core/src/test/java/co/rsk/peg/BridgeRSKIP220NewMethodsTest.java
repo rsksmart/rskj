@@ -22,7 +22,7 @@ import java.util.Random;
 import static org.mockito.Mockito.*;
 
 class BridgeRSKIP220NewMethodsTest {
-    private static Random random = new Random();
+    private static Random random = new Random(BridgeRSKIP220NewMethodsTest.class.hashCode());
 
     private TestSystemProperties config;
     private Constants constants;

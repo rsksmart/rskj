@@ -54,7 +54,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithParentHash() {
-        Keccak256 parentHash = TestUtils.randomHash();
+        Keccak256 parentHash = TestUtils.randomHash("parentHash");
 
         BlockHeader header = blockHeaderBuilder
                                 .setParentHash(parentHash.getBytes())
@@ -65,7 +65,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithUnclesHash() {
-        byte[] unclesHash = TestUtils.randomHash().getBytes();
+        byte[] unclesHash = TestUtils.randomHash("unclesHash").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setUnclesHash(unclesHash)
@@ -85,7 +85,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithCoinbase() {
-        RskAddress coinbase = TestUtils.randomAddress();
+        RskAddress coinbase = TestUtils.randomAddress("coinbase");
 
         BlockHeader header = blockHeaderBuilder
                 .setCoinbase(coinbase)
@@ -96,7 +96,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithStateRoot() {
-        byte[] stateRoot = TestUtils.randomHash().getBytes();
+        byte[] stateRoot = TestUtils.randomHash("stateRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setStateRoot(stateRoot)
@@ -114,7 +114,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithTxTrieRoot() {
-        byte[] txTrieRoot = TestUtils.randomHash().getBytes();
+        byte[] txTrieRoot = TestUtils.randomHash("txTrieRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setTxTrieRoot(txTrieRoot)
@@ -132,7 +132,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithReceiptTrieRoot() {
-        byte[] receiptTrieRoot = TestUtils.randomHash().getBytes();
+        byte[] receiptTrieRoot = TestUtils.randomHash("receiptTrieRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setReceiptTrieRoot(receiptTrieRoot)
@@ -150,7 +150,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithLogsBloom() {
-        byte[] logsBloom = TestUtils.randomHash().getBytes();
+        byte[] logsBloom = TestUtils.randomHash("logsBloom").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setLogsBloom(logsBloom)
@@ -227,10 +227,10 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithMiningFields() {
-        byte[] btcCoinbase = TestUtils.randomBytes(128);
-        byte[] btcHeader = TestUtils.randomBytes(80);
-        byte[] merkleProof = TestUtils.randomBytes(32);
-        byte[] extraData = TestUtils.randomBytes(32);
+        byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase",128);
+        byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader",80);
+        byte[] merkleProof = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "merkleProof",32);
+        byte[] extraData = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "extraData",32);
 
         BlockHeader header = blockHeaderBuilder
                 .setBitcoinMergedMiningHeader(btcHeader)
@@ -258,9 +258,9 @@ class BlockHeaderBuilderTest {
     @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} then expectedSize {2}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
     void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, int expectedSize) {
-        byte[] btcCoinbase = TestUtils.randomBytes(128);
-        byte[] btcHeader = TestUtils.randomBytes(80);
-        byte[] merkleProof = TestUtils.randomBytes(32);
+        byte[] btcCoinbase = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcCoinbase",128);
+        byte[] btcHeader = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "btcHeader",80);
+        byte[] merkleProof = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "merkleProof",32);
 
         BlockHeader header = blockHeaderBuilder
                 .setCreateConsensusCompliantHeader(createConsensusCompliantHeader)
@@ -333,7 +333,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithUmmRoot() {
-        byte[] ummRoot = TestUtils.randomBytes(20);
+        byte[] ummRoot = TestUtils.generateBytes(BlockHeaderBuilderTest.class, "ummRoot",20);
         BlockHeader header = blockHeaderBuilder
                 .setUmmRoot(ummRoot)
                 .build();

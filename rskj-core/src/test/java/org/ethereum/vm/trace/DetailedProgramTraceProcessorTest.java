@@ -54,8 +54,8 @@ class DetailedProgramTraceProcessorTest {
 
     @Test
     void getUnknownTrace() {
-        Keccak256 hash = TestUtils.randomHash();
-        Keccak256 otherHash = TestUtils.randomHash();
+        Keccak256 hash = TestUtils.randomHash("hash");
+        Keccak256 otherHash = TestUtils.randomHash("otherHash");
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DetailedProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
@@ -67,8 +67,8 @@ class DetailedProgramTraceProcessorTest {
 
     @Test
     void getEmptyTrace() {
-        Keccak256 hash = TestUtils.randomHash();
-        Keccak256 otherHash = TestUtils.randomHash();
+        Keccak256 hash = TestUtils.randomHash("hash");
+        Keccak256 otherHash = TestUtils.randomHash("otherHash");
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DetailedProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
@@ -84,7 +84,7 @@ class DetailedProgramTraceProcessorTest {
 
     @Test
     void setAndGetTrace() {
-        Keccak256 hash = TestUtils.randomHash();
+        Keccak256 hash = TestUtils.randomHash("hash");
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DataWord ownerDW = DataWord.valueOf(42);
@@ -99,14 +99,14 @@ class DetailedProgramTraceProcessorTest {
 
     @Test
     void setAndGetTraceAsJsonNode() {
-        Keccak256 hash = TestUtils.randomHash();
+        Keccak256 hash = TestUtils.randomHash("hash");
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DataWord ownerDW = DataWord.valueOf(42);
         DetailedProgramTrace trace = buildTestTrace(ownerDW);
         processor.processProgramTrace(trace, hash);
 
-        Keccak256 hash2 = TestUtils.randomHash();
+        Keccak256 hash2 = TestUtils.randomHash("hash2");
         DataWord ownerDW2 = DataWord.valueOf(42);
         DetailedProgramTrace trace2 = buildTestTrace(ownerDW2);
         processor.processProgramTrace(trace2, hash2);

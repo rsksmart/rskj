@@ -48,6 +48,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -317,7 +329,7 @@ class EthModuleTest {
                 config.getGasEstimationCap()
         );
 
-        String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
+        String addr = eth.getCode(TestUtils.randomAddress("addr").toHexString(), "pending");
         MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 

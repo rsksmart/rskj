@@ -115,7 +115,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         }
 
         public static BtcBlock generateBtcBlock(BtcBlock prevBlock) {
-            Sha256Hash merkleRoot = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+            Sha256Hash merkleRoot = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(new Random(prevBlock.hashCode()).nextLong()).toByteArray()));
             List<BtcTransaction> txs = Collections.emptyList();
             return generateBtcBlock(prevBlock, txs, merkleRoot);
         }

@@ -40,7 +40,7 @@ class TransactionResultDTOTest {
 
     @Test
     void remascAddressSerialization() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(new Random(TransactionResultDTOTest.class.hashCode()).nextLong());
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         assertThat(dto.getFrom(), is("0x0000000000000000000000000000000000000000"));
@@ -101,7 +101,7 @@ class TransactionResultDTOTest {
 
     @Test
     void transactionRemascHasSignatureNullWhenFlagIsFalse() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(new Random(TransactionResultDTOTest.class.hashCode()).nextLong());
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNull(dto.getV());
         Assertions.assertNull(dto.getR());
@@ -110,7 +110,7 @@ class TransactionResultDTOTest {
 
     @Test
     void transactionRemascHasSignatureZeroWhenFlagIsTrue() {
-        RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
+        RemascTransaction remascTransaction = new RemascTransaction(new Random(TransactionResultDTOTest.class.hashCode()).nextLong());
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, true, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertEquals(HEX_ZERO, dto.getV());
         Assertions.assertEquals(HEX_ZERO, dto.getR());

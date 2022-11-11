@@ -44,7 +44,7 @@ class ReversibleTransactionExecutorTest {
         CallTransaction.Function helloFn = hello.functions.get("hello");
         RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
 
-        RskAddress from = TestUtils.randomAddress();
+        RskAddress from = TestUtils.randomAddress("from");
         byte[] gasPrice = Hex.decode("00");
         byte[] value = Hex.decode("00");
         byte[] gasLimit = Hex.decode("f424");

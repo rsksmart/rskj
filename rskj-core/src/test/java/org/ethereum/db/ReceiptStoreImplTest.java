@@ -26,9 +26,10 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.datasource.*;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.LogInfo;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -40,8 +41,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 3/1/2016.
@@ -184,7 +188,7 @@ class ReceiptStoreImplTest {
     void getUnknownTransactionByBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
-        Keccak256 blockHash = TestUtils.randomHash();
+        Keccak256 blockHash = TestUtils.randomHash("blockHash");
 
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes());
 

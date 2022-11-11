@@ -223,7 +223,7 @@ class NetBlockStoreTest {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress("coinbase"))
                 .setNumber(1)
                 .setMinimumGasPrice(Coin.ZERO)
                 .build();
@@ -237,7 +237,7 @@ class NetBlockStoreTest {
         NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(new byte[0])
-                .setCoinbase(TestUtils.randomAddress())
+                .setCoinbase(TestUtils.randomAddress("coinbase"))
                 .setNumber(1)
                 .setMinimumGasPrice(Coin.ZERO)
                 .build();

@@ -39,6 +39,7 @@ import co.rsk.util.PreflightChecksUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -70,7 +71,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
-import static org.ethereum.TestUtils.randomHash;
+import static org.ethereum.TestUtils.generateBytesFromRandom;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -90,7 +91,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        File blocksFile = tempDir.resolve( "blocks.txt").toFile();
+        File blocksFile = tempDir.resolve("blocks.txt").toFile();
         String[] args = new String[]{"--fromBlock", "0", "--toBlock", "2", "--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
@@ -339,20 +340,19 @@ class CliToolsTest {
 
     @Test
     void importState() throws IOException {
-        byte[] value = new byte[42];
-        Random random = new Random();
-        random.nextBytes(value);
+        byte[] value = TestUtils.generateBytes(CliToolsTest.class,"value",42);
+
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(ByteUtil.toHexString(value));
         stringBuilder.append("\n");
 
-        File stateFile = tempDir.resolve( "state.txt").toFile();
+        File stateFile = tempDir.resolve("state.txt").toFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(stateFile))) {
             writer.write(stringBuilder.toString());
         }
 
-        String databaseDir = tempDir.resolve( "db").toAbsolutePath().toString();
+        String databaseDir = tempDir.resolve("db").toAbsolutePath().toString();
         String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
@@ -394,13 +394,11 @@ class CliToolsTest {
 
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
-            Keccak256 blockHash = randomHash();
+            Keccak256 blockHash = new Keccak256(generateBytesFromRandom(random,32));
             when(block.getHash()).thenReturn(blockHash);
             when(block.getParentHash()).thenReturn(parentHash);
             when(block.getNumber()).thenReturn(i);
-            byte[] randomData = new byte[128];
-            random.nextBytes(randomData);
-            when(block.getEncoded()).thenReturn(randomData);
+            when(block.getEncoded()).thenReturn(generateBytesFromRandom(random,128));
 
             indexedBlockStore.saveBlock(block, ZERO, true);
             parentHash = blockHash;
@@ -487,7 +485,7 @@ class CliToolsTest {
 
     @Test
     void dbMigrate() throws IOException {
-        File nodeIdPropsFile = tempDir.resolve( "nodeId.properties").toFile();
+        File nodeIdPropsFile = tempDir.resolve("nodeId.properties").toFile();
         File dbKindPropsFile = tempDir.resolve(KeyValueDataSource.DB_KIND_PROPERTIES_FILE).toFile();
 
         if (nodeIdPropsFile.createNewFile()) {
@@ -684,7 +682,7 @@ class CliToolsTest {
 
         ClassLoader classLoader = this.getClass().getClassLoader();
         File workDir = new File(classLoader.getResource("doc/rpc").getFile());
-        File destFile = tempDir.resolve( "generated_openrpc.json").toFile();
+        File destFile = tempDir.resolve("generated_openrpc.json").toFile();
 
         GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc(
                 version,

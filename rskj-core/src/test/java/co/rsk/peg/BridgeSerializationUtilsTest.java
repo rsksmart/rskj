@@ -1345,7 +1345,7 @@ class BridgeSerializationUtilsTest {
     }
 
     private int randomInRange(int min, int max) {
-        return new Random().nextInt(max - min + 1) + min;
+        return new Random(BridgeSerializationUtilsTest.class.hashCode()).nextInt(max - min + 1) + min;
     }
 
     private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
