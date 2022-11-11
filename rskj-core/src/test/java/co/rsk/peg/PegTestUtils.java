@@ -52,7 +52,7 @@ import org.ethereum.crypto.Keccak256Helper;
 /**
  * Created by oscar on 05/08/2016.
  */
-public class PegTestUtils {
+public final class PegTestUtils {
 
     private static int nhash = 0;
 
@@ -322,5 +322,15 @@ public class PegTestUtils {
             valuesToSend,
             address
         );
+    }
+
+    public static UTXO createUTXO(Coin value, Address address) {
+        return new UTXO(
+            PegTestUtils.createHash(),
+            1,
+            value,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(address));
     }
 }
