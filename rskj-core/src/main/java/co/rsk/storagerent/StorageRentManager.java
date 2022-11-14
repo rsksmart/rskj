@@ -77,8 +77,7 @@ public class StorageRentManager {
         return result;
     }
 
-    @VisibleForTesting
-    public Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
+    private Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
                                                    MutableRepositoryTracked blockTrack) {
         return nodes.entrySet()
                 .stream()

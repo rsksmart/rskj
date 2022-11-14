@@ -242,7 +242,8 @@ public class StorageRentDSLTests {
                 BLOCK_AVERAGE_TIME * blockCount
         );
         // pay for deleted keys
-        checkStorageRent(world, "tx02", 10163, 0, 4, 0, 0);
+        checkStorageRent(world, "tx02", 10163, 0, 4, 0,
+                0);
 
         RskAddress contract = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
 
@@ -254,12 +255,7 @@ public class StorageRentDSLTests {
                 .getStorageRentResult()
                 .getRentedNodes();
         ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(contract, DataWord.ZERO));
-        RentedNode expectedNode = new RentedNode(
-                key,
-                DELETE_OPERATION,
-                1,
-                29246250000l
-        );
+        RentedNode expectedNode = new RentedNode(key, DELETE_OPERATION, 1, 29246250000l);
         assertTrue(rentedNodeSet.contains(expectedNode));
 
         RentedNode deletedNode = rentedNodeSet.stream().filter(r -> r.getKey().equals(key))
@@ -286,7 +282,8 @@ public class StorageRentDSLTests {
                 BLOCK_AVERAGE_TIME * blockCount
         );
         // pay for deleted keys
-        checkStorageRent(world, "tx02", 20000, 0, 4, 0, 0);
+        checkStorageRent(world, "tx02", 20000, 0, 4, 0,
+                0);
 
         RskAddress addr = new RskAddress("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // deployed contact addr
 
@@ -298,12 +295,7 @@ public class StorageRentDSLTests {
                 .getStorageRentResult()
                 .getRentedNodes();
         ByteArrayWrapper key = new ByteArrayWrapper(new TrieKeyMapper().getAccountStorageKey(addr, DataWord.ZERO));
-        RentedNode expectedNode = new RentedNode(
-                key,
-                DELETE_OPERATION,
-                1,
-                292462500000l
-        );
+        RentedNode expectedNode = new RentedNode(key, DELETE_OPERATION, 1, 292462500000l);
         assertTrue(rentedNodeSet.contains(expectedNode));
 
         RentedNode deletedNode = rentedNodeSet.stream().filter(r -> r.getKey().equals(key))

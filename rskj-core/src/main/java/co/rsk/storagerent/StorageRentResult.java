@@ -6,11 +6,13 @@ import java.util.Set;
 
 public class StorageRentResult {
 
+    private final boolean outOfGas;
+
+    // params used for testing and log trace
     private final Set<RentedNode> rentedNodes;
     private final Set<RentedNode> rollbackNodes;
     private final long gasAfterPayingRent;
     private final long mismatchesCount;
-    private final boolean outOfGas;
     private final long executionBlockTimestamp;
     private final long outOfGasRentToPay;
     private final long paidRent;
@@ -41,53 +43,57 @@ public class StorageRentResult {
                 mismatchesCount, executionBlockTimestamp, false, -1, paidRent);
     }
 
-    public Set<RentedNode> getRentedNodes() {
-        return rentedNodes;
-    }
-
-    public Set<RentedNode> getRollbackNodes() {
-        return rollbackNodes;
+    public boolean isOutOfGas() {
+        return outOfGas;
     }
 
     public long getGasAfterPayingRent() {
         return gasAfterPayingRent;
     }
 
+    @VisibleForTesting
+    public Set<RentedNode> getRentedNodes() {
+        return rentedNodes;
+    }
+
+    @VisibleForTesting
+    public Set<RentedNode> getRollbackNodes() {
+        return rollbackNodes;
+    }
+
+    @VisibleForTesting
     public long getMismatchesRent() {
         return StorageRentUtil.mismatchesRent(this.mismatchesCount);
     }
 
+    @VisibleForTesting
     public long getMismatchCount() {
         return this.mismatchesCount;
     }
 
-    public boolean isOutOfGas() {
-        return outOfGas;
-    }
-
-    @VisibleForTesting // and log trace
+    @VisibleForTesting
     public long getRollbacksRent() {
         return StorageRentUtil.rentBy(this.rollbackNodes,
                 rentedNode -> rentedNode.rollbackFee(this.executionBlockTimestamp, this.rentedNodes));
     }
 
-    @VisibleForTesting // and log trace
+    @VisibleForTesting
     public long getPayableRent() {
         return StorageRentUtil.rentBy(this.rentedNodes,
                 rentedNode -> rentedNode.payableRent(this.executionBlockTimestamp));
     }
 
-    @VisibleForTesting // and log trace
+    @VisibleForTesting
     public long getPaidRent() {
         return paidRent;
     }
 
-    @VisibleForTesting // and log trace
+    @VisibleForTesting
     public long getOutOfGasRentToPay() {
         return outOfGasRentToPay;
     }
 
-    @VisibleForTesting // and log trace
+    @VisibleForTesting
     public long totalRent() {
         return this.getPayableRent() + this.getRollbacksRent() + this.getMismatchesRent();
     }
