@@ -35,6 +35,7 @@ public interface KeyValueDataSource extends DataSource {
     String DB_KIND_PROPERTIES_FILE = "dbKind.properties";
     String KEYVALUE_DATASOURCE_PROP_NAME = "keyvalue.datasource";
     String KEYVALUE_DATASOURCE = "KeyValueDataSource";
+    String KEYVALUE_DATASOURCES_PROP_NAME = "keyvalue.datasources";
 
     @Nullable
     byte[] get(byte[] key);
