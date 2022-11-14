@@ -52,12 +52,12 @@ public class StorageRentResult {
     }
 
     public long getRollbacksRent() {
-        return StorageRentManager.rentBy(this.rollbackNodes,
+        return StorageRentUtil.rentBy(this.rollbackNodes,
                 rentedNode -> rentedNode.rollbackFee(this.executionBlockTimestamp, this.rentedNodes));
     }
 
     public long getPayableRent() {
-        return StorageRentManager.rentBy(this.rentedNodes,
+        return StorageRentUtil.rentBy(this.rentedNodes,
                 rentedNode -> rentedNode.payableRent(this.executionBlockTimestamp));
     }
 
@@ -66,7 +66,7 @@ public class StorageRentResult {
     }
 
     public long getMismatchesRent() {
-        return StorageRentManager.getMismatchesRent(this.mismatchesCount);
+        return StorageRentUtil.mismatchesRent(this.mismatchesCount);
     }
 
     public long getMismatchCount() {

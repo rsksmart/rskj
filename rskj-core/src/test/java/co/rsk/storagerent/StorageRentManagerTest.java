@@ -12,6 +12,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -27,6 +28,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StorageRentManagerTest {
+
+    private StorageRentManager storageRentManager;
+
+    @Before
+    public void setup() {
+        this.storageRentManager = new StorageRentManager();
+    }
 
     @Test
     public void pay_shouldPayRent() {
@@ -207,7 +215,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
+        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
 
         repositoryWithTimestamps.commit();
 
@@ -238,7 +246,7 @@ public class StorageRentManagerTest {
 
         // pay and update timestamp
         long updatedTimestamp = 50000000000l;
-        StorageRentResult result = StorageRentManager.pay(enoughGas, updatedTimestamp,
+        StorageRentResult result = storageRentManager.pay(enoughGas, updatedTimestamp,
                 blockTrack, transactionTrack, 0);
 
         transactionTrack.commit();
@@ -268,7 +276,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        StorageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
+        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
 
         repositoryWithTimestamps.commit();
 
@@ -299,7 +307,7 @@ public class StorageRentManagerTest {
 
         // pay and update timestamp
         long notEnoughtAccumulatedRent = firstBlockTimestamp + 100000000;
-        StorageRentResult result = StorageRentManager.pay(enoughGas, notEnoughtAccumulatedRent,
+        StorageRentResult result = storageRentManager.pay(enoughGas, notEnoughtAccumulatedRent,
                 blockTrack, transactionTrack, 0);
 
         transactionTrack.commit();
@@ -338,7 +346,7 @@ public class StorageRentManagerTest {
                                          long expectedRollbacksRent, long expectedRentedNodesCount,
                                          long expectedRollbackNodesCount, boolean expectedIsOutOfGas,
                                          long expectedPaidRent) {
-        StorageRentResult storageRentResult = StorageRentManager.pay(gasRemaining, executionBlockTimestamp,
+        StorageRentResult storageRentResult = storageRentManager.pay(gasRemaining, executionBlockTimestamp,
                 mockBlockTrack, mockTransactionTrack, 0);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 

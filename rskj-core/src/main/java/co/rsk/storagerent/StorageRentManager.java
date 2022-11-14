@@ -9,10 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentUtil.MISMATCH_PENALTY;
+import static co.rsk.storagerent.StorageRentUtil.rentBy;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
@@ -22,7 +21,7 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute");
 
-    private StorageRentManager() {
+    public StorageRentManager() {
     }
 
     /**
@@ -35,7 +34,7 @@ public class StorageRentManager {
      * @param initialMismatchesCount
      * @return new remaining gas
      */
-    public static StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
+    public StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
                                         MutableRepositoryTracked blockTrack,
                                         MutableRepositoryTracked transactionTrack, int initialMismatchesCount) {
         // get trie-nodes used within a transaction execution
@@ -56,14 +55,15 @@ public class StorageRentManager {
         LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackKeys.size());
 
+        // todo(fedejinich) this can be refactored
         // calculate rent
         long mismatchesCount = blockTrack.getMismatchesCount() +
                 transactionTrack.getMismatchesCount() - initialMismatchesCount;
 
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-        long rollbacksRent = rentBy(rollbackNodes, rentedNode ->
-                rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
-        long rentToPay = payableRent + rollbacksRent + getMismatchesRent(mismatchesCount);
+        long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, 
+                rentedNodes));
+        long rentToPay = payableRent + rollbacksRent + StorageRentUtil.mismatchesRent(mismatchesCount);
 
         // not enough gas to pay rent
         if(gasRemaining < rentToPay) {
@@ -91,12 +91,8 @@ public class StorageRentManager {
         return result;
     }
 
-    public static long getMismatchesRent(long mismatchesCount) {
-        return MISMATCH_PENALTY * mismatchesCount;
-    }
-
     @VisibleForTesting
-    public static Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
+    public Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
                                                    MutableRepositoryTracked blockTrack) {
         return nodes.entrySet()
                 .stream()
@@ -104,7 +100,7 @@ public class StorageRentManager {
                 .collect(Collectors.toSet());
     }
 
-    private static Map<ByteArrayWrapper, OperationType> mergeNodes(Map<ByteArrayWrapper, OperationType> nodes1,
+    private Map<ByteArrayWrapper, OperationType> mergeNodes(Map<ByteArrayWrapper, OperationType> nodes1,
                                                                    Map<ByteArrayWrapper, OperationType> nodes2) {
         Map<ByteArrayWrapper, OperationType> merged = new HashMap<>();
 
@@ -112,13 +108,5 @@ public class StorageRentManager {
         nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
 
         return merged;
-    }
-
-    public static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
-        Optional<Long> rent = rentedNodes.stream()
-                .map(r -> rentFunction.apply(r))
-                .reduce(GasCost::add);
-
-        return rentedNodes.isEmpty() || !rent.isPresent() ? 0 : rent.get();
     }
 }

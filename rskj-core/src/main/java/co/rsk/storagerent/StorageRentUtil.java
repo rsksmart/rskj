@@ -19,18 +19,20 @@
 
 package co.rsk.storagerent;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.OperationType;
+import org.ethereum.vm.GasCost;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
- * Rent computation util according to the RSKIP240
- * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
+ * Storage Rent Util
  */
 public class StorageRentUtil {
     public static final long READ_THRESHOLD = 2500;
@@ -144,5 +146,30 @@ public class StorageRentUtil {
         if (value < 0) {
             throw new IllegalArgumentException(s);
         }
+    }
+
+    /**
+     * Maps a collection an calculates rent
+     *
+     * @param rentedNodes a RentedNode collection
+     * @param rentFunction a map function to calculate rent
+     * @return a rent amount
+     * */
+    public static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
+        Optional<Long> rent = rentedNodes.stream()
+                .map(r -> rentFunction.apply(r))
+                .reduce(GasCost::add);
+
+        return rentedNodes.isEmpty() || !rent.isPresent() ? 0 : rent.get();
+    }
+
+    /***
+     * Calculates the rent amount for reading/writing non-existent trie nodes
+     *
+     * @param mismatchesCount
+     * @return a rent amount
+     */
+    public static long mismatchesRent(long mismatchesCount) {
+        return MISMATCH_PENALTY * mismatchesCount;
     }
 }
