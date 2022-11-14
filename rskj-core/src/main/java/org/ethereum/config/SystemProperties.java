@@ -32,6 +32,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.KeyValueDataSourcesEnum;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -715,5 +716,42 @@ public abstract class SystemProperties {
 
     public DbKind databaseKind() {
         return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
+    }
+
+    public DbKind getKeyValueDataSources(KeyValueDataSourcesEnum keyValueDataSourcesEnum) {
+        return Optional.ofNullable(configFromFiles.getString(
+                String.format(
+                        "%s.%s",
+                        KeyValueDataSource.KEYVALUE_DATASOURCES_PROP_NAME,
+                        keyValueDataSourcesEnum.getValue())
+        )).map(DbKind::ofName).orElse(this.databaseKind());
+    }
+
+    public DbKind getStatesRootDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATE_ROOTS);
+    }
+
+    public DbKind getTrieDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.TRIE);
+    }
+
+    public DbKind getUniTrieDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.UNI_TRIE);
+    }
+
+    public DbKind getBlocksDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.BLOCKS);
+    }
+
+    public DbKind getBloomsDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.BLOOMS);
+    }
+
+    public DbKind getReceiptsDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.RECEIPTS);
+    }
+
+    public DbKind getWalletDataSource() {
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.WALLET);
     }
 }
