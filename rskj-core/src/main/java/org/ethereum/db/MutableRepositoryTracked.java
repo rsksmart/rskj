@@ -221,5 +221,6 @@ public class MutableRepositoryTracked extends MutableRepository {
     public void clearTrackedNodes() {
         this.trackedNodes = new HashMap<>();
         this.rollbackNodes = new HashMap<>();
+        this.readMismatchesCount = 0;
     }
 }

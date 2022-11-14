@@ -109,8 +109,6 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
     private boolean storageRentEnabled; // todo(fedejinich) this is a workaround to enable storage rent just in StorageRentDSLTest, it will be removed
-    private StorageRentResult storageRentResult; // todo(fedejinich) this can be removed an consulted via srmanger
-    private int initialMismatchesCount;
     private final StorageRentManager storageRentManager = new StorageRentManager();
 
     public TransactionExecutor(
@@ -164,11 +162,6 @@ public class TransactionExecutor {
      */
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations, signatureCache);
-
-        if(isStorageRentEnabled()) {
-            // this saves the previous count (since blockTrack is shared across all the executed transactions)
-            initialMismatchesCount = ((MutableRepositoryTracked) blockTrack).getMismatchesCount();
-        }
 
         if (localCall) {
             return true;
@@ -525,7 +518,7 @@ public class TransactionExecutor {
         if(isStorageRentEnabled()) {
             logger.trace("Paying storage rent. gas leftover: {}", gasLeftover);
             payStorageRent();
-            logger.trace("Paid storage rent: {}. gas leftover: {}", storageRentResult.totalRent(), gasLeftover);
+            logger.trace("Paid storage rent. gas leftover: {}", gasLeftover);
         } else {
             transactionTrack.commit();
         }
@@ -578,9 +571,9 @@ public class TransactionExecutor {
     private void payStorageRent() {
         Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
 
-        storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
-                (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack,
-                initialMismatchesCount);
+        StorageRentResult storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+                (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack
+        );
 
         profiler.stop(storageRentMetric);
 
@@ -745,7 +738,7 @@ public class TransactionExecutor {
 
     @VisibleForTesting
     public StorageRentResult getStorageRentResult() {
-        return storageRentResult;
+        return storageRentManager.getResult();
     }
 
     @VisibleForTesting

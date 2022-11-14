@@ -18,6 +18,7 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
  * */
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute");
+    private Optional<StorageRentResult> result = Optional.empty();
 
     /**
      * Pay storage rent.
@@ -26,12 +27,11 @@ public class StorageRentManager {
      * @param executionBlockTimestamp execution block timestamp
      * @param blockTrack              repository to fetch the relevant data before the transaction execution
      * @param transactionTrack        repository to update the rent timestamps
-     * @param initialMismatchesCount
-     * @return new remaining gas
+     * @return a storage rent result
      */
     public StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
                                         MutableRepositoryTracked blockTrack,
-                                        MutableRepositoryTracked transactionTrack, int initialMismatchesCount) {
+                                        MutableRepositoryTracked transactionTrack) {
         // get trie-nodes used within a transaction execution
         Map<ByteArrayWrapper, OperationType> storageRentKeys = mergeNodes(blockTrack.getStorageRentNodes(),
                 transactionTrack.getStorageRentNodes());
@@ -51,8 +51,7 @@ public class StorageRentManager {
                 rentedNodes.size(), rollbackKeys.size());
 
         // 'blockTrack' accumulates mismatches, so we calculate the difference
-        int mismatchesCount = blockTrack.getMismatchesCount() +
-                transactionTrack.getMismatchesCount() - initialMismatchesCount;
+        int mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount();
 
         // calculate rent
         StorageRentResult result = StorageRentUtil.calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
@@ -68,8 +67,12 @@ public class StorageRentManager {
             transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
         }
 
-        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, out of gas: {}",
-            result.totalRent(), result.getPayableRent(), result.getRollbacksRent(), result.isOutOfGas());
+        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, " +
+                        "mismatches count: {}, out of gas: {}",
+            result.totalRent(), result.getPayableRent(), result.getRollbacksRent(),
+                result.getMismatchCount(), result.isOutOfGas());
+
+        this.result = Optional.of(result);
 
         return result;
     }
@@ -91,5 +94,12 @@ public class StorageRentManager {
         nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
 
         return merged;
+    }
+
+    public StorageRentResult getResult() {
+        if(!result.isPresent()) {
+            throw new IllegalStateException("cannot get result before paying storage rent");
+        }
+        return result.get();
     }
 }
