@@ -31,10 +31,12 @@ import static org.mockito.Mockito.*;
 public class MutableRepositoryTrackedTest {
 
     private MutableRepositoryTestable spyRepository;
+    private StorageRentManager storageRentManager;
 
     @Before
     public void setup() {
-        spyRepository = newMutableRepositoryTestable();
+        this.spyRepository = newMutableRepositoryTestable();
+        this.storageRentManager = new StorageRentManager();
     }
 
     // Testing internalGet calls: getCode, isContract, getStorageBytes, getStorageValue, getAccountState
@@ -426,7 +428,7 @@ public class MutableRepositoryTrackedTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        StorageRentManager.pay(100000, firstBlockTimestamp,
+        storageRentManager.pay(100000, firstBlockTimestamp,
                 initialRepository, repositoryWithTimestamps, 0);
 
         repositoryWithTimestamps.commit();
@@ -458,7 +460,7 @@ public class MutableRepositoryTrackedTest {
 
         // pay and update timestamp
         long updatedTimesteamp = 50000000000l;
-        StorageRentResult result = StorageRentManager.pay(100000, updatedTimesteamp,
+        StorageRentResult result = storageRentManager.pay(100000, updatedTimesteamp,
                 blockTrack, transactionTrack, 0);
 
         RentedNode nodeAfterPayment = new RentedNode(key, READ_OPERATION, 3, updatedTimesteamp);
