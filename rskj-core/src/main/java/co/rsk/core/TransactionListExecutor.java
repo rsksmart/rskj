@@ -3,6 +3,7 @@ package co.rsk.core;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
@@ -29,11 +30,11 @@ public class TransactionListExecutor implements Callable<Boolean> {
     private final Map<Integer, TransactionReceipt> receipts;
     private final Map<Keccak256, ProgramResult> transactionResults;
     private final ProgramTraceProcessor programTraceProcessor;
-    private Coin totalFees;
+    private final boolean remascEnabled;
     private long totalGas;
-
     private int i;
     private final boolean registerProgramResults;
+    private Coin totalPaidFees;
 
     public TransactionListExecutor(
             List<Transaction> transactions,
@@ -50,7 +51,9 @@ public class TransactionListExecutor implements Callable<Boolean> {
             Map<Keccak256, ProgramResult> transactionResults,
             boolean registerProgramResults,
             @Nullable ProgramTraceProcessor programTraceProcessor,
-            int firstTxIndex) {
+            int firstTxIndex,
+            Coin totalPaidFees,
+            boolean remascEnabled) {
         this.block = block;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.track = track;
@@ -65,17 +68,25 @@ public class TransactionListExecutor implements Callable<Boolean> {
         this.registerProgramResults = registerProgramResults;
         this.transactionResults = transactionResults;
         this.programTraceProcessor = programTraceProcessor;
-        this.totalFees = Coin.ZERO;
         this.totalGas = 0L;
         this.i = firstTxIndex;
+        this.totalPaidFees = totalPaidFees;
+        this.remascEnabled = remascEnabled;
     }
 
     @Override
     public Boolean call() {
         long totalGasUsed = 0;
-        Coin totalPaidFees = Coin.ZERO;
 
         for (Transaction tx : transactions) {
+
+            int numberOfTransactions = block.getTransactionsList().size();
+            boolean isRemascTransaction = tx.isRemascTransaction(this.i, numberOfTransactions);
+
+            if (this.remascEnabled && isRemascTransaction) {
+                addFeesToRemasc();
+            }
+
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
                     i,
@@ -90,6 +101,8 @@ public class TransactionListExecutor implements Callable<Boolean> {
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
+                // It's used just for testing, the last tx should be always the REMASC.
+                payToRemascWhenThereIsNoRemascTx(numberOfTransactions, isRemascTransaction);
                 if (!discardInvalidTxs) {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                             block.getNumber(), tx.getHash()
@@ -122,6 +135,9 @@ public class TransactionListExecutor implements Callable<Boolean> {
                 totalPaidFees = totalPaidFees.add(txPaidFees);
             }
 
+            // It's used just for testing, the last tx should be always the REMASC.
+            payToRemascWhenThereIsNoRemascTx(numberOfTransactions, isRemascTransaction);
+
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             TransactionReceipt receipt = new TransactionReceipt();
@@ -144,9 +160,21 @@ public class TransactionListExecutor implements Callable<Boolean> {
             logger.trace("tx[{}] done", i);
         }
         totalGas += totalGasUsed;
-        totalFees = totalFees.add(totalPaidFees);
-
         return true;
+    }
+
+    private void payToRemascWhenThereIsNoRemascTx(int numberOfTransactions, boolean isRemascTransaction) {
+        boolean isLastTx = this.i == numberOfTransactions - 1;
+        if (this.remascEnabled && isLastTx && !isRemascTransaction) {
+            addFeesToRemasc();
+        }
+    }
+
+    private void addFeesToRemasc() {
+        if (this.totalPaidFees.compareTo(Coin.ZERO) > 0) {
+            logger.trace("Adding fee to remasc contract account");
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, this.totalPaidFees);
+        }
     }
 
     public Repository getRepository() {
@@ -170,7 +198,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
     }
 
     public Coin getTotalFees() {
-        return this.totalFees;
+        return this.totalPaidFees;
     }
 
     public long getTotalGas() {
