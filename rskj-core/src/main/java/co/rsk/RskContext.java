@@ -474,7 +474,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             blockExecutor = new BlockExecutor(
                     getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
-                    getTransactionExecutorFactory()
+                    getTransactionExecutorFactory(),
+                    getRskSystemProperties().isRemascEnabled()
             );
         }
 

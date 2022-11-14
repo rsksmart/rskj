@@ -160,8 +160,8 @@ public class StateTestRunner {
                                 new ProgramInvokeFactoryImpl(),
                                 precompiledContracts,
                                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                        )
-                ),
+                        ),
+                        config.isRemascEnabled()),
                 stateRootHandler
         );
 
