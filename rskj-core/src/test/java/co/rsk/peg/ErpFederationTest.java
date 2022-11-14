@@ -3,20 +3,11 @@ package co.rsk.peg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.ScriptException;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.Utils;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.script.*;
+import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.bitcoinj.wallet.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
@@ -83,6 +74,7 @@ public class ErpFederationTest {
             activationDelayValue,
             false
         );
+
     }
 
     @Test
@@ -183,10 +175,40 @@ public class ErpFederationTest {
 
             Script rskjScript = erpFederation.getRedeemScript();
             Script alternativeScript = generatedScript.script;
+
             Assert.assertEquals(alternativeScript, rskjScript);
         }
     }
+    @Test
+    public void getErpRedeemScript_compareOtherImplementation_P2SHERPFederation() throws IOException {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
+        byte[] rawRedeemScripts;
+        try {
+            rawRedeemScripts = Files.readAllBytes(Paths.get("src/test/resources/redeemScripts_p2shERP.json"));
+        } catch (IOException e) {
+            System.out.println("redeemScripts_p2shERP.json file not found");
+            throw(e);
+        }
+
+        RawGeneratedRedeemScript[] generatedScripts = new ObjectMapper().readValue(rawRedeemScripts, RawGeneratedRedeemScript[].class);
+        for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
+            // NOTE: difference with other tests is here, this one tests a P2shErpFederation
+            Federation erpFederation = new P2shErpFederation(
+                    FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
+                    ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                    0L,
+                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+                    generatedScript.emergencyFed,
+                    generatedScript.timelock,
+                    activations
+            );
+
+            Script rskjScript = erpFederation.getRedeemScript();
+            Script alternativeScript = generatedScript.script;
+            Assert.assertEquals(alternativeScript, rskjScript);
+        }
+    }
     @Test
     public void createErpFederation_testnet_constants_before_RSKIP293() {
         createErpFederation(BridgeTestNetConstants.getInstance(), false);
