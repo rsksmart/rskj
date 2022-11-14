@@ -47,14 +47,27 @@ public class StatusResolver {
                     genesis.getParentHash().getBytes(),
                     genesis.getCumulativeDifficulty());
         } else {
-            Block block = blockStore.getBestBlock();
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
-
-            status = new Status(block.getNumber(),
-                    block.getHash().getBytes(),
-                    block.getParentHash().getBytes(),
-                    totalDifficulty);
+            status = getStatusFromBestBlock();
         }
+        return status;
+    }
+
+    /**
+     * Unlike #currentStatus(), this method will return best block info even if genesis is not connected
+     */
+    public Status currentStatusLenient() {
+        return getStatusFromBestBlock();
+    }
+
+    private Status getStatusFromBestBlock() {
+        Status status;
+        Block block = blockStore.getBestBlock();
+        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+
+        status = new Status(block.getNumber(),
+                block.getHash().getBytes(),
+                block.getParentHash().getBytes(),
+                totalDifficulty);
         return status;
     }
 }

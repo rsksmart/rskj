@@ -18,6 +18,7 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.ConfigFactory;
 import org.ethereum.config.SystemProperties;
 
@@ -64,7 +65,7 @@ public class ActivationConfigsForTest {
             consensusRules.put(consensusRule, -1L);
         }
 
-        return new ActivationConfig(consensusRules);
+        return new ActivationConfig(consensusRules, ImmutableSet.of(new ActivationConfig.MessageVersionForHeight(0, 1)));
     }
 
     public static ActivationConfig only(ConsensusRule... upgradesToEnable) {
@@ -74,14 +75,14 @@ public class ActivationConfigsForTest {
             consensusRules.put(consensusRule, 0L);
         }
 
-        return new ActivationConfig(consensusRules);
+        return new ActivationConfig(consensusRules, ImmutableSet.of(new ActivationConfig.MessageVersionForHeight(0, 1)));
     }
 
     public static ActivationConfig bridgeUnitTest() {
         Map<ConsensusRule, Long> allDisabled = EnumSet.allOf(ConsensusRule.class).stream()
                 .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         allDisabled.put(ConsensusRule.ARE_BRIDGE_TXS_PAID, 10L);
-        return new ActivationConfig(allDisabled);
+        return new ActivationConfig(allDisabled, ImmutableSet.of(new ActivationConfig.MessageVersionForHeight(0, 1)));
     }
 
     private static ActivationConfig read(String resourceBasename) {

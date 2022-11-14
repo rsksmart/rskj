@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import co.rsk.net.messages.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
@@ -38,10 +39,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
@@ -81,6 +78,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private long cleanMsgTimestamp;
 
+    private final MessageVersionCalculator messageVersionCalculator;
+
     /**
      * Creates a new node message handler.
      */
@@ -90,7 +89,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable ChannelManager channelManager,
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
-            StatusResolver statusResolver) {
+            StatusResolver statusResolver,
+            MessageVersionCalculator messageVersionCalculator) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -105,6 +105,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = new Thread(this, "message handler");
+
+        this.messageVersionCalculator = messageVersionCalculator;
     }
 
     /**
@@ -120,7 +122,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
+        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender, messageVersionCalculator);
         message.accept(mv);
 
         long processTime = System.nanoTime() - start;

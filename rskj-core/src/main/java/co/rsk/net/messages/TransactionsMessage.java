@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 7/22/2016.
  */
-public class TransactionsMessage extends Message {
+public class TransactionsMessage extends MessageVersionAware {
     private List<Transaction> transactions;
 
     public TransactionsMessage(List<Transaction> transactions) {
@@ -36,6 +36,11 @@ public class TransactionsMessage extends Message {
 
     public List<Transaction> getTransactions() {
         return this.transactions;
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // TODO(iago) get from message
     }
 
     @Override

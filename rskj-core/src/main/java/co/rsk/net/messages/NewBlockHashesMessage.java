@@ -34,7 +34,7 @@ import java.util.List;
  * @author Mikhail Kalinin
  * @since 05.09.2015
  */
-public class NewBlockHashesMessage extends Message {
+public class NewBlockHashesMessage extends MessageVersionAware {
 
     /**
      * List of identifiers holding hash and number of the blocks
@@ -52,6 +52,11 @@ public class NewBlockHashesMessage extends Message {
     public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
         this.blockIdentifiers = blockIdentifiers;
         parsed = true;
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // TODO(iago) get from message
     }
 
     private void parse() {

@@ -50,6 +50,7 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.messages.MessageVersionCalculator;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -253,6 +254,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private PeerScoringReporterService peerScoringReporterService;
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
+
+    private MessageVersionCalculator messageVersionCalculator;
 
     private volatile boolean closed;
 
@@ -2019,7 +2022,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getStatusResolver());
+                    getStatusResolver(),
+                    getMessageVersionCalculator());
         }
 
         return nodeMessageHandler;
@@ -2116,9 +2120,20 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return minerClock;
     }
 
+    private MessageVersionCalculator getMessageVersionCalculator() {
+        checkIfNotClosed();
+
+        if (this.messageVersionCalculator == null) {
+            this.messageVersionCalculator = new MessageVersionCalculator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
+        }
+
+        return this.messageVersionCalculator;
+    }
+
     private void checkIfNotClosed() {
         if (closed) {
             throw new IllegalStateException("RSK Context is closed and cannot be in use anymore");
         }
     }
+
 }

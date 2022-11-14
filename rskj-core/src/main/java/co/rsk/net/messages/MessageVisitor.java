@@ -43,6 +43,7 @@ public class MessageVisitor {
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+    private static final String INVALID_VERSION_LOG_TEMPLATE = "Message[{}] not processed, invalid version.";
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
@@ -51,6 +52,7 @@ public class MessageVisitor {
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final ChannelManager channelManager;
+    private final MessageVersionCalculator messageVersionCalculator;
 
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
@@ -58,7 +60,8 @@ public class MessageVisitor {
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
-                          Peer sender) {
+                          Peer sender,
+                          MessageVersionCalculator messageVersionCalculator) {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
@@ -67,6 +70,7 @@ public class MessageVisitor {
         this.channelManager = channelManager;
         this.config = config;
         this.sender = sender;
+        this.messageVersionCalculator = messageVersionCalculator;
     }
 
     /**
@@ -76,6 +80,14 @@ public class MessageVisitor {
      * @param message the BlockMessage.
      */
     public void apply(BlockMessage message) {
+        Integer messageVersion = message.getVersion();
+        // used for sync (other than relay), so we should only reject lower versions
+        // TODO(iago) this could be improved by having different messages for sync and relay
+        if (isLowerThanLocal(messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         final Block block = message.getBlock();
 
         logger.trace("Process block {} {}", block.getNumber(), block.getPrintableHash());
@@ -117,6 +129,7 @@ public class MessageVisitor {
     }
 
     public void apply(StatusMessage message) {
+        // accept regardless version, peer could be using us for long sync or the other way around
         final Status status = message.getStatus();
         logger.trace("Process status {}", status.getBestBlockNumber());
         this.syncProcessor.processStatus(sender, status);
@@ -156,6 +169,12 @@ public class MessageVisitor {
     }
 
     public void apply(NewBlockHashMessage message) {
+        Integer messageVersion = message.getVersion();
+        if (isDifferentFromLocal(messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         this.syncProcessor.processNewBlockHash(sender, message);
     }
 
@@ -177,16 +196,28 @@ public class MessageVisitor {
     }
 
     public void apply(NewBlockHashesMessage message) {
+        Integer messageVersion = message.getVersion();
+        if (isDifferentFromLocal(messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            loggerMessageProcess.debug("Message[{}] not processed, better block to sync.", message.getMessageType());
             return;
         }
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
     public void apply(TransactionsMessage message) {
+        Integer messageVersion = message.getVersion();
+        if (isDifferentFromLocal(messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            loggerMessageProcess.debug("Message[{}] not processed, better block to sync.", message.getMessageType());
             return;
         }
 
@@ -239,4 +270,20 @@ public class MessageVisitor {
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
     }
+
+    private boolean isDifferentFromLocal(Integer messageVersion) {
+        int currentVersion = messageVersionCalculator.get();
+        return messageVersion != currentVersion;
+    }
+
+    private boolean isLowerThanLocal(Integer messageVersion) {
+        int currentVersion = messageVersionCalculator.get();
+        return messageVersion < currentVersion;
+    }
+
+    private boolean isGreaterThanLocal(Integer messageVersion) {
+        int currentVersion = messageVersionCalculator.get();
+        return messageVersion > currentVersion;
+    }
+
 }

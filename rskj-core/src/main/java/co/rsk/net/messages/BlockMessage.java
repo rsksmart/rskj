@@ -24,11 +24,17 @@ import org.ethereum.util.RLP;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class BlockMessage extends Message {
+public class BlockMessage extends MessageVersionAware {
+
     private Block block;
 
     public BlockMessage(Block block) {
         this.block = block;
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // TODO(iago) get from message
     }
 
     public Block getBlock() {

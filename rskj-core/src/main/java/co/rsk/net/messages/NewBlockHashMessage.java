@@ -5,11 +5,16 @@ import org.ethereum.util.RLP;
 /**
  * Wrapper around an RSK NewBlockHash message.
  */
-public class NewBlockHashMessage extends Message {
+public class NewBlockHashMessage extends MessageVersionAware {
     private byte[] hash;
 
     public NewBlockHashMessage(byte[] hash) {
         this.hash = hash;
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // TODO(iago) get from message
     }
 
     public byte[] getBlockHash() {
