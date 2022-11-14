@@ -1,5 +1,7 @@
 package co.rsk.storagerent;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.Set;
 
 public class StorageRentResult {
@@ -15,7 +17,7 @@ public class StorageRentResult {
 
 
     private StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long gasAfterPayingRent,
-                             long mismatchesCount, long executionBlockTimestamp, boolean outOfGas,
+                              long mismatchesCount, long executionBlockTimestamp, boolean outOfGas,
                               long outOfGasRentToPay, long paidRent) {
         this.rentedNodes = rentedNodes;
         this.rollbackNodes = rollbackNodes;
@@ -39,26 +41,12 @@ public class StorageRentResult {
                 mismatchesCount, executionBlockTimestamp, false, -1, paidRent);
     }
 
-    public long totalRent() {
-        return this.getPayableRent() + this.getRollbacksRent() + this.getMismatchesRent();
-    }
-
     public Set<RentedNode> getRentedNodes() {
         return rentedNodes;
     }
 
     public Set<RentedNode> getRollbackNodes() {
         return rollbackNodes;
-    }
-
-    public long getRollbacksRent() {
-        return StorageRentUtil.rentBy(this.rollbackNodes,
-                rentedNode -> rentedNode.rollbackFee(this.executionBlockTimestamp, this.rentedNodes));
-    }
-
-    public long getPayableRent() {
-        return StorageRentUtil.rentBy(this.rentedNodes,
-                rentedNode -> rentedNode.payableRent(this.executionBlockTimestamp));
     }
 
     public long getGasAfterPayingRent() {
@@ -77,11 +65,30 @@ public class StorageRentResult {
         return outOfGas;
     }
 
+    @VisibleForTesting // and log trace
+    public long getRollbacksRent() {
+        return StorageRentUtil.rentBy(this.rollbackNodes,
+                rentedNode -> rentedNode.rollbackFee(this.executionBlockTimestamp, this.rentedNodes));
+    }
+
+    @VisibleForTesting // and log trace
+    public long getPayableRent() {
+        return StorageRentUtil.rentBy(this.rentedNodes,
+                rentedNode -> rentedNode.payableRent(this.executionBlockTimestamp));
+    }
+
+    @VisibleForTesting // and log trace
+    public long getPaidRent() {
+        return paidRent;
+    }
+
+    @VisibleForTesting // and log trace
     public long getOutOfGasRentToPay() {
         return outOfGasRentToPay;
     }
 
-    public long getPaidRent() {
-        return paidRent;
+    @VisibleForTesting // and log trace
+    public long totalRent() {
+        return this.getPayableRent() + this.getRollbacksRent() + this.getMismatchesRent();
     }
 }

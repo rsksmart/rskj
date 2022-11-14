@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -153,7 +154,7 @@ public class StorageRentUtil {
      *
      * @param rentedNodes a RentedNode collection
      * @param rentFunction a map function to calculate rent
-     * @return a rent amount
+     * @return a rent amountx
      * */
     public static long rentBy(Collection<RentedNode> rentedNodes, Function<RentedNode, Long> rentFunction) {
         Optional<Long> rent = rentedNodes.stream()
@@ -171,5 +172,28 @@ public class StorageRentUtil {
      */
     public static long mismatchesRent(long mismatchesCount) {
         return MISMATCH_PENALTY * mismatchesCount;
+    }
+
+    // todo(fedejinich) add unit test
+    public static StorageRentResult calculateRent(long mismatchesCount,
+                                                  Set<RentedNode> rentedNodes,
+                                                  Set<RentedNode> rollbackNodes,
+                                                  long gasRemaining, long executionBlockTimestamp) {
+        long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
+        long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp,
+                rentedNodes));
+
+        long rentToPay = payableRent + rollbacksRent + StorageRentUtil.mismatchesRent(mismatchesCount);
+
+        // not enough gas to pay rent
+        if(gasRemaining < rentToPay) {
+            return StorageRentResult.outOfGas(rentedNodes, rollbackNodes, mismatchesCount, executionBlockTimestamp,
+                    rentToPay);
+        }
+
+        long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);
+
+        return StorageRentResult.ok(rentedNodes, rollbackNodes,
+                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp, rentToPay);
     }
 }

@@ -4,14 +4,12 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
-import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentUtil.rentBy;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
@@ -20,9 +18,6 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
  * */
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute");
-
-    public StorageRentManager() {
-    }
 
     /**
      * Pay storage rent.
@@ -52,41 +47,29 @@ public class StorageRentManager {
         Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
         Set<RentedNode> rollbackNodes = fetchRentedNodes(rollbackKeys, blockTrack);
 
-        LOGGER.trace("storage rent - rented nodes: {}, rollback nodes: {}",
+        LOGGER.debug("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackKeys.size());
 
-        // todo(fedejinich) this can be refactored
-        // calculate rent
-        long mismatchesCount = blockTrack.getMismatchesCount() +
+        // 'blockTrack' accumulates mismatches, so we calculate the difference
+        int mismatchesCount = blockTrack.getMismatchesCount() +
                 transactionTrack.getMismatchesCount() - initialMismatchesCount;
 
-        long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
-        long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp, 
-                rentedNodes));
-        long rentToPay = payableRent + rollbacksRent + StorageRentUtil.mismatchesRent(mismatchesCount);
+        // calculate rent
+        StorageRentResult result = StorageRentUtil.calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
+                gasRemaining, executionBlockTimestamp);
 
-        // not enough gas to pay rent
-        if(gasRemaining < rentToPay) {
-            return StorageRentResult.outOfGas(rentedNodes, rollbackNodes, mismatchesCount, executionBlockTimestamp,
-                    rentToPay);
+        if(!result.isOutOfGas()) {
+            // update rent timestamps
+            Set<RentedNode> nodesWithRent = rentedNodes.stream()
+                    .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
+                            rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
+                    .collect(Collectors.toSet());
+
+            transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
         }
 
-        // pay storage rent
-        long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);
-
-        // update rent timestamps
-        Set<RentedNode> nodesWithRent = rentedNodes.stream()
-                .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
-                        rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
-                .collect(Collectors.toSet());
-
-        transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
-
-        StorageRentResult result = StorageRentResult.ok(rentedNodes, rollbackNodes,
-                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp, rentToPay);
-
-        LOGGER.trace("storage rent - paid rent: {}, payable rent: {}, rollbacks rent: {}",
-            result.totalRent(), result.getPayableRent(), result.getRollbacksRent());
+        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, out of gas: {}",
+            result.totalRent(), result.getPayableRent(), result.getRollbacksRent(), result.isOutOfGas());
 
         return result;
     }
