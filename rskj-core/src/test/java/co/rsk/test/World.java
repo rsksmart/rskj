@@ -195,8 +195,6 @@ public class World {
         return this.blockExecutor;
     }
 
-    public RskSystemProperties getConfig() { return this.config; }
-
     public StateRootHandler getStateRootHandler() {
         return this.stateRootHandler;
     }
