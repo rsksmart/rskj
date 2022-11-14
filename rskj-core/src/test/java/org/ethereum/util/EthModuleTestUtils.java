@@ -33,7 +33,6 @@ import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.rpc.CallArguments;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -50,7 +49,7 @@ public class EthModuleTestUtils {
                 world.getBlockChain(),
                 null,
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
-                new ExecutionBlockRetriever(null, world.getBlockChain(), null, null),
+                new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null,
                 null,
                 null,
@@ -68,7 +67,7 @@ public class EthModuleTestUtils {
                 world.getBlockChain(),
                 null,
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
-                new ExecutionBlockRetriever(null, world.getBlockChain(), null, null),
+                new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null,
                 null,
                 null,

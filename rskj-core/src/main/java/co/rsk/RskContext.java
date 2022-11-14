@@ -1015,6 +1015,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getBlocksBloomStore(),
                 getStateRootsStore()));
 
+        internalServices.add(getExecutionBlockRetriever());
+
         return Collections.unmodifiableList(internalServices);
     }
 
@@ -2081,10 +2083,9 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ExecutionBlockRetriever getExecutionBlockRetriever() {
         if (executionBlockRetriever == null) {
             executionBlockRetriever = new ExecutionBlockRetriever(
-                    getMiningMainchainView(),
                     getBlockchain(),
-                    getMinerServer(),
-                    getBlockToMineBuilder()
+                    getBlockToMineBuilder(),
+                    getCompositeEthereumListener()
             );
         }
 

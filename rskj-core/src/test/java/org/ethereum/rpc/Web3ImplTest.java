@@ -2371,13 +2371,11 @@ class Web3ImplTest {
     private Web3Impl createWeb3(SimpleEthereum eth, PeerServer peerServer) {
         wallet = WalletFactory.createWallet();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        BlockStore blockStore = Web3Mocks.getMockBlockStore();
-        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockStore, 449);
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
-                null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
+                null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
@@ -2474,7 +2472,6 @@ class Web3ImplTest {
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore) {
-        MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2488,7 +2485,7 @@ class Web3ImplTest {
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
+                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
@@ -2538,7 +2535,6 @@ class Web3ImplTest {
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore) {
-        MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2549,7 +2545,7 @@ class Web3ImplTest {
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
+                new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator,
                 new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(

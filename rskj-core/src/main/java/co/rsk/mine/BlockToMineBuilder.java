@@ -41,6 +41,7 @@ import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -102,6 +103,24 @@ public class BlockToMineBuilder {
     }
 
     /**
+     * Creates a pending block based on the parent block header. Pending block is temporary, not connected to the chain and
+     * includes txs from the mempool.
+     *
+     * @param parentHeader block header a "pending" block is based on.
+     *
+     * @return "pending" block result.
+     * */
+    @Nonnull
+    public BlockResult buildPending(@Nonnull BlockHeader parentHeader) {
+        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(parentHeader.getMinimumGasPrice());
+        List<BlockHeader> uncles = getUnclesHeaders(parentHeader);
+        List<Transaction> txs = getTransactions(new ArrayList<>(), parentHeader, minimumGasPrice);
+        Block newBlock = createBlock(Collections.singletonList(parentHeader), uncles, txs, minimumGasPrice, null);
+
+        return executor.executeAndFill(newBlock, parentHeader);
+    }
+
+    /**
      * Creates a new block to mine based on the previous mainchain blocks.
      *
      * @param mainchainHeaders last best chain blocks where 0 index is the best block and so on.
@@ -109,17 +128,7 @@ public class BlockToMineBuilder {
      */
     public BlockResult build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
         BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
-        List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
-                blockStore,
-                newBlockParentHeader.getNumber() + 1,
-                newBlockParentHeader.getHash(),
-                miningConfig.getUncleGenerationLimit()
-        );
-
-
-        if (uncles.size() > miningConfig.getUncleListLimit()) {
-            uncles = uncles.subList(0, miningConfig.getUncleListLimit());
-        }
+        List<BlockHeader> uncles = getUnclesHeaders(newBlockParentHeader);
 
         Coin minimumGasPrice = minimumGasPriceCalculator.calculate(newBlockParentHeader.getMinimumGasPrice());
 
@@ -129,6 +138,21 @@ public class BlockToMineBuilder {
 
         removePendingTransactions(txsToRemove);
         return executor.executeAndFill(newBlock, newBlockParentHeader);
+    }
+
+    private List<BlockHeader> getUnclesHeaders(BlockHeader newBlockParentHeader) {
+        List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
+                blockStore,
+                newBlockParentHeader.getNumber() + 1,
+                newBlockParentHeader.getHash(),
+                miningConfig.getUncleGenerationLimit()
+        );
+
+        if (uncles.size() > miningConfig.getUncleListLimit()) {
+            uncles = uncles.subList(0, miningConfig.getUncleListLimit());
+        }
+
+        return uncles;
     }
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {

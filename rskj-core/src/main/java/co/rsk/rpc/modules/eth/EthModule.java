@@ -23,12 +23,12 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.HexUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -120,12 +120,14 @@ public class EthModule
     public String call(CallArguments args, String bnOrId) {
         String hReturn = null;
         try {
-            BlockResult blockResult = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+            ExecutionBlockRetriever.Result result = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
+            Block block = result.getBlock();
+            Trie finalState = result.getFinalState();
             ProgramResult res;
-            if (blockResult.getFinalState() != null) {
-                res = callConstant_workaround(args, blockResult);
+            if (finalState != null) {
+                res = callConstantWithState(args, block, finalState);
             } else {
-                res = callConstant(args, blockResult.getBlock());
+                res = callConstant(args, block);
             }
 
             if (res.isRevert()) {
@@ -290,13 +292,12 @@ public class EthModule
         return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
     }
 
-    @Deprecated
-    private ProgramResult callConstant_workaround(CallArguments args, BlockResult executionBlock) {
+    private ProgramResult callConstantWithState(CallArguments args, Block executionBlock, Trie state) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        return reversibleTransactionExecutor.executeTransaction_workaround(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), executionBlock.getFinalState()),
-                executionBlock.getBlock(),
-                executionBlock.getBlock().getCoinbase(),
+        return reversibleTransactionExecutor.executeTransaction(
+                new MutableRepository(new TrieStoreImpl(new HashMapDB()), state),
+                executionBlock,
+                executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),
                 hexArgs.getGasLimit(),
                 hexArgs.getToAddress(),
