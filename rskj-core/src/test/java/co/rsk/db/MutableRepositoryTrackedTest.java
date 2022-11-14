@@ -429,7 +429,7 @@ public class MutableRepositoryTrackedTest {
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
         storageRentManager.pay(100000, firstBlockTimestamp,
-                initialRepository, repositoryWithTimestamps, 0);
+                initialRepository, repositoryWithTimestamps);
 
         repositoryWithTimestamps.commit();
 
@@ -461,7 +461,7 @@ public class MutableRepositoryTrackedTest {
         // pay and update timestamp
         long updatedTimesteamp = 50000000000l;
         StorageRentResult result = storageRentManager.pay(100000, updatedTimesteamp,
-                blockTrack, transactionTrack, 0);
+                blockTrack, transactionTrack);
 
         RentedNode nodeAfterPayment = new RentedNode(key, READ_OPERATION, 3, updatedTimesteamp);
 

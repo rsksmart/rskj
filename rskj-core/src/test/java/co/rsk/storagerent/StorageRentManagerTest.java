@@ -215,7 +215,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
+        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
 
         repositoryWithTimestamps.commit();
 
@@ -247,7 +247,7 @@ public class StorageRentManagerTest {
         // pay and update timestamp
         long updatedTimestamp = 50000000000l;
         StorageRentResult result = storageRentManager.pay(enoughGas, updatedTimestamp,
-                blockTrack, transactionTrack, 0);
+                blockTrack, transactionTrack);
 
         transactionTrack.commit();
 
@@ -276,7 +276,7 @@ public class StorageRentManagerTest {
 
         // timestamping the trie
         MutableRepositoryTracked repositoryWithTimestamps = (MutableRepositoryTracked) initialRepository.startTracking();
-        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps, 0);
+        storageRentManager.pay(enoughGas, firstBlockTimestamp, initialRepository, repositoryWithTimestamps);
 
         repositoryWithTimestamps.commit();
 
@@ -308,7 +308,7 @@ public class StorageRentManagerTest {
         // pay and update timestamp
         long notEnoughtAccumulatedRent = firstBlockTimestamp + 100000000;
         StorageRentResult result = storageRentManager.pay(enoughGas, notEnoughtAccumulatedRent,
-                blockTrack, transactionTrack, 0);
+                blockTrack, transactionTrack);
 
         transactionTrack.commit();
 
@@ -347,7 +347,7 @@ public class StorageRentManagerTest {
                                          long expectedRollbackNodesCount, boolean expectedIsOutOfGas,
                                          long expectedPaidRent) {
         StorageRentResult storageRentResult = storageRentManager.pay(gasRemaining, executionBlockTimestamp,
-                mockBlockTrack, mockTransactionTrack, 0);
+                mockBlockTrack, mockTransactionTrack);
         long remainingGasAfterPayingRent = storageRentResult.getGasAfterPayingRent();
 
         assertTrue(remainingGasAfterPayingRent >= 0);

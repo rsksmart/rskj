@@ -175,10 +175,9 @@ public class StorageRentUtil {
     }
 
     // todo(fedejinich) add unit test
-    public static StorageRentResult calculateRent(long mismatchesCount,
-                                                  Set<RentedNode> rentedNodes,
-                                                  Set<RentedNode> rollbackNodes,
-                                                  long gasRemaining, long executionBlockTimestamp) {
+    public static StorageRentResult calculateRent(long mismatchesCount, Set<RentedNode> rentedNodes,
+                                                  Set<RentedNode> rollbackNodes, long gasRemaining,
+                                                  long executionBlockTimestamp) {
         long payableRent = rentBy(rentedNodes, rentedNode -> rentedNode.payableRent(executionBlockTimestamp));
         long rollbacksRent = rentBy(rollbackNodes, rentedNode -> rentedNode.rollbackFee(executionBlockTimestamp,
                 rentedNodes));
