@@ -41,6 +41,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.AdditionalMatchers.lt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -294,10 +295,32 @@ class BlockFactoryTest {
         assertEquals((byte) 0x0, factory.decodeBlock(genesisRaw()).getHeader().getVersion());
     }
 
+    @Test
+    public void headerIsVersion0BeforeActivation () {
+        long number = 20L;
+        enableRskip351At(number);
+        BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number - 1).build();
+        Assertions.assertEquals(header.getVersion(), 0);
+    }
+
+    @Test
+    public void headerIsVersion1AfterActivation () {
+        long number = 20L;
+        enableRskip351At(number);
+        BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
+        Assertions.assertEquals(header.getVersion(), 1);
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
         }
+    }
+
+    private void enableRskip351At(long number) {
+        when(activationConfig.getHeaderVersion(lt(number))).thenReturn((byte) 0x0);
+        when(activationConfig.getHeaderVersion(geq(number))).thenReturn((byte) 0x1);
+        when(activationConfig.isActive(eq(RSKIP351), geq(number))).thenReturn(true);
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(

@@ -18,6 +18,7 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -585,21 +586,20 @@ class SyncProcessorTest {
         Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
     }
 
-    @Test
-    void processBodyResponseAddsToBlockchain() {
+    void testProcessBodyResponseAddsToBlockchain(TestSystemProperties config) {
         final NetBlockStore store = new NetBlockStore();
-        Blockchain blockchain = new BlockChainBuilder().ofSize(10);
+        Blockchain blockchain = new BlockChainBuilder().setConfig(config).ofSize(10, new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig()));
+
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         Assertions.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig()).createChildBlock(blockchain.getBlockByNumber(10));
 
         Assertions.assertEquals(11, block.getNumber());
         Assertions.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash().getBytes());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
         SyncProcessor processor = new SyncProcessor(
@@ -636,6 +636,19 @@ class SyncProcessorTest {
         Assertions.assertEquals(11, blockchain.getBestBlock().getNumber());
         Assertions.assertArrayEquals(block.getHash().getBytes(), blockchain.getBestBlockHash());
         Assertions.assertTrue(processor.getExpectedResponses().isEmpty());
+        System.out.println(block.getHeader().getVersion());
+    }
+
+    @Test
+    void processBodyResponseAddsToBlockchain() {
+        testProcessBodyResponseAddsToBlockchain(new TestSystemProperties());
+    }
+
+    @Test
+    void processBodyResponseAddsToBlockchainWithoutFingerroot500() {
+        testProcessBodyResponseAddsToBlockchain(new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(-1))
+        ));
     }
 
     @Test

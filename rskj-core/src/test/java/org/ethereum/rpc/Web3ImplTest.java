@@ -57,6 +57,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
 import co.rsk.util.TestContract;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -1032,31 +1033,36 @@ class Web3ImplTest {
         assertNonCanonicalBlockHash("0x1", chain.block, blockRef -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
-    @Test
-    void getBlockByNumber() {
-        World world = new World();
-
-        Web3Impl web3 = createWeb3(world);
-
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(
+    private BlockBuilder createBlockBuilder(World world) {
+        return new BlockBuilder(
                 world.getBlockChain(),
                 world.getBridgeSupportFactory(),
                 world.getBlockStore(),
-                new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)))
-                .trieStore(world.getTrieStore()).difficulty(2).parent(genesis).build();
+                new BlockGenerator(world.getConfig().getNetworkConstants(), world.getConfig().getActivationConfig()));
+    }
+
+    void testBlockByNumber(RskSystemProperties config) {
+        World world = new World(config);
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = createBlockBuilder(world)
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build(config);
+
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        Block block1b = createBlockBuilder(world)
+                .trieStore(world.getTrieStore()).difficulty(2).parent(genesis).build(config);
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(11).parent(block1b).build();
+
+        Block block2b = createBlockBuilder(world)
+                .trieStore(world.getTrieStore()).difficulty(11).parent(block1b).build(config);
         block2b.setBitcoinMergedMiningHeader(new byte[]{0x02});
+
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
         BlockResultDTO bresult = web3.eth_getBlockByNumber("0x1", false);
-
         assertNotNull(bresult);
 
         String blockHash = "0x" + block1b.getHash();
@@ -1064,15 +1070,25 @@ class Web3ImplTest {
 
         String bnOrId = "0x2";
         bresult = web3.eth_getBlockByNumber("0x2", true);
-
         assertNotNull(bresult);
 
         blockHash = "0x" + block2b.getHash();
         assertEquals(blockHash, bresult.getHash());
 
         String hexString = web3.rsk_getRawBlockHeaderByNumber(bnOrId).replace("0x", "");
-        Keccak256 obtainedBlockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
-        assertEquals(blockHash, obtainedBlockHash.toJsonString());
+        assertArrayEquals(block2b.getHeader().getEncoded(), Hex.decode(hexString));
+    }
+
+    @Test
+    void getBlockByNumberWithoutFingerroot500() {
+        testBlockByNumber(new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(2))
+        ));
+    }
+
+    @Test
+    void getBlockByNumber() {
+        testBlockByNumber(new TestSystemProperties());
     }
 
     @Test
@@ -1177,26 +1193,22 @@ class Web3ImplTest {
         Assertions.assertThrows(org.ethereum.rpc.exception.RskJsonRpcRequestException.class, () -> web3.eth_getBlockByNumber(bnOrId, false));
     }
 
-    @Test
-    void getBlockByHash() {
-        World world = new World();
-
+    void testGetBlockByHash(RskSystemProperties config) {
+        World world = new World(config);
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+
+        Block block1 = createBlockBuilder(world).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(
-                world.getBlockChain(),
-                world.getBridgeSupportFactory(),
-                world.getBlockStore(),
-                new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue() - 1).parent(genesis).build();
+
+        Block block1b = createBlockBuilder(world).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue() - 1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();
+
+        Block block2b = createBlockBuilder(world).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[]{0x02});
+
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
@@ -1219,8 +1231,7 @@ class Web3ImplTest {
         assertEquals(block1bHashString, bresult.getHash());
 
         String hexString = web3.rsk_getRawBlockHeaderByHash(block1bHashString).replace("0x", "");
-        Keccak256 blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
-        assertEquals(blockHash.toJsonString(), block1bHashString);
+        assertArrayEquals(block1b.getHeader().getEncoded(), Hex.decode(hexString));
 
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
@@ -1228,8 +1239,19 @@ class Web3ImplTest {
         assertEquals(block2bHashString, bresult.getHash());
 
         hexString = web3.rsk_getRawBlockHeaderByHash(block2bHashString).replace("0x", "");
-        blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
-        assertEquals(blockHash.toJsonString(), block2bHashString);
+        assertArrayEquals(block2b.getHeader().getEncoded(), Hex.decode(hexString));
+    }
+
+    @Test
+    void getBlockByHashWithoutFingerroot500() {
+        testGetBlockByHash(new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(2))
+        ));
+    }
+
+    @Test
+    void getBlockByHash() {
+        testGetBlockByHash(new TestSystemProperties());
     }
 
     @Test

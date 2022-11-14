@@ -356,6 +356,109 @@ class BlockHeaderTest {
         Assertions.assertEquals(logsBloomField.length, Bloom.BLOOM_BYTES);
     }
 
+    private BlockHeaderV1 createV1FromV0(BlockHeaderV0 headerV0) {
+        return new BlockHeaderV1(
+                headerV0.getParentHash().getBytes(), headerV0.getUnclesHash(), headerV0.getCoinbase(), headerV0.getStateRoot(),
+                headerV0.getTxTrieRoot(), headerV0.getReceiptsRoot(), headerV0.getLogsBloom(), headerV0.getDifficulty(),
+                headerV0.getNumber(), headerV0.getGasLimit(), headerV0.getGasUsed(), headerV0.getTimestamp(), headerV0.getExtraData(),
+                headerV0.getPaidFees(), headerV0.getBitcoinMergedMiningHeader(), headerV0.getBitcoinMergedMiningMerkleProof(),
+                headerV0.getBitcoinMergedMiningCoinbaseTransaction(), headerV0.getMiningForkDetectionData(),
+                headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
+                false, false, headerV0.getUmmRoot()
+        );
+    }
+
+    @Test
+    public void encodedV0IsTheSameForV0andV1 () {
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+
+        BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
+        headerV0.setLogsBloom(logsBloom);
+
+        BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
+
+        Assertions.assertArrayEquals(headerV0.getEncoded(), headerV1.getEncoded());
+    }
+
+    @Test
+    public void fullEncodedV0IsTheSameForV0andV1 () {
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+
+        BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
+        headerV0.setLogsBloom(logsBloom);
+
+        BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
+
+        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV1.getFullEncoded());
+    }
+
+    @Test
+    public void fullEncodedV0IsTheSameAsEncodedForHeaderMessage () {
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+
+        BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
+        headerV0.setLogsBloom(logsBloom);
+
+        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV0.getEncodedForHeaderMessage());
+    }
+
+    @Test
+    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloom () {
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+
+        BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+        headerV1.setLogsBloom(logsBloom);
+
+        RLPList fullEncoded = RLP.decodeList(headerV1.getFullEncoded());
+        RLPList encodedForHeaderMessage = RLP.decodeList(headerV1.getEncodedForHeaderMessage());
+
+        Assertions.assertEquals(fullEncoded.size(), encodedForHeaderMessage.size());
+
+        for (int i = 0; i < fullEncoded.size(); i++)
+            if (i != 6) // logs bloom field
+                Assertions.assertArrayEquals(fullEncoded.get(i).getRLPData(), encodedForHeaderMessage.get(i).getRLPData());
+
+        Assertions.assertFalse(Arrays.equals(fullEncoded.get(6).getRLPData(), encodedForHeaderMessage.get(6).getRLPData()));
+    }
+
+    @Test
+    public void hashOfV1IncludesLogsBloom() {
+        BlockHeaderV1 headerV1 = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x04;
+        headerV1.setLogsBloom(logsBloom);
+        byte[] hash = headerV1.getHash().getBytes();
+
+        byte[] otherLogsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 0x01;
+        logsBloom[1] = 0x02;
+        logsBloom[2] = 0x03;
+        logsBloom[3] = 0x05;
+        headerV1.setLogsBloom(otherLogsBloom);
+
+        Assertions.assertFalse(Arrays.equals(hash, headerV1.getHash().getBytes()));
+    }
+
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot) {

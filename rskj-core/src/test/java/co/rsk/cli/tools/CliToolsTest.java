@@ -38,6 +38,7 @@ import co.rsk.util.PreflightChecksUtils;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -267,7 +268,7 @@ class CliToolsTest {
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(receiptStore).when(rskContext).getReceiptStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(world.getConfig().getActivationConfig())).when(rskContext).getBlockFactory();
         doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
@@ -284,11 +285,8 @@ class CliToolsTest {
         verify(stopper).stop(0);
     }
 
-    @Test
-    void importBlocks() throws IOException, DslProcessorException {
+    void testImportBlocks(World world) throws IOException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks01b.txt");
-        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
-        World world = new World(receiptStore);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -321,7 +319,7 @@ class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
-        doReturn(new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351))).when(rskContext).getBlockFactory();
+        doReturn(new BlockFactory(world.getConfig().getActivationConfig())).when(rskContext).getBlockFactory();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         doReturn(tempDir.toString()).when(rskSystemProperties).databaseDir();
         doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
@@ -334,6 +332,33 @@ class CliToolsTest {
         Assertions.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
 
         verify(stopper).stop(0);
+    }
+
+    @Test
+    void importBlocks() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(-1))
+        );
+        World world = new World(receiptStore, config);
+        testImportBlocks(world);
+    }
+
+    @Test
+    void importBlocksWithRskip351InMiddle() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(2))
+        );
+        World world = new World(receiptStore, config);
+        testImportBlocks(world);
+    }
+
+    @Test
+    void importBlocksWithRskip351() throws IOException, DslProcessorException {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        testImportBlocks(world);
     }
 
     @Test

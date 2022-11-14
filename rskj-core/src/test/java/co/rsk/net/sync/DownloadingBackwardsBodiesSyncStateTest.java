@@ -229,6 +229,76 @@ class DownloadingBackwardsBodiesSyncStateTest {
     }
 
     @Test
+    void connectingWithBlockHeaderExtension() {
+        LinkedList<BlockHeader> toRequest = new LinkedList<>();
+        LinkedList<BodyResponseMessage> responses = new LinkedList<>();
+        LinkedList<Block> expectedBlocks = new LinkedList<>();
+        Function<Long, BlockDifficulty> difficultyForBlockNumber =
+                (n) -> new BlockDifficulty(BigInteger.valueOf(n * (n + 1) / 2));
+
+        // This setup initializes responses and blocks so that the blocks have the same number and difficulty as
+        // their indexes and each one is the children of the previous block.
+        for (long i = 1; i <= 10; i++) {
+            BlockHeader headerToRequest = mock(BlockHeader.class);
+            Keccak256 headerHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.longToBytes(i), 32));
+            BlockHeaderExtension blockHeaderExtension = mock(BlockHeaderExtension.class);
+
+            when(headerToRequest.getExtension()).thenReturn(blockHeaderExtension);
+            when(headerToRequest.getHash()).thenReturn(headerHash);
+            when(headerToRequest.getNumber()).thenReturn(i);
+
+            toRequest.addFirst(headerToRequest);
+
+            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
+
+            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>(), blockHeaderExtension);
+            responses.addFirst(response);
+
+            Block block = mock(Block.class);
+            expectedBlocks.addFirst(block);
+            when(block.getNumber()).thenReturn(i);
+            when(block.getHash()).thenReturn(headerHash);
+            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+                    .thenReturn(block);
+
+            when(block.isParentOf(any())).thenReturn(true);
+            when(blockStore.getTotalDifficultyForHash(headerHash.getBytes()))
+                    .thenReturn(difficultyForBlockNumber.apply(i));
+            when(block.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(i)));
+
+            when(block.getHeader()).thenReturn(headerToRequest);
+        }
+        when(genesis.isParentOf(expectedBlocks.getLast())).thenReturn(true);
+        when(genesis.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(0L)));
+
+        Keccak256 childHash = new Keccak256(ByteUtil.leftPadBytes(ByteUtil.intToBytes(11), 32));
+        when(child.getHash()).thenReturn(childHash);
+        when(blockStore.getTotalDifficultyForHash(childHash.getBytes()))
+                .thenReturn(difficultyForBlockNumber.apply(11L));
+        when(child.getCumulativeDifficulty()).thenReturn(new BlockDifficulty(BigInteger.valueOf(11L)));
+        when(child.getNumber()).thenReturn(11L);
+
+        DownloadingBackwardsBodiesSyncState target = new DownloadingBackwardsBodiesSyncState(
+                syncConfiguration,
+                syncEventsHandler,
+                peersInformation,
+                genesis,
+                blockFactory,
+                blockStore,
+                child,
+                toRequest,
+                peer);
+
+        while (!responses.isEmpty()) {
+            target.onEnter();
+            BodyResponseMessage response = responses.pop();
+            target.newBody(response, mock(Peer.class));
+            Block block = expectedBlocks.pop();
+            verify(block.getHeader()).setExtension(response.getBlockHeaderExtension());
+        }
+    }
+
+    @Test
     void connecting_notGenesis() {
         LinkedList<BlockHeader> toRequest = new LinkedList<>();
         LinkedList<BodyResponseMessage> responses = new LinkedList<>();

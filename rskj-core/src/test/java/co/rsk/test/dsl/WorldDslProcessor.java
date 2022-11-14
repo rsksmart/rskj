@@ -18,6 +18,7 @@
 
 package co.rsk.test.dsl;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -55,7 +56,8 @@ public class WorldDslProcessor {
     public WorldDslProcessor(World world) {
         this.world = world;
         BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                                     world.getBlockStore()).trieStore(world.getTrieStore());
+                                                     world.getBlockStore(), new BlockGenerator(world.getConfig().getNetworkConstants(), world.getConfig().getActivationConfig())
+        ).trieStore(world.getTrieStore());
         blockBuilder.parent(world.getBlockChain().getBestBlock());
         this.blockBuilder = blockBuilder;
     }

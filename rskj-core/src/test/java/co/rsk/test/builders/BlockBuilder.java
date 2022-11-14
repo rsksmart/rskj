@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
@@ -64,7 +65,7 @@ public class BlockBuilder {
     }
 
     public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
-        this(blockChain, bridgeSupportFactory, blockStore, new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351)));
+        this(blockChain, bridgeSupportFactory, blockStore, new BlockGenerator());
     }
 
     public BlockBuilder parent(Block parent) {
@@ -107,10 +108,14 @@ public class BlockBuilder {
     }
 
     public Block build() {
+        final TestSystemProperties config = new TestSystemProperties();
+        return this.build(config);
+    }
+
+    public Block build(final RskSystemProperties config) {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),

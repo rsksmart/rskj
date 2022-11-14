@@ -27,6 +27,7 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidator;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -777,6 +778,40 @@ class NodeBlockProcessorTest {
     }
 
     @Test
+    void processBodyRequestMessageUsingBlockInBlockchainWithoutRskip351() throws UnknownHostException {
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.fingerroot500", ConfigValueFactory.fromAnyRef(-1))
+        );
+        final Blockchain blockchain = new BlockChainBuilder()
+                .setConfig(config)
+                .ofSize(10, new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig()));
+        final Block block = blockchain.getBlockByNumber(3);
+        final NetBlockStore store = new NetBlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        final SimplePeer sender = new SimplePeer();
+
+        processor.processBodyRequest(sender, 100, block.getHash().getBytes());
+
+        Assertions.assertFalse(sender.getMessages().isEmpty());
+        Assertions.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assertions.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, message.getMessageType());
+
+        final BodyResponseMessage bMessage = (BodyResponseMessage) message;
+
+        Assertions.assertEquals(100, bMessage.getId());
+        Assertions.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
+        Assertions.assertEquals(block.getUncleList(), bMessage.getUncles());
+        Assertions.assertEquals(null, bMessage.getBlockHeaderExtension());
+    }
+
+    @Test
     void processBodyRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(3);
@@ -803,6 +838,11 @@ class NodeBlockProcessorTest {
         Assertions.assertEquals(100, bMessage.getId());
         Assertions.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
         Assertions.assertEquals(block.getUncleList(), bMessage.getUncles());
+        Assertions.assertNotNull(bMessage.getBlockHeaderExtension());
+        Assertions.assertArrayEquals(
+                block.getHeader().getExtension().getEncoded(),
+                bMessage.getBlockHeaderExtension().getEncoded()
+        );
     }
 
     @Test

@@ -193,32 +193,53 @@ class MessageTest {
         Assertions.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
     }
 
+    private BlockHeadersResponseMessage testBlockHeadersResponseMessage(BlockFactory blockFactory, List<BlockHeader> headers) {
+        BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(100, headers);
+        byte[] encoded = message.getEncoded();
+
+        BlockHeadersResponseMessage result = (BlockHeadersResponseMessage) Message.create(blockFactory, encoded);
+
+        for (int k = 0; k < headers.size(); k++) {
+            result.getBlockHeaders().get(k).setExtension(headers.get(k).getExtension()); // identity applying on block header v0
+        }
+
+        Assertions.assertNotNull(encoded);
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, result.getMessageType());
+
+        Assertions.assertEquals(100, message.getId());
+        Assertions.assertEquals(headers.size(), message.getBlockHeaders().size());
+
+        return result;
+    }
+
     @Test
-    void encodeDecodeBlockHeadersResponseMessage() {
+    void encodeDecodeBlockHeadersResponseMessageWithoutRSKIP351() {
         BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
         BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
+
+        List<BlockHeader> headers = new ArrayList<>();
+        for (int k = 1; k <= 4; k++)
+            headers.add(blockGenerator.getBlock(k).getHeader());
+
+        BlockHeadersResponseMessage newmessage = testBlockHeadersResponseMessage(blockFactory, headers);
+
+        for (int k = 0; k < headers.size(); k++) {
+            Assertions.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
+            Assertions.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
+            Assertions.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
+        }
+    }
+
+    @Test
+    void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
             headers.add(blockGenerator.getBlock(k).getHeader());
 
-        BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(100, headers);
-
-        byte[] encoded = message.getEncoded();
-
-        Assertions.assertNotNull(encoded);
-
-        Message result = Message.create(blockFactory, encoded);
-
-        Assertions.assertNotNull(result);
-        Assertions.assertArrayEquals(encoded, result.getEncoded());
-        Assertions.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, result.getMessageType());
-
-        BlockHeadersResponseMessage newmessage = (BlockHeadersResponseMessage) result;
-
-        Assertions.assertEquals(100, newmessage.getId());
-
-        Assertions.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
+        BlockHeadersResponseMessage newmessage = testBlockHeadersResponseMessage(blockFactory, headers);
 
         for (int k = 0; k < headers.size(); k++) {
             Assertions.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
@@ -504,6 +525,58 @@ class MessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+    }
+
+    @Test
+    void encodeDecodeBodyResponseMessageWithExtension() {
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (int k = 1; k <= 10; k++)
+            transactions.add(createTransaction(k));
+
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        BlockGenerator blockGenerator = this.blockGenerator;
+        Block parent = blockGenerator.getGenesisBlock();
+
+        for (int k = 1; k < 10; k++) {
+            Block block = blockGenerator.createChildBlock(parent);
+            uncles.add(block.getHeader());
+            parent = block;
+        }
+
+        byte[] bloom = new byte[]{ 1, 2, 3, 4 };
+        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom);
+
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assertions.assertNotNull(result);
+        Assertions.assertArrayEquals(encoded, result.getEncoded());
+        Assertions.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, result.getMessageType());
+
+        BodyResponseMessage newmessage = (BodyResponseMessage)result;
+
+        Assertions.assertNotNull(newmessage);
+
+        Assertions.assertEquals(100, newmessage.getId());
+
+        Assertions.assertNotNull(newmessage.getTransactions());
+        Assertions.assertEquals(transactions.size(), newmessage.getTransactions().size());
+
+        Assertions.assertEquals(transactions, newmessage.getTransactions());
+
+        Assertions.assertNotNull(newmessage.getUncles());
+        Assertions.assertEquals(uncles.size(), newmessage.getUncles().size());
+
+        for (int k = 0; k < uncles.size(); k++)
+            Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+
+        Assertions.assertNotNull(newmessage.getBlockHeaderExtension());
+        Assertions.assertArrayEquals(extension.getEncoded(), newmessage.getBlockHeaderExtension().getEncoded());
     }
 
     private static Transaction createTransaction(int number) {

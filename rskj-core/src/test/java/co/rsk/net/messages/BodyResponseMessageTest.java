@@ -3,10 +3,7 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +15,7 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 class BodyResponseMessageTest {
-    @Test
-    void createMessage() {
+    BodyResponseMessage testCreateMessage(BlockHeaderExtension extension) {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -36,7 +32,7 @@ class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, null);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension);
 
         Assertions.assertEquals(100, message.getId());
 
@@ -52,6 +48,21 @@ class BodyResponseMessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             Assertions.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
+
+        return  message;
+    }
+    @Test
+    void createMessage() {
+        BodyResponseMessage message = testCreateMessage(null);
+        Assertions.assertNull(message.getBlockHeaderExtension());
+    }
+
+    @Test
+    void createMessageWithExtension() {
+        Bloom bloom = new Bloom();
+        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom.getData());
+        BodyResponseMessage message = testCreateMessage(extension);
+        Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
     }
 
     private static Transaction createTransaction(int number) {

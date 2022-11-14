@@ -281,12 +281,20 @@ public class BlockChainBuilder {
         return ofSize(size, false);
     }
 
+    public Blockchain ofSize(int size, BlockGenerator blockGenerator) {
+        return ofSize(size, false, Collections.emptyMap(), blockGenerator);
+    }
+
     public Blockchain ofSize(int size, boolean mining) {
         return ofSize(size, mining, Collections.emptyMap());
     }
 
+
     public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
-        BlockGenerator blockGenerator = new BlockGenerator();
+        return ofSize(size, mining, accounts, new BlockGenerator());
+    }
+
+    public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts, BlockGenerator blockGenerator) {
         Genesis genesis = blockGenerator.getGenesisBlock(accounts);
         BlockChainImpl blockChain = setGenesis(genesis).build();
 

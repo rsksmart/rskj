@@ -80,12 +80,17 @@ public class World {
         this(new BlockChainBuilder());
     }
 
+
     public World(RskSystemProperties config) {
         this(new BlockChainBuilder().setConfig(config));
     }
 
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
+    }
+
+    public World(ReceiptStore receiptStore, RskSystemProperties config) {
+        this(new BlockChainBuilder().setReceiptStore(receiptStore).setConfig(config));
     }
 
     @VisibleForTesting
@@ -185,6 +190,8 @@ public class World {
 
         return this.blockExecutor;
     }
+
+    public RskSystemProperties getConfig() { return this.config; }
 
     public StateRootHandler getStateRootHandler() {
         return this.stateRootHandler;
