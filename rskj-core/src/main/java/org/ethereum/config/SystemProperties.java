@@ -690,7 +690,7 @@ public abstract class SystemProperties {
         return configFromFiles.getInt(PROPERTY_RPC_MAX_PAYLOAD_SIZE);
     }
 
-    public Integer getMaxBatchRequestsSize() {
+    public int getMaxBatchRequestsSize() {
         return configFromFiles.getInt(PROPERTY_RPC_HTTP_MAX_BATCH_REQUESTS_SIZE);
     }
 
