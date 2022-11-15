@@ -22,17 +22,14 @@ package org.ethereum.crypto;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.Utils;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 import static java.util.Arrays.copyOfRange;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -172,31 +169,6 @@ public class HashUtil {
         }
     }
 
-    /**
-     * @return generates random peer id for the HelloMessage
-     */
-    public static byte[] randomPeerId() {
-        byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
-
-        final String peerId;
-        if (peerIdBytes.length > 64) {
-            peerId = ByteUtil.toHexString(peerIdBytes, 1, 64);
-        } else {
-            peerId = ByteUtil.toHexString(peerIdBytes);
-        }
-
-        return Hex.decode(peerId);
-    }
-
-    /**
-     * @return - generate random 32 byte hash
-     */
-    public static byte[] randomHash() {
-        byte[] randomHash = new byte[32];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(randomHash);
-        return randomHash;
-    }
 
     /**
      * Converts {@code hash} in a form of byte array to {@code String}

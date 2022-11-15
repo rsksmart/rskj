@@ -19,6 +19,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -83,8 +84,8 @@ class SyncProcessorTest {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
         BlockStore blockStore = builder.getBlockStore();
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
@@ -134,8 +135,8 @@ class SyncProcessorTest {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
         BlockStore blockStore = builder.getBlockStore();
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
@@ -190,8 +191,8 @@ class SyncProcessorTest {
     void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(0, hash, parentHash, blockchain.getTotalDifficulty());
 
@@ -238,8 +239,8 @@ class SyncProcessorTest {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.ofSize(0);
         BlockStore blockStore = builder.getBlockStore();
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
@@ -314,8 +315,8 @@ class SyncProcessorTest {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
+        byte[] parentHash = TestUtils.generateBytes("parentHash",32);
 
         Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
 
@@ -1183,11 +1184,12 @@ class SyncProcessorTest {
 
             byte[] hash;
 
-            if (block != null)
+            if (block != null) {
                 hash = block.getHash().getBytes();
-            else
-                hash = HashUtil.randomHash();
-
+            }
+            else {
+                hash = TestUtils.generateBytes("hash", 32);
+            }
             bids.add(new BlockIdentifier(hash, number));
         }
         BlockIdentifier bid = new BlockIdentifier(blockchain.getBestBlockHash(), blockchain.getBestBlock().getNumber());

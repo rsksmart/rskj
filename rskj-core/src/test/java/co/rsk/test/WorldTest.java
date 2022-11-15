@@ -19,10 +19,9 @@
 package co.rsk.test;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -81,7 +80,7 @@ class WorldTest {
     void saveAndGetAccount() {
         World world = new World();
 
-        Account account = new Account(new ECKey(Utils.getRandom()));
+        Account account = new Account(TestUtils.getRandomECKey("worldTest"));
 
         world.saveAccount("acc1", account);
         Assertions.assertSame(account, world.getAccountByName("acc1"));

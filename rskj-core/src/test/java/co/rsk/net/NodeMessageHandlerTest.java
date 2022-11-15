@@ -31,15 +31,12 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.TransactionUtils;
-import co.rsk.scoring.EventType;
-import co.rsk.scoring.PeerScoring;
-import co.rsk.scoring.PeerScoringManager;
-import co.rsk.scoring.PunishmentParameters;
+import co.rsk.scoring.*;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
@@ -53,7 +50,6 @@ import org.mockito.Mockito;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -838,7 +834,7 @@ class NodeMessageHandlerTest {
 
     @Test
     void processBlockHeadersRequestMessageUsingProcessor() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("sbp",32);
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 mock(StatusResolver.class));

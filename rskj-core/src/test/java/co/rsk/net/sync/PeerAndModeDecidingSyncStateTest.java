@@ -23,9 +23,9 @@ import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.net.simples.SimplePeer;
 import co.rsk.scoring.PeerScoringManager;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskMockFactory;
 import org.junit.jupiter.api.Assertions;
@@ -127,7 +127,7 @@ class PeerAndModeDecidingSyncStateTest {
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knownPeer"))));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -148,7 +148,7 @@ class PeerAndModeDecidingSyncStateTest {
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knowPeer"))));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -170,7 +170,7 @@ class PeerAndModeDecidingSyncStateTest {
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knownPeer"))));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());

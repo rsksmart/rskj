@@ -33,7 +33,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -350,7 +349,7 @@ class MessageTest {
 
     @Test
     void encodeDecodeBlockHeadersRequestMessage() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
         byte[] encoded = message.getEncoded();
@@ -425,7 +424,7 @@ class MessageTest {
 
     @Test
     void encodeDecodeNewBlockHashMessage() {
-        byte[] hash = HashUtil.randomHash();
+        byte[] hash = TestUtils.generateBytes("hash",32);
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
         byte[] encoded = message.getEncoded();

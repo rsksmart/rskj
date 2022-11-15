@@ -23,10 +23,12 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.Assertions;
 import org.mapdb.DB;
@@ -37,14 +39,12 @@ import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
+import java.util.*;
 
 
 public final class TestUtils {
+    private static SecureRandom random = new SecureRandom("testUtils".getBytes());
 
     private TestUtils() {
     }
@@ -59,6 +59,10 @@ public final class TestUtils {
 
     public static Keccak256 randomHash(String discriminator) {
         return new Keccak256(generateBytes(TestUtils.class, discriminator, 32));
+    }
+
+    public static ECKey getRandomECKey(String discriminator){
+        return new ECKey(new SecureRandom(discriminator.getBytes()));
     }
 
     public static DB createMapDB(String testDBDir) {
@@ -87,13 +91,13 @@ public final class TestUtils {
         for (int i = 0; i < length; ++i) {
 
             byte[] difficutly = new BigInteger(8, random).toByteArray();
-            byte[] newHash = HashUtil.randomHash();
+            byte[] newHash = generateBytes("newHash",32);
 
             BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                     .setParentHash(lastHash)
                     .setUnclesHash(newHash)
                     .setCoinbase(RskAddress.nullAddress())
-                    .setStateRoot(HashUtil.randomHash())
+                    .setStateRoot(generateBytes("newHeader",32))
                     .setDifficultyFromBytes(difficutly)
                     .setNumber(lastIndex)
                     .build();
@@ -234,4 +238,32 @@ public final class TestUtils {
         random.nextBytes(byteArray);
         return byteArray;
     }
+
+    /**
+     * @return - generate random 32 byte hash
+     */
+    public static byte[] randomHashInBytes(String discriminator) {
+        byte[] randomHash = new byte[32];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(randomHash);
+        return randomHash;
+    }
+
+    /**
+     * @return generates random peer id for the HelloMessage
+     */
+    public static byte[] randomPeerId(String discriminator) {
+        Random random = new SecureRandom(discriminator.getBytes());
+        byte[] peerIdBytes = new BigInteger(512, random).toByteArray();
+
+        final String peerId;
+        if (peerIdBytes.length > 64) {
+            peerId = ByteUtil.toHexString(peerIdBytes, 1, 64);
+        } else {
+            peerId = ByteUtil.toHexString(peerIdBytes);
+        }
+
+        return Hex.decode(peerId);
+    }
+
 }
