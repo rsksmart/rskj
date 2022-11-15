@@ -80,7 +80,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             responseContent = buildErrorContent(ErrorResolver.JsonError.INVALID_REQUEST.code, e.getMessage());
             responseCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
         } catch (StackOverflowError e) {
-            String stackOverflowErrorMsg = "Stack overflow produced due to complex nested objects detected in request params";
+            String stackOverflowErrorMsg = "Invalid request";
             LOGGER.error(stackOverflowErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
