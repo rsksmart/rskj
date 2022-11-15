@@ -36,8 +36,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
@@ -215,17 +213,19 @@ public class BridgeSupportTestPowerMock {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
         List<BtcBlock> checkpoints = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
+
         BridgeSupport bridgeSupport = new BridgeSupport(
-                bridgeConstants,
-                provider,
-                mock(BridgeEventLogger.class),
-                mock(BtcLockSenderProvider.class),
-                mock(PeginInstructionsProvider.class),
-                track,
-                null,
-                new Context(bridgeConstants.getBtcParams()),
-                new FederationSupport(bridgeConstants, provider, null),
-                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class)
+            bridgeConstants,
+            provider,
+            mock(BridgeEventLogger.class),
+            mock(BtcLockSenderProvider.class),
+            mock(PeginInstructionsProvider.class),
+            track,
+            null,
+            new Context(bridgeConstants.getBtcParams()),
+            new FederationSupport(bridgeConstants, provider, null),
+            btcBlockStoreFactory,
+            mock(ActivationConfig.ForBlock.class)
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -3754,21 +3754,23 @@ public class BridgeSupportTestPowerMock {
     }
 
     private BridgeSupport getBridgeSupportWithMocksForFederationTests(
-            boolean genesis,
-            Federation mockedNewFederation,
-            Federation mockedGenesisFederation,
-            Federation mockedOldFederation,
-            PendingFederation mockedPendingFederation,
-            ABICallElection mockedFederationElection,
-            Block executionBlock,
-            BridgeEventLogger eventLogger) throws IOException {
+        boolean genesis,
+        Federation mockedNewFederation,
+        Federation mockedGenesisFederation,
+        Federation mockedOldFederation,
+        PendingFederation mockedPendingFederation,
+        ABICallElection mockedFederationElection,
+        Block executionBlock,
+        BridgeEventLogger eventLogger) throws IOException {
 
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
 
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(constantsMock.getFederationChangeAuthorizer()).thenReturn(bridgeConstants.getFederationChangeAuthorizer());
-        when(constantsMock.getFederationActivationAge()).thenReturn(bridgeConstants.getFederationActivationAge());
+
+        long federationActivationAge = bridgeConstants.getFederationActivationAge();
+        when(constantsMock.getFederationActivationAge()).thenReturn(federationActivationAge);
 
         class FederationHolder {
             private PendingFederation pendingFederation;
@@ -3851,12 +3853,12 @@ public class BridgeSupportTestPowerMock {
         }).when(providerMock).setPendingFederation(any());
 
         return getBridgeSupport(
-                constantsMock,
-                providerMock,
-                null,
-                eventLogger,
-                executionBlock,
-                null
+            constantsMock,
+            providerMock,
+            null,
+            eventLogger,
+            executionBlock,
+            null
         );
     }
 
@@ -3989,18 +3991,6 @@ public class BridgeSupportTestPowerMock {
                 blockStoreFactory,
                 activations
         );
-    }
-
-    private BtcLockSenderProvider getBtcLockSenderProvider(TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
-        BtcLockSender btcLockSender = mock(BtcLockSender.class);
-        when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
-        when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
-        when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
-
-        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
-
-        return btcLockSenderProvider;
     }
 
     private BtcTransaction createTransaction() {

@@ -1137,6 +1137,145 @@ public class BridgeUtilsTest {
     }
 
     @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            false,
+            false,
+            activeFederationAddress,
+            true
+        );
+    }
+
+    // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            false,
+            false,
+            randomAddress,
+            true
+        );
+    }
+
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            true,
+            false,
+            activeFederationAddress,
+            false
+        );
+    }
+
+    @Test
+    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            true,
+            false,
+            randomAddress,
+            false
+        );
+    }
+
+    @Test
+    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            false,
+            true,
+            activeFederationAddress,
+            true
+        );
+    }
+
+    // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
+    @Test
+    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            false,
+            true,
+            randomAddress,
+            true
+        );
+    }
+
+    @Test
+    public void testIsValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+        Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            true,
+            true,
+            activeFederationAddress,
+            false
+        );
+    }
+
+    @Test
+    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
+        testIsValidPegInTx_fromP2shErpScriptSender(
+            true,
+            true,
+            randomAddress,
+            false
+        );
+    }
+
+    private void testIsValidPegInTx_fromP2shErpScriptSender(
+        boolean isRskip353Active,
+        boolean flyoverFederation,
+        Address destinationAddress,
+        boolean expectedResult) {
+
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
+
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            networkParameters,
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        Script flyoverP2shErpRedeemScript = FastBridgeP2shErpRedeemScriptParser.createFastBridgeP2shErpRedeemScript(
+            p2shErpFederation.getRedeemScript(),
+            PegTestUtils.createHash(2)
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        tx.addInput(
+            Sha256Hash.ZERO_HASH,
+            0,
+            flyoverFederation ? flyoverP2shErpRedeemScript : p2shErpFederation.getRedeemScript()
+        );
+
+        Assert.assertEquals(expectedResult, BridgeUtils.isValidPegInTx(
+            tx,
+            activeFederation,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations)
+        );
+    }
+
+    @Test
     public void testTxIsProcessableInLegacyVersion() {
         // Before hard fork
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
@@ -3533,7 +3672,7 @@ public class BridgeUtilsTest {
         );
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -3573,7 +3712,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_before_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
@@ -3602,7 +3741,7 @@ public class BridgeUtilsTest {
         Assert.assertTrue(foundUTXOs.isEmpty());
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -3636,7 +3775,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -3683,7 +3822,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(amount, expectedAmount);
     }
 
-    @Test()
+    @Test
     public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_after_RSKIP293() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
