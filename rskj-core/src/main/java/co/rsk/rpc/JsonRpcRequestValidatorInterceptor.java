@@ -39,7 +39,7 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     private void validateRequest(JsonNode node) {
         if (node.isArray() && node.size() > this.maxBatchRequestsSize) {
             String msg = String.format("Cannot dispatch batch requests. %s is the max number of supported batch requests", this.maxBatchRequestsSize);
-            logger.error(msg);
+            logger.warn(msg);
 
             throw new JsonRpcRequestPayloadException(msg);
         }
