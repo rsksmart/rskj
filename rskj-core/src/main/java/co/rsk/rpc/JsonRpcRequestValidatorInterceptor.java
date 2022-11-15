@@ -30,7 +30,7 @@ import java.util.List;
 public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(JsonRpcRequestValidatorInterceptor.class);
 
-    private final Integer maxBatchRequestsSize;
+    private final int maxBatchRequestsSize;
 
     public JsonRpcRequestValidatorInterceptor(Integer maxBatchRequestsSize) {
         this.maxBatchRequestsSize = maxBatchRequestsSize;
