@@ -85,7 +85,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             int errorCode = ErrorResolver.JsonError.INVALID_REQUEST.code;
             responseContent = buildErrorContent(errorCode, stackOverflowErrorMsg);
             responseCode = errorCode;
-        } catch (Error e) {
+        } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
