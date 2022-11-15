@@ -388,7 +388,7 @@ public class BridgeUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
 
-        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
+        // First, check tx is not a typical release tx (tx spending from any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
         for (int i = 0; i < tx.getInputs().size(); i++) {
             final int index = i;
@@ -405,6 +405,19 @@ public class BridgeUtils {
             if (activations.isActive(ConsensusRule.RSKIP201)) {
                 RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
                 try {
+                    // Consider transactions that have an input with a redeem script of type P2SH ERP FED
+                    // to be "future transactions" that should not be pegins. These are gonna be considered pegouts.
+                    // This is only for backwards compatibility reasons. As soon as RSKIP353 activates,
+                    // pegins to the new federation should be valid again.
+                    // There's no reason for someone to send an actual pegin of this type before the new fed is active.
+                    // TODO: Remove this if block after RSKIP353 activation
+                    if (!activations.isActive(ConsensusRule.RSKIP353) &&
+                        (redeemScriptParser.getMultiSigType() == MultiSigType.P2SH_ERP_FED ||
+                        redeemScriptParser.getMultiSigType() == MultiSigType.FAST_BRIDGE_P2SH_ERP_FED)) {
+                        String message = "Tried to register a transaction with a P2SH ERP federation redeem script before RSKIP353 activation";
+                        logger.warn("[isValidPegInTx] {}", message);
+                        throw new ScriptException(message);
+                    }
                     Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
                     if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
                         return false;
@@ -430,7 +443,7 @@ public class BridgeUtils {
         Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
         boolean isUTXOsOrTxAmountBelowMinimum =
-            activations.isActive(RSKIP293)? isAnyUTXOAmountBelowMinimum(
+            activations.isActive(RSKIP293) ? isAnyUTXOAmountBelowMinimum(
                 activations,
                 bridgeConstants,
                 tx,

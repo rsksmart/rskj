@@ -58,11 +58,6 @@ public class Federation {
         this.creationTime = creationTime.truncatedTo(ChronoUnit.MILLIS);
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
-
-        // Calculated once on-demand
-        this.redeemScript = null;
-        this.p2shScript = null;
-        this.address = null;
     }
 
     public List<FederationMember> getMembers() {
@@ -75,9 +70,9 @@ public class Federation {
         // Copy instances since we don't control
         // immutability of BtcECKey instances
         return members.stream()
-                .map(m -> m.getBtcPublicKey().getPubKey())
-                .map(BtcECKey::fromPublicOnly)
-                .collect(Collectors.toList());
+            .map(m -> m.getBtcPublicKey().getPubKey())
+            .map(BtcECKey::fromPublicOnly)
+            .collect(Collectors.toList());
     }
 
     public int getNumberOfSignaturesRequired() {
@@ -150,7 +145,7 @@ public class Federation {
 
     public boolean hasMemberWithRskAddress(byte[] address) {
         return members.stream()
-                .anyMatch(m -> Arrays.equals(m.getRskPublicKey().getAddress(), address));
+            .anyMatch(m -> Arrays.equals(m.getRskPublicKey().getAddress(), address));
     }
 
     public boolean isMember(FederationMember federationMember){
@@ -175,12 +170,12 @@ public class Federation {
         Federation otherFederation = (Federation) other;
 
         return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-                this.getSize() == otherFederation.getSize() &&
-                this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-                this.creationBlockNumber == otherFederation.creationBlockNumber &&
-                this.btcParams.equals(otherFederation.btcParams) &&
-                this.members.equals(otherFederation.members) &&
-                this.getRedeemScript().equals(otherFederation.getRedeemScript());
+            this.getSize() == otherFederation.getSize() &&
+            this.getCreationTime().equals(otherFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherFederation.creationBlockNumber &&
+            this.btcParams.equals(otherFederation.btcParams) &&
+            this.members.equals(otherFederation.members) &&
+            this.getRedeemScript().equals(otherFederation.getRedeemScript());
     }
 
     @Override
@@ -188,10 +183,10 @@ public class Federation {
         // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
         // well-defined hashCode()s
         return Objects.hash(
-                getCreationTime(),
-                this.creationBlockNumber,
-                getNumberOfSignaturesRequired(),
-                getBtcPublicKeys()
+            getCreationTime(),
+            this.creationBlockNumber,
+            getNumberOfSignaturesRequired(),
+            getBtcPublicKeys()
         );
     }
 }

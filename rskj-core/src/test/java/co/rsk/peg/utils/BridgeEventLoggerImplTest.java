@@ -68,7 +68,6 @@ public class BridgeEventLoggerImplTest {
     ActivationConfig.ForBlock activations;
     List<LogInfo> eventLogs;
     BridgeEventLogger eventLogger;
-    BridgeConstants constantsMock;
     BtcTransaction btcTxMock;
     BtcTransaction btcTx;
 
@@ -76,8 +75,7 @@ public class BridgeEventLoggerImplTest {
     public void setup() {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
-        constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
+        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
     }
@@ -311,7 +309,6 @@ public class BridgeEventLoggerImplTest {
     @Test
     public void logCommitFederationBeforeRskip146() {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-        when(constantsMock.getFederationActivationAge()).thenReturn(CONSTANTS.getFederationActivationAge());
 
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
@@ -319,30 +316,34 @@ public class BridgeEventLoggerImplTest {
         when(executionBlock.getNumber()).thenReturn(15L);
 
         List<BtcECKey> oldFederationKeys = Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-                BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
+            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
-        Federation oldFederation = new Federation(oldFederationMembers,
-                Instant.ofEpochMilli(15005L), 15L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation oldFederation = new Federation(
+            oldFederationMembers,
+            Instant.ofEpochMilli(15005L),
+            15L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
-                BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
-                BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
+            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
+            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
+            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
         Federation newFederation = new Federation(
-                newFederationMembers,
-                Instant.ofEpochMilli(5005L),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            newFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         // Act
@@ -375,7 +376,10 @@ public class BridgeEventLoggerImplTest {
         RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
         Assert.assertEquals(4, oldFedPubKeys.size());
         for (int i = 0; i < 4; i++) {
-            Assert.assertEquals(oldFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData()));
+            Assert.assertEquals(
+                oldFederation.getBtcPublicKeys().get(i),
+                BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData())
+            );
         }
 
         // Assert new federation data
@@ -386,18 +390,23 @@ public class BridgeEventLoggerImplTest {
         RLPList newFedPubKeys = (RLPList) newFedData.get(1);
         Assert.assertEquals(3, newFedPubKeys.size());
         for (int i = 0; i < 3; i++) {
-            Assert.assertEquals(newFederation.getBtcPublicKeys().get(i), BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData()));
+            Assert.assertEquals(
+                newFederation.getBtcPublicKeys().get(i),
+                BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData())
+            );
         }
 
         // Assert new federation activation block number
-        Assert.assertEquals(15L + CONSTANTS.getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+        Assert.assertEquals(
+            15L + CONSTANTS.getFederationActivationAge(),
+            Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue()
+        );
     }
 
     @Test
     public void logCommitFederationAfterRskip146() {
         // Setup event logger
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-        when(constantsMock.getFederationActivationAge()).thenReturn(CONSTANTS.getFederationActivationAge());
 
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
@@ -405,31 +414,35 @@ public class BridgeEventLoggerImplTest {
         when(executionBlock.getNumber()).thenReturn(15L);
 
         List<BtcECKey> oldFederationKeys = Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-                BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
+            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
         );
 
         List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
 
         Federation oldFederation = new Federation(
-                oldFederationMembers,
-                Instant.ofEpochMilli(15005L),
-                15L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            oldFederationMembers,
+            Instant.ofEpochMilli(15005L),
+            15L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         List<BtcECKey> newFederationKeys = Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
-                BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
-                BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
+            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
+            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
+            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
         );
 
         List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
 
-        Federation newFederation = new Federation(newFederationMembers,
-                Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation newFederation = new Federation(
+            newFederationMembers,
+            Instant.ofEpochMilli(5005L),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
 
         // Act
         eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
@@ -442,13 +455,13 @@ public class BridgeEventLoggerImplTest {
         String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
         String newFederationBtcAddress = newFederation.getAddress().toBase58();
-        long newFedActivationBlockNumber = executionBlock.getNumber() + constantsMock.getFederationActivationAge();
+        long newFedActivationBlockNumber = executionBlock.getNumber() + CONSTANTS.getFederationActivationAge();
         Object[] data = new Object[]{
-                oldFederationFlatPubKeys,
-                oldFederationBtcAddress,
-                newFederationFlatPubKeys,
-                newFederationBtcAddress,
-                newFedActivationBlockNumber
+            oldFederationFlatPubKeys,
+            oldFederationBtcAddress,
+            newFederationFlatPubKeys,
+            newFederationBtcAddress,
+            newFedActivationBlockNumber
         };
         assertEvent(eventLogs, 0, BridgeEvents.COMMIT_FEDERATION.getEvent(), new Object[]{}, data);
     }
