@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
+import co.rsk.peg.storageprovider.BridgeStorageIndexKeys;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -37,6 +38,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
+import static co.rsk.peg.storageprovider.BridgeStorageIndexKeys.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -47,43 +49,11 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP = DataWord.fromString("newFederationBtcUTXOsForTestnet");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP = DataWord.fromString("newFedBtcUTXOsForTestnetPostHop");
-    private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("oldFederationBtcUTXOs");
-    private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = DataWord.fromString("btcTxHashesAP");
-    private static final DataWord RELEASE_REQUEST_QUEUE = DataWord.fromString("releaseRequestQueue");
-    private static final DataWord RELEASE_TX_SET = DataWord.fromString("releaseTransactionSet");
-    private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = DataWord.fromString("rskTxsWaitingFS");
-    private static final DataWord NEW_FEDERATION_KEY = DataWord.fromString("newFederation");
-    private static final DataWord OLD_FEDERATION_KEY = DataWord.fromString("oldFederation");
-    private static final DataWord PENDING_FEDERATION_KEY = DataWord.fromString("pendingFederation");
-    private static final DataWord FEDERATION_ELECTION_KEY = DataWord.fromString("federationElection");
-    private static final DataWord LOCK_ONE_OFF_WHITELIST_KEY = DataWord.fromString("lockWhitelist");
-    private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
-    private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
-    private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
-    private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
-    private static final DataWord RELEASE_REQUEST_QUEUE_WITH_TXHASH = DataWord.fromString("releaseRequestQueueWithTxHash");
-    private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
-    private static final DataWord RECEIVE_HEADERS_TIMESTAMP = DataWord.fromString("receiveHeadersLastTimestamp");
-
-    // Federation creation keys
-    private static final DataWord ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("activeFedCreationBlockHeight");
-    private static final DataWord NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("nextFedCreationBlockHeight");
-    private static final DataWord LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY = DataWord.fromString("lastRetiredFedP2SHScript");
-
-    // Version keys and versions
-    private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
-    private static final DataWord OLD_FEDERATION_FORMAT_VERSION = DataWord.fromString("oldFederationFormatVersion");
-    private static final DataWord PENDING_FEDERATION_FORMAT_VERSION = DataWord.fromString("pendingFederationFormatVersion");
     private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
     private static final Integer ERP_FEDERATION_FORMAT_VERSION = 2000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
     private static final byte FLYOVER_FEDERATION_DERIVATION_HASH_TRUE_VALUE = (byte) 1;
-
-    private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -354,7 +324,7 @@ public class BridgeStorageProvider {
             return newFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(NEW_FEDERATION_FORMAT_VERSION);
+        Optional<Integer> storageVersion = getStorageVersion(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord());
 
         newFederation = safeGetFromRepository(
             NEW_FEDERATION_KEY,
@@ -391,12 +361,12 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP123)) {
             if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
                 saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION,
+                    NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
                     ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION,
+                    NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
                     FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
@@ -411,7 +381,7 @@ public class BridgeStorageProvider {
             return oldFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION);
+        Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord());
 
         oldFederation = safeGetFromRepository(
             OLD_FEDERATION_KEY,
@@ -446,12 +416,12 @@ public class BridgeStorageProvider {
             if (activations.isActive(RSKIP123)) {
                 if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
                     saveStorageVersion(
-                        OLD_FEDERATION_FORMAT_VERSION,
+                        OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
                         ERP_FEDERATION_FORMAT_VERSION
                     );
                 } else {
                     saveStorageVersion(
-                        OLD_FEDERATION_FORMAT_VERSION,
+                        OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
                         FEDERATION_FORMAT_VERSION_MULTIKEY
                     );
                 }
@@ -468,7 +438,7 @@ public class BridgeStorageProvider {
             return pendingFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION);
+        Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord());
 
         pendingFederation = safeGetFromRepository(
             PENDING_FEDERATION_KEY,
@@ -500,7 +470,7 @@ public class BridgeStorageProvider {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
-                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), FEDERATION_FORMAT_VERSION_MULTIKEY);
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
 
@@ -1007,13 +977,13 @@ public class BridgeStorageProvider {
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
-        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord();
         if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
             if (activations.isActive(RSKIP284)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP;
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord();
             }
             if (activations.isActive(RSKIP293)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP;
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKeyDataWord();
             }
         }
 
@@ -1059,6 +1029,10 @@ public class BridgeStorageProvider {
         return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
     }
 
+    private <T> T safeGetFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) {
+        return safeGetFromRepository(keyAddress.getKeyDataWord(), deserializer);
+    }
+
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
         try {
             return getFromRepository(keyAddress, deserializer);
@@ -1067,17 +1041,28 @@ public class BridgeStorageProvider {
         }
     }
 
+    private <T> T getFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
+        return getFromRepository(keyAddress.getKeyDataWord(), deserializer);
+    }
+
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
         byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
         return deserializer.deserialize(data);
     }
 
+    private <T> void safeSaveToRepository(BridgeStorageIndexKeys addressKey, T object, RepositorySerializer<T> serializer) {
+        safeSaveToRepository(addressKey.getKeyDataWord(), object, serializer);
+    }
     private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
         try {
             saveToRepository(addressKey, object, serializer);
         } catch (IOException ioe) {
             throw new RuntimeException("Unable to save to repository: " + addressKey, ioe);
         }
+    }
+
+    private <T> void saveToRepository(BridgeStorageIndexKeys indexKeys, T object, RepositorySerializer<T> serializer) throws IOException {
+        saveToRepository(indexKeys.getKeyDataWord(), object, serializer);
     }
 
     private <T> void saveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) throws IOException {
