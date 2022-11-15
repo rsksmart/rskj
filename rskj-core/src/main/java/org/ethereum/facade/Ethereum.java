@@ -40,7 +40,7 @@ public interface Ethereum {
 
     /**
      * @param transaction submit transaction to the net, return option to wait for net
-     *                    return the result of adding the transaction to the pool.
+     * @return the result of adding the transaction to the pool.
      */
     TransactionPoolAddResult submitTransaction(Transaction transaction);
 
