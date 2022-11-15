@@ -45,7 +45,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.core.Genesis.getZeroHash;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -300,11 +299,11 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
-    public Block createBlock(int number, int ntxs) {
+    public Block createBlock(long number, int ntxs) {
         return createBlock(number, ntxs, null);
     }
 
-    public Block createBlock(int number, int ntxs, Long gasLimit){
+    public Block createBlock(long number, int ntxs, Long gasLimit){
         Block parent = gasLimit == null ? getGenesisBlock() : getGenesisBlock(gasLimit);
 
         List<Transaction> txs = new ArrayList<>();

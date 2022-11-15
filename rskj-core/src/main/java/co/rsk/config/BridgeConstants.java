@@ -24,8 +24,10 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import java.util.List;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
-public class BridgeConstants {
+public abstract class BridgeConstants {
     protected String btcParamsString;
 
     protected Federation genesisFederation;
@@ -44,9 +46,11 @@ public class BridgeConstants {
     protected Coin minimumPegoutTxValueInSatoshis;
 
     protected long federationActivationAge;
+    protected long specialCaseFederationActivationAge;
 
     protected long fundsMigrationAgeSinceActivationBegin;
     protected long fundsMigrationAgeSinceActivationEnd;
+    protected long specialCaseFundsMigrationAgeSinceActivationEnd;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
 
@@ -116,14 +120,18 @@ public class BridgeConstants {
 
     public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
 
-    public long getFederationActivationAge() { return federationActivationAge; }
+    public long getFederationActivationAge() {
+        return federationActivationAge;
+    }
 
     public long getFundsMigrationAgeSinceActivationBegin() {
         return fundsMigrationAgeSinceActivationBegin;
     }
 
-    public long getFundsMigrationAgeSinceActivationEnd() {
-        return fundsMigrationAgeSinceActivationEnd;
+    public long getFundsMigrationAgeSinceActivationEnd(ActivationConfig.ForBlock activations) {
+        return activations.isActive(ConsensusRule.RSKIP357) ?
+            specialCaseFundsMigrationAgeSinceActivationEnd :
+            fundsMigrationAgeSinceActivationEnd;
     }
 
     public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
