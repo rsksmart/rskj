@@ -1120,9 +1120,11 @@ class BridgeSerializationUtilsTest {
         );
     }
 
-    @Test
+    @Test()
     void serializeSha256Hash_nullValue() {
-        test_serializeSha256Hash(null, new byte[]{});
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            test_serializeSha256Hash(null, null);
+        });
     }
 
     private void test_deserializeSha256Hash(byte[] serializedHashBytes, Sha256Hash expectedHash, boolean shouldDeserialize) {
@@ -1134,30 +1136,17 @@ class BridgeSerializationUtilsTest {
 
     }
 
-    @Test
-    void deserializeSha256Hash() {
-        byte[] serializedHashBytes = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
-        Sha256Hash expectedHash = Sha256Hash.wrap("0200000000000000000000000000000000000000000000000000000000000000");
-        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
-    }
-
-    @Test
-    void deserializeSha256Hash_zeroHash() {
-        byte[] serializedHashBytes = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
-        Sha256Hash expectedHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000");
-        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
-    }
-
-    @Test
-    void deserializeSha256Hash_nullValue() {
-        test_deserializeSha256Hash(null, null, false);
-    }
-
-    @Test
-    void deserializeSha256Hash_ok() {
-        byte[] serializedHashBytes = Hex.decode("a00150000000000000000000000000000000000000000000000000000000000000");
-        Sha256Hash expectedHash = Sha256Hash.wrap("0150000000000000000000000000000000000000000000000000000000000000");
-        test_deserializeSha256Hash(serializedHashBytes, expectedHash, true);
+    @ParameterizedTest
+    @CsvSource(
+    value = {
+        "a00150000000000000000000000000000000000000000000000000000000000000, 0150000000000000000000000000000000000000000000000000000000000000, true",
+        "a00000000000000000000000000000000000000000000000000000000000000000, 0000000000000000000000000000000000000000000000000000000000000000, true",
+        "null, null, false"
+    }, nullValues = "null")
+    void deserializeSha256Hash(String hash, String expectedSha256Hash, boolean shouldDeserialize) {
+        byte[] serializedHashBytes = hash == null? null: Hex.decode(hash);
+        Sha256Hash expectedHash = expectedSha256Hash == null? null:Sha256Hash.wrap(expectedSha256Hash);
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash, shouldDeserialize);
     }
 
     @Test

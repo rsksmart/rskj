@@ -801,9 +801,6 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeSha256Hash(Sha256Hash hash) {
-        if (hash == null){
-            return new byte[]{};
-        }
         return RLP.encodeElement(hash.getBytes());
     }
 
