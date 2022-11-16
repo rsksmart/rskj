@@ -1127,30 +1127,39 @@ class BridgeSerializationUtilsTest {
         });
     }
 
-    private void test_deserializeSha256Hash(byte[] serializedHashBytes, Sha256Hash expectedHash, boolean shouldDeserialize) {
-        Optional<Sha256Hash> result = BridgeSerializationUtils.deserializeSha256Hash(serializedHashBytes);
-        Assertions.assertEquals(shouldDeserialize, result.isPresent());
-        if (shouldDeserialize){
-            Assertions.assertEquals(expectedHash, result.get());
-        }
-
-    }
-
-    @ParameterizedTest
-    @CsvSource(
-    value = {
-        "a00150000000000000000000000000000000000000000000000000000000000000, 0150000000000000000000000000000000000000000000000000000000000000, true",
-        "a00000000000000000000000000000000000000000000000000000000000000000, 0000000000000000000000000000000000000000000000000000000000000000, true",
-        "null, null, false"
-    }, nullValues = "null")
-    void deserializeSha256Hash(String hash, String expectedSha256Hash, boolean shouldDeserialize) {
-        byte[] serializedHashBytes = hash == null? null: Hex.decode(hash);
-        Sha256Hash expectedHash = expectedSha256Hash == null? null:Sha256Hash.wrap(expectedSha256Hash);
-        test_deserializeSha256Hash(serializedHashBytes, expectedHash, shouldDeserialize);
+    private void test_deserializeSha256Hash(byte[] serializedHashBytes, Sha256Hash expectedHash) {
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(serializedHashBytes);
+        Assertions.assertEquals(expectedHash, result);
     }
 
     @Test
-    void serializeScript() {
+    public void deserializeSha256Hash() {
+        byte[] serializedHashBytes = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0200000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash);
+    }
+
+    @Test
+    public void deserializeSha256Hash_zeroHash() {
+        byte[] serializedHashBytes = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash);
+    }
+
+    @Test
+    public void deserializeSha256Hash_nullValue() {
+        test_deserializeSha256Hash(null, null);
+    }
+
+    @Test
+    public void deserializeSha256Hash_ok() {
+        byte[] serializedHashBytes = Hex.decode("a00150000000000000000000000000000000000000000000000000000000000000");
+        Sha256Hash expectedHash = Sha256Hash.wrap("0150000000000000000000000000000000000000000000000000000000000000");
+        test_deserializeSha256Hash(serializedHashBytes, expectedHash);
+    }
+
+    @Test
+    public void serializeScript() {
         Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
 
         byte[] actualData = BridgeSerializationUtils.serializeScript(expectedScript);

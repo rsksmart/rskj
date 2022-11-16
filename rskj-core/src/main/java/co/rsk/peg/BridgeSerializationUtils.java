@@ -804,12 +804,12 @@ public class BridgeSerializationUtils {
         return RLP.encodeElement(hash.getBytes());
     }
 
-    public static Optional<Sha256Hash> deserializeSha256Hash(byte[] data) {
+    public static Sha256Hash deserializeSha256Hash(byte[] data) {
         RLPElement element = RLP.decodeFirstElement(data, 0);
         if (element == null) {
-            return Optional.empty();
+            return null;
         }
-        return Optional.of(Sha256Hash.wrap(element.getRLPData()));
+        return Sha256Hash.wrap(element.getRLPData());
     }
 
     public static Optional<Keccak256> deserializeKeccak256(byte[] data) {

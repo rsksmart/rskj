@@ -684,7 +684,12 @@ public class BridgeStorageProvider {
         }
 
         DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
-        return safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
+        Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
+        if (blockHash != null) {
+            return Optional.of(blockHash);
+        }
+
+        return Optional.empty();
     }
 
     public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
