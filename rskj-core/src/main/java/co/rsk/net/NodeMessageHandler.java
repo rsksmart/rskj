@@ -331,7 +331,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         //Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
         if (timeStatus.getSeconds() > 10) {
-            Status status = statusResolver.currentStatus();
+            Status status = statusResolver.currentStatusLenient(); // TODO(iago:4) undo, just for testing!!!
             logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), status.getBestBlockHash());
             channelManager.broadcastStatus(status);
             lastStatusSent = now;

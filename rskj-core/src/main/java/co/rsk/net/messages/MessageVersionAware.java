@@ -19,7 +19,7 @@
 package co.rsk.net.messages;
 
 public abstract class MessageVersionAware extends Message {
-    // TODO(iago) think about possible issues with soft forks and retractBlock
+
     public abstract int getVersion();
 
 }

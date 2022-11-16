@@ -34,7 +34,7 @@ public class BlockMessage extends MessageVersionAware {
 
     @Override
     public int getVersion() {
-        return 1; // TODO(iago) get from message
+        return 1; // TODO(iago:2) get from message
     }
 
     public Block getBlock() {

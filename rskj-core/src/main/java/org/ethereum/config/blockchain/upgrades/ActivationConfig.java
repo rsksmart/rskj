@@ -166,7 +166,7 @@ public class ActivationConfig {
         }
 
         private boolean isDefined() {
-            return this.height > -1; // TODO(iago) -1 to constant
+            return this.height > -1; // TODO(iago:3) -1 to constant
         }
 
         private boolean handlesHeight(long heightToCheck) {

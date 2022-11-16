@@ -250,7 +250,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         byte protocolVersion = version.getCode();
         int networkId = config.networkId();
 
-        Status status = statusResolver.currentStatus();
+        Status status = statusResolver.currentStatusLenient(); // TODO(iago:4) undo, just for testing!!!
 
         // Original status
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(
@@ -270,7 +270,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         ethState = EthState.STATUS_SENT;
     }
-
 
     @Override
     public boolean hasStatusPassed() {

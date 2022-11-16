@@ -129,7 +129,11 @@ public class MessageVisitor {
     }
 
     public void apply(StatusMessage message) {
-        // accept regardless version, peer could be using us for long sync or the other way around
+        // TODO(iago:1) think about the following:
+        // accept only if:
+        // a) same version
+        // b) peer lower version and lower bestBlockNumber or difficulty to allow it long sync with us
+        // b) peer greater version and greater bestBlockNumber or difficulty to allow us full sync with it
         final Status status = message.getStatus();
         logger.trace("Process status {}", status.getBestBlockNumber());
         this.syncProcessor.processStatus(sender, status);
@@ -271,19 +275,23 @@ public class MessageVisitor {
         channelManager.broadcastBlockHash(identifiers, newNodes);
     }
 
-    private boolean isDifferentFromLocal(Integer messageVersion) {
+    private boolean isDifferentFromLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
         int currentVersion = messageVersionCalculator.get();
-        return messageVersion != currentVersion;
+        return isVersionCheckEnabled(currentVersion) && messageVersion != currentVersion;
     }
 
-    private boolean isLowerThanLocal(Integer messageVersion) {
+    private boolean isLowerThanLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
         int currentVersion = messageVersionCalculator.get();
-        return messageVersion < currentVersion;
+        return isVersionCheckEnabled(currentVersion) && messageVersion < currentVersion;
     }
 
-    private boolean isGreaterThanLocal(Integer messageVersion) {
+    private boolean isGreaterThanLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
         int currentVersion = messageVersionCalculator.get();
-        return messageVersion > currentVersion;
+        return isVersionCheckEnabled(currentVersion) && messageVersion > currentVersion;
+    }
+
+    private static boolean isVersionCheckEnabled(int currentVersion) { // TODO(iago:3) move this method to messageVersionCalculator
+        return currentVersion != -1; // TODO(iago) constant
     }
 
 }
