@@ -1379,261 +1379,6 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-
-        Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
-
-        Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(1),
-                Instant.EPOCH,
-                5L,
-                bridgeConstantsRegtest.getBtcParams()
-        );
-
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
-        when(provider.getReleaseRequestQueue())
-                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstantsRegtest)
-                .withProvider(provider)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(rskCurrentBlock)
-                .withActivations(activations)
-                .build();
-
-        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
-        when(provider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration1);
-
-        bridgeSupport.updateCollections(tx);
-
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-
-        verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-    }
-
-    @Test
-    public void callProcessFundsMigration_is_migrating_after_rskip_146_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-
-        Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
-
-        Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(1),
-                Instant.EPOCH,
-                5L,
-                bridgeConstantsRegtest.getBtcParams()
-        );
-
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
-        when(provider.getReleaseRequestQueue())
-                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
-        tx.sign(new ECKey().getPrivKeyBytes());
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstantsRegtest)
-                .withProvider(provider)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(rskCurrentBlock)
-                .withActivations(activations)
-                .build();
-
-        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
-        when(provider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration1);
-
-        bridgeSupport.updateCollections(tx);
-
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
-        // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
-    }
-
-    @Test
-    public void callProcessFundsMigration_is_migrated_before_rskip_146_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-
-        Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
-
-        Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(1),
-                Instant.EPOCH,
-                5L,
-                bridgeConstantsRegtest.getBtcParams()
-        );
-
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
-        when(provider.getReleaseRequestQueue())
-                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
-        Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstantsRegtest)
-                .withProvider(provider)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(rskCurrentBlock)
-                .withActivations(activations)
-                .build();
-
-        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
-        when(provider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration1);
-
-        bridgeSupport.updateCollections(tx);
-
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-
-        verify(bridgeEventLogger, never()).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-    }
-
-    @Test
-    public void callProcessFundsMigration_is_migrated_after_rskip_146_activation() throws IOException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-
-        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
-
-        Federation oldFederation = bridgeConstantsRegtest.getGenesisFederation();
-
-        Federation newFederation = new Federation(
-                FederationTestUtils.getFederationMembers(1),
-                Instant.EPOCH,
-                5L,
-                bridgeConstantsRegtest.getBtcParams()
-        );
-
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getFeePerKb())
-                .thenReturn(Coin.MILLICOIN);
-        when(provider.getReleaseRequestQueue())
-                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
-        when(provider.getReleaseTransactionSet())
-                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        // Old federation will be in migration age at block 35
-        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
-        Transaction tx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
-
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstantsRegtest)
-                .withProvider(provider)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(rskCurrentBlock)
-                .withActivations(activations)
-                .build();
-
-        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
-        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
-        when(provider.getOldFederationBtcUTXOs())
-                .thenReturn(sufficientUTXOsForMigration1);
-
-        bridgeSupport.updateCollections(tx);
-
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntriesWithoutHash().size());
-        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntriesWithHash().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntriesWithHash().toArray()[0];
-        // Should have been logged with the migrated UTXO
-        verify(bridgeEventLogger, times(1)).logReleaseBtcRequested(tx.getHash().getBytes(), entry.getTransaction(), Coin.COIN);
-    }
-
-    @Test
     public void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
@@ -5721,12 +5466,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
     @Test
     public void getTransactionType_pegout_tx() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstantsRegtest, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .build();
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = new Address(
             btcRegTestParams,
-                        Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
+            Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
         );
 
         // Create a tx from the Fed to a random btc address
@@ -6035,6 +5782,103 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         tx.getInput(0).setScriptSig(inputScript);
 
         Assert.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+    }
+
+    @Test
+    public void getTransactionType_sentFromP2SHErpFed_beforeRskip353_pegin() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withActivations(activations)
+            .build();
+
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            bridgeConstantsRegtest.getBtcParams(),
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        tx.addOutput(Coin.COIN, activeFederation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+
+        Assert.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+    }
+
+    @Test
+    public void getTransactionType_sentFromP2SHErpFed_afterRskip353_pegout() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withActivations(activations)
+            .build();
+
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> emergencyKeys = PegTestUtils.createRandomBtcECKeys(3);
+        long activationDelay = 256L;
+
+        Federation p2shErpFederation = new P2shErpFederation(
+            activeFederation.getMembers(),
+            activeFederation.getCreationTime(),
+            activeFederation.getCreationBlockNumber(),
+            bridgeConstantsRegtest.getBtcParams(),
+            emergencyKeys,
+            activationDelay,
+            activations
+        );
+
+        // Create a tx from the p2sh erp fed
+        BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        tx.addOutput(Coin.COIN, PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstantsRegtest.getBtcParams()));
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, p2shErpFederation.getRedeemScript());
+
+        // Sign it using the federation members
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(activeFederation);
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(activeFederation);
+        tx.getInput(0).setScriptSig(inputScript);
+
+        Sha256Hash sighash = tx.hashForSignature(
+            0,
+            redeemScript,
+            BtcTransaction.SigHash.ALL,
+            false
+        );
+
+        for (int i = 0; i < activeFederation.getNumberOfSignaturesRequired(); i++) {
+            BtcECKey federatorPrivKey = federationPrivateKeys.get(i);
+            BtcECKey federatorPublicKey = activeFederation.getBtcPublicKeys().get(i);
+
+            BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
+            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+
+            int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+            inputScript = ScriptBuilder.updateScriptWithSignature(
+                inputScript,
+                txSig.encodeToBitcoin(),
+                sigIndex,
+                1,
+                1
+            );
+        }
+        tx.getInput(0).setScriptSig(inputScript);
+
+        Assert.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
@@ -6626,12 +6470,11 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
         Block block = mock(Block.class);
         // Set block right after the migration should start
-        when(block.getNumber()).thenReturn(
-            newFed.getCreationBlockNumber() +
+        long blockNumber = newFed.getCreationBlockNumber() +
             bridgeConstantsRegtest.getFederationActivationAge() +
             bridgeConstantsRegtest.getFundsMigrationAgeSinceActivationBegin() +
-            1
-        );
+            1;
+        when(block.getNumber()).thenReturn(blockNumber);
 
         List<UTXO> utxosToMigrate = new ArrayList<>();
         for (int i = 0; i < utxosToCreate; i++) {

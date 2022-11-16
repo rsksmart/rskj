@@ -7,6 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -69,7 +70,11 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(height)).thenReturn(new StoredBlock(btcBlock, BigInteger.ONE, height));
 
-        bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
+        bridgeSupport = new BridgeSupportBuilder()
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withActivations(activationsAfterForks)
+            .build();
     }
 
     @Test
@@ -135,29 +140,5 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.length);
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants,
-           BtcBlockStoreWithCache.Factory blockStoreFactory,
-           ActivationConfig.ForBlock activations) {
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Repository track = mock(Repository.class);
-        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
-        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-        Block executionBlock = mock(Block.class);
-
-        return new BridgeSupport(
-                constants,
-                provider,
-                eventLogger,
-                btcLockSenderProvider,
-                new PeginInstructionsProvider(),
-                track,
-                executionBlock,
-                new Context(constants.getBtcParams()),
-                new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory,
-                activations
-        );
     }
 }
