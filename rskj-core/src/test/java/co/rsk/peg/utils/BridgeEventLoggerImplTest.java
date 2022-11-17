@@ -24,16 +24,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -41,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -62,15 +56,13 @@ import static org.mockito.Mockito.when;
 public class BridgeEventLoggerImplTest {
 
     private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
-    ActivationConfig.ForBlock activations;
-    List<LogInfo> eventLogs;
-    BridgeEventLogger eventLogger;
-    BtcTransaction btcTxMock;
-    BtcTransaction btcTx;
+    private List<LogInfo> eventLogs;
+    private BridgeEventLogger eventLogger;
+    private BtcTransaction btcTxMock;
+    private BtcTransaction btcTx;
 
     @Before
     public void setup() {
-        activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         eventLogger = new BridgeEventLoggerImpl(CONSTANTS, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
@@ -192,7 +184,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logReleaseBtcAfterRskip146() {
+    public void logReleaseBtc() {
         // Setup Btc transaction
         Keccak256 rskTxHash = PegTestUtils.createHash3(1);
 
@@ -205,107 +197,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logCommitFederationBeforeRskip146() {
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
-
-        // Setup parameters for test method call
-        Block executionBlock = mock(Block.class);
-        when(executionBlock.getTimestamp()).thenReturn(15005L);
-        when(executionBlock.getNumber()).thenReturn(15L);
-
-        List<BtcECKey> oldFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-            BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-            BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49"))
-        );
-
-        List<FederationMember> oldFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(oldFederationKeys);
-
-        Federation oldFederation = new Federation(
-            oldFederationMembers,
-            Instant.ofEpochMilli(15005L),
-            15L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        List<BtcECKey> newFederationKeys = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("0346cb6b905e4dee49a862eeb2288217d06afcd4ace4b5ca77ebedfbc6afc1c19d")),
-            BtcECKey.fromPublicOnly(Hex.decode("0269a0dbe7b8f84d1b399103c466fb20531a56b1ad3a7b44fe419e74aad8c46db7")),
-            BtcECKey.fromPublicOnly(Hex.decode("026192d8ab41bd402eb0431457f6756a3f3ce15c955c534d2b87f1e0372d8ba338"))
-        );
-
-        List<FederationMember> newFederationMembers = FederationTestUtils.getFederationMembersWithBtcKeys(newFederationKeys);
-
-        Federation newFederation = new Federation(
-            newFederationMembers,
-            Instant.ofEpochMilli(5005L),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-
-        // Act
-        eventLogger.logCommitFederation(executionBlock, oldFederation, newFederation);
-
-        // Assert log size
-        Assert.assertEquals(1, eventLogs.size());
-
-        LogInfo logResult = eventLogs.get(0);
-
-        // Assert address that made the log
-        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
-
-        // Assert log topics
-        Assert.assertEquals(1, logResult.getTopics().size());
-        Assert.assertEquals(Bridge.COMMIT_FEDERATION_TOPIC, logResult.getTopics().get(0));
-
-        // Assert log data
-        Assert.assertNotNull(logResult.getData());
-        List<RLPElement> rlpData = RLP.decode2(logResult.getData());
-        Assert.assertEquals(1, rlpData.size());
-        RLPList dataList = (RLPList) rlpData.get(0);
-        Assert.assertEquals(3, dataList.size());
-
-        // Assert old federation data
-        RLPList oldFedData = (RLPList) dataList.get(0);
-        Assert.assertEquals(2, oldFedData.size());
-        Assert.assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
-
-        RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
-        Assert.assertEquals(4, oldFedPubKeys.size());
-        for (int i = 0; i < 4; i++) {
-            Assert.assertEquals(
-                oldFederation.getBtcPublicKeys().get(i),
-                BtcECKey.fromPublicOnly(oldFedPubKeys.get(i).getRLPData())
-            );
-        }
-
-        // Assert new federation data
-        RLPList newFedData = (RLPList) dataList.get(1);
-        Assert.assertEquals(2, newFedData.size());
-        Assert.assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
-
-        RLPList newFedPubKeys = (RLPList) newFedData.get(1);
-        Assert.assertEquals(3, newFedPubKeys.size());
-        for (int i = 0; i < 3; i++) {
-            Assert.assertEquals(
-                newFederation.getBtcPublicKeys().get(i),
-                BtcECKey.fromPublicOnly(newFedPubKeys.get(i).getRLPData())
-            );
-        }
-
-        // Assert new federation activation block number
-        Assert.assertEquals(
-            15L + CONSTANTS.getFederationActivationAge(),
-            Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue()
-        );
-    }
-
-    @Test
-    public void logCommitFederationAfterRskip146() {
-        // Setup event logger
-        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
-
+    public void logCommitFederation() {
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(15005L);
