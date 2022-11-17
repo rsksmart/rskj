@@ -56,7 +56,7 @@ public class NewBlockHashesMessage extends MessageVersionAware {
 
     @Override
     public int getVersion() {
-        return 1; // TODO(iago:2) get from message
+        return 1; // TODO(iago:1) get from message
     }
 
     private void parse() {

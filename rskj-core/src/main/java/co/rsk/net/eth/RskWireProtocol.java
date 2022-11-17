@@ -24,10 +24,7 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.StatusResolver;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.GetBlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.StatusMessage;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
@@ -79,6 +76,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private final Genesis genesis;
     private final MessageQueue msgQueue;
 
+    private final MessageVersionValidator messageVersionValidator;
+
     public RskWireProtocol(RskSystemProperties config,
                            PeerScoringManager peerScoringManager,
                            MessageHandler messageHandler,
@@ -87,7 +86,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                            MessageRecorder messageRecorder,
                            StatusResolver statusResolver,
                            MessageQueue msgQueue,
-                           Channel channel) {
+                           Channel channel,
+                           MessageVersionValidator messageVersionValidator) {
         this.ethereumListener = ethereumListener;
         this.version = V62;
 
@@ -99,6 +99,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         this.statusResolver = statusResolver;
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
+
+        this.messageVersionValidator = messageVersionValidator;
     }
 
     @Override
@@ -131,6 +133,15 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
             case RSK_MESSAGE:
                 RskMessage rskmessage = (RskMessage)msg;
                 Message message = rskmessage.getMessage();
+
+                if (message instanceof StatusMessage) {
+                    StatusMessage statusMessage = (StatusMessage) message;
+                    Status localStatus = statusResolver.currentStatusLenient();
+                    if (messageVersionValidator.notValidForLongSync(statusMessage.getVersion(), localStatus.getTotalDifficulty())) {
+                        disconnect(ReasonCode.INCOMPATIBLE_STATE);
+                        return;
+                    }
+                }
 
                 switch (message.getMessageType()) {
                     case BLOCK_MESSAGE:

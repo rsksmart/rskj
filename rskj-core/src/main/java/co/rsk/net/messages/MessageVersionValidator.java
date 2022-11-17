@@ -39,6 +39,25 @@ public class MessageVersionValidator {
         this.difficultySupplier = () -> statusResolver.currentStatusLenient().getTotalDifficulty();
     }
 
+    // TODO(iago:1) rethink this name, what about backward sync?
+    public boolean notValidForLongSync(int peerVersion, BlockDifficulty peerDifficulty) {
+        // peer version is higher but difficulty lower, not valid even for us to long sync
+        if (localVersionIsLowerButDifficultyIsNot(peerVersion, peerDifficulty)) {
+            return true;
+        }
+
+        // peer version is lower but difficulty higher, not valid even for peer to long sync with us
+        if (localVersionIsHigherButDifficultyIsNot(peerVersion, peerDifficulty)) {
+            return true;
+        }
+
+        // accept only if:
+        // a) same message version
+        // b) peer lower version and lower difficulty to allow it long sync with us
+        // c) peer greater version and greater difficulty to allow us full sync with it
+        return false;
+    }
+
     boolean versionDifferentFromLocal(Integer peerVersion) {
         int localVersion = versionSupplier.getAsInt();
         return isVersionCheckEnabled(localVersion) && peerVersion != localVersion;
@@ -54,12 +73,12 @@ public class MessageVersionValidator {
         return isVersionCheckEnabled(localVersion) && peerVersion > localVersion;
     }
 
-    boolean localVersionIsLowerButDifficultyIsNot(Integer peerVersion, BlockDifficulty peerDifficulty) {
+    private boolean localVersionIsLowerButDifficultyIsNot(Integer peerVersion, BlockDifficulty peerDifficulty) {
         BlockDifficulty localDifficulty = difficultySupplier.get();
         return versionHigherThanLocal(peerVersion) && peerDifficulty.compareTo(localDifficulty) <= 0;
     }
 
-    boolean localVersionIsHigherButDifficultyIsNot(Integer peerVersion, BlockDifficulty peerDifficulty) {
+    private boolean localVersionIsHigherButDifficultyIsNot(Integer peerVersion, BlockDifficulty peerDifficulty) {
         BlockDifficulty localDifficulty = difficultySupplier.get();
         return versionLowerThanLocal(peerVersion) && peerDifficulty.compareTo(localDifficulty) >= 0;
     }

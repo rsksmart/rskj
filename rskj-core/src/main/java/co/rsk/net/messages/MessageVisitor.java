@@ -130,24 +130,6 @@ public class MessageVisitor {
 
     public void apply(StatusMessage message) {
         final Status status = message.getStatus();
-
-        // peer version is higher but difficulty lower, not valid even for us to long sync
-        if (messageVersionValidator.localVersionIsLowerButDifficultyIsNot(message.getVersion(), status.getTotalDifficulty())) {
-            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
-            return;
-        }
-
-        // peer version is lower but difficulty higher, not valid even for peer to long sync with us
-        if (messageVersionValidator.localVersionIsHigherButDifficultyIsNot(message.getVersion(), status.getTotalDifficulty())) {
-            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
-            return;
-        }
-
-        // accept only if:
-        // a) same message version
-        // b) peer lower version and lower difficulty to allow it long sync with us
-        // c) peer greater version and greater difficulty to allow us full sync with it
-
         logger.trace("Process status {}", status.getBestBlockNumber());
         this.syncProcessor.processStatus(sender, status);
     }

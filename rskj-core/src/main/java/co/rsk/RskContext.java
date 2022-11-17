@@ -2047,7 +2047,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getMessageRecorder(),
                     getStatusResolver(),
                     messageQueue,
-                    channel);
+                    channel,
+                    getMessageVersionCalculator());
         }
 
         return rskWireProtocolFactory;
