@@ -22,6 +22,17 @@ package org.ethereum;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+
+import java.io.File;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.ethereum.core.Block;
@@ -58,6 +69,14 @@ public final class TestUtils {
     public static byte[] randomBytes(int length) {
         byte[] result = new byte[length];
         getRandom().nextBytes(result);
+        return result;
+    }
+
+    public static short[] randomShortArray(int length) {
+        short[] result = new short[length];
+        byte[] bytes = new byte[length * 2];
+        getRandom().nextBytes(bytes);
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(result);
         return result;
     }
 

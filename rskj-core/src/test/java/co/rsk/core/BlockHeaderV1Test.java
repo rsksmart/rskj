@@ -40,7 +40,8 @@ public class BlockHeaderV1Test {
                 false,
                 false,
                 false,
-                null
+                null,
+                new short[0]
         );
     }
 

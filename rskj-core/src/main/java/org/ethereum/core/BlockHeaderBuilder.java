@@ -57,6 +57,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
     private byte[] ummRoot;
+    private short[] txExecutionSublistsEdges;
 
     private Coin minimumGasPrice;
     private int uncleCount;
@@ -68,11 +69,13 @@ public class BlockHeaderBuilder {
 
     private boolean createConsensusCompliantHeader;
     private boolean createUmmCompliantHeader;
+    private boolean createParallelCompliantHeader;
 
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
         createConsensusCompliantHeader = true;
         createUmmCompliantHeader = true;
+        createParallelCompliantHeader = true;
     }
 
     public BlockHeaderBuilder setCreateConsensusCompliantHeader(boolean createConsensusCompliantHeader) {
@@ -82,6 +85,15 @@ public class BlockHeaderBuilder {
 
     public BlockHeaderBuilder setCreateUmmCompliantHeader(boolean createUmmCompliantHeader) {
         this.createUmmCompliantHeader = createUmmCompliantHeader;
+        return this;
+    }
+
+    public BlockHeaderBuilder setCreateParallelCompliantHeader(boolean createParallelCompliantHeader) {
+        this.createParallelCompliantHeader = createParallelCompliantHeader;
+
+        if (!createParallelCompliantHeader) {
+            this.txExecutionSublistsEdges = null;
+        }
         return this;
     }
 
@@ -252,6 +264,18 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setTxExecutionSublistsEdges(short[] edges) {
+        if (edges != null) {
+            this.txExecutionSublistsEdges = new short[edges.length];
+            System.arraycopy(edges, 0, this.txExecutionSublistsEdges, 0, edges.length);
+            this.createParallelCompliantHeader = true;
+        } else {
+            this.txExecutionSublistsEdges = null;
+            this.createParallelCompliantHeader = false;
+        }
+        return this;
+    }
+
     private void initializeWithDefaultValues() {
         extraData = normalizeValue(extraData, new byte[0]);
         bitcoinMergedMiningHeader = normalizeValue(bitcoinMergedMiningHeader, new byte[0]);
@@ -309,6 +333,10 @@ public class BlockHeaderBuilder {
             }
         }
 
+        if (createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+            txExecutionSublistsEdges = new short[0];
+        }
+
         if (activationConfig.getHeaderVersion(number) == 0x1) return new BlockHeaderV1(
                 parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot,
@@ -320,7 +348,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
         );
 
         return new BlockHeaderV0(
@@ -334,7 +362,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData, ummRoot
+                includeForkDetectionData, ummRoot, txExecutionSublistsEdges
         );
     }
 }

@@ -40,14 +40,14 @@ public class BlockHeaderV0 extends BlockHeader {
         Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
         byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
         Coin minimumGasPrice, int uncleCount, boolean sealed,
-        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+        boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges) {
         super(parentHash,unclesHash, coinbase, stateRoot,
                 txTrieRoot, receiptTrieRoot, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
-                useRskip92Encoding, includeForkDetectionData, ummRoot);
+                useRskip92Encoding, includeForkDetectionData, ummRoot, txExecutionSublistsEdges);
         this.logsBloom = logsBloom;
     }
 

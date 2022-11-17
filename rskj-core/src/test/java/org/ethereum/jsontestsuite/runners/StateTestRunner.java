@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -118,9 +119,13 @@ public class StateTestRunner {
 
         try{
             executor.executeTransaction();
-        } catch (StackOverflowError soe){
+        } catch (StackOverflowError soe) {
             logger.error(" !!! StackOverflowError: update your java run command with -Xss32M !!!");
             System.exit(-1);
+        }
+
+        if (config.isRemascEnabled() && executor.getPaidFees().compareTo(Coin.ZERO) > 0) {
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, executor.getPaidFees());
         }
 
         track.commit();
@@ -155,8 +160,8 @@ public class StateTestRunner {
                                 new ProgramInvokeFactoryImpl(),
                                 precompiledContracts,
                                 new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                        )
-                ),
+                        ),
+                        config.isRemascEnabled()),
                 stateRootHandler
         );
 

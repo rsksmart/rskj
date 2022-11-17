@@ -31,6 +31,8 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,8 +40,8 @@ import java.util.List;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static final int RLP_HEADER_SIZE = 17;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 20;
+    private static final int RLP_HEADER_SIZE = 18;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 21;
 
     private final ActivationConfig activationConfig;
 
@@ -138,28 +140,26 @@ public class BlockFactory {
 
         if (!canBeDecoded(rlpHeader, blockNumber)) {
             throw new IllegalArgumentException(String.format(
-                    "A block header must have 16/17 elements or 19/20 including merged-mining fields but it had %d",
+                    "Invalid block header size: %d",
                     rlpHeader.size()
             ));
         }
 
         int r = 15;
 
-        boolean isUmm = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber);
-
-        boolean includeUncleCount = isUmm ||
-            // sizes prior to UMM activation
-            rlpHeader.size() == (RLP_HEADER_SIZE-1) || rlpHeader.size() == (RLP_HEADER_SIZE_WITH_MERGED_MINING-1);
-
-        int uncleCount = 0;
-        if (includeUncleCount) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
+        byte[] ucBytes = rlpHeader.get(r++).getRLPData();
+        int uncleCount = parseBigInteger(ucBytes).intValueExact();
 
         byte[] ummRoot = null;
-        if (isUmm) {
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
+        }
+
+        short[] txExecutionSublistsEdges = null;
+        if (activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            byte[] edgesBytes = rlpHeader.get(r++).getRLPRawData();
+            txExecutionSublistsEdges = new short[edgesBytes.length / 2];
+            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(txExecutionSublistsEdges);
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -202,7 +202,7 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot
+                ummRoot, txExecutionSublistsEdges
         );
 
         return new BlockHeaderV0(
@@ -212,15 +212,16 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                ummRoot
+                ummRoot, txExecutionSublistsEdges
         );
     }
 
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber) {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
-
-        return rlpHeader.size() == (RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment) ||
-            rlpHeader.size() == (RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment);
+        int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
+        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
+        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
+        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

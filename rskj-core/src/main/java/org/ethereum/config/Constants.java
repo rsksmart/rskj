@@ -48,6 +48,7 @@ public class Constants {
 
     private static final long DEFAULT_MAX_TIMESTAMPS_DIFF_IN_SECS = 5L * 60;  // 5 mins
     private static final long TESTNET_MAX_TIMESTAMPS_DIFF_IN_SECS = 120L * 60; // 120 mins
+    public static final int TX_EXECUTION_THREADS = 4;
 
     private final byte chainId;
     private final boolean seedCowAccounts;
@@ -224,6 +225,8 @@ public class Constants {
     public static int getMaxBitcoinMergedMiningMerkleProofLength() {
         return 960;
     }
+
+    public static int getTransactionExecutionThreads() { return TX_EXECUTION_THREADS; }
 
     public static Constants mainnet() {
         return new Constants(

@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,16 +16,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.core.bc;
 
-import java.util.Locale;
+import org.ethereum.db.ByteArrayWrapper;
 
-public class FormatUtils {
-    private FormatUtils() {
+import java.util.Map;
+import java.util.Set;
 
-    }
+public interface IReadWrittenKeysTracker {
+    Set<ByteArrayWrapper> getThisThreadReadKeys();
 
-    public static String formatNanosecondsToSeconds(long nanoseconds) {
-        return String.format(Locale.ROOT, "%.6f", nanoseconds / 1_000_000_000.0);
-    }
+    Set<ByteArrayWrapper> getThisThreadWrittenKeys();
+
+    Map<Long, Set<ByteArrayWrapper>> getReadKeysByThread();
+
+    Map<Long, Set<ByteArrayWrapper>> getWrittenKeysByThread();
+
+    void addNewReadKey(ByteArrayWrapper key);
+
+    void addNewWrittenKey(ByteArrayWrapper key);
+
+    boolean detectCollision();
+
+    void clear();
 }

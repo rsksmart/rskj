@@ -404,13 +404,107 @@ class BlockHeaderBuilderTest {
         assertArrayEquals(null, header.getUmmRoot());
     }
 
+    @Test
+    void createsHeaderWithParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithNullEdgesButParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(null)
+                .setCreateParallelCompliantHeader(true)
+                .build();
+
+        assertArrayEquals(new short[0], header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithoutParallelCompliantButWithEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(false)
+                .setTxExecutionSublistsEdges(edges)
+                .build();
+
+        assertArrayEquals(edges, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithEdgesButWithoutParallelCompliant() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = builder
+                .setTxExecutionSublistsEdges(edges)
+                .setCreateParallelCompliantHeader(false)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
+
+    @Test
+    void createsHeaderWithParallelCompliantButWithNullEdges() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.all());
+
+        BlockHeader header = builder
+                .setCreateParallelCompliantHeader(true)
+                .setTxExecutionSublistsEdges(null)
+                .build();
+
+        assertArrayEquals(null, header.getTxExecutionSublistsEdges());
+    }
     private static class CreateHeaderArgumentsProvider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    Arguments.of(false, false, 20),
-                    Arguments.of(false, true, 18),
-                    Arguments.of(true, false, 18)
+                    Arguments.of(false, false, 21),
+                    Arguments.of(false, true, 19),
+                    Arguments.of(true, false, 19)
             );
         }
     }

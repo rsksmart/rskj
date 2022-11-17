@@ -128,8 +128,8 @@ public class BlockBuilder {
                             new ProgramInvokeFactoryImpl(),
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                    )
-            );
+                    ),
+                    config.isRemascEnabled());
             executor.executeAndFill(block, parent.getHeader());
         }
 

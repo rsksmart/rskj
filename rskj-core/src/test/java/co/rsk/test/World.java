@@ -188,8 +188,8 @@ public class World {
                             programInvokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             blockTxSignatureCache
-                    )
-            );
+                    ),
+                    config.isRemascEnabled());
         }
 
         return this.blockExecutor;

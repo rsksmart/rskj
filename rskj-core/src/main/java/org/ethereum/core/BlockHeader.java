@@ -14,6 +14,8 @@ import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -92,6 +94,9 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    /* Edges of the transaction execution lists */
+    private short[] txExecutionSublistsEdges;
+
     private final byte[] ummRoot;
 
     /**
@@ -118,7 +123,8 @@ public abstract class BlockHeader {
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
+                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
+                       short[] txExecutionSublistsEdges) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -143,6 +149,7 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+        this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
     }
 
     @VisibleForTesting
@@ -352,6 +359,12 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
+        if (this.txExecutionSublistsEdges != null) {
+            byte[] edgesBytes = new byte[this.txExecutionSublistsEdges.length * 2];
+            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(this.txExecutionSublistsEdges);
+            fieldToEncodeList.add(RLP.encodeElement(edgesBytes));
+        }
+
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
             fieldToEncodeList.add(bitcoinMergedMiningHeader);
@@ -362,7 +375,6 @@ public abstract class BlockHeader {
                 fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
             }
         }
-
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
@@ -429,6 +441,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
+        toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(txExecutionSublistsEdges)).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -592,5 +605,11 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
+    }
+
+    public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
+
+    public void setTxExecutionSublistsEdges(short[] edges) {
+        this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
     }
 }

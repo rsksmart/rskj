@@ -810,8 +810,8 @@ class SyncProcessorTest {
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
-                )
-        );
+                ),
+                config.isRemascEnabled());
         Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

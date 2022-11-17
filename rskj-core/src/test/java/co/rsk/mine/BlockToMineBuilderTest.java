@@ -217,7 +217,7 @@ class BlockToMineBuilderTest {
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
                 Coin.ZERO, 0, false, true, false,
-                new byte[0]
+                new byte[0], null
         );
     }
 }
