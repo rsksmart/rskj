@@ -66,11 +66,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import co.rsk.peg.storageprovider.BridgeStorageIndexKeys;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static co.rsk.peg.storageprovider.BridgeStorageIndexKeys.*;
 
 /**
  * Created by ajlopez on 6/7/2016.
@@ -80,10 +82,6 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BridgeStorageProviderTest {
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP = DataWord.fromString("newFederationBtcUTXOsForTestnet");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP = DataWord.fromString("newFedBtcUTXOsForTestnetPostHop");
-    private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
     private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
     private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
@@ -150,11 +148,11 @@ class BridgeStorageProviderTest {
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         assertTrue(repository.isContract(contractAddress));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseRequestQueue".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseTransactionSet".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("rskTxsWaitingFS".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("newFederationBtcUTXOs".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("oldFederationBtcUTXOs".getBytes())));
+        assertNotNull(repository.getStorageBytes(contractAddress, RELEASE_REQUEST_QUEUE.getKeyDataWord()));
+        assertNotNull(repository.getStorageBytes(contractAddress, RELEASE_TX_SET.getKeyDataWord()));
+        assertNotNull(repository.getStorageBytes(contractAddress, RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getKeyDataWord()));
+        assertNotNull(repository.getStorageBytes(contractAddress, NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()));
+        assertNotNull(repository.getStorageBytes(contractAddress, OLD_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
@@ -2027,8 +2025,8 @@ class BridgeStorageProviderTest {
 
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash, 1L);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-            .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord()))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -2039,7 +2037,7 @@ class BridgeStorageProviderTest {
         assertTrue(result.isPresent());
         assertEquals(Long.valueOf(1), result.get());
 
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
         verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash.toString()));
     }
 
@@ -2053,8 +2051,8 @@ class BridgeStorageProviderTest {
 
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash1, 1L);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-            .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord()))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
             .thenReturn(BridgeSerializationUtils.serializeLong(2L));
@@ -2072,8 +2070,8 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(1), result.get());
 
         // old storage was accessed and new storage not
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
 
         // Get hash2 which is stored in new storage
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -2081,8 +2079,8 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
 
         // Get hash2 again
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -2090,7 +2088,7 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // No more accesses to repository, as both values are in cache
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
         verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
     }
 
@@ -2111,7 +2109,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is accessed once to set the value
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2135,7 +2133,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2160,7 +2158,7 @@ class BridgeStorageProviderTest {
         provider0.saveHeightBtcTxHashAlreadyProcessed();
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -3330,14 +3328,14 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.empty(), provider.getNextPegoutHeight());
 
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKeyDataWord());
     }
 
     @Test
     void getNextPegoutHeight_after_RSKIP271_activation() {
         Repository repository = mock(Repository.class);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY)).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKeyDataWord())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -3346,7 +3344,7 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.of(1L), provider.getNextPegoutHeight());
 
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKeyDataWord());
     }
 
     @Test
@@ -3468,7 +3466,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, times(0)).addStorageBytes(
             eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+            eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()),
             any()
         );
     }
@@ -3756,7 +3754,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY
+            NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskip284Activation = Arrays.asList(
@@ -3765,7 +3763,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip284Activation));
 
         List<UTXO> federationUtxosAfterRskip293Activation = Arrays.asList(
@@ -3774,7 +3772,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKeyDataWord()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip293Activation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3813,7 +3811,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY
+            NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
@@ -3822,7 +3820,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3838,23 +3836,23 @@ class BridgeStorageProviderTest {
         if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
             verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord()),
                 any()
             );
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP,
+                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord(),
                 BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation)
             );
         } else {
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                NEW_FEDERATION_BTC_UTXOS_KEY,
+                NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord(),
                 BridgeSerializationUtils.serializeUTXOList(federationUtxos)
             );
             verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord()),
                 any()
             );
         }
