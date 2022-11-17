@@ -50,7 +50,7 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.net.messages.MessageVersionCalculator;
+import co.rsk.net.messages.MessageVersionValidator;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -255,7 +255,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
 
-    private MessageVersionCalculator messageVersionCalculator;
+    private MessageVersionValidator messageVersionValidator;
 
     private volatile boolean closed;
 
@@ -2120,14 +2120,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return minerClock;
     }
 
-    private MessageVersionCalculator getMessageVersionCalculator() {
+    private MessageVersionValidator getMessageVersionCalculator() {
         checkIfNotClosed();
 
-        if (this.messageVersionCalculator == null) {
-            this.messageVersionCalculator = new MessageVersionCalculator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
+        if (this.messageVersionValidator == null) {
+            this.messageVersionValidator = new MessageVersionValidator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
         }
 
-        return this.messageVersionCalculator;
+        return this.messageVersionValidator;
     }
 
     private void checkIfNotClosed() {

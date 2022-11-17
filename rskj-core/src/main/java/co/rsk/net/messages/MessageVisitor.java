@@ -52,7 +52,7 @@ public class MessageVisitor {
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final ChannelManager channelManager;
-    private final MessageVersionCalculator messageVersionCalculator;
+    private final MessageVersionValidator messageVersionValidator;
 
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
@@ -61,7 +61,7 @@ public class MessageVisitor {
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
                           Peer sender,
-                          MessageVersionCalculator messageVersionCalculator) {
+                          MessageVersionValidator messageVersionValidator) {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
@@ -70,7 +70,7 @@ public class MessageVisitor {
         this.channelManager = channelManager;
         this.config = config;
         this.sender = sender;
-        this.messageVersionCalculator = messageVersionCalculator;
+        this.messageVersionValidator = messageVersionValidator;
     }
 
     /**
@@ -83,7 +83,7 @@ public class MessageVisitor {
         Integer messageVersion = message.getVersion();
         // used for sync (other than relay), so we should only reject lower versions
         // TODO(iago) this could be improved by having different messages for sync and relay
-        if (isLowerThanLocal(messageVersion)) {
+        if (messageVersionValidator.versionLowerThanLocal(messageVersion)) {
             loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
             return;
         }
@@ -129,12 +129,25 @@ public class MessageVisitor {
     }
 
     public void apply(StatusMessage message) {
-        // TODO(iago:1) think about the following:
-        // accept only if:
-        // a) same version
-        // b) peer lower version and lower bestBlockNumber or difficulty to allow it long sync with us
-        // b) peer greater version and greater bestBlockNumber or difficulty to allow us full sync with it
         final Status status = message.getStatus();
+
+        // peer version is higher but difficulty lower, not valid even for us to long sync
+        if (messageVersionValidator.localVersionIsLowerButDifficultyIsNot(message.getVersion(), status.getTotalDifficulty())) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
+        // peer version is lower but difficulty higher, not valid even for peer to long sync with us
+        if (messageVersionValidator.localVersionIsHigherButDifficultyIsNot(message.getVersion(), status.getTotalDifficulty())) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
+        // accept only if:
+        // a) same message version
+        // b) peer lower version and lower difficulty to allow it long sync with us
+        // c) peer greater version and greater difficulty to allow us full sync with it
+
         logger.trace("Process status {}", status.getBestBlockNumber());
         this.syncProcessor.processStatus(sender, status);
     }
@@ -174,7 +187,7 @@ public class MessageVisitor {
 
     public void apply(NewBlockHashMessage message) {
         Integer messageVersion = message.getVersion();
-        if (isDifferentFromLocal(messageVersion)) {
+        if (messageVersionValidator.versionDifferentFromLocal(messageVersion)) {
             loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
             return;
         }
@@ -201,7 +214,7 @@ public class MessageVisitor {
 
     public void apply(NewBlockHashesMessage message) {
         Integer messageVersion = message.getVersion();
-        if (isDifferentFromLocal(messageVersion)) {
+        if (messageVersionValidator.versionDifferentFromLocal(messageVersion)) {
             loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
             return;
         }
@@ -215,7 +228,7 @@ public class MessageVisitor {
 
     public void apply(TransactionsMessage message) {
         Integer messageVersion = message.getVersion();
-        if (isDifferentFromLocal(messageVersion)) {
+        if (messageVersionValidator.versionDifferentFromLocal(messageVersion)) {
             loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
             return;
         }
@@ -273,25 +286,6 @@ public class MessageVisitor {
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
-    }
-
-    private boolean isDifferentFromLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
-        int currentVersion = messageVersionCalculator.get();
-        return isVersionCheckEnabled(currentVersion) && messageVersion != currentVersion;
-    }
-
-    private boolean isLowerThanLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
-        int currentVersion = messageVersionCalculator.get();
-        return isVersionCheckEnabled(currentVersion) && messageVersion < currentVersion;
-    }
-
-    private boolean isGreaterThanLocal(Integer messageVersion) { // TODO(iago:3) move this method to messageVersionCalculator
-        int currentVersion = messageVersionCalculator.get();
-        return isVersionCheckEnabled(currentVersion) && messageVersion > currentVersion;
-    }
-
-    private static boolean isVersionCheckEnabled(int currentVersion) { // TODO(iago:3) move this method to messageVersionCalculator
-        return currentVersion != -1; // TODO(iago) constant
     }
 
 }

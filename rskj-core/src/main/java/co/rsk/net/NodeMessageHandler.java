@@ -78,7 +78,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private long cleanMsgTimestamp;
 
-    private final MessageVersionCalculator messageVersionCalculator;
+    private final MessageVersionValidator messageVersionValidator;
 
     /**
      * Creates a new node message handler.
@@ -90,7 +90,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
             StatusResolver statusResolver,
-            MessageVersionCalculator messageVersionCalculator) {
+            MessageVersionValidator messageVersionValidator) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -106,7 +106,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
         this.thread = new Thread(this, "message handler");
 
-        this.messageVersionCalculator = messageVersionCalculator;
+        this.messageVersionValidator = messageVersionValidator;
     }
 
     /**
@@ -122,7 +122,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender, messageVersionCalculator);
+        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender, messageVersionValidator);
         message.accept(mv);
 
         long processTime = System.nanoTime() - start;

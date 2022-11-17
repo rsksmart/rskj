@@ -157,6 +157,7 @@ public class ActivationConfig {
     }
 
     static class MessageVersionForHeight {
+        public static final int UNDEFINED_HEIGHT = -1;
         private final long height;
         private final int messageVersion;
 
@@ -166,7 +167,7 @@ public class ActivationConfig {
         }
 
         private boolean isDefined() {
-            return this.height > -1; // TODO(iago:3) -1 to constant
+            return this.height > UNDEFINED_HEIGHT;
         }
 
         private boolean handlesHeight(long heightToCheck) {

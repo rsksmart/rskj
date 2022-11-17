@@ -26,11 +26,16 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class StatusMessage extends Message {
+public class StatusMessage extends MessageVersionAware {
     private Status status;
 
     public StatusMessage(Status status) {
         this.status = status;
+    }
+
+    @Override
+    public int getVersion() {
+        return 1; // TODO(iago:2) get from message
     }
 
     @Override
