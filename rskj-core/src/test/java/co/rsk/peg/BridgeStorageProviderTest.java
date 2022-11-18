@@ -63,11 +63,9 @@ import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import co.rsk.peg.storageprovider.BridgeStorageIndexKeys;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -1247,14 +1245,14 @@ class BridgeStorageProviderTest {
                     Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKeyDataWord(), address);
                     return new byte[]{(byte)0xaa};
                 });
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)))))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKeyDataWord())))
                 .then((InvocationOnMock invocation) -> {
                     calls.add(0);
                     RskAddress contractAddress = invocation.getArgument(0);
                     DataWord address = invocation.getArgument(1);
                     // Make sure the bytes are got from the correct address in the repo
                     assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                    Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKeyDataWord(), address);
                     return new byte[]{(byte)0xbb};
                 });
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
@@ -1383,11 +1381,11 @@ class BridgeStorageProviderTest {
                         byte[] data = invocation.getArgument(2);
                         // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                         assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                        Assertions.assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
+                        Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKeyDataWord(), address);
                         assertArrayEquals(Hex.decode("bbcc"), data);
                         return null;
                     })
-                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKeyDataWord()), any(byte[].class));
 
             storageProvider.saveLockWhitelist();
             // Shouldn't have tried to save nor serialize anything
@@ -1917,7 +1915,7 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(1), result.get());
 
         verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash.toString()));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKeyDataWord("-", hash.toString()));
     }
 
     @Test
@@ -1933,7 +1931,7 @@ class BridgeStorageProviderTest {
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord()))
                 .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKeyDataWord("-", hash2.toString())))
                 .thenReturn(BridgeSerializationUtils.serializeLong(2L));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
@@ -1950,7 +1948,7 @@ class BridgeStorageProviderTest {
 
         // old storage was accessed and new storage not
         verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKeyDataWord("-", hash2.toString()));
 
         // Get hash2 which is stored in new storage
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -1959,7 +1957,7 @@ class BridgeStorageProviderTest {
 
         // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
         verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKeyDataWord("-", hash2.toString()));
 
         // Get hash2 again
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -1968,7 +1966,7 @@ class BridgeStorageProviderTest {
 
         // No more accesses to repository, as both values are in cache
         verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKeyDataWord());
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKeyDataWord("-", hash2.toString()));
     }
 
     @Test
