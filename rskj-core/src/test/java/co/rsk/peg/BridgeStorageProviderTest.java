@@ -324,7 +324,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
@@ -373,7 +373,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     // First call is storage version getter
                     return new byte[0];
                 } else {
@@ -435,7 +435,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     // First call is storage version getter
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
@@ -547,7 +547,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
@@ -594,7 +594,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     // First call is storage version getter
                     return new byte[0];
                 } else {
@@ -657,7 +657,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     // First call is storage version getter
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
@@ -791,7 +791,7 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
@@ -832,7 +832,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
@@ -874,7 +874,7 @@ class BridgeStorageProviderTest {
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     return new byte[0];
                 } else {
                     // Second call is the actual storage getter
@@ -908,7 +908,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
@@ -949,7 +949,7 @@ class BridgeStorageProviderTest {
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
                     // Second call is the actual storage getter
@@ -1060,7 +1060,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageBytesCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
@@ -1098,7 +1098,7 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageBytesCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
@@ -3264,7 +3264,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
-                eq(DataWord.fromString("nextPegoutHeight")),
+                eq(NEXT_PEGOUT_HEIGHT_KEY.getKeyDataWord()),
                 any()
         );
     }
@@ -3283,7 +3283,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromString("nextPegoutHeight"),
+                NEXT_PEGOUT_HEIGHT_KEY.getKeyDataWord(),
                 BridgeSerializationUtils.serializeLong(10L)
         );
     }
@@ -3426,7 +3426,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
@@ -3478,7 +3478,7 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
@@ -3523,7 +3523,7 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
@@ -3582,7 +3582,7 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(), address);
                     Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
