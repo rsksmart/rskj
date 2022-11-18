@@ -9,13 +9,12 @@ import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,11 +31,16 @@ public abstract class BlockHeader {
     public abstract byte getVersion();
     public abstract BlockHeaderExtension getExtension();
     public abstract void setExtension(BlockHeaderExtension extension);
+
     // fields from block header extension
     public abstract byte[] getLogsBloom();
     public abstract void setLogsBloom(byte[] logsBloom);
+    public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
+    public abstract void setTxExecutionSublistsEdges(short[] edges);
+
     // encoding to use in logs bloom field on header response message
     public abstract byte[] getLogsBloomFieldEncoded();
+    public abstract void addExtraFieldsToEncoded(boolean useExtensionEncoding, List<byte[]> fieldsToEncode);
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
@@ -94,9 +98,6 @@ public abstract class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
-    /* Edges of the transaction execution lists */
-    private short[] txExecutionSublistsEdges;
-
     private final byte[] ummRoot;
 
     /**
@@ -123,8 +124,7 @@ public abstract class BlockHeader {
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot,
-                       short[] txExecutionSublistsEdges) {
+                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -149,7 +149,6 @@ public abstract class BlockHeader {
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
         this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
-        this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
     }
 
     @VisibleForTesting
@@ -295,24 +294,14 @@ public abstract class BlockHeader {
         return this.hash;
     }
 
-    public byte[] getFullEncoded() {
-        // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
-        // calculating RSKIP92 block hashes
-        return this.getEncoded(true, true, false);
-    }
 
-    public byte[] getEncoded() {
-        // the encoded block header used for calculating block hashes including RSKIP92
-        return this.getEncoded(true, !useRskip92Encoding, false);
-    }
-
-    public byte[] getEncodedForHeaderMessage() {
-        return this.getEncoded(true, true, true);
-    }
-
-    public byte[] getEncodedForHash() {
-        return this.getEncoded(true, !useRskip92Encoding, true);
-    }
+    // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
+    // calculating RSKIP92 block hashes
+    public byte[] getFullEncoded() { return this.getEncoded(true, true, false); }
+    // the encoded block header used for calculating block hashes including RSKIP92
+    public byte[] getEncoded() { return this.getEncoded(true, !useRskip92Encoding, false); }
+    public byte[] getEncodedForHeaderMessage() { return this.getEncoded(true, true, true); }
+    public byte[] getEncodedForHash() { return this.getEncoded(true, !useRskip92Encoding, true); }
 
     @Nullable
     public Coin getMinimumGasPrice() {
@@ -359,11 +348,7 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
-        if (this.txExecutionSublistsEdges != null) {
-            byte[] edgesBytes = new byte[this.txExecutionSublistsEdges.length * 2];
-            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(this.txExecutionSublistsEdges);
-            fieldToEncodeList.add(RLP.encodeElement(edgesBytes));
-        }
+        this.addExtraFieldsToEncoded(useExtensionEncoding, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
@@ -376,6 +361,13 @@ public abstract class BlockHeader {
             }
         }
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    public void addTxExecutionSublistsEdgesIfAny(List<byte[]> fieldsToEncode) {
+        short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
+        if (txExecutionSublistsEdges != null) {
+            fieldsToEncode.add(ByteUtil.shortsToRLP(txExecutionSublistsEdges));
+        }
     }
 
     /**
@@ -441,7 +433,7 @@ public abstract class BlockHeader {
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
         toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
-        toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(txExecutionSublistsEdges)).append(suffix);
+        toStringBuff.append("  txExecutionSublistsEdges=").append(Arrays.toString(this.getTxExecutionSublistsEdges())).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -605,11 +597,5 @@ public abstract class BlockHeader {
 
     public byte[] getUmmRoot() {
         return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
-    }
-
-    public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
-
-    public void setTxExecutionSublistsEdges(short[] edges) {
-        this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
     }
 }

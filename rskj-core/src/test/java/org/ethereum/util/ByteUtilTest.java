@@ -513,4 +513,10 @@ class ByteUtilTest {
             Assertions.assertEquals(src[i - srcStart], actualResult[i]);
         }
     }
+
+    @Test
+    void shortsRLP() {
+        short[] shorts = new short[]{ 1, 2, 3, 5, 8, 13 };
+        Assertions.assertArrayEquals(shorts, ByteUtil.rlpToShorts(RLP.decode2(ByteUtil.shortsToRLP(shorts)).get(0).getRLPData()));
+    }
 }

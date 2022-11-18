@@ -366,7 +366,7 @@ class BlockHeaderTest {
         BlockHeader header = createBlockHeader(new byte[80], new byte[32], new byte[128], new byte[0],
                 false, new byte[0], new short[0], false, false);
 
-        assertArrayEquals(HashUtil.keccak256(header.getEncoded()), header.getHash().getBytes());
+        assertArrayEquals(HashUtil.keccak256(header.getEncodedForHash()), header.getHash().getBytes());
 
         List<Consumer<BlockHeader>> stateModifiers = Arrays.asList(
                 h -> h.setBitcoinMergedMiningCoinbaseTransaction(HashUtil.keccak256("BitcoinMergedMiningCoinbaseTransaction".getBytes())),
@@ -384,7 +384,7 @@ class BlockHeaderTest {
 
         stateModifiers.forEach(sm -> {
             sm.accept(header);
-            assertArrayEquals(HashUtil.keccak256(header.getEncoded()),
+            assertArrayEquals(HashUtil.keccak256(header.getEncodedForHash()),
                     header.getHash().getBytes(),
                     "Block header returned invalid hash after modification");
         });
@@ -481,7 +481,7 @@ class BlockHeaderTest {
     }
 
     @Test
-    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloom () {
+    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloomAndEdges () {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
@@ -494,11 +494,13 @@ class BlockHeaderTest {
         RLPList fullEncoded = RLP.decodeList(headerV1.getFullEncoded());
         RLPList encodedForHeaderMessage = RLP.decodeList(headerV1.getEncodedForHeaderMessage());
 
-        Assertions.assertEquals(fullEncoded.size(), encodedForHeaderMessage.size());
+        Assertions.assertEquals(fullEncoded.size() - 1, encodedForHeaderMessage.size());
 
-        for (int i = 0; i < fullEncoded.size(); i++)
+        for (int i = 0; i < encodedForHeaderMessage.size(); i++) {
+            int j = i < 16 ? i : i + 1; //padding if extension has edges
             if (i != 6) // logs bloom field
-                Assertions.assertArrayEquals(fullEncoded.get(i).getRLPData(), encodedForHeaderMessage.get(i).getRLPData());
+                Assertions.assertArrayEquals(fullEncoded.get(j).getRLPData(), encodedForHeaderMessage.get(i).getRLPData());
+        }
 
         Assertions.assertFalse(Arrays.equals(fullEncoded.get(6).getRLPData(), encodedForHeaderMessage.get(6).getRLPData()));
     }

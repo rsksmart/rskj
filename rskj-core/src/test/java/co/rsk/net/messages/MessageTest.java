@@ -546,7 +546,8 @@ class MessageTest {
         }
 
         byte[] bloom = new byte[]{ 1, 2, 3, 4 };
-        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom);
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom, edges);
 
         BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles, extension);
 

@@ -60,7 +60,8 @@ class BodyResponseMessageTest {
     @Test
     void createMessageWithExtension() {
         Bloom bloom = new Bloom();
-        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom.getData());
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderExtension extension = new BlockHeaderExtensionV1(bloom.getData(), edges);
         BodyResponseMessage message = testCreateMessage(extension);
         Assertions.assertArrayEquals(extension.getEncoded(), message.getBlockHeaderExtension().getEncoded());
     }

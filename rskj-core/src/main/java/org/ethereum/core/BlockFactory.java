@@ -26,13 +26,12 @@ import co.rsk.remasc.RemascTransaction;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -156,10 +155,8 @@ public class BlockFactory {
         }
 
         short[] txExecutionSublistsEdges = null;
-        if (activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
-            byte[] edgesBytes = rlpHeader.get(r++).getRLPRawData();
-            txExecutionSublistsEdges = new short[edgesBytes.length / 2];
-            ByteBuffer.wrap(edgesBytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(txExecutionSublistsEdges);
+        if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+            txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -221,7 +218,12 @@ public class BlockFactory {
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
         int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment;
-        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
+
+        int preHeaderExtensionAdjustment = activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 1 : 0;
+
+        return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM ||
+                rlpHeader.size() == expectedSize - preHeaderExtensionAdjustment ||
+                rlpHeader.size() == expectedSizeMM - preHeaderExtensionAdjustment;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

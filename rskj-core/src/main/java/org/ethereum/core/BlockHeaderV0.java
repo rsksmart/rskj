@@ -23,6 +23,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.util.RLP;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class BlockHeaderV0 extends BlockHeader {
     // block header for blocks before rskip351
     @Override
@@ -33,6 +36,7 @@ public class BlockHeaderV0 extends BlockHeader {
     public void setExtension(BlockHeaderExtension extension) {}
 
     private byte[] logsBloom;
+    private short[] txExecutionSublistsEdges;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
         byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
@@ -47,8 +51,9 @@ public class BlockHeaderV0 extends BlockHeader {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
-                useRskip92Encoding, includeForkDetectionData, ummRoot, txExecutionSublistsEdges);
+                useRskip92Encoding, includeForkDetectionData, ummRoot);
         this.logsBloom = logsBloom;
+        this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
     }
 
     @Override
@@ -63,8 +68,19 @@ public class BlockHeaderV0 extends BlockHeader {
         this.logsBloom = logsBloom;
     }
 
+    public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
+
+    public void setTxExecutionSublistsEdges(short[] edges) {
+        this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
+    }
+
     @Override
     public byte[] getLogsBloomFieldEncoded() {
         return RLP.encodeElement(this.logsBloom);
+    }
+
+    @Override
+    public void addExtraFieldsToEncoded(boolean useExtensionEncoding, List<byte[]> fieldsToEncode) {
+        this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
     }
 }

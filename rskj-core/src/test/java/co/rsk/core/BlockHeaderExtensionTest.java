@@ -8,8 +8,6 @@ import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 public class BlockHeaderExtensionTest {
     @Test
     public void decodeV1() {
@@ -18,7 +16,10 @@ public class BlockHeaderExtensionTest {
         logsBloom[1] = 0x02;
         logsBloom[2] = 0x03;
         logsBloom[3] = 0x04;
-        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom);
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, edges);
 
         BlockHeaderExtension decoded = BlockHeaderExtension.fromEncoded(
                 RLP.decodeList(extension.getEncoded())

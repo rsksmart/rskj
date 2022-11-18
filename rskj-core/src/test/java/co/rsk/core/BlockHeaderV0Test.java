@@ -15,7 +15,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class BlockHeaderV0Test {
-    private BlockHeaderV0 createBlockHeader(byte[] logsBloom) {
+    private BlockHeaderV0 createBlockHeader(byte[] logsBloom, short[] edges) {
         return new BlockHeaderV0(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
@@ -41,21 +41,23 @@ public class BlockHeaderV0Test {
                 false,
                 false,
                 null,
-                new short[0]
+                edges
         );
     }
 
     @Test
     void hasNullExtension() {
-        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256));
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256), edges);
         Assertions.assertEquals(null, header.getExtension());
     }
 
     @Test
     void setsExtensionIsVoid() {
-        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256));
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderV0 header = createBlockHeader(TestUtils.randomBytes(256), edges);
         byte[] bloom = Arrays.copyOf(header.getLogsBloom(), header.getLogsBloom().length);
-        header.setExtension(new BlockHeaderExtensionV1(TestUtils.randomBytes(256)));
+        header.setExtension(new BlockHeaderExtensionV1(TestUtils.randomBytes(256), edges));
         Assertions.assertEquals(null, header.getExtension());
         Assertions.assertArrayEquals(bloom, header.getLogsBloom());
     }
@@ -63,7 +65,8 @@ public class BlockHeaderV0Test {
     @Test
     void logsBloomFieldEncoded() {
         byte[] bloom = TestUtils.randomBytes(256);
-        BlockHeaderV0 header = createBlockHeader(bloom);
+        short[] edges = new short[]{ 1, 2, 3, 4 };
+        BlockHeaderV0 header = createBlockHeader(bloom, edges);
         byte[] field = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
         Assertions.assertArrayEquals(bloom, field);
     }
