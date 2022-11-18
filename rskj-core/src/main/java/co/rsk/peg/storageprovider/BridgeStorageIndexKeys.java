@@ -32,15 +32,32 @@ public enum BridgeStorageIndexKeys {
     OLD_FEDERATION_FORMAT_VERSION("oldFederationFormatVersion"),
     PENDING_FEDERATION_FORMAT_VERSION("pendingFederationFormatVersion"),
     NEXT_PEGOUT_HEIGHT_KEY("nextPegoutHeight"),
+
+    // Compound keys
+    BTC_TX_HASH_AP("btcTxHashAP"),
+    COINBASE_INFORMATION("coinbaseInformation"),
+    BTC_BLOCK_HEIGHT("btcBlockHeight"),
+    FAST_BRIDGE_HASH_USED_IN_BTC_TX("fastBridgeHashUsedInBtcTx"),
+    FAST_BRIDGE_FEDERATION_INFORMATION("fastBridgeFederationInformation"),
     ;
 
+    private String keyAsString;
     private DataWord keyDataWord;
 
     BridgeStorageIndexKeys(String keyDataWord) {
+        this.keyAsString = keyDataWord;
         this.keyDataWord = DataWord.fromString(keyDataWord);
+    }
+
+    public String getKeyAsString() {
+        return keyAsString;
     }
 
     public DataWord getKeyDataWord() {
         return keyDataWord;
+    }
+
+    public DataWord getCompoundKeyDataWord(String delimiter, String key) {
+        return DataWord.fromLongString(keyAsString + delimiter + key);
     }
 }
