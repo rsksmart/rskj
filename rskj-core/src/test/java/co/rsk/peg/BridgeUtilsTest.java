@@ -1137,7 +1137,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
+    void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
         Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
@@ -1149,7 +1149,7 @@ class BridgeUtilsTest {
 
     // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
     @Test
-    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
+    void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
@@ -1160,7 +1160,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+    void testIsValidPegInTx_p2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
         Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
@@ -1171,7 +1171,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+    void testIsValidPegInTx_p2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
@@ -1182,7 +1182,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
+    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_federation_address_before_RSKIP353() {
         Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
@@ -1194,7 +1194,7 @@ class BridgeUtilsTest {
 
     // It shouldn't identify transactions sent to random addresses as peg-in, but it is the current behaviour
     @Test
-    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
+    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_before_RSKIP353() {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         testIsValidPegInTx_fromP2shErpScriptSender(
             false,
@@ -1205,7 +1205,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
+    void testIsValidPegInTx_flyoverpP2shErpScript_sends_funds_to_federation_address_after_RSKIP353() {
         Address activeFederationAddress = bridgeConstantsRegtest.getGenesisFederation().getAddress();
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,
@@ -1216,7 +1216,7 @@ class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
+    void testIsValidPegInTx_flyoverP2shErpScript_sends_funds_to_random_address_after_RSKIP353() {
         Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress(networkParameters);
         testIsValidPegInTx_fromP2shErpScriptSender(
             true,

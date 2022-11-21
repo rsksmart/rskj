@@ -1,19 +1,33 @@
 package co.rsk.peg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.ScriptException;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.Utils;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.*;
+import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.resources.TestConstants;
-import java.math.BigInteger;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -21,10 +35,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -233,7 +243,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new ErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -249,7 +259,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new ErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -265,7 +275,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
+        assertThrows(VerificationException.class, () -> new ErpFederation(
             federationMembersFromPks,
             creationTime,
             0L,
@@ -541,7 +551,7 @@ class ErpFederationTest {
         List<FederationMember> federationMembersWithBtcKeys = FederationTestUtils.getFederationMembersWithBtcKeys(standardMultisigKeys);
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-        Assertions.assertThrows(FederationCreationException.class, () -> new ErpFederation(
+        assertThrows(FederationCreationException.class, () -> new ErpFederation(
             federationMembersWithBtcKeys,
             creationTime,
             0L,
@@ -576,7 +586,7 @@ class ErpFederationTest {
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
         NetworkParameters btcParams = constants.getBtcParams();
-        Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
+        assertThrows(ScriptException.class, () -> spendFromErpFed(
             btcParams,
             300,
             false,
@@ -620,7 +630,7 @@ class ErpFederationTest {
         // In this case, the value 300 when encoded as BE and decoded as LE results in a larger number
         // This causes the validation to fail
         NetworkParameters btcParams = constants.getBtcParams();
-        Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
+        assertThrows(ScriptException.class, () -> spendFromErpFed(
             btcParams,
             300,
             false,
