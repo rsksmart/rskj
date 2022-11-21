@@ -39,6 +39,7 @@ public class ActivationConfigTest {
             "    twoToThree: 0",
             "    iris300: 0",
             "    hop400: 0",
+            "    hop401: 0",
             "    fingerroot500: 0",
             "},",
             "consensusRules: {",
@@ -100,6 +101,8 @@ public class ActivationConfigTest {
             "    rskip293: hop400",
             "    rskip294: hop400",
             "    rskip297: hop400",
+            "    rskip353: hop401",
+            "    rskip357: hop401",
             "}"
     ));
 
