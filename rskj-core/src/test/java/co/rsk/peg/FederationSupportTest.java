@@ -44,13 +44,17 @@ class FederationSupportTest {
     private BridgeStorageProvider provider;
     private Block executionBlock;
 
-
     @BeforeEach
     void setUp() {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
-        federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
+
+        federationSupport = new FederationSupport(
+            bridgeConstants,
+            provider,
+            executionBlock
+        );
     }
 
     @Test
@@ -79,14 +83,11 @@ class FederationSupportTest {
     void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(75);
         Federation oldFederation = getNewFakeFederation(0);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(executionBlock.getNumber())
-                .thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge())
-                .thenReturn(10L);
+
+        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(executionBlock.getNumber()).thenReturn(80L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(oldFederation));
     }
@@ -95,14 +96,11 @@ class FederationSupportTest {
     void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(65);
         Federation oldFederation = getNewFakeFederation(0);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(executionBlock.getNumber())
-                .thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge())
-                .thenReturn(10L);
+
+        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(executionBlock.getNumber()).thenReturn(80L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
