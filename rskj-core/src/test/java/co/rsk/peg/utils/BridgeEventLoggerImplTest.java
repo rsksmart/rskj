@@ -403,8 +403,8 @@ class BridgeEventLoggerImplTest {
 
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
-                .map(BtcECKey::getPubKey)
-                .collect(Collectors.toList());
+            .map(BtcECKey::getPubKey)
+            .collect(Collectors.toList());
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
@@ -432,5 +432,4 @@ class BridgeEventLoggerImplTest {
 
         return serializedRskTxHashes;
     }
-
 }

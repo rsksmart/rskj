@@ -35,18 +35,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-// to avoid Junit5 unnecessary stub error due to some setup generalizations
-@MockitoSettings(strictness = Strictness.LENIENT)
+@MockitoSettings(strictness = Strictness.LENIENT) //TODO Work on removing this setting by using only the needed stubs
 class PendingFederationTest {
     private PendingFederation pendingFederation;
 
@@ -89,7 +90,7 @@ class PendingFederationTest {
 
     @Test
     void testEquals_basic() {
-        Assertions.assertEquals(pendingFederation, pendingFederation);
+        assertEquals(pendingFederation, pendingFederation);
 
         Assertions.assertNotEquals(null, pendingFederation);
         Assertions.assertNotEquals(pendingFederation, new Object());
@@ -121,14 +122,14 @@ class PendingFederationTest {
     @Test
     void testEquals_same() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
-        Assertions.assertEquals(pendingFederation, otherPendingFederation);
+        assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
     void testToString() {
-        Assertions.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
+        assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
-        Assertions.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
+        assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
     @Test
@@ -233,10 +234,10 @@ class PendingFederationTest {
                 null
             );
         } catch (Exception e) {
-            Assertions.assertEquals("PendingFederation is incomplete", e.getMessage());
+            assertEquals("PendingFederation is incomplete", e.getMessage());
             return;
         }
-        Assertions.fail();
+        fail();
     }
 
     @Test
@@ -246,7 +247,7 @@ class PendingFederationTest {
 
             Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[]{(byte) 0xaa}));
 
-            Assertions.assertEquals(expectedHash, pendingFederation.getHash());
+            assertEquals(expectedHash, pendingFederation.getHash());
         }
     }
 
@@ -315,9 +316,9 @@ class PendingFederationTest {
             );
         }
 
-        Assertions.assertEquals(expectedFederation, builtFederation);
+        assertEquals(expectedFederation, builtFederation);
         if (isRskip201Active && !isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
-            Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
+            assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, builtFederation.getRedeemScript());
         }
     }
 }

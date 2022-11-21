@@ -1,15 +1,27 @@
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.peg.resources.TestConstants;
+import java.math.BigInteger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,19 +33,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class ErpFederationTest {
     private ErpFederation federation;
@@ -58,12 +57,12 @@ class ErpFederationTest {
 
     @Test
     void getErpPubKeys() {
-        Assertions.assertEquals(emergencyKeys, federation.getErpPubKeys());
+        assertEquals(emergencyKeys, federation.getErpPubKeys());
     }
 
     @Test
     void getActivationDelay() {
-        Assertions.assertEquals(activationDelayValue, federation.getActivationDelay());
+        assertEquals(activationDelayValue, federation.getActivationDelay());
     }
 
     @Test
@@ -106,9 +105,9 @@ class ErpFederationTest {
         Script p2shs = federation.getP2SHScript();
         String expectedProgram = "a914e16874869871d2fbc116ed503699b42b886e4eeb87";
 
-        Assertions.assertEquals(expectedProgram, Hex.toHexString(p2shs.getProgram()));
-        Assertions.assertEquals(3, p2shs.getChunks().size());
-        Assertions.assertEquals(
+        assertEquals(expectedProgram, Hex.toHexString(p2shs.getProgram()));
+        assertEquals(3, p2shs.getChunks().size());
+        assertEquals(
             federation.getAddress(),
             p2shs.getToAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
         );
@@ -119,12 +118,12 @@ class ErpFederationTest {
         String fedAddress = federation.getAddress().toBase58();
         String expectedAddress = "2NDo5A7r5GbgMt9hH4iQ3fvuxspixP67xgU";
 
-        Assertions.assertEquals(expectedAddress, fedAddress);
+        assertEquals(expectedAddress, fedAddress);
     }
 
     @Test
     void getErpPubKeys_compressed_public_keys() {
-        Assertions.assertEquals(emergencyKeys, federation.getErpPubKeys());
+        assertEquals(emergencyKeys, federation.getErpPubKeys());
     }
 
     @Test
@@ -146,7 +145,7 @@ class ErpFederationTest {
             mock(ActivationConfig.ForBlock.class)
         );
 
-        Assertions.assertEquals(emergencyKeys, federationWithUncompressedKeys.getErpPubKeys());
+        assertEquals(emergencyKeys, federationWithUncompressedKeys.getErpPubKeys());
     }
 
     @Test
@@ -176,7 +175,7 @@ class ErpFederationTest {
             Script rskjScript = erpFederation.getRedeemScript();
             Script alternativeScript = generatedScript.script;
 
-            Assertions.assertEquals(alternativeScript, rskjScript);
+            assertEquals(alternativeScript, rskjScript);
         }
     }
     @Test
@@ -195,18 +194,18 @@ class ErpFederationTest {
         for (RawGeneratedRedeemScript generatedScript : generatedScripts) {
             // NOTE: difference with other tests is here, this one tests a P2shErpFederation
             Federation erpFederation = new P2shErpFederation(
-                    FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
-                    ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                    0L,
-                    NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-                    generatedScript.emergencyFed,
-                    generatedScript.timelock,
-                    activations
+                FederationTestUtils.getFederationMembersWithBtcKeys(generatedScript.mainFed),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
+                NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
+                generatedScript.emergencyFed,
+                generatedScript.timelock,
+                activations
             );
 
             Script rskjScript = erpFederation.getRedeemScript();
             Script alternativeScript = generatedScript.script;
-            Assertions.assertEquals(alternativeScript, rskjScript);
+            assertEquals(alternativeScript, rskjScript);
         }
     }
     @Test
@@ -231,53 +230,49 @@ class ErpFederationTest {
 
     @Test
     void createInvalidErpFederation_negativeCsvValue() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                emergencyKeys,
-                -100L,
-                activations
-        ));
-    }
-
-    @Test
-    void createInvalidErpFederation_csvValueNegative() {
-        Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                emergencyKeys,
-                -100,
-                activations
+            federationMembersFromPks,
+            creationTime,
+            0L,
+            btcParams,
+            emergencyKeys,
+            -100L,
+            activations
         ));
     }
 
     @Test
     void createInvalidErpFederation_csvValueZero() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                emergencyKeys,
-                0,
-                activations
+            federationMembersFromPks,
+            creationTime,
+            0L,
+            btcParams,
+            emergencyKeys,
+            0,
+            activations
         ));
     }
 
     @Test
     void createInvalidErpFederation_csvValueAboveMax() {
+        List<FederationMember> federationMembersFromPks = FederationTestUtils.getFederationMembersFromPks(100, 200, 300);
+        Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
+        NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Assertions.assertThrows(VerificationException.class, () -> new ErpFederation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                emergencyKeys,
-                ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
-                activations
+            federationMembersFromPks,
+            creationTime,
+            0L,
+            btcParams,
+            emergencyKeys,
+            ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1,
+            activations
         ));
     }
 
@@ -296,7 +291,7 @@ class ErpFederationTest {
             activations
         );
 
-        Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
+        assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, erpFederation.getRedeemScript());
     }
 
     @Test
@@ -364,7 +359,7 @@ class ErpFederationTest {
 
     @Test
     void testEquals_basic() {
-        Assertions.assertEquals(federation, federation);
+        assertEquals(federation, federation);
 
         Assertions.assertNotEquals(null, federation);
         Assertions.assertNotEquals(federation, new Object());
@@ -383,7 +378,7 @@ class ErpFederationTest {
             activations
         );
 
-        Assertions.assertEquals(federation, otherFederation);
+        assertEquals(federation, otherFederation);
     }
 
     @Test
@@ -490,7 +485,7 @@ class ErpFederationTest {
             activationsPre
         );
 
-        Assertions.assertEquals(erpFederation, otherErpFederation);
+        assertEquals(erpFederation, otherErpFederation);
 
         // One federation created after RSKIP284 with the same data, should have different redeem script
         otherErpFederation = new ErpFederation(
@@ -516,7 +511,7 @@ class ErpFederationTest {
             activationsPost
         );
 
-        Assertions.assertEquals(erpFederation, otherErpFederation);
+        assertEquals(erpFederation, otherErpFederation);
     }
 
     @Disabled("Can't recreate the hardcoded redeem script since the needed CSV value is above the max. Keeping the test ignored as testimonial")
@@ -547,13 +542,13 @@ class ErpFederationTest {
         Instant creationTime = ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant();
         NetworkParameters btcParams = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
         Assertions.assertThrows(FederationCreationException.class, () -> new ErpFederation(
-                federationMembersWithBtcKeys,
-                creationTime,
-                0L,
-                btcParams,
-                emergencyMultisigKeys,
-                activationDelay,
-                activations
+            federationMembersWithBtcKeys,
+            creationTime,
+            0L,
+            btcParams,
+            emergencyMultisigKeys,
+            activationDelay,
+            activations
         ));
     }
 
@@ -565,12 +560,12 @@ class ErpFederationTest {
         // actually allows the emergency multisig to spend before the expected amount of blocks
         // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         Assertions.assertDoesNotThrow(() ->
-        spendFromErpFed(
-            constants.getBtcParams(),
-            constants.getErpFedActivationDelay(),
-            false,
-            true
-        ));
+            spendFromErpFed(
+                constants.getBtcParams(),
+                constants.getErpFedActivationDelay(),
+                false,
+                true
+            ));
     }
 
     @Test
@@ -582,10 +577,10 @@ class ErpFederationTest {
         // This causes the validation to fail
         NetworkParameters btcParams = constants.getBtcParams();
         Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
-                btcParams,
-                300,
-                false,
-                true
+            btcParams,
+            300,
+            false,
+            true
         ));
     }
 
@@ -595,10 +590,10 @@ class ErpFederationTest {
 
         // Should validate since it's not executing the path of the script with the CSV value
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                false,
-                false
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            false,
+            false
         ));
     }
 
@@ -610,10 +605,10 @@ class ErpFederationTest {
         // actually allows the emergency multisig to spend before the expected amount of blocks
         // Since it's encoded as BE and decoded as LE, the result is a number lower than the one defined in the constant
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                false,
-                true
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            false,
+            true
         ));
     }
 
@@ -626,10 +621,10 @@ class ErpFederationTest {
         // This causes the validation to fail
         NetworkParameters btcParams = constants.getBtcParams();
         Assertions.assertThrows(ScriptException.class, () -> spendFromErpFed(
-                btcParams,
-                300,
-                false,
-                true
+            btcParams,
+            300,
+            false,
+            true
         ));
     }
 
@@ -639,10 +634,10 @@ class ErpFederationTest {
 
         // Should validate since it's not executing the path of the script with the CSV value
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                false,
-                false
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            false,
+            false
         ));
     }
 
@@ -652,10 +647,10 @@ class ErpFederationTest {
 
         // Post RSKIP293 activation it should encode the CSV value correctly
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                true,
-                true
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            true,
+            true
         ));
     }
 
@@ -664,10 +659,10 @@ class ErpFederationTest {
         BridgeConstants constants = BridgeTestNetConstants.getInstance();
 
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                true,
-                false
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            true,
+            false
         ));
     }
 
@@ -677,10 +672,10 @@ class ErpFederationTest {
 
         // Post RSKIP293 activation it should encode the CSV value correctly
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                true,
-                true
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            true,
+            true
         ));
     }
 
@@ -689,10 +684,10 @@ class ErpFederationTest {
         BridgeConstants constants = BridgeMainNetConstants.getInstance();
 
         Assertions.assertDoesNotThrow(() -> spendFromErpFed(
-                constants.getBtcParams(),
-                constants.getErpFedActivationDelay(),
-                true,
-                false
+            constants.getBtcParams(),
+            constants.getErpFedActivationDelay(),
+            true,
+            false
         ));
     }
 
@@ -904,57 +899,57 @@ class ErpFederationTest {
         int index = 0;
 
         // First byte should equal OP_NOTIF
-        Assertions.assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
+        assertEquals(ScriptOpCodes.OP_NOTIF, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
         int m = defaultMultisigKeys.size() / 2 + 1;
-        Assertions.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
+        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         // Assert public keys
         for (BtcECKey key: defaultMultisigKeys) {
             byte[] pubkey = key.getPubKey();
-            Assertions.assertEquals(pubkey.length, script[index++]);
+            assertEquals(pubkey.length, script[index++]);
             for (byte b : pubkey) {
-                Assertions.assertEquals(b, script[index++]);
+                assertEquals(b, script[index++]);
             }
         }
 
         // Next byte should equal N, from an M/N multisig
         int n = defaultMultisigKeys.size();
-        Assertions.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
+        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
         // Next byte should equal OP_ELSE
-        Assertions.assertEquals(ScriptOpCodes.OP_ELSE, script[index++]);
+        assertEquals(ScriptOpCodes.OP_ELSE, script[index++]);
 
         // Next byte should equal csv value length
-        Assertions.assertEquals(expectedCsvValueLength, script[index++]);
+        assertEquals(expectedCsvValueLength, script[index++]);
 
         // Next bytes should equal the csv value in bytes
         for (int i = 0; i < expectedCsvValueLength; i++) {
-            Assertions.assertEquals(serializedCsvValue[i], script[index++]);
+            assertEquals(serializedCsvValue[i], script[index++]);
         }
 
-        Assertions.assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY).byteValue(), script[index++]);
-        Assertions.assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
+        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKSEQUENCEVERIFY).byteValue(), script[index++]);
+        assertEquals(ScriptOpCodes.OP_DROP, script[index++]);
 
         // Next byte should equal M, from an M/N multisig
         m = emergencyMultisigKeys.size() / 2 + 1;
-        Assertions.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
+        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(m)), script[index++]);
 
         for (BtcECKey key: emergencyMultisigKeys) {
             byte[] pubkey = key.getPubKey();
-            Assertions.assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
+            assertEquals(Integer.valueOf(pubkey.length).byteValue(), script[index++]);
             for (byte b : pubkey) {
-                Assertions.assertEquals(b, script[index++]);
+                assertEquals(b, script[index++]);
             }
         }
 
         // Next byte should equal N, from an M/N multisig
         n = emergencyMultisigKeys.size();
-        Assertions.assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
+        assertEquals(ScriptOpCodes.getOpCode(String.valueOf(n)), script[index++]);
 
-        Assertions.assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
-        Assertions.assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
+        assertEquals(ScriptOpCodes.OP_ENDIF, script[index++]);
+        assertEquals(Integer.valueOf(ScriptOpCodes.OP_CHECKMULTISIG).byteValue(), script[index++]);
     }
 
     private static class RawGeneratedRedeemScript {
