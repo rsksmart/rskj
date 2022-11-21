@@ -6021,7 +6021,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         Address sender = Address.fromP2SHScript(btcRegTestParams, outputScript);
 
-        Assertions.assertNotEquals(bridgeConstantsRegtest.getOldFederationAddress(), sender.toBase58());
+        assertNotEquals(bridgeConstantsRegtest.getOldFederationAddress(), sender.toBase58());
 
         // Create a tx from a p2sh multisig address to the active fed
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
@@ -6056,11 +6056,11 @@ class BridgeSupportTest extends BridgeSupportTestBase {
         }
         tx.getInput(0).setScriptSig(inputScript);
 
-        Assertions.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
+        assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(tx));
     }
 
     @Test
-    public void getTransactionType_sentFromP2SHErpFed_beforeRskip353_pegin() {
+    void getTransactionType_sentFromP2SHErpFed_beforeRskip353_pegin() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -6093,7 +6093,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getTransactionType_sentFromP2SHErpFed_afterRskip353_pegout() {
+    void getTransactionType_sentFromP2SHErpFed_afterRskip353_pegout() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(true);
