@@ -25,7 +25,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.flyover.FlyoverFederationInformation;
-import co.rsk.peg.storageprovider.BridgeStorageIndexKeys;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -38,7 +37,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
-import static co.rsk.peg.storageprovider.BridgeStorageIndexKeys.*;
+import static co.rsk.peg.BridgeStorageIndexKeys.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -325,7 +324,7 @@ public class BridgeStorageProvider {
             return newFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord());
+        Optional<Integer> storageVersion = getStorageVersion(NEW_FEDERATION_FORMAT_VERSION.getKey());
 
         newFederation = safeGetFromRepository(
             NEW_FEDERATION_KEY,
@@ -362,17 +361,17 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP123)) {
             if (activations.isActive(RSKIP353) && newFederation instanceof P2shErpFederation) {
                 saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     P2SH_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else if (activations.isActive(RSKIP201) && newFederation instanceof ErpFederation) {
                 saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
-                    NEW_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
@@ -387,7 +386,7 @@ public class BridgeStorageProvider {
             return oldFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord());
+        Optional<Integer> storageVersion = getStorageVersion(OLD_FEDERATION_FORMAT_VERSION.getKey());
 
         oldFederation = safeGetFromRepository(
             OLD_FEDERATION_KEY,
@@ -423,17 +422,17 @@ public class BridgeStorageProvider {
         if (activations.isActive(RSKIP123)) {
             if (activations.isActive(RSKIP353) && oldFederation instanceof P2shErpFederation) {
                 saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
                     P2SH_ERP_FEDERATION_FORMAT_VERSION
                 );
             } else if (activations.isActive(RSKIP201) && oldFederation instanceof ErpFederation) {
                 saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
                     ERP_FEDERATION_FORMAT_VERSION
                 );
             } else {
                 saveStorageVersion(
-                    OLD_FEDERATION_FORMAT_VERSION.getKeyDataWord(),
+                    OLD_FEDERATION_FORMAT_VERSION.getKey(),
                     FEDERATION_FORMAT_VERSION_MULTIKEY
                 );
             }
@@ -449,7 +448,7 @@ public class BridgeStorageProvider {
             return pendingFederation;
         }
 
-        Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord());
+        Optional<Integer> storageVersion = getStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey());
 
         pendingFederation = safeGetFromRepository(
             PENDING_FEDERATION_KEY,
@@ -481,7 +480,7 @@ public class BridgeStorageProvider {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
             if (activations.isActive(RSKIP123)) {
-                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKeyDataWord(), FEDERATION_FORMAT_VERSION_MULTIKEY);
+                saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION.getKey(), FEDERATION_FORMAT_VERSION_MULTIKEY);
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
 
@@ -988,13 +987,13 @@ public class BridgeStorageProvider {
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
-        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKeyDataWord();
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY.getKey();
         if (networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
             if (activations.isActive(RSKIP284)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKeyDataWord();
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey();
             }
             if (activations.isActive(RSKIP293)) {
-                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKeyDataWord();
+                key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey();
             }
         }
 
@@ -1048,7 +1047,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T safeGetFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) {
-        return safeGetFromRepository(keyAddress.getKeyDataWord(), deserializer);
+        return safeGetFromRepository(keyAddress.getKey(), deserializer);
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
@@ -1060,7 +1059,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T getFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        return getFromRepository(keyAddress.getKeyDataWord(), deserializer);
+        return getFromRepository(keyAddress.getKey(), deserializer);
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
@@ -1069,7 +1068,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> void safeSaveToRepository(BridgeStorageIndexKeys addressKey, T object, RepositorySerializer<T> serializer) {
-        safeSaveToRepository(addressKey.getKeyDataWord(), object, serializer);
+        safeSaveToRepository(addressKey.getKey(), object, serializer);
     }
     private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
         try {
@@ -1080,7 +1079,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> void saveToRepository(BridgeStorageIndexKeys indexKeys, T object, RepositorySerializer<T> serializer) throws IOException {
-        saveToRepository(indexKeys.getKeyDataWord(), object, serializer);
+        saveToRepository(indexKeys.getKey(), object, serializer);
     }
 
     private <T> void saveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) throws IOException {

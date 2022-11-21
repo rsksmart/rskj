@@ -1,4 +1,4 @@
-package co.rsk.peg.storageprovider;
+package co.rsk.peg;
 
 import org.ethereum.vm.DataWord;
 
@@ -41,23 +41,17 @@ public enum BridgeStorageIndexKeys {
     FAST_BRIDGE_FEDERATION_INFORMATION("fastBridgeFederationInformation"),
     ;
 
-    private String keyAsString;
-    private DataWord keyDataWord;
+    private String key;
 
-    BridgeStorageIndexKeys(String keyDataWord) {
-        this.keyAsString = keyDataWord;
-        this.keyDataWord = DataWord.fromString(keyDataWord);
+    BridgeStorageIndexKeys(String key) {
+        this.key = key;
     }
 
-    public String getKeyAsString() {
-        return keyAsString;
+    public DataWord getKey() {
+        return DataWord.fromString(key);
     }
 
-    public DataWord getKeyDataWord() {
-        return keyDataWord;
-    }
-
-    public DataWord getCompoundKeyDataWord(String delimiter, String key) {
-        return DataWord.fromLongString(keyAsString + delimiter + key);
+    public DataWord getCompoundKeyDataWord(String delimiter, String identifier) {
+        return DataWord.fromLongString(key + delimiter + identifier);
     }
 }
