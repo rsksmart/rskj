@@ -101,7 +101,7 @@ class ActivationConfigTest {
             "    rskip290: hop400",
             "    rskip293: hop400",
             "    rskip294: hop400",
-            "    rskip144: hop400",
+            "    rskip144: fingerroot500",
             "    rskip297: hop400",
             "    rskip351: fingerroot500",
             "    rskip353: hop401",
