@@ -1,4 +1,4 @@
-package co.rsk.peg.utils;
+package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -6,7 +6,6 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class BridgeStorageProviderUtil {
+public final class BridgeSupportTestUtil {
     public static Repository createRepository() {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
