@@ -90,7 +90,7 @@ public class BridgeStorageProvider {
 
     private Coin lockingCap;
 
-    private HashMap<DataWord, Optional<Integer>> storageVersion;
+    private HashMap<DataWord, Optional<Integer>> storageVersionEntries;
 
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
@@ -118,7 +118,7 @@ public class BridgeStorageProvider {
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.activations = activations;
-        this.storageVersion = new HashMap<>();
+        this.storageVersionEntries = new HashMap<>();
         this.bridgeConstants = bridgeConstants;
     }
 
@@ -990,7 +990,7 @@ public class BridgeStorageProvider {
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
-        if (!storageVersion.containsKey(versionKey)) {
+        if (!storageVersionEntries.containsKey(versionKey)) {
             Optional<Integer> version = safeGetFromRepository(versionKey, data -> {
                 if (data == null || data.length == 0) {
                     return Optional.empty();
@@ -999,16 +999,16 @@ public class BridgeStorageProvider {
                 return Optional.of(BridgeSerializationUtils.deserializeInteger(data));
             });
 
-            storageVersion.put(versionKey, version);
+            storageVersionEntries.put(versionKey, version);
             return version;
         }
 
-        return storageVersion.get(versionKey);
+        return storageVersionEntries.get(versionKey);
     }
 
     private void saveStorageVersion(DataWord versionKey, Integer version) {
         safeSaveToRepository(versionKey, version, BridgeSerializationUtils::serializeInteger);
-        storageVersion.put(versionKey, Optional.of(version));
+        storageVersionEntries.put(versionKey, Optional.of(version));
     }
 
     private Federation deserializeFederationAccordingToVersion(
