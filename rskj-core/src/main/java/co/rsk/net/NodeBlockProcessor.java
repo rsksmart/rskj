@@ -119,7 +119,8 @@ public class NodeBlockProcessor implements BlockProcessor {
                 .filter(b -> !hasBlock(b.getBytes()))
                 .forEach(
                         b -> {
-                            sender.sendMessage(new GetBlockMessage(b.getBytes()));
+                            int localVersion = messageVersionValidator.getLocalVersion();
+                            sender.sendMessage(new GetBlockMessage(localVersion, b.getBytes()));
                             nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
@@ -140,7 +141,8 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private void processBlockHeader(@Nonnull final Peer sender, @Nonnull final BlockHeader header) {
-        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
+        int localVersion = messageVersionValidator.getLocalVersion();
+        sender.sendMessage(new GetBlockMessage(localVersion, header.getHash().getBytes()));
         this.store.saveHeader(header);
     }
 

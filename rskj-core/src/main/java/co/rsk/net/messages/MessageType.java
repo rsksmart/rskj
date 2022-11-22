@@ -89,9 +89,22 @@ public enum MessageType {
         }
     },
     GET_BLOCK_MESSAGE(3) {
+        private Message createMessageCommon(int version, RLPList list) {
+            return new GetBlockMessage(version, list.get(0).getRLPData());
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
         @Override
+        @Deprecated
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return new GetBlockMessage(list.get(0).getRLPData());
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     NEW_BLOCK_HASHES(6) {

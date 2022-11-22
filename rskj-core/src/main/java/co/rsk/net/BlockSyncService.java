@@ -22,8 +22,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
+import co.rsk.net.messages.MessageVersionValidator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.validators.BlockValidator;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
@@ -55,6 +57,7 @@ public class BlockSyncService {
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final RskSystemProperties config;
     private final BlockValidator blockHeaderValidator;
+    private final MessageVersionValidator messageVersionValidator;
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
@@ -64,13 +67,26 @@ public class BlockSyncService {
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final SyncConfiguration syncConfiguration,
-            @Nonnull final BlockValidator blockHeaderValidator) {
+            @Nonnull final BlockValidator blockHeaderValidator,
+            @Nonnull final MessageVersionValidator messageVersionValidator) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
         this.nodeInformation = nodeInformation;
         this.config = config;
         this.blockHeaderValidator = blockHeaderValidator;
+        this.messageVersionValidator = messageVersionValidator;
+    }
+
+    @VisibleForTesting
+    public BlockSyncService(
+            @Nonnull final RskSystemProperties config,
+            @Nonnull final NetBlockStore store,
+            @Nonnull final Blockchain blockchain,
+            @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final SyncConfiguration syncConfiguration,
+            @Nonnull final BlockValidator blockHeaderValidator) {
+        this(config, store, blockchain, nodeInformation, syncConfiguration, blockHeaderValidator, null);
     }
 
     /**
@@ -229,7 +245,8 @@ public class BlockSyncService {
         
         logger.trace("Missing block {}", hash.toHexString());
 
-        sender.sendMessage(new GetBlockMessage(hash.getBytes()));
+        int localVersion = messageVersionValidator.getLocalVersion();
+        sender.sendMessage(new GetBlockMessage(localVersion, hash.getBytes()));
     }
 
     /**

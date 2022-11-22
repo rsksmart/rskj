@@ -1597,7 +1597,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockchain(),
                     getBlockNodeInformation(),
                     getSyncConfiguration(),
-                    getBlockHeaderValidator());
+                    getBlockHeaderValidator(),
+                    getMessageVersionValidator());
         }
 
         return blockSyncService;
