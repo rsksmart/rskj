@@ -210,7 +210,9 @@ public class BridgeSupport {
 
     @VisibleForTesting
     InputStream getCheckPoints() {
-        InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+        String resourceName = "/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints";
+        InputStream checkpoints = BridgeSupport.class.getResourceAsStream(resourceName);
+        logger.debug("[getCheckPoints] Looking for checkpoint {}. Found? {}", resourceName, checkpoints != null);
         if (checkpoints == null) {
             // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
             checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
@@ -975,16 +977,18 @@ public class BridgeSupport {
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
+        long federationActivationAge = bridgeConstants.getFederationActivationAge();
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageBegin = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
-        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageBegin = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = federationActivationAge + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge > ageBegin && federationAge < ageEnd;
     }
 
     private boolean federationIsPastMigrationAge(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+        long ageEnd = bridgeConstants.getFederationActivationAge() +
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations);
 
         return federationAge >= ageEnd;
     }
@@ -3011,11 +3015,16 @@ public class BridgeSupport {
 
                 return Pair.of(migrationBtcTx, selectedUTXOs);
             } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
+                logger.debug(
+                    "[createMigrationTransaction] Error while creating migration transaction. Exception type {}. Message {}",
+                    e.getClass(),
+                    e.getMessage()
+                );
                 expectedMigrationValue = expectedMigrationValue.divide(2);
             } catch(Wallet.DustySendRequested e) {
-                throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
+                throw new IllegalStateException("[createMigrationTransaction] Retiring federation wallet cannot be emptied", e);
             } catch (UTXOProviderException e) {
-                throw new RuntimeException("Unexpected UTXO provider error", e);
+                throw new RuntimeException("[createMigrationTransaction] Unexpected UTXO provider error", e);
             }
         }
     }

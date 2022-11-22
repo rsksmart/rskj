@@ -52,7 +52,11 @@ public final class PendingFederation {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.members = Collections.unmodifiableList(
+            members.stream()
+                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                .collect(Collectors.toList())
+        );
     }
 
     public List<FederationMember> getMembers() {
@@ -62,7 +66,9 @@ public final class PendingFederation {
 
     public List<BtcECKey> getBtcPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
-        return members.stream().map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
+        return members.stream()
+            .map(FederationMember::getBtcPublicKey)
+            .collect(Collectors.toList());
     }
 
     public boolean isComplete() {
@@ -96,6 +102,19 @@ public final class PendingFederation {
         ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP353)) {
+            logger.info("[buildFederation] Going to create a P2SH ERP Federation");
+            return new P2shErpFederation(
+                members,
+                creationTime,
+                blockNumber,
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay(),
+                activations
+            );
         }
 
         if (activations.isActive(ConsensusRule.RSKIP201)) {

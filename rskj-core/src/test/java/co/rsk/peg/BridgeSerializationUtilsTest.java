@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -140,23 +141,23 @@ class BridgeSerializationUtilsTest {
     @Test
     void serializeFederationOnlyBtcKeys() throws Exception {
         byte[][] publicKeyBytes = new byte[][]{
-                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
         // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
         Federation federation = new Federation(
             FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
-                    BtcECKey.fromPublicOnly(publicKeyBytes[0]),
-                    BtcECKey.fromPublicOnly(publicKeyBytes[1]),
-                    BtcECKey.fromPublicOnly(publicKeyBytes[2]),
-                    BtcECKey.fromPublicOnly(publicKeyBytes[3]),
-                    BtcECKey.fromPublicOnly(publicKeyBytes[4]),
-                    BtcECKey.fromPublicOnly(publicKeyBytes[5]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[5]),
             })),
             Instant.ofEpochMilli(0xabcdef), //
             42L,
@@ -183,10 +184,10 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeFederationOnlyBtcKeys_ok() throws Exception {
         byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
-                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> k.getPubKey())
-                .toArray(byte[][]::new);
+            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(k -> k.getPubKey())
+            .toArray(byte[][]::new);
 
         byte[][] rlpKeys = new byte[publicKeyBytes.length][];
 
@@ -237,22 +238,56 @@ class BridgeSerializationUtilsTest {
 
     @Test
     void serializeAndDeserializeFederation_beforeRskip284_testnet() {
-        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_TESTNET);
+        testSerializeAndDeserializeFederation(
+            false,
+            false,
+            NetworkParameters.ID_TESTNET
+        );
     }
 
     @Test
     void serializeAndDeserializeFederation_beforeRskip284_mainnet() {
-        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_MAINNET);
+        testSerializeAndDeserializeFederation(
+            false,
+            false,
+            NetworkParameters.ID_MAINNET
+        );
     }
 
     @Test
     void serializeAndDeserializeFederation_afterRskip284_testnet() {
-        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_TESTNET);
+        testSerializeAndDeserializeFederation(
+            true,
+            false,
+            NetworkParameters.ID_TESTNET
+        );
     }
 
     @Test
     void serializeAndDeserializeFederation_afterRskip284_mainnet() {
-        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_MAINNET);
+        testSerializeAndDeserializeFederation(
+            true,
+            false,
+            NetworkParameters.ID_MAINNET
+        );
+    }
+
+    @Test
+    void serializeAndDeserializeFederation_afterRskip353_testnet() {
+        testSerializeAndDeserializeFederation(
+            true,
+            true,
+            NetworkParameters.ID_TESTNET
+        );
+    }
+
+    @Test
+    void serializeAndDeserializeFederation_afterRskip353_mainnet() {
+        testSerializeAndDeserializeFederation(
+            true,
+            true,
+            NetworkParameters.ID_MAINNET
+        );
     }
 
     @Test
@@ -267,7 +302,7 @@ class BridgeSerializationUtilsTest {
         }
 
         Federation testFederation = new Federation(
-                members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            members, Instant.now(), 123, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         byte[] serializedFederation = BridgeSerializationUtils.serializeFederation(testFederation);
@@ -301,9 +336,9 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeFederation_invalidFederationMember() {
         byte[] serialized = RLP.encodeList(
-                RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
-                RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
-                RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0])))
+            RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
+            RLP.encodeElement(BigInteger.valueOf(1).toByteArray()),
+            RLP.encodeList(RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0])))
         );
 
 
@@ -327,7 +362,7 @@ class BridgeSerializationUtilsTest {
             byte[] serializedTestPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
 
             PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
-                    serializedTestPendingFederation);
+                serializedTestPendingFederation);
 
             Assertions.assertEquals(testPendingFederation, deserializedTestPendingFederation);
         }
@@ -365,7 +400,7 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializePendingFederation_invalidFederationMember() {
         byte[] serialized = RLP.encodeList(
-                RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]))
+            RLP.encodeList(RLP.encodeElement(new byte[0]), RLP.encodeElement(new byte[0]))
         );
 
         try {
@@ -379,24 +414,24 @@ class BridgeSerializationUtilsTest {
     @Test
     void serializePendingFederationOnlyBtcKeys() throws Exception {
         byte[][] publicKeyBytes = new byte[][]{
-                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
         // Only actual keys serialized are BTC keys, so we don't really care about RSK or MST keys
         PendingFederation pendingFederation = new PendingFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
-                        BtcECKey.fromPublicOnly(publicKeyBytes[0]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[1]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[2]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[3]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[4]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-                }))
+            FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[5]),
+            }))
         );
 
         byte[] result = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation);
@@ -414,10 +449,10 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializePendingFederationOnlyBtcKeys() throws Exception {
         byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
-                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> k.getPubKey())
-                .toArray(byte[][]::new);
+            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(k -> k.getPubKey())
+            .toArray(byte[][]::new);
 
         byte[][] rlpBytes = new byte[publicKeyBytes.length][];
 
@@ -441,16 +476,16 @@ class BridgeSerializationUtilsTest {
 
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
-                new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(createAddress("8899"), createAddress("aabb"))
+            new ABICallSpec("one-function", new byte[][]{}),
+            Arrays.asList(createAddress("8899"), createAddress("aabb"))
         );
         sampleVotes.put(
-                new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(createAddress("ccdd"), createAddress("eeff"), createAddress("0011"))
+            new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
+            Arrays.asList(createAddress("ccdd"), createAddress("eeff"), createAddress("0011"))
         );
         sampleVotes.put(
-                new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(createAddress("fa"), createAddress("ca"))
+            new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
+            Arrays.asList(createAddress("fa"), createAddress("ca"))
         );
 
         ABICallElection sample = new ABICallElection(authorizer, sampleVotes);
@@ -508,29 +543,29 @@ class BridgeSerializationUtilsTest {
 
         ABICallSpec firstSpec = new ABICallSpec("funct", new byte[][]{});
         List<RskAddress> firstVoters = Arrays.asList(
-                createAddress("aa"),
-                createAddress("bbccdd")
+            createAddress("aa"),
+            createAddress("bbccdd")
         );
 
         ABICallSpec secondSpec = new ABICallSpec("other-funct", new byte[][]{
-                Hex.decode("1122"),
-                Hex.decode("334455")
+            Hex.decode("1122"),
+            Hex.decode("334455")
         });;
         List<RskAddress> secondVoters = Arrays.asList(
-                createAddress("55"),
-                createAddress("66"),
-                createAddress("77")
+            createAddress("55"),
+            createAddress("66"),
+            createAddress("77")
         );
 
         ABICallSpec thirdSpec = new ABICallSpec("random-funct", new byte[][]{
-                Hex.decode("aabb")
+            Hex.decode("aabb")
         });
 
         List<RskAddress> thirdVoters = Arrays.asList(
-                createAddress("1111"),
-                createAddress("3333"),
-                createAddress("5555"),
-                createAddress("77")
+            createAddress("1111"),
+            createAddress("3333"),
+            createAddress("5555"),
+            createAddress("77")
         );
 
         Map<ABICallSpec, List<RskAddress>> specsVotersToProcess = new HashMap<>();
@@ -539,7 +574,7 @@ class BridgeSerializationUtilsTest {
         specsVotersToProcess.put(secondSpec, secondVoters);
         specsVotersToProcess.put(thirdSpec, thirdVoters);
 
-        Assertions.assertNotEquals(0, thirdVoters.get(0).getBytes().length);
+        assertNotEquals(0, thirdVoters.get(0).getBytes().length);
 
         ABICallElection electionToProcess = new ABICallElection(authorizer, specsVotersToProcess);
 
@@ -554,22 +589,22 @@ class BridgeSerializationUtilsTest {
         spec = new ABICallSpec("funct", new byte[][]{});
         Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                createAddress("aa"),
-                createAddress("bbccdd")
+            createAddress("aa"),
+            createAddress("bbccdd")
         );
 
         Assertions.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
         Assertions.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
 
         spec = new ABICallSpec("other-funct", new byte[][]{
-                Hex.decode("1122"),
-                Hex.decode("334455")
+            Hex.decode("1122"),
+            Hex.decode("334455")
         });
         Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                createAddress("55"),
-                createAddress("66"),
-                createAddress("77")
+            createAddress("55"),
+            createAddress("66"),
+            createAddress("77")
         );
 
         Assertions.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
@@ -577,14 +612,14 @@ class BridgeSerializationUtilsTest {
         Assertions.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
 
         spec = new ABICallSpec("random-funct", new byte[][]{
-                Hex.decode("aabb")
+            Hex.decode("aabb")
         });
         Assertions.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                createAddress("1111"),
-                createAddress("3333"),
-                createAddress("5555"),
-                createAddress("77")
+            createAddress("1111"),
+            createAddress("3333"),
+            createAddress("5555"),
+            createAddress("77")
         );
 
         Assertions.assertEquals(4, election.getVotes().get(spec).size());
@@ -633,12 +668,12 @@ class BridgeSerializationUtilsTest {
     @Test
     void serializeLockWhitelist() throws Exception {
         byte[][] addressesBytes = new byte[][]{
-                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKeyHash(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKeyHash(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKeyHash(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKeyHash(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKeyHash(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKeyHash(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKeyHash(),
         };
         Coin maxToTransfer = Coin.CENT;
 
@@ -646,11 +681,11 @@ class BridgeSerializationUtilsTest {
             Arrays.stream(addressesBytes)
                 .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
-                0);
+            0);
 
         byte[] result = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                lockWhitelist.getAll(OneOffWhiteListEntry.class),
-                lockWhitelist.getDisableBlockHeight()
+            lockWhitelist.getAll(OneOffWhiteListEntry.class),
+            lockWhitelist.getDisableBlockHeight()
         ));
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("f897");
@@ -668,10 +703,10 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeOneOffLockWhitelistAndDisableBlockHeight() throws Exception {
         byte[][] addressesBytes = Arrays.asList(100, 200, 300, 400).stream()
-                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> k.getPubKeyHash())
-                .toArray(byte[][]::new);
+            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(k -> k.getPubKeyHash())
+            .toArray(byte[][]::new);
 
         byte[][] rlpBytes = new byte[9][0];
 
@@ -685,8 +720,8 @@ class BridgeSerializationUtilsTest {
         byte[] data = RLP.encodeList(rlpBytes);
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
-                data,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            data,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         MatcherAssert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
@@ -700,15 +735,15 @@ class BridgeSerializationUtilsTest {
     @Test
     void deserializeOneOffLockWhitelistAndDisableBlockHeight_null() throws Exception {
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
-                null,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            null,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Assertions.assertNull(deserializedLockWhitelist);
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist2 = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
-                new byte[]{},
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            new byte[]{},
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Assertions.assertNull(deserializedLockWhitelist2);
@@ -723,8 +758,8 @@ class BridgeSerializationUtilsTest {
 
         LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
         byte[] serializedLockWhitelist = BridgeSerializationUtils.serializeOneOffLockWhitelist(Pair.of(
-                originalLockWhitelist.getAll(OneOffWhiteListEntry.class),
-                originalLockWhitelist.getDisableBlockHeight()
+            originalLockWhitelist.getAll(OneOffWhiteListEntry.class),
+            originalLockWhitelist.getDisableBlockHeight()
         ));
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(serializedLockWhitelist, btcParams);
 
@@ -734,35 +769,35 @@ class BridgeSerializationUtilsTest {
         MatcherAssert.assertThat(deserializedAddresses, hasSize(1));
         MatcherAssert.assertThat(originalAddresses, is(deserializedAddresses));
         MatcherAssert.assertThat(
-                ((OneOffWhiteListEntry)originalLockWhitelist.get(originalAddresses.get(0))).maxTransferValue(),
-                is((deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
+            ((OneOffWhiteListEntry)originalLockWhitelist.get(originalAddresses.get(0))).maxTransferValue(),
+            is((deserializedLockWhitelist.getLeft().get(deserializedAddresses.get(0))).maxTransferValue()));
     }
 
     @Test
     void serializeAndDeserializeFederationOnlyBtcKeysWithRealRLP() {
         NetworkParameters networkParms = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         byte[][] publicKeyBytes = new byte[][]{
-                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
-                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
         };
 
         // Only actual keys serialized are BTC keys, so deserialization will fill RSK and MST keys with those
         Federation federation = new Federation(
-                FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
-                        BtcECKey.fromPublicOnly(publicKeyBytes[0]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[1]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[2]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[3]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[4]),
-                        BtcECKey.fromPublicOnly(publicKeyBytes[5])
-                )),
-                Instant.ofEpochMilli(0xabcdef),
-                42L,
-                networkParms
+            FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(
+                BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                BtcECKey.fromPublicOnly(publicKeyBytes[5])
+            )),
+            Instant.ofEpochMilli(0xabcdef),
+            42L,
+            networkParms
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
@@ -773,10 +808,10 @@ class BridgeSerializationUtilsTest {
     @Test
     void serializeRequestQueue() throws Exception {
         List<ReleaseRequestQueue.Entry> sampleEntries = Arrays.asList(
-                new ReleaseRequestQueue.Entry(mockAddressHash160("ccdd"), Coin.valueOf(10)),
-                new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(50)),
-                new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(20)),
-                new ReleaseRequestQueue.Entry(mockAddressHash160("aa"), Coin.valueOf(30))
+            new ReleaseRequestQueue.Entry(mockAddressHash160("ccdd"), Coin.valueOf(10)),
+            new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(50)),
+            new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(20)),
+            new ReleaseRequestQueue.Entry(mockAddressHash160("aa"), Coin.valueOf(30))
         );
         ReleaseRequestQueue sample = new ReleaseRequestQueue(sampleEntries);
 
@@ -810,9 +845,9 @@ class BridgeSerializationUtilsTest {
         Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
 
         List<ReleaseRequestQueue.Entry> expectedEntries = Arrays.asList(
-                new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
-                new ReleaseRequestQueue.Entry(a2, Coin.valueOf(7)),
-                new ReleaseRequestQueue.Entry(a3, Coin.valueOf(8))
+            new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
+            new ReleaseRequestQueue.Entry(a2, Coin.valueOf(7)),
+            new ReleaseRequestQueue.Entry(a3, Coin.valueOf(8))
         );
 
         byte[][] rlpItems = new byte[6][];
@@ -863,10 +898,10 @@ class BridgeSerializationUtilsTest {
     @Test
     void serializeTransactionSet() throws Exception {
         Set<ReleaseTransactionSet.Entry> sampleEntries = new HashSet<>(Arrays.asList(
-                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
-                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("bb"), 20L),
-                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ba"), 30L),
-                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("aa"), 40L)
+            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
+            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("bb"), 20L),
+            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ba"), 30L),
+            new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("aa"), 40L)
         ));
         ReleaseTransactionSet sample = new ReleaseTransactionSet(sampleEntries);
 
@@ -912,10 +947,10 @@ class BridgeSerializationUtilsTest {
         t4.addOutput(Coin.MILLICOIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-                new ReleaseTransactionSet.Entry(t1, 32L),
-                new ReleaseTransactionSet.Entry(t2, 14L),
-                new ReleaseTransactionSet.Entry(t3, 102L),
-                new ReleaseTransactionSet.Entry(t4, 20L)
+            new ReleaseTransactionSet.Entry(t1, 32L),
+            new ReleaseTransactionSet.Entry(t2, 14L),
+            new ReleaseTransactionSet.Entry(t3, 102L),
+            new ReleaseTransactionSet.Entry(t4, 20L)
         ));
 
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(expectedEntries);
@@ -941,7 +976,7 @@ class BridgeSerializationUtilsTest {
         t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-                new ReleaseTransactionSet.Entry(t1, 32L, PegTestUtils.createHash3(0))
+            new ReleaseTransactionSet.Entry(t1, 32L, PegTestUtils.createHash3(0))
         ));
 
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
@@ -962,7 +997,7 @@ class BridgeSerializationUtilsTest {
         t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
-                new ReleaseTransactionSet.Entry(t1, 32L)
+            new ReleaseTransactionSet.Entry(t1, 32L)
         ));
 
         ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
@@ -988,17 +1023,17 @@ class BridgeSerializationUtilsTest {
     void serializeDeserializeCoin() {
         byte[] serialized1 = BridgeSerializationUtils.serializeCoin(Coin.COIN);
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized1),
-                is(Coin.COIN));
+            is(Coin.COIN));
         byte[] serialized2 = BridgeSerializationUtils.serializeCoin(Coin.valueOf(Long.MAX_VALUE));
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized2),
-                is(Coin.valueOf(Long.MAX_VALUE)));
+            is(Coin.valueOf(Long.MAX_VALUE)));
         byte[] serialized3 = BridgeSerializationUtils.serializeCoin(Coin.ZERO);
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized3),
-                is(Coin.ZERO));
+            is(Coin.ZERO));
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(null),
-                nullValue());
+            nullValue());
         MatcherAssert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
-                nullValue());
+            nullValue());
     }
 
     @Test
@@ -1093,8 +1128,8 @@ class BridgeSerializationUtilsTest {
 
         byte[] data = RLP.encodeList(rlpElements);
         Assertions.assertThrows(RuntimeException.class, () -> BridgeSerializationUtils.deserializeFlyoverFederationInformation(
-                data,
-                new byte[]{(byte)0x23}
+            data,
+            new byte[]{(byte)0x23}
         ));
     }
 
@@ -1184,7 +1219,11 @@ class BridgeSerializationUtilsTest {
         Assertions.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
     }
 
-    private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
+    private void testSerializeAndDeserializeFederation(
+        boolean isRskip284Active,
+        boolean isRskip353Active,
+        String networkId) {
+
         final int NUM_CASES = 20;
 
         BridgeConstants bridgeConstants;
@@ -1196,6 +1235,7 @@ class BridgeSerializationUtilsTest {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+        when(activations.isActive(ConsensusRule.RSKIP353)).thenReturn(isRskip353Active);
 
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
@@ -1237,11 +1277,34 @@ class BridgeSerializationUtilsTest {
 
             Assertions.assertEquals(testFederation, deserializedTestFederation);
             Assertions.assertEquals(testErpFederation, deserializedTestErpFederation);
-            Assertions.assertNotEquals(testFederation, deserializedTestErpFederation);
-            Assertions.assertNotEquals(testErpFederation, deserializedTestFederation);
+            assertNotEquals(testFederation, deserializedTestErpFederation);
+            assertNotEquals(testErpFederation, deserializedTestFederation);
 
             if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
                 Assertions.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
+            }
+
+            if (isRskip353Active) {
+                Federation testP2shErpFederation = new P2shErpFederation(
+                    members,
+                    Instant.now(),
+                    123,
+                    bridgeConstants.getBtcParams(),
+                    bridgeConstants.getErpFedPubKeysList(),
+                    bridgeConstants.getErpFedActivationDelay(),
+                    activations
+                );
+                byte[] serializedTestP2shErpFederation = BridgeSerializationUtils.serializeFederation(testP2shErpFederation);
+
+                Federation deserializedTestP2shErpFederation = BridgeSerializationUtils.deserializeP2shErpFederation(
+                    serializedTestP2shErpFederation,
+                    bridgeConstants,
+                    activations
+                );
+
+                assertEquals(testP2shErpFederation, deserializedTestP2shErpFederation);
+                assertNotEquals(testFederation, deserializedTestP2shErpFederation);
+                assertNotEquals(testErpFederation, deserializedTestP2shErpFederation);
             }
         }
     }

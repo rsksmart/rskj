@@ -233,14 +233,15 @@ public class BridgeSerializationUtils {
      */
     private static byte[] serializeFederationWithSerializer(Federation federation, FederationMemberSerializer federationMemberSerializer) {
         List<byte[]> federationMembers = federation.getMembers().stream()
-                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
-                .collect(Collectors.toList());
+            .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+            .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
+            .collect(Collectors.toList());
 
         byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
         rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
         rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
         rlpElements[FEDERATION_MEMBERS_INDEX] = RLP.encodeList((byte[][])federationMembers.toArray(new byte[federationMembers.size()][]));
+
         return RLP.encodeList(rlpElements);
     }
 
@@ -296,8 +297,10 @@ public class BridgeSerializationUtils {
      * For the federation member serialization format, see serializeFederationMember.
      */
     public static byte[] serializeFederation(Federation federation) {
-        return serializeFederationWithSerializer(federation,
-                BridgeSerializationUtils::serializeFederationMember);
+        return serializeFederationWithSerializer(
+            federation,
+            BridgeSerializationUtils::serializeFederationMember
+        );
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
@@ -324,6 +327,28 @@ public class BridgeSerializationUtils {
         );
 
         return new ErpFederation(
+            federation.getMembers(),
+            federation.creationTime,
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay(),
+            activations
+        );
+    }
+
+    public static P2shErpFederation deserializeP2shErpFederation(
+        byte[] data,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
+    ) {
+        Federation federation = deserializeFederationWithDeserializer(
+            data,
+            bridgeConstants.getBtcParams(),
+            BridgeSerializationUtils::deserializeFederationMember
+        );
+
+        return new P2shErpFederation(
             federation.getMembers(),
             federation.creationTime,
             federation.getCreationBlockNumber(),

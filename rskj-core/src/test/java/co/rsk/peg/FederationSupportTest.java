@@ -50,16 +50,21 @@ class FederationSupportTest {
         provider = mock(BridgeStorageProvider.class);
         bridgeConstants = mock(BridgeConstants.class);
         executionBlock = mock(Block.class);
-        federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
+
+        federationSupport = new FederationSupport(
+            bridgeConstants,
+            provider,
+            executionBlock
+        );
     }
 
     @Test
     void whenNewFederationIsNullThenActiveFederationIsGenesisFederation() {
         Federation genesisFederation = getNewFakeFederation(0);
         when(provider.getNewFederation())
-                .thenReturn(null);
+            .thenReturn(null);
         when(bridgeConstants.getGenesisFederation())
-                .thenReturn(genesisFederation);
+            .thenReturn(genesisFederation);
 
         assertThat(federationSupport.getActiveFederation(), is(genesisFederation));
     }
@@ -68,9 +73,9 @@ class FederationSupportTest {
     void whenOldFederationIsNullThenActiveFederationIsNewFederation() {
         Federation newFederation = getNewFakeFederation(100);
         when(provider.getNewFederation())
-                .thenReturn(newFederation);
+            .thenReturn(newFederation);
         when(provider.getOldFederation())
-                .thenReturn(null);
+            .thenReturn(null);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
@@ -79,14 +84,11 @@ class FederationSupportTest {
     void whenOldAndNewFederationArePresentReturnOldFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(75);
         Federation oldFederation = getNewFakeFederation(0);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(executionBlock.getNumber())
-                .thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge())
-                .thenReturn(10L);
+
+        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(executionBlock.getNumber()).thenReturn(80L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(oldFederation));
     }
@@ -95,14 +97,11 @@ class FederationSupportTest {
     void whenOldAndNewFederationArePresentReturnNewFederationByActivationAge() {
         Federation newFederation = getNewFakeFederation(65);
         Federation oldFederation = getNewFakeFederation(0);
-        when(provider.getNewFederation())
-                .thenReturn(newFederation);
-        when(provider.getOldFederation())
-                .thenReturn(oldFederation);
-        when(executionBlock.getNumber())
-                .thenReturn(80L);
-        when(bridgeConstants.getFederationActivationAge())
-                .thenReturn(10L);
+
+        when(provider.getNewFederation()).thenReturn(newFederation);
+        when(provider.getOldFederation()).thenReturn(oldFederation);
+        when(executionBlock.getNumber()).thenReturn(80L);
+        when(bridgeConstants.getFederationActivationAge()).thenReturn(10L);
 
         assertThat(federationSupport.getActiveFederation(), is(newFederation));
     }
@@ -118,11 +117,11 @@ class FederationSupportTest {
         ECKey mstKey1 = new ECKey();
 
         Federation theFederation = new Federation(
-                Arrays.asList(
-                        new FederationMember(btcKey0, rskKey0, mstKey0),
-                        new FederationMember(btcKey1, rskKey1, mstKey1)
-                ), Instant.ofEpochMilli(123), 456,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            Arrays.asList(
+                new FederationMember(btcKey0, rskKey0, mstKey0),
+                new FederationMember(btcKey1, rskKey1, mstKey1)
+            ), Instant.ofEpochMilli(123), 456,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         when(provider.getNewFederation()).thenReturn(theFederation);
 
@@ -150,8 +149,8 @@ class FederationSupportTest {
         ECKey mstKey1 = new ECKey();
 
         List<FederationMember> members = Arrays.asList(
-                new FederationMember(btcKey0, rskKey0, mstKey0),
-                new FederationMember(btcKey1, rskKey1, mstKey1)
+            new FederationMember(btcKey0, rskKey0, mstKey0),
+            new FederationMember(btcKey1, rskKey1, mstKey1)
         );
 
         Assertions.assertTrue(Arrays.equals(federationSupport.getMemberPublicKeyOfType(members, 0, FederationMember.KeyType.BTC, "a prefix"), btcKey0.getPubKey()));
@@ -167,8 +166,8 @@ class FederationSupportTest {
     @Test
     void getMemberPublicKeyOfType_OutOfBounds() {
         List<FederationMember> members = Arrays.asList(
-                new FederationMember(new BtcECKey(), new ECKey(), new ECKey()),
-                new FederationMember(new BtcECKey(), new ECKey(), new ECKey())
+            new FederationMember(new BtcECKey(), new ECKey(), new ECKey()),
+            new FederationMember(new BtcECKey(), new ECKey(), new ECKey())
         );
 
         try {
@@ -188,8 +187,8 @@ class FederationSupportTest {
 
     private Federation getNewFakeFederation(long creationBlockNumber) {
         return new Federation(
-                Collections.emptyList(), Instant.ofEpochMilli(123),
-                creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            Collections.emptyList(), Instant.ofEpochMilli(123),
+            creationBlockNumber, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
 }
