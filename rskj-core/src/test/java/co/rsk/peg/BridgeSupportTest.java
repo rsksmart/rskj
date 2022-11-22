@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static co.rsk.peg.utils.BridgeStorageProviderUtil.*;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 import static co.rsk.peg.PegTestUtils.createUTXO;
 
 class BridgeSupportTest {
