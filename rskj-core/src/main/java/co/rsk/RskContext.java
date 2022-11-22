@@ -600,7 +600,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockSyncService(),
                         getSyncConfiguration(),
                         getBlockHeaderValidator(),
-                        getBlockRelayValidator()
+                        getBlockRelayValidator(),
+                        getMessageVersionValidator()
                 );
             } else {
                 nodeBlockProcessor = new NodeBlockProcessor(
@@ -608,7 +609,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockchain(),
                         getBlockNodeInformation(),
                         getBlockSyncService(),
-                        getSyncConfiguration()
+                        getSyncConfiguration(),
+                        getMessageVersionValidator()
                 );
             }
         }
@@ -777,7 +779,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (channelManager == null) {
-            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool());
+            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getMessageVersionValidator());
         }
 
         return channelManager;
@@ -1681,7 +1683,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private Eth62MessageFactory getEth62MessageFactory() {
         if (eth62MessageFactory == null) {
-            eth62MessageFactory = new Eth62MessageFactory(getBlockFactory());
+            eth62MessageFactory = new Eth62MessageFactory(getBlockFactory(), getMessageVersionValidator());
         }
 
         return eth62MessageFactory;
@@ -2023,7 +2025,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTransactionGateway(),
                     getPeerScoringManager(),
                     getStatusResolver(),
-                    getMessageVersionCalculator());
+                    getMessageVersionValidator());
         }
 
         return nodeMessageHandler;
@@ -2048,7 +2050,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getStatusResolver(),
                     messageQueue,
                     channel,
-                    getMessageVersionCalculator());
+                    getMessageVersionValidator());
         }
 
         return rskWireProtocolFactory;
@@ -2121,7 +2123,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return minerClock;
     }
 
-    private MessageVersionValidator getMessageVersionCalculator() {
+    private MessageVersionValidator getMessageVersionValidator() {
         checkIfNotClosed();
 
         if (this.messageVersionValidator == null) {

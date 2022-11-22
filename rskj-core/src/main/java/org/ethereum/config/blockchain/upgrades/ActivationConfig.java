@@ -18,6 +18,7 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import co.rsk.net.messages.MessageVersionValidator;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException.WrongType;
 import com.typesafe.config.ConfigValue;
@@ -99,9 +100,8 @@ public class ActivationConfig {
 
         Config networkUpgradesConfig = config.getConfig(PROPERTY_ACTIVATION_HEIGHTS);
 
-        // add the original messageVersion
-        int originalMessageVersion = 1;
-        messageVersionForHeight.add(new MessageVersionForHeight(0, originalMessageVersion));
+        // add default as disabled
+        messageVersionForHeight.add(new MessageVersionForHeight(0, MessageVersionValidator.DISABLED_VERSION));
 
         // add messageVersion for network upgrades
         for (Map.Entry<String, ConfigValue> e : networkUpgradesConfig.entrySet()) {

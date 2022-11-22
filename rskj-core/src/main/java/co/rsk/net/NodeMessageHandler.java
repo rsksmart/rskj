@@ -90,7 +90,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
             StatusResolver statusResolver,
-            MessageVersionValidator messageVersionValidator) {
+            @Nonnull MessageVersionValidator messageVersionValidator) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -107,6 +107,17 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.thread = new Thread(this, "message handler");
 
         this.messageVersionValidator = messageVersionValidator;
+    }
+
+    @VisibleForTesting
+    public NodeMessageHandler(RskSystemProperties config,
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
+                              StatusResolver statusResolver) {
+        this(config, blockProcessor, syncProcessor, channelManager, transactionGateway, peerScoringManager, statusResolver, null);
     }
 
     /**

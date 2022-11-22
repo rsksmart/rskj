@@ -42,16 +42,21 @@ public abstract class Message {
 
     @VisibleForTesting
     static Message create(BlockFactory blockFactory, byte[] encoded) {
-        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0));
+        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0), false);
     }
 
-    public static Message create(BlockFactory blockFactory, RLPList paramsList) {
+    public static Message create(BlockFactory blockFactory, RLPList paramsList, boolean isVersioningEnabled) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
             int type = paramsList.get(0).getRLPData()[0];
             MessageType messageType = MessageType.valueOfType(type);
             RLPList list = (RLPList) RLP.decode2(body).get(0);
+
+            if (isVersioningEnabled) {
+                return messageType.createVersionedMessage(blockFactory, list);
+            }
+
             return messageType.createMessage(blockFactory, list);
         }
 

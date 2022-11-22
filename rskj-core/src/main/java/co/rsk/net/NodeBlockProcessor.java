@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -53,6 +54,8 @@ public class NodeBlockProcessor implements BlockProcessor {
     // keep tabs on which nodes know which blocks.
     protected final BlockSyncService blockSyncService;
 
+    private final MessageVersionValidator messageVersionValidator;
+
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
@@ -66,12 +69,24 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
-            @Nonnull final SyncConfiguration syncConfiguration) {
+            @Nonnull final SyncConfiguration syncConfiguration,
+            @Nonnull final MessageVersionValidator messageVersionValidator) {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
+        this.messageVersionValidator = messageVersionValidator;
+    }
+
+    @VisibleForTesting
+    public NodeBlockProcessor(
+            @Nonnull final NetBlockStore store,
+            @Nonnull final Blockchain blockchain,
+            @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final BlockSyncService blockSyncService,
+            @Nonnull final SyncConfiguration syncConfiguration) {
+        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
     }
 
     /**
@@ -145,7 +160,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
-        sender.sendMessage(new BlockMessage(block));
+        int localVersion = messageVersionValidator.getLocalVersion();
+        sender.sendMessage(new BlockMessage(localVersion, block));
     }
 
     /**

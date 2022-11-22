@@ -25,13 +25,17 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
-public class MessageVersionValidator {
+public class MessageVersionValidator { // TODO(iago:2) rename, it is not only validator
+
+    // TODO(iago:2) move to an enum or similar
+    public static final int DISABLED_VERSION = -1;
 
     private final IntSupplier versionSupplier;
     private final Supplier<BlockDifficulty> difficultySupplier;
 
     public MessageVersionValidator(ActivationConfig activationConfig, StatusResolver statusResolver) {
         this.versionSupplier = () -> {
+            // TODO(iago:3) is it a good idea to use this status for the check? how up to date is it?
             long bestBlock = statusResolver.currentStatusLenient().getBestBlockNumber();
             return activationConfig.getMessageVersionForHeight(bestBlock);
         };
@@ -60,17 +64,17 @@ public class MessageVersionValidator {
 
     boolean versionDifferentFromLocal(Integer peerVersion) {
         int localVersion = versionSupplier.getAsInt();
-        return isVersionCheckEnabled(localVersion) && peerVersion != localVersion;
+        return isVersioningEnabledFor(localVersion) && peerVersion != localVersion;
     }
 
     boolean versionLowerThanLocal(Integer peerVersion) {
         int localVersion = versionSupplier.getAsInt();
-        return isVersionCheckEnabled(localVersion) && peerVersion < localVersion;
+        return isVersioningEnabledFor(localVersion) && peerVersion < localVersion;
     }
 
     boolean versionHigherThanLocal(Integer peerVersion) {
         int localVersion = versionSupplier.getAsInt();
-        return isVersionCheckEnabled(localVersion) && peerVersion > localVersion;
+        return isVersioningEnabledFor(localVersion) && peerVersion > localVersion;
     }
 
     private boolean localVersionIsLowerButDifficultyIsNot(Integer peerVersion, BlockDifficulty peerDifficulty) {
@@ -83,7 +87,15 @@ public class MessageVersionValidator {
         return versionLowerThanLocal(peerVersion) && peerDifficulty.compareTo(localDifficulty) >= 0;
     }
 
-    private static boolean isVersionCheckEnabled(int localVersion) {
-        return localVersion != -1; // TODO(iago) constant
+    public static boolean isVersioningEnabledFor(int versionToCheck) {
+        return versionToCheck != DISABLED_VERSION;
+    }
+
+    public int getLocalVersion() {
+        return this.versionSupplier.getAsInt();
+    }
+
+    public boolean isVersioningEnabled() {
+        return isVersioningEnabledFor(getLocalVersion());
     }
 }

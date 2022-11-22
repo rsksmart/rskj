@@ -18,8 +18,27 @@
 
 package co.rsk.net.messages;
 
+import org.ethereum.util.RLP;
+
 public abstract class MessageVersionAware extends Message {
 
     public abstract int getVersion();
+
+    protected abstract byte[] encodeWithoutVersion();
+
+    @Override
+    public byte[] getEncodedMessage() {
+        byte[] encodedMessage = encodeWithoutVersion();
+
+        // include version if versioning enabled
+        boolean isVersioningEnabled = MessageVersionValidator.isVersioningEnabledFor(getVersion());
+        if (isVersioningEnabled) {
+            byte[] versionEncoded = RLP.encodeInt(this.getVersion());
+            return RLP.encodeList(versionEncoded, encodedMessage);
+        }
+
+        // keep previous behavior if versioning is disabled
+        return encodedMessage;
+    }
 
 }

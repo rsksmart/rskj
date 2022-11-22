@@ -1,20 +1,23 @@
 package co.rsk.net.messages;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 
 /**
  * Wrapper around an RSK NewBlockHash message.
  */
 public class NewBlockHashMessage extends MessageVersionAware {
+    private int version;
     private byte[] hash;
 
-    public NewBlockHashMessage(byte[] hash) {
+    public NewBlockHashMessage(int version, byte[] hash) {
+        this.version = version;
         this.hash = hash;
     }
 
-    @Override
-    public int getVersion() {
-        return 1; // TODO(iago:1) get from message
+    @VisibleForTesting
+    public NewBlockHashMessage(byte[] hash) {
+        this(0, hash);
     }
 
     public byte[] getBlockHash() {
@@ -27,7 +30,12 @@ public class NewBlockHashMessage extends MessageVersionAware {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public int getVersion() {
+        return this.version;
+    }
+
+    @Override
+    public byte[] encodeWithoutVersion() {
         byte[] elementHash = RLP.encodeElement(this.hash);
         return RLP.encodeList(elementHash);
     }

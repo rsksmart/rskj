@@ -22,6 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -38,27 +39,53 @@ import static org.ethereum.util.ByteUtil.byteArrayToInt;
 public enum MessageType {
 
     STATUS_MESSAGE(1) {
-        @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+        private Message createMessageCommon(int version, RLPList list) {
             byte[] rlpdata = list.get(0).getRLPData();
             long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
             byte[] hash = list.get(1).getRLPData();
 
             if (list.size() == 2) {
-                return new StatusMessage(new Status(number, hash));
+                return new StatusMessage(version, new Status(number, hash));
             }
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
             BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
 
-            return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
+            return new StatusMessage(version, new Status(number, hash, parentHash, totalDifficulty));
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
+        @Override
+        @Deprecated
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     BLOCK_MESSAGE(2) {
+        private Message createMessageCommon(int version, BlockFactory blockFactory, RLPList list) {
+            return new BlockMessage(version, blockFactory.decodeBlock(list.get(0).getRLPData()));
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
         @Override
+        @Deprecated
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return new BlockMessage(blockFactory.decodeBlock(list.get(0).getRLPData()));
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, blockFactory, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), blockFactory, getContent(list));
         }
     },
     GET_BLOCK_MESSAGE(3) {
@@ -68,14 +95,26 @@ public enum MessageType {
         }
     },
     NEW_BLOCK_HASHES(6) {
+        private Message createMessageCommon(int version, RLPList list) {
+            return new NewBlockHashesMessage(version, list.getRLPData());
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
         @Override
+        @Deprecated
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return new NewBlockHashesMessage(list.getRLPData());
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     TRANSACTIONS(7) {
-        @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+        private Message createMessageCommon(int version, RLPList list) {
             List<Transaction> txs = new ArrayList<>();
 
             for (int k = 0; k < list.size(); k++) {
@@ -91,7 +130,21 @@ public enum MessageType {
                 txs.add(tx);
             }
 
-            return new TransactionsMessage(txs);
+            return new TransactionsMessage(version, txs);
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
+        @Override
+        @Deprecated
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     BLOCK_HASH_REQUEST_MESSAGE(8) {
@@ -247,10 +300,23 @@ public enum MessageType {
         }
     },
     NEW_BLOCK_HASH_MESSAGE(17) {
-        @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+        private Message createMessageCommon(int version, RLPList list) {
             byte[] hash = list.get(0).getRLPData();
-            return new NewBlockHashMessage(hash);
+            return new NewBlockHashMessage(version, hash);
+        }
+
+        /**
+         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
+         */
+        @Override
+        @Deprecated
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
+        }
+
+        @Override
+        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+            return createMessageCommon(getVersion(list), getContent(list));
         }
     };
 
@@ -261,6 +327,11 @@ public enum MessageType {
     }
 
     public abstract Message createMessage(BlockFactory blockFactory, RLPList list);
+
+    // Fallback behavior for methods without versioning, override on methods with it
+    public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
+        return createMessage(blockFactory, list);
+    }
 
     public byte getTypeAsByte() {
         return (byte) this.type;
@@ -277,5 +348,20 @@ public enum MessageType {
 
     private static boolean validTransactionLength(byte[] data) {
         return data.length <= 1 << 19;  /* 512KB */
+    }
+
+    private static int getVersion(RLPList list) {
+        try {
+            // version must be first item
+            byte[] data = list.get(0).getRLPData();
+            return ByteUtil.byteArrayToInt(data);
+        } catch (NumberFormatException nfe) {
+            throw new IllegalArgumentException("Could not get version from RLP: " + nfe.getMessage());
+        }
+    }
+
+    private static RLPList getContent(RLPList list) {
+        // TODO(iago:2) validate this decodeList!!!
+        return RLP.decodeList(list.get(1).getRLPData());
     }
 }

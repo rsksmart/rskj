@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
@@ -28,10 +29,17 @@ import java.util.List;
  * Created by ajlopez on 7/22/2016.
  */
 public class TransactionsMessage extends MessageVersionAware {
+    private final int version;
     private List<Transaction> transactions;
 
-    public TransactionsMessage(List<Transaction> transactions) {
+    public TransactionsMessage(int version, List<Transaction> transactions) {
+        this.version = version;
         this.transactions = transactions;
+    }
+
+    @VisibleForTesting
+    public TransactionsMessage(List<Transaction> transactions) {
+        this(0, transactions);
     }
 
     public List<Transaction> getTransactions() {
@@ -40,7 +48,7 @@ public class TransactionsMessage extends MessageVersionAware {
 
     @Override
     public int getVersion() {
-        return 1; // TODO(iago:1) get from message
+        return version;
     }
 
     @Override
@@ -49,7 +57,7 @@ public class TransactionsMessage extends MessageVersionAware {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public byte[] encodeWithoutVersion() {
         List<byte[]> encodedElements = new ArrayList<>();
 
         for (Transaction tx : transactions) {

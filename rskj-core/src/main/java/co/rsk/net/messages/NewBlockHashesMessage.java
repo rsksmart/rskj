@@ -18,6 +18,7 @@
  */
 package co.rsk.net.messages;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
@@ -36,6 +37,7 @@ import java.util.List;
  */
 public class NewBlockHashesMessage extends MessageVersionAware {
 
+    private final int version;
     /**
      * List of identifiers holding hash and number of the blocks
      */
@@ -44,19 +46,21 @@ public class NewBlockHashesMessage extends MessageVersionAware {
     private boolean parsed;
     private byte[] encoded;
 
-    public NewBlockHashesMessage(byte[] payload) {
+    public NewBlockHashesMessage(int version, byte[] payload) {
+        this.version = version;
         this.encoded = payload;
         this.parsed = false;
     }
 
-    public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
+    public NewBlockHashesMessage(int version, List<BlockIdentifier> blockIdentifiers) {
+        this.version = version;
         this.blockIdentifiers = blockIdentifiers;
         parsed = true;
     }
 
-    @Override
-    public int getVersion() {
-        return 1; // TODO(iago:1) get from message
+    @VisibleForTesting
+    public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
+        this(0, blockIdentifiers);
     }
 
     private void parse() {
@@ -71,7 +75,7 @@ public class NewBlockHashesMessage extends MessageVersionAware {
         parsed = true;
     }
 
-    private void encode() {
+    private void encodeInternal() {
         List<byte[]> encodedElements = new ArrayList<>();
 
         for (BlockIdentifier identifier : blockIdentifiers) {
@@ -89,9 +93,14 @@ public class NewBlockHashesMessage extends MessageVersionAware {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
+    public int getVersion() {
+        return version;
+    }
+
+    @Override
+    public byte[] encodeWithoutVersion() {
         if (encoded == null) {
-            encode();
+            encodeInternal();
         }
 
         return encoded;

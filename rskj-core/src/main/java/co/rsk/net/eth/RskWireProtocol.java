@@ -273,7 +273,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         sendMessage(msg);
 
         // RSK new protocol send status
-        RskMessage rskmessage = new RskMessage(new StatusMessage(status));
+        int localVersion = messageVersionValidator.getLocalVersion();
+        RskMessage rskmessage = new RskMessage(new StatusMessage(localVersion, status));
         loggerNet.trace("Sending status best block {} to {}",
                 status.getBestBlockNumber(),
                 channel.getPeerNodeID());
