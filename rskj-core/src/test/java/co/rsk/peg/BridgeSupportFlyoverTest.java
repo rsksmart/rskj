@@ -68,7 +68,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static co.rsk.peg.utils.BridgeStorageProviderUtil.*;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
 
 class BridgeSupportFlyoverTest {
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
