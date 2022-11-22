@@ -46,15 +46,15 @@ public class StorageRentUtil {
     private StorageRentUtil() {}
 
     /**
-     * Computes the amount of rent to be paid for trie reads/writes.
-     * The final amount it's determined by the rent cap and rent threshold
+     * Computes the amount of rent to be paid for trie read/write.
+     * The final amount it's determined by the rent cap and rent threshold.
      *
      * @param rentDue       a rent due
      * @param rentCap       a maximum gas amount to be pay
      * @param rentThreshold a gas threshold
-     * @return an amount of gas to be paid
+     * @return an amount of rent (gas) to be paid
      */
-    public static long computeRent(long rentDue, long rentCap, long rentThreshold) {
+    public static long payableRent(long rentDue, long rentCap, long rentThreshold) {
         validPositiveValue(rentCap, "cap must be positive");
         validPositiveValue(rentThreshold, "threshold must be positive");
 
@@ -98,8 +98,8 @@ public class StorageRentUtil {
      *
      * @return the new timestamp (it can be the same if it doesn't reach the threshold)
      * */
-    public static long computeNewTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp,
-                                           long currentBlockTimestamp, long rentCap, long rentThreshold) {
+    public static long newTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp, long currentBlockTimestamp,
+                                    long rentCap, long rentThreshold) {
         validPositiveValue(nodeSize, "nodeSize must be positive");
         validPositiveValue(rentDue, "rentDue must be positive");
         validPositiveValue(currentBlockTimestamp, "currentBlockTimestamp must be positive");

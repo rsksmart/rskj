@@ -50,7 +50,7 @@ public class RentedNode {
      * @return the rent amount expressed in gas units
      * */
     public long payableRent(long currentBlockTimestamp) {
-        return computeRent(
+        return StorageRentUtil.payableRent(
                 rentDue(this.nodeSize, duration(currentBlockTimestamp)),
                 RENT_CAP,
                 rentThreshold(this.operationType));
@@ -63,7 +63,7 @@ public class RentedNode {
      * @return a new updated timestamp
      * */
     public long updatedRentTimestamp(long currentBlockTimestamp) {
-        return computeNewTimestamp(
+        return newTimestamp(
                 this.nodeSize,
                 rentDue(this.nodeSize, duration(currentBlockTimestamp)),
                 this.rentTimestamp,
@@ -81,16 +81,12 @@ public class RentedNode {
      * @return a duration, expressed in milliseconds.
      */
     private long duration(long currentBlockTimestamp) {
-        long duration = 0;
-
-        if(getRentTimestamp() == Trie.NO_RENT_TIMESTAMP) {
+        if(this.rentTimestamp == Trie.NO_RENT_TIMESTAMP) {
             // new nodes or old nodes (before hop) have zero duration, they receive the timestamp of the current block
-            return duration;
+            return 0;
         }
 
-        duration = Math.subtractExact(currentBlockTimestamp, getRentTimestamp()); // this prevents overflows
-
-        return duration;
+        return Math.subtractExact(currentBlockTimestamp, getRentTimestamp()); // this prevents overflows
     }
 
     /**
@@ -104,7 +100,7 @@ public class RentedNode {
      * @return a gas fee to pay (for being part of a rollback)
      * */
     public long rollbackFee(long executionBlockTimestamp, Set<RentedNode> rentedNodeSet) {
-        long computedRent = computeRent(
+        long computedRent = StorageRentUtil.payableRent(
                 rentDue(this.nodeSize, duration(executionBlockTimestamp)),
                 RENT_CAP,
                 0); // there are no thresholds for rollbacks, we want to make the user to pay something
