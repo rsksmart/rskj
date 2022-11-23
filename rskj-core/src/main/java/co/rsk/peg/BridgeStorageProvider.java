@@ -956,23 +956,23 @@ public class BridgeStorageProvider {
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
-        return BTC_TX_HASH_AP.getCompoundKeyDataWord("-", btcTxHash.toString());
+        return BTC_TX_HASH_AP.getCompoundKey("-", btcTxHash.toString());
     }
 
     private DataWord getStorageKeyForCoinbaseInformation(Sha256Hash btcTxHash) {
-        return COINBASE_INFORMATION.getCompoundKeyDataWord("-", btcTxHash.toString());
+        return COINBASE_INFORMATION.getCompoundKey("-", btcTxHash.toString());
     }
 
     private DataWord getStorageKeyForBtcBlockIndex(Integer height) {
-        return BTC_BLOCK_HEIGHT.getCompoundKeyDataWord("-", height.toString());
+        return BTC_BLOCK_HEIGHT.getCompoundKey("-", height.toString());
     }
 
     private DataWord getStorageKeyForFlyoverHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
-        return FAST_BRIDGE_HASH_USED_IN_BTC_TX.getCompoundKeyDataWord("-", btcTxHash.toString() + derivationHash.toString());
+        return FAST_BRIDGE_HASH_USED_IN_BTC_TX.getCompoundKey("-", btcTxHash.toString() + derivationHash.toString());
     }
 
     private DataWord getStorageKeyForFlyoverFederationInformation(byte[] flyoverFederationRedeemScriptHash) {
-        return FAST_BRIDGE_FEDERATION_INFORMATION.getCompoundKeyDataWord("-", Hex.toHexString(flyoverFederationRedeemScriptHash));
+        return FAST_BRIDGE_FEDERATION_INFORMATION.getCompoundKey("-", Hex.toHexString(flyoverFederationRedeemScriptHash));
     }
 
     private DataWord getStorageKeyForNewFederationBtcUtxos() {
