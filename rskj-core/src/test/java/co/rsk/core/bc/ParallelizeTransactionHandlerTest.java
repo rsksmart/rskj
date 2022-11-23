@@ -714,6 +714,48 @@ public class ParallelizeTransactionHandlerTest {
             Assertions.assertTrue(true);
         }
     }
+
+    @Test
+    void senderWritesAKeyAndReadsAnotherThatIsWrittenShouldGoToSequential() {
+        HashSet<ByteArrayWrapper> writeKeyX = createASetAndAddKeys(aWrappedKey);
+        HashSet<ByteArrayWrapper> writeKeyY = createASetAndAddKeys(aDifferentWrapperKey);
+        HashSet<ByteArrayWrapper> readKeyY = createASetAndAddKeys(aDifferentWrapperKey);
+
+        Account senderA = new AccountBuilder().name("sender1").build();
+        Account senderB = new AccountBuilder().name("sender2").build();
+
+        Transaction a_writes_x = new TransactionBuilder().nonce(1).sender(senderA).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+        Transaction b_writes_y = new TransactionBuilder().nonce(1).sender(senderB).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+        Transaction a_reads_y = new TransactionBuilder().nonce(2).sender(senderA).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+
+        handler.addTransaction(a_writes_x, new HashSet<>(), writeKeyX, 1000);
+        handler.addTransaction(b_writes_y, new HashSet<>(), writeKeyY, 1000);
+        handler.addTransaction(a_reads_y, readKeyY, new HashSet<>(), 1000);
+
+        Assertions.assertArrayEquals(new short[]{ 1, 2 }, handler.getTransactionsPerSublistInOrder());
+    }
+
+    @Test
+    void senderWritesAKeyAndReadsAnotherThatIsWrittenShouldGoToSequentialIfReadingOtherKeys() {
+        ByteArrayWrapper anotherKey = new ByteArrayWrapper(new byte[]{ 7, 7, 7 });
+        HashSet<ByteArrayWrapper> writeKeyX = createASetAndAddKeys(aWrappedKey);
+        HashSet<ByteArrayWrapper> writeKeyYAndAnother = createASetAndAddKeys(anotherKey, aDifferentWrapperKey);
+        HashSet<ByteArrayWrapper> readKeyYAndAnother = createASetAndAddKeys(anotherKey, aDifferentWrapperKey);
+
+        Account senderA = new AccountBuilder().name("sender1").build();
+        Account senderB = new AccountBuilder().name("sender2").build();
+
+        Transaction a_writes_x = new TransactionBuilder().nonce(1).sender(senderA).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+        Transaction b_writes_y = new TransactionBuilder().nonce(1).sender(senderB).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+        Transaction a_reads_y = new TransactionBuilder().nonce(2).sender(senderA).value(BigInteger.valueOf(0)).gasLimit(BigInteger.valueOf(16000)).build();
+
+        handler.addTransaction(a_writes_x, new HashSet<>(), writeKeyX, 1000);
+        handler.addTransaction(b_writes_y, new HashSet<>(), writeKeyYAndAnother, 1000);
+        handler.addTransaction(a_reads_y, readKeyYAndAnother, new HashSet<>(), 1000);
+
+        Assertions.assertArrayEquals(new short[]{ 1, 2 }, handler.getTransactionsPerSublistInOrder());
+    }
+
     private HashSet<ByteArrayWrapper> createASetAndAddKeys(ByteArrayWrapper... aKey) {
         return new HashSet<>(Arrays.asList(aKey));
     }

@@ -9,7 +9,7 @@ import org.ethereum.util.RLPList;
 import java.util.Arrays;
 import java.util.List;
 
-public class BlockHeaderExtensionV1 extends BlockHeaderExtension {
+public class BlockHeaderExtensionV1 implements BlockHeaderExtension {
     @Override
     public byte getHeaderVersion() { return 0x1; }
 
@@ -27,7 +27,7 @@ public class BlockHeaderExtensionV1 extends BlockHeaderExtension {
 
     public BlockHeaderExtensionV1(byte[] logsBloom, short[] edges) {
         this.logsBloom = logsBloom;
-        this.setTxExecutionSublistsEdges(edges);
+        this.txExecutionSublistsEdges = edges != null ? Arrays.copyOf(edges, edges.length) : null;
     }
 
     public byte[] getHash() {
@@ -38,7 +38,9 @@ public class BlockHeaderExtensionV1 extends BlockHeaderExtension {
     public byte[] getEncoded() {
         List<byte[]> fieldToEncodeList = Lists.newArrayList(RLP.encodeByte(this.getHeaderVersion()), RLP.encodeElement(this.getLogsBloom()));
         short[] txExecutionSublistsEdges = this.getTxExecutionSublistsEdges();
-        if (txExecutionSublistsEdges != null) fieldToEncodeList.add(ByteUtil.shortsToRLP(this.getTxExecutionSublistsEdges()));
+        if (txExecutionSublistsEdges != null) {
+            fieldToEncodeList.add(ByteUtil.shortsToRLP(this.getTxExecutionSublistsEdges()));
+        }
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 

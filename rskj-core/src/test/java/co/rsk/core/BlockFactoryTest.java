@@ -299,7 +299,7 @@ class BlockFactoryTest {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number - 1).build();
-        Assertions.assertEquals(header.getVersion(), 0);
+        Assertions.assertEquals(0, header.getVersion());
     }
 
     @Test
@@ -307,7 +307,7 @@ class BlockFactoryTest {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
-        Assertions.assertEquals(header.getVersion(), 1);
+        Assertions.assertEquals(1, header.getVersion());
     }
 
     @Test

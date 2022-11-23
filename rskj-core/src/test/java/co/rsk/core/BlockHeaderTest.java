@@ -419,7 +419,7 @@ class BlockHeaderTest {
         Assertions.assertEquals(0x1, logsBloomField[0]);
         Assertions.assertArrayEquals(header.getExtension().getHash(), Arrays.copyOfRange(logsBloomField, 1, 33));
         for (byte b:Arrays.copyOfRange(logsBloomField, 33, Bloom.BLOOM_BYTES)) Assertions.assertEquals(0x0, b);
-        Assertions.assertEquals(logsBloomField.length, Bloom.BLOOM_BYTES);
+        Assertions.assertEquals(Bloom.BLOOM_BYTES, logsBloomField.length);
     }
 
     private BlockHeaderV1 createV1FromV0(BlockHeaderV0 headerV0) {

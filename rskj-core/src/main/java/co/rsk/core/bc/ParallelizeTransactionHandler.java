@@ -151,64 +151,78 @@ public class ParallelizeTransactionHandler {
         return sublistCandidate;
     }
 
-
     private TransactionSublist getSublistCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         Optional<TransactionSublist> sublistCandidate = getSublistBySender(tx);
 
         if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
-            return getSequentialSublist();
-        }
-
-        // read - written
-        for (ByteArrayWrapper newReadKey : newReadKeys) {
-            if (sublistsHavingWrittenToKey.containsKey(newReadKey)) {
-                TransactionSublist sublist = sublistsHavingWrittenToKey.get(newReadKey);
-                sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
-            }
-        }
-
-        if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
+            // there is a tx with the same sender in the sequential sublist
             return sublistCandidate.get();
         }
 
+        // analyze reads
+        for (ByteArrayWrapper newReadKey : newReadKeys) {
+            // read - written
+            if (sublistsHavingWrittenToKey.containsKey(newReadKey)) {
+                TransactionSublist sublist = sublistsHavingWrittenToKey.get(newReadKey);
+
+                if (sublist.isSequential()) {
+                    // there is a tx with read-written collision in sequential sublist
+                    return sublist;
+                }
+                if (!sublistCandidate.isPresent()) {
+                    // this is the new candidate
+                    sublistCandidate = Optional.of(sublist);
+                } else if (!sublistCandidate.get().equals(sublist)) {
+                    // use the sequential sublist (greedy decision)
+                    return getSequentialSublist();
+                }
+            }
+        }
+
+        // analyze writes
         for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
-            // written - written,
+            // write - written
             if (sublistsHavingWrittenToKey.containsKey(newWrittenKey)) {
                 TransactionSublist sublist = sublistsHavingWrittenToKey.get(newWrittenKey);
-                sublistCandidate = Optional.of(sublistCandidate.map(sc -> returnsSequentialIfBothAreDifferent(sc, sublist)).orElse(sublist));
+
+                if (sublist.isSequential()) {
+                    // there is a tx with write-written collision in sequential sublist
+                    return sublist;
+                }
+                if (!sublistCandidate.isPresent()) {
+                    // this is the new candidate
+                    sublistCandidate = Optional.of(sublist);
+                } else if (!sublistCandidate.get().equals(sublist)) {
+                    // use the sequential sublist (greedy decision)
+                    return getSequentialSublist();
+                }
             }
 
-            if (sublistCandidate.isPresent() && sublistCandidate.get().isSequential()) {
-                return sublistCandidate.get();
-            }
-            // read - written
+            // write - read
             if (sublistsHavingReadFromKey.containsKey(newWrittenKey)) {
-                Set<TransactionSublist> sublist = sublistsHavingReadFromKey.get(newWrittenKey);
-
-                if (sublist.size() > 1) {
+                Set<TransactionSublist> sublists = sublistsHavingReadFromKey.get(newWrittenKey);
+                if (sublists.size() > 1) {
+                    // there is a write-read collision with multiple sublists
                     return getSequentialSublist();
                 }
 
-                sublistCandidate = Optional.of(sublistCandidate.map(sc -> getTransactionSublistForReadKeys(sublist, sc)).orElse(getNextSublist(sublist)));
+                // there is only one colluded sublist
+                TransactionSublist sublist = getNextSublist(sublists);
+                if (!sublistCandidate.isPresent()) {
+                    // if there is no candidate, take the colluded sublist
+                    sublistCandidate = Optional.of(sublist);
+                } else if (!sublistCandidate.get().equals(sublist)) {
+                    // otherwise, check if the sublist is different from the candidate and return the sequential
+                    return getSequentialSublist();
+                }
             }
         }
 
-        return sublistCandidate.orElseGet(() -> getAvailableSublistWithLessUsedGas(GasCost.toGas(tx.getGasLimit())).orElseGet(this::getSequentialSublist));
-    }
-
-    private TransactionSublist getTransactionSublistForReadKeys(Set<TransactionSublist> sublist, TransactionSublist sc) {
-        if (!sublist.contains(sc)) {
-            return getSequentialSublist();
-        }
-
-        return getNextSublist(sublist);
-    }
-
-    private TransactionSublist returnsSequentialIfBothAreDifferent(TransactionSublist sublist1, TransactionSublist sublist2) {
-        if (!sublist1.equals(sublist2)) {
-            return getSequentialSublist();
-        }
-        return sublist1;
+        // if there is no candidate use the sublist with more gas available
+        // if the is no more gas available in any parallel sublist use the sequential
+        return sublistCandidate
+                .orElseGet(() -> getAvailableSublistWithLessUsedGas(GasCost.toGas(tx.getGasLimit()))
+                        .orElseGet(this::getSequentialSublist));
     }
 
     private TransactionSublist getNextSublist(Set<TransactionSublist> sublist) {

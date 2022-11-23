@@ -31,9 +31,11 @@ public class BlockHeaderV0 extends BlockHeader {
     @Override
     public byte getVersion() { return 0x0; }
     @Override
-    public BlockHeaderExtension getExtension() { return null; }
+    public BlockHeaderExtension getExtension() { return null; } // block header v0 has no extension
     @Override
-    public void setExtension(BlockHeaderExtension extension) {}
+    public void setExtension(BlockHeaderExtension extension) {
+        // block header v0 has no extension
+    }
 
     private byte[] logsBloom;
     private short[] txExecutionSublistsEdges;

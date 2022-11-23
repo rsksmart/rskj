@@ -83,9 +83,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             int numberOfTransactions = block.getTransactionsList().size();
             boolean isRemascTransaction = tx.isRemascTransaction(this.i, numberOfTransactions);
 
-            if (this.remascEnabled && isRemascTransaction) {
-                addFeesToRemasc();
-            }
+            addFeesToRemascIfEnabled(isRemascTransaction);
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
@@ -101,16 +99,7 @@ public class TransactionListExecutor implements Callable<Boolean> {
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
-                // It's used just for testing, the last tx should be always the REMASC.
-                payToRemascWhenThereIsNoRemascTx(numberOfTransactions, isRemascTransaction);
-                if (!discardInvalidTxs) {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), tx.getHash()
-                    );
-                    return false;
-                }
-
-                logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                if (discardIfInvalid(tx, numberOfTransactions, isRemascTransaction)) return false;
                 continue;
             }
 
@@ -130,30 +119,20 @@ public class TransactionListExecutor implements Callable<Boolean> {
             long txGasUsed = txExecutor.getGasUsed();
             totalGasUsed += txGasUsed;
 
-            Coin txPaidFees = txExecutor.getPaidFees();
-            if (txPaidFees != null) {
-                totalPaidFees = totalPaidFees.add(txPaidFees);
-            }
+            addPaidFeesToToal(txExecutor);
 
             // It's used just for testing, the last tx should be always the REMASC.
             payToRemascWhenThereIsNoRemascTx(numberOfTransactions, isRemascTransaction);
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(txGasUsed);
-            receipt.setCumulativeGas(totalGasUsed);
-
-            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
-            receipt.setTransaction(tx);
-            receipt.setLogInfoList(txExecutor.getVMLogs());
-            receipt.setStatus(txExecutor.getReceipt().getStatus());
+            TransactionReceipt receipt = createTransactionReceipt(totalGasUsed, tx, txExecutor, txGasUsed);
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", i + 1);
-
             i++;
+
+            logger.trace("tx[{}].receipt", i);
 
             receipts.put(i, receipt);
 
@@ -161,6 +140,45 @@ public class TransactionListExecutor implements Callable<Boolean> {
         }
         totalGas += totalGasUsed;
         return true;
+    }
+
+    private boolean discardIfInvalid(Transaction tx, int numberOfTransactions, boolean isRemascTransaction) {
+        // It's used just for testing, the last tx should be always the REMASC.
+        payToRemascWhenThereIsNoRemascTx(numberOfTransactions, isRemascTransaction);
+        if (!discardInvalidTxs) {
+            logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                    block.getNumber(), tx.getHash()
+            );
+            return true;
+        }
+
+        logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+        return false;
+    }
+
+    private TransactionReceipt createTransactionReceipt(long totalGasUsed, Transaction tx, TransactionExecutor txExecutor, long txGasUsed) {
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setGasUsed(txGasUsed);
+        receipt.setCumulativeGas(totalGasUsed);
+
+        receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
+        receipt.setTransaction(tx);
+        receipt.setLogInfoList(txExecutor.getVMLogs());
+        receipt.setStatus(txExecutor.getReceipt().getStatus());
+        return receipt;
+    }
+
+    private void addPaidFeesToToal(TransactionExecutor txExecutor) {
+        Coin txPaidFees = txExecutor.getPaidFees();
+        if (txPaidFees != null) {
+            totalPaidFees = totalPaidFees.add(txPaidFees);
+        }
+    }
+
+    private void addFeesToRemascIfEnabled(boolean isRemascTransaction) {
+        if (this.remascEnabled && isRemascTransaction) {
+            addFeesToRemasc();
+        }
     }
 
     private void payToRemascWhenThereIsNoRemascTx(int numberOfTransactions, boolean isRemascTransaction) {

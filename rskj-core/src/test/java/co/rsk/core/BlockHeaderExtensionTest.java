@@ -1,12 +1,16 @@
 package co.rsk.core;
 
+import com.google.common.collect.Lists;
 import org.ethereum.core.BlockHeaderExtension;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.Bloom;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 public class BlockHeaderExtensionTest {
     @Test
@@ -27,5 +31,22 @@ public class BlockHeaderExtensionTest {
 
         Assertions.assertEquals(extension.getHeaderVersion(), decoded.getHeaderVersion());
         Assertions.assertArrayEquals(extension.getHash(), extension.getHash());
+    }
+
+    @Test
+    public void invalidDecode() {
+        byte version = 0;
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeaderExtension decoded = BlockHeaderExtension.fromEncoded(
+                new RLPList(RLP.encodeList(
+                        RLP.encodeByte(version),
+                        RLP.encodeElement(logsBloom),
+                        ByteUtil.shortsToRLP(edges)
+                ), 0)
+        );
+
+        Assertions.assertNull(decoded);
     }
 }

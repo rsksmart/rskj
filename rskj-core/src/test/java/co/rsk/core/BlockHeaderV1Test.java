@@ -77,7 +77,7 @@ public class BlockHeaderV1Test {
         byte[] field = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
         Assertions.assertEquals((byte) 0x1, field[0]);
         for (int i = 33; i < 256; i++) Assertions.assertEquals((byte) 0x0, field[i]);
-        Assertions.assertEquals(field.length, Bloom.BLOOM_BYTES);
+        Assertions.assertEquals(Bloom.BLOOM_BYTES, field.length);
     }
 
     BlockHeaderV1 encodedHeaderWithRandomLogsBloom() {
