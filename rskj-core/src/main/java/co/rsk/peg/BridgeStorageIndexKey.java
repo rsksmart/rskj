@@ -2,7 +2,7 @@ package co.rsk.peg;
 
 import org.ethereum.vm.DataWord;
 
-public enum BridgeStorageIndexKeys {
+public enum BridgeStorageIndexKey {
     NEW_FEDERATION_BTC_UTXOS_KEY("newFederationBtcUTXOs"),
     NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP("newFederationBtcUTXOsForTestnet"),
     NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP("newFedBtcUTXOsForTestnetPostHop"),
@@ -43,7 +43,7 @@ public enum BridgeStorageIndexKeys {
 
     private String key;
 
-    BridgeStorageIndexKeys(String key) {
+    BridgeStorageIndexKey(String key) {
         this.key = key;
     }
 

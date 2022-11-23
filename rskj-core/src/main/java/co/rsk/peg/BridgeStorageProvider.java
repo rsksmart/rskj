@@ -37,7 +37,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
-import static co.rsk.peg.BridgeStorageIndexKeys.*;
+import static co.rsk.peg.BridgeStorageIndexKey.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
@@ -1028,7 +1028,7 @@ public class BridgeStorageProvider {
         return BridgeSerializationUtils.deserializeFederation(data, networkParameters);
     }
 
-    private <T> T safeGetFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) {
+    private <T> T safeGetFromRepository(BridgeStorageIndexKey keyAddress, RepositoryDeserializer<T> deserializer) {
         return safeGetFromRepository(keyAddress.getKey(), deserializer);
     }
 
@@ -1040,7 +1040,7 @@ public class BridgeStorageProvider {
         }
     }
 
-    private <T> T getFromRepository(BridgeStorageIndexKeys keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
+    private <T> T getFromRepository(BridgeStorageIndexKey keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
         return getFromRepository(keyAddress.getKey(), deserializer);
     }
 
@@ -1049,7 +1049,7 @@ public class BridgeStorageProvider {
         return deserializer.deserialize(data);
     }
 
-    private <T> void safeSaveToRepository(BridgeStorageIndexKeys addressKey, T object, RepositorySerializer<T> serializer) {
+    private <T> void safeSaveToRepository(BridgeStorageIndexKey addressKey, T object, RepositorySerializer<T> serializer) {
         safeSaveToRepository(addressKey.getKey(), object, serializer);
     }
     private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
@@ -1060,7 +1060,7 @@ public class BridgeStorageProvider {
         }
     }
 
-    private <T> void saveToRepository(BridgeStorageIndexKeys indexKeys, T object, RepositorySerializer<T> serializer) throws IOException {
+    private <T> void saveToRepository(BridgeStorageIndexKey indexKeys, T object, RepositorySerializer<T> serializer) throws IOException {
         saveToRepository(indexKeys.getKey(), object, serializer);
     }
 

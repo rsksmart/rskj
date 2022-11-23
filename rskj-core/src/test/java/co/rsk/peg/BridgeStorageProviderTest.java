@@ -71,7 +71,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static co.rsk.peg.BridgeStorageIndexKeys.*;
+import static co.rsk.peg.BridgeStorageIndexKey.*;
 
 /**
  * Created by ajlopez on 6/7/2016.
