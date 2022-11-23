@@ -51,7 +51,7 @@ public enum BridgeStorageIndexKey {
         return DataWord.fromString(key);
     }
 
-    public DataWord getCompoundKeyDataWord(String delimiter, String identifier) {
+    public DataWord getCompoundKey(String delimiter, String identifier) {
         return DataWord.fromLongString(key + delimiter + identifier);
     }
 }
