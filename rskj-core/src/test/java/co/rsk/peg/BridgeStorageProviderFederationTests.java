@@ -53,11 +53,6 @@ public class BridgeStorageProviderFederationTests {
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private ActivationConfig.ForBlock activations;
 
-    @Before
-    public void setUp() throws Exception {
-
-    }
-
     @Test
     public void getNewFederation_should_return_P2shErpFederation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
