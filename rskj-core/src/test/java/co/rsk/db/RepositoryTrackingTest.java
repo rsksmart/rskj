@@ -147,31 +147,9 @@ public class RepositoryTrackingTest {
         assertRepositoryHasSize(1, 1);
     }
 
-    public void tracksReadAndWriteOnAddBalanceOfNonExistent () {
-        repository.addBalance(COW, Coin.valueOf(1));
-
-        assertRepositoryHasSize(1, 1);
-    }
-
-    public void tracksReadAndWriteOnAddBalanceZeroOfNonExistent () {
-        repository.addBalance(COW, Coin.valueOf(0));
-
-        assertRepositoryHasSize(1, 1);
-    }
-
-    public void tracksReadAndWriteOnAddBalanceOfExistent () {
-        repository.addBalance(COW, Coin.valueOf(1));
-
-        tracker.clear();
-
-        repository.addBalance(COW, Coin.valueOf(1));
-
-        assertRepositoryHasSize(1, 1);
-    }
-
-    public void doesntTrackWriteOnAddBalanceZeroOfExistent () {
-        repository.addBalance(COW, Coin.valueOf(1));
-
+    @Test
+    void addZeroBalanceShouldNotWriteAKey() {
+        repository.createAccount(COW);
         tracker.clear();
 
         repository.addBalance(COW, Coin.valueOf(0));
