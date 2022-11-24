@@ -3407,7 +3407,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298() {
+    void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298() {
         Repository repository = mock(Repository.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -3426,7 +3426,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298() {
+    void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298() {
         Repository repository = mock(Repository.class);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3461,7 +3461,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_for_a_null_btcTxHash_after_RSKIP298() {
+    void getPegoutCreationRskTxHashByBtcTxHash_for_a_null_btcTxHash_after_RSKIP298() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
@@ -3483,7 +3483,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void setPegoutCreationEntry_before_RSKIP298() throws IOException {
+    void setPegoutCreationEntry_before_RSKIP298() throws IOException {
         Repository repository = mock(Repository.class);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3507,7 +3507,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void setPegoutCreationEntry_ok_after_RSKIP298() throws IOException {
+    void setPegoutCreationEntry_ok_after_RSKIP298() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
@@ -3533,7 +3533,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void setPegoutCreationEntry_rskTxHash_is_null_after_RSKIP298() throws IOException {
+    void setPegoutCreationEntry_rskTxHash_is_null_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3564,7 +3564,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void savePegoutCreationEntry_before_RSKIP298() throws IOException {
+    void savePegoutCreationEntry_before_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3593,7 +3593,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void savePegoutCreationEntry_zero_hash_after_RSKIP298() throws IOException {
+    void savePegoutCreationEntry_zero_hash_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3626,7 +3626,7 @@ class BridgeStorageProviderTest {
     }
 
     @Test
-    public void savePegoutCreationEntry_ok_after_RSKIP298() throws IOException {
+    void savePegoutCreationEntry_ok_after_RSKIP298() throws IOException {
         Repository repository = spy(createRepository());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);

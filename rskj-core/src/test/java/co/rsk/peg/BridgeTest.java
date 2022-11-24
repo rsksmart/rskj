@@ -83,7 +83,7 @@ class BridgeTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() throws VMException {
+    void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP298), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -99,7 +99,7 @@ class BridgeTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298_activation() throws VMException {
+    void getPegoutCreationRskTxHashByBtcTxHash_after_RSKIP298_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP298), anyLong());
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(13);
@@ -121,7 +121,7 @@ class BridgeTest {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() throws VMException {
+    void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP298), anyLong());
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(17);

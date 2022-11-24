@@ -6,26 +6,27 @@ import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
-    @Before
-    public void setUpOnEachTest() {
+class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
+
+    @BeforeEach
+    void setUp() {
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() {
+    void getPegoutCreationRskTxHashByBtcTxHash_before_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(false);
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(15);
@@ -40,7 +41,7 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_ok_after_RSKIP298_activation() {
+    void getPegoutCreationRskTxHashByBtcTxHash_ok_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(3);
@@ -60,7 +61,7 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() {
+    void getPegoutCreationRskTxHashByBtcTxHash_not_found_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(9);
@@ -79,7 +80,7 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_by_zero_hash_after_RSKIP298_activation() {
+    void getPegoutCreationRskTxHashByBtcTxHash_by_zero_hash_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         Sha256Hash btcTxHash = Sha256Hash.ZERO_HASH;
@@ -99,7 +100,7 @@ public class BridgeSupportPegoutCreationTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void getPegoutCreationRskTxHashByBtcTxHash_btcTxHash_is_null_after_RSKIP298_activation() {
+    void getPegoutCreationRskTxHashByBtcTxHash_btcTxHash_is_null_after_RSKIP298_activation() {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
