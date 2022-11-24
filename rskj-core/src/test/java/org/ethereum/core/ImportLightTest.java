@@ -83,8 +83,8 @@ public class ImportLightTest {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         repositoryLocator,
-                        transactionExecutorFactory
-                ),
+                        transactionExecutorFactory,
+                        false, false),
                 stateRootHandler
         );
 

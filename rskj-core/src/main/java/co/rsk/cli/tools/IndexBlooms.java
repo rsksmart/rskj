@@ -40,7 +40,7 @@ public class IndexBlooms {
     private static final String LATEST = "latest";
 
     public static void main(String[] args) {
-        try (RskContext ctx = new RskContext(args)) {
+        try (RskContext ctx = new RskContext(args, false, true)) {
             BlockStore blockStore = ctx.getBlockStore();
             BlocksBloomStore blocksBloomStore = ctx.getBlocksBloomStore();
 
