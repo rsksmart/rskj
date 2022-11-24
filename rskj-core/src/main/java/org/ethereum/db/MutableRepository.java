@@ -299,7 +299,7 @@ public class MutableRepository implements Repository {
     public synchronized Coin addBalance(RskAddress addr, Coin value) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
-        if (value == Coin.ZERO) {
+        if (value.equals(Coin.ZERO)) {
             return account.getBalance();
         }
 
