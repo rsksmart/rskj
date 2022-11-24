@@ -46,6 +46,8 @@ import org.ethereum.util.RLPList;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -1057,23 +1059,18 @@ class BridgeSerializationUtilsTest {
         }
     }
 
-    @Test
-    void deserializeKeccak256() {
-        byte[] serializedKeccak256Hash = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
-        Keccak256 expectedHash = new Keccak256("0200000000000000000000000000000000000000000000000000000000000000");
-        test_deserializeKeccak256(serializedKeccak256Hash, expectedHash, true);
-    }
-
-    @Test
-    void deserializeKeccak256_nullValue() {
-        test_deserializeKeccak256(null, null, false);
-    }
-
-    @Test
-    void deserializeKeccak256_zeroHash() {
-        byte[] serializedKeccak256Hash = Hex.decode("a00000000000000000000000000000000000000000000000000000000000000000");
-        Keccak256 expectedHash = new Keccak256("0000000000000000000000000000000000000000000000000000000000000000");
-        test_deserializeKeccak256(serializedKeccak256Hash, expectedHash, true);
+    @ParameterizedTest
+    @CsvSource(
+        value = {
+            "a00200000000000000000000000000000000000000000000000000000000000000, 0200000000000000000000000000000000000000000000000000000000000000, true",
+            "a00000000000000000000000000000000000000000000000000000000000000000, 0000000000000000000000000000000000000000000000000000000000000000, true",
+            "null, null, false"
+        }
+    , nullValues = "null")
+    void deserializeKeccak256(String keccak256Hash, String expectedKeccak256, boolean shouldDeserialize) {
+        byte[] serializedKeccak256Hash = keccak256Hash == null? null: Hex.decode(keccak256Hash);
+        Keccak256 expectedHash = expectedKeccak256 == null? null: new Keccak256(expectedKeccak256);
+        test_deserializeKeccak256(serializedKeccak256Hash, expectedHash, shouldDeserialize);
     }
 
     private void test_serializeKeccak256(Keccak256 keccakHash, byte[] expectedSerializedKeccak256Hash) {
@@ -1082,7 +1079,7 @@ class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void serializeKeccak256() {
+    void serializeKeccak256() {
         Keccak256 keccakHash = new Keccak256("0200000000000000000000000000000000000000000000000000000000000000");
         byte[] expectedSerializedKeccak256Hash = Hex.decode("a00200000000000000000000000000000000000000000000000000000000000000");
         test_serializeKeccak256(keccakHash, expectedSerializedKeccak256Hash);

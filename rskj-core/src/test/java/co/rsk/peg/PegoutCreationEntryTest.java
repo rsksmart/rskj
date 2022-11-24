@@ -4,16 +4,17 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 
-public class PegoutCreationEntryTest {
+
+class PegoutCreationEntryTest {
 
     @Test
-    public void testGetPegoutCreationEntryBtcTxHash() {
+    void testGetPegoutCreationEntryBtcTxHash() {
         Sha256Hash btcTxHash = PegTestUtils.createHash(3);
         Keccak256 rskTxHash = PegTestUtils.createHash3(5);
 
@@ -24,7 +25,7 @@ public class PegoutCreationEntryTest {
     }
 
     @Test
-    public void testGetPegoutCreationEntryRskTxHash() {
+    void testGetPegoutCreationEntryRskTxHash() {
         Sha256Hash btcTxHash = PegTestUtils.createHash(5);
         Keccak256 rskTxHash = PegTestUtils.createHash3(3);
 
@@ -35,7 +36,7 @@ public class PegoutCreationEntryTest {
     }
 
     @Test
-    public void testTestEquals() {
+    void testTestEquals() {
         Sha256Hash btcTxHash = PegTestUtils.createHash(8);
         Keccak256 rskTxHash = PegTestUtils.createHash3(13);
 
@@ -53,7 +54,7 @@ public class PegoutCreationEntryTest {
     }
 
     @Test
-    public void testTestHashCode() {
+    void testTestHashCode() {
         Sha256Hash btcTxHash = PegTestUtils.createHash(13); // hashcode = 0
         Keccak256 rskTxHash = new Keccak256(
             Keccak256Helper.keccak256(ByteUtil.toHexString("rsk".getBytes()))
@@ -66,7 +67,7 @@ public class PegoutCreationEntryTest {
     }
 
     @Test
-    public void testTestToString() {
+    void testTestToString() {
         Sha256Hash btcTxHash = PegTestUtils.createHash(3);
         Keccak256 rskTxHash = PegTestUtils.createHash3(10);
 
