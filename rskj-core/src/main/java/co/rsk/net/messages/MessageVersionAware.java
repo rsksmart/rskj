@@ -26,7 +26,6 @@ public abstract class MessageVersionAware extends Message {
 
     protected abstract byte[] encodeWithoutVersion();
 
-    @Override
     public byte[] getEncodedMessage() {
         byte[] encodedMessage = encodeWithoutVersion();
 

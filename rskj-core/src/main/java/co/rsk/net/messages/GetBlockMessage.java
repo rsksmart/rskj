@@ -35,7 +35,7 @@ public class GetBlockMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public GetBlockMessage(byte[] hash) {
-        this(0, hash);
+        this(MessageVersionValidator.DISABLED_VERSION, hash);
     }
 
     @Override

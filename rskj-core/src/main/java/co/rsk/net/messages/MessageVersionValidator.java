@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 
 public class MessageVersionValidator { // TODO(iago:2) rename, it is not only validator
 
-    // TODO(iago:2) move to an enum or similar
     public static final int DISABLED_VERSION = -1;
 
     private final IntSupplier versionSupplier;
@@ -95,7 +94,4 @@ public class MessageVersionValidator { // TODO(iago:2) rename, it is not only va
         return this.versionSupplier.getAsInt();
     }
 
-    public boolean isVersioningEnabled() {
-        return isVersioningEnabledFor(getLocalVersion());
-    }
 }

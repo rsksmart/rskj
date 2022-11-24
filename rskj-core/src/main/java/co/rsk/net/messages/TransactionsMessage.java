@@ -39,7 +39,7 @@ public class TransactionsMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public TransactionsMessage(List<Transaction> transactions) {
-        this(0, transactions);
+        this(MessageVersionValidator.DISABLED_VERSION, transactions);
     }
 
     public List<Transaction> getTransactions() {

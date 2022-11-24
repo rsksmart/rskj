@@ -38,7 +38,7 @@ public class StatusMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public StatusMessage(Status status) {
-        this(0, status);
+        this(MessageVersionValidator.DISABLED_VERSION, status);
     }
 
     @Override

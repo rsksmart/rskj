@@ -134,6 +134,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 RskMessage rskmessage = (RskMessage)msg;
                 Message message = rskmessage.getMessage();
 
+                // TODO:I rethink this
                 if (message instanceof StatusMessage) {
                     StatusMessage statusMessage = (StatusMessage) message;
                     Status localStatus = statusResolver.currentStatusLenient();

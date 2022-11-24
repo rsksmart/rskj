@@ -20,7 +20,6 @@
 package org.ethereum.net.eth.message;
 
 import co.rsk.net.eth.RskMessage;
-import co.rsk.net.messages.MessageVersionValidator;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.net.message.Message;
 import org.ethereum.util.RLP;
@@ -36,11 +35,8 @@ public class Eth62MessageFactory {
 
     private final BlockFactory blockFactory;
 
-    private final MessageVersionValidator messageVersionValidator;
-
-    public Eth62MessageFactory(BlockFactory blockFactory, MessageVersionValidator messageVersionValidator) {
+    public Eth62MessageFactory(BlockFactory blockFactory) {
         this.blockFactory = blockFactory;
-        this.messageVersionValidator = messageVersionValidator;
     }
 
     public Message create(byte code, byte[] encoded) {
@@ -51,7 +47,7 @@ public class Eth62MessageFactory {
                 return new StatusMessage(encoded);
             case RSK_MESSAGE:
                 RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
-                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, (RLPList) paramsList.get(0), messageVersionValidator.isVersioningEnabled()));
+                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, (RLPList) paramsList.get(0)));
             default:
                 throw new IllegalArgumentException("No such message");
         }

@@ -39,7 +39,12 @@ import static org.ethereum.util.ByteUtil.byteArrayToInt;
 public enum MessageType {
 
     STATUS_MESSAGE(1) {
-        private Message createMessageCommon(int version, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             byte[] rlpdata = list.get(0).getRLPData();
             long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
             byte[] hash = list.get(1).getRLPData();
@@ -54,80 +59,44 @@ public enum MessageType {
 
             return new StatusMessage(version, new Status(number, hash, parentHash, totalDifficulty));
         }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), getContent(list));
-        }
     },
     BLOCK_MESSAGE(2) {
-        private Message createMessageCommon(int version, BlockFactory blockFactory, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             return new BlockMessage(version, blockFactory.decodeBlock(list.get(0).getRLPData()));
-        }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, blockFactory, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), blockFactory, getContent(list));
         }
     },
     GET_BLOCK_MESSAGE(3) {
-        private Message createMessageCommon(int version, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             return new GetBlockMessage(version, list.get(0).getRLPData());
-        }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     NEW_BLOCK_HASHES(6) {
-        private Message createMessageCommon(int version, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             return new NewBlockHashesMessage(version, list.getRLPData());
-        }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     TRANSACTIONS(7) {
-        private Message createMessageCommon(int version, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             List<Transaction> txs = new ArrayList<>();
 
             for (int k = 0; k < list.size(); k++) {
@@ -144,20 +113,6 @@ public enum MessageType {
             }
 
             return new TransactionsMessage(version, txs);
-        }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), getContent(list));
         }
     },
     BLOCK_HASH_REQUEST_MESSAGE(8) {
@@ -313,23 +268,14 @@ public enum MessageType {
         }
     },
     NEW_BLOCK_HASH_MESSAGE(17) {
-        private Message createMessageCommon(int version, RLPList list) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
+            MessageData messageData = MessageData.create(msgList);
+            int version = messageData.version;
+            RLPList list = messageData.content;
+
             byte[] hash = list.get(0).getRLPData();
             return new NewBlockHashMessage(version, hash);
-        }
-
-        /**
-         * @deprecated Some time after versioning being enabled all nodes should be updated and this method could be removed
-         */
-        @Override
-        @Deprecated
-        public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(MessageVersionValidator.DISABLED_VERSION, list);
-        }
-
-        @Override
-        public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-            return createMessageCommon(getVersion(list), getContent(list));
         }
     };
 
@@ -340,11 +286,6 @@ public enum MessageType {
     }
 
     public abstract Message createMessage(BlockFactory blockFactory, RLPList list);
-
-    // Fallback behavior for methods without versioning, override on methods with it
-    public Message createVersionedMessage(BlockFactory blockFactory, RLPList list) {
-        return createMessage(blockFactory, list);
-    }
 
     public byte getTypeAsByte() {
         return (byte) this.type;
@@ -363,18 +304,55 @@ public enum MessageType {
         return data.length <= 1 << 19;  /* 512KB */
     }
 
-    private static int getVersion(RLPList list) {
-        try {
-            // version must be first item
-            byte[] data = list.get(0).getRLPData();
-            return ByteUtil.byteArrayToInt(data);
-        } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Could not get version from RLP: " + nfe.getMessage());
-        }
-    }
+    private static class MessageData {
+        private final int version;
+        private final RLPList content;
 
-    private static RLPList getContent(RLPList list) {
-        // TODO(iago:2) validate this decodeList!!!
-        return RLP.decodeList(list.get(1).getRLPData());
+        private MessageData(int version, RLPList content) {
+            this.version = version;
+            this.content = content;
+        }
+
+        private static MessageData create(RLPList list) {
+
+// TODO(iago:1)
+//            - [ ] versionar todos los mensajes? de cara al futuro, si un nuevo mensaje es versionado, el -1 ya no se podrá usar para deshabilitarlo como ahora xq será para todos o ninguno
+//
+//            creo q es mejor versionarlos todos aunq para algunos no se hagan comprobaciones
+//
+//            así el MessageInfo se podría usar en un sitio sólo
+//
+//            pero ojo xq los q tienen id ya tienen tamaño 2 sin versión, esto complica un poco la comprobación de si el mensaje es versioned o no
+
+            // if received message does not contain version, assume disabled versioning for the peer and the message
+            MessageData fallback = new MessageData(MessageVersionValidator.DISABLED_VERSION, list);
+
+            // size!=2: for sure not a versioned message (needs 2 elements)
+            if (list.size() != 2) {
+                return fallback;
+            }
+
+            // size=2: it could be either a versioned message or a status message (2 param variant), so we need to check
+            // if 2nd element is a list (content) and 1st one an int (version) to identify it (check order matters)
+
+            int version;
+            RLPList content;
+
+            try {
+                content = RLP.decodeList(list.get(1).getRLPData());
+            } catch (IllegalArgumentException iae) { // NOSONAR expected exception, no need to log or throw
+                return fallback; // not versioned
+            }
+
+            try {
+                byte[] data = list.get(0).getRLPData();
+                version = ByteUtil.byteArrayToInt(data);
+            } catch (NumberFormatException nfe) { // NOSONAR expected exception, no need to log or throw
+                return fallback; // not versioned
+            }
+
+            // for sure a versioned message here
+            return new MessageData(version, content);
+        }
     }
 }

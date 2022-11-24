@@ -60,7 +60,7 @@ public class NewBlockHashesMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
-        this(0, blockIdentifiers);
+        this(MessageVersionValidator.DISABLED_VERSION, blockIdentifiers);
     }
 
     private void parse() {

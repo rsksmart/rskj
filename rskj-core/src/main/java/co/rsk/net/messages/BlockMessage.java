@@ -36,7 +36,7 @@ public class BlockMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public BlockMessage(Block block) {
-        this(0, block);
+        this(MessageVersionValidator.DISABLED_VERSION, block);
     }
 
     public Block getBlock() {

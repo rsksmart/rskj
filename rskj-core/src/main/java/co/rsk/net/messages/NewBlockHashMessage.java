@@ -17,7 +17,7 @@ public class NewBlockHashMessage extends MessageVersionAware {
 
     @VisibleForTesting
     public NewBlockHashMessage(byte[] hash) {
-        this(0, hash);
+        this(MessageVersionValidator.DISABLED_VERSION, hash);
     }
 
     public byte[] getBlockHash() {

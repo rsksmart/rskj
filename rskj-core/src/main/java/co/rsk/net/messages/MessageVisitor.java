@@ -85,6 +85,7 @@ public class MessageVisitor {
         // used in two scenarios, peer provides us with it because:
         //  - we requested it via GetBlockMessage: peer version must NOT be lower than ours for us to accept the message (higher accepted because we could be in long sync with peer)
         //  - of regular relay: peer version must be the same as ours for us to accept the message
+        // therefore we only reject the message when peer's version is lower than ours
         if (messageVersionValidator.versionLowerThanLocal(messageVersion)) {
             loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
             return;
