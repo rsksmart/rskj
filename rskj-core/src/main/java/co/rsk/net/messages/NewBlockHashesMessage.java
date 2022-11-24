@@ -18,7 +18,6 @@
  */
 package co.rsk.net.messages;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
@@ -35,9 +34,8 @@ import java.util.List;
  * @author Mikhail Kalinin
  * @since 05.09.2015
  */
-public class NewBlockHashesMessage extends MessageVersionAware {
+public class NewBlockHashesMessage extends Message {
 
-    private final int version;
     /**
      * List of identifiers holding hash and number of the blocks
      */
@@ -46,21 +44,14 @@ public class NewBlockHashesMessage extends MessageVersionAware {
     private boolean parsed;
     private byte[] encoded;
 
-    public NewBlockHashesMessage(int version, byte[] payload) {
-        this.version = version;
+    public NewBlockHashesMessage(byte[] payload) {
         this.encoded = payload;
         this.parsed = false;
     }
 
-    public NewBlockHashesMessage(int version, List<BlockIdentifier> blockIdentifiers) {
-        this.version = version;
+    public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
         this.blockIdentifiers = blockIdentifiers;
         parsed = true;
-    }
-
-    @VisibleForTesting
-    public NewBlockHashesMessage(List<BlockIdentifier> blockIdentifiers) {
-        this(MessageVersionValidator.DISABLED_VERSION, blockIdentifiers);
     }
 
     private void parse() {
@@ -75,7 +66,7 @@ public class NewBlockHashesMessage extends MessageVersionAware {
         parsed = true;
     }
 
-    private void encodeInternal() {
+    private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
 
         for (BlockIdentifier identifier : blockIdentifiers) {
@@ -93,14 +84,9 @@ public class NewBlockHashesMessage extends MessageVersionAware {
     }
 
     @Override
-    public int getVersion() {
-        return version;
-    }
-
-    @Override
-    public byte[] encodeWithoutVersion() {
+    public byte[] getEncodedMessage() {
         if (encoded == null) {
-            encodeInternal();
+            encode();
         }
 
         return encoded;

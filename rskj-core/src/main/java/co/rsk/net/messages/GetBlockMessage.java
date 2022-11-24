@@ -18,24 +18,16 @@
 
 package co.rsk.net.messages;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class GetBlockMessage extends MessageVersionAware {
-    private int version;
+public class GetBlockMessage extends Message {
     private byte[] hash;
 
-    public GetBlockMessage(int version, byte[] hash) {
-        this.version = version;
-        this.hash = hash;
-    }
-
-    @VisibleForTesting
     public GetBlockMessage(byte[] hash) {
-        this(MessageVersionValidator.DISABLED_VERSION, hash);
+        this.hash = hash;
     }
 
     @Override
@@ -44,12 +36,7 @@ public class GetBlockMessage extends MessageVersionAware {
     }
 
     @Override
-    public int getVersion() {
-        return version;
-    }
-
-    @Override
-    public byte[] encodeWithoutVersion() {
+    public byte[] getEncodedMessage() {
         byte[] hash = RLP.encodeElement(this.hash);
 
         return RLP.encodeList(hash);

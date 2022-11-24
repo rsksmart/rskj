@@ -76,7 +76,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private final Genesis genesis;
     private final MessageQueue msgQueue;
 
-    private final MessageVersionValidator messageVersionValidator;
+    private final LocalMessageVersionValidator localMessageVersionValidator;
 
     public RskWireProtocol(RskSystemProperties config,
                            PeerScoringManager peerScoringManager,
@@ -87,7 +87,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                            StatusResolver statusResolver,
                            MessageQueue msgQueue,
                            Channel channel,
-                           MessageVersionValidator messageVersionValidator) {
+                           LocalMessageVersionValidator localMessageVersionValidator) {
         this.ethereumListener = ethereumListener;
         this.version = V62;
 
@@ -100,7 +100,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
 
-        this.messageVersionValidator = messageVersionValidator;
+        this.localMessageVersionValidator = localMessageVersionValidator;
     }
 
     @Override
@@ -133,12 +133,10 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
             case RSK_MESSAGE:
                 RskMessage rskmessage = (RskMessage)msg;
                 Message message = rskmessage.getMessage();
-
-                // TODO:I rethink this
+                // TODO(iago:2) should we do it here or in visitor as well? here to disconnect sooner?
                 if (message instanceof StatusMessage) {
-                    StatusMessage statusMessage = (StatusMessage) message;
                     Status localStatus = statusResolver.currentStatusLenient();
-                    if (messageVersionValidator.notValidForLongSync(statusMessage.getVersion(), localStatus.getTotalDifficulty())) {
+                    if (localMessageVersionValidator.notValidForLongSync(rskmessage.getVersion(), localStatus.getTotalDifficulty())) {
                         disconnect(ReasonCode.INCOMPATIBLE_STATE);
                         return;
                     }
@@ -160,7 +158,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 }
 
                 if (this.messageHandler != null) {
-                    this.messageHandler.postMessage(channel, rskmessage.getMessage());
+                    this.messageHandler.postMessage(channel, rskmessage);
                 }
                 break;
             default:
@@ -274,8 +272,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         sendMessage(msg);
 
         // RSK new protocol send status
-        int localVersion = messageVersionValidator.getLocalVersion();
-        RskMessage rskmessage = new RskMessage(new StatusMessage(localVersion, status));
+        int localVersion = localMessageVersionValidator.getLocalVersion();
+        RskMessage rskmessage = new RskMessage(localVersion, new StatusMessage(status));
         loggerNet.trace("Sending status best block {} to {}",
                 status.getBestBlockNumber(),
                 channel.getPeerNodeID());
@@ -283,6 +281,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         ethState = EthState.STATUS_SENT;
     }
+
 
     @Override
     public boolean hasStatusPassed() {

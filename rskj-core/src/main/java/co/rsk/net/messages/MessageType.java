@@ -22,7 +22,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -40,63 +39,43 @@ public enum MessageType {
 
     STATUS_MESSAGE(1) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] rlpdata = list.get(0).getRLPData();
             long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
             byte[] hash = list.get(1).getRLPData();
 
             if (list.size() == 2) {
-                return new StatusMessage(version, new Status(number, hash));
+                return new StatusMessage(new Status(number, hash));
             }
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
             BlockDifficulty totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : RLP.parseBlockDifficulty(rlpTotalDifficulty);
 
-            return new StatusMessage(version, new Status(number, hash, parentHash, totalDifficulty));
+            return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
         }
     },
     BLOCK_MESSAGE(2) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
-            return new BlockMessage(version, blockFactory.decodeBlock(list.get(0).getRLPData()));
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return new BlockMessage(blockFactory.decodeBlock(list.get(0).getRLPData()));
         }
     },
     GET_BLOCK_MESSAGE(3) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
-            return new GetBlockMessage(version, list.get(0).getRLPData());
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return new GetBlockMessage(list.get(0).getRLPData());
         }
     },
     NEW_BLOCK_HASHES(6) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
-            return new NewBlockHashesMessage(version, list.getRLPData());
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            return new NewBlockHashesMessage(list.getRLPData());
         }
     },
     TRANSACTIONS(7) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
             List<Transaction> txs = new ArrayList<>();
 
             for (int k = 0; k < list.size(); k++) {
@@ -112,7 +91,7 @@ public enum MessageType {
                 txs.add(tx);
             }
 
-            return new TransactionsMessage(version, txs);
+            return new TransactionsMessage(txs);
         }
     },
     BLOCK_HASH_REQUEST_MESSAGE(8) {
@@ -269,13 +248,9 @@ public enum MessageType {
     },
     NEW_BLOCK_HASH_MESSAGE(17) {
         @Override
-        public Message createMessage(BlockFactory blockFactory, RLPList msgList) {
-            MessageData messageData = MessageData.create(msgList);
-            int version = messageData.version;
-            RLPList list = messageData.content;
-
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] hash = list.get(0).getRLPData();
-            return new NewBlockHashMessage(version, hash);
+            return new NewBlockHashMessage(hash);
         }
     };
 
@@ -302,57 +277,5 @@ public enum MessageType {
 
     private static boolean validTransactionLength(byte[] data) {
         return data.length <= 1 << 19;  /* 512KB */
-    }
-
-    private static class MessageData {
-        private final int version;
-        private final RLPList content;
-
-        private MessageData(int version, RLPList content) {
-            this.version = version;
-            this.content = content;
-        }
-
-        private static MessageData create(RLPList list) {
-
-// TODO(iago:1)
-//            - [ ] versionar todos los mensajes? de cara al futuro, si un nuevo mensaje es versionado, el -1 ya no se podrá usar para deshabilitarlo como ahora xq será para todos o ninguno
-//
-//            creo q es mejor versionarlos todos aunq para algunos no se hagan comprobaciones
-//
-//            así el MessageInfo se podría usar en un sitio sólo
-//
-//            pero ojo xq los q tienen id ya tienen tamaño 2 sin versión, esto complica un poco la comprobación de si el mensaje es versioned o no
-
-            // if received message does not contain version, assume disabled versioning for the peer and the message
-            MessageData fallback = new MessageData(MessageVersionValidator.DISABLED_VERSION, list);
-
-            // size!=2: for sure not a versioned message (needs 2 elements)
-            if (list.size() != 2) {
-                return fallback;
-            }
-
-            // size=2: it could be either a versioned message or a status message (2 param variant), so we need to check
-            // if 2nd element is a list (content) and 1st one an int (version) to identify it (check order matters)
-
-            int version;
-            RLPList content;
-
-            try {
-                content = RLP.decodeList(list.get(1).getRLPData());
-            } catch (IllegalArgumentException iae) { // NOSONAR expected exception, no need to log or throw
-                return fallback; // not versioned
-            }
-
-            try {
-                byte[] data = list.get(0).getRLPData();
-                version = ByteUtil.byteArrayToInt(data);
-            } catch (NumberFormatException nfe) { // NOSONAR expected exception, no need to log or throw
-                return fallback; // not versioned
-            }
-
-            // for sure a versioned message here
-            return new MessageData(version, content);
-        }
     }
 }

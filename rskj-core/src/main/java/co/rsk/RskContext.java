@@ -50,7 +50,7 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
-import co.rsk.net.messages.MessageVersionValidator;
+import co.rsk.net.messages.LocalMessageVersionValidator;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -255,7 +255,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
 
-    private MessageVersionValidator messageVersionValidator;
+    private LocalMessageVersionValidator localMessageVersionValidator;
 
     private volatile boolean closed;
 
@@ -600,8 +600,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockSyncService(),
                         getSyncConfiguration(),
                         getBlockHeaderValidator(),
-                        getBlockRelayValidator(),
-                        getMessageVersionValidator()
+                        getBlockRelayValidator()
                 );
             } else {
                 nodeBlockProcessor = new NodeBlockProcessor(
@@ -609,8 +608,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                         getBlockchain(),
                         getBlockNodeInformation(),
                         getBlockSyncService(),
-                        getSyncConfiguration(),
-                        getMessageVersionValidator()
+                        getSyncConfiguration()
                 );
             }
         }
@@ -779,7 +777,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (channelManager == null) {
-            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool(), getMessageVersionValidator());
+            channelManager = new ChannelManagerImpl(getRskSystemProperties(), getSyncPool());
         }
 
         return channelManager;
@@ -1597,8 +1595,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockchain(),
                     getBlockNodeInformation(),
                     getSyncConfiguration(),
-                    getBlockHeaderValidator(),
-                    getMessageVersionValidator());
+                    getBlockHeaderValidator());
         }
 
         return blockSyncService;
@@ -1675,7 +1672,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskWireProtocolFactory(),
                     getEth62MessageFactory(),
                     getStaticMessages(),
-                    getPeerScoringManager()
+                    getPeerScoringManager(),
+                    getMessageVersionValidator()
             );
         }
 
@@ -2124,14 +2122,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return minerClock;
     }
 
-    private MessageVersionValidator getMessageVersionValidator() {
+    private LocalMessageVersionValidator getMessageVersionValidator() {
         checkIfNotClosed();
 
-        if (this.messageVersionValidator == null) {
-            this.messageVersionValidator = new MessageVersionValidator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
+        if (this.localMessageVersionValidator == null) {
+            this.localMessageVersionValidator = new LocalMessageVersionValidator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
         }
 
-        return this.messageVersionValidator;
+        return this.localMessageVersionValidator;
     }
 
     private void checkIfNotClosed() {
@@ -2139,5 +2137,4 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             throw new IllegalStateException("RSK Context is closed and cannot be in use anymore");
         }
     }
-
 }

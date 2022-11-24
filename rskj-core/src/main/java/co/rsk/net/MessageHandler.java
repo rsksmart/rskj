@@ -22,12 +22,12 @@ package co.rsk.net;
  * Created by ajlopez on 5/11/2016.
  */
 
-import co.rsk.net.messages.Message;
+import co.rsk.net.eth.RskMessage;
 
 public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
+    void processMessage(Peer sender, RskMessage message);
 
-    void postMessage(Peer sender, Message message) throws InterruptedException;
+    void postMessage(Peer sender, RskMessage message) throws InterruptedException;
 
     long getMessageQueueSize();
 }

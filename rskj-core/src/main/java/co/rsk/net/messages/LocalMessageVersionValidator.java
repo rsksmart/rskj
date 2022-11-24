@@ -25,20 +25,20 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
-public class MessageVersionValidator { // TODO(iago:2) rename, it is not only validator
+public class LocalMessageVersionValidator { // TODO(iago:2) rename, it is not only validator
 
     public static final int DISABLED_VERSION = -1;
 
     private final IntSupplier versionSupplier;
     private final Supplier<BlockDifficulty> difficultySupplier;
 
-    public MessageVersionValidator(ActivationConfig activationConfig, StatusResolver statusResolver) {
+    public LocalMessageVersionValidator(ActivationConfig activationConfig, StatusResolver statusResolver) {
         this.versionSupplier = () -> {
             // TODO(iago:3) is it a good idea to use this status for the check? how up to date is it?
             long bestBlock = statusResolver.currentStatusLenient().getBestBlockNumber();
             return activationConfig.getMessageVersionForHeight(bestBlock);
         };
-
+        // TODO(iago) is it better to use difficulty or blockNumber?
         this.difficultySupplier = () -> statusResolver.currentStatusLenient().getTotalDifficulty();
     }
 

@@ -73,9 +73,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private final int maxConnectionsAllowed;
     private final int networkCIDR;
 
-    private final MessageVersionValidator messageVersionValidator;
-
-    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool, MessageVersionValidator messageVersionValidator) {
+    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
         this.syncPool = syncPool;
         this.maxActivePeers = config.maxActivePeers();
@@ -85,12 +83,6 @@ public class ChannelManagerImpl implements ChannelManager {
         this.newPeers = new CopyOnWriteArrayList<>();
         this.maxConnectionsAllowed = config.maxConnectionsAllowed();
         this.networkCIDR = config.networkCIDR();
-        this.messageVersionValidator = messageVersionValidator;
-    }
-
-    @VisibleForTesting
-    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
-        this(config, syncPool, null);
     }
 
     @Override
@@ -197,9 +189,8 @@ public class ChannelManagerImpl implements ChannelManager {
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
-        int localVersion = messageVersionValidator.getLocalVersion();
-        final Message newBlock = new BlockMessage(localVersion, block);
-        final Message newBlockHashes = new NewBlockHashesMessage(localVersion, Arrays.asList(bi));
+        final Message newBlock = new BlockMessage(block);
+        final Message newBlockHashes = new NewBlockHashesMessage(Arrays.asList(bi));
         synchronized (activePeersLock) {
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -226,8 +217,7 @@ public class ChannelManagerImpl implements ChannelManager {
     @Nonnull
     public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        int localVersion = messageVersionValidator.getLocalVersion();
-        final Message newBlockHash = new NewBlockHashesMessage(localVersion, identifiers);
+        final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
         synchronized (activePeersLock) {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -245,8 +235,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     @Override
     public int broadcastStatus(Status status) {
-        int localVersion = messageVersionValidator.getLocalVersion();
-        final Message message = new StatusMessage(localVersion, status);
+        final Message message = new StatusMessage(status);
         synchronized (activePeersLock) {
             if (activePeers.isEmpty()) {
                 return 0;
@@ -338,8 +327,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private Set<NodeID> internalBroadcastTransactions(Set<NodeID> skip, List<Transaction> transactions) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        int localVersion = messageVersionValidator.getLocalVersion();
-        final Message newTransactions = new TransactionsMessage(localVersion, transactions);
+        final Message newTransactions = new TransactionsMessage(transactions);
         final List<Channel> peersToBroadcast = activePeers.values().stream().
                 filter(p -> !skip.contains(p.getNodeId())).collect(Collectors.toList());
 

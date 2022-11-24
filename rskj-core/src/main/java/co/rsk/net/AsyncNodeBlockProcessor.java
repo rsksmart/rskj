@@ -20,11 +20,9 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.MessageVersionValidator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.util.FormatUtils;
 import co.rsk.validators.BlockValidator;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
@@ -68,8 +66,8 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
     public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
                                    @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator,
-                                   @Nullable Listener listener, @Nonnull MessageVersionValidator messageVersionValidator) {
-        super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, messageVersionValidator);
+                                   @Nullable Listener listener) {
+        super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         this.blockHeaderValidator = blockHeaderValidator;
         this.blockValidator = blockValidator;
         this.listener = listener;
@@ -77,23 +75,8 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                                   @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator,
-                                   @Nonnull MessageVersionValidator messageVersionValidator) {
-        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockHeaderValidator, blockValidator, null, messageVersionValidator);
-    }
-
-    @VisibleForTesting
-    AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
-                            @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                            @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator) {
-        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockHeaderValidator, blockValidator, null, null);
-    }
-
-    @VisibleForTesting
-    AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
-                            @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                            @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator, @Nullable Listener listener) {
-        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockHeaderValidator, blockValidator, listener, null);
+                                   @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator) {
+        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockHeaderValidator, blockValidator, null);
     }
 
     @Override

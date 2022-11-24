@@ -19,7 +19,6 @@
 package co.rsk.net.messages;
 
 import co.rsk.net.Status;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
@@ -27,18 +26,11 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class StatusMessage extends MessageVersionAware {
-    private final int version;
+public class StatusMessage extends Message {
     private Status status;
 
-    public StatusMessage(int version, Status status) {
-        this.version = version;
-        this.status = status;
-    }
-
-    @VisibleForTesting
     public StatusMessage(Status status) {
-        this(MessageVersionValidator.DISABLED_VERSION, status);
+        this.status = status;
     }
 
     @Override
@@ -47,12 +39,7 @@ public class StatusMessage extends MessageVersionAware {
     }
 
     @Override
-    public int getVersion() {
-        return version;
-    }
-
-    @Override
-    public byte[] encodeWithoutVersion() {
+    public byte[] getEncodedMessage() {
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(status.getBestBlockNumber()));
         byte[] hash = RLP.encodeElement(status.getBestBlockHash());
 

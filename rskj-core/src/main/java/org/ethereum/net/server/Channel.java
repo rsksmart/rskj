@@ -25,6 +25,8 @@ import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.LocalMessageVersionValidator;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -64,6 +66,7 @@ public class Channel implements Peer {
     private final Eth62MessageFactory eth62MessageFactory;
     private final StaticMessages staticMessages;
     private final boolean isActive;
+    private final LocalMessageVersionValidator localMessageVersionValidator;
 
     private Eth eth = new EthAdapter();
 
@@ -82,7 +85,8 @@ public class Channel implements Peer {
                    RskWireProtocol.Factory rskWireProtocolFactory,
                    Eth62MessageFactory eth62MessageFactory,
                    StaticMessages staticMessages,
-                   String remoteId) {
+                   String remoteId,
+                   LocalMessageVersionValidator localMessageVersionValidator) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
@@ -91,6 +95,18 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
+        this.localMessageVersionValidator = localMessageVersionValidator;
+    }
+
+    @VisibleForTesting
+    public Channel(MessageQueue msgQueue,
+                   MessageCodec messageCodec,
+                   NodeManager nodeManager,
+                   RskWireProtocol.Factory rskWireProtocolFactory,
+                   Eth62MessageFactory eth62MessageFactory,
+                   StaticMessages staticMessages,
+                   String remoteId) {
+        this(msgQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId, null);
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
@@ -213,7 +229,8 @@ public class Channel implements Peer {
     }
 
     public void sendMessage(Message message) {
-        eth.sendMessage(new RskMessage(message));
+        int version = localMessageVersionValidator.getLocalVersion();
+        eth.sendMessage(new RskMessage(version, message));
     }
 
     @Override

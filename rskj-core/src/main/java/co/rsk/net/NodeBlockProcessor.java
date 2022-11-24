@@ -21,7 +21,6 @@ package co.rsk.net;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -54,8 +53,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     // keep tabs on which nodes know which blocks.
     protected final BlockSyncService blockSyncService;
 
-    private final MessageVersionValidator messageVersionValidator;
-
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
@@ -69,24 +66,12 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
-            @Nonnull final SyncConfiguration syncConfiguration,
-            @Nonnull final MessageVersionValidator messageVersionValidator) {
+            @Nonnull final SyncConfiguration syncConfiguration) {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
-        this.messageVersionValidator = messageVersionValidator;
-    }
-
-    @VisibleForTesting
-    public NodeBlockProcessor(
-            @Nonnull final NetBlockStore store,
-            @Nonnull final Blockchain blockchain,
-            @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final BlockSyncService blockSyncService,
-            @Nonnull final SyncConfiguration syncConfiguration) {
-        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, null);
     }
 
     /**
@@ -119,8 +104,7 @@ public class NodeBlockProcessor implements BlockProcessor {
                 .filter(b -> !hasBlock(b.getBytes()))
                 .forEach(
                         b -> {
-                            int localVersion = messageVersionValidator.getLocalVersion();
-                            sender.sendMessage(new GetBlockMessage(localVersion, b.getBytes()));
+                            sender.sendMessage(new GetBlockMessage(b.getBytes()));
                             nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
@@ -141,8 +125,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private void processBlockHeader(@Nonnull final Peer sender, @Nonnull final BlockHeader header) {
-        int localVersion = messageVersionValidator.getLocalVersion();
-        sender.sendMessage(new GetBlockMessage(localVersion, header.getHash().getBytes()));
+        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
         this.store.saveHeader(header);
     }
 
@@ -162,8 +145,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         nodeInformation.addBlockToNode(new Keccak256(hash), sender.getPeerNodeID());
-        int localVersion = messageVersionValidator.getLocalVersion();
-        sender.sendMessage(new BlockMessage(localVersion, block));
+        sender.sendMessage(new BlockMessage(block));
     }
 
     /**
