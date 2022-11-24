@@ -242,7 +242,7 @@ class BridgeSupportReleaseBtcTest {
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
         Object btcDestinationAddress = event.decodeEventData(logInfo1.getData())[0];
-        assertTrue(btcDestinationAddress instanceof byte[]);
+        Assertions.assertTrue(btcDestinationAddress instanceof byte[]);
     }
 
     @Test
@@ -264,10 +264,10 @@ class BridgeSupportReleaseBtcTest {
 
         verify(repository, never()).transfer(any(), any(), any());
 
-        assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assertions.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assertions.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
-        assertEquals(3, logInfo.size());
+        Assertions.assertEquals(3, logInfo.size());
         verify(eventLogger, times(1)).logReleaseBtcRequested(
                 any(byte[].class),
                 any(BtcTransaction.class),
@@ -280,7 +280,7 @@ class BridgeSupportReleaseBtcTest {
         LogInfo logInfo1 = logInfo.get(0);
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
         Object btcDestinationAddress = event.decodeEventData(logInfo1.getData())[0];
-        assertTrue(btcDestinationAddress instanceof  String);
+        Assertions.assertTrue(btcDestinationAddress instanceof  String);
     }
 
     @Test

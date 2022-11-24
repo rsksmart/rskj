@@ -31,9 +31,12 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static co.rsk.peg.PegTestUtils.*;
 import static org.hamcrest.Matchers.hasItem;
@@ -41,8 +44,8 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+
 
 public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
 
@@ -50,7 +53,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     protected ActivationConfig.ForBlock activationsAfterForks;
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
-    @Before
+    @BeforeEach
     public void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
@@ -624,22 +627,22 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstantsRegtest, activationsBeforeForks);
 
         if ("FullySigned".equals(expectedResult)) {
-            Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertThat(logs, is(not(empty())));
-            Assert.assertThat(logs, hasSize(3));
+            assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+            assertThat(logs, is(not(empty())));
+            assertThat(logs, hasSize(3));
             LogInfo releaseTxEvent = logs.get(2);
-            Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
-            Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+            assertThat(releaseTxEvent.getTopics(), hasSize(1));
+            assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
             BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
             Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
-            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            assertEquals(4, retrievedScriptSig.getChunks().size());
             assertTrue(retrievedScriptSig.getChunks().get(1).data.length > 0);
             assertTrue(retrievedScriptSig.getChunks().get(2).data.length > 0);
         } else {
             Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
-            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            assertEquals(4, retrievedScriptSig.getChunks().size());
             boolean expectSignatureToBePersisted = "PartiallySigned".equals(expectedResult); // for "InvalidParameters"
-            Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
+            assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
             assertFalse(retrievedScriptSig.getChunks().get(2).data.length > 0);
         }
     }
