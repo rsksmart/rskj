@@ -453,7 +453,8 @@ class TraceModuleImplTest {
                 new BlockFactory(rskSystemProperties.getActivationConfig()),
                 world.getBlockExecutor(),
                 new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                new MinerUtils(new BlockTxSignatureCache(new ReceivedTxSignatureCache()))
+                new MinerUtils(),
+                world.getBlockTxSignatureCache()
         );
 
         return new ExecutionBlockRetriever(world.getBlockChain(), builder, mock(CompositeEthereumListener.class));
