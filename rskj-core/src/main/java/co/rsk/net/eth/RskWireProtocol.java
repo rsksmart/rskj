@@ -19,6 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeID;
@@ -134,9 +135,10 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 RskMessage rskmessage = (RskMessage)msg;
                 Message message = rskmessage.getMessage();
                 // TODO(iago:2) should we do it here or in visitor as well? here to disconnect sooner?
-                if (message instanceof StatusMessage) {
-                    Status localStatus = statusResolver.currentStatusLenient();
-                    if (localMessageVersionValidator.notValidForLongSync(rskmessage.getVersion(), localStatus.getTotalDifficulty())) {
+                if (message.getMessageType() == MessageType.STATUS_MESSAGE) {
+                    StatusMessage statusMessage = (StatusMessage) message;
+                    BlockDifficulty peerDifficulty = statusMessage.getStatus().getTotalDifficulty();
+                    if (localMessageVersionValidator.notValidForLongSync(rskmessage.getVersion(), peerDifficulty)) {
                         disconnect(ReasonCode.INCOMPATIBLE_STATE);
                         return;
                     }
