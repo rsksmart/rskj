@@ -228,9 +228,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         boolean contains = receivedMessages.contains(encodedMessage);
 
         if (!contains) {
-            // bear in mind message versioning if adding more types to this check: if versioning is enabled message.getEncoded() includes version
-            // for block and transaction messages we just accept same version as local (check MessageVisitor#apply) before reaching this check,
-            // so there is no chance to accept same message twice with different versions, but if we add new types here we need to consider this
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
                     this.receivedMessages.clear();
