@@ -40,7 +40,7 @@ public class StatusResolver {
      */
     public Status currentStatus() {
         Status status;
-        if (blockStore.getMinNumber() != 0) {
+        if (blockStore.getMinNumber() < 0) { // TODO(iago) undo, just for testing
             status = new Status(
                     genesis.getNumber(),
                     genesis.getHash().getBytes(),
