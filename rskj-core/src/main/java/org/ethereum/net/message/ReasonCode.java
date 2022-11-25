@@ -84,6 +84,8 @@ public enum ReasonCode {
 
     UNEXPECTED_GENESIS(0x11),
 
+    INCOMPATIBLE_STATE(0x12), // TODO(iago:3) is anything else needed after adding it here?
+
     /**
      * [0xFF] Reason not specified
      */

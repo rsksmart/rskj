@@ -50,6 +50,7 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.handler.quota.TxQuotaChecker;
+import co.rsk.net.messages.LocalMessageVersionValidator;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
@@ -253,6 +254,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private PeerScoringReporterService peerScoringReporterService;
     private TxQuotaChecker txQuotaChecker;
     private GasPriceTracker gasPriceTracker;
+
+    private LocalMessageVersionValidator localMessageVersionValidator;
 
     private volatile boolean closed;
 
@@ -1669,7 +1672,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getRskWireProtocolFactory(),
                     getEth62MessageFactory(),
                     getStaticMessages(),
-                    getPeerScoringManager()
+                    getPeerScoringManager(),
+                    getMessageVersionValidator()
             );
         }
 
@@ -2019,7 +2023,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getStatusResolver());
+                    getStatusResolver(),
+                    getMessageVersionValidator());
         }
 
         return nodeMessageHandler;
@@ -2043,7 +2048,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getMessageRecorder(),
                     getStatusResolver(),
                     messageQueue,
-                    channel);
+                    channel,
+                    getMessageVersionValidator());
         }
 
         return rskWireProtocolFactory;
@@ -2114,6 +2120,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return minerClock;
+    }
+
+    private LocalMessageVersionValidator getMessageVersionValidator() {
+        checkIfNotClosed();
+
+        if (this.localMessageVersionValidator == null) {
+            this.localMessageVersionValidator = new LocalMessageVersionValidator(getRskSystemProperties().getActivationConfig(), getStatusResolver());
+        }
+
+        return this.localMessageVersionValidator;
     }
 
     private void checkIfNotClosed() {

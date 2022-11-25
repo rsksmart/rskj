@@ -18,6 +18,7 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import co.rsk.net.messages.LocalMessageVersionValidator;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException.WrongType;
 import com.typesafe.config.ConfigValue;
@@ -28,10 +29,13 @@ import java.util.stream.Collectors;
 public class ActivationConfig {
     private static final String PROPERTY_ACTIVATION_HEIGHTS = "hardforkActivationHeights";
     private static final String PROPERTY_CONSENSUS_RULES = "consensusRules";
+    private static final String PROPERTY_MESSAGE_VERSIONS = "hardforkMessageVersions";
 
     private final Map<ConsensusRule, Long> activationHeights;
 
-    public ActivationConfig(Map<ConsensusRule, Long> activationHeights) {
+    private final List<MessageVersionForHeight> messageVersionsForHeightDesc;
+
+    public ActivationConfig(Map<ConsensusRule, Long> activationHeights, List<MessageVersionForHeight> messageVersionsForHeightDesc) {
         if (activationHeights.size() != ConsensusRule.values().length) {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
@@ -40,8 +44,18 @@ public class ActivationConfig {
                     missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
             ));
         }
-
         this.activationHeights = activationHeights;
+
+        this.messageVersionsForHeightDesc = messageVersionsForHeightDesc;
+    }
+
+    public int getMessageVersionForHeight(long blockToCheck) {
+        for (MessageVersionForHeight mfh : messageVersionsForHeightDesc) {
+            if (mfh.handlesHeight(blockToCheck)) {
+                return mfh.getMessageVersion();
+            }
+        }
+        throw new IllegalStateException("No message version found for block: " + blockToCheck);
     }
 
     public boolean isActive(ConsensusRule consensusRule, long blockNumber) {
@@ -75,7 +89,37 @@ public class ActivationConfig {
             activationHeights.put(consensusRule, activationHeight);
         }
 
-        return new ActivationConfig(activationHeights);
+        List<MessageVersionForHeight> messageVersionForHeight = buildMessageVersionForHeight(config);
+
+        return new ActivationConfig(activationHeights, messageVersionForHeight);
+    }
+
+    private static List<MessageVersionForHeight> buildMessageVersionForHeight(Config config) {
+        List<MessageVersionForHeight> messageVersionForHeight = new ArrayList<>();
+        Config messageVersionConfig = config.getConfig(PROPERTY_MESSAGE_VERSIONS);
+
+        Config networkUpgradesConfig = config.getConfig(PROPERTY_ACTIVATION_HEIGHTS);
+
+        // add default as disabled
+        messageVersionForHeight.add(new MessageVersionForHeight(0, LocalMessageVersionValidator.DISABLED_VERSION));
+
+        // add messageVersion for network upgrades
+        for (Map.Entry<String, ConfigValue> e : networkUpgradesConfig.entrySet()) {
+            NetworkUpgrade networkUpgrade = NetworkUpgrade.named(e.getKey());
+
+            if (!messageVersionConfig.hasPath(networkUpgrade.getName())) {
+                continue;
+            }
+
+            long activationHeight = networkUpgradesConfig.getLong(networkUpgrade.getName());
+            int messageVersion = messageVersionConfig.getInt(networkUpgrade.getName());
+            messageVersionForHeight.add(new MessageVersionForHeight(activationHeight, messageVersion));
+        }
+
+        List<MessageVersionForHeight> messageVersionForHeightDesc = messageVersionForHeight.stream()
+                .sorted(Comparator.comparingLong(MessageVersionForHeight::getHeight).reversed())
+                .collect(Collectors.toList());
+        return Collections.unmodifiableList(messageVersionForHeightDesc);
     }
 
     private static long parseActivationHeight(
@@ -109,6 +153,33 @@ public class ActivationConfig {
 
         public boolean isActivating(ConsensusRule consensusRule) {
             return ActivationConfig.this.isActivating(consensusRule, blockNumber);
+        }
+    }
+
+    static class MessageVersionForHeight {
+        public static final int UNDEFINED_HEIGHT = -1;
+        private final long height;
+        private final int messageVersion;
+
+        MessageVersionForHeight(long height, int messageVersion) {
+            this.height = height;
+            this.messageVersion = messageVersion;
+        }
+
+        private boolean isDefined() {
+            return this.height > UNDEFINED_HEIGHT;
+        }
+
+        private boolean handlesHeight(long heightToCheck) {
+            return isDefined() && heightToCheck >= this.height;
+        }
+
+        private long getHeight() {
+            return this.height;
+        }
+
+        private int getMessageVersion() {
+            return this.messageVersion;
         }
     }
 }

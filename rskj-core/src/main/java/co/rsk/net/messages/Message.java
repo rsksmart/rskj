@@ -34,7 +34,7 @@ public abstract class Message {
 
     public abstract void accept(MessageVisitor v);
 
-    public final byte[] getEncoded() {
+    public final byte[] getEncoded() { // TODO(iago) rename, confusing with getEncodedMessage()
         byte[] type = RLP.encodeByte(getMessageType().getTypeAsByte());
         byte[] body = RLP.encodeElement(this.getEncodedMessage());
         return RLP.encodeList(type, body);

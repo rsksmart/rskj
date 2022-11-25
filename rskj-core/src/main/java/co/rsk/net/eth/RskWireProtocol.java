@@ -19,15 +19,13 @@
 package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.StatusResolver;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.GetBlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.StatusMessage;
+import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
@@ -79,6 +77,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private final Genesis genesis;
     private final MessageQueue msgQueue;
 
+    private final LocalMessageVersionValidator localMessageVersionValidator;
+
     public RskWireProtocol(RskSystemProperties config,
                            PeerScoringManager peerScoringManager,
                            MessageHandler messageHandler,
@@ -87,7 +87,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                            MessageRecorder messageRecorder,
                            StatusResolver statusResolver,
                            MessageQueue msgQueue,
-                           Channel channel) {
+                           Channel channel,
+                           LocalMessageVersionValidator localMessageVersionValidator) {
         this.ethereumListener = ethereumListener;
         this.version = V62;
 
@@ -99,6 +100,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         this.statusResolver = statusResolver;
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
+
+        this.localMessageVersionValidator = localMessageVersionValidator;
     }
 
     @Override
@@ -131,6 +134,15 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
             case RSK_MESSAGE:
                 RskMessage rskmessage = (RskMessage)msg;
                 Message message = rskmessage.getMessage();
+                // TODO(iago:2) should we do it here or in visitor as well? here to disconnect sooner?
+                if (message.getMessageType() == MessageType.STATUS_MESSAGE) {
+                    StatusMessage statusMessage = (StatusMessage) message;
+                    BlockDifficulty peerDifficulty = statusMessage.getStatus().getTotalDifficulty();
+                    if (localMessageVersionValidator.notValidForLongSync(rskmessage.getVersion(), peerDifficulty)) {
+                        disconnect(ReasonCode.INCOMPATIBLE_STATE);
+                        return;
+                    }
+                }
 
                 switch (message.getMessageType()) {
                     case BLOCK_MESSAGE:
@@ -148,7 +160,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 }
 
                 if (this.messageHandler != null) {
-                    this.messageHandler.postMessage(channel, rskmessage.getMessage());
+                    this.messageHandler.postMessage(channel, rskmessage);
                 }
                 break;
             default:
@@ -250,7 +262,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         byte protocolVersion = version.getCode();
         int networkId = config.networkId();
 
-        Status status = statusResolver.currentStatus();
+        Status status = statusResolver.currentStatusLenient(); // TODO(iago:4) undo, just for testing!!!
 
         // Original status
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(
@@ -262,7 +274,8 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         sendMessage(msg);
 
         // RSK new protocol send status
-        RskMessage rskmessage = new RskMessage(new StatusMessage(status));
+        int localVersion = localMessageVersionValidator.getLocalVersion();
+        RskMessage rskmessage = new RskMessage(localVersion, new StatusMessage(status));
         loggerNet.trace("Sending status best block {} to {}",
                 status.getBestBlockNumber(),
                 channel.getPeerNodeID());

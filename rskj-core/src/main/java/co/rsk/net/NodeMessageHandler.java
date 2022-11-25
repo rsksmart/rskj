@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import co.rsk.net.eth.RskMessage;
+import co.rsk.net.messages.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
@@ -38,10 +40,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.ExecState;
@@ -81,6 +79,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private long cleanMsgTimestamp;
 
+    private final LocalMessageVersionValidator localMessageVersionValidator;
+
     /**
      * Creates a new node message handler.
      */
@@ -90,7 +90,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             @Nullable ChannelManager channelManager,
             @Nullable TransactionGateway transactionGateway,
             @Nullable PeerScoringManager peerScoringManager,
-            StatusResolver statusResolver) {
+            StatusResolver statusResolver,
+            @Nonnull LocalMessageVersionValidator localMessageVersionValidator) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -104,23 +105,38 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
+        this.localMessageVersionValidator = localMessageVersionValidator;
+
         this.thread = new Thread(this, "message handler");
+    }
+
+    @VisibleForTesting
+    public NodeMessageHandler(RskSystemProperties config,
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
+                              StatusResolver statusResolver) {
+        this(config, blockProcessor, syncProcessor, channelManager, transactionGateway, peerScoringManager, statusResolver, null);
     }
 
     /**
      * processMessage processes a RSK Message, doing the appropriate action based on the message type.
      *
      * @param sender  the message sender.
-     * @param message the message to be processed.
+     * @param rskMessage the message to be processed.
      */
-    public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
+    public synchronized void processMessage(final Peer sender, @Nonnull final RskMessage rskMessage) {
         messageCounter.decrement(sender);
+
+        Message message = rskMessage.getMessage();
 
         long start = System.nanoTime();
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
+        MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender, localMessageVersionValidator, rskMessage.getVersion());
         message.accept(mv);
 
         long processTime = System.nanoTime() - start;
@@ -134,8 +150,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     @Override
-    public void postMessage(Peer sender, Message message) {
-        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+    public void postMessage(Peer sender, RskMessage message) {
+        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessage().getMessageType());
         // There's an obvious race condition here, but fear not.
         // receivedMessages and logger are thread-safe
         // cleanMsgTimestamp is a long replaced by the next value, we don't care
@@ -148,10 +164,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     /**
      * verify if the message is allowed, and if so, add it to the queue
      */
-    private void tryAddMessage(Peer sender, Message message) {
-        double score = sender.score(System.currentTimeMillis(), message.getMessageType());
+    private void tryAddMessage(Peer sender, RskMessage message) {
+        double score = sender.score(System.currentTimeMillis(), message.getMessage().getMessageType());
 
-        boolean allowed = controlMessageIngress(sender, message, score);
+        boolean allowed = controlMessageIngress(sender, message.getMessage(), score);
 
         if (allowed) {
             this.addMessage(sender, message, score);
@@ -209,7 +225,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      */
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
-
         boolean contains = receivedMessages.contains(encodedMessage);
 
         if (!contains) {
@@ -227,7 +242,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return !contains;
     }
 
-    private void addMessage(Peer sender, Message message, double score) {
+    private void addMessage(Peer sender, RskMessage message, double score) {
         // optimistic increment() to ensure it is called before decrement() on processMessage()
         // there was a race condition on which queue got the new item and decrement() was called before increment() for the same sender
         // also, while queue implementation stays unbounded, offer() will never return false
@@ -329,7 +344,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         //Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
         if (timeStatus.getSeconds() > 10) {
-            Status status = statusResolver.currentStatus();
+            Status status = statusResolver.currentStatusLenient(); // TODO(iago:4) undo, just for testing!!!
             logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), status.getBestBlockHash());
             channelManager.broadcastStatus(status);
             lastStatusSent = now;
@@ -347,10 +362,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static class MessageTask {
         private final Peer sender;
-        private final Message message;
+        private final RskMessage message;
         private final double score;
 
-        public MessageTask(Peer sender, Message message, double score) {
+        public MessageTask(Peer sender, RskMessage message, double score) {
             this.sender = sender;
             this.message = message;
             this.score = score;
@@ -360,7 +375,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             return this.sender;
         }
 
-        public Message getMessage() {
+        public RskMessage getMessage() {
             return this.message;
         }
 

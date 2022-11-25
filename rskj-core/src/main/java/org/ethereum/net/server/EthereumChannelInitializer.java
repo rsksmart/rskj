@@ -21,7 +21,9 @@ package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.messages.LocalMessageVersionValidator;
 import co.rsk.scoring.PeerScoringManager;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
@@ -58,6 +60,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     private final Eth62MessageFactory eth62MessageFactory;
     private final StaticMessages staticMessages;
     private final PeerScoringManager peerScoringManager;
+    private final LocalMessageVersionValidator localMessageVersionValidator;
 
     public EthereumChannelInitializer(
             String remoteId,
@@ -69,7 +72,8 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             RskWireProtocol.Factory rskWireProtocolFactory,
             Eth62MessageFactory eth62MessageFactory,
             StaticMessages staticMessages,
-            PeerScoringManager peerScoringManager) {
+            PeerScoringManager peerScoringManager,
+            LocalMessageVersionValidator localMessageVersionValidator) {
         this.remoteId = remoteId;
         this.config = config;
         this.channelManager = channelManager;
@@ -80,6 +84,22 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
         this.eth62MessageFactory = eth62MessageFactory;
         this.staticMessages = staticMessages;
         this.peerScoringManager = peerScoringManager;
+        this.localMessageVersionValidator = localMessageVersionValidator;
+    }
+
+    @VisibleForTesting
+    public EthereumChannelInitializer(
+            String remoteId,
+            RskSystemProperties config,
+            ChannelManager channelManager,
+            CompositeEthereumListener ethereumListener,
+            ConfigCapabilities configCapabilities,
+            NodeManager nodeManager,
+            RskWireProtocol.Factory rskWireProtocolFactory,
+            Eth62MessageFactory eth62MessageFactory,
+            StaticMessages staticMessages,
+            PeerScoringManager peerScoringManager) {
+        this(remoteId, config, channelManager, ethereumListener, configCapabilities, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, peerScoringManager, null);
     }
 
     @Override
@@ -111,7 +131,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
             HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
-            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
+            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId, localMessageVersionValidator);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);

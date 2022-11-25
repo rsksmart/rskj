@@ -43,6 +43,7 @@ public class MessageVisitor {
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+    private static final String INVALID_VERSION_LOG_TEMPLATE = "Message[{}] not processed, invalid version.";
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
@@ -51,6 +52,9 @@ public class MessageVisitor {
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final ChannelManager channelManager;
+    private final LocalMessageVersionValidator localMessageVersionValidator;
+
+    private final int messageVersion;
 
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
@@ -58,7 +62,9 @@ public class MessageVisitor {
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
-                          Peer sender) {
+                          Peer sender,
+                          LocalMessageVersionValidator localMessageVersionValidator,
+                          int messageVersion) {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
@@ -67,6 +73,8 @@ public class MessageVisitor {
         this.channelManager = channelManager;
         this.config = config;
         this.sender = sender;
+        this.localMessageVersionValidator = localMessageVersionValidator;
+        this.messageVersion = messageVersion;
     }
 
     /**
@@ -76,6 +84,16 @@ public class MessageVisitor {
      * @param message the BlockMessage.
      */
     public void apply(BlockMessage message) {
+        // TODO(iago) this could be improved by having different messages for sync and relay
+        // used in two scenarios, peer provides us with it because:
+        //  - we requested it via GetBlockMessage: peer version must NOT be lower than ours for us to accept the message (higher accepted because we could be in long sync with peer)
+        //  - of regular relay: peer version must be the same as ours for us to accept the message
+        // therefore we only reject the message when peer's version is lower than ours
+        if (localMessageVersionValidator.versionLowerThanLocal(this.messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         final Block block = message.getBlock();
 
         logger.trace("Process block {} {}", block.getNumber(), block.getPrintableHash());
@@ -123,6 +141,12 @@ public class MessageVisitor {
     }
 
     public void apply(GetBlockMessage message) {
+        // a peer wants us to provide a block: peer version must NOT be higher than ours for us to accept the message (lower accepted because peer could be in long sync with us)
+        if (localMessageVersionValidator.versionHigherThanLocal(this.messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         final byte[] hash = message.getBlockHash();
         this.blockProcessor.processGetBlock(sender, hash);
     }
@@ -156,6 +180,12 @@ public class MessageVisitor {
     }
 
     public void apply(NewBlockHashMessage message) {
+        // a peer is providing us with a block hash via relaying: his version must be the same as ours for us to accept the message
+        if (localMessageVersionValidator.versionDifferentFromLocal(this.messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         this.syncProcessor.processNewBlockHash(sender, message);
     }
 
@@ -177,16 +207,28 @@ public class MessageVisitor {
     }
 
     public void apply(NewBlockHashesMessage message) {
+        // a peer is providing us with block hashes via relaying: its version must be the same as ours for us to accept the message
+        if (localMessageVersionValidator.versionDifferentFromLocal(this.messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            loggerMessageProcess.debug("Message[{}] not processed, better block to sync.", message.getMessageType());
             return;
         }
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
     public void apply(TransactionsMessage message) {
+        // a peer is providing us with a new transaction via relaying: his version must be same as ours for us to accept the message
+        if (localMessageVersionValidator.versionDifferentFromLocal(this.messageVersion)) {
+            loggerMessageProcess.debug(INVALID_VERSION_LOG_TEMPLATE, message.getMessageType());
+            return;
+        }
+
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            loggerMessageProcess.debug("Message[{}] not processed, better block to sync.", message.getMessageType());
             return;
         }
 

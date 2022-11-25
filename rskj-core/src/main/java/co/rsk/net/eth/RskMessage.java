@@ -19,6 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.LocalMessageVersionValidator;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
@@ -27,9 +28,12 @@ import org.ethereum.util.RLP;
  * Created by ajlopez on 5/14/2016.
  */
 public class RskMessage extends EthMessage {
+
+    private final int version;
     private Message message;
 
-    public RskMessage(Message message) {
+    public RskMessage(int version, Message message) {
+        this.version = version;
         this.message = message;
         this.parsed = true;
     }
@@ -39,6 +43,10 @@ public class RskMessage extends EthMessage {
         return EthMessageCodes.RSK_MESSAGE;
     }
 
+    public int getVersion() {
+        return this.version;
+    }
+
     public Message getMessage() {
         return this.message;
     }
@@ -46,7 +54,12 @@ public class RskMessage extends EthMessage {
     @Override
     public byte[] getEncoded() {
         if (encoded == null) {
-            encode();
+            boolean isVersioningEnabled = LocalMessageVersionValidator.isVersioningEnabledFor(this.version);
+            if (isVersioningEnabled) {
+                encodeVersioned();
+            } else {
+                encode();
+            }
         }
 
         return encoded;
@@ -63,6 +76,11 @@ public class RskMessage extends EthMessage {
         this.encoded = RLP.encodeList(msg);
     }
 
+    private void encodeVersioned() {
+        byte[] versionEncoded = RLP.encodeInt(this.version);
+        byte[] msg = this.message.getEncoded();
+        this.encoded = RLP.encodeList(versionEncoded, msg);
+    }
 
     @Override
     public String toString() {
