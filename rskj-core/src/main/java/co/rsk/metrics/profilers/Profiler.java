@@ -1,5 +1,24 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2019 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.metrics.profilers;
 
+import javax.annotation.Nonnull;
 
 /**
  * Interface every profiler has to implement. The profiler is responsible of the profiling logic.
@@ -8,11 +27,11 @@ package co.rsk.metrics.profilers;
 public interface Profiler {
 
     /**
-     *List of possible measurement categories (or types).
+     * List of possible measurement categories (or types).
      * Depending on what is actually being profiled, new categories can be added or
      * categories not needed can be removed
      */
-    enum PROFILING_TYPE {
+    enum MetricType {
         // BLOCK_CONNECTION - BLOCK_EXECUTE = Time consumed fetching the block and, after block execution, saving the data
         // that means some DB_READ and DB_WRITE will be included here (and contained in the DB_READ and DB_WRITE categories again)
         BLOCK_CONNECTION,
@@ -42,14 +61,10 @@ public interface Profiler {
 
     /**
      * Starts a metric of a specific type
+     *
      * @param type task category that needs to be profiled
      * @return new Metric instance
      */
-    Metric start(PROFILING_TYPE type);
-
-    /**
-     * Stops a metric finalizing all the properties being profiled
-     * @param metric Metric instance that needs to be finalized
-     */
-    void stop(Metric metric);
+    @Nonnull
+    Metric start(@Nonnull MetricType type);
 }

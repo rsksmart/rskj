@@ -171,6 +171,10 @@ public class RskSystemProperties extends SystemProperties {
         return getInt("blooms.confirmations", 400);
     }
 
+    public boolean isMetricsProfilingEnabled() {
+        return getBoolean("profiling.metrics.enabled", false);
+    }
+
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }

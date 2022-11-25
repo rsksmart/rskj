@@ -161,14 +161,14 @@ public class Trie {
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
         Trie trie;
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
+        Metric metric = profiler.start(Profiler.MetricType.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
             trie = fromMessageOrchid(message, store);
         } else {
             trie = fromMessageRskip107(ByteBuffer.wrap(message), store);
         }
 
-        profiler.stop(metric);
+        metric.close();
 
         return trie;
     }
@@ -402,15 +402,15 @@ public class Trie {
      */
     @Nullable
     public byte[] get(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
+        Metric metric = profiler.start(Profiler.MetricType.TRIE_GET_VALUE_FROM_KEY);
         Trie node = find(key);
         if (node == null) {
-            profiler.stop(metric);
+            metric.close();
             return null;
         }
 
         byte[] result = node.getValue();
-        profiler.stop(metric);
+        metric.close();
         return result;
     }
 

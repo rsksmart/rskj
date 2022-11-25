@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.util.PreflightCheckException;
 import co.rsk.util.PreflightChecksUtils;
 import org.junit.jupiter.api.Test;
@@ -64,8 +65,10 @@ class StartTest {
         Runtime runtime = mock(Runtime.class);
         ArgumentCaptor<Thread> threadCaptor = ArgumentCaptor.forClass(Thread.class);
         NodeRunner runner = mock(NodeRunner.class);
+        RskSystemProperties systemProperties = mock(RskSystemProperties.class);
         RskContext ctx = mock(RskContext.class);
         doReturn(runner).when(ctx).getNodeRunner();
+        doReturn(systemProperties).when(ctx).getRskSystemProperties();
         PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
 
         Start.runNode(runtime, preflightChecks, ctx);

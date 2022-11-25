@@ -363,11 +363,11 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        Metric metric = profiler.start(Profiler.MetricType.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
         ECKey key = Secp256k1.getInstance().recoverFromSignature((signature.getV() - 27) & ~4, signature, raw, true);
-        profiler.stop(metric);
+        metric.close();
         return key;
     }
 
@@ -375,9 +375,8 @@ public class Transaction {
         if (sender != null) {
             return sender;
         }
-
-
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        
+        Metric metric = profiler.start(Profiler.MetricType.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = Secp256k1.getInstance().signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());
@@ -386,7 +385,7 @@ public class Transaction {
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
         } finally {
-            profiler.stop(metric);
+            metric.close();
         }
 
         return sender;

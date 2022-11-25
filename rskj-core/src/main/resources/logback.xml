@@ -35,7 +35,7 @@
         </filter>
     </appender>
 
-    <!-- File appender -->
+    <!-- Default file appender -->
     <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>./logs/rsk.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -52,6 +52,26 @@
         </rollingPolicy>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>${logging:-TRACE}</level>
+        </filter>
+    </appender>
+
+    <!-- Metrics file appender -->
+    <appender name="FILE-METRICS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>./metrics/rsk.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
+            <Pattern>
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+            </Pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>./metrics/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${logging:-INFO}</level>
         </filter>
     </appender>
 
@@ -115,6 +135,11 @@
     <logger name="clitool" level="DEBUG" additivity="false" >
         <appender-ref ref="STDOUT_CLI_TOOL"/>
         <appender-ref ref="FILE-AUDIT"/>
+    </logger>
+
+    <!-- Logger for metrics -->
+    <logger name="metrics" level="INFO" additivity="false" >
+        <appender-ref ref="FILE-METRICS"/>
     </logger>
 
     <!-- Root logger -->

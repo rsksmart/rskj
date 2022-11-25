@@ -17,6 +17,9 @@
  */
 package co.rsk;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.impl.LoggingProfiler;
 import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +54,12 @@ public class Start {
 
     static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
         preflightChecks.runChecks();
+
+        RskSystemProperties systemProperties = ctx.getRskSystemProperties();
+        
+        if (systemProperties.isMetricsProfilingEnabled()) {
+            ProfilerFactory.configure(new LoggingProfiler());
+        }
 
         NodeRunner runner = ctx.getNodeRunner();
 

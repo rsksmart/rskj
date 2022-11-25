@@ -307,10 +307,10 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
+            Metric metric = profiler.start(Profiler.MetricType.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
-            profiler.stop(metric);
-            metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+            metric.close();
+            metric = profiler.start(Profiler.MetricType.PRECOMPILED_CONTRACT_EXECUTE);
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -321,7 +321,7 @@ public class TransactionExecutor {
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
                 gasLeftover = 0;
-                profiler.stop(metric);
+                metric.close();
                 return;
             }
 
@@ -344,7 +344,7 @@ public class TransactionExecutor {
                 result.setException(e);
             }
             result.spendGas(gasUsed);
-            profiler.stop(metric);
+            metric.close();
         } else {
             byte[] code = track.getCode(targetAddress);
             // Code can be null
@@ -416,7 +416,7 @@ public class TransactionExecutor {
 
         //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
+        Metric metric = profiler.start(Profiler.MetricType.VM_EXECUTE);
         try {
 
             // Charge basic cost of the transaction
@@ -446,11 +446,11 @@ public class TransactionExecutor {
             gasLeftover = 0;
             execError(e);
             result.setException(e);
-            profiler.stop(metric);
+            metric.close();
             return;
         }
         cacheTrack.commit();
-        profiler.stop(metric);
+        metric.close();
     }
 
     private void createContract() {
