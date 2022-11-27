@@ -63,7 +63,7 @@ public class PeersInformation {
         this.peerScoringManager = peerScoringManager;
         this.peerComparator = ((Comparator<Map.Entry<Peer, SyncPeerStatus>>) this::comparePeerFailInstant)
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
-//                .thenComparing(this::comparePeerScoring)
+                .thenComparing(this::comparePeerScoring)
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
@@ -179,16 +179,22 @@ public class PeersInformation {
     }
 
     private int comparePeerScoring(
-            Map.Entry<NodeID, SyncPeerStatus> entry,
-            Map.Entry<NodeID, SyncPeerStatus> other) {
-        int score = getScore(entry.getKey());
-        int scoreOther = getScore(other.getKey());
-        // Treats all non-negative scores the same for calculating the best peer
-        if (score >= 0 && scoreOther >= 0) {
-            return 0;
-        }
-
-        return Integer.compare(score, scoreOther);
+            Map.Entry<Peer, SyncPeerStatus> entry,
+            Map.Entry<Peer, SyncPeerStatus> other) {
+        logger.debug(
+                "PEER SCORING COMPARISON Entry: {} Other: {}",
+                getScore(entry.getKey().getPeerNodeID()),
+                getScore(other.getKey().getPeerNodeID())
+        );
+        return 0;
+//        int score = getScore(entry.getKey().getPeerNodeID());
+//        int scoreOther = getScore(other.getKey().getPeerNodeID());
+//        // Treats all non-negative scores the same for calculating the best peer
+//        if (score >= 0 && scoreOther >= 0) {
+//            return 0;
+//        }
+//
+//        return Integer.compare(score, scoreOther);
     }
 
     private int comparePeerTotalDifficulty(
