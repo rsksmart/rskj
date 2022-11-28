@@ -131,7 +131,7 @@ class Web3HttpServerTest {
 
         assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
         Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
-        Assertions.assertEquals("Stack overflow produced due to complex nested objects detected in request params", jsonRpcResponse.get("error").get("message").asText());
+        Assertions.assertEquals("Invalid request", jsonRpcResponse.get("error").get("message").asText());
     }
 
     @Test
