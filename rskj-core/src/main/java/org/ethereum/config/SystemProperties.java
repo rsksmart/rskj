@@ -761,16 +761,16 @@ public abstract class SystemProperties {
         }
     }
 
-    public DbKind getStatesRootDataSource() {
+    public DbKind getStateRootsDataSource() {
         return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATE_ROOTS);
     }
 
     public DbKind getTrieDataSource() {
-        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.TRIE);
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATES);
     }
 
     public DbKind getUniTrieDataSource() {
-        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.UNI_TRIE);
+        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATES);
     }
 
     public DbKind getBlocksDataSource() {
