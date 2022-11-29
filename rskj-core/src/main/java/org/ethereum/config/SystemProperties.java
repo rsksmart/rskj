@@ -77,7 +77,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
-    public static final String PROPERTY_RPC_MAX_PAYLOAD_SIZE = "rpc.providers.web.max_frame_size";
+    public static final String PROPERTY_RPC_HTTP_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.http.max_aggregated_frame_size";
     public static final String PROPERTY_RPC_HTTP_ENABLED = "rpc.providers.web.http.enabled";
     public static final String PROPERTY_RPC_HTTP_MAX_BATCH_REQUESTS_SIZE = "rpc.providers.web.max_batch_requests_size";
     public static final String PROPERTY_RPC_HTTP_ADDRESS = "rpc.providers.web.http.bind_address";
