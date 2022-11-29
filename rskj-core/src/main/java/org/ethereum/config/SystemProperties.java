@@ -686,8 +686,8 @@ public abstract class SystemProperties {
         return configFromFiles.getString(PROPERTY_RPC_CORS);
     }
 
-    public int getMaxPayloadSize() {
-        return configFromFiles.getInt(PROPERTY_RPC_MAX_PAYLOAD_SIZE);
+    public int rpcHttpMaxAggregatedFrameSize() {
+        return configFromFiles.getInt(PROPERTY_RPC_HTTP_SERVER_MAX_AGGREGATED_FRAME_SIZE);
     }
 
     public int getMaxBatchRequestsSize() {
