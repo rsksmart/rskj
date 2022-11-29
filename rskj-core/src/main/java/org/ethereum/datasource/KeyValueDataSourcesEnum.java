@@ -25,8 +25,7 @@ public enum KeyValueDataSourcesEnum {
     RECEIPTS("receipts"),
     BLOOMS("blooms"),
     WALLET("wallet"),
-    UNI_TRIE("states"),
-    TRIE("states");
+    STATES("states");
 
     private final String value;
 
