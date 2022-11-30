@@ -765,11 +765,7 @@ public abstract class SystemProperties {
         return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATE_ROOTS);
     }
 
-    public DbKind getTrieDataSource() {
-        return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATES);
-    }
-
-    public DbKind getUniTrieDataSource() {
+    public DbKind getStatesDataSource() {
         return this.getKeyValueDataSources(KeyValueDataSourcesEnum.STATES);
     }
 
