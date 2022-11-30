@@ -63,7 +63,12 @@ public abstract class CliToolRskContextAware {
         Objects.requireNonNull(stopper, "stopper should not be null");
 
         String cliToolName = getClass().getSimpleName();
-        try (RskContext ctx = contextFactory.create()) {
+
+        RskContext ctx = null;
+        // not using try-with-resources because System::exit (from stopper) prevents autocloseable closing
+        try {
+            ctx = contextFactory.create();
+
             printInfo("{} started", cliToolName);
 
             RskSystemProperties rskSystemProperties = ctx.getRskSystemProperties();
@@ -73,9 +78,17 @@ public abstract class CliToolRskContextAware {
             onExecute(args, ctx);
 
             printInfo("{} finished", cliToolName);
+
+            ctx.close();
+
             stopper.stop(0);
         } catch (Exception e) {
             printError("{} failed", cliToolName, e);
+
+            if (ctx != null) {
+                ctx.close();
+            }
+
             stopper.stop(1);
         }
     }
