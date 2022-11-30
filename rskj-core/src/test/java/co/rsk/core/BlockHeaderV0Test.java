@@ -4,8 +4,6 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderV0;
-import org.ethereum.core.BlockHeaderV1;
-import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
@@ -67,7 +65,7 @@ public class BlockHeaderV0Test {
         byte[] bloom = TestUtils.randomBytes(256);
         short[] edges = new short[]{ 1, 2, 3, 4 };
         BlockHeaderV0 header = createBlockHeader(bloom, edges);
-        byte[] field = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
+        byte[] field = header.getExtensionData();
         Assertions.assertArrayEquals(bloom, field);
     }
 }

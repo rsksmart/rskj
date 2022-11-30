@@ -50,15 +50,18 @@ public abstract class BlockHeader {
     public abstract BlockHeaderExtension getExtension();
     public abstract void setExtension(BlockHeaderExtension extension);
 
+    // contains the logs bloom or the hash of the extension depending on version
+    protected byte[] extensionData;
+    public byte[] getExtensionData() { return this.extensionData; };
+
     // fields from block header extension
     public abstract byte[] getLogsBloom();
     public abstract void setLogsBloom(byte[] logsBloom);
     public abstract short[] getTxExecutionSublistsEdges(); // Edges of the transaction execution lists
     public abstract void setTxExecutionSublistsEdges(short[] edges);
 
-    // encoding to use in logs bloom field on header response message
-    public abstract byte[] getLogsBloomFieldEncoded();
-    public abstract void addExtraFieldsToEncoded(boolean useExtensionEncoding, List<byte[]> fieldsToEncode);
+    // called after encoding the header, used to add elements at the end
+    public abstract void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode);
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
@@ -137,7 +140,7 @@ public abstract class BlockHeader {
     private final boolean includeForkDetectionData;
 
     protected BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, BlockDifficulty difficulty,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] extensionData, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
@@ -148,6 +151,7 @@ public abstract class BlockHeader {
         this.coinbase = coinbase;
         this.stateRoot = stateRoot;
         this.txTrieRoot = txTrieRoot;
+        this.extensionData = extensionData;
         this.receiptTrieRoot = receiptTrieRoot;
         this.difficulty = difficulty;
         this.number = number;
@@ -318,7 +322,7 @@ public abstract class BlockHeader {
     public byte[] getFullEncoded() { return this.getEncoded(true, true, false); }
     // the encoded block header used for calculating block hashes including RSKIP92
     public byte[] getEncoded() { return this.getEncoded(true, !useRskip92Encoding, false); }
-    public byte[] getEncodedForHeaderMessage() { return this.getEncoded(true, true, true); }
+    public byte[] getEncodedCompressed() { return this.getEncoded(true, true, true); }
     public byte[] getEncodedForHash() { return this.getEncoded(true, !useRskip92Encoding, true); }
 
     @Nullable
@@ -326,7 +330,7 @@ public abstract class BlockHeader {
         return this.minimumGasPrice;
     }
 
-    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean useExtensionEncoding) {
+    public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase, boolean compressed) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
@@ -346,7 +350,7 @@ public abstract class BlockHeader {
 
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
-        byte[] logsBloom = useExtensionEncoding ? this.getLogsBloomFieldEncoded() : RLP.encodeElement(this.getLogsBloom());
+        byte[] logsBloomField = RLP.encodeElement(compressed ? this.getExtensionData() : this.getLogsBloom());
         byte[] difficulty = encodeBlockDifficulty(this.difficulty);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
@@ -356,7 +360,7 @@ public abstract class BlockHeader {
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
         byte[] mgp = RLP.encodeSignedCoinNonNullZero(this.minimumGasPrice);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
+                stateRoot, txTrieRoot, receiptTrieRoot, logsBloomField, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
@@ -366,7 +370,11 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
-        this.addExtraFieldsToEncoded(useExtensionEncoding, fieldToEncodeList);
+        if (this.getVersion() > 0) {
+            fieldToEncodeList.add(RLP.encodeByte(this.getVersion()));
+        }
+
+        this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);

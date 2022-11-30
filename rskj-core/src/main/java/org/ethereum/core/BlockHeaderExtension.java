@@ -3,8 +3,8 @@ package org.ethereum.core;
 import org.ethereum.util.RLPList;
 
 public interface BlockHeaderExtension {
-    byte getHeaderVersion();
     byte[] getEncoded();
+    byte[] getHash();
 
     static BlockHeaderExtension fromEncoded(RLPList encoded) {
         byte version = encoded.get(0).getRLPData()[0];

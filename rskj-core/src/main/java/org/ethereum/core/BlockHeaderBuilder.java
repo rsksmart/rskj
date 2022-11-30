@@ -333,7 +333,7 @@ public class BlockHeaderBuilder {
             }
         }
 
-        if (createParallelCompliantHeader && txExecutionSublistsEdges == null) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP144, number) && createParallelCompliantHeader && txExecutionSublistsEdges == null) {
             txExecutionSublistsEdges = new short[0];
         }
 

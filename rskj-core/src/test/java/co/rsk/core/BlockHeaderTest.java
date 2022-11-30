@@ -414,12 +414,10 @@ class BlockHeaderTest {
         BlockHeaderV1 header = (BlockHeaderV1) createBlockHeaderWithVersion((byte) 0x1);
         header.setLogsBloom(logsBloom);
 
-        byte[] logsBloomField = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
+        byte[] extensionData = header.getExtensionData();
 
-        Assertions.assertEquals(0x1, logsBloomField[0]);
-        Assertions.assertArrayEquals(header.getExtension().getHash(), Arrays.copyOfRange(logsBloomField, 1, 33));
-        for (byte b:Arrays.copyOfRange(logsBloomField, 33, Bloom.BLOOM_BYTES)) Assertions.assertEquals(0x0, b);
-        Assertions.assertEquals(Bloom.BLOOM_BYTES, logsBloomField.length);
+        Assertions.assertEquals(32, extensionData.length);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), Arrays.copyOfRange(extensionData, 0, 32));
     }
 
     private BlockHeaderV1 createV1FromV0(BlockHeaderV0 headerV0) {
@@ -432,6 +430,16 @@ class BlockHeaderTest {
                 headerV0.getMinimumGasPrice(), headerV0.getUncleCount(), headerV0.isSealed(),
                 false, false, headerV0.getUmmRoot(), headerV0.getTxExecutionSublistsEdges()
         );
+    }
+
+    private void testEncodingButVersion(BlockHeaderV0 headerV0, BlockHeaderV1 headerV1) {
+        RLPList rlpHeaderV0 = RLP.decodeList(headerV0.getEncoded());
+        RLPList rlpHeaderV1 = RLP.decodeList(headerV1.getEncoded());
+
+        for (int i = 0; i < rlpHeaderV0.size(); i++) {
+            // jump version field
+            Assertions.assertArrayEquals(rlpHeaderV0.get(i).getRLPData(), rlpHeaderV1.get(i > 15 ? i + 1 : i).getRLPData());
+        }
     }
 
     @Test
@@ -447,7 +455,7 @@ class BlockHeaderTest {
 
         BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
 
-        Assertions.assertArrayEquals(headerV0.getEncoded(), headerV1.getEncoded());
+        testEncodingButVersion(headerV0, headerV1);
     }
 
     @Test
@@ -463,7 +471,7 @@ class BlockHeaderTest {
 
         BlockHeaderV1 headerV1 = createV1FromV0(headerV0);
 
-        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV1.getFullEncoded());
+        testEncodingButVersion(headerV0, headerV1);
     }
 
     @Test
@@ -477,11 +485,11 @@ class BlockHeaderTest {
         BlockHeaderV0 headerV0 = (BlockHeaderV0) createBlockHeaderWithVersion((byte) 0x0);
         headerV0.setLogsBloom(logsBloom);
 
-        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV0.getEncodedForHeaderMessage());
+        Assertions.assertArrayEquals(headerV0.getFullEncoded(), headerV0.getEncodedCompressed());
     }
 
     @Test
-    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloomAndEdges () {
+    public void fullEncodedV1IsTheSameAsEncodedForHeaderMessageButLogsBloomEdgesAndVersion () {
         byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
         logsBloom[0] = 0x01;
         logsBloom[1] = 0x02;
@@ -492,12 +500,12 @@ class BlockHeaderTest {
         headerV1.setLogsBloom(logsBloom);
 
         RLPList fullEncoded = RLP.decodeList(headerV1.getFullEncoded());
-        RLPList encodedForHeaderMessage = RLP.decodeList(headerV1.getEncodedForHeaderMessage());
+        RLPList encodedForHeaderMessage = RLP.decodeList(headerV1.getEncodedCompressed());
 
         Assertions.assertEquals(fullEncoded.size() - 1, encodedForHeaderMessage.size());
 
         for (int i = 0; i < encodedForHeaderMessage.size(); i++) {
-            int j = i < 16 ? i : i + 1; //padding if extension has edges
+            int j = i < 17 ? i : i + 1; //padding if extension has version
             if (i != 6) // logs bloom field
                 Assertions.assertArrayEquals(fullEncoded.get(j).getRLPData(), encodedForHeaderMessage.get(i).getRLPData());
         }

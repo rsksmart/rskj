@@ -261,7 +261,10 @@ class BlockHeaderBuilderTest {
 
     @ParameterizedTest(name = "createHeader: when createConsensusCompliantHeader {0} and useRskip92Encoding {1} then expectedSize {2}")
     @ArgumentsSource(CreateHeaderArgumentsProvider.class)
-    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, int expectedSize) {
+    void createsHeaderWith(boolean createConsensusCompliantHeader, boolean useRskip92Encoding, boolean useRSKIP351, int expectedSize) {
+        BlockHeaderBuilder blockHeaderBuilder = useRSKIP351
+                ? this.blockHeaderBuilder
+                : new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIP351));
         byte[] btcCoinbase = TestUtils.randomBytes(128);
         byte[] btcHeader = TestUtils.randomBytes(80);
         byte[] merkleProof = TestUtils.randomBytes(32);
@@ -502,9 +505,12 @@ class BlockHeaderBuilderTest {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    Arguments.of(false, false, 21),
-                    Arguments.of(false, true, 19),
-                    Arguments.of(true, false, 19)
+                    Arguments.of(false, false, false, 21),
+                    Arguments.of(false, true, false, 19),
+                    Arguments.of(true, false, false, 19),
+                    Arguments.of(false, false, true, 22),
+                    Arguments.of(false, true, true, 20),
+                    Arguments.of(true, false, true, 20)
             );
         }
     }

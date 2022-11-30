@@ -37,7 +37,6 @@ public class BlockHeaderV0 extends BlockHeader {
         // block header v0 has no extension
     }
 
-    private byte[] logsBloom;
     private short[] txExecutionSublistsEdges;
 
     public BlockHeaderV0(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
@@ -48,41 +47,40 @@ public class BlockHeaderV0 extends BlockHeader {
         Coin minimumGasPrice, int uncleCount, boolean sealed,
         boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot, short[] txExecutionSublistsEdges) {
         super(parentHash,unclesHash, coinbase, stateRoot,
-                txTrieRoot, receiptTrieRoot, difficulty,
+                txTrieRoot, receiptTrieRoot, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount, sealed,
                 useRskip92Encoding, includeForkDetectionData, ummRoot);
-        this.logsBloom = logsBloom;
         this.txExecutionSublistsEdges = txExecutionSublistsEdges != null ? Arrays.copyOf(txExecutionSublistsEdges, txExecutionSublistsEdges.length) : null;
     }
 
+    // logs bloom is stored in the extension data
     @Override
-    public byte[] getLogsBloom() { return logsBloom; }
-
+    public byte[] getLogsBloom() { return extensionData; }
+    @Override
     public void setLogsBloom(byte[] logsBloom) {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter logs bloom");
         }
         this.hash = null;
 
-        this.logsBloom = logsBloom;
+        this.extensionData = logsBloom;
     }
 
+    @Override
     public short[] getTxExecutionSublistsEdges() { return this.txExecutionSublistsEdges != null ? Arrays.copyOf(this.txExecutionSublistsEdges, this.txExecutionSublistsEdges.length) : null; }
 
+    @Override
     public void setTxExecutionSublistsEdges(short[] edges) {
         this.txExecutionSublistsEdges =  edges != null? Arrays.copyOf(edges, edges.length) : null;
     }
 
     @Override
-    public byte[] getLogsBloomFieldEncoded() {
-        return RLP.encodeElement(this.logsBloom);
-    }
-
-    @Override
-    public void addExtraFieldsToEncoded(boolean useExtensionEncoding, List<byte[]> fieldsToEncode) {
+    public void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode) {
+        // block headers v0 encoded should remain the same
+        // edges are added using compressed encoding too
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
     }
 }

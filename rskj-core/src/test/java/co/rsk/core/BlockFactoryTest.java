@@ -26,6 +26,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -86,7 +87,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
@@ -102,7 +103,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
@@ -118,7 +119,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
@@ -131,7 +132,8 @@ class BlockFactoryTest {
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null, null);
 
-        byte[] encodedBlock = header.getEncoded(false, false, false);
+        boolean compressed = false;
+        byte[] encodedBlock = header.getEncoded(false, false, compressed);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
         byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
         coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
@@ -142,7 +144,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, compressed);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
@@ -158,11 +160,12 @@ class BlockFactoryTest {
 
         BlockHeader header = createBlockHeader(number, new byte[0], null, null);
 
-        byte[] encodedHeader = header.getEncoded(false, false, false);
+        boolean compressed = false;
+        byte[] encodedHeader = header.getEncoded(false, false, compressed);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(16));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, compressed);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
@@ -179,11 +182,12 @@ class BlockFactoryTest {
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
         BlockHeader header = createBlockHeader(number, forkDetectionData, null, null);
 
-        byte[] encodedHeader = header.getEncoded(false, false, false);
+        boolean compressed = false;
+        byte[] encodedHeader = header.getEncoded(false, false, compressed);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(16));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, compressed);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
@@ -199,7 +203,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(17));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
@@ -216,7 +220,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(17));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
@@ -235,7 +239,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(16));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
     }
 
     @Test
@@ -250,7 +254,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(20));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
@@ -267,7 +271,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(20));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
@@ -286,7 +290,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> factory.decodeHeader(encodedHeader, false));
     }
 
     @Test
@@ -295,7 +299,7 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void headerIsVersion0BeforeActivation () {
+    public void headerIsVersion0Before351Activation () {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number - 1).build();
@@ -303,11 +307,242 @@ class BlockFactoryTest {
     }
 
     @Test
-    public void headerIsVersion1AfterActivation () {
+    public void headerIsVersion1After351Activation () {
         long number = 20L;
         enableRskip351At(number);
         BlockHeader header = factory.getBlockHeaderBuilder().setNumber(number).build();
         Assertions.assertEquals(1, header.getVersion());
+    }
+
+    private BlockHeader testRSKIP351FullHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom, short[] expectedEdges) {
+        return testRSKIP351CompressedHeaderEncoding(encoded, expectedVersion, expectedLogsBloom, expectedEdges, false);
+    }
+
+    private BlockHeader testRSKIP351CompressedHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom, short[] expectedEdges) {
+        return testRSKIP351CompressedHeaderEncoding(encoded, expectedVersion, expectedLogsBloom, expectedEdges, true);
+    }
+
+    private BlockHeader testRSKIP351CompressedHeaderEncoding(byte[] encoded, byte expectedVersion, byte[] expectedLogsBloom, short[] expectedEdges, boolean compressed) {
+        BlockHeader decodedHeader = factory.decodeHeader(encoded, compressed);
+
+        Assertions.assertEquals(expectedVersion, decodedHeader.getVersion());
+        Assertions.assertArrayEquals(expectedLogsBloom, decodedHeader.getLogsBloom());
+        Assertions.assertArrayEquals(expectedEdges, decodedHeader.getTxExecutionSublistsEdges());
+
+        return decodedHeader;
+    }
+
+    @Test
+    public void decodeCompressedBefore351() {
+        long number = 20L;
+        enableRulesAt(number, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setNumber(number - 1)
+                .build();
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
+        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeCompressedBefore351WithEdges() {
+        long number = 20L;
+        long blockNumber = number - 1;
+        enableRulesAt(blockNumber, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setTxExecutionSublistsEdges(edges)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
+        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+    }
+
+    /**
+     * note on decodeCompressedOfExtendedBefore351 &
+     * decodeCompressedOfExtendedBefore351WithEdges:
+     * while nodes activate hf, the new nodes will decode
+     * blocks headers v0 with compressed=true when old nodes send
+     * block headers encoded in the old fashion. in consequence,
+     * decode(compressed=true) needs to handle encoded(compress=false)
+     * for blocks v0
+     */
+
+    @Test
+    public void decodeCompressedOfExtendedBefore351() {
+        long number = 20L;
+        enableRulesAt(number, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setNumber(number - 1)
+                .build();
+
+        byte[] encoded = header.getFullEncoded(); // used before hf
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
+        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeCompressedOfExtendedBefore351WithEdges() {
+        long number = 20L;
+        long blockNumber = number - 1;
+        enableRulesAt(blockNumber, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setTxExecutionSublistsEdges(edges)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getFullEncoded(); // used before hf
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
+        Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeCompressedAfter351WithEdges() {
+        long blockNumber = 20L;
+        enableRulesAt(blockNumber, RSKIP144);
+        enableRskip351At(blockNumber);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setTxExecutionSublistsEdges(edges)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeFullBefore351And144() {
+        long number = 20L;
+        long blockNumber = number - 1;
+        enableRulesAt(number, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getFullEncoded();
+
+        BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 0,  logsBloom, null);
+        Assertions.assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeFullBefore351WithEdges() {
+        long number = 20L;
+        long blockNumber = number - 1;
+        enableRulesAt(blockNumber, RSKIP144);
+        enableRskip351At(number);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setTxExecutionSublistsEdges(edges)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getFullEncoded();
+
+        BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 0,  logsBloom, edges);
+        Assertions.assertArrayEquals(header.getLogsBloom(), decodedHeader.getExtensionData());
+    }
+
+    @Test
+    public void decodeFullAfter351WithEdges() {
+        long blockNumber = 20L;
+        enableRulesAt(blockNumber, RSKIP144);
+        enableRskip351At(blockNumber);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        short[] edges = { 1, 2, 3, 4 };
+
+        BlockHeader header = factory.getBlockHeaderBuilder()
+                .setLogsBloom(logsBloom)
+                .setTxExecutionSublistsEdges(edges)
+                .setNumber(blockNumber)
+                .build();
+
+        byte[] encoded = header.getFullEncoded();
+
+        BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 1,  logsBloom, edges);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -322,7 +557,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(21));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getTxExecutionSublistsEdges(), is(edges));
@@ -340,7 +575,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(18));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getTxExecutionSublistsEdges(), is(edges));
@@ -358,7 +593,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(20));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getTxExecutionSublistsEdges(), is(edges));
@@ -376,7 +611,7 @@ class BlockFactoryTest {
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(17));
 
-        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader, false);
 
         assertThat(header.getHash(), is(decodedHeader.getHash()));
         assertThat(header.getTxExecutionSublistsEdges(), is(edges));

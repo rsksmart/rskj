@@ -4,7 +4,6 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderV1;
-import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.jupiter.api.Assertions;
@@ -74,18 +73,13 @@ public class BlockHeaderV1Test {
     void logsBloomFieldEncoded() {
         byte[] bloom = TestUtils.randomBytes(256);
         BlockHeaderV1 header = createBlockHeader(bloom);
-        byte[] field = RLP.decode2(header.getLogsBloomFieldEncoded()).get(0).getRLPData();
-        Assertions.assertEquals((byte) 0x1, field[0]);
-        for (int i = 33; i < 256; i++) Assertions.assertEquals((byte) 0x0, field[i]);
-        Assertions.assertEquals(Bloom.BLOOM_BYTES, field.length);
+        byte[] extensionData = header.getExtensionData();
+        Assertions.assertEquals(32, extensionData.length);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), extensionData);
     }
 
     BlockHeaderV1 encodedHeaderWithRandomLogsBloom() {
         return createBlockHeader(TestUtils.randomBytes(256));
-    }
-
-    byte[] getLogsBloomFieldHashPart(byte[] encodedHeader) {
-        return Arrays.copyOfRange(encodedHeader, 1, 33);
     }
 
     @Test
@@ -95,13 +89,13 @@ public class BlockHeaderV1Test {
         byte[] hash = TestUtils.randomBytes(32);
         Mockito.when(extension.getHash()).thenReturn(hash);
         header.setExtension(extension);
-        byte[] encoded = header.getLogsBloomFieldEncoded();
 
+        BlockHeaderV1 otherHeader = encodedHeaderWithRandomLogsBloom();
         BlockHeaderExtensionV1 otherExtension = Mockito.mock(BlockHeaderExtensionV1.class);
         byte[] otherHash = TestUtils.randomBytes(32);
         Mockito.when(otherExtension.getHash()).thenReturn(otherHash);
-        header.setExtension(otherExtension);
+        otherHeader.setExtension(otherExtension);
 
-        Assertions.assertFalse(Arrays.equals(encoded, header.getLogsBloomFieldEncoded()));
+        Assertions.assertFalse(Arrays.equals(header.getExtensionData(), otherHeader.getExtensionData()));
     }
 }

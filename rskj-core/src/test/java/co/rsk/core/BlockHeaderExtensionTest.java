@@ -10,8 +10,6 @@ import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 public class BlockHeaderExtensionTest {
     @Test
     public void decodeV1() {
@@ -29,8 +27,7 @@ public class BlockHeaderExtensionTest {
                 RLP.decodeList(extension.getEncoded())
         );
 
-        Assertions.assertEquals(extension.getHeaderVersion(), decoded.getHeaderVersion());
-        Assertions.assertArrayEquals(extension.getHash(), extension.getHash());
+        Assertions.assertArrayEquals(extension.getHash(), decoded.getHash());
     }
 
     @Test
