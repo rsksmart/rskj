@@ -57,7 +57,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         this.jsonRpcServer = jsonRpcServer;
     }
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, Integer maxBatchRequestsSize) {
+    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));

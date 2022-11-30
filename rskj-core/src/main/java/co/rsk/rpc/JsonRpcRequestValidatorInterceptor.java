@@ -32,7 +32,7 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
 
     private final int maxBatchRequestsSize;
 
-    public JsonRpcRequestValidatorInterceptor(Integer maxBatchRequestsSize) {
+    public JsonRpcRequestValidatorInterceptor(int maxBatchRequestsSize) {
         this.maxBatchRequestsSize = maxBatchRequestsSize;
     }
 
