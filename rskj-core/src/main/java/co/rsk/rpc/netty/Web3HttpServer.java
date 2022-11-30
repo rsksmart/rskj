@@ -51,7 +51,7 @@ public class Web3HttpServer implements InternalService {
         this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
-        this.maxFrameSize = maxFrameSize;
+        this.maxAggregatedFrameSize = maxAggregatedFrameSize;
     }
 
     @Override
