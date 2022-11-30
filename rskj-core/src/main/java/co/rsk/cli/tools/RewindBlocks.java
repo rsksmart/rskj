@@ -95,6 +95,8 @@ public class RewindBlocks extends CliToolRskContextAware {
         long minInconsistentBlockNum = findMinInconsistentBlock(blockStore, repositoryLocator);
         if (minInconsistentBlockNum == -1) {
             printer.println("No inconsistent block has been found. Nothing to do");
+        } else if (minInconsistentBlockNum < blockStore.getMinNumber()) {
+            printer.println("Cannot rewind to " + minInconsistentBlockNum + ", such block is not in store.");
         } else {
             printer.println("Min inconsistent block number: " + minInconsistentBlockNum);
             rewindBlocks(minInconsistentBlockNum - 1, blockStore);
