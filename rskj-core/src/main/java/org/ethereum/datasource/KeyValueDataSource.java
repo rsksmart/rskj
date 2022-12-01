@@ -70,9 +70,12 @@ public interface KeyValueDataSource extends DataSource {
     void flush();
 
     @Nonnull
-    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind) {
+    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, @Nonnull DbKind defaultKind) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
+        String fullDbDir = datasourcePath.toAbsolutePath().toString();
+
+        KeyValueDataSource.validateDbKind(kind, fullDbDir, defaultKind);
 
         KeyValueDataSource ds;
         switch (kind) {
@@ -91,21 +94,27 @@ public interface KeyValueDataSource extends DataSource {
         return ds;
     }
 
-    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind) {
+    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind defaultKind) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, kind);
+            DbKind originKind = KeyValueDataSource.getDbKindValueFromDbKindFile(originPath.toAbsolutePath().toString(), defaultKind);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, originKind, defaultKind);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, kind);
+        DbKind destinationKind = KeyValueDataSource.getDbKindValueFromDbKindFile(destinationPath.toAbsolutePath().toString(), defaultKind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, destinationKind, defaultKind);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }
 
     static DbKind getDbKindValueFromDbKindFile(String databaseDir) {
+        return getDbKindValueFromDbKindFile(databaseDir, DbKind.LEVEL_DB);
+    }
+
+    static DbKind getDbKindValueFromDbKindFile(String databaseDir, DbKind defaultKind) {
         try {
             File file = new File(databaseDir, DB_KIND_PROPERTIES_FILE);
             Properties props = new Properties();
@@ -118,7 +127,7 @@ public interface KeyValueDataSource extends DataSource {
                 return DbKind.ofName(props.getProperty(KEYVALUE_DATASOURCE_PROP_NAME));
             }
 
-            return DbKind.LEVEL_DB;
+            return defaultKind;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -140,7 +149,15 @@ public interface KeyValueDataSource extends DataSource {
         }
     }
 
+    static void validateDbKind(DbKind currentDbKind, String databaseDir, DbKind defaultKind) {
+        validateDbKind(currentDbKind, databaseDir, false, defaultKind);
+    }
+
     static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        validateDbKind(currentDbKind, databaseDir, databaseReset, DbKind.LEVEL_DB);
+    }
+
+    static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset, DbKind defaultKind) {
         File dir = new File(databaseDir);
 
         if (dir.exists() && !dir.isDirectory()) {
@@ -155,7 +172,7 @@ public interface KeyValueDataSource extends DataSource {
             return;
         }
 
-        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir);
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, Optional.ofNullable(defaultKind).orElse(DbKind.LEVEL_DB));
 
         if (prevDbKind != currentDbKind) {
             if (databaseReset) {

@@ -158,20 +158,20 @@ class NotParameterizedKeyValueDataSourceTest {
         KeyValueDataSource.mergeDataSources(triePath, Collections.singletonList(multiTriePath), dbKind);
 
         // being able to init the DS proves it was closed on mergeDataSources
-        KeyValueDataSource trieDS = KeyValueDataSource.makeDataSource(triePath, dbKind);
+        KeyValueDataSource trieDS = KeyValueDataSource.makeDataSource(triePath, dbKind, dbKind);
         Assertions.assertNull(trieDS.get("missingKey".getBytes()), "Key not present on any DS should not be present after merge");
         Assertions.assertNotNull(trieDS.get(keyTrie), "Pre-existing key on destination should exist after merge");
         Assertions.assertNotNull(trieDS.get(keyMultiTrie), "Key from origination should exist on destination after merge");
 
         // being able to init the DS proves it was closed on mergeDataSources
-        KeyValueDataSource multiTrieDS = KeyValueDataSource.makeDataSource(multiTriePath, dbKind);
+        KeyValueDataSource multiTrieDS = KeyValueDataSource.makeDataSource(multiTriePath, dbKind, dbKind);
         Assertions.assertNull(multiTrieDS.get("missingKey".getBytes()), "Origination should remain intact, key not present before should not exist after merge");
         Assertions.assertNull(multiTrieDS.get(keyTrie), "Origination should remain intact, nothing copied from destination");
         Assertions.assertNotNull(multiTrieDS.get(keyMultiTrie), "Origination should remain intact, pre-existing key should exist after merge");
     }
 
     private static void createDS(Path triePath, DbKind rocksDb, byte[] key, byte[] value) {
-        KeyValueDataSource trieDS = KeyValueDataSource.makeDataSource(triePath, rocksDb);
+        KeyValueDataSource trieDS = KeyValueDataSource.makeDataSource(triePath, rocksDb, rocksDb);
         trieDS.put(key, value);
         trieDS.flush();
         trieDS.close();

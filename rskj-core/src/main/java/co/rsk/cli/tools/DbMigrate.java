@@ -32,6 +32,8 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -107,6 +109,7 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         }
 
         DbKind sourceDbKind = ctx.getRskSystemProperties().databaseKind();
+        DbKind defaultDbKind = ctx.getRskSystemProperties().databaseKind();
         DbKind targetDbKind = DbKind.ofName(this.targetdb);
 
         if (sourceDbKind == targetDbKind) {
@@ -125,10 +128,38 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         FileUtil.recursiveDelete(targetDbDir);
 
         try (Stream<Path> databasePaths = Files.list(Paths.get(sourceDbDir))) {
-            databasePaths.filter(path -> path.toFile().isDirectory())
-                    .map(path -> path.getFileName().toString())
-                    .map(dbName -> buildDbMigrationInformation(sourceDbDir, targetDbDir, sourceDbKind, targetDbKind, dbName))
-                    .forEach(this::migrate);
+            List<Path> paths = databasePaths.collect(Collectors.toList());
+
+            for (Path path : paths) {
+                if (!path.toFile().isDirectory()) {
+                    continue;
+                }
+
+                String fullSourceDbPath = path.toAbsolutePath().toString();
+                String dbName = path.getFileName().toString();
+                String fullTargetDbPath = String.format("%s/%s", targetDbDir, dbName);
+
+                DbKind dbSourceDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(fullSourceDbPath, defaultDbKind);
+
+                if (dbSourceDbKind == targetDbKind) {
+                    File targetDbFolder = new File(targetDbDir);
+                    targetDbFolder.mkdirs();
+                    Files.move(Paths.get(fullSourceDbPath), Paths.get(fullTargetDbPath));
+                    continue;
+                }
+
+                DbMigrationInformation dbMigrationInformation = buildDbMigrationInformation(sourceDbDir, targetDbDir, defaultDbKind, dbSourceDbKind, targetDbKind, dbName);
+
+                this.migrate(dbMigrationInformation);
+
+                KeyValueDataSource.validateDbKind(targetDbKind, fullTargetDbPath, true, defaultDbKind);
+
+                String nodeIdFilePath = "/" + NODE_ID_FILE;
+
+                if (new File(fullSourceDbPath, NODE_ID_FILE).exists()) {
+                    Files.move(Paths.get(fullSourceDbPath + nodeIdFilePath), Paths.get(fullTargetDbPath + nodeIdFilePath));
+                }
+            }
         }
 
         KeyValueDataSource.validateDbKind(targetDbKind, targetDbDir, true);
@@ -149,14 +180,15 @@ public class DbMigrate extends PicoCliToolRskContextAware {
     private DbMigrationInformation buildDbMigrationInformation(
             String sourceDbDir,
             String targetDbDir,
+            DbKind defaultDbKind,
             DbKind sourceDbKind,
             DbKind targetDbKind,
             String dbName
     ) {
         logger.info("Preparing data sources for db: {}", dbName);
 
-        KeyValueDataSource sourceDataSource = KeyValueDataSource.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind);
-        KeyValueDataSource targetDataSource = KeyValueDataSource.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind);
+        KeyValueDataSource sourceDataSource = KeyValueDataSource.makeDataSource(Paths.get(sourceDbDir, dbName), sourceDbKind, defaultDbKind);
+        KeyValueDataSource targetDataSource = KeyValueDataSource.makeDataSource(Paths.get(targetDbDir, dbName), targetDbKind, defaultDbKind);
 
         logger.info("Data sources prepared successfully");
         logger.info("Preparing indexes for db: {}", dbName);
