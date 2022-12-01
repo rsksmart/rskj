@@ -159,6 +159,8 @@ public class DbMigrate extends PicoCliToolRskContextAware {
                 if (new File(fullSourceDbPath, NODE_ID_FILE).exists()) {
                     Files.move(Paths.get(fullSourceDbPath + nodeIdFilePath), Paths.get(fullTargetDbPath + nodeIdFilePath));
                 }
+
+                FileUtil.recursiveDelete(fullSourceDbPath);
             }
         }
 
