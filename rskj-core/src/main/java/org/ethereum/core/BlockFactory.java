@@ -241,17 +241,18 @@ public class BlockFactory {
     private boolean canBeDecoded(RLPList rlpHeader, long blockNumber, boolean compressed) {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
-        int preRSKIP351SizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 0 : 1;
+        int preRSKIP351SizeAdjustment = getRSKIP351SizeAdjustment(blockNumber, compressed, preParallelSizeAdjustment);
 
-        int compressionSizeAdjustment = 0;
-        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && compressed) {
-            compressionSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 2 : 1;
-        }
-
-        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;
-        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;
+        int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
+        int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment;
 
         return rlpHeader.size() == expectedSize || rlpHeader.size() == expectedSizeMM;
+    }
+
+    private int getRSKIP351SizeAdjustment(long blockNumber, boolean compressed, int preParallelSizeAdjustment) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) return 1; // remove version
+        if (compressed) return 2 - preParallelSizeAdjustment; // remove version and edges if existent
+        return 0;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {
