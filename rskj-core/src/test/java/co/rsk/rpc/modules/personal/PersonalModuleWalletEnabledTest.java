@@ -1,5 +1,6 @@
 package co.rsk.rpc.modules.personal;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.DecoderException;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.*;
  */
 
 class PersonalModuleWalletEnabledTest {
+    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     void importRawKey_KeyIsNull_ThrowsNullPointerException() {
@@ -75,7 +77,7 @@ class PersonalModuleWalletEnabledTest {
     }
 
     private PersonalModuleWalletEnabled createPersonalModuleWalletEnabled(Wallet wallet) {
-        return new PersonalModuleWalletEnabled(null, null, wallet, null);
+        return new PersonalModuleWalletEnabled(config, null, wallet, null);
     }
 
 }

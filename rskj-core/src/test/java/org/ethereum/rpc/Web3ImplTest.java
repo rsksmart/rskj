@@ -2089,6 +2089,7 @@ class Web3ImplTest {
         BigInteger gasLimit = BigInteger.valueOf(9);
         String data = "0xff";
         BigInteger nonce = BigInteger.ONE;
+        byte chainId = config.getNetworkConstants().getChainId();
 
         CallArguments args = new CallArguments();
         args.setFrom(fromAddress);
@@ -2098,6 +2099,14 @@ class Web3ImplTest {
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(nonce.toString());
+        args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
+
+        String txHash = null;
+        try {
+            txHash = web3.personal_sendTransaction(args, "passphrase1");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // ***** Verifies tx hash
         Transaction expectedTx = Transaction
                 .builder()

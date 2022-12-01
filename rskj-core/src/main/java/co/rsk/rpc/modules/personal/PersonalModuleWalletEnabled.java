@@ -45,12 +45,14 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final Wallet wallet;
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
+    private final Constants constants;
 
     public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
         this.transactionPool = transactionPool;
+        this.constants = config.getNetworkConstants();
     }
 
     @Override
@@ -195,6 +197,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 		Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
 
 		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+
+        if (!tx.acceptTransactionSignature(constants.getChainId())) {
+            throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+        }
 
         TransactionPoolAddResult result = eth.submitTransaction(tx);
         if (!result.transactionsWereAdded()) {

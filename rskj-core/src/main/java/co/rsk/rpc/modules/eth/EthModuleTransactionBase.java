@@ -106,6 +106,16 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 				throw invalidParamError("Missing parameter, gasPrice, gas or value");
 			}
 
+			Account senderAccount = this.wallet.getAccount(tx.getSender());
+
+			if (senderAccount == null) {
+				throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_COULD_NOT_FIND_ACCOUNT + tx.getSender().toHexString());
+			}
+
+			if (!tx.acceptTransactionSignature(constants.getChainId())) {
+				throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+			}
+
 			TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
 			if (!result.transactionsWereAdded()) {
 				throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
