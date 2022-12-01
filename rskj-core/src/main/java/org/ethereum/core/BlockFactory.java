@@ -117,7 +117,7 @@ public class BlockFactory {
             receiptTrieRoot = EMPTY_TRIE_HASH;
         }
 
-        byte[] logsBloomField = rlpHeader.get(6).getRLPData(); // logs bloom when decoding extended, extension data when compressed
+        byte[] logsBloomField = rlpHeader.get(6).getRLPData(); // logs bloom when decoding extended, list(version, hash(extension)) when compressed
         byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
         BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
@@ -154,10 +154,9 @@ public class BlockFactory {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
-        byte version = 0x0;
-        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
-            version = rlpHeader.get(r++).getRLPData()[0];
-        }
+        byte version = !activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 0x0 : (compressed
+                ? RLP.decodeList(logsBloomField).get(0).getRLPData()[0]
+                : rlpHeader.get(r++).getRLPData()[0]);
 
         short[] txExecutionSublistsEdges = null;
         if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
@@ -236,7 +235,7 @@ public class BlockFactory {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
         int preRSKIP351SizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 0 : 1;
-        int compressionSizeAdjustment = compressed && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 1 : 0;
+        int compressionSizeAdjustment = compressed && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 2 : 0;
 
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;
         int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;

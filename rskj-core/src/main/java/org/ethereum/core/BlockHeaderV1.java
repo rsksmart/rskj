@@ -3,6 +3,9 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +38,7 @@ public class BlockHeaderV1 extends BlockHeader {
 
         BlockHeaderExtensionV1 extension = new BlockHeaderExtensionV1(logsBloom, txExecutionSublistsEdges);
 
-        this.extensionData = extension.getHash(); // update after calculating
+        this.extensionData = BlockHeaderV1.createExtensionData(extension.getHash()); // update after calculating
         this.extension = extension;
     }
 
@@ -59,8 +62,16 @@ public class BlockHeaderV1 extends BlockHeader {
         this.extension = new BlockHeaderExtensionV1(null, null);
     }
 
+    @VisibleForTesting
+    public static byte[] createExtensionData(byte[] extensionHash) {
+        return RLP.encodeList(
+                RLP.encodeByte((byte) 0x1),
+                RLP.encodeElement(extensionHash)
+        );
+    }
+
     private void updateExtensionData() {
-        this.extensionData = this.extension.getHash();
+        this.extensionData = BlockHeaderV1.createExtensionData(this.extension.getHash());
     }
 
     @Override
@@ -94,6 +105,7 @@ public class BlockHeaderV1 extends BlockHeader {
     @Override
     public void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode) {
         if (!usingCompressedEncoding) {
+            fieldsToEncode.add(RLP.encodeByte(this.getVersion()));
             this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
         }
     }

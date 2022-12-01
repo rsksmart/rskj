@@ -6,6 +6,7 @@ import org.ethereum.core.BlockHeaderExtensionV1;
 import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -73,9 +74,13 @@ public class BlockHeaderV1Test {
     void logsBloomFieldEncoded() {
         byte[] bloom = TestUtils.randomBytes(256);
         BlockHeaderV1 header = createBlockHeader(bloom);
-        byte[] extensionData = header.getExtensionData();
-        Assertions.assertEquals(32, extensionData.length);
-        Assertions.assertArrayEquals(header.getExtension().getHash(), extensionData);
+        RLPList extensionDataRLP = RLP.decodeList(header.getExtensionData());
+
+        byte version = extensionDataRLP.get(0).getRLPData()[0];
+        byte[] extensionHash = extensionDataRLP.get(1).getRLPData();
+
+        Assertions.assertEquals((byte) 0x1, version);
+        Assertions.assertArrayEquals(header.getExtension().getHash(), extensionHash);
     }
 
     BlockHeaderV1 encodedHeaderWithRandomLogsBloom() {

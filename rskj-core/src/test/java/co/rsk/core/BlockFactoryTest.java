@@ -26,6 +26,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockHeaderV1;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -465,7 +466,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getEncodedCompressed();
 
         BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
-        Assertions.assertArrayEquals(header.getExtension().getHash(), decodedHeader.getExtensionData());
+        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
     }
 
     @Test
@@ -542,7 +543,7 @@ class BlockFactoryTest {
         byte[] encoded = header.getFullEncoded();
 
         BlockHeader decodedHeader = testRSKIP351FullHeaderEncoding(encoded, (byte) 1,  logsBloom, edges);
-        Assertions.assertArrayEquals(header.getExtension().getHash(), decodedHeader.getExtensionData());
+        Assertions.assertArrayEquals(BlockHeaderV1.createExtensionData(header.getExtension().getHash()), decodedHeader.getExtensionData());
     }
 
     @Test

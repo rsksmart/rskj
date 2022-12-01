@@ -370,10 +370,6 @@ public abstract class BlockHeader {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
-        if (this.getVersion() > 0) {
-            fieldToEncodeList.add(RLP.encodeByte(this.getVersion()));
-        }
-
         this.addExtraFieldsToEncodedHeader(compressed, fieldToEncodeList);
 
         if (withMergedMiningFields && hasMiningFields()) {

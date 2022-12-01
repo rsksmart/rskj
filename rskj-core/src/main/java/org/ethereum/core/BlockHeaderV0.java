@@ -79,8 +79,11 @@ public class BlockHeaderV0 extends BlockHeader {
 
     @Override
     public void addExtraFieldsToEncodedHeader(boolean usingCompressedEncoding, List<byte[]> fieldsToEncode) {
-        // block headers v0 encoded should remain the same
-        // edges are added using compressed encoding too
+        // adding edges to
+        // 1. keep RSKIP 351 and RSKIP 144 independent
+        //    either can be activated at any height independently
+        // 2. keep compressed encoding the same as uncompressed
+        //    since this difference should not exist on v0
         this.addTxExecutionSublistsEdgesIfAny(fieldsToEncode);
     }
 }
