@@ -5,7 +5,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 
 import java.util.Arrays;
 import java.util.List;
