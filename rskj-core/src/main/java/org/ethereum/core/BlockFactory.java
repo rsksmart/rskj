@@ -154,13 +154,20 @@ public class BlockFactory {
             ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
-        byte version = !activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 0x0 : (compressed
-                ? RLP.decodeList(logsBloomField).get(0).getRLPData()[0]
-                : rlpHeader.get(r++).getRLPData()[0]);
+        byte version = 0x0;
+
+        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber)) {
+            version = compressed
+                    ? RLP.decodeList(logsBloomField).get(0).getRLPData()[0]
+                    : rlpHeader.get(r++).getRLPData()[0];
+        }
 
         short[] txExecutionSublistsEdges = null;
-        if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
-            txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+
+        if (!activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) || !compressed) {
+            if (rlpHeader.size() > r && activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber)) {
+                txExecutionSublistsEdges = ByteUtil.rlpToShorts(rlpHeader.get(r++).getRLPRawData());
+            }
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -235,7 +242,11 @@ public class BlockFactory {
         int preUmmHeaderSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? 0 : 1;
         int preParallelSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 0 : 1;
         int preRSKIP351SizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 0 : 1;
-        int compressionSizeAdjustment = compressed && activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) ? 2 : 0;
+
+        int compressionSizeAdjustment = 0;
+        if (activationConfig.isActive(ConsensusRule.RSKIP351, blockNumber) && compressed) {
+            compressionSizeAdjustment = activationConfig.isActive(ConsensusRule.RSKIP144, blockNumber) ? 2 : 1;
+        }
 
         int expectedSize = RLP_HEADER_SIZE - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;
         int expectedSizeMM = RLP_HEADER_SIZE_WITH_MERGED_MINING - preUmmHeaderSizeAdjustment - preParallelSizeAdjustment - preRSKIP351SizeAdjustment - compressionSizeAdjustment;

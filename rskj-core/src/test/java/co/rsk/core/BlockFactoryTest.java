@@ -383,6 +383,28 @@ class BlockFactoryTest {
         Assertions.assertArrayEquals(logsBloom, decodedHeader.getExtensionData());
     }
 
+    @Test
+    public void decodeCompressedWithNoEdgesAndMergedMiningFields() {
+        long blockNumber = 20L;
+        enableRulesAt(blockNumber, RSKIP144, RSKIP92, RSKIPUMM);
+        enableRskip351At(blockNumber);
+
+        byte[] logsBloom = new byte[Bloom.BLOOM_BYTES];
+        logsBloom[0] = 1;
+        logsBloom[1] = 1;
+        logsBloom[2] = 1;
+        logsBloom[3] = 1;
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(blockNumber, new byte[0], new byte[0], null, logsBloom);
+
+        byte[] encoded = header.getEncodedCompressed();
+
+        BlockHeader decodedHeader = testRSKIP351CompressedHeaderEncoding(encoded, (byte) 1,  null, null);
+
+        Assertions.assertArrayEquals(header.getExtensionData(), decodedHeader.getExtensionData());
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+    }
     /**
      * note on decodeCompressedOfExtendedBefore351 &
      * decodeCompressedOfExtendedBefore351WithEdges:
@@ -635,6 +657,15 @@ class BlockFactoryTest {
             byte[] forkDetectionData,
             byte[] ummRoot,
             short[] edges) {
+        return createBlockHeaderWithMergedMiningFields(number, forkDetectionData, ummRoot, edges, null);
+    }
+
+    private BlockHeader createBlockHeaderWithMergedMiningFields(
+            long number,
+            byte[] forkDetectionData,
+            byte[] ummRoot,
+            short[] edges,
+            byte[] logsBloom) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -662,6 +693,7 @@ class BlockFactoryTest {
                 .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
                 .setTxExecutionSublistsEdges(edges)
+                .setLogsBloom(logsBloom)
                 .build();
     }
 
