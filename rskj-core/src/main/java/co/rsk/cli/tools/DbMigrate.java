@@ -21,6 +21,7 @@ import co.rsk.cli.PicoCliToolRskContextAware;
 import org.ethereum.datasource.DataSourceKeyIterator;
 import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,10 @@ import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,6 +54,7 @@ import java.util.stream.Stream;
 @CommandLine.Command(name = "db-migrate", mixinStandardHelpOptions = true, version = "db-migrate 1.0",
         description = "Migrates between different databases such as leveldb and rocksdb.")
 public class DbMigrate extends PicoCliToolRskContextAware {
+    private static final int BATCH_SIZE = 10_000;
     private static final Logger logger = LoggerFactory.getLogger(DbMigrate.class);
     private static final String NODE_ID_FILE = "nodeId.properties";
 
@@ -224,13 +229,22 @@ public class DbMigrate extends PicoCliToolRskContextAware {
         logger.info("Migrating data source: {}", sourceKeyValueDataSource.getName());
 
         try (DataSourceKeyIterator iterator = sourceKeyValueDataSource.keyIterator()) {
+            final Map<ByteArrayWrapper, byte[]> bulkDataMap = new HashMap<>();
+
             while (iterator.hasNext()) {
                 byte[] data = iterator.next();
 
-                targetKeyValueDataSource.put(
-                        data,
-                        sourceKeyValueDataSource.get(data)
-                );
+                bulkDataMap.put(new ByteArrayWrapper(data), sourceKeyValueDataSource.get(data));
+
+                if (bulkDataMap.size() > BATCH_SIZE - 1) {
+                    targetKeyValueDataSource.updateBatch(bulkDataMap, new HashSet<>());
+                    bulkDataMap.clear();
+                }
+            }
+
+            if (bulkDataMap.size() > 0) {
+                targetKeyValueDataSource.updateBatch(bulkDataMap, new HashSet<>());
+                bulkDataMap.clear();
             }
         } catch (Exception e) {
             logger.error("An error happened closing DB Key Iterator", e);
