@@ -20,7 +20,6 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -62,7 +61,6 @@ class BridgeEventLoggerImplTest {
     private static final BridgeRegTestConstants CONSTANTS = BridgeRegTestConstants.getInstance();
     private List<LogInfo> eventLogs;
     private BridgeEventLogger eventLogger;
-    private BridgeConstants constantsMock;
     private BtcTransaction btcTxMock;
     private BtcTransaction btcTx;
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -70,8 +68,7 @@ class BridgeEventLoggerImplTest {
     @BeforeEach
     void setup() {
         eventLogs = new LinkedList<>();
-        constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
+        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
     }
