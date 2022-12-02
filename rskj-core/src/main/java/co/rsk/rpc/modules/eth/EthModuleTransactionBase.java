@@ -41,95 +41,89 @@ import co.rsk.util.HexUtils;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
-	protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
+    protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-	private final Wallet wallet;
-	private final TransactionPool transactionPool;
-	private final Constants constants;
-	private final TransactionGateway transactionGateway;
+    private final Wallet wallet;
+    private final TransactionPool transactionPool;
+    private final Constants constants;
+    private final TransactionGateway transactionGateway;
 
-	public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
-		this.wallet = wallet;
-		this.transactionPool = transactionPool;
-		this.constants = constants;
-		this.transactionGateway = transactionGateway;
-	}
+    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
+        this.wallet = wallet;
+        this.transactionPool = transactionPool;
+        this.constants = constants;
+        this.transactionGateway = transactionGateway;
+    }
 
-	@Override
-	public synchronized String sendTransaction(CallArguments args) {
+    @Override
+    public synchronized String sendTransaction(CallArguments args) {
 
-		Account senderAccount = this.wallet.getAccount(new RskAddress(args.getFrom()));
+        Account senderAccount = this.wallet.getAccount(new RskAddress(args.getFrom()));
 
-		if (senderAccount == null) {
-			throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_COULD_NOT_FIND_ACCOUNT + args.getFrom());
-		}
+        if (senderAccount == null) {
+            throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_COULD_NOT_FIND_ACCOUNT + args.getFrom());
+        }
 
-		String txHash = null;
+        String txHash = null;
 
-		try {
+        try {
 
-			synchronized (transactionPool) {
+            synchronized (transactionPool) {
 
-				TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
+                TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
 
-				Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
+                Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
 
-				tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+                tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
-				if (!tx.acceptTransactionSignature(constants.getChainId())) {
-					throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.getChainId());
-				}
+                if (!tx.acceptTransactionSignature(constants.getChainId())) {
+                    throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.getChainId());
+                }
 
-				TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
+                TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
 
-				if (!result.transactionsWereAdded()) {
-					throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-				}
+                if (!result.transactionsWereAdded()) {
+                    throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+                }
 
-				txHash = tx.getHash().toJsonString();
-			}
+                txHash = tx.getHash().toJsonString();
+            }
 
-			return txHash;
+            return txHash;
 
-		} finally {
-			LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
-		}
-	}
+        } finally {
+            LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
+        }
+    }
 
-	@Override
-	public String sendRawTransaction(String rawData) {
-		String s = null;
-		try {
-			Transaction tx = new ImmutableTransaction(HexUtils.stringHexToByteArray(rawData));
+    @Override
+    public String sendRawTransaction(String rawData) {
+        String s = null;
+        try {
+            Transaction tx = new ImmutableTransaction(HexUtils.stringHexToByteArray(rawData));
 
-			if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
-				throw invalidParamError("Missing parameter, gasPrice, gas or value");
-			}
+            if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
+                throw invalidParamError("Missing parameter, gasPrice, gas or value");
+            }
 
-			Account senderAccount = this.wallet.getAccount(tx.getSender());
+            if (!tx.acceptTransactionSignature(constants.getChainId())) {
+                throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+            }
 
-			if (senderAccount == null) {
-				throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_COULD_NOT_FIND_ACCOUNT + tx.getSender().toHexString());
-			}
+            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
+            if (!result.transactionsWereAdded()) {
+                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+            }
 
-			if (!tx.acceptTransactionSignature(constants.getChainId())) {
-				throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
-			}
-
-			TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
-			if (!result.transactionsWereAdded()) {
-				throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-			}
-
-			return s = tx.getHash().toJsonString();
-		} catch (RLPException e) {
-			throw invalidParamError("Invalid input: " + e.getMessage(), e);
-		} finally {
-			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
-			}
-		}
-	}
+            return s = tx.getHash().toJsonString();
+        } catch (RLPException e) {
+            throw invalidParamError("Invalid input: " + e.getMessage(), e);
+        } finally {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
+            }
+        }
+    }
 
 
 }
