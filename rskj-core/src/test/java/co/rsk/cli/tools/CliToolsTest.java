@@ -514,6 +514,8 @@ class CliToolsTest {
         }
 
         tempDir.resolve("blocks").toFile().mkdir();
+        tempDir.resolve("blooms").toFile().mkdir();
+        File blocksDbKindPropsFile = tempDir.resolve(String.format("%s/%s", "blocks", KeyValueDataSource.DB_KIND_PROPERTIES_FILE)).toFile();
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -537,12 +539,19 @@ class CliToolsTest {
         }
 
         String dbKindPropsFileLine = null;
+        String blocksDbKindPropsFileLine = null;
 
-        if (dbKindPropsFile.exists()) {
+        if (dbKindPropsFile.exists() && blocksDbKindPropsFile.exists()) {
             BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
             reader.readLine();
             reader.readLine();
             dbKindPropsFileLine = reader.readLine();
+            reader.close();
+
+            reader = new BufferedReader(new FileReader(blocksDbKindPropsFile));
+            reader.readLine();
+            reader.readLine();
+            blocksDbKindPropsFileLine = reader.readLine();
             reader.close();
         }
 
@@ -550,6 +559,9 @@ class CliToolsTest {
         Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
         Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
+
+        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", blocksDbKindPropsFileLine);
+        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", blocksDbKindPropsFileLine);
     }
 
     @Test
