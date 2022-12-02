@@ -748,17 +748,16 @@ public abstract class SystemProperties {
     }
 
     public DbKind getKeyValueDataSources(KeyValueDataSourcesEnum keyValueDataSourcesEnum) {
-        try {
-            return Optional.ofNullable(configFromFiles.getString(
-                    String.format(
-                            "%s.%s",
-                            KeyValueDataSource.KEYVALUE_DATASOURCES_PROP_NAME,
-                            keyValueDataSourcesEnum.getValue())
-            )).map(DbKind::ofName).orElse(this.databaseKind());
-        } catch (Exception e) {
-            logger.warn("keyvalue.datasources not found. Using keyvalue.datasource as default", e);
-            return this.databaseKind();
+        String path = String.format(
+                "%s.%s",
+                KeyValueDataSource.KEYVALUE_DATASOURCES_PROP_NAME,
+                keyValueDataSourcesEnum.getValue());
+
+        if (configFromFiles.hasPath(path)) {
+            return Optional.ofNullable(configFromFiles.getString(path)).map(DbKind::ofName).orElse(this.databaseKind());
         }
+
+        return this.databaseKind();
     }
 
     public DbKind getStateRootsDataSource() {
