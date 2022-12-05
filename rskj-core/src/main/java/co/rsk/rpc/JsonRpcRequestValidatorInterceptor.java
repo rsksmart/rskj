@@ -36,8 +36,20 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
         this.maxBatchRequestsSize = maxBatchRequestsSize;
     }
 
+    private JsonNode getMethod(JsonNode rootNode) {
+        JsonNode result = rootNode;
+
+        while (result.isArray() && !result.get(0).has("method")) {
+            result = result.get(0);
+        }
+
+        return result;
+    }
+
     private void validateRequest(JsonNode node) {
-        if (node.isArray() && node.size() > this.maxBatchRequestsSize) {
+        JsonNode jsonRequest = getMethod(node);
+
+        if (jsonRequest.isArray() && jsonRequest.size() > this.maxBatchRequestsSize) {
             String msg = String.format("Cannot dispatch batch requests. %s is the max number of supported batch requests", this.maxBatchRequestsSize);
             logger.warn(msg);
 
@@ -52,6 +64,7 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
 
     @Override
     public void preHandle(Object target, Method method, List<JsonNode> params) {
+        System.out.println("");
         // Ignoring this function as we don't need anything to perform here.
     }
 

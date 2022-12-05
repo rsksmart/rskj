@@ -224,6 +224,127 @@ class Web3WebSocketServerTest {
     }
 
     @Test
+    void testMaxBatchRequestWithNestedLevels() throws Exception {
+        String content = "[[[{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "},{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "}]]]";
+
+        byte[] msg = content.getBytes();
+        String serverPath = "/";
+
+        Web3 web3Mock = mock(Web3.class);
+        String mockResult = "output";
+        when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
+
+        int randomPort = 9998;
+
+        TestSystemProperties testSystemProperties = new TestSystemProperties();
+
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
+        int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
+        int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
+        int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
+
+        assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
+        assertEquals(DEFAULT_MAX_FRAME_SIZE, maxFrameSize);
+        assertEquals(DEFAULT_MAX_AGGREGATED_FRAME_SIZE, maxAggregatedFrameSize);
+
+        Web3WebSocketServer websocketServer = new Web3WebSocketServer(
+                InetAddress.getLoopbackAddress(),
+                randomPort,
+                handler,
+                serverHandler,
+                serverWriteTimeoutSeconds,
+                maxFrameSize,
+                maxAggregatedFrameSize
+        );
+        websocketServer.start();
+
+        OkHttpClient wsClient = new OkHttpClient();
+        Request wsRequest = new Request.Builder().url("ws://localhost:" + randomPort + serverPath).build();
+        WebSocketCall wsCall = WebSocketCall.create(wsClient, wsRequest);
+
+        CountDownLatch wsAsyncResultLatch = new CountDownLatch(1);
+        CountDownLatch wsAsyncCloseLatch = new CountDownLatch(1);
+        AtomicReference<Exception> failureReference = new AtomicReference<>();
+        wsCall.enqueue(new WebSocketListener() {
+
+            private WebSocket webSocket;
+
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                wsExecutor.submit(() -> {
+                    RequestBody body = RequestBody.create(WebSocket.TEXT, msg);
+                    try {
+                        this.webSocket = webSocket;
+                        this.webSocket.sendMessage(body);
+                        this.webSocket.close(1000, null);
+                    } catch (IOException e) {
+                        failureReference.set(e);
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(IOException e, Response response) {
+                failureReference.set(e);
+            }
+
+            @Override
+            public void onMessage(ResponseBody message) throws IOException {
+                JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, message.bytes());
+
+                Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
+                Assertions.assertEquals("Cannot dispatch batch requests. 1 is the max number of supported batch requests", jsonRpcResponse.get("error").get("message").asText());
+
+                message.close();
+                wsAsyncResultLatch.countDown();
+            }
+
+            @Override
+            public void onPong(Buffer payload) {
+            }
+
+            @Override
+            public void onClose(int code, String reason) {
+                wsAsyncCloseLatch.countDown();
+            }
+        });
+
+        if (!wsAsyncResultLatch.await(10, TimeUnit.SECONDS)) {
+            fail("Result timed out");
+        }
+
+        if (!wsAsyncCloseLatch.await(10, TimeUnit.SECONDS)) {
+            fail("Close timed out");
+        }
+
+        websocketServer.stop();
+
+        Exception failure = failureReference.get();
+        if (failure != null) {
+            failure.printStackTrace();
+            fail(failure.getMessage());
+        }
+    }
+
+    @Test
     void testStackOverflowErrorInRequest() throws Exception {
         String content = "[{\n" +
                 "    \"method\": \"web3_sha3\",\n" +

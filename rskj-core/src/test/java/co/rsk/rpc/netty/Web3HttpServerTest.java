@@ -3,7 +3,6 @@ package co.rsk.rpc.netty;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -92,6 +91,54 @@ class Web3HttpServerTest {
         Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
         String responseBody = response.body().string();
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
+
+        server.stop();
+
+        assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
+        Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
+        Assertions.assertEquals("Cannot dispatch batch requests. 1 is the max number of supported batch requests", jsonRpcResponse.get("error").get("message").asText());
+    }
+
+    @Test
+    void testMaxBatchRequestWithNestedLevels() throws Exception {
+        Web3 web3Mock = Mockito.mock(Web3.class);
+        String mockResult = "output";
+        Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
+        CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
+        Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
+        Mockito.when(mockCorsConfiguration.getHeader()).thenReturn("*");
+
+        int randomPort = 9000;
+
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
+        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
+        server.start();
+
+        String content = "[[[{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "},{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "}]]]";
+
+        Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
+        String responseBody = response.body().string();
+        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(responseBody);
+
+        server.stop();
 
         assertThat(response.code(), is(HttpResponseStatus.BAD_REQUEST.code()));
         Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
