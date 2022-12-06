@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -86,8 +87,9 @@ public class BridgeEventLoggerTest {
     @Test
     void logBatchPegoutCreated() {
         Sha256Hash btcTxHash = btcTxMock.getHash();
+        List<Keccak256> rskTxHashes = new ArrayList<>();
         assertThrows(UnsupportedOperationException.class, () -> {
-            eventLogger.logBatchPegoutCreated(btcTxHash, new ArrayList<>());
+            eventLogger.logBatchPegoutCreated(btcTxHash, rskTxHashes);
         });
     }
 
