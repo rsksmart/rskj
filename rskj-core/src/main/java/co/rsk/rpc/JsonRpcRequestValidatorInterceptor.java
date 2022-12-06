@@ -29,6 +29,7 @@ import java.util.List;
 
 public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(JsonRpcRequestValidatorInterceptor.class);
+    private static final int MAX_JSON_REQUEST_DEPTH = 99;
 
     private final int maxBatchRequestsSize;
 
@@ -37,10 +38,12 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     }
 
     private JsonNode getMethod(JsonNode rootNode) {
+        int depth = 0;
         JsonNode result = rootNode;
 
-        while (result.isArray() && !result.get(0).has("method")) {
+        while (depth < MAX_JSON_REQUEST_DEPTH && result.isArray() && !result.get(0).has("method")) {
             result = result.get(0);
+            depth++;
         }
 
         return result;
