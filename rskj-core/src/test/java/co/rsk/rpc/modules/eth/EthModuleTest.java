@@ -40,6 +40,7 @@ import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -207,8 +208,31 @@ class EthModuleTest {
 		assertEquals(txExpectedResult, txResult);
 	}
 
+    @Test
+    void sendTransactionThrowsErrorOnChainIdValidationTest() {
 
+        Constants constants = Constants.regtest();
 
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setChainId("" + ((int) constants.getChainId() - 2));
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendTransaction(args));
+    }
 
     @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
