@@ -307,7 +307,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
     }
 
-    void test_addSignature_EventEmitted(boolean rskip326Active, boolean useValidSignature, int wantedNumberOfInvocations, boolean shouldSignTwice) throws Exception {
+    private void test_addSignature_EventEmitted(boolean rskip326Active, boolean useValidSignature, int wantedNumberOfInvocations, boolean shouldSignTwice) throws Exception {
         // Setup
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository track = createRepository().startTracking();
