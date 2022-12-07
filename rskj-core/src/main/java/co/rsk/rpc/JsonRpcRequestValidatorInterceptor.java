@@ -29,7 +29,6 @@ import java.util.List;
 
 public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     private static final Logger logger = LoggerFactory.getLogger(JsonRpcRequestValidatorInterceptor.class);
-    private static final int MAX_JSON_REQUEST_DEPTH = 99;
 
     private final int maxBatchRequestsSize;
 
@@ -38,14 +37,10 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
     }
 
     private int validateRequestCount(JsonNode rootNode) {
-        return this.validateRequestCount(rootNode, 0, 0);
+        return this.validateRequestCount(rootNode, 0);
     }
 
-    private int validateRequestCount(JsonNode rootNode, int depth, int totalReqCount) {
-        if (depth > MAX_JSON_REQUEST_DEPTH) {
-            throw new StackOverflowError("Reached max number of requests depth.");
-        }
-
+    private int validateRequestCount(JsonNode rootNode, int totalReqCount) {
         int reqCount = totalReqCount;
 
         if (rootNode.isArray()) {
@@ -53,7 +48,7 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
                 JsonNode node = rootNode.get(i);
 
                 if (node.isArray()) {
-                    reqCount = validateRequestCount(node, depth + 1, reqCount);
+                    reqCount = validateRequestCount(node, reqCount);
                 } else if (node.has("method")) {
                     reqCount = reqCount + 1;
                 }
