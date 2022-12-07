@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
-public class BridgeEventLoggerTest {
+class BridgeEventLoggerTest {
 
     private BridgeEventLogger eventLogger;
     private BtcTransaction btcTxMock;

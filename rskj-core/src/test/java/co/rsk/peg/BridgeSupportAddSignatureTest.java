@@ -47,7 +47,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.*;
 
 
-public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
+class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
 
     protected ActivationConfig.ForBlock activationsBeforeForks;
     protected ActivationConfig.ForBlock activationsAfterForks;
