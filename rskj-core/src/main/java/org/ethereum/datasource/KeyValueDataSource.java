@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.LoggerFactory;
 
@@ -70,12 +71,16 @@ public interface KeyValueDataSource extends DataSource {
     void flush();
 
     @Nonnull
-    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, @Nonnull DbKind defaultKind) {
+    static KeyValueDataSource makeDataSource(@Nonnull Path datasourcePath, @Nonnull DbKind kind, @Nonnull RskSystemProperties rskSystemProperties) {
         String name = datasourcePath.getFileName().toString();
         String databaseDir = datasourcePath.getParent().toString();
         String fullDbDir = datasourcePath.toAbsolutePath().toString();
 
-        KeyValueDataSource.validateDbKind(kind, fullDbDir, defaultKind);
+        // Validating general DB kind selection
+        KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), databaseDir, rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
+
+        // Validating individual DB kind
+        KeyValueDataSource.validateDbKind(kind, fullDbDir, rskSystemProperties.databaseKind());
 
         KeyValueDataSource ds;
         switch (kind) {
@@ -94,18 +99,19 @@ public interface KeyValueDataSource extends DataSource {
         return ds;
     }
 
-    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind defaultKind) {
+    static void mergeDataSources(@Nonnull Path destinationPath, @Nonnull List<Path> originPaths, @Nonnull DbKind kind, @Nonnull RskSystemProperties rskSystemProperties) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
+
         for (Path originPath : originPaths) {
-            DbKind originKind = KeyValueDataSource.getDbKindValueFromDbKindFile(originPath.toAbsolutePath().toString(), defaultKind);
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, originKind, defaultKind);
+            DbKind originKind = KeyValueDataSource.getDbKindValueFromDbKindFile(originPath.toAbsolutePath().toString(), kind);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, originKind, rskSystemProperties);
             for (ByteArrayWrapper byteArrayWrapper : singleOriginDataSource.keys()) {
                 mergedStores.put(byteArrayWrapper, singleOriginDataSource.get(byteArrayWrapper.getData()));
             }
             singleOriginDataSource.close();
         }
-        DbKind destinationKind = KeyValueDataSource.getDbKindValueFromDbKindFile(destinationPath.toAbsolutePath().toString(), defaultKind);
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, destinationKind, defaultKind);
+        DbKind destinationKind = KeyValueDataSource.getDbKindValueFromDbKindFile(destinationPath.toAbsolutePath().toString(), kind);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, destinationKind, rskSystemProperties);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }
