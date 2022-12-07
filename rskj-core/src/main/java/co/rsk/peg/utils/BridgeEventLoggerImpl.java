@@ -77,16 +77,16 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         CallTransaction.Function event = BridgeEvents.ADD_SIGNATURE.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash, federatorRskAddress);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(federatorPublicKey.getPubKey());
+        byte[] encodedData = event.encodeEventData((Object) federatorPublicKey.getPubKey());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
     public void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash) {
         CallTransaction.Function event = BridgeEvents.RELEASE_BTC.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash);
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics((Object) rskTxHash);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(btcTx.bitcoinSerialize());
+        byte[] encodedData = event.encodeEventData((Object) btcTx.bitcoinSerialize());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
@@ -145,7 +145,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     public void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
         CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics((Object) btcTx.getHash().getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] encodedData = event.encodeEventData(reason.getValue());
@@ -155,7 +155,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics((Object) btcTx.getHash().getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] encodedData = event.encodeEventData(reason.getValue());
@@ -186,11 +186,11 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     @Override
     public void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes) {
         CallTransaction.Function event = BridgeEvents.BATCH_PEGOUT_CREATED.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics((Object) btcTx.getHash().getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] serializedRskTxHashes = serializeRskTxHashes(rskTxHashes);
-        byte[] encodedData = event.encodeEventData(serializedRskTxHashes);
+        byte[] encodedData = event.encodeEventData((Object) serializedRskTxHashes);
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
