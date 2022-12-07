@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import picocli.CommandLine;
 

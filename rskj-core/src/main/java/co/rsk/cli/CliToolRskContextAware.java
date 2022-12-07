@@ -18,10 +18,8 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.util.Factory;
 import co.rsk.util.NodeStopper;
-import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
