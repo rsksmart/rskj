@@ -24,7 +24,6 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;

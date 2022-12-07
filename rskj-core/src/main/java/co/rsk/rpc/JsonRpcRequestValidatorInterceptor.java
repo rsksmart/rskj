@@ -37,27 +37,41 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
         this.maxBatchRequestsSize = maxBatchRequestsSize;
     }
 
-    private JsonNode getMethod(JsonNode rootNode) {
-        int depth = 0;
-        JsonNode result = rootNode;
+    private int validateRequestCount(JsonNode rootNode) {
+        return this.validateRequestCount(rootNode, 0, 0);
+    }
 
-        while (depth < MAX_JSON_REQUEST_DEPTH && result.isArray() && !result.get(0).has("method")) {
-            result = result.get(0);
-            depth++;
+    private int validateRequestCount(JsonNode rootNode, int depth, int totalReqCount) {
+        if (depth > MAX_JSON_REQUEST_DEPTH) {
+            throw new StackOverflowError("Reached max number of requests depth.");
         }
 
-        return result;
+        int reqCount = totalReqCount;
+
+        if (rootNode.isArray()) {
+            for (int i = 0; i < rootNode.size(); i++) {
+                JsonNode node = rootNode.get(i);
+
+                if (node.isArray()) {
+                    reqCount = validateRequestCount(node, depth + 1, reqCount);
+                } else if (node.has("method")) {
+                    reqCount = reqCount + 1;
+                }
+
+                if (reqCount > this.maxBatchRequestsSize) {
+                    String msg = String.format("Cannot dispatch batch requests. %s is the max number of supported batch requests", this.maxBatchRequestsSize);
+                    logger.warn(msg);
+
+                    throw new JsonRpcRequestPayloadException(msg);
+                }
+            }
+        }
+
+        return reqCount;
     }
 
     private void validateRequest(JsonNode node) {
-        JsonNode jsonRequest = getMethod(node);
-
-        if (jsonRequest.isArray() && jsonRequest.size() > this.maxBatchRequestsSize) {
-            String msg = String.format("Cannot dispatch batch requests. %s is the max number of supported batch requests", this.maxBatchRequestsSize);
-            logger.warn(msg);
-
-            throw new JsonRpcRequestPayloadException(msg);
-        }
+        validateRequestCount(node);
     }
 
     @Override
@@ -67,7 +81,6 @@ public class JsonRpcRequestValidatorInterceptor implements JsonRpcInterceptor {
 
     @Override
     public void preHandle(Object target, Method method, List<JsonNode> params) {
-        System.out.println("");
         // Ignoring this function as we don't need anything to perform here.
     }
 
