@@ -54,14 +54,14 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
     @BeforeEach
-    public void setUpOnEachTest() {
+    void setUpOnEachTest() {
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
         bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
     @Test
-    public void addSignature_fedPubKey_belongs_to_active_federation() throws Exception {
+    void addSignature_fedPubKey_belongs_to_active_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
 
@@ -104,7 +104,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_belongs_to_retiring_federation() throws Exception {
+    void addSignature_fedPubKey_belongs_to_retiring_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -160,7 +160,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_no_belong_to_retiring_or_active_federation() throws Exception {
+    void addSignature_fedPubKey_no_belong_to_retiring_or_active_federation() throws Exception {
         //Setup
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
@@ -215,7 +215,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_fedPubKey_no_belong_to_active_federation_no_existing_retiring_fed() throws Exception {
+    void addSignature_fedPubKey_no_belong_to_active_federation_no_existing_retiring_fed() throws Exception {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -231,7 +231,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureToMissingTransaction() throws Exception {
+    void addSignatureToMissingTransaction() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository repository = createRepository();
@@ -259,7 +259,7 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureFromInvalidFederator() throws Exception {
+    void addSignatureFromInvalidFederator() throws Exception {
 
         Repository repository = createRepository();
 
@@ -283,26 +283,26 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignatureWithInvalidSignature() throws Exception {
+    void addSignatureWithInvalidSignature() throws Exception {
         List<BtcECKey> list = new ArrayList<>();
         list.add(new BtcECKey());
         addSignatureFromValidFederator(list, 1, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureWithLessSignaturesThanExpected() throws Exception {
+    void addSignatureWithLessSignaturesThanExpected() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 0, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureWithMoreSignaturesThanExpected() throws Exception {
+    void addSignatureWithMoreSignaturesThanExpected() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 2, true, false, "InvalidParameters");
     }
 
     @Test
-    public void addSignatureNonCanonicalSignature() throws Exception {
+    void addSignatureNonCanonicalSignature() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
     }
@@ -380,56 +380,56 @@ public class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void addSignature_calledTwiceWithSameFederatorPreRSKIP326_emitEventTwice() throws Exception {
+    void addSignature_calledTwiceWithSameFederatorPreRSKIP326_emitEventTwice() throws Exception {
         test_addSignature_EventEmitted(false, true, 2, true);
     }
 
     @Test
-    public void addSignature_calledTwiceWithSameFederatorPostRSKIP326_emitEventOnlyOnce() throws Exception {
+    void addSignature_calledTwiceWithSameFederatorPostRSKIP326_emitEventOnlyOnce() throws Exception {
         test_addSignature_EventEmitted(true, true, 1, true);
     }
 
     @Test
-    public void addSignatureCreateEventLog_preRSKIP326() throws Exception {
+    void addSignatureCreateEventLog_preRSKIP326() throws Exception {
         test_addSignature_EventEmitted(false, true, 1, false);
     }
 
     @Test
-    public void addSignature_invalidSignatureBeforeRSKIP326_eventStillEmitted() throws Exception {
+    void addSignature_invalidSignatureBeforeRSKIP326_eventStillEmitted() throws Exception {
         test_addSignature_EventEmitted(false, false, 1, false);
     }
 
     @Test
-    public void addSignature_afterRSKIP326_eventEmitted() throws Exception {
+    void addSignature_afterRSKIP326_eventEmitted() throws Exception {
         test_addSignature_EventEmitted(true, true, 1, false);
     }
 
     @Test
-    public void addSignature_invalidSignatureAfterRSKIP326_noEventEmitted() throws Exception {
+    void addSignature_invalidSignatureAfterRSKIP326_noEventEmitted() throws Exception {
         test_addSignature_EventEmitted(true, false, 0, false);
     }
 
     @Test
-    public void addSignatureTwice() throws Exception {
+    void addSignatureTwice() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
     }
 
     @Test
-    public void addSignatureOneSignature() throws Exception {
+    void addSignatureOneSignature() throws Exception {
         List<BtcECKey> keys = Collections.singletonList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
         addSignatureFromValidFederator(keys, 1, true, false, "PartiallySigned");
     }
 
     @Test
-    public void addSignatureTwoSignatures() throws Exception {
+    void addSignatureTwoSignatures() throws Exception {
         List<BtcECKey> federatorPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         List<BtcECKey> keys = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
         addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
     }
 
     @Test
-    public void addSignatureMultipleInputsPartiallyValid() throws Exception {
+    void addSignatureMultipleInputsPartiallyValid() throws Exception {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
         Repository repository = createRepository();
