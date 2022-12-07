@@ -10,8 +10,8 @@ public interface Table {
     void setPos(int i,long value);
     boolean isNull();
     int length();
-    void copyTo(FileChannel file, int ofs) throws IOException;
-    void update(FileChannel file, int ofs) throws IOException;
+    void copyTo(FileChannel file, long ofs) throws IOException;
+    void update(FileChannel file, long ofs) throws IOException;
     void readFrom(DataInputStream din, int count) throws IOException;
     void clearPageTracking();
     void fill(long value);

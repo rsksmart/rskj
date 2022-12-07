@@ -26,7 +26,7 @@ public class ByteArray32HashMap extends AbstractByteArrayHashMap {
         return Int32Table.getElementSize();
     }
 
-    protected Table createTable(int cap,int predefinedSlotSize)
+    protected Table createTable(int cap,long maxPointer,int predefinedSlotSize)
     {
         if ((predefinedSlotSize!=0) && (predefinedSlotSize!=4))
             throw new RuntimeException("Invalid predefined slot size");

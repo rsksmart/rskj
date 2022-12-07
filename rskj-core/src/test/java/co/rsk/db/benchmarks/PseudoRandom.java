@@ -28,6 +28,7 @@ public class PseudoRandom {
     }
 
     public synchronized void setSeed(long aseed) {
+        // Maximum seed is FFFFFFFFFFFF (2^48-1)
         this.seed = initialScramble(aseed);
         scrambleSeed(); // scramble once more
     }

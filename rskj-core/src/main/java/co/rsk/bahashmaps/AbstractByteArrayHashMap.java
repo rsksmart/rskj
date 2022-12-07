@@ -52,6 +52,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
     long maxOffset=-1;
     boolean inBatch;
     long maxOffsetToCommit =-1;
+    long maxPointer;
 
     float loadFactor;
     KeyValueDataSource dataSource;
@@ -220,6 +221,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             }
             this.BAKeyValueRelation = BAKeyValueRelation;
             this.maxElements = maxElements;
+            this.maxPointer = newBeHeapCapacity;
 
             if (sharedBaHeap==null)
                 this.baHeap = createByteArrayHeap(initialCapacity, newBeHeapCapacity);
@@ -620,6 +622,9 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
             }
         }
 
+        if ((i==481965362) || (markedOffsetNew==1070701)) {
+            System.out.println("Adding the wrong key: "+markedOffsetNew+" at "+i);
+        }
         tableSetPos(i, markedOffsetNew);
         registerNewPureOffset(offset);
         if (offset== debugOffset)
@@ -820,7 +825,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         // because it maps to the same file
         if ((memoryMappedIndex) && (oldTab!=null))
             throw new RuntimeException("Memorymapped table resize not implemented");
-        Table newTab = createTable(newCap,0); // chose again the slot size if necessay
+        Table newTab = createTable(newCap,maxPointer,0); // chose again the slot size if necessay
         // Filling is not required anymore because the empty element
         // is all zeros. newTab.fill(empty );
 
@@ -1121,7 +1126,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
                     float ft = (float)cap * lf;
                     this.threshold = cap < 1073741824 && ft < 1.07374182E9F ? (int)ft : 2147483647;
                     //????? TO DO: SharedSecrets.getJavaObjectInputStreamAccess().checkArray(s, Entry[].class, cap);
-                    table = createTable(cap,0);
+                    table = createTable(cap,maxPointer,0);
                     //table.fill(empty );
                     for(int i = 0; i < mappings; ++i) {
                         ByteArrayWrapper key = (ByteArrayWrapper) s.readObject();
@@ -1136,7 +1141,7 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         }
     }
 
-    protected abstract Table createTable(int cap,int predefinedSlotSize) throws IOException;
+    protected abstract Table createTable(int cap,long maxPointer,int predefinedSlotSize) throws IOException;
 
 
     void reinitialize() {
@@ -1542,7 +1547,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         public int threshold;
         public int flags;
         public byte tableSlotSize; // the size of a slot in the table
-        public long maxOffset;
+        public long maxOffsetUsed;
+        public long maxPointer;
     }
 
     public Header loadHeaderFromDataSource() throws IOException {
@@ -1579,13 +1585,16 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         header.size = hdin.readInt();
         header.threshold = hdin.readInt();
         try {
-            header.flags = hdin.readInt();
-            header.tableSlotSize = hdin.readByte();
-            header.maxOffset = hdin.readLong();
-        }  catch (EOFException e) {
             header.flags = 0;
             header.tableSlotSize = 5;
-            header.maxOffset = Long.MAX_VALUE; // Allow anything
+            header.maxOffsetUsed = Long.MAX_VALUE; // Allow anything
+            header.maxPointer = (1L<<40);
+            header.flags = hdin.readInt();
+            header.tableSlotSize = hdin.readByte();
+            header.maxOffsetUsed = hdin.readLong(); // maxOffset used.
+            header.maxPointer = hdin.readLong();
+        }  catch (EOFException e) {
+
         }
     }
 
@@ -1622,17 +1631,18 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         this.threshold = header.threshold;
         this.size = header.size;
         this.format.dbVersion = header.dbVersion;
-        this.maxOffset = header.maxOffset;
+        this.maxOffset = header.maxOffsetUsed;
+        this.maxPointer = header.maxPointer;
         // to-do: read header.tableSlotSize
         // to-do: read header.flags
     }
 
     void mapTable(Header header) throws IOException {
-        table = createTable(header.totalSize,header.tableSlotSize);
+        table = createTable(header.totalSize,0,header.tableSlotSize);
     }
 
     void loadTableFromFile(Header header) throws IOException {
-        table = createTable(header.totalSize,header.tableSlotSize);
+        table = createTable(header.totalSize,0,header.tableSlotSize);
         System.out.println("Reading hash table");
         File file = mapPath.toFile();
         FileInputStream fin = new FileInputStream(file);
@@ -1722,7 +1732,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         header.size = size;
         header.threshold = threshold;
         header.tableSlotSize = (byte) getElementSize();
-        header.maxOffset = maxOffsetToCommit;
+        header.maxOffsetUsed = maxOffsetToCommit;
+        header.maxPointer = maxPointer;
         return header;
     }
 
@@ -1795,7 +1806,8 @@ public abstract class AbstractByteArrayHashMap  extends AbstractMap<ByteArrayWra
         hos.writeInt(header.threshold);
         hos.writeInt(header.flags);
         hos.writeByte(header.tableSlotSize);
-        hos.writeLong(header.maxOffset);
+        hos.writeLong(header.maxOffsetUsed);
+        hos.writeLong(header.maxPointer);
     }
 
 

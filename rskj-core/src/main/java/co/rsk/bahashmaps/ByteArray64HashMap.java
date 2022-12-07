@@ -27,10 +27,13 @@ public class ByteArray64HashMap extends AbstractByteArrayHashMap {
         return LongTable.getElementSize();
     }
 
-    protected Table createTable(int cap,int predefinedSlotSize)
+    protected Table createTable(int cap,long maxPointer,int predefinedSlotSize)
     {
         if ((predefinedSlotSize!=0) && (predefinedSlotSize!=8))
             throw new RuntimeException("Invalid predefined slot size");
+
+        if (maxPointer>=Long.MAX_VALUE)
+            throw new RuntimeException("Invalid maxPointer");
 
         LongTable table;
         table = new LongTable(cap);

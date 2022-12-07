@@ -76,11 +76,11 @@ public class MemoryMappedTable implements Table {
     }
 
     @Override
-    public void update(FileChannel file, int ofs) throws IOException {
+    public void update(FileChannel file, long ofs) throws IOException {
     }
 
     @Override
-    public void copyTo(FileChannel file, int ofs) throws IOException {
+    public void copyTo(FileChannel file, long ofs) throws IOException {
     }
 
     @Override

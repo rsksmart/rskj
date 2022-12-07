@@ -23,24 +23,25 @@ public class Benchmark {
     boolean showPartialMemConsumed = true;
 
     public String getExactCountLiteral(long i) {
-        if (i==1_000)
-            return "1k";
-        if (i==10_000)
-            return "10k";
-        if (i==100_000)
-            return "100k";
-        if (i==1_000_000)
-            return "1M";
-        if (i==10_000_000)
-            return "10M";
-        if (i==50_000_000)
-            return "50M";
-        if (i==100_000_000)
-            return "100M";
-        if (i==1_000_000_000L)
-            return "1B";
-        if (i==10_000_000_000L)
-            return "10B";
+        String pow2 = getExactCountPow2(i);
+        if (pow2.length()>0)
+            return pow2;
+
+        String units = "TGMk";
+        long base = 1_000_000_000_000L;
+        int index = 0;
+        do {
+            if ((i >= base) && (i % base == 0)) {
+                long r = i / base;
+                return "" + r + units.charAt(index);
+            }
+            index++;
+            base /= 1000;
+        } while (base > 1);
+        return ""+i;
+    }
+
+    public String getExactCountPow2(long i) {
 
         int s =0;
         while (s<30) {
@@ -48,7 +49,7 @@ public class Benchmark {
                 return "(2^"+s+")";
             s++;
         }
-        return ""+i;
+        return "";
     }
 
     public String getMillions(long i) {

@@ -10,7 +10,11 @@ public abstract class Space {
     public boolean filled;
     public boolean inUse = false;
     public int previousSpaceNum = -1; // unlinked
+    public int number;
 
+    public void setNumber(int number) {
+        this.number = number;
+    }
 
     /**
      * Reads a byte from the specified position.

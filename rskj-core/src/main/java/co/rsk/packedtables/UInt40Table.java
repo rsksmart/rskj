@@ -54,7 +54,7 @@ public class UInt40Table implements Table {
             ofs = pageSize*(i/slotsPerPage)+(i%slotsPerPage);
           return ObjectIO.getLong5(table,ofs);
     }
-
+    final static long MAX_VALUE = (1L<<40)-1;
     @Override
     public void setPos(int i, long value) {
         int ofs;
@@ -62,6 +62,9 @@ public class UInt40Table implements Table {
             ofs =i*5;
         else
             ofs = pageSize*(i/slotsPerPage)+(i%slotsPerPage);
+
+        if (value>MAX_VALUE)
+            throw new RuntimeException("Invalid value");
         ObjectIO.putLong5(table,ofs,value);
 
         if (pageSize!=0) {
@@ -90,7 +93,7 @@ public class UInt40Table implements Table {
         return (modifiedPageCount>0);
     }
     @Override
-    public void update(FileChannel file, int ofs) throws IOException {
+    public void update(FileChannel file, long ofs) throws IOException {
         System.out.println("pageSize: "+pageSize);
         if (pageSize==0) {
             copyTo(file, ofs);
@@ -112,7 +115,7 @@ public class UInt40Table implements Table {
     }
 
     @Override
-    public void copyTo(FileChannel file, int ofs) throws IOException {
+    public void copyTo(FileChannel file, long ofs) throws IOException {
         // Child to -do
         System.out.println("Writing full file");
         // This seems to be faster

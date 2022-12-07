@@ -384,6 +384,7 @@ public class ByteArrayHeapBase {
         // This loop will create the space files if they don't already exists in disk!
         for (int i = maxSpaces-1; i >=0; i--) {
             spaces[i] = newSpace();
+            spaces[i].setNumber(i);
             headOfPartiallyFilledSpaces.addSpace(i);
         }
         curSpaceNum = getNewSpaceNum();

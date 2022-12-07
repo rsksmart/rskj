@@ -28,6 +28,7 @@ public class CompareDBs extends Benchmark {
     static Test test = Test.readTest;
     boolean keyIsValueHash =true;
     static DbKind database = DbKind.FLAT_DB;
+    static boolean periodicFlush = false;
 
     static enum DatabaseConfig {
         withLog,
@@ -35,7 +36,7 @@ public class CompareDBs extends Benchmark {
     }
     DatabaseConfig config = DatabaseConfig.withMaxOffset; // This is only for flatDb
 
-    int maxKeys = 50_000_000; // 5_000_000; //100_000_000;
+    int maxKeys = 500_000_000; // 5_000_000; //100_000_000;
     int keyLength = 32;
     int valueLength = 50;
 
@@ -299,10 +300,18 @@ public class CompareDBs extends Benchmark {
 
     public void writes() {
         setup(false);
+        int dumpProgressInterval = 100_000;
+        if (maxKeys>=100_000_000) {
+            dumpProgressInterval = 1_000_000;
+        }
 
         start(true);
         int flushBatch = 1_000_000;
-        System.out.println("flushBatch: "+flushBatch);
+
+        if (periodicFlush) {
+            System.out.println("flushBatch: " + flushBatch);
+        } else
+            System.out.println("No periodic flush");
         int c =0;
         for (long i = 0; i < maxKeys; i++) {
 
@@ -316,15 +325,18 @@ public class CompareDBs extends Benchmark {
             if (keyIsValueHash)
                 key= Keccak256Helper.keccak256(value);
             db.put(key, value);
-            c++;
-            if (c==flushBatch) {
-                long fstart = System.currentTimeMillis();
-                db.flush();
-                long fstop = System.currentTimeMillis();
-                log("Time to flush: "+(fstop-fstart)+" ms");
-                c=0;
+
+            if (periodicFlush) {
+                c++;
+                if (c == flushBatch) {
+                    long fstart = System.currentTimeMillis();
+                    db.flush();
+                    long fstop = System.currentTimeMillis();
+                    log("Time to flush: " + (fstop - fstart) + " ms");
+                    c = 0;
+                }
             }
-            if (i % 100000 == 0) {
+            if (i % dumpProgressInterval == 0) {
                 dumpProgress(i,maxKeys);
             }
 

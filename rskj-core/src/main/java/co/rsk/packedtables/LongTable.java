@@ -41,14 +41,14 @@ public class LongTable implements Table {
 
 
     @Override
-    public void copyTo(FileChannel file, int ofs) throws IOException {
+    public void copyTo(FileChannel file, long ofs) throws IOException {
         // Child to -do
           FileMapUtil.mapAndCopyLongArray(file,ofs,table.length,table);
         isModified =false;
     }
 
     @Override
-    public void update(FileChannel file, int ofs) throws IOException {
+    public void update(FileChannel file, long ofs) throws IOException {
         // update not implemented
         FileMapUtil.mapAndCopyLongArray(file,ofs,table.length,table);
         isModified =false;

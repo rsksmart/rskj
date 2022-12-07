@@ -17,7 +17,9 @@ public class MemoryMappedSpace extends Space {
     int size;
     boolean bigEndian;
 
+
     public void createMemoryMapped(int size,String fileName) throws IOException {
+
         file = new RandomAccessFile(fileName, "rw");
         this.out = file.getChannel()
                 .map(FileChannel.MapMode.READ_WRITE, 0, size);

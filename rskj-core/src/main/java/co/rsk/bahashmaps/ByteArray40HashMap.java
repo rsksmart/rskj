@@ -31,7 +31,7 @@ public class ByteArray40HashMap extends AbstractByteArrayHashMap {
     }
 
 
-    protected Table createTable(int cap,int predefinedSlotSize) throws IOException {
+    protected Table createTable(int cap,long maxPointer,int predefinedSlotSize) throws IOException {
         if ((predefinedSlotSize!=0) && (predefinedSlotSize!=5))
             throw new RuntimeException("Invalid predefined slot size");
 

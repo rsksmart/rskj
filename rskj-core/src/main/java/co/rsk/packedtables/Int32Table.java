@@ -4,6 +4,7 @@ import co.rsk.dbutils.FileMapUtil;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
@@ -23,8 +24,12 @@ public class Int32Table implements Table {
     }
 
 
+    final static long MAX_VALUE = (1L<<32)-1;
     @Override
     public void setPos(int i, long value) {
+        if (value>MAX_VALUE) {
+            throw new RuntimeException("Invalid value");
+        }
         table[i] = (int) value;
         isModified = true;
     }
@@ -44,14 +49,14 @@ public class Int32Table implements Table {
 
 
     @Override
-    public void copyTo(FileChannel file, int ofs) throws IOException {
+    public void copyTo(FileChannel file, long ofs) throws IOException {
         // Child to -do
         FileMapUtil.mapAndCopyIntArray(file,ofs,table.length,table);
         isModified =false;
     }
 
     @Override
-    public void update(FileChannel file, int ofs) throws IOException {
+    public void update(FileChannel file, long ofs) throws IOException {
         // update not implemented
         FileMapUtil.mapAndCopyIntArray(file,ofs,table.length,table);
         isModified =false;
