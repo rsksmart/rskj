@@ -171,8 +171,8 @@ class Web3HttpServerTest {
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
 
-        for (long i = 0; i < 199_999; i++) {
-            content = String.format("[%s]", content);
+        for (long i = 0; i < 99_999; i++) {
+            content = String.format("[[[[[[[[[[%s]]]]]]]]]]", content);
         }
 
         Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
@@ -329,10 +329,5 @@ class Web3HttpServerTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/requests/" + name + ".json", Web3HttpServerTest.class.getClassLoader());
-        return json;
     }
 }

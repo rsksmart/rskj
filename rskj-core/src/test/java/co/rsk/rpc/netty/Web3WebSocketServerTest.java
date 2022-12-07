@@ -27,15 +27,13 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import co.rsk.util.JacksonParserUtil;
@@ -346,26 +344,11 @@ class Web3WebSocketServerTest {
 
     @Test
     void testStackOverflowErrorInRequest() throws Exception {
-        String content = "[[[{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "},{\n" +
-                "    \"method\": \"eth_getBlockByNumber\",\n" +
-                "    \"params\": [\n" +
-                "        \"latest\",\n" +
-                "        true\n" +
-                "    ],\n" +
-                "    \"id\": 1,\n" +
-                "    \"jsonrpc\": \"2.0\"\n" +
-                "}]]]";
+        List<String> messages = new ArrayList<>();
+        String content = this.getJsonRpcDummyMessageStr("value");
 
         for (long i = 0; i < 99_999; i++) {
-            content = String.format("[%s]", content);
+            content = String.format("[[[[[[[[[[%s]]]]]]]]]]", content);
         }
 
         byte[] msg = content.getBytes();
@@ -381,9 +364,9 @@ class Web3WebSocketServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 10);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
-        int maxFrameSize = 999_999;
+        int maxFrameSize = 9_999_999;
         int maxAggregatedFrameSize = 9_999_999;
 
         assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
@@ -433,6 +416,8 @@ class Web3WebSocketServerTest {
             public void onMessage(ResponseBody message) throws IOException {
                 JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, message.bytes());
 
+                messages.add(jsonRpcResponse.toPrettyString());
+
                 Assertions.assertEquals(jsonRpcResponse.get("error").get("code").asInt(), ErrorResolver.JsonError.INVALID_REQUEST.code);
                 Assertions.assertEquals("Invalid request", jsonRpcResponse.get("error").get("message").asText());
 
@@ -451,11 +436,11 @@ class Web3WebSocketServerTest {
         });
 
         if (!wsAsyncResultLatch.await(10, TimeUnit.SECONDS)) {
-            fail("Result timed out");
+            fail(String.format("Result timed out. %s", String.join("", messages)));
         }
 
         if (!wsAsyncCloseLatch.await(10, TimeUnit.SECONDS)) {
-            fail("Close timed out");
+            fail(String.format("Close timed out. %s", String.join("", messages)));
         }
 
         websocketServer.stop();
@@ -567,12 +552,32 @@ class Web3WebSocketServerTest {
         }
     }
 
-    private byte[] getJsonRpcDummyMessage(String value) {
+    private Map<String, JsonNode> getJsonRpcDummyMessageMap(String value) {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
         jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
         jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode("web3_sha3"));
         jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add(value));
+
+        return jsonRpcRequestProperties;
+    }
+
+    private String getJsonRpcDummyMessageStr(String value) {
+        Map<String, JsonNode> jsonRpcRequestProperties = getJsonRpcDummyMessageMap(value);
+
+        String request = "";
+        try {
+            Object object = JacksonParserUtil.treeToValue(OBJECT_MAPPER, JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class);
+            request = OBJECT_MAPPER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            fail(e.getMessage());
+        }
+        return request;
+
+    }
+
+    private byte[] getJsonRpcDummyMessage(String value) {
+        Map<String, JsonNode> jsonRpcRequestProperties = getJsonRpcDummyMessageMap(value);
 
         byte[] request = new byte[0];
         try {
