@@ -1802,7 +1802,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_postRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
+    void rskTxWaitingForSignature_postRSKIP326_emitNewPegoutConfirmedEvent() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 
@@ -1848,7 +1848,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_preRSKIP326_noPegoutConfirmedEventEmitted() throws IOException {
+    void rskTxWaitingForSignature_preRSKIP326_noPegoutConfirmedEventEmitted() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
 
@@ -1894,7 +1894,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void rskTxWaitingForSignature_postRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
+    void rskTxWaitingForSignature_postRSKIP326NoTxWithEnoughConfirmation_pegoutConfirmedEventNotEmitted() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
 

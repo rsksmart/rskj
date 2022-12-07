@@ -357,7 +357,7 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
+    void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
         when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
         String sender = "0x00000000000000000000000000000000000000";
         Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
@@ -398,7 +398,7 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logBatchPegoutCreatedWithWitness() {
+    void logBatchPegoutCreatedWithWitness() {
         List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
 
         TransactionWitness txWitness = new TransactionWitness(1);
@@ -421,7 +421,7 @@ class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logPegoutConfirmed() {
+    void logPegoutConfirmed() {
         long pegoutCreationRskBlockNumber = 50;
         eventLogger.logPegoutConfirmed(btcTx.getHash(), pegoutCreationRskBlockNumber);
 

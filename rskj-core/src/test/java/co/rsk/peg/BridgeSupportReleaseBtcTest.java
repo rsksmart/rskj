@@ -127,7 +127,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void eventLogger_logReleaseBtcRequested_after_rskip_146_185_326() throws IOException {
+    void eventLogger_logReleaseBtcRequested_after_rskip_146_185_326() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
@@ -246,7 +246,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void handmade_release_after_rskip_146_185_326() throws IOException {
+    void handmade_release_after_rskip_146_185_326() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
@@ -429,7 +429,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_after_rskip_219_326() throws IOException {
+    void release_after_rskip_219_326() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
@@ -544,7 +544,7 @@ class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void release_after_rskip_219_326_minimum_inclusive() throws IOException {
+    void release_after_rskip_219_326_minimum_inclusive() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP185)).thenReturn(true);
         when(activationMock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
