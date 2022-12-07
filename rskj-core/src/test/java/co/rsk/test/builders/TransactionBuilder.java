@@ -141,8 +141,10 @@ public class TransactionBuilder {
      * Generates a random transaction
      */
     public Transaction buildRandomTransaction() {
-        int i = new Random().nextInt();
-        BigInteger randomPositiveVal = i > 0 ? BigInteger.valueOf(i) : BigInteger.valueOf(i * -1);
+        long i = new Random().nextInt();
+        long k = i * -1L;
+
+        BigInteger randomPositiveVal = i > 0 ? BigInteger.valueOf(i) : BigInteger.valueOf(k);
 
         Account receiver = new AccountBuilder().name("account" + randomPositiveVal).build();
 

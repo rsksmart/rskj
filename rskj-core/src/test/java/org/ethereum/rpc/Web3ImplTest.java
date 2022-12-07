@@ -2101,12 +2101,6 @@ class Web3ImplTest {
         args.setNonce(nonce.toString());
         args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
 
-        String txHash = null;
-        try {
-            txHash = web3.personal_sendTransaction(args, "passphrase1");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         // ***** Verifies tx hash
         Transaction expectedTx = Transaction
                 .builder()
@@ -2125,10 +2119,8 @@ class Web3ImplTest {
 
         when(ethereumMock.submitTransaction(expectedTx)).thenReturn(pendingTransactionResult);
 
-        String txHash = null;
-
         // ***** Executes the transaction *******************
-        txHash = web3.personal_sendTransaction(args, "passphrase1");
+       String txHash = web3.personal_sendTransaction(args, "passphrase1");
 
 
         // ***** Checking expected result *******************

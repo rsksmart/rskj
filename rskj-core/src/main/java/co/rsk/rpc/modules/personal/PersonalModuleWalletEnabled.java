@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;

@@ -36,6 +36,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.MatcherAssert;
@@ -178,35 +179,35 @@ class EthModuleTest {
         }
     }
 
-	@Test
-	void sendTransactionWithGasLimitTest() {
+    @Test
+    void sendTransactionWithGasLimitTest() {
 
-		Constants constants = Constants.regtest();
+        Constants constants = Constants.regtest();
 
-		Wallet wallet = new Wallet(new HashMapDB());
-		RskAddress sender = wallet.addAccount();
-		RskAddress receiver = wallet.addAccount();
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
 
-		// Hash of the expected transaction
-		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-		Transaction tx = TransactionFactoryHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
-		String txExpectedResult = tx.getHash().toJsonString();
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        Transaction tx = TransactionFactoryHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
+        String txExpectedResult = tx.getHash().toJsonString();
 
-		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
-		when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
 
-		TransactionGateway transactionGateway = mock(TransactionGateway.class);
-		when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
 
-		TransactionPool transactionPool = mock(TransactionPool.class);
+        TransactionPool transactionPool = mock(TransactionPool.class);
 
-		EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
 
-		// Hash of the actual transaction builded inside the sendTransaction
-		String txResult = ethModuleTransaction.sendTransaction(args);
+        // Hash of the actual transaction builded inside the sendTransaction
+        String txResult = ethModuleTransaction.sendTransaction(args);
 
-		assertEquals(txExpectedResult, txResult);
-	}
+        assertEquals(txExpectedResult, txResult);
+    }
 
     @Test
     void sendTransactionThrowsErrorOnChainIdValidationTest() {
@@ -235,6 +236,35 @@ class EthModuleTest {
     }
 
     @Test
+    void sendRawTransactionThrowsErrorOnChainIdValidationTest() {
+
+        Constants constants = Constants.regtest();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount();
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setChainId("" + ((int) constants.getChainId() - 2));
+
+        Transaction tx = TransactionFactoryHelper.createTransaction(args, (byte) ((int) constants.getChainId() - 1), wallet.getAccount(sender));
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+        TransactionPool transactionPool = mock(TransactionPool.class);
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+        String rawData = ByteUtil.toHexString(tx.getEncoded());
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> ethModuleTransaction.sendRawTransaction(rawData));
+    }
+
+    @Test
     void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
@@ -260,7 +290,7 @@ class EthModuleTest {
 
     @Test
     void getCode() {
-        byte[] expectedCode = new byte[] {1, 2, 3};
+        byte[] expectedCode = new byte[]{1, 2, 3};
 
         TransactionPool mockTransactionPool = mock(TransactionPool.class);
         PendingState mockPendingState = mock(PendingState.class);
