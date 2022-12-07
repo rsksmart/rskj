@@ -346,14 +346,27 @@ class Web3WebSocketServerTest {
 
     @Test
     void testStackOverflowErrorInRequest() throws Exception {
-        String content = "[{\n" +
-                "    \"method\": \"web3_sha3\",\n" +
+        String content = "[[[{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
                 "    \"params\": [\n" +
-                "        \"latest\"" +
+                "        \"latest\",\n" +
+                "        true\n" +
                 "    ],\n" +
                 "    \"id\": 1,\n" +
                 "    \"jsonrpc\": \"2.0\"\n" +
-                "}]";
+                "},{\n" +
+                "    \"method\": \"eth_getBlockByNumber\",\n" +
+                "    \"params\": [\n" +
+                "        \"latest\",\n" +
+                "        true\n" +
+                "    ],\n" +
+                "    \"id\": 1,\n" +
+                "    \"jsonrpc\": \"2.0\"\n" +
+                "}]]]";
+
+        for (long i = 0; i < 99_999; i++) {
+            content = String.format("[%s]", content);
+        }
 
         byte[] msg = content.getBytes();
         String serverPath = "/";
@@ -366,17 +379,14 @@ class Web3WebSocketServerTest {
 
         TestSystemProperties testSystemProperties = new TestSystemProperties();
 
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null);
-        JsonRpcBasicServer jsonRpcBasicServer = Mockito.mock(JsonRpcBasicServer.class);
-        Mockito.when(jsonRpcBasicServer.handleRequest(Mockito.any(), Mockito.any())).thenThrow(new StackOverflowError());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(jsonRpcBasicServer);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 10);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
-        int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
-        int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
+        int maxFrameSize = 999_999;
+        int maxAggregatedFrameSize = 9_999_999;
 
         assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
-        assertEquals(DEFAULT_MAX_FRAME_SIZE, maxFrameSize);
-        assertEquals(DEFAULT_MAX_AGGREGATED_FRAME_SIZE, maxAggregatedFrameSize);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(
                 InetAddress.getLoopbackAddress(),

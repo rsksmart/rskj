@@ -24,6 +24,7 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.function.Consumer;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -155,10 +156,9 @@ class Web3HttpServerTest {
 
         int randomPort = 9900;
 
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcBasicServer jsonRpcBasicServer = Mockito.mock(JsonRpcBasicServer.class);
-        Mockito.when(jsonRpcBasicServer.handleRequest(Mockito.any(), Mockito.any())).thenThrow(new StackOverflowError());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(jsonRpcBasicServer);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -170,6 +170,10 @@ class Web3HttpServerTest {
                 "    \"id\": 1,\n" +
                 "    \"jsonrpc\": \"2.0\"\n" +
                 "}]";
+
+        for (long i = 0; i < 199_999; i++) {
+            content = String.format("[%s]", content);
+        }
 
         Response response = sendJsonRpcMessage(randomPort, "application/json-rpc", "127.0.0.1", content);
         String responseBody = response.body().string();
