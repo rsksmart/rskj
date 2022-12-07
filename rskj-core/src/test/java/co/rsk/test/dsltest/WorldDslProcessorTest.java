@@ -25,13 +25,10 @@ import co.rsk.test.dsl.BlockExecutorDSL;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.apache.commons.lang3.NotImplementedException;
-import org.ethereum.core.*;
-import org.junit.Assert;
-import org.junit.Test;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -39,8 +36,7 @@ import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -69,8 +65,8 @@ public class WorldDslProcessorTest {
         Block block = world.getBlockByName("b01");
 
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(1, block.getNumber());
-        Assertions.assertEquals(genesis.getHash(), block.getParentHash());
+        assertEquals(1, block.getNumber());
+        assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
@@ -88,14 +84,14 @@ public class WorldDslProcessorTest {
         Block block1 = world.getBlockByName("b01");
 
         Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getNumber());
-        Assertions.assertEquals(genesis.getHash(), block1.getParentHash());
+        assertEquals(1, block1.getNumber());
+        assertEquals(genesis.getHash(), block1.getParentHash());
 
         Block block2 = world.getBlockByName("b02");
 
         Assertions.assertNotNull(block2);
-        Assertions.assertEquals(2, block2.getNumber());
-        Assertions.assertEquals(block1.getHash(), block2.getParentHash());
+        assertEquals(2, block2.getNumber());
+        assertEquals(block1.getHash(), block2.getParentHash());
     }
 
     @Test
@@ -113,14 +109,14 @@ public class WorldDslProcessorTest {
         Block block1 = world.getBlockByName("b01");
 
         Assertions.assertNotNull(block1);
-        Assertions.assertEquals(1, block1.getNumber());
-        Assertions.assertEquals(genesis.getHash(), block1.getParentHash());
+        assertEquals(1, block1.getNumber());
+        assertEquals(genesis.getHash(), block1.getParentHash());
 
         Block block2 = world.getBlockByName("b02");
 
         Assertions.assertNotNull(block2);
-        Assertions.assertEquals(2, block2.getNumber());
-        Assertions.assertEquals(block1.getHash(), block2.getParentHash());
+        assertEquals(2, block2.getNumber());
+        assertEquals(block1.getHash(), block2.getParentHash());
     }
 
     @Test
@@ -137,8 +133,8 @@ public class WorldDslProcessorTest {
         Block block = world.getBlockChain().getStatus().getBestBlock();
 
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(1, block.getNumber());
-        Assertions.assertEquals(genesis.getHash(), block.getParentHash());
+        assertEquals(1, block.getNumber());
+        assertEquals(genesis.getHash(), block.getParentHash());
     }
 
     @Test
@@ -156,8 +152,8 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(parent);
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(2, block.getNumber());
-        Assertions.assertEquals(parent.getHash(), block.getParentHash());
+        assertEquals(2, block.getNumber());
+        assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -175,8 +171,8 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(parent);
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(2, block.getNumber());
-        Assertions.assertEquals(parent.getHash(), block.getParentHash());
+        assertEquals(2, block.getNumber());
+        assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -192,7 +188,7 @@ public class WorldDslProcessorTest {
             Assertions.fail();
         }
         catch (DslProcessorException ex) {
-            Assertions.assertEquals("Expected best block 'b01'", ex.getMessage());
+            assertEquals("Expected best block 'b01'", ex.getMessage());
         }
     }
 
@@ -212,8 +208,8 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(parent);
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(3, block.getNumber());
-        Assertions.assertEquals(parent.getHash(), block.getParentHash());
+        assertEquals(3, block.getNumber());
+        assertEquals(parent.getHash(), block.getParentHash());
     }
 
     @Test
@@ -228,7 +224,7 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockChain().getStatus().getBestBlock();
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(0, block.getNumber());
+        assertEquals(0, block.getNumber());
     }
 
     @Test
@@ -243,7 +239,7 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockChain().getStatus().getBestBlock();
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(2, block.getNumber());
+        assertEquals(2, block.getNumber());
     }
 
     @Test
@@ -259,7 +255,7 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockChain().getStatus().getBestBlock();
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(2, block.getNumber());
+        assertEquals(2, block.getNumber());
     }
 
     @Test
@@ -289,7 +285,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assertions.assertNotNull(account);
-        Assertions.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()).asBigInteger());
+        assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -306,7 +302,7 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(account);
         RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
-        Assertions.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+        assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -323,7 +319,7 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(account);
         RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
-        Assertions.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+        assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
 
         byte[] code = repository.getCode(account.getAddress());
 
@@ -350,7 +346,7 @@ public class WorldDslProcessorTest {
 
         Assertions.assertNotNull(account);
         RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
-        Assertions.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+        assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
 
         byte[] code = repository.getCode(account.getAddress());
         byte[] expected = new byte[4 + 20];
@@ -373,7 +369,7 @@ public class WorldDslProcessorTest {
             Assertions.fail();
         }
         catch (DslProcessorException ex) {
-            Assertions.assertEquals("Unknown command 'foo'", ex.getMessage());
+            assertEquals("Unknown command 'foo'", ex.getMessage());
         }
     }
 
@@ -389,7 +385,7 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockByName("b01");
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(1, block.getNumber());
+        assertEquals(1, block.getNumber());
     }
 
     @Test
@@ -404,13 +400,13 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockByName("b02");
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(2, block.getNumber());
+        assertEquals(2, block.getNumber());
         Assertions.assertNotNull(block.getUncleList());
         Assertions.assertFalse(block.getUncleList().isEmpty());
-        Assertions.assertEquals(2, block.getUncleList().size());
+        assertEquals(2, block.getUncleList().size());
 
-        Assertions.assertEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
-        Assertions.assertEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
+        assertEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
+        assertEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
     }
 
     @Test
@@ -435,9 +431,9 @@ public class WorldDslProcessorTest {
 
         Assertions.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assertions.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assertions.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
+        assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assertions.assertNotNull(tx01.getData());
-        Assertions.assertEquals(0, tx01.getData().length);
+        assertEquals(0, tx01.getData().length);
     }
 
     @Test
@@ -462,7 +458,7 @@ public class WorldDslProcessorTest {
 
         Assertions.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assertions.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assertions.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
+        assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assertions.assertNotNull(tx01.getData());
         Assertions.assertArrayEquals(new byte[] { 0x01, 0x02, 0x03, 0x04 }, tx01.getData());
     }
@@ -489,11 +485,11 @@ public class WorldDslProcessorTest {
 
         Assertions.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assertions.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assertions.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
+        assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assertions.assertNotNull(tx01.getData());
-        Assertions.assertEquals(0, tx01.getData().length);
-        Assertions.assertEquals(new BigInteger("2"), tx01.getGasPrice().asBigInteger());
-        Assertions.assertEquals(new BigInteger("1200000"), tx01.getGasLimitAsInteger());
+        assertEquals(0, tx01.getData().length);
+        assertEquals(new BigInteger("2"), tx01.getGasPrice().asBigInteger());
+        assertEquals(new BigInteger("1200000"), tx01.getGasLimitAsInteger());
     }
 
     @Test
@@ -518,10 +514,10 @@ public class WorldDslProcessorTest {
 
         Assertions.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
         Assertions.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
-        Assertions.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
+        assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assertions.assertNotNull(tx01.getData());
-        Assertions.assertEquals(0, tx01.getData().length);
-        Assertions.assertEquals(new BigInteger("10"), tx01.getNonceAsInteger());
+        assertEquals(0, tx01.getData().length);
+        assertEquals(new BigInteger("10"), tx01.getNonceAsInteger());
     }
 
     @Test
@@ -539,10 +535,10 @@ public class WorldDslProcessorTest {
 
         Block block = world.getBlockByName("b01");
         Assertions.assertNotNull(block);
-        Assertions.assertEquals(1, block.getNumber());
+        assertEquals(1, block.getNumber());
         Assertions.assertNotNull(block.getTransactionsList());
         Assertions.assertFalse(block.getTransactionsList().isEmpty());
-        Assertions.assertEquals(2, block.getTransactionsList().size());
+        assertEquals(2, block.getTransactionsList().size());
 
         Transaction tx01 = world.getTransactionByName("tx01");
         Transaction tx02 = world.getTransactionByName("tx02");
@@ -550,8 +546,8 @@ public class WorldDslProcessorTest {
         Assertions.assertNotNull(tx01);
         Assertions.assertNotNull(tx02);
 
-        Assertions.assertEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
-        Assertions.assertEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
+        assertEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
+        assertEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
     }
 
     @Test

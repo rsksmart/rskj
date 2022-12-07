@@ -4,14 +4,14 @@ import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TrieKeyMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TrieUpdateRentTest {
 

@@ -38,7 +38,6 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by ajlopez on 29/03/2017.

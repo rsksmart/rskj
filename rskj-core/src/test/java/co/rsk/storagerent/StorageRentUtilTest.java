@@ -20,13 +20,13 @@
 package co.rsk.storagerent;
 
 import org.ethereum.db.OperationType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StorageRentUtilTest {
 

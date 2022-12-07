@@ -4,14 +4,14 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 
 import static co.rsk.trie.Trie.RSKIP240_TRIE_VERSION;
 import static co.rsk.trie.Trie.fromMessage;
 import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TrieRskip240MessageTest {
 

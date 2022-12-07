@@ -110,9 +110,6 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.RskTestFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -124,7 +121,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

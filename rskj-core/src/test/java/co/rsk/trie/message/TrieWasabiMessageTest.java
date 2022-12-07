@@ -21,8 +21,8 @@ package co.rsk.trie.message;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieValueTest;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.bouncycastle.util.encoders.Hex.decode;
 
@@ -37,15 +37,15 @@ public class TrieWasabiMessageTest {
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
+        Assertions.assertNotNull(message);
 
         // flags (1 byte)
-        Assert.assertEquals(1, message.length);
+        Assertions.assertEquals(1, message.length);
 
         // check flags
-        Assert.assertEquals(0b01000000, message[0]);
+        Assertions.assertEquals(0b01000000, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -56,13 +56,13 @@ public class TrieWasabiMessageTest {
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(10, message.length);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(10, message.length);
 
         // check flags (version + lshared + left + leftEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
-        Assert.assertEquals(0b01011010, message[0]);
+        Assertions.assertEquals(0b01011010, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -72,19 +72,19 @@ public class TrieWasabiMessageTest {
                 .put(decode("0a01"), TrieValueTest.makeValue(LONG_VALUE - 1))
                 .put(decode("0a0110"), TrieValueTest.makeValue(LONG_VALUE - 1));
 
-        Assert.assertTrue(trie.getLeft().getNode().isPresent());
-        Assert.assertTrue(!trie.getLeft().isEmbeddable());
-        Assert.assertTrue(!trie.getRight().getNode().isPresent());
+        Assertions.assertTrue(trie.getLeft().getNode().isPresent());
+        Assertions.assertTrue(!trie.getLeft().isEmbeddable());
+        Assertions.assertTrue(!trie.getRight().getNode().isPresent());
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(68, message.length);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(68, message.length);
 
         // check flags (version + lshared + left) => 0b01000000 | 0b00010000 | 0b00001000
-        Assert.assertEquals(0b01011000, message[0]);
+        Assertions.assertEquals(0b01011000, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -94,20 +94,20 @@ public class TrieWasabiMessageTest {
                 .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
                 .put(decode("1a10"), TrieValueTest.makeValue(LONG_VALUE - 1));
 
-        Assert.assertTrue(trie.getLeft().isEmbeddable());
-        Assert.assertTrue(trie.getLeft().getNode().get().isTerminal());
-        Assert.assertTrue(!trie.getRight().isEmbeddable());
-        Assert.assertTrue(!trie.getRight().getNode().get().isTerminal());
+        Assertions.assertTrue(trie.getLeft().isEmbeddable());
+        Assertions.assertTrue(trie.getLeft().getNode().get().isTerminal());
+        Assertions.assertTrue(!trie.getRight().isEmbeddable());
+        Assertions.assertTrue(!trie.getRight().getNode().get().isTerminal());
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(72, message.length);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(72, message.length);
 
         // check flags (version + lshared + left + leftEmbedded + right) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010 | 0b00000100
-        Assert.assertEquals(0b01011110, message[0]);
+        Assertions.assertEquals(0b01011110, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -117,20 +117,20 @@ public class TrieWasabiMessageTest {
                 .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
                 .put(decode("0a10"), TrieValueTest.makeValue(LONG_VALUE - 1));
 
-        Assert.assertTrue(!trie.getLeft().isEmbeddable());
-        Assert.assertTrue(!trie.getLeft().getNode().get().isTerminal());
-        Assert.assertTrue(trie.getRight().isEmbeddable());
-        Assert.assertTrue(trie.getRight().getNode().get().isTerminal());
+        Assertions.assertTrue(!trie.getLeft().isEmbeddable());
+        Assertions.assertTrue(!trie.getLeft().getNode().get().isTerminal());
+        Assertions.assertTrue(trie.getRight().isEmbeddable());
+        Assertions.assertTrue(trie.getRight().getNode().get().isTerminal());
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(72, message.length);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(72, message.length);
 
         // check flags (version + lshared + left + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000100 | 0b00000001
-        Assert.assertEquals(0b01011101, message[0]);
+        Assertions.assertEquals(0b01011101, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -141,13 +141,13 @@ public class TrieWasabiMessageTest {
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
-        Assert.assertEquals(14, message.length);
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals(14, message.length);
 
         // check flags (version + lshared + left + leftEmbedded + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
-        Assert.assertEquals(0b01011111, message[0]);
+        Assertions.assertEquals(0b01011111, message[0]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -156,21 +156,21 @@ public class TrieWasabiMessageTest {
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
+        Assertions.assertNotNull(message);
 
         // flags (1 byte) + value (4 bytes)
-        Assert.assertEquals(5, message.length);
+        Assertions.assertEquals(5, message.length);
 
         // check flags
-        Assert.assertEquals(0b01000000, message[0]);
+        Assertions.assertEquals(0b01000000, message[0]);
 
         // check value
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(2, message[2]);
-        Assert.assertEquals(3, message[3]);
-        Assert.assertEquals(4, message[4]);
+        Assertions.assertEquals(1, message[1]);
+        Assertions.assertEquals(2, message[2]);
+        Assertions.assertEquals(3, message[3]);
+        Assertions.assertEquals(4, message[4]);
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -179,23 +179,23 @@ public class TrieWasabiMessageTest {
 
         byte[] message = trie.toMessage();
 
-        Assert.assertNotNull(message);
+        Assertions.assertNotNull(message);
 
         // flags (1 byte) + valueHash (32 bytes) + valueLength (3 bytes)
-        Assert.assertEquals(36, message.length);
+        Assertions.assertEquals(36, message.length);
 
         // check flags => 0b01100000 | 0b00100000
-        Assert.assertEquals(0b01100000, message[0]);
+        Assertions.assertEquals(0b01100000, message[0]);
 
         // check encoded valueHash
         byte[] valueHash = trie.getValueHash().getBytes();
         for (int k = 0; k < valueHash.length; k++) {
-            Assert.assertEquals(valueHash[k], message[k + 1]); // the first byte corresponds to flags
+            Assertions.assertEquals(valueHash[k], message[k + 1]); // the first byte corresponds to flags
         }
 
         // check value length
-        Assert.assertEquals(new Uint24(LONG_VALUE), Uint24.decode(new byte[]{message[33], message[34], message[35]}, 0));
+        Assertions.assertEquals(new Uint24(LONG_VALUE), Uint24.decode(new byte[]{message[33], message[34], message[35]}, 0));
 
-        Assert.assertEquals(trie, Trie.fromMessage(message, null));
+        Assertions.assertEquals(trie, Trie.fromMessage(message, null));
     }
 }

@@ -18,7 +18,7 @@ import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
 import static org.ethereum.db.OperationType.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Grey box tests of the StorageRent feature (RSKIP240)
