@@ -75,19 +75,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return ds;
     }
 
+
+
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
-
-        if (options == null) {
-            options = new Options();
-            options.setCreateIfMissing(true);
-            options.setCompressionType(CompressionType.NO_COMPRESSION);
-            options.setArenaBlockSize(GENERAL_SIZE);
-            options.setWriteBufferSize(GENERAL_SIZE);
-            options.setParanoidChecks(true);
-        }
+        instantiateOptionsInternal();
 
         try {
             logger.debug("~> RocksDbDataSource.init(): {}", name);
@@ -374,5 +368,22 @@ public class RocksDbDataSource implements KeyValueDataSource {
     @Override
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
+    }
+
+    private synchronized static void instantiateOptionsInternal() {
+        if (options == null) {
+            try {
+                options = new Options();
+                options.setCreateIfMissing(true);
+                options.setCompressionType(CompressionType.NO_COMPRESSION);
+                options.setArenaBlockSize(GENERAL_SIZE);
+                options.setWriteBufferSize(GENERAL_SIZE);
+                options.setParanoidChecks(true);
+            } catch (Exception ioe) {
+                logger.error(ioe.getMessage(), ioe);
+                panicProcessor.panic("rocksdb", ioe.getMessage());
+                throw new RuntimeException("Can't instance Options class");
+            }
+        }
     }
 }
