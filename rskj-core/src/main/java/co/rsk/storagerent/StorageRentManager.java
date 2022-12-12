@@ -43,6 +43,8 @@ public class StorageRentManager {
         }
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
+        // todo(fedejinich) at the end, this is not necessary. StorageRentUtil can receive tracked keys and calculate
+        //  everything just by using the used keys
 
         Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
         Set<RentedNode> rollbackNodes = fetchRentedNodes(rollbackKeys, blockTrack);
@@ -57,22 +59,25 @@ public class StorageRentManager {
         StorageRentResult result = StorageRentUtil.calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
                 gasRemaining, executionBlockTimestamp);
 
-        if(!result.isOutOfGas()) {
-            // update rent timestamps
-            Set<RentedNode> nodesWithRent = rentedNodes.stream()
-                    .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
-                            rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
-                    .collect(Collectors.toSet());
+        this.result = Optional.of(result);
 
-            transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
+        if(result.isOutOfGas()) {
+            LOGGER.debug("out of gas at rent payment - total rent: {}, payable rent: {}, rollbacks rent: {}, " +
+                            "mismatches count: {}", result.totalRent(), result.getPayableRent(),
+                    result.getRollbacksRent(), result.getMismatchCount());
+
+            return result;
         }
 
-        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, " +
-                        "mismatches count: {}, out of gas: {}",
-            result.totalRent(), result.getPayableRent(), result.getRollbacksRent(),
-                result.getMismatchCount(), result.isOutOfGas());
+        // update rent timestamps
+        Set<RentedNode> nodesWithRent = rentedNodes.stream()
+                .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
+                        rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
+                .collect(Collectors.toSet());
+        transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
-        this.result = Optional.of(result);
+        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, mismatches count: {}",
+                result.totalRent(), result.getPayableRent(), result.getRollbacksRent(), result.getMismatchCount());
 
         return result;
     }

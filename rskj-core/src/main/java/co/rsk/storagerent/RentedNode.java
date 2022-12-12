@@ -13,6 +13,8 @@ import static co.rsk.storagerent.StorageRentUtil.*;
  * A RentedNode contains the relevant data of an involved node during transaction execution.
  * It also returns the relevant information to pay the storage rent.
  * */
+// todo(fedejinich) at the end this class is not doing any special stuff, it can be removed and add
+//  the logic into StorageRentManager
 public class RentedNode {
     private final ByteArrayWrapper key; // a trie key
     private final OperationType operationType; // an operation type
