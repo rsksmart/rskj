@@ -2,19 +2,18 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.storagerent.RentedNode;
-import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
 import static co.rsk.storagerent.StorageRentUtil.RENT_CAP;
 import static co.rsk.storagerent.StorageRentUtil.rentDue;
 import static org.ethereum.db.OperationType.READ_OPERATION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RentedNodeTest {
 

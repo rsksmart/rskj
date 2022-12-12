@@ -17,7 +17,6 @@
  */
 package org.ethereum.core;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -304,59 +303,60 @@ public class TransactionExecutorTest {
         assertNotNull(blockTxSignatureCache.getSender(transaction));
     }
 
-    @Test @Ignore // todo(fedejinich) right now we're ignoring this test, it will be enabled when the major test refactor it's done
-    public void isStorageRentEnabled() {
-        Transaction transaction = new TransactionBuilder()
-                // a simple call
-                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
-                .data("someData".getBytes(StandardCharsets.UTF_8))
-                .build();
-        checkStorageRentEnabled(transaction, true);
-
-        transaction = new TransactionBuilder()
-                // just a value transfer (no data)
-                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
-                .destination(new AccountBuilder().name("another").build().getAddress())
-                .value(BigInteger.ONE)
-                .build();
-        checkStorageRentEnabled(transaction, false);
-
-        transaction = new TransactionBuilder()
-                // just a value transfer (no data)
-                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
-                .destination(new AccountBuilder().name("another").build().getAddress())
-                .value(BigInteger.ONE)
-                .build();
-        checkStorageRentEnabled(transaction, true);
-
-        transaction = new TransactionBuilder()
-                // a value transfer (with data)
-                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
-                .value(BigInteger.ONE)
-                .data("something".getBytes(StandardCharsets.UTF_8))
-                .build();
-        checkStorageRentEnabled(transaction, true);
-    }
-
-    private void checkStorageRentEnabled(Transaction transaction, boolean shouldBeEnabled) {
-        TransactionExecutor transactionExecutor = buildTransactionExecutor(transaction, activationConfig);
-        assertEquals(shouldBeEnabled, transactionExecutor.isStorageRentEnabled());
-
-        // now disable storage rent
-        TransactionExecutor transactionExecutorBeforeStorageRent = buildTransactionExecutor(transaction,
-                ActivationConfigsForTest.allBut(ConsensusRule.RSKIP240));
-        assertFalse(transactionExecutorBeforeStorageRent.isStorageRentEnabled());
-    }
-
-    private TransactionExecutor buildTransactionExecutor(Transaction transaction, ActivationConfig activationConfig) {
-        return new TransactionExecutor(
-                constants, activationConfig, transaction, txIndex, rskAddress,
-                repository, blockStore, receiptStore, blockFactory,
-                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
-                true, precompiledContracts, deletedAccounts,
-                mock(SignatureCache.class)
-        );
-    }
+//    @Test
+//    // todo(fedejinich) right now we're ignoring this test, it will be enabled when the major test refactor it's done
+//    public void isStorageRentEnabled() {
+//        Transaction transaction = new TransactionBuilder()
+//                // a simple call
+//                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
+//                .data("someData".getBytes(StandardCharsets.UTF_8))
+//                .build();
+//        checkStorageRentEnabled(transaction, true);
+//
+//        transaction = new TransactionBuilder()
+//                // just a value transfer (no data)
+//                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
+//                .destination(new AccountBuilder().name("another").build().getAddress())
+//                .value(BigInteger.ONE)
+//                .build();
+//        checkStorageRentEnabled(transaction, false);
+//
+//        transaction = new TransactionBuilder()
+//                // just a value transfer (no data)
+//                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
+//                .destination(new AccountBuilder().name("another").build().getAddress())
+//                .value(BigInteger.ONE)
+//                .build();
+//        checkStorageRentEnabled(transaction, true);
+//
+//        transaction = new TransactionBuilder()
+//                // a value transfer (with data)
+//                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
+//                .value(BigInteger.ONE)
+//                .data("something".getBytes(StandardCharsets.UTF_8))
+//                .build();
+//        checkStorageRentEnabled(transaction, true);
+//    }
+//
+//    private void checkStorageRentEnabled(Transaction transaction, boolean shouldBeEnabled) {
+//        TransactionExecutor transactionExecutor = buildTransactionExecutor(transaction, activationConfig);
+//        assertEquals(shouldBeEnabled, transactionExecutor.isStorageRentEnabled());
+//
+//        // now disable storage rent
+//        TransactionExecutor transactionExecutorBeforeStorageRent = buildTransactionExecutor(transaction,
+//                ActivationConfigsForTest.allBut(ConsensusRule.RSKIP240));
+//        assertFalse(transactionExecutorBeforeStorageRent.isStorageRentEnabled());
+//    }
+//
+//    private TransactionExecutor buildTransactionExecutor(Transaction transaction, ActivationConfig activationConfig) {
+//        return new TransactionExecutor(
+//                constants, activationConfig, transaction, txIndex, rskAddress,
+//                repository, blockStore, receiptStore, blockFactory,
+//                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
+//                true, precompiledContracts, deletedAccounts,
+//                mock(SignatureCache.class)
+//        );
+//    }
 
     private boolean executeValidTransaction(Transaction transaction, BlockTxSignatureCache blockTxSignatureCache) {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());

@@ -12,8 +12,8 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.GregorianCalendar;
@@ -22,8 +22,8 @@ import java.util.Map;
 
 import static org.ethereum.db.OperationType.READ_OPERATION;
 import static org.ethereum.db.OperationType.WRITE_OPERATION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +31,7 @@ public class StorageRentManagerTest {
 
     private StorageRentManager storageRentManager;
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.storageRentManager = new StorageRentManager();
     }

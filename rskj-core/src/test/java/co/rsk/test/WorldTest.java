@@ -32,7 +32,8 @@ import org.junit.jupiter.api.Test;
 import java.io.FileNotFoundException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -62,13 +63,13 @@ public class WorldTest {
         Block genesis = world.getBlockByName("g00");
 
         Assertions.assertNotNull(genesis);
-        Assertions.assertEquals(0, genesis.getNumber());
+        assertEquals(0, genesis.getNumber());
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
         Assertions.assertNotNull(best);
-        Assertions.assertEquals(0, best.getNumber());
-        Assertions.assertEquals(genesis.getHash(), best.getHash());
+        assertEquals(0, best.getNumber());
+        assertEquals(genesis.getHash(), best.getHash());
     }
 
     @Test

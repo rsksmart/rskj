@@ -15,16 +15,16 @@ import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static co.rsk.storagerent.StorageRentUtil.rentThreshold;
 import static org.ethereum.db.OperationType.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -33,7 +33,7 @@ public class MutableRepositoryTrackedTest {
     private MutableRepositoryTestable spyRepository;
     private StorageRentManager storageRentManager;
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.spyRepository = newMutableRepositoryTestable();
         this.storageRentManager = new StorageRentManager();
