@@ -93,7 +93,6 @@ public class MigrateState {
         command = MigrateStateUtil.Command.ofName(args[commandIdx].toUpperCase(Locale.ROOT));
 
         TrieStore srcTrieStore = null;
-        TrieStore dstTrieStore = null;
         KeyValueDataSource dsDst = null;
 
         String srcFilePath = args[srcFilePathIdx];
@@ -104,9 +103,7 @@ public class MigrateState {
         KeyValueDataSource dsSrc;
         DbKind srcFileFmt = DbKind.ofName(args[srcFileFormatIdx]);
 
-        dsSrc = KeyValueDataSourceUtils.makeDataSource(
-                Paths.get(srcFilePath),
-                srcFileFmt);
+        dsSrc = KeyValueDataSourceUtils.makeDataSource(Paths.get(srcFilePath), srcFileFmt);
 
         logger.info("src path: " + srcFilePath);
         logger.info("src format: " + srcFileFmt);
@@ -146,7 +143,6 @@ public class MigrateState {
             // do not migrate: check that migration is ok.
             // We iterate the trie over the new (dst) database, to make it faster
             srcTrieStore = new TrieStoreImpl(dsSrc);
-            dstTrieStore = new TrieStoreImpl(dsDst);
         } else if (command == MigrateStateUtil.Command.COPY) {
             String rootStr = args[rootIdx];
             if (rootStr.equalsIgnoreCase("ALL")) {
@@ -177,17 +173,17 @@ public class MigrateState {
             System.exit(1);
         }
 
-        if (dstTrieStore == null) {
-
-        }
-
         MigrateStateUtil mu = new MigrateStateUtil(root, srcTrieStore, dsSrc, dsDst, dsCache);
-        mu.executeCommand(command);
+        boolean result = mu.executeCommand(command);
         dsSrc.close();
 
-        if ((dsDst != null) && (dsDst != dsSrc))
+        if ((dsDst != null) && (dsDst != dsSrc)) {
             dsDst.close();
+        }
 
+        if (!result) {
+            throw new RuntimeException("The result of your operation is not correct.");
+        }
     }
 
 

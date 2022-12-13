@@ -6,6 +6,8 @@ import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.KeyValueDataSourceUtils;
 import org.ethereum.db.ByteArrayWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 public class MigrateStateUtil {
+    private static final Logger logger = LoggerFactory.getLogger(MigrateStateUtil.class);
 
     TrieStore fixSrcTrieStore;
     Command command;
@@ -27,7 +30,7 @@ public class MigrateStateUtil {
 
     void consoleLog(String s) {
         LocalDateTime now = LocalDateTime.now();
-        System.out.println(dtf.format(now)+": "+s);
+        logger.info(dtf.format(now)+": "+s);
     }
     private void showMem() {
         Runtime runtime = Runtime.getRuntime();
@@ -118,7 +121,7 @@ public class MigrateStateUtil {
             dsChecked = dsSrc;
 
         if (command==Command.FIX)
-            dsChecked = dsDst;
+            fixSrcTrieStore = new TrieStoreImpl(dsSrc);
 
         boolean ret ;
         startTime = System.currentTimeMillis();
