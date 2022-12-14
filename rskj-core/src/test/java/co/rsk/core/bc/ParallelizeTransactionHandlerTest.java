@@ -756,6 +756,88 @@ public class ParallelizeTransactionHandlerTest {
         Assertions.assertArrayEquals(new short[]{ 1, 2 }, handler.getTransactionsPerSublistInOrder());
     }
 
+    @Test
+    void writeSequentialAfterTwoParallelReadsAndAWriteShouldGoToSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+        HashSet<ByteArrayWrapper> setWithY = createASetAndAddKeys(aDifferentWrapperKey);
+        HashSet<ByteArrayWrapper> setWithXAndY = createASetAndAddKeys(aWrappedKey, aDifferentWrapperKey);
+
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        // read X
+        handler.addTransaction(
+                new TransactionBuilder().sender(accountBuilder.name("sender1").build()).build(),
+                setWithX, new HashSet<>(), 10000
+        );
+
+        // read Y
+        handler.addTransaction(
+                new TransactionBuilder().sender(accountBuilder.name("sender2").build()).build(),
+                setWithY, new HashSet<>(), 10000
+        );
+
+        // write X and Y
+        handler.addTransaction(
+                new TransactionBuilder().sender(accountBuilder.name("sender3").build()).build(),
+                new HashSet<>(), setWithXAndY, 10000
+        );
+
+        // last write of X is in sequential
+        Assertions.assertArrayEquals(new short[]{ 1, 2 }, handler.getTransactionsPerSublistInOrder());
+
+        // write X
+        handler.addTransaction(
+                new TransactionBuilder().sender(accountBuilder.name("sender4").build()).build(),
+                new HashSet<>(), setWithX, 10000
+        );
+
+        // should go to sequential
+        // [[read x], [read y]] [write x and y, write x]
+        Assertions.assertArrayEquals(new short[]{ 1, 2 }, handler.getTransactionsPerSublistInOrder());
+    }
+
+    @Test
+    void writeAfterWriteToSequentialForOutOfGasShouldGoToSequential() {
+        HashSet<ByteArrayWrapper> setWithX = createASetAndAddKeys(aWrappedKey);
+
+        AccountBuilder accountBuilder = new AccountBuilder();
+
+        ParallelizeTransactionHandler handler = new ParallelizeTransactionHandler((short) 2, 1000);
+
+        // write X with 800
+        handler.addTransaction(
+                new TransactionBuilder()
+                        .sender(accountBuilder.name("sender1").build())
+                        .gasLimit(BigInteger.valueOf(800))
+                        .build(),
+                new HashSet<>(), setWithX, 800
+        );
+
+        // write X with 300
+        handler.addTransaction(
+                new TransactionBuilder()
+                        .sender(accountBuilder.name("sender2").build())
+                        .gasLimit(BigInteger.valueOf(300))
+                        .build(),
+                new HashSet<>(), setWithX, 300
+        );
+
+        // last write of X is in sequential because of out of gas. 800 + 300 > 1000
+        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+
+        // read X with 100
+        handler.addTransaction(
+                new TransactionBuilder()
+                        .sender(accountBuilder.name("sender3").build())
+                        .gasLimit(BigInteger.valueOf(100))
+                        .build(),
+                setWithX, new HashSet<>(), 100
+        );
+
+        // should go to sequential
+        Assertions.assertArrayEquals(new short[]{ 1 }, handler.getTransactionsPerSublistInOrder());
+    }
+
     private HashSet<ByteArrayWrapper> createASetAndAddKeys(ByteArrayWrapper... aKey) {
         return new HashSet<>(Arrays.asList(aKey));
     }

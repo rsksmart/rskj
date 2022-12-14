@@ -123,13 +123,12 @@ public class ParallelizeTransactionHandler {
 
         if (sublist.isSequential()) {
             sublistOfSender.put(sender, sublist);
-            return;
         } else {
             sublistOfSender.putIfAbsent(sender, sublist);
         }
 
         for (ByteArrayWrapper key: newWrittenKeys) {
-            sublistsHavingWrittenToKey.putIfAbsent(key, sublist);
+            sublistsHavingWrittenToKey.put(key, sublist);
         }
     }
 
