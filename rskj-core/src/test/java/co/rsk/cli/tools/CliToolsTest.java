@@ -792,13 +792,18 @@ class CliToolsTest {
         ByteArrayWrapper root = dsStateKeys.iterator().next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        migrateStateCliTool.onExecute(new String[]{
+        MigrateState.main(new String[]{
+                "--command",
                 "migrate",
+                "--root",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
                 dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
                 DbKind.LEVEL_DB.name()
         });
 
@@ -840,12 +845,18 @@ class CliToolsTest {
         File dstStateFile = dstStateFilePath.toFile();
 
         MigrateState migrateStateCliTool = new MigrateState();
-        migrateStateCliTool.onExecute(new String[]{
+        MigrateState.main(new String[]{
+                "--command",
                 "copy",
+                "--root",
                 "all",
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
                 dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
                 DbKind.LEVEL_DB.name()
         });
 
@@ -887,10 +898,14 @@ class CliToolsTest {
         dsState.close();
 
         MigrateState migrateStateCliTool = new MigrateState();
-        Assertions.assertDoesNotThrow(() -> migrateStateCliTool.onExecute(new String[]{
+        Assertions.assertDoesNotThrow(() -> migrateStateCliTool.main(new String[]{
+                "--command",
                 "check",
+                "--root",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
         }));
     }
@@ -926,13 +941,18 @@ class CliToolsTest {
         ByteArrayWrapper root = dsIterator.next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        migrateStateCliTool.onExecute(new String[]{
+        MigrateState.main(new String[]{
+                "--command",
                 "copy",
+                "--root",
                 "all",
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
                 dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
                 DbKind.LEVEL_DB.name()
         });
 
@@ -943,13 +963,18 @@ class CliToolsTest {
         trieStore.dispose();
         dsDstState.close();
 
-        migrateStateCliTool = new MigrateState();
-        migrateStateCliTool.onExecute(new String[]{
+        MigrateState.main(new String[]{
+                "--command",
                 "fix",
+                "--root",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
                 dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
                 DbKind.LEVEL_DB.name()
         });
 
@@ -995,15 +1020,22 @@ class CliToolsTest {
         ByteArrayWrapper root = dsIterator.next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        migrateStateCliTool.onExecute(new String[]{
+        MigrateState.main(new String[]{
+                "--command",
                 "migrate2",
+                "--root",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--destinationFilePath",
                 dstStateFile.getAbsolutePath(),
+                "--destinationFileKind",
                 DbKind.LEVEL_DB.name(),
+                "--cacheFilePath",
                 cacheStateFile.getAbsolutePath(),
+                "--cacheFileKind",
                 DbKind.LEVEL_DB.name()
         });
 
@@ -1048,11 +1080,14 @@ class CliToolsTest {
         ByteArrayWrapper root = dsIterator.next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        Assertions.assertDoesNotThrow(() -> migrateStateCliTool.onExecute(new String[]{
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
+                "--command",
                 "VALUEEXISTS",
+                "--key",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name()
         }));
     }
@@ -1086,11 +1121,14 @@ class CliToolsTest {
         ByteArrayWrapper root = dsIterator.next();
         dsState.close();
 
-        MigrateState migrateStateCliTool = new MigrateState();
-        Assertions.assertDoesNotThrow(() -> migrateStateCliTool.onExecute(new String[]{
+        Assertions.assertDoesNotThrow(() -> MigrateState.main(new String[]{
+                "--command",
                 "NODEEXISTS",
+                "--key",
                 root.toString(),
+                "--sourceFilePath",
                 stateFile.getAbsolutePath(),
+                "--sourceFileKind",
                 DbKind.LEVEL_DB.name()
         }));
     }

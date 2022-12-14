@@ -4,7 +4,6 @@ import co.rsk.RskContext;
 import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.spongycastle.util.encoders.Hex;
@@ -33,8 +32,8 @@ import java.util.Optional;
  *
  */
 public class ShowInfo extends CliToolRskContextAware  {
-    static int commandIdx = 0;
-    static int blockNumberIdx = 1;
+    private static final int COMMAND_IDX = 0;
+    private static final int BLOCK_NUMBER_IDX = 1;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
@@ -59,11 +58,9 @@ public class ShowInfo extends CliToolRskContextAware  {
         }
     }
 
-    Command command;
-
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        command = Command.ofName(args[commandIdx].toUpperCase(Locale.ROOT));
+        Command command = Command.ofName(args[COMMAND_IDX].toUpperCase(Locale.ROOT));
 
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = null;
@@ -89,7 +86,7 @@ public class ShowInfo extends CliToolRskContextAware  {
             return;
         }
         if (command== Command.STATEROOT) {
-            blockNumber = Long.parseLong(args[blockNumberIdx]);
+            blockNumber = Long.parseLong(args[BLOCK_NUMBER_IDX]);
             block = blockStore.getChainBlockByNumber(blockNumber);
             System.out.println("block "+blockNumber+" state root: "+
                     Hex.toHexString(block.getStateRoot()));
@@ -112,7 +109,9 @@ public class ShowInfo extends CliToolRskContextAware  {
             System.out.println("best block "+blockNumber);
             System.out.println("State root: "+ Hex.toHexString(root));
             showState(root, trieStore);
-        }  else System.exit(1);
+        }  else {
+            System.exit(1);
+        }
 
     }
 

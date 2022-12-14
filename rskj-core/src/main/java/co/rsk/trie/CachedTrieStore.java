@@ -18,11 +18,6 @@
 
 package co.rsk.trie;
 
-import org.ethereum.util.ByteUtil;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 public class CachedTrieStore implements TrieStore {
