@@ -51,7 +51,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     private final String databaseDir;
     private final String name;
 
-    private static Options options = null;
+    private final Options options = createOptions();
     private RocksDB db;
     private boolean alive;
 
@@ -81,7 +81,6 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public void init() {
         resetDbLock.writeLock().lock();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
-        instantiateOptionsInternal();
 
         try {
             logger.debug("~> RocksDbDataSource.init(): {}", name);
@@ -370,20 +369,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
-    private synchronized static void instantiateOptionsInternal() {
-        if (options == null) {
-            try {
-                options = new Options();
-                options.setCreateIfMissing(true);
-                options.setCompressionType(CompressionType.NO_COMPRESSION);
-                options.setArenaBlockSize(GENERAL_SIZE);
-                options.setWriteBufferSize(GENERAL_SIZE);
-                options.setParanoidChecks(true);
-            } catch (Exception ioe) {
-                logger.error(ioe.getMessage(), ioe);
-                panicProcessor.panic("rocksdb", ioe.getMessage());
-                throw new RuntimeException("Can't instance Options class");
-            }
-        }
+    private static Options createOptions() {
+        Options tempOptions = new Options();
+        tempOptions.setCreateIfMissing(true);
+        tempOptions.setCompressionType(CompressionType.NO_COMPRESSION);
+        tempOptions.setArenaBlockSize(GENERAL_SIZE);
+        tempOptions.setWriteBufferSize(GENERAL_SIZE);
+        tempOptions.setParanoidChecks(true);
+        return tempOptions;
     }
 }
