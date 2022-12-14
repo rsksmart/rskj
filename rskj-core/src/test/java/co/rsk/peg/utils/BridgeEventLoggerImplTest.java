@@ -19,11 +19,14 @@
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
@@ -60,11 +63,12 @@ class BridgeEventLoggerImplTest {
     private BridgeEventLogger eventLogger;
     private BtcTransaction btcTxMock;
     private BtcTransaction btcTx;
+    private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @BeforeEach
     void setup() {
         eventLogs = new LinkedList<>();
-        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, eventLogs);
+        eventLogger = new BridgeEventLoggerImpl(CONSTANTS, activations, eventLogs);
         btcTxMock = mock(BtcTransaction.class);
         btcTx = new BtcTransaction(CONSTANTS.getBtcParams());
     }
@@ -114,7 +118,7 @@ class BridgeEventLoggerImplTest {
     void logPeginBtc() {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -274,7 +278,7 @@ class BridgeEventLoggerImplTest {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
@@ -308,7 +312,7 @@ class BridgeEventLoggerImplTest {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
 
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
 
@@ -339,16 +343,31 @@ class BridgeEventLoggerImplTest {
 
 
     @Test
-    void testLogReleaseBtcRequestReceived() {
+    void testLogReleaseBtcRequestReceivedBeforeRSKIP326HardFork() {
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(false);
         String sender = "0x00000000000000000000000000000000000000";
-        byte[] btcDestinationAddress = "1234".getBytes();
+        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
         Coin amount = Coin.COIN;
 
-        eventLogger.logReleaseBtcRequestReceived(sender, btcDestinationAddress, amount);
+        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
 
         commonAssertLogs(eventLogs);
         assertTopics(2, eventLogs);
-        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcDestinationAddress, amount.value});
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent(), new Object[]{sender}, new Object[]{btcRecipientAddress.getHash160(), amount.value});
+    }
+
+    @Test
+    void testLogReleaseBtcRequestReceivedAfterRSKIP326HardFork() {
+        when(activations.isActive(ConsensusRule.RSKIP326)).thenReturn(true);
+        String sender = "0x00000000000000000000000000000000000000";
+        Address btcRecipientAddress = new Address(CONSTANTS.getBtcParams(), CONSTANTS.getBtcParams().getP2SHHeader(), Hex.decode("6bf06473af5f595cf97702229b007e50d6cfba83"));
+        Coin amount = Coin.COIN;
+
+        eventLogger.logReleaseBtcRequestReceived(sender, btcRecipientAddress, amount);
+
+        commonAssertLogs(eventLogs);
+        assertTopics(2, eventLogs);
+        assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent(), new Object[]{sender}, new Object[]{btcRecipientAddress.toString(), amount.value});
     }
 
 
@@ -369,13 +388,48 @@ class BridgeEventLoggerImplTest {
     void logBatchPegoutCreated() {
         List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
 
-        eventLogger.logBatchPegoutCreated(btcTx, rskTxHashes);
+        eventLogger.logBatchPegoutCreated(btcTx.getHash(), rskTxHashes);
 
         commonAssertLogs(eventLogs);
 
         assertTopics(2, eventLogs);
 
         assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
+    }
+
+    @Test
+    void logBatchPegoutCreatedWithWitness() {
+        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
+
+        TransactionWitness txWitness = new TransactionWitness(1);
+
+        btcTx.addInput(
+                Sha256Hash.ZERO_HASH,
+                0, ScriptBuilder.createInputScript(null, new BtcECKey())
+        );
+
+        txWitness.setPush(0, new byte[]{ 0x1 });
+        btcTx.setWitness(0, txWitness);
+        eventLogger.logBatchPegoutCreated(btcTx.getHash(true), rskTxHashes);
+
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+
+        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash(true).getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
+
+    }
+
+    @Test
+    void logPegoutConfirmed() {
+        long pegoutCreationRskBlockNumber = 50;
+        eventLogger.logPegoutConfirmed(btcTx.getHash(), pegoutCreationRskBlockNumber);
+
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+
+        assertEvent(eventLogs, 0, BridgeEvents.PEGOUT_CONFIRMED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{pegoutCreationRskBlockNumber});
     }
 
     /**********************************
