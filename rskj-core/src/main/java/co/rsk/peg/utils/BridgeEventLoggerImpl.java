@@ -18,15 +18,14 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
@@ -53,11 +52,15 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private List<LogInfo> logs;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs) {
+    private ActivationConfig.ForBlock activations;
+
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
+        this.activations = activations;
         this.bridgeConstants = bridgeConstants;
         this.logs = logs;
     }
 
+    @Override
     public void logUpdateCollections(Transaction rskTx) {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
@@ -67,6 +70,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
         String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
@@ -82,6 +86,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash) {
         CallTransaction.Function event = BridgeEvents.RELEASE_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash);
@@ -91,6 +96,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
@@ -114,6 +120,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
@@ -124,6 +131,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logPeginBtc(RskAddress receiver, BtcTransaction btcTx, Coin amount, int protocolVersion) {
         CallTransaction.Function event = BridgeEvents.PEGIN_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString(), btcTx.getHash().getBytes());
@@ -134,6 +142,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logReleaseBtcRequested(byte[] rskTransactionHash, BtcTransaction btcTx, Coin amount) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUESTED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTransactionHash, btcTx.getHash().getBytes());
@@ -143,6 +152,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
         CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
@@ -153,6 +163,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
+    @Override
     public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
         CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
@@ -164,12 +175,27 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+    public void logReleaseBtcRequestReceived(String sender, Address btcDestinationAddress, Coin amount) {
+        if (activations.isActive(ConsensusRule.RSKIP326)) {
+            logReleaseBtcRequestReceived(sender, btcDestinationAddress.toString(), amount);
+        } else {
+            logReleaseBtcRequestReceived(sender, btcDestinationAddress.getHash160(), amount);
+        }
+    }
+
+    private void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount) {
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED_LEGACY.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(btcDestinationAddress, amount.getValue());
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    private void logReleaseBtcRequestReceived(String sender, String btcDestinationAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.RELEASE_REQUEST_RECEIVED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(btcDestinationAddress, amount.getValue());
-
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
@@ -184,14 +210,23 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes) {
+    public void logBatchPegoutCreated(Sha256Hash btcTxHash, List<Keccak256> rskTxHashes) {
         CallTransaction.Function event = BridgeEvents.BATCH_PEGOUT_CREATED.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTxHash.getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
         byte[] serializedRskTxHashes = serializeRskTxHashes(rskTxHashes);
         byte[] encodedData = event.encodeEventData(serializedRskTxHashes);
 
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    @Override
+    public void logPegoutConfirmed(Sha256Hash btcTxHash, long pegoutCreationRskBlockNumber) {
+        CallTransaction.Function event = BridgeEvents.PEGOUT_CONFIRMED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTxHash.getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(pegoutCreationRskBlockNumber);
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 

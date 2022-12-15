@@ -876,9 +876,9 @@ public class BridgeSupport {
             }
 
             if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender().toHexString(), destinationAddress.getHash160(), value);
+                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender().toHexString(), destinationAddress, value);
             }
-            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+            logger.info("releaseBtc successful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
         }
     }
 
@@ -1199,7 +1199,7 @@ public class BridgeSupport {
                 logger.debug("[processPegoutsInBatch] used {} UTXOs for this pegout", selectedUTXOs.size());
                 availableUTXOs.removeAll(selectedUTXOs);
 
-                eventLogger.logBatchPegoutCreated(generatedTransaction,
+                eventLogger.logBatchPegoutCreated(generatedTransaction.getHash(),
                     pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
                 adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
@@ -1247,7 +1247,7 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
-        if (txsWithEnoughConfirmations.size() > 0) {
+        if (!txsWithEnoughConfirmations.isEmpty()) {
             ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
             // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
             if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
@@ -1257,6 +1257,9 @@ public class BridgeSupport {
             }
             else {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
+            }
+            if(activations.isActive(ConsensusRule.RSKIP326)) {
+                eventLogger.logPegoutConfirmed(entry.getTransaction().getHash(), entry.getRskBlockNumber());
             }
         }
     }
@@ -1338,7 +1341,11 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+
+        if (!activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
+        }
+
         processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
     }
 
@@ -1388,6 +1395,8 @@ public class BridgeSupport {
             }
         }
 
+        boolean signed = false;
+
         // All signatures are correct. Proceed to signing
         for (int i = 0; i < numInputs; i++) {
             Sha256Hash sighash = sighashes.get(i);
@@ -1406,6 +1415,7 @@ public class BridgeSupport {
                     inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigs.get(i).encodeToBitcoin(), sigIndex, 1, 1);
                     input.setScriptSig(inputScript);
                     logger.debug("Tx input {} for tx {} signed.", i, new Keccak256(rskTxHash));
+                    signed = true;
                 } catch (IllegalStateException e) {
                     Federation retiringFederation = getRetiringFederation();
                     if (getActiveFederation().hasBtcPublicKey(federatorPublicKey)) {
@@ -1421,6 +1431,10 @@ public class BridgeSupport {
                 logger.warn("Input {} of tx {} already signed by this federator.", i, new Keccak256(rskTxHash));
                 break;
             }
+        }
+
+        if(signed && activations.isActive(ConsensusRule.RSKIP326)) {
+            eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
         }
 
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {

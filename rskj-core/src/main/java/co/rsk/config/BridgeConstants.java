@@ -46,7 +46,6 @@ public abstract class BridgeConstants {
     protected Coin minimumPegoutTxValueInSatoshis;
 
     protected long federationActivationAge;
-    protected long specialCaseFederationActivationAge;
 
     protected long fundsMigrationAgeSinceActivationBegin;
     protected long fundsMigrationAgeSinceActivationEnd;
