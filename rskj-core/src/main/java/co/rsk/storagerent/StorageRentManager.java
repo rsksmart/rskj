@@ -1,13 +1,15 @@
 package co.rsk.storagerent;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;

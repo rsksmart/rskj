@@ -406,10 +406,10 @@ public class TransactionExecutor {
         transactionTrack.transfer(tx.getSender(signatureCache), newContractAddress, endowment);
     }
 
-    private void execError(Throwable err) {
-        logger.error("execError: ", err);
-        executionError = err.getMessage();
-    }
+//    private void execError(Throwable err) {
+//        logger.error("execError: ", err);
+//        executionError = err.getMessage();
+//    }
 
     private void execError(String err) {
         logger.trace(err);
@@ -454,7 +454,7 @@ public class TransactionExecutor {
             }
         } catch (Exception e) {
             transactionTrack.rollback();
-            outOfGas(e.getMessage());
+            outOfGas(e);
             result.setException(e);
             profiler.stop(metric);
             return;
@@ -587,6 +587,11 @@ public class TransactionExecutor {
 
         gasLeftover = storageRentResult.getGasAfterPayingRent();
         transactionTrack.commit();
+    }
+
+    private void outOfGas(Throwable throwable) {
+        logger.error("out of gas: {}", throwable);
+        outOfGas(throwable.getMessage());
     }
 
     private void outOfGas(String outOfGasMessage) {
