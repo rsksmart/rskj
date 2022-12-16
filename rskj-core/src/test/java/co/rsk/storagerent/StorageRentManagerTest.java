@@ -251,7 +251,7 @@ public class StorageRentManagerTest {
 
         transactionTrack.commit();
 
-        assertTrue(result.totalRent() > 0);
+        assertTrue(result.getPaidRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, updatedTimestamp),
@@ -313,7 +313,7 @@ public class StorageRentManagerTest {
         transactionTrack.commit();
 
         // it shouldn't have updated the timestamp
-        assertTrue(result.totalRent() > 0);
+        assertTrue(result.getPaidRent() > 0);
         assertEquals(1, result.getRollbackNodes().size());
         assertEquals(result.getRentedNodes(), result.getRollbackNodes());
         assertEquals(new RentedNode(key, READ_OPERATION, 3, firstBlockTimestamp), // no timestamp update

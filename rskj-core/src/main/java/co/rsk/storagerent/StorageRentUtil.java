@@ -186,8 +186,8 @@ public class StorageRentUtil {
 
         // not enough gas to pay rent
         if(gasRemaining < rentToPay) {
-            return StorageRentResult.outOfGas(rentedNodes, rollbackNodes, mismatchesCount, executionBlockTimestamp,
-                    rentToPay);
+            return StorageRentResult.outOfGas(rentedNodes, rollbackNodes,
+                    mismatchesCount, executionBlockTimestamp);
         }
 
         long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);

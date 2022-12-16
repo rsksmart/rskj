@@ -428,7 +428,8 @@ public class StorageRentDSLTests {
         // but run out of gas at rent payment
         assertTrue(storageRentResultTx03.isOutOfGas());
         assertArrayEquals(new byte[0], world.getTransactionReceiptByName(tx03).getStatus()); // tx fail
-        assertTrue(storageRentResultTx03.getOutOfGasRentToPay() > 0);
+        assertEquals(0, storageRentResultTx03.getPaidRent());
+        assertEquals(0, storageRentResultTx03.getGasAfterPayingRent());
 
         for (RentedNode n : storageRentResultTx03
                 .getRentedNodes()) {
@@ -514,7 +515,7 @@ public class StorageRentDSLTests {
         assertEquals(rentedNodesCount, storageRentResult.getRentedNodes().size());
         assertEquals(rollbackNodesCount, storageRentResult.getRollbackNodes().size());
         assertEquals(rollbackRent, storageRentResult.getRollbacksRent());
-        assertEquals(paidRent, storageRentResult.totalRent());
+        assertEquals(paidRent, storageRentResult.getPaidRent());
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
     }
 
