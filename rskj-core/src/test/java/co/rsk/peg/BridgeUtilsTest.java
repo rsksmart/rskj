@@ -3858,4 +3858,132 @@ class BridgeUtilsTest {
 
         Assertions.assertTrue(foundUTXOs.isEmpty());
     }
+
+    @Test
+    void testRemoveSignaturesFromTransaction_single_input() {
+        // Arrange
+        Federation federation = bridgeConstantsRegtest.getGenesisFederation();
+        Address federationAddress = federation.getAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, federationAddress);
+
+        TransactionInput txIn = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn);
+
+        Sha256Hash unsignedTxHash = btcTx.getHash();
+
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, btcTx);
+        Sha256Hash signedTxHash = btcTx.getHash();
+
+        // Act
+        BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
+        Sha256Hash removedSignaturesTxHash = btcTx.getHash();
+
+        // Assert
+        assertNotEquals(unsignedTxHash, signedTxHash);
+        assertNotEquals(signedTxHash, removedSignaturesTxHash);
+        assertEquals(unsignedTxHash, removedSignaturesTxHash);
+    }
+
+    @Test
+    void testRemoveSignaturesFromTransaction_with_three_inputs() {
+        // Arrange
+        Federation federation = bridgeConstantsRegtest.getGenesisFederation();
+        Address federationAddress = federation.getAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, federationAddress);
+
+        TransactionInput txIn = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn);
+        TransactionInput txIn2 = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn2);
+        TransactionInput txIn3 = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn3);
+
+        Sha256Hash unsignedTxHash = btcTx.getHash();
+
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, btcTx);
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn2, btcTx);
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn3, btcTx);
+
+        Sha256Hash signedTxHash = btcTx.getHash();
+
+        // Act
+        BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
+        Sha256Hash removedSignaturesTxHash = btcTx.getHash();
+
+        // Assert
+        assertNotEquals(unsignedTxHash, signedTxHash);
+        assertNotEquals(signedTxHash, removedSignaturesTxHash);
+        assertEquals(unsignedTxHash, removedSignaturesTxHash);
+    }
+
+    @Test
+    void testRemoveSignaturesFromTransaction_with_inputs_for_two_feds() {
+        // Arrange
+        Federation federation = bridgeConstantsRegtest.getGenesisFederation();
+        Federation erpFed = createErpFederation();
+        Address federationAddress = federation.getAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(Coin.COIN, federationAddress);
+
+        TransactionInput txIn = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn);
+        TransactionInput txIn2 = createTransactionInputFromFed(federation);
+        btcTx.addInput(txIn2);
+        TransactionInput txIn3 = createTransactionInputFromFed(erpFed);
+        btcTx.addInput(txIn3);
+
+        Sha256Hash unsignedTxHash = btcTx.getHash();
+
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, btcTx);
+        signWithNecessaryKeys(bridgeConstantsRegtest.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn2, btcTx);
+        signWithNecessaryKeys(erpFed, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn3, btcTx);
+
+        Sha256Hash signedTxHash = btcTx.getHash();
+
+        // Act
+        BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
+        Sha256Hash removedSignaturesTxHash = btcTx.getHash();
+
+        // Assert
+        assertNotEquals(unsignedTxHash, signedTxHash);
+        assertNotEquals(signedTxHash, removedSignaturesTxHash);
+        assertEquals(unsignedTxHash, removedSignaturesTxHash);
+    }
+
+    private TransactionInput createTransactionInputFromFed(Federation federation) {
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            null,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        // Create script to be signed by federation members
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(federation, null);
+        txIn.setScriptSig(inputScript);
+        return txIn;
+    }
+
+    private Script createBaseInputScriptThatSpendsFromTheFederation(
+        Federation federation,
+        Script customRedeemScript
+    ) {
+        Script scriptPubKey = federation.getP2SHScript();
+        Script redeemScript = federation.getRedeemScript();
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
+
+        if (customRedeemScript == null) {
+            return scriptPubKey.createEmptyInputScript(
+                redeemData.keys.get(0),
+                redeemData.redeemScript
+            );
+        }
+
+        // customRedeemScript might not be actually custom, but just in case, use the provided redeemScript
+        return scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), customRedeemScript);
+    }
 }

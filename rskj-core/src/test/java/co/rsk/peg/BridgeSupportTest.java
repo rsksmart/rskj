@@ -5644,6 +5644,7 @@ class BridgeSupportTest extends BridgeSupportTestBase {
         Assertions.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(tx));
     }
 
+
     @Test
     void getTransactionType_sentFromOldFed_beforeRskip199_pegin_tx() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);

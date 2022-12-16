@@ -107,6 +107,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP298;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -1451,8 +1452,18 @@ public class BridgeSupport {
         if (BridgeUtils.hasEnoughSignatures(btcContext, btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
-
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
+
+            if (activations.isActive(RSKIP298)){
+                // Remove signatures to get the unsigned btcTxHash
+                BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
+                Sha256Hash unsignedBtcTxHash = btcTx.getHash();
+                Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(unsignedBtcTxHash);
+                // To only set to null existing entries, this check if exists a pegout creation entry for the given unsigned btcTxHash
+                if (pegoutCreationEntry.isPresent()){
+                    provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTx.getHash(), null));
+                }
+            }
         } else if (logger.isDebugEnabled()) {
             int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
             int neededSignatures = federation.getNumberOfSignaturesRequired();

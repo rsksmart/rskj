@@ -3551,10 +3551,10 @@ class BridgeStorageProviderTest {
         provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
-        verify(repository, never()).addStorageBytes(
+        verify(repository, atLeastOnce()).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
-            BridgeSerializationUtils.serializeKeccak256(rskTxHash)
+            null
         );
 
         Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(

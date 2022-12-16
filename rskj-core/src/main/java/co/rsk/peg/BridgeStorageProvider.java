@@ -981,7 +981,6 @@ public class BridgeStorageProvider {
         if (
             this.pegoutCreationEntry == null
                 || this.pegoutCreationEntry.getBtcTxHash() == null
-                || this.pegoutCreationEntry.getRskTxHash() == null
                 || !activations.isActive(RSKIP298)
         ){
             return;

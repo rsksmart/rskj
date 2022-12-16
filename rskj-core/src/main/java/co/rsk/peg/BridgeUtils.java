@@ -38,6 +38,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -76,6 +77,41 @@ public class BridgeUtils {
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
     private BridgeUtils() {}
+
+    /*
+    Received tx inputs are replaced by base inputs without signatures that spend from the given federation.
+    This way the tx has the same hash as the one registered in release_requested event topics.
+     */
+    public static void removeSignaturesFromTransaction(BtcTransaction tx, Federation spendingFed) {
+        for (int inputIndex = 0; inputIndex < tx.getInputs().size(); inputIndex++) {
+            //Get redeem script for current input
+            TransactionInput txInput = tx.getInput(inputIndex);
+            Script inputRedeemScript = getRedeemScriptFromInput(txInput);
+            logger.trace("[removeSignaturesFromTransaction] input {} scriptSig {}", inputIndex, tx.getInput(inputIndex).getScriptSig());
+            logger.trace("[removeSignaturesFromTransaction] input {} redeem script {}", inputIndex, inputRedeemScript);
+
+            txInput.setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(spendingFed, inputRedeemScript));
+            logger.debug("[removeSignaturesFromTransaction] Updated input {} scriptSig with base input script that " +
+                             "spends from the federation {}", inputIndex, spendingFed.getAddress());
+        }
+    }
+
+    private static Script getRedeemScriptFromInput(TransactionInput txInput) {
+        Script inputScript = txInput.getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        // Last chunk of the scriptSig contains the redeem script
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        return new Script(program);
+    }
+
+    private static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation, Script customRedeemScript) {
+        Script scriptPubKey = federation.getP2SHScript();
+        Script redeemScript = federation.getRedeemScript();
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
+
+        // customRedeemScript might not be actually custom, but just in case, use the provided redeemScript
+        return scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), customRedeemScript);
+    }
 
     public static Wallet getFederationNoSpendWallet(
         Context btcContext,
