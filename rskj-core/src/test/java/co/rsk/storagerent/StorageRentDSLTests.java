@@ -363,7 +363,7 @@ public class StorageRentDSLTests {
         assertTrue(storageRentResult.getRentedNodes().contains(contractAccountState));
         assertTrue(storageRentResult.getRentedNodes().contains(code));
 
-        assertEquals(12500, storageRentResult.getMismatchesRent());
+        assertEquals(12500, StorageRentUtil.mismatchesRent(storageRentResult.getMismatchCount()));
 
         // payable rent is calculated with the most recent timestamp
         long rentedNodesRent = senderAccountState.payableRent(finalTimestamp) +

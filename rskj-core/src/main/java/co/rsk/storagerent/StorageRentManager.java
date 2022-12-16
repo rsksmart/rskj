@@ -19,7 +19,7 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
  * https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP240.md
  * */
 public class StorageRentManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger("execute");
+    private static final Logger LOGGER = LoggerFactory.getLogger("execute"); // NOSONAR
     private Optional<StorageRentResult> result = Optional.empty();
 
     /**
@@ -64,10 +64,7 @@ public class StorageRentManager {
         this.result = Optional.of(result);
 
         if(result.isOutOfGas()) {
-            LOGGER.debug("out of gas at rent payment - total rent: {}, payable rent: {}, rollbacks rent: {}, " +
-                            "mismatches count: {}", result.totalRent(), result.getPayableRent(),
-                    result.getRollbacksRent(), result.getMismatchCount());
-
+            LOGGER.debug("out of gas at rent payment - storage rent result: {}", result);
             return result;
         }
 
@@ -78,8 +75,7 @@ public class StorageRentManager {
                 .collect(Collectors.toSet());
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
-        LOGGER.debug("storage rent result - total rent: {}, payable rent: {}, rollbacks rent: {}, mismatches count: {}",
-                result.totalRent(), result.getPayableRent(), result.getRollbacksRent(), result.getMismatchCount());
+        LOGGER.debug("storage rent result: {}", result);
 
         return result;
     }

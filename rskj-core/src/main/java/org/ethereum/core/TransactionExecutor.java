@@ -578,8 +578,7 @@ public class TransactionExecutor {
         profiler.stop(storageRentMetric);
 
         if(storageRentResult.isOutOfGas()) {
-            outOfGas(String.format("Not enough gas to pay storage rent. rent to pay: {}",
-                    storageRentResult.getOutOfGasRentToPay()));
+            outOfGas(String.format("Not enough gas to pay storage rent. storage rent result: {}", storageRentResult));
             result.clearFieldsOnException(); 
             transactionTrack.rollback();
             return;

@@ -62,11 +62,6 @@ public class StorageRentResult {
     }
 
     @VisibleForTesting
-    public long getMismatchesRent() {
-        return StorageRentUtil.mismatchesRent(this.mismatchesCount);
-    }
-
-    @VisibleForTesting
     public long getMismatchCount() {
         return this.mismatchesCount;
     }
@@ -90,11 +85,11 @@ public class StorageRentResult {
 
     @VisibleForTesting
     public long getOutOfGasRentToPay() {
-        return outOfGasRentToPay;
+        return outOfGasRentToPay; // todo(fedejinich) complex with no sense, remove it
     }
 
     @VisibleForTesting
     public long totalRent() {
-        return this.getPayableRent() + this.getRollbacksRent() + this.getMismatchesRent();
+        return this.getPayableRent() + this.getRollbacksRent() + StorageRentUtil.mismatchesRent(this.mismatchesCount);
     }
 }
