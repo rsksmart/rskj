@@ -97,7 +97,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
             Files.createDirectories(dbPath.getParent());
 
             logger.debug("Initializing new or existing database: '{}'", name);
-            openDb(options, dbPath);
+            openDb(dbPath);
 
             logger.debug("<~ RocksDbDataSource.init(): {}", name);
         } catch (RocksDBException ioe) {
@@ -114,7 +114,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void openDb(Options options, Path dbPath) throws RocksDBException {
+    private void openDb(Path dbPath) throws RocksDBException {
         db = RocksDB.open(options, dbPath.toString());
 
         alive = true;
@@ -370,12 +370,12 @@ public class RocksDbDataSource implements KeyValueDataSource {
     }
 
     private static Options createOptions() {
-        Options tempOptions = new Options();
-        tempOptions.setCreateIfMissing(true);
-        tempOptions.setCompressionType(CompressionType.NO_COMPRESSION);
-        tempOptions.setArenaBlockSize(GENERAL_SIZE);
-        tempOptions.setWriteBufferSize(GENERAL_SIZE);
-        tempOptions.setParanoidChecks(true);
-        return tempOptions;
+        Options options = new Options();
+        options.setCreateIfMissing(true);
+        options.setCompressionType(CompressionType.NO_COMPRESSION);
+        options.setArenaBlockSize(GENERAL_SIZE);
+        options.setWriteBufferSize(GENERAL_SIZE);
+        options.setParanoidChecks(true);
+        return options;
     }
 }
