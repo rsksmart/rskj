@@ -87,10 +87,10 @@ public class BridgeUtils {
             //Get redeem script for current input
             TransactionInput txInput = tx.getInput(inputIndex);
             Script inputRedeemScript = getRedeemScriptFromInput(txInput);
-            logger.trace("[removeSignaturesFromTransaction] input {} scriptSig {}", inputIndex, tx.getInput(inputIndex).getScriptSig());
+            logger.trace("[removeSignaturesFromTransaction] input {} scriptSig {}", inputIndex, txInput.getScriptSig());
             logger.trace("[removeSignaturesFromTransaction] input {} redeem script {}", inputIndex, inputRedeemScript);
 
-            txInput.setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(spendingFed, inputRedeemScript));
+            txInput.setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(spendingFed));
             logger.debug("[removeSignaturesFromTransaction] Updated input {} scriptSig with base input script that " +
                              "spends from the federation {}", inputIndex, spendingFed.getAddress());
         }
@@ -104,13 +104,11 @@ public class BridgeUtils {
         return new Script(program);
     }
 
-    private static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation, Script customRedeemScript) {
+    private static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
         Script scriptPubKey = federation.getP2SHScript();
         Script redeemScript = federation.getRedeemScript();
         RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
-
-        // customRedeemScript might not be actually custom, but just in case, use the provided redeemScript
-        return scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), customRedeemScript);
+        return scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
     }
 
     public static Wallet getFederationNoSpendWallet(

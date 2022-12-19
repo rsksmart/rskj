@@ -30,19 +30,25 @@ public class PegoutCreationEntry {
         }
 
         PegoutCreationEntry that = (PegoutCreationEntry) o;
-        return getBtcTxHash().equals(that.getBtcTxHash()) && getRskTxHash().equals(that.getRskTxHash());
+
+        if (!getBtcTxHash().equals(that.getBtcTxHash())) {
+            return false;
+        }
+        return getRskTxHash() != null ? getRskTxHash().equals(that.getRskTxHash()) : that.getRskTxHash() == null;
     }
 
     @Override
     public int hashCode() {
-        return getBtcTxHash().hashCode() + getRskTxHash().hashCode();
+        int result = getBtcTxHash().hashCode();
+        result = 31 * result + (getRskTxHash() != null ? getRskTxHash().hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
         return "PegoutCreationEntry{" +
                    "btcTxHash=" + btcTxHash +
-                   ", rskTxHash=" + rskTxHash +
+                   ", rskTxHash=" + (rskTxHash == null? "null":rskTxHash) +
                    '}';
     }
 }

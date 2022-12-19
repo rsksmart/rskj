@@ -24,6 +24,8 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutPoint;
 import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
@@ -87,6 +89,18 @@ public class PegTestUtils {
         bytes[3] = (byte) (0xFF & nHash >> 24);
 
         return Sha256Hash.wrap(bytes);
+    }
+
+    public static TransactionInput createTransactionInputFromFed(Federation federation, NetworkParameters networkParameters) {
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            null,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        // Create script to be signed by federation members
+        txIn.setScriptSig(createBaseInputScriptThatSpendsFromTheFederation(federation));
+        return txIn;
     }
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {

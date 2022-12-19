@@ -534,8 +534,27 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         }
     }
 
+    private List getSignatureForTxInput(TransactionInput txInput, BtcTransaction btcTx, BtcECKey privateKeyToSignWith) {
+        Script inputScript = txInput.getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+        Sha256Hash sighash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+
+        BtcECKey.ECDSASignature sig = privateKeyToSignWith.sign(sighash);
+
+        byte[] derEncodedSig = sig.encodeToDER();
+
+        List derEncodedSigs = new ArrayList();
+        for (int i = 0; i < 1; i++) {
+            derEncodedSigs.add(derEncodedSig);
+        }
+
+        return derEncodedSigs;
+    }
+
     @Test
-    void addSignature_after_RSKIP298_ok() throws Exception {
+    void addSignature_after_RSKIP298_removes_pegout_creation_entry_from_storage() throws Exception {
         // Act
         List<BtcECKey> federatorPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         List<BtcECKey> privateKeysToSignWith = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
@@ -543,7 +562,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
 
-        final Keccak256 keccak256 = PegTestUtils.createHash3();
+        final Keccak256 rskTxHash = PegTestUtils.createHash3();
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
@@ -562,12 +581,12 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         SortedMap<Keccak256, BtcTransaction> rskTxWaitingForSignatures = new TreeMap<>();
-        rskTxWaitingForSignatures.put(keccak256, btcTx);
+        rskTxWaitingForSignatures.put(rskTxHash, btcTx);
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(
             rskTxWaitingForSignatures
         );
         when(provider.getPegoutCreationRskTxHashByBtcTxHash(unsignedBtxTxHash)).thenReturn(
-            Optional.of(keccak256)
+            Optional.of(rskTxHash)
         );
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -576,38 +595,25 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
             .withActivations(activations)
             .build();
 
-        Script inputScript = btcTx.getInputs().get(0).getScriptSig();
-        List<ScriptChunk> chunks = inputScript.getChunks();
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        Script redeemScript = new Script(program);
-        Sha256Hash sighash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
-
-        BtcECKey.ECDSASignature sig = privateKeysToSignWith.get(0).sign(sighash);
-
-        byte[] derEncodedSig = sig.encodeToDER();
-
-        List derEncodedSigs = new ArrayList();
-        for (int i = 0; i < 1; i++) {
-            derEncodedSigs.add(derEncodedSig);
-        }
-
         // Act
-        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
+        BtcECKey privateKeyToSignWith = privateKeysToSignWith.get(0);
+        List derEncodedSigs = getSignatureForTxInput(btcTx.getInputs().get(0), btcTx, privateKeyToSignWith);
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith), derEncodedSigs, rskTxHash.getBytes());
 
-        if (privateKeysToSignWith.size() > 1) {
-            BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
-            byte[] derEncodedSig2 = sig2.encodeToDER();
-            List derEncodedSigs2 = new ArrayList();
-            for (int i = 0; i < 1; i++) {
-                derEncodedSigs2.add(derEncodedSig2);
-            }
-            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
-        }
+        // Verify pegout creation entry is only set to null when pegout is fully signed
+        verify(provider, never()).getPegoutCreationRskTxHashByBtcTxHash(any());
+        verify(provider, never()).setPegoutCreationEntry(
+            any()
+        );
+
+        BtcECKey privateKeyToSignWith2 = privateKeysToSignWith.get(1);
+        List derEncodedSigs2 = getSignatureForTxInput(btcTx.getInputs().get(0), btcTx, privateKeyToSignWith2);
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith2), derEncodedSigs2, rskTxHash.getBytes());
 
         // Assert
-        verify(provider, atLeastOnce()).getPegoutCreationRskTxHashByBtcTxHash(unsignedBtxTxHash);
-        verify(provider, atLeastOnce()).setPegoutCreationEntry(
-            any()
+        verify(provider, times(1)).getPegoutCreationRskTxHashByBtcTxHash(unsignedBtxTxHash);
+        verify(provider, times(1)).setPegoutCreationEntry(
+            new PegoutCreationEntry(unsignedBtxTxHash, null)
         );
     }
 
@@ -620,7 +626,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
 
-        final Keccak256 keccak256 = PegTestUtils.createHash3();
+        final Keccak256 rskTxHash = PegTestUtils.createHash3();
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
@@ -639,7 +645,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         when(activations.isActive(ConsensusRule.RSKIP298)).thenReturn(true);
 
         SortedMap<Keccak256, BtcTransaction> rskTxWaitingForSignatures = new TreeMap<>();
-        rskTxWaitingForSignatures.put(keccak256, btcTx);
+        rskTxWaitingForSignatures.put(rskTxHash, btcTx);
         when(provider.getRskTxsWaitingForSignatures()).thenReturn(
             rskTxWaitingForSignatures
         );
@@ -650,37 +656,23 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
             .withActivations(activations)
             .build();
 
-        Script inputScript = btcTx.getInputs().get(0).getScriptSig();
-        List<ScriptChunk> chunks = inputScript.getChunks();
-        byte[] program = chunks.get(chunks.size() - 1).data;
-        Script redeemScript = new Script(program);
-        Sha256Hash sighash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
-
-        BtcECKey.ECDSASignature sig = privateKeysToSignWith.get(0).sign(sighash);
-
-        byte[] derEncodedSig = sig.encodeToDER();
-
-        List derEncodedSigs = new ArrayList();
-        for (int i = 0; i < 1; i++) {
-            derEncodedSigs.add(derEncodedSig);
-        }
-
         // Act
-        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
+        BtcECKey privateKeyToSignWith = privateKeysToSignWith.get(0);
+        List derEncodedSigs = getSignatureForTxInput(btcTx.getInputs().get(0), btcTx, privateKeyToSignWith);
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith), derEncodedSigs, rskTxHash.getBytes());
 
-        if (privateKeysToSignWith.size() > 1) {
-            BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
-            byte[] derEncodedSig2 = sig2.encodeToDER();
-            List derEncodedSigs2 = new ArrayList();
-            for (int i = 0; i < 1; i++) {
-                derEncodedSigs2.add(derEncodedSig2);
-            }
-            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
-        }
+        // Verify pegout creation entry is only set to null when pegout is fully signed
+        verify(provider, never()).getPegoutCreationRskTxHashByBtcTxHash(any());
+        verify(provider, never()).setPegoutCreationEntry(
+            any()
+        );
 
+        BtcECKey privateKeyToSignWith2 = privateKeysToSignWith.get(1);
+        List derEncodedSigs2 = getSignatureForTxInput(btcTx.getInputs().get(0), btcTx, privateKeyToSignWith2);
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith2), derEncodedSigs2, rskTxHash.getBytes());
 
         // Assert
-        verify(provider, atLeastOnce()).getPegoutCreationRskTxHashByBtcTxHash(unsignedBtxTxHash);
+        verify(provider, times(1)).getPegoutCreationRskTxHashByBtcTxHash(unsignedBtxTxHash);
         verify(provider, never()).setPegoutCreationEntry(
             any()
         );

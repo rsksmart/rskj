@@ -1454,16 +1454,7 @@ public class BridgeSupport {
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
 
-            if (activations.isActive(RSKIP298)){
-                // Remove signatures to get the unsigned btcTxHash
-                BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
-                Sha256Hash unsignedBtcTxHash = btcTx.getHash();
-                Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(unsignedBtcTxHash);
-                // To only set to null existing entries, this check if exists a pegout creation entry for the given unsigned btcTxHash
-                if (pegoutCreationEntry.isPresent()){
-                    provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTx.getHash(), null));
-                }
-            }
+            removePegoutCreationEntry(btcTx, federation);
         } else if (logger.isDebugEnabled()) {
             int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
             int neededSignatures = federation.getNumberOfSignaturesRequired();
@@ -1471,6 +1462,19 @@ public class BridgeSupport {
 
             logger.debug("Tx {} not yet fully signed. Requires {}/{} signatures but has {}",
                     new Keccak256(rskTxHash), neededSignatures, getFederationSize(), signaturesCount);
+        }
+    }
+
+    private void removePegoutCreationEntry(BtcTransaction btcTx, Federation federation) {
+        if (activations.isActive(RSKIP298)){
+            // Remove signatures to get the unsigned btcTxHash
+            BridgeUtils.removeSignaturesFromTransaction(btcTx, federation);
+            Sha256Hash unsignedBtcTxHash = btcTx.getHash();
+            Optional<Keccak256> pegoutCreationEntry = provider.getPegoutCreationRskTxHashByBtcTxHash(unsignedBtcTxHash);
+            // To only set to null existing entries, this check if exists a pegout creation entry for the given unsigned btcTxHash
+            if (pegoutCreationEntry.isPresent()){
+                provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTx.getHash(), null));
+            }
         }
     }
 

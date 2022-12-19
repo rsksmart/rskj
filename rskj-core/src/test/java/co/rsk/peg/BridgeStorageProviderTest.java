@@ -3551,7 +3551,7 @@ class BridgeStorageProviderTest {
         provider.setPegoutCreationEntry(new PegoutCreationEntry(btcTxHash, rskTxHash));
         provider.save();
 
-        verify(repository, atLeastOnce()).addStorageBytes(
+        verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
             storageKeyForPegoutCreationIndex,
             null
