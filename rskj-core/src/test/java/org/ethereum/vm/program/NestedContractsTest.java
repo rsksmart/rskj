@@ -29,7 +29,9 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
+import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.DataWord;
@@ -197,7 +199,7 @@ class NestedContractsTest {
                 null,
                 null,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory()),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 null
         );
 

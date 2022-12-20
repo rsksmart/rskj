@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
@@ -33,6 +32,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.vm.LogInfo;
 
 /**
@@ -43,12 +43,16 @@ public class BridgeSupportFactory {
     private final Factory btcBlockStoreFactory;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final SignatureCache signatureCache;
 
     public BridgeSupportFactory(Factory btcBlockStoreFactory,
-            BridgeConstants bridgeConstants, ActivationConfig activationConfig) {
+                                BridgeConstants bridgeConstants,
+                                ActivationConfig activationConfig,
+                                SignatureCache signatureCache) {
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
+        this.signatureCache = signatureCache;
     }
 
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
@@ -70,9 +74,9 @@ public class BridgeSupportFactory {
             eventLogger = null;
         } else {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
+                eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs, signatureCache);
             } else {
-                eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs);
+                eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstants, activations, logs, signatureCache);
             }
         }
 
@@ -90,7 +94,8 @@ public class BridgeSupportFactory {
                 btcContext,
                 federationSupport,
                 btcBlockStoreFactory,
-                activations
+                activations,
+                signatureCache
         );
     }
 }

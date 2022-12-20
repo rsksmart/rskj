@@ -141,7 +141,8 @@ public class World {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(),
+                blockTxSignatureCache);
         this.receivedTxSignatureCache = new ReceivedTxSignatureCache();
         this.blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
     }
@@ -169,7 +170,7 @@ public class World {
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockTxSignatureCache);
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
@@ -181,7 +182,7 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new PrecompiledContracts(config, bridgeSupportFactory, blockTxSignatureCache),
                             blockTxSignatureCache
                     )
             );

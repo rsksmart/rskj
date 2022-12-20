@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.BlockDifficulty;
@@ -24,9 +23,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
@@ -47,14 +44,14 @@ import static org.mockito.Mockito.when;
 
 class BlockResultDTOTest {
 
-    private static final String HEX_ZERO = "0x0";
-
     private Block block;
     private BlockStore blockStore;
-    public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
 
     // todo(fedejinich) currently RemascTx(blockNumber) has a bug, thats why I initialize this way
     public static final RemascTransaction REMASC_TRANSACTION = new RemascTransaction(new RemascTransaction(1).getEncoded());
+    public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
+
+    private static final String HEX_ZERO = "0x0";
 
     @BeforeEach
     void setup() {
@@ -65,7 +62,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assertions.assertNotNull(blockResultDTO);
@@ -76,7 +73,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemascAndTransactionHashes() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         List<String> transactionHashes = transactionHashesByBlock(blockResultDTO);
 
         Assertions.assertNotNull(blockResultDTO);
@@ -88,7 +85,7 @@ class BlockResultDTOTest {
     @Test
     void getBlockResultDTOWithoutRemasc_emptyTransactions() {
         Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         Assertions.assertEquals(HexUtils.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
 
@@ -99,7 +96,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithNullSignatureRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
         Assertions.assertEquals(2, blockResultDTO.getTransactions().size());
 
@@ -116,7 +113,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithWithZeroSignatureRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, true);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, false, true, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         Assertions.assertNotNull(blockResultDTO);
         Assertions.assertEquals(2, blockResultDTO.getTransactions().size());
 
@@ -132,7 +129,7 @@ class BlockResultDTOTest {
 
     @Test
     void getBlockResultDTOWithoutRemascAndFullTransactions() {
-        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, true, false);
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, true, blockStore, true, false, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         List<String> transactionResultsHashes = transactionResultsByBlock(blockResultDTO).stream().map(e -> e.getHash()).collect(Collectors.toList());
 

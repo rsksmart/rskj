@@ -19,6 +19,9 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.Assertions;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -80,14 +84,14 @@ class AddressBasedAuthorizerTest {
 
         for (long n = 100L; n <= 102L; n++) {
             Transaction mockedTx = mock(Transaction.class);
-            when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
+            when(mockedTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
             Assertions.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
-            Assertions.assertTrue(auth.isAuthorized(mockedTx));
+            Assertions.assertTrue(auth.isAuthorized(mockedTx, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
         }
 
         Assertions.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
-        Assertions.assertFalse(auth.isAuthorized(mockedTx));
+        when(mockedTx.getSender(any(SignatureCache.class))).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
+        Assertions.assertFalse(auth.isAuthorized(mockedTx, new BlockTxSignatureCache(new ReceivedTxSignatureCache())));
     }
 }

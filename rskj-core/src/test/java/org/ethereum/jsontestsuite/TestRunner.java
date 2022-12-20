@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
@@ -86,7 +85,7 @@ public class TestRunner {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
@@ -282,7 +281,7 @@ public class TestRunner {
             /* 3. Create Program - exec.code */
             /* 4. run VM */
             VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), exec.getCode(), programInvoke, null, new HashSet<>());
+            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), exec.getCode(), programInvoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;

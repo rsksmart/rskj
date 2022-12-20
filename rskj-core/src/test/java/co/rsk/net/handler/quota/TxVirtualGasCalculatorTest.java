@@ -15,16 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net.handler.quota;
 
-import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -69,7 +66,6 @@ class TxVirtualGasCalculatorTest {
                 .build();
 
         Transaction mockedTx = spy(transaction);
-        when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(1)).getAddress()));
         when(mockedTx.getSize()).thenReturn(size);
 
         return mockedTx;

@@ -22,6 +22,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Assertions;
@@ -49,7 +51,8 @@ class PrecompiledContractAddressTests {
 
     @Test
     void testGetPrecompile() {
-        PrecompiledContracts pcList = new PrecompiledContracts(config, null);
+        PrecompiledContracts pcList = new PrecompiledContracts(config, null,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");

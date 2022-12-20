@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.txpool;
 
 import java.math.BigInteger;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 
@@ -43,9 +43,12 @@ public class TxPoolModuleImpl implements TxPoolModule {
     private final JsonNodeFactory jsonNodeFactory;
     private final TransactionPool transactionPool;
 
-    public TxPoolModuleImpl(TransactionPool transactionPool) {
+    private final SignatureCache signatureCache;
+
+    public TxPoolModuleImpl(TransactionPool transactionPool, SignatureCache signatureCache) {
         this.transactionPool = transactionPool;
         jsonNodeFactory = JsonNodeFactory.instance;
+        this.signatureCache = signatureCache;
     }
 
     /**
@@ -62,8 +65,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
         contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::fullSerializer));
         contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::fullSerializer));
-        JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
-        return node;
+        return jsonNodeFactory.objectNode().setAll(contentProps);
     }
 
     private JsonNode serializeTransactions(
@@ -91,7 +93,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         txNode.putNull("blockNumber");
         txNode.putNull("transactionIndex");
 
-        txNode.put("from", HexUtils.toJsonHex(tx.getSender().getBytes()));
+        txNode.put("from", HexUtils.toJsonHex(tx.getSender(signatureCache).getBytes()));
         txNode.put("gas", HexUtils.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         txNode.put("gasPrice", HexUtils.toJsonHex(tx.getGasPrice().getBytes()));
         txNode.put("hash", HexUtils.toJsonHex(tx.getHash().toHexString()));
@@ -115,10 +117,10 @@ public class TxPoolModuleImpl implements TxPoolModule {
     private Map<RskAddress, Map<BigInteger, List<Transaction>>> groupTransactions(List<Transaction> transactions) {
         Map<RskAddress, Map<BigInteger, List<Transaction>>> groupedTransactions = new HashMap<>();
         for (Transaction tx : transactions){
-            Map<BigInteger, List<Transaction>> txsBySender = groupedTransactions.get(tx.getSender());
+            Map<BigInteger, List<Transaction>> txsBySender = groupedTransactions.get(tx.getSender(signatureCache));
             if (txsBySender == null){
                 txsBySender = new HashMap<>();
-                groupedTransactions.put(tx.getSender(), txsBySender);
+                groupedTransactions.put(tx.getSender(signatureCache), txsBySender);
             }
             List<Transaction> txsByNonce = txsBySender.get(tx.getNonceAsInteger());
             if (txsByNonce == null){
@@ -146,8 +148,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         Map<RskAddress, Map<BigInteger, List<Transaction>>> queuedGrouped = groupTransactions(transactionPool.getQueuedTransactions());
         contentProps.put(PENDING, serializeTransactions(pendingGrouped, this::summarySerializer));
         contentProps.put(QUEUED, serializeTransactions(queuedGrouped, this::summarySerializer));
-        JsonNode node = jsonNodeFactory.objectNode().setAll(contentProps);
-        return node;
+        return jsonNodeFactory.objectNode().setAll(contentProps);
     }
 
     /**
@@ -162,7 +163,6 @@ public class TxPoolModuleImpl implements TxPoolModule {
         Map<String, JsonNode> txProps = new HashMap<>();
         txProps.put(PENDING, jsonNodeFactory.numberNode(transactionPool.getPendingTransactions().size()));
         txProps.put(QUEUED, jsonNodeFactory.numberNode(transactionPool.getQueuedTransactions().size()));
-        JsonNode node = jsonNodeFactory.objectNode().setAll(txProps);
-        return node;
+        return jsonNodeFactory.objectNode().setAll(txProps);
     }
 }

@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 
@@ -48,8 +48,8 @@ public class AddressBasedAuthorizer {
                 .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
     }
 
-    public boolean isAuthorized(Transaction tx) {
-        return isAuthorized(tx.getSender());
+    public boolean isAuthorized(Transaction tx, SignatureCache signatureCache) {
+        return isAuthorized(tx.getSender(signatureCache));
     }
 
     public int getNumberOfAuthorizedKeys() {

@@ -30,6 +30,9 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -67,6 +70,7 @@ class AltBN128Test {
     private TestSystemProperties config;
     private PrecompiledContracts precompiledContracts;
     private ActivationConfig.ForBlock activations;
+    private SignatureCache signatureCache;
 
     private static final int ADD_GAS_COST = 150;
     private static final int MUL_GAS_COST = 6000;
@@ -74,7 +78,8 @@ class AltBN128Test {
     @BeforeEach
     void init() {
         config = new TestSystemProperties();
-        precompiledContracts = new PrecompiledContracts(config, null);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        precompiledContracts = new PrecompiledContracts(config, null, signatureCache);
         activations = mock(ActivationConfig.ForBlock.class);
 
         when(activations.isActive(ConsensusRule.RSKIP137)).thenReturn(true);
@@ -796,7 +801,7 @@ class AltBN128Test {
         byte[] compiledCode = compiler.compile(code);
         VM vm = new VM(vmConfig, precompiledContracts);
         Program program = new Program(vmConfig, precompiledContracts, blockFactory,
-                activations, compiledCode, invoke, null, new HashSet<>());
+                activations, compiledCode, invoke, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         vm.play(program);
 

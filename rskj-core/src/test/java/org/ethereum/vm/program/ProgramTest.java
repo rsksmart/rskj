@@ -24,10 +24,7 @@ import co.rsk.peg.Bridge;
 import com.google.common.collect.Sets;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
@@ -53,7 +50,7 @@ class ProgramTest {
     protected static final int STACK_STATE_ERROR = 0;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     private final ProgramInvoke programInvoke = mock(ProgramInvoke.class);
     private final MessageCall msg = mock(MessageCall.class);
@@ -111,7 +108,8 @@ class ProgramTest {
             null,
             programInvoke,
             transaction,
-            Sets.newHashSet()
+            Sets.newHashSet(),
+            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
         program.getResult().spendGas(TOTAL_GAS);
     }

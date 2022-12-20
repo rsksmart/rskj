@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net.handler.quota;
 
 import co.rsk.core.Coin;
@@ -112,7 +111,7 @@ class TxQuotaCheckerIntegrationTest {
 
         timeProvider = mock(TimeProvider.class);
 
-        quotaChecker = new TxQuotaChecker(timeProvider);
+        quotaChecker = new TxQuotaChecker(timeProvider, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         // 3 items to facilitate testing
         TestUtils.setInternalState(quotaChecker, "accountQuotas", new MaxSizeHashMap<>(3, true));

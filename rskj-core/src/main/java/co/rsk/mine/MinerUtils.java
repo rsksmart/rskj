@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -32,6 +31,7 @@ import co.rsk.validators.TxGasPriceCap;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.slf4j.Logger;
@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class MinerUtils {
-
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
@@ -163,21 +162,21 @@ public class MinerUtils {
         }
     }
 
-    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool) {
+    public List<org.ethereum.core.Transaction> getAllTransactions(TransactionPool transactionPool, SignatureCache signatureCache) {
 
         List<Transaction> txs = transactionPool.getPendingTransactions();
 
-        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, signatureCache);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice, boolean isRskip252Enabled, SignatureCache signatureCache) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 Keccak256 hash = tx.getHash();
                 Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
-                RskAddress txSender = tx.getSender();
+                RskAddress txSender = tx.getSender(signatureCache);
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 
                 BigInteger expectedNonce;

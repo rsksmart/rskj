@@ -1,4 +1,3 @@
-package org.ethereum.vm;
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -17,7 +16,7 @@ package org.ethereum.vm;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
+package org.ethereum.vm;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
@@ -37,6 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -57,8 +57,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.ethereum.util.ByteUtil.*;
-
-
 
 /**
  * @author Roman Mandeleil
@@ -137,10 +135,14 @@ public class PrecompiledContracts {
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private final SignatureCache signatureCache;
 
-    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory) {
+    public PrecompiledContracts(RskSystemProperties config,
+                                BridgeSupportFactory bridgeSupportFactory,
+                                SignatureCache signatureCache) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.signatureCache = signatureCache;
     }
 
 
@@ -162,8 +164,11 @@ public class PrecompiledContracts {
             return identity;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(),
-                    bridgeSupportFactory);
+            return new Bridge(
+                    BRIDGE_ADDR,
+                    config.getNetworkConstants(),
+                    config.getActivationConfig(),
+                    bridgeSupportFactory, signatureCache);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;

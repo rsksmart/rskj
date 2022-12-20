@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm.program;
 
 import co.rsk.config.VmConfig;
@@ -34,10 +33,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -115,6 +111,8 @@ public class Program {
 
     private final Set<DataWord> deletedAccountsInBlock;
 
+    private final SignatureCache signatureCache;
+
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
@@ -123,7 +121,8 @@ public class Program {
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction,
-            Set<DataWord> deletedAccounts) {
+            Set<DataWord> deletedAccounts,
+            SignatureCache signatureCache) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
         this.blockFactory = blockFactory;
@@ -150,6 +149,7 @@ public class Program {
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
         this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
+        this.signatureCache = signatureCache;
 
         precompile();
         traceListener = new ProgramTraceListener(config);
@@ -201,7 +201,8 @@ public class Program {
                 receiveAddress.getBytes(),
                 value.getBytes(),
                 data,
-                note);
+                note,
+                signatureCache);
     }
 
     private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
@@ -600,7 +601,7 @@ public class Program {
 
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
+            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
             vm.play(program);
             programResult = program.getResult();
 
@@ -825,7 +826,7 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
+        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, signatureCache);
 
         vm.play(program);
         childResult = program.getResult();

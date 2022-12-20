@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.BridgeRegTestConstants;
@@ -73,8 +72,7 @@ public class StateTestRunner {
             config.getNetworkConstants().bridgeConstants.getBtcParams()
     );
 
-    private final BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-           blockStoreWithCache, BridgeRegTestConstants.getInstance(), config.getActivationConfig());
+    private final BridgeSupportFactory bridgeSupportFactory;
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -90,11 +88,15 @@ public class StateTestRunner {
     protected Block block;
     protected ValidationStats vStats;
     protected PrecompiledContracts precompiledContracts;
+    protected SignatureCache signatureCache;
 
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
+        this.signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+        this.bridgeSupportFactory = new BridgeSupportFactory(
+                blockStoreWithCache, BridgeRegTestConstants.getInstance(), config.getActivationConfig(), signatureCache);
         setstateTestUSeREMASC(false);
-        precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory);
+        precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, signatureCache);
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {

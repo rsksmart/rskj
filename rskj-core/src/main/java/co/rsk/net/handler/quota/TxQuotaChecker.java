@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net.handler.quota;
 
 import co.rsk.core.RskAddress;
@@ -24,6 +23,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.GasPriceTracker;
 import org.slf4j.Logger;
@@ -55,10 +55,13 @@ public class TxQuotaChecker {
 
     private final TimeProvider timeProvider;
 
-    public TxQuotaChecker(TimeProvider timeProvider) {
+    private final SignatureCache signatureCache;
+
+    public TxQuotaChecker(TimeProvider timeProvider, SignatureCache signatureCache) {
         this.accountQuotas = new MaxSizeHashMap<>(MAX_QUOTAS_SIZE, true);
         this.timeProvider = timeProvider;
         this.lastBlockGasLimit = UNKNOWN_LAST_BLOCK_GAS_LIMIT;
+        this.signatureCache = signatureCache;
     }
 
     /**
@@ -118,7 +121,7 @@ public class TxQuotaChecker {
     }
 
     private boolean isFirstTxFromSender(Transaction newTx, CurrentContext currentContext) {
-        RskAddress senderAddress = newTx.getSender();
+        RskAddress senderAddress = newTx.getSender(signatureCache);
 
         TxQuota quotaForSender = this.accountQuotas.get(senderAddress);
         long accountNonce = currentContext.state.getNonce(senderAddress).longValue();
@@ -176,7 +179,7 @@ public class TxQuotaChecker {
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit.longValue());
         long maxQuota = getMaxQuota(maxGasPerSecond);
 
-        RskAddress address = isTxSource ? newTx.getSender() : newTx.getReceiveAddress();
+        RskAddress address = isTxSource ? newTx.getSender(signatureCache) : newTx.getReceiveAddress();
 
         TxQuota quotaForAddress = this.accountQuotas.get(address);
         if (quotaForAddress == null) {
@@ -206,7 +209,7 @@ public class TxQuotaChecker {
     }
 
     private double calculateConsumedVirtualGas(Transaction newTx, @Nullable Transaction replacedTx, CurrentContext currentContext) {
-        long accountNonce = currentContext.state.getNonce(newTx.getSender()).longValue();
+        long accountNonce = currentContext.state.getNonce(newTx.getSender(signatureCache)).longValue();
         long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
         long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();
 

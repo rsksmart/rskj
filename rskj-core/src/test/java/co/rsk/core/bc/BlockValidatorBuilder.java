@@ -71,7 +71,8 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTxsFieldsValidationRule() {
-        this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
+        this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule(
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         return this;
     }
 

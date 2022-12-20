@@ -15,18 +15,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.util.HexUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,8 +26,17 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockStore;
 
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.util.HexUtils;
 
 public class BlockResultDTO {
     private final String number; // QUANTITY - the block number. null when its pending block.
@@ -122,7 +122,7 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? HexUtils.toQuantityJsonHex(paidFees.getBytes()) : null;
     }
 
-    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc) {
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         if (b == null) {
             return null;
         }
@@ -135,7 +135,7 @@ public class BlockResultDTO {
         List<Transaction> blockTransactions = b.getTransactionsList();
         // For full tx will present as TransactionResultDTO otherwise just as transaction hash
         List<Object> transactions = IntStream.range(0, blockTransactions.size())
-                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc, zeroSignatureIfRemasc))
+                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc, zeroSignatureIfRemasc, signatureCache))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -181,15 +181,15 @@ public class BlockResultDTO {
         );
     }
 
-    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc, boolean zeroSignatureIfRemasc) {
+    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         Transaction transaction = block.getTransactionsList().get(transactionIndex);
 
         if(skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
             return null;
         }
-
+        
         if(fullTx) {
-            return new TransactionResultDTO(block, transactionIndex, transaction, zeroSignatureIfRemasc);
+            return new TransactionResultDTO(block, transactionIndex, transaction, zeroSignatureIfRemasc, signatureCache);
         }
 
         return transaction.getHash().toJsonString();

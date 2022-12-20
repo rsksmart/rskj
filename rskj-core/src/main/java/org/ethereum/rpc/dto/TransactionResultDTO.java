@@ -15,15 +15,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc.dto;
+
+import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.signature.ECDSASignature;
 
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.signature.ECDSASignature;
 
 /**
  * Created by Ruben on 8/1/2016.
@@ -47,7 +48,7 @@ public class TransactionResultDTO {
     private String r;
     private String s;
 
-    public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc) {
+    public TransactionResultDTO(Block b, Integer index, Transaction tx, boolean zeroSignatureIfRemasc, SignatureCache signatureCache) {
         hash = tx.getHash().toJsonString();
 
         nonce = HexUtils.toQuantityJsonHex(tx.getNonce());
@@ -56,7 +57,7 @@ public class TransactionResultDTO {
         blockNumber = b != null ? HexUtils.toQuantityJsonHex(b.getNumber()) : null;
         transactionIndex = index != null ? HexUtils.toQuantityJsonHex(index) : null;
 
-        from = tx.getSender().toJsonString();
+        from = tx.getSender(signatureCache).toJsonString();
         to = tx.getReceiveAddress().toJsonString();
         gas = HexUtils.toQuantityJsonHex(tx.getGasLimit());
 

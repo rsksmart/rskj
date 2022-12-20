@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
@@ -86,6 +85,7 @@ import static org.mockito.Mockito.mock;
 class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private TransactionExecutorFactory transactionExecutorFactory;
 
     @Test
@@ -608,7 +608,8 @@ class TransactionModuleTest {
                         blockFactory,
                         blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
                 minerClock,
                 blockFactory,
@@ -640,10 +641,10 @@ class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig()),
+                        config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap()
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new ReceivedTxSignatureCache());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ChannelManager channelManager = new SimpleChannelManager();
@@ -672,6 +673,7 @@ class TransactionModuleTest {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 
@@ -689,7 +691,7 @@ class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), signatureCache),
                 blockTxSignatureCache
         );
     }
@@ -701,7 +703,7 @@ class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory()),
+                new PrecompiledContracts(config, bridgeSupportFactory(), signatureCache),
                 blockTxSignatureCache
         );
     }
@@ -710,7 +712,7 @@ class TransactionModuleTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), signatureCache);
         return bridgeSupportFactory;
     }
 }

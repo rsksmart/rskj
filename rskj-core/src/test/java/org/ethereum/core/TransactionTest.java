@@ -487,7 +487,10 @@ class TransactionTest {
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig());
+                            config.getActivationConfig(),
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+                    BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
@@ -495,8 +498,8 @@ class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory),
-                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+                            new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                            signatureCache);
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -750,6 +753,7 @@ class TransactionTest {
         ECKey ecKey = ECKey.fromPrivate(privKey);
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
@@ -758,7 +762,7 @@ class TransactionTest {
                 .value(value)
                 .build();
         try {
-            tx.verify();
+            tx.verify(signatureCache);
         } catch (Exception e) {
             fail(e.getMessage());
         }
@@ -772,6 +776,7 @@ class TransactionTest {
         ECKey ecKey = ECKey.fromPrivate(privKey);
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         Transaction tx = Transaction.builder()
                 .gasPrice(gasPrice)
@@ -781,7 +786,7 @@ class TransactionTest {
                 .build();
         tx.sign(senderPrivKey);
         try {
-            tx.verify();
+            tx.verify(signatureCache);
         } catch (Exception e) {
             fail(e.getMessage());
         }
@@ -826,11 +831,14 @@ class TransactionTest {
             Repository repository,
             BlockTxSignatureCache blockTxSignatureCache) {
         Repository track = repository.startTracking();
+
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), signatureCache);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -838,7 +846,7 @@ class TransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 blockTxSignatureCache);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);

@@ -4,14 +4,10 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
-import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
-import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.test.builders.BridgeSupportBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +34,7 @@ class BridgeSupportRSKIP220NewMethodsTest {
     private StoredBlock storedBlock;
     private BtcBlock btcBlock;
     private BridgeSupport bridgeSupport;
+    private SignatureCache signatureCache;
 
     @BeforeEach
     void setUpOnEachTest() throws BlockStoreException {
@@ -45,6 +42,7 @@ class BridgeSupportRSKIP220NewMethodsTest {
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         hashBytes = new byte[32];
         random.nextBytes(hashBytes);
@@ -74,6 +72,7 @@ class BridgeSupportRSKIP220NewMethodsTest {
             .withBridgeConstants(bridgeConstants)
             .withBtcBlockStoreFactory(btcBlockStoreFactory)
             .withActivations(activationsAfterForks)
+            .withSignatureCache(signatureCache)
             .build();
     }
 

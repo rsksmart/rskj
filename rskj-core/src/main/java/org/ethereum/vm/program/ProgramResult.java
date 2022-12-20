@@ -16,9 +16,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm.program;
 
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
@@ -215,7 +215,8 @@ public class ProgramResult {
         byte[] receiveAddress,
         byte[] value,
         byte[] data,
-        String note
+        String note,
+        SignatureCache signatureCache
     ) {
         byte[] parentHash = parentTransaction.getHash().getBytes();
         byte[] originHash = parentHash;
@@ -234,7 +235,8 @@ public class ProgramResult {
             receiveAddress,
             value,
             data,
-            note
+            note,
+            signatureCache
         );
         getInternalTransactions().add(transaction);
         return transaction;

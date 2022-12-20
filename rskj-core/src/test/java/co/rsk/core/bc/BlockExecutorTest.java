@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -849,7 +848,9 @@ public class BlockExecutorTest {
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         return new BlockExecutor(
                 config.getActivationConfig(),
@@ -860,8 +861,8 @@ public class BlockExecutorTest {
                         null,
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
-                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+                        new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
+                        signatureCache
                 )
         );
     }

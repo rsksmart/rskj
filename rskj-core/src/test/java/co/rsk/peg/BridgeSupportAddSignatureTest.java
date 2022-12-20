@@ -6,8 +6,7 @@ import java.util.*;
 
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
@@ -45,7 +44,6 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.*;
-
 
 class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
 
@@ -91,6 +89,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
                 new Context(bridgeConstantsRegtest.getBtcParams()),
                 mockFederationSupport,
                 null,
+                null,
                 null
         );
 
@@ -118,6 +117,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
                 mock(Block.class),
                 new Context(bridgeConstantsRegtest.getBtcParams()),
                 mockFederationSupport,
+                null,
                 null,
                 null
         );
@@ -174,6 +174,7 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
                 mock(Block.class),
                 new Context(bridgeConstantsRegtest.getBtcParams()),
                 mockFederationSupport,
+                null,
                 null,
                 null
         );
@@ -458,9 +459,11 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         provider.getRskTxsWaitingForSignatures().put(keccak256, t);
         provider.save();
 
+        SignatureCache signatureCache = new ReceivedTxSignatureCache();
+
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstantsRegtest, activations, logs);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstantsRegtest, activations, logs, signatureCache);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstantsRegtest)
@@ -565,10 +568,12 @@ class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
         provider.save();
         track.commit();
 
+        SignatureCache signatureCache = new ReceivedTxSignatureCache();
+
         track = repository.startTracking();
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstantsRegtest, activations, logs);
+        BridgeEventLogger eventLogger = new BrigeEventLoggerLegacyImpl(bridgeConstantsRegtest, activations, logs, signatureCache);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
                 .withBridgeConstants(bridgeConstantsRegtest)
