@@ -247,6 +247,10 @@ public class LogFilter extends Filter {
         boolean skippingToNumber = false;
 
         do {
+            if (Thread.interrupted()) {
+                return; // TODO log sth maybe
+            }
+
             boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
             BlocksBloom blocksBloom = isConfirmedBlock ? blocksBloomStore.getBlocksBloomByNumber(blockNumber) : null;

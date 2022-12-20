@@ -2432,7 +2432,8 @@ class Web3ImplTest {
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap()
+                config.getGasEstimationCap(),
+                config.getGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
@@ -2547,7 +2548,8 @@ class Web3ImplTest {
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap()
+                config.getGasEstimationCap(),
+                config.getGasCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
@@ -2610,8 +2612,9 @@ class Web3ImplTest {
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
-                config.getGasEstimationCap());
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
+                config.getGasEstimationCap(),
+                config.getGasCap());
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
         MinerClient minerClient = new SimpleMinerClient();

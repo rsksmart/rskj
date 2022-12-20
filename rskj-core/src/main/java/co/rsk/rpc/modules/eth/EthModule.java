@@ -54,7 +54,7 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 // TODO add all RPC methods
 public class EthModule
-    implements EthModuleWallet, EthModuleTransaction {
+        implements EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
@@ -72,6 +72,7 @@ public class EthModule
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
     private final long gasEstimationCap;
+    private final long gasCap;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -84,7 +85,8 @@ public class EthModule
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory,
-            long gasEstimationCap) {
+            long gasEstimationCap,
+            long gasCap) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -96,6 +98,7 @@ public class EthModule
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.gasEstimationCap = gasEstimationCap;
+        this.gasCap = gasCap;
     }
 
     @Override
@@ -200,7 +203,10 @@ public class EthModule
     }
 
     public String chainId() {
-        return HexUtils.toJsonHex(new byte[] { chainId });
+        for (int i = 0; i < 100_000_000; i++) {
+            System.out.println(Math.random() * 7 / 4 * i);
+        }
+        return HexUtils.toJsonHex(new byte[]{chainId});
     }
 
     public String getCode(String address, String blockId) {
@@ -214,7 +220,7 @@ public class EthModule
 
             AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
 
-            if(accountInformationProvider != null) {
+            if (accountInformationProvider != null) {
                 byte[] code = accountInformationProvider.getCode(addr);
 
                 // Code can be null, if there is no account.
@@ -262,7 +268,7 @@ public class EthModule
                 executionBlock,
                 executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),
-                hexArgs.getGasLimit(),
+                hexArgs.gasLimitForCall(this.gasCap),
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
@@ -299,7 +305,7 @@ public class EthModule
                 executionBlock,
                 executionBlock.getCoinbase(),
                 hexArgs.getGasPrice(),
-                hexArgs.getGasLimit(),
+                hexArgs.gasLimitForCall(this.gasCap),
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),

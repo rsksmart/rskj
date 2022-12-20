@@ -106,4 +106,16 @@ public class CallArgumentsToByteArray {
 
         return this.getGasLimit();
     }
+
+    public byte[] gasLimitForCall(long gasCap) {
+        long gasLimit = ByteUtil.byteArrayToLong(this.getGasLimit());
+
+        if(gasLimit > gasCap) {
+            LOGGER.warn("provided gasLimit ({}) exceeds the gas cap," +
+                    " using the gas cap ({})", gasLimit, gasCap);
+            return ByteUtil.longToBytes(gasCap);
+        }
+
+        return this.getGasLimit();
+    }
 }

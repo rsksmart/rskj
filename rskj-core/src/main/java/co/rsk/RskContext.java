@@ -713,7 +713,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory(),
-                    getRskSystemProperties().getGasEstimationCap()
+                    getRskSystemProperties().getGasEstimationCap(),
+                    getRskSystemProperties().getGasCap()
             );
         }
 
@@ -1941,7 +1942,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
                     getWeb3(),
                     getRskSystemProperties().getRpcModules(),
-                    rskSystemProperties.getMaxBatchRequestsSize()
+                    rskSystemProperties.getMaxBatchRequestsSize(),
+                    getRskSystemProperties()
             );
         }
 

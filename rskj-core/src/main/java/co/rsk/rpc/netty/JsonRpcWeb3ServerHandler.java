@@ -18,7 +18,10 @@
 
 package co.rsk.rpc.netty;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.JsonRpcMethodFilter;
+import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.util.JacksonParserUtil;
@@ -27,6 +30,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.jsonrpc4j.*;
 import io.netty.buffer.*;
@@ -38,6 +42,7 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +62,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         this.jsonRpcServer = jsonRpcServer;
     }
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize) {
+    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules, int maxBatchRequestsSize, RskSystemProperties rskSystemProperties) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
         List<JsonRpcInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new JsonRpcRequestValidatorInterceptor(maxBatchRequestsSize));

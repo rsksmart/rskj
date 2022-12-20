@@ -90,6 +90,10 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_FRAME_SIZE = "rpc.providers.web.ws.max_frame_size";
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
     private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
+    private static final String PROPERTY_RPC_GAS_CAP = "rpc.gascap";
+    private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
+    private static final String PROPERTY_RPC_EVM_TIMEOUT = "rpc.evmtimeout";
+    private static final String PROPERTY_RPC_GET_LOGS_TIMEOUT = "rpc.getlogstimeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -725,5 +729,21 @@ public abstract class SystemProperties {
 
     public DbKind databaseKind() {
         return DbKind.ofName(configFromFiles.getString(KeyValueDataSource.KEYVALUE_DATASOURCE_PROP_NAME));
+    }
+
+    public long getGasCap() {
+        return configFromFiles.getLong(PROPERTY_RPC_GAS_CAP);
+    }
+
+    public int getRpcTimeout() {
+        return configFromFiles.getInt(PROPERTY_RPC_TIMEOUT);
+    }
+
+    public int getEvmTimeout() {
+        return configFromFiles.getInt(PROPERTY_RPC_EVM_TIMEOUT);
+    }
+
+    public int getGetLogsTimeout() {
+        return configFromFiles.getInt(PROPERTY_RPC_GET_LOGS_TIMEOUT);
     }
 }
