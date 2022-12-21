@@ -57,7 +57,7 @@ public class StorageRentDSLTests {
     @Test
     public void tokenTransfer() throws FileNotFoundException, DslProcessorException {
         long blockCount = 67_716; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
             "dsl/storagerent/token_transfer.txt",
             BLOCK_AVERAGE_TIME * blockCount
         );
@@ -107,7 +107,7 @@ public class StorageRentDSLTests {
     @Test
     public void internalTransactionFailsButOverallEndsOk() throws FileNotFoundException, DslProcessorException {
         long blockCount = 74_875; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
             "dsl/storagerent/nested_call_handled_fail.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -126,7 +126,7 @@ public class StorageRentDSLTests {
     @Test
     public void internalTransactionUnhandledFail() throws FileNotFoundException, DslProcessorException {
         long blockCount = 74_875; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
             "dsl/storagerent/nested_call_unhandled_fail.txt",
             BLOCK_AVERAGE_TIME * blockCount
         );
@@ -148,7 +148,7 @@ public class StorageRentDSLTests {
     @Test
     public void internalTransactionsSucceedsButOverallFails() throws FileNotFoundException, DslProcessorException {
         long blockCount = 74_875; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
             "dsl/storagerent/nested_call_succeeds_overall_fail.txt",
             BLOCK_AVERAGE_TIME * blockCount
         );
@@ -171,7 +171,7 @@ public class StorageRentDSLTests {
     @Test
     public void internalTransactionsAndOverallSucceeds() throws FileNotFoundException, DslProcessorException {
         long blockCount = 74_875; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
             "dsl/storagerent/nested_call_succeeds_overall_succeeds.txt",
             BLOCK_AVERAGE_TIME * blockCount
         );
@@ -189,7 +189,7 @@ public class StorageRentDSLTests {
     public void rollbackFees() throws FileNotFoundException, DslProcessorException {
         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
         long blockCount = 99999999; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/rollbackFees.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -237,7 +237,7 @@ public class StorageRentDSLTests {
     @Test
     public void deleteNodeWithAccumulatedRent() throws FileNotFoundException, DslProcessorException {
         long blockCount = 974_875; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/delete_operation.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -277,7 +277,7 @@ public class StorageRentDSLTests {
     @Test
     public void deleteNodeWithAccumulatedOutstandingRent() throws FileNotFoundException, DslProcessorException {
         long blockCount = 974_8750; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/delete_operation.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -322,7 +322,7 @@ public class StorageRentDSLTests {
     public void fixedPenaltyForReadingNonExistingKeys_multipleTx() throws FileNotFoundException, DslProcessorException {
         TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
         long blockCount = 674_075; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/mismatches_multiple_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -382,7 +382,7 @@ public class StorageRentDSLTests {
     @Test
     public void fixedPenaltyForReadingNonExistingKeys_nestedTx() throws FileNotFoundException, DslProcessorException {
         long blockCount = 674_075; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/mismatches_nested_tx.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -399,7 +399,7 @@ public class StorageRentDSLTests {
     @Test
     public void notEnoughFundsToPayRent() throws FileNotFoundException, DslProcessorException {
         long blockCount = 67_716_000; // accumulate rent
-        World world = processedWorldWithCustomTimeBetweenBlocks(
+        World world = processedWorldWithStorageRentEnabled(
                 "dsl/storagerent/not_enough_funds.txt",
                 BLOCK_AVERAGE_TIME * blockCount
         );
@@ -519,14 +519,14 @@ public class StorageRentDSLTests {
         assertEquals(mismatchCount, storageRentResult.getMismatchCount());
     }
 
-    private World processedWorldWithCustomTimeBetweenBlocks(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
+    private World processedWorldWithStorageRentEnabled(String path, long timeBetweenBlocks) throws FileNotFoundException, DslProcessorException {
         TestSystemProperties config = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("storageRent.enabled", ConfigValueFactory.fromAnyRef(true))
         );
 
         DslParser parser = DslParser.fromResource(path);
         World world = new World(config);
-        world.setCustomTimeBetweenBlocks(timeBetweenBlocks);
+        world.setCustomTimeBetweenBlocks(timeBetweenBlocks); // set a custom time between blocks to accumulate rent
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);

@@ -45,6 +45,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -162,7 +163,7 @@ public abstract class MinerServerTest {
         RskAddress tx1Sender = tx1.getSender(signatureCache);
 
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
-        Repository track = mock(Repository.class);
+        Repository track = mock(MutableRepositoryTracked.class);
 
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
@@ -170,7 +171,7 @@ public abstract class MinerServerTest {
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1Sender)).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
-        Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
+        Mockito.doReturn(track).when(repositoryLocator).trackedRepositoryAt(any());
         Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
