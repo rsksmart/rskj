@@ -113,7 +113,12 @@ class NotParameterizedKeyValueDataSourceTest {
     @Test
     void validateDbKindMissingFolder() {
         String dbPath = tempDir.toString();
-        KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+        boolean shouldGenerateDbKindFile = KeyValueDataSource.validateDbKind(DbKind.ROCKS_DB, dbPath, false);
+
+        if (shouldGenerateDbKindFile) {
+            KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
+        }
+
         DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.ROCKS_DB, dbKindLevel, "When DbKind file is missing validation should create it with the provided value");
     }
@@ -135,7 +140,13 @@ class NotParameterizedKeyValueDataSourceTest {
     void validateDbKindExistingFolderDifferentDbWithResetGeneratesNewFileThrows() {
         String dbPath = tempDir.toString();
         KeyValueDataSource.generatedDbKindFile(DbKind.ROCKS_DB, dbPath);
-        KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, dbPath, true);
+
+        boolean shouldGenerateDbKindFile = KeyValueDataSource.validateDbKind(DbKind.LEVEL_DB, dbPath, true);
+
+        if (shouldGenerateDbKindFile) {
+            KeyValueDataSource.generatedDbKindFile(DbKind.LEVEL_DB, dbPath);
+        }
+
         DbKind dbKindLevel = KeyValueDataSource.getDbKindValueFromDbKindFile(dbPath);
         Assertions.assertEquals(DbKind.LEVEL_DB, dbKindLevel, "When DbKind changes and reset flag is specified on validation, new DbKind file should be generated");
     }

@@ -76,11 +76,16 @@ public interface KeyValueDataSource extends DataSource {
         String databaseDir = datasourcePath.getParent().toString();
         String fullDbDir = datasourcePath.toAbsolutePath().toString();
 
-        // Validating general DB kind selection
-        KeyValueDataSource.validateDbKind(rskSystemProperties.databaseKind(), databaseDir, rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled());
-
-        // Validating individual DB kind
-        KeyValueDataSource.validateDbKind(kind, fullDbDir, rskSystemProperties.databaseKind());
+        DbKind defaultKind = KeyValueDataSource.getDefaultKind(
+                rskSystemProperties.databaseKind(),
+                databaseDir,
+                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()
+        );
+        boolean shouldGenerateDbKindFile = KeyValueDataSource.validateDbKind(
+                kind, fullDbDir,
+                rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled(),
+                defaultKind
+        );
 
         KeyValueDataSource ds;
         switch (kind) {
@@ -95,6 +100,10 @@ public interface KeyValueDataSource extends DataSource {
         }
 
         ds.init();
+
+        if (shouldGenerateDbKindFile) {
+            KeyValueDataSource.generatedDbKindFile(kind, fullDbDir);
+        }
 
         return ds;
     }
@@ -155,15 +164,11 @@ public interface KeyValueDataSource extends DataSource {
         }
     }
 
-    static void validateDbKind(DbKind currentDbKind, String databaseDir, DbKind defaultKind) {
-        validateDbKind(currentDbKind, databaseDir, false, defaultKind);
-    }
+    static DbKind getDefaultKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        if (databaseReset) {
+            return currentDbKind;
+        }
 
-    static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
-        validateDbKind(currentDbKind, databaseDir, databaseReset, DbKind.LEVEL_DB);
-    }
-
-    static void validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset, DbKind defaultKind) {
         File dir = new File(databaseDir);
 
         if (dir.exists() && !dir.isDirectory()) {
@@ -174,19 +179,48 @@ public interface KeyValueDataSource extends DataSource {
         boolean databaseDirExists = dir.exists() && dir.isDirectory();
 
         if (!databaseDirExists || dir.list().length == 0) {
-            KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
-            return;
+            return currentDbKind;
         }
 
-        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, Optional.ofNullable(defaultKind).orElse(DbKind.LEVEL_DB));
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, currentDbKind);
 
         if (prevDbKind != currentDbKind) {
-            if (databaseReset) {
-                KeyValueDataSource.generatedDbKindFile(currentDbKind, databaseDir);
-            } else {
-                LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
-                throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + ".");
-            }
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
+            throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + " for " + databaseDir + ".");
         }
+
+        return prevDbKind;
+    }
+
+    static boolean validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset) {
+        return validateDbKind(currentDbKind, databaseDir, databaseReset, DbKind.LEVEL_DB);
+    }
+
+    static boolean validateDbKind(DbKind currentDbKind, String databaseDir, boolean databaseReset, DbKind defaultKind) {
+        if (databaseReset) {
+            return true;
+        }
+
+        File dir = new File(databaseDir);
+
+        if (dir.exists() && !dir.isDirectory()) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).error("database.dir should be a folder.");
+            throw new IllegalStateException("database.dir should be a folder");
+        }
+
+        boolean databaseDirExists = dir.exists() && dir.isDirectory();
+
+        if (!databaseDirExists || dir.list().length == 0) {
+            return true;
+        }
+
+        DbKind prevDbKind = KeyValueDataSource.getDbKindValueFromDbKindFile(databaseDir, defaultKind);
+
+        if (prevDbKind != currentDbKind) {
+            LoggerFactory.getLogger(KEYVALUE_DATASOURCE).warn("Use the flag --reset when running the application if you are using a different datasource. Also you can use the cli tool DbMigrate, in order to migrate data between databases.");
+            throw new IllegalStateException("DbKind mismatch. You have selected " + currentDbKind.name() + " when the previous detected DbKind was " + prevDbKind.name() + " for " + databaseDir + ".");
+        }
+
+        return false;
     }
 }

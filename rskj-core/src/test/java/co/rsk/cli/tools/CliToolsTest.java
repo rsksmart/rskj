@@ -538,17 +538,10 @@ class CliToolsTest {
             reader.close();
         }
 
-        String dbKindPropsFileLine = null;
         String blocksDbKindPropsFileLine = null;
 
-        if (dbKindPropsFile.exists() && blocksDbKindPropsFile.exists()) {
-            BufferedReader reader = new BufferedReader(new FileReader(dbKindPropsFile));
-            reader.readLine();
-            reader.readLine();
-            dbKindPropsFileLine = reader.readLine();
-            reader.close();
-
-            reader = new BufferedReader(new FileReader(blocksDbKindPropsFile));
+        if (blocksDbKindPropsFile.exists()) {
+            BufferedReader reader = new BufferedReader(new FileReader(blocksDbKindPropsFile));
             reader.readLine();
             reader.readLine();
             blocksDbKindPropsFileLine = reader.readLine();
@@ -556,11 +549,6 @@ class CliToolsTest {
         }
 
         Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
-        Assertions.assertEquals("nodeId=testing", nodeIdPropsFileLine);
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", dbKindPropsFileLine);
-
-        Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", blocksDbKindPropsFileLine);
         Assertions.assertEquals("keyvalue.datasource=ROCKS_DB", blocksDbKindPropsFileLine);
     }
 
