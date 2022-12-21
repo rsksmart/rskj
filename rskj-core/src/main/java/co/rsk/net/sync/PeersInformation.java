@@ -28,6 +28,7 @@ import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
@@ -106,9 +107,19 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
-        return getBestCandidatesStream()
-                .max(this.peerComparator)
-                .map(Map.Entry::getKey);
+        List<Map.Entry<Peer, SyncPeerStatus>> candidates = getBestCandidatesStream().sorted(this.peerComparator).collect(Collectors.toList());
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int topThird = candidates.size() / 3;
+        List<Peer> nonBootstraps = candidates.stream().limit(topThird).map(Map.Entry::getKey).filter(c -> !c.getAddress().getHostName().contains("ootstrap")).collect(Collectors.toList());
+        if (nonBootstraps.isEmpty()) {
+            return candidates.stream().findFirst().map(Map.Entry::getKey);
+        }
+
+        Random r = new SecureRandom();
+        return Optional.ofNullable(nonBootstraps.get(r.nextInt(candidates.size())));
     }
 
     public Optional<Peer> getBestOrEqualPeer() {
