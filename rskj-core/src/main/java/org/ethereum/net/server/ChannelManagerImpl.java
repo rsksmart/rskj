@@ -55,6 +55,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final Duration INBOUND_CONNECTION_BAN_TIMEOUT = Duration.ofSeconds(10);
+    private static final int LOG_ACTIVE_PEERS_PERIOD = 60; // every minute
     private final Object activePeersLock = new Object();
     private final Map<NodeID, Channel> activePeers;
 
@@ -72,6 +73,8 @@ public class ChannelManagerImpl implements ChannelManager {
     private final int maxActivePeers;
     private final int maxConnectionsAllowed;
     private final int networkCIDR;
+
+    private long timeLastLoggedPeers = System.currentTimeMillis();
 
     public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
         this.mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
@@ -98,6 +101,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void handleNewPeersAndDisconnections() {
         this.tryProcessNewPeers();
         this.cleanDisconnections();
+        this.logActivePeers();
     }
 
     @VisibleForTesting
@@ -343,6 +347,26 @@ public class ChannelManagerImpl implements ChannelManager {
     public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
         this.activePeers.clear();
         this.activePeers.putAll(newActivePeers);
+    }
+
+    private void logActivePeers() {
+        long now = System.currentTimeMillis();
+        Duration timeFromLastLog = Duration.ofMillis(now - timeLastLoggedPeers);
+
+        if (timeFromLastLog.getSeconds() > LOG_ACTIVE_PEERS_PERIOD) {
+            logger.info("Active peers count: {}", activePeers.size());
+
+            if (logger.isDebugEnabled()) {
+                String activePeersStr = activePeers.values()
+                        .stream()
+                        .map(Channel::toString)
+                        .collect(Collectors.joining(","));
+
+                logger.debug("Active peers list: [{}]", activePeersStr);
+            }
+
+            this.timeLastLoggedPeers = now;
+        }
     }
 
 }
