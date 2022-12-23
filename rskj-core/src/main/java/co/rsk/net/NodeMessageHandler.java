@@ -57,8 +57,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
-    private static final int WAITING_TIME_TO_WARN = 3; // seconds
-    public static final int WAITING_TIME_TO_WARN_PERIOD = 10; // seconds
+    private static final int QUEUED_TIME_TO_WARN_LIMIT = 2; // seconds
+    private static final int QUEUED_TIME_TO_WARN_PERIOD = 10; // seconds
+    private static final int PROCESSING_TIME_TO_WARN_LIMIT = 2; // seconds
 
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
@@ -135,7 +136,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
 
         if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
-            loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+            loggerMessageProcess.warn("Message[{}] processing took long: [{}] seconds.", message.getMessageType(), timeInSeconds);
+        } else if (processTime / 1E9 > PROCESSING_TIME_TO_WARN_LIMIT) {
+            loggerMessageProcess.warn("Message[{}] processing took long: [{}] seconds.", message.getMessageType(), timeInSeconds);
         } else {
             loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
         }
@@ -343,7 +346,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private void logTooLongWaitingTime(MessageTask task) {
         long taskWaitTime = task.getLifeTimeInSeconds();
-        if (taskWaitTime < WAITING_TIME_TO_WARN) {
+        if (taskWaitTime < QUEUED_TIME_TO_WARN_LIMIT) {
             return;
         }
 
@@ -371,8 +374,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
-        if (recentDelays && timeDelayWarn.getSeconds() > WAITING_TIME_TO_WARN_PERIOD) {
-            logger.warn("Tasks were waiting too much in the queue (> {}s)", WAITING_TIME_TO_WARN);
+        if (recentDelays && timeDelayWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD) {
+            logger.warn("Tasks were waiting too much in the queue (> {}s)", QUEUED_TIME_TO_WARN_LIMIT);
             recentDelays = false;
             lastDelayWarn = now;
         }
