@@ -57,6 +57,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+    private static final int WAITING_TIME_TO_WARN = 3; // seconds
+    public static final int WAITING_TIME_TO_WARN_PERIOD = 10; // seconds
 
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
@@ -76,6 +78,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final MessageCounter messageCounter = new MessageCounter();
     private final int messageQueueMaxSize;
+
+    private volatile boolean recentDelays = false;
+    private volatile long lastDelayWarn = System.currentTimeMillis();
 
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -300,6 +305,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 if (task != null) {
                     addTracingKeys(task.getNodeMsgTraceInfo());
                     logger.trace("Start task");
+                    logTooLongWaitingTime(task);
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
                 } else {
@@ -335,6 +341,17 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MDC.remove(TraceUtils.SESSION_ID);
     }
 
+    private void logTooLongWaitingTime(MessageTask task) {
+        long taskWaitTime = task.getLifeTimeInSeconds();
+        if (taskWaitTime < WAITING_TIME_TO_WARN) {
+            return;
+        }
+
+        logger.debug("Task {} was waiting {}s in the queue", task.message.getMessageType(), taskWaitTime);
+
+        recentDelays = true;
+    }
+
     private void updateTimedEvents() {
         long now = System.currentTimeMillis();
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
@@ -352,6 +369,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             channelManager.broadcastStatus(status);
             lastStatusSent = now;
         }
+
+        Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
+        if (recentDelays && timeDelayWarn.getSeconds() > WAITING_TIME_TO_WARN_PERIOD) {
+            logger.warn("Tasks were waiting too much in the queue (> {}s)", WAITING_TIME_TO_WARN);
+            recentDelays = false;
+            lastDelayWarn = now;
+        }
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -368,12 +392,14 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         private final Message message;
         private final double score;
         private final NodeMsgTraceInfo nodeMsgTraceInfo;
+        private final long creationTime;
 
         public MessageTask(Peer sender, Message message, double score, NodeMsgTraceInfo nodeMsgTraceInfo) {
             this.sender = sender;
             this.message = message;
             this.score = score;
             this.nodeMsgTraceInfo = nodeMsgTraceInfo;
+            this.creationTime = System.currentTimeMillis();
         }
 
         public Peer getSender() {
@@ -386,6 +412,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         public NodeMsgTraceInfo getNodeMsgTraceInfo() {
             return nodeMsgTraceInfo;
+        }
+
+        private long getLifeTimeInSeconds() {
+            return (System.currentTimeMillis() - this.creationTime) / 1000;
         }
 
         @Override
