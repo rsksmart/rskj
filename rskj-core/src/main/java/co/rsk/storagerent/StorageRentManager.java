@@ -3,6 +3,7 @@ package co.rsk.storagerent;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
+import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +46,6 @@ public class StorageRentManager {
         }
 
         // map tracked nodes to RentedNode to fetch nodeSize and rentTimestamp
-        // todo(fedejinich) at the end, this is not necessary. StorageRentUtil can receive tracked keys and calculate
-        //  everything just by using the used keys
-
         Set<RentedNode> rentedNodes = fetchRentedNodes(storageRentKeys, blockTrack);
         Set<RentedNode> rollbackNodes = fetchRentedNodes(rollbackKeys, blockTrack);
 
@@ -58,7 +56,7 @@ public class StorageRentManager {
         int mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount();
 
         // calculate rent
-        StorageRentResult result = StorageRentUtil.calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
+        StorageRentResult result = calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
                 gasRemaining, executionBlockTimestamp);
 
         this.result = Optional.of(result);
@@ -78,6 +76,28 @@ public class StorageRentManager {
         LOGGER.debug("storage rent result: {}", result);
 
         return result;
+    }
+
+    private StorageRentResult calculateRent(long mismatchesCount, Set<RentedNode> rentedNodes,
+                                                  Set<RentedNode> rollbackNodes, long gasRemaining,
+                                                  long executionBlockTimestamp) {
+        long payableRent = StorageRentUtil.rentBy(rentedNodes, rentedNode ->
+                rentedNode.payableRent(executionBlockTimestamp));
+        long rollbacksRent = StorageRentUtil.rentBy(rollbackNodes, rentedNode ->
+                rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
+
+        long rentToPay = payableRent + rollbacksRent + StorageRentUtil.mismatchesRent(mismatchesCount);
+
+        // not enough gas to pay rent
+        if(gasRemaining < rentToPay) {
+            return StorageRentResult.outOfGas(rentedNodes, rollbackNodes,
+                    mismatchesCount, executionBlockTimestamp);
+        }
+
+        long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);
+
+        return StorageRentResult.ok(rentedNodes, rollbackNodes,
+                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp, rentToPay);
     }
 
     private Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
