@@ -1,5 +1,6 @@
 package co.rsk.storagerent;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
@@ -21,9 +22,10 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
  * */
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute"); // NOSONAR
-    private Optional<StorageRentResult> result = Optional.empty();
 
-    /**
+    private StorageRentResult result;
+
+     /**
      * Pay storage rent.
      *
      * @param gasRemaining            remaining gas amount to pay storage rent
@@ -56,14 +58,13 @@ public class StorageRentManager {
         int mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount();
 
         // calculate rent
-        StorageRentResult result = calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
-                gasRemaining, executionBlockTimestamp);
-
-        this.result = Optional.of(result);
+        this.result = calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
+                gasRemaining, executionBlockTimestamp);;
 
         if(result.isOutOfGas()) {
             LOGGER.debug("out of gas at rent payment - storage rent result: {}", result);
-            return result;
+
+            return this.result;
         }
 
         // update rent timestamps
@@ -75,7 +76,7 @@ public class StorageRentManager {
 
         LOGGER.debug("storage rent result: {}", result);
 
-        return result;
+        return this.result;
     }
 
     private StorageRentResult calculateRent(long mismatchesCount, Set<RentedNode> rentedNodes,
@@ -91,13 +92,13 @@ public class StorageRentManager {
         // not enough gas to pay rent
         if(gasRemaining < rentToPay) {
             return StorageRentResult.outOfGas(rentedNodes, rollbackNodes,
-                    mismatchesCount, executionBlockTimestamp);
+                    mismatchesCount, payableRent, rollbacksRent);
         }
 
         long gasAfterPayingRent = GasCost.subtract(gasRemaining, rentToPay);
 
         return StorageRentResult.ok(rentedNodes, rollbackNodes,
-                gasAfterPayingRent, mismatchesCount, executionBlockTimestamp, rentToPay);
+                gasAfterPayingRent, mismatchesCount, rentToPay, payableRent, rollbacksRent);
     }
 
     private Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
@@ -118,10 +119,8 @@ public class StorageRentManager {
         return merged;
     }
 
+    @VisibleForTesting
     public StorageRentResult getResult() {
-        if(!result.isPresent()) {
-            throw new IllegalStateException("cannot get result before paying storage rent");
-        }
-        return result.get();
+        return this.result;
     }
 }

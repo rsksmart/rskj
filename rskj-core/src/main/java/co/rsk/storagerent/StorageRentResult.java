@@ -13,32 +13,35 @@ public class StorageRentResult {
     private final Set<RentedNode> rollbackNodes;
     private final long gasAfterPayingRent;
     private final long mismatchesCount;
-    private final long executionBlockTimestamp;
     private final long paidRent;
+    private final long payableRent;
+    private final long rollbacksRent;
 
 
     private StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long gasAfterPayingRent,
-                              long mismatchesCount, long executionBlockTimestamp, boolean outOfGas, long paidRent) {
+                              long mismatchesCount, boolean outOfGas, long paidRent,
+                              long payableRent, long rollbacksRent) {
         this.rentedNodes = rentedNodes;
         this.rollbackNodes = rollbackNodes;
         this.gasAfterPayingRent = gasAfterPayingRent;
         this.mismatchesCount = mismatchesCount;
-        this.executionBlockTimestamp = executionBlockTimestamp;
         this.outOfGas = outOfGas;
         this.paidRent = paidRent;
+        this.payableRent = payableRent;
+        this.rollbacksRent = rollbacksRent;
     }
 
     public static StorageRentResult outOfGas(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes,
-                                             long mismatchesCount, long executionBlockTimestamp) {
+                                             long mismatchesCount, long payableRent, long rollbacksRent) {
         return new StorageRentResult(rentedNodes, rollbackNodes, 0,
-                mismatchesCount, executionBlockTimestamp, true, 0);
+                mismatchesCount, true, 0, payableRent, rollbacksRent);
     }
 
     public static StorageRentResult ok(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes,
-                                       long gasAfterPayingRent, long mismatchesCount, long executionBlockTimestamp,
-                                       long paidRent) {
+                                       long gasAfterPayingRent, long mismatchesCount,
+                                       long paidRent, long payableRent, long rollbacksRent) {
         return new StorageRentResult(rentedNodes, rollbackNodes, gasAfterPayingRent,
-                mismatchesCount, executionBlockTimestamp, false, paidRent);
+                mismatchesCount, false, paidRent, payableRent, rollbacksRent);
     }
 
     public boolean isOutOfGas() {
@@ -66,14 +69,12 @@ public class StorageRentResult {
 
     @VisibleForTesting
     public long getRollbacksRent() {
-        return StorageRentUtil.rentBy(this.rollbackNodes,
-                rentedNode -> rentedNode.rollbackFee(this.executionBlockTimestamp, this.rentedNodes));
+        return this.rollbacksRent;
     }
 
     @VisibleForTesting
     public long getPayableRent() {
-        return StorageRentUtil.rentBy(this.rentedNodes,
-                rentedNode -> rentedNode.payableRent(this.executionBlockTimestamp));
+        return this.payableRent;
     }
 
     @VisibleForTesting
