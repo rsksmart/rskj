@@ -133,15 +133,25 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         message.accept(mv);
 
         long processTime = System.nanoTime() - start;
-        String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
+        logProcessingTime(message, processTime);
+    }
 
-        if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
-            loggerMessageProcess.warn("Message[{}] processing took long: [{}] seconds.", message.getMessageType(), timeInSeconds);
-        } else if (processTime / 1E9 > PROCESSING_TIME_TO_WARN_LIMIT) {
-            loggerMessageProcess.warn("Message[{}] processing took long: [{}] seconds.", message.getMessageType(), timeInSeconds);
-        } else {
-            loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+    private static void logProcessingTime(@Nonnull Message message, long processTime) {
+        String timeInSecondsStr = FormatUtils.formatNanosecondsToSeconds(processTime);
+
+        boolean isBlockRelated = message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.BODY_RESPONSE_MESSAGE;
+        if (isBlockRelated && BlockUtils.tooMuchProcessTime(processTime)) {
+            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), timeInSecondsStr);
+            return;
         }
+
+        double processTimeInSeconds = processTime / 1E9;
+        if (!isBlockRelated && processTimeInSeconds > PROCESSING_TIME_TO_WARN_LIMIT) {
+            loggerMessageProcess.warn("Message[{}] processing took too much: [{}] seconds.", message.getMessageType(), timeInSecondsStr);
+            return;
+        }
+
+        loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSecondsStr);
     }
 
     @Override
@@ -345,12 +355,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void logTooLongWaitingTime(MessageTask task) {
-        long taskWaitTime = task.getLifeTimeInSeconds();
-        if (taskWaitTime < QUEUED_TIME_TO_WARN_LIMIT) {
+        long taskWaitTimeInSeconds = task.getLifeTimeInSeconds();
+        if (taskWaitTimeInSeconds < QUEUED_TIME_TO_WARN_LIMIT) {
             return;
         }
 
-        logger.debug("Task {} was waiting {}s in the queue", task.message.getMessageType(), taskWaitTime);
+        logger.debug("Task {} was waiting too much in the queue: [{}] seconds", task.message.getMessageType(), taskWaitTimeInSeconds);
 
         recentDelays = true;
     }
@@ -374,8 +384,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
-        if (recentDelays && timeDelayWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD) {
-            logger.warn("Tasks were waiting too much in the queue (> {}s)", QUEUED_TIME_TO_WARN_LIMIT);
+        boolean isTimeToWarnDelays = recentDelays && timeDelayWarn.getSeconds() > QUEUED_TIME_TO_WARN_PERIOD;
+        if (isTimeToWarnDelays) {
+            logger.warn("Tasks are waiting too much in the queue: > [{}] seconds", QUEUED_TIME_TO_WARN_LIMIT);
             recentDelays = false;
             lastDelayWarn = now;
         }

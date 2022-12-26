@@ -447,20 +447,20 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private void removePendingMessage(long messageId, MessageType messageType) {
         MessageInfo messageInfo = pendingMessages.remove(messageId);
-        long taskWaitTime = messageInfo.getLifeTimeInSeconds();
-        logger.trace("Pending {}@{} REMOVED after {}s", messageType, messageId, taskWaitTime);
-        logDelays(messageId, messageType, taskWaitTime);
+        long taskWaitTimeInSeconds = messageInfo.getLifeTimeInSeconds();
+        logger.trace("Pending {}@{} REMOVED after [{}] seconds", messageType, messageId, taskWaitTimeInSeconds);
+        logDelays(messageId, messageType, taskWaitTimeInSeconds);
     }
 
-    private void logDelays(long messageId, MessageType messageType, long taskWaitTime) {
-        if (taskWaitTime < ROUNDTRIP_TIME_TO_WARN_LIMIT) {
+    private void logDelays(long messageId, MessageType messageType, long taskWaitTimeInSeconds) {
+        if (taskWaitTimeInSeconds < ROUNDTRIP_TIME_TO_WARN_LIMIT) {
             return;
         }
 
         long now = System.currentTimeMillis();
         Duration timeDelayWarn = Duration.ofMillis(now - lastDelayWarn);
         if (timeDelayWarn.getSeconds() > ROUNDTRIP_TIME_TO_WARN_PERIOD) {
-            logger.warn("{} with id {} round-trip took too long (> {}s)", messageType, messageId, ROUNDTRIP_TIME_TO_WARN_LIMIT);
+            logger.warn("{}-{} round-trip took too much: [{}] seconds", messageType, messageId, taskWaitTimeInSeconds);
             lastDelayWarn = now;
         }
     }
