@@ -19,12 +19,18 @@
 
 package co.rsk.storagerent;
 
+import co.rsk.core.RskAddress;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
+import org.ethereum.db.TrieKeyMapper;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static co.rsk.storagerent.StorageRentUtil.*;
+import static co.rsk.storagerent.StorageRentUtil.rentThreshold;
+import static org.ethereum.db.OperationType.READ_OPERATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -174,11 +180,74 @@ public class StorageRentUtilTest {
     }
 
     @Test
-    public void rentThreshold() {
+    public void rentThreshold_forEachOperationType() {
         assertEquals(READ_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.READ_OPERATION));
         assertEquals(WRITE_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.WRITE_OPERATION));
         assertEquals(WRITE_THRESHOLD, StorageRentUtil.rentThreshold(OperationType.DELETE_OPERATION));
         assertEquals(3, OperationType.values().length);
+    }
+
+    @Test
+    public void updatedTimestamp() {
+        RentedNode rentedNode =  new RentedNode(new ByteArrayWrapper(new byte[0]) , READ_OPERATION,
+                10, 0);
+
+        // not enough duration, same timestamp
+        assertEquals(0, updatedRentTimestamp(1, rentedNode));
+        // normal duration, returns the current block timestamp
+        assertEquals(400_000_000_00l, updatedRentTimestamp(400_000_000_00l, rentedNode));
+        // excessive duration, partially advanced timestamp
+        assertEquals(1_048_576_000, updatedRentTimestamp(100_000_000_000l, rentedNode));
+    }
+
+    @Test
+    public void rollbackFee_eachCase() {
+        ByteArrayWrapper aKey = new ByteArrayWrapper(new TrieKeyMapper()
+                .getAccountKey(new RskAddress("a0663f719962ec10bb57865532bef522059dfd96")));
+        OperationType anOperation = READ_OPERATION;
+        long aNodeSize = 1;
+        RentedNode rentedNode = new RentedNode(aKey, anOperation, aNodeSize, 1);
+
+        // rollback fee => 25%
+        long executionBlockTimestamp = 100000000;
+        long expected = (long) (rentDue(rentedNode.getNodeSize(), executionBlockTimestamp) * 0.25);
+        assertTrue(rollbackFee(executionBlockTimestamp, Collections.emptySet(), rentedNode) > 0);
+        assertEquals(expected, rollbackFee(executionBlockTimestamp, Collections.emptySet(), rentedNode));
+
+        // already paid && payable rent > 0 => 0
+        executionBlockTimestamp = 100000000000l;
+        assertTrue(payableRent(executionBlockTimestamp, rentedNode) > 0);
+        assertEquals(0, rollbackFee(executionBlockTimestamp, Collections.singleton(rentedNode), rentedNode));
+
+        // already paid && payable rent == 0 => 25%
+        executionBlockTimestamp = 1000000000l;
+        assertEquals(0, payableRent(executionBlockTimestamp, rentedNode));
+        assertTrue(rollbackFee(executionBlockTimestamp, Collections.singleton(rentedNode), rentedNode) > 0);
+        assertEquals((long) (rentDue(rentedNode.getNodeSize(), executionBlockTimestamp) * 0.25),
+                rollbackFee(executionBlockTimestamp, Collections.singleton(rentedNode), rentedNode));
+    }
+
+    @Test
+    public void payableRent_eachCase() {
+        RentedNode rentedNode =  new RentedNode(new ByteArrayWrapper(new byte[0]) , READ_OPERATION,
+                10, 0);
+
+        // not enough duration, zero rent
+        assertEquals(0, payableRent(1, rentedNode));
+        // normal duration, accumulates rent
+        assertEquals(2632, payableRent(400_000_000_00l, rentedNode));
+        // excessive duration, outstanding rent
+        assertEquals(RENT_CAP, payableRent(100_000_000_000l, rentedNode));
+    }
+
+    private long updatedRentTimestamp(long executionBlockTimestamp, RentedNode node) {
+        return newTimestamp(
+                node.getNodeSize(),
+                rentDue(node.getNodeSize(), duration(executionBlockTimestamp, node.getRentTimestamp())),
+                node.getRentTimestamp(),
+                executionBlockTimestamp,
+                RENT_CAP,
+                rentThreshold(node.getOperationType()));
     }
 
     private void assertEqualsDouble(double expected, double actual) {

@@ -19,6 +19,7 @@
 
 package co.rsk.storagerent;
 
+import co.rsk.trie.Trie;
 import org.ethereum.db.OperationType;
 import org.ethereum.vm.GasCost;
 
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
@@ -61,6 +63,36 @@ public class StorageRentUtil {
         long computedRent = Math.min(rentCap, rentDue);
         
         return computedRent > rentThreshold ? computedRent : 0;
+    }
+
+    public static long payableRent(long executionBlockTimestamp, RentedNode node) {
+        return payableRent(rentDue(node.getNodeSize(), duration(executionBlockTimestamp, node.getRentTimestamp())),
+                RENT_CAP, rentThreshold(node.getOperationType()));
+    }
+
+    /**
+     * The rollback fee represents the 25% of accumulated rent at a given block.
+     * If the same key is already contained and has a positive rent, then the fee is zero.
+     * That's because rent is fully paid by payableRent() and not as rollbackFee().
+     *
+     * @param executionBlockTimestamp the current block timestamp
+     * @param rentedNodeSet nodes that are already paying storage rent
+     * @param rentedNode used node
+     *
+     * @return a gas fee to pay (for being part of a rollback)
+     * */
+    public static long rollbackFee(long executionBlockTimestamp, Set<RentedNode> rentedNodeSet, RentedNode rentedNode) {
+        long computedRent = StorageRentUtil.payableRent(
+                rentDue(rentedNode.getNodeSize(), duration(executionBlockTimestamp, rentedNode.getRentTimestamp())),
+                RENT_CAP,
+                0); // there are no thresholds for rollbacks, we want to make the user to pay something
+
+        long payableRent = payableRent(executionBlockTimestamp, rentedNode);
+        boolean alreadyPaysRent = rentedNodeSet.stream().map(RentedNode::getKey)
+                .collect(Collectors.toSet())
+                .contains(rentedNode.getKey());
+
+        return alreadyPaysRent && payableRent > 0 ? 0 : feeByRent(computedRent);
     }
 
     /**
@@ -172,5 +204,21 @@ public class StorageRentUtil {
      */
     public static long mismatchesRent(long mismatchesCount) {
         return MISMATCH_PENALTY * mismatchesCount;
+    }
+
+    /***
+     * Given a block timestamp, calculates the duration of a rented node (in milliseconds)
+     *
+     * @param currentBlockTimestamp a given block timestamp (in milliseconds)
+     *
+     * @return a duration, expressed in milliseconds.
+     */
+    public static long duration(long currentBlockTimestamp, long rentTimestamp) {
+        if(rentTimestamp == Trie.NO_RENT_TIMESTAMP) {
+            // new nodes or old nodes (before hop) have zero duration, they receive the timestamp of the current block
+            return 0;
+        }
+
+        return Math.subtractExact(currentBlockTimestamp, rentTimestamp); // this prevents overflows
     }
 }

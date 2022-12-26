@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static co.rsk.storagerent.StorageRentUtil.rentThreshold;
+import static co.rsk.storagerent.StorageRentUtil.*;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 
@@ -23,9 +23,9 @@ import static org.ethereum.db.OperationType.*;
 public class MutableRepositoryTracked extends MutableRepository {
 
     // used trie nodes in this repository (and its sub-repositories)
-    private Map<ByteArrayWrapper, OperationType> trackedNodes; // todo(fedejinich) this can be final
+    private Map<ByteArrayWrapper, OperationType> trackedNodes;
     // nodes that have been part of a rolled back repository
-    private Map<ByteArrayWrapper, OperationType> rollbackNodes; // todo(fedejinich) this can be final
+    private Map<ByteArrayWrapper, OperationType> rollbackNodes;
     // parent repository to commit tracked nodes
     private final MutableRepositoryTracked parentRepository;
     // counter for reading non-existing keys
@@ -97,8 +97,8 @@ public class MutableRepositoryTracked extends MutableRepository {
         byte[] rawKey = key.getData();
 
         // if we reach here, it will always get timestamp/valueLength from an existing key
-
         Long nodeSize = Long.valueOf(this.mutableTrie.getValueLength(rawKey).intValue());
+
         Optional<Long> rentTimestamp = this.mutableTrie.getRentTimestamp(rawKey);
         long lastRentPaidTimestamp = rentTimestamp.isPresent() ? rentTimestamp.get() : NO_RENT_TIMESTAMP;
 
@@ -109,7 +109,13 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
         rentedNodes.forEach(node -> {
-            long updatedRentTimestamp = node.updatedRentTimestamp(executionBlockTimestamp);
+            long updatedRentTimestamp = newTimestamp(
+                    node.getNodeSize(),
+                    rentDue(node.getNodeSize(), duration(executionBlockTimestamp, node.getRentTimestamp())),
+                    node.getRentTimestamp(),
+                    executionBlockTimestamp,
+                    RENT_CAP,
+                    rentThreshold(node.getOperationType()));
 
             // only updates to bigger timestamps
             if(updatedRentTimestamp > node.getRentTimestamp()) {

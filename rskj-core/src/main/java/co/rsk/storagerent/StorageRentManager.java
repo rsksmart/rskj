@@ -10,10 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static co.rsk.storagerent.StorageRentUtil.*;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
@@ -34,10 +34,9 @@ public class StorageRentManager {
      * @param transactionTrack        repository to update the rent timestamps
      * @return a storage rent result
      */
-    public StorageRentResult pay(long gasRemaining, long executionBlockTimestamp,
-                                        MutableRepositoryTracked blockTrack,
-                                        MutableRepositoryTracked transactionTrack) {
-        // get trie-nodes used within a transaction execution
+    public StorageRentResult pay(long gasRemaining, long executionBlockTimestamp, MutableRepositoryTracked blockTrack,
+                                 MutableRepositoryTracked transactionTrack) {
+        // get trie-nodes used within transaction execution
         Map<ByteArrayWrapper, OperationType> storageRentKeys = mergeNodes(blockTrack.getStorageRentNodes(),
                 transactionTrack.getStorageRentNodes());
         Map<ByteArrayWrapper, OperationType> rollbackKeys = mergeNodes(blockTrack.getRollBackNodes(),
@@ -54,12 +53,9 @@ public class StorageRentManager {
         LOGGER.debug("storage rent - rented nodes: {}, rollback nodes: {}",
                 rentedNodes.size(), rollbackKeys.size());
 
-        // 'blockTrack' accumulates mismatches, so we calculate the difference
         int mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount();
 
-        // calculate rent
-        this.result = calculateRent(mismatchesCount, rentedNodes, rollbackNodes,
-                gasRemaining, executionBlockTimestamp);;
+        this.result = payRent(mismatchesCount, rentedNodes, rollbackNodes, gasRemaining, executionBlockTimestamp);
 
         if(result.isOutOfGas()) {
             LOGGER.debug("out of gas at rent payment - storage rent result: {}", result);
@@ -69,8 +65,7 @@ public class StorageRentManager {
 
         // update rent timestamps
         Set<RentedNode> nodesWithRent = rentedNodes.stream()
-                .filter(rentedNode -> rentedNode.payableRent(executionBlockTimestamp) > 0 ||
-                        rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP)
+                .filter(rentedNode -> hasEnoughRent(executionBlockTimestamp, rentedNode))
                 .collect(Collectors.toSet());
         transactionTrack.updateRents(nodesWithRent, executionBlockTimestamp);
 
@@ -79,13 +74,17 @@ public class StorageRentManager {
         return this.result;
     }
 
-    private StorageRentResult calculateRent(long mismatchesCount, Set<RentedNode> rentedNodes,
-                                                  Set<RentedNode> rollbackNodes, long gasRemaining,
-                                                  long executionBlockTimestamp) {
+    private static boolean hasEnoughRent(long executionBlockTimestamp, RentedNode rentedNode) {
+        return payableRent(executionBlockTimestamp, rentedNode) > 0 ||
+                rentedNode.getRentTimestamp() == NO_RENT_TIMESTAMP;
+    }
+
+    private StorageRentResult payRent(long mismatchesCount, Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes,
+                                      long gasRemaining, long executionBlockTimestamp) {
         long payableRent = StorageRentUtil.rentBy(rentedNodes, rentedNode ->
-                rentedNode.payableRent(executionBlockTimestamp));
+                payableRent(executionBlockTimestamp, rentedNode));
         long rollbacksRent = StorageRentUtil.rentBy(rollbackNodes, rentedNode ->
-                rentedNode.rollbackFee(executionBlockTimestamp, rentedNodes));
+                rollbackFee(executionBlockTimestamp, rentedNodes, rentedNode));
 
         long rentToPay = payableRent + rollbacksRent + StorageRentUtil.mismatchesRent(mismatchesCount);
 
@@ -102,7 +101,7 @@ public class StorageRentManager {
     }
 
     private Set<RentedNode> fetchRentedNodes(Map<ByteArrayWrapper, OperationType> nodes,
-                                                   MutableRepositoryTracked blockTrack) {
+                                             MutableRepositoryTracked blockTrack) {
         return nodes.entrySet()
                 .stream()
                 .map(entry -> blockTrack.fetchRentedNode(entry.getKey(), entry.getValue()))

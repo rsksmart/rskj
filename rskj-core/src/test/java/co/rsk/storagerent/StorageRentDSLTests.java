@@ -262,7 +262,7 @@ public class StorageRentDSLTests {
                 .collect(Collectors.toList())
                 .get(0);
 
-        long paidRent = deletedNode.payableRent(world.getBlockByName("b02").getTimestamp()); // node was deleted at b02
+        long paidRent = payableRent(world.getBlockByName("b02").getTimestamp(), deletedNode); // node was deleted at b02
         assertTrue(WRITE_THRESHOLD <= paidRent && paidRent < RENT_CAP);
 
         // check deleted storage cell
@@ -302,7 +302,7 @@ public class StorageRentDSLTests {
                 .collect(Collectors.toList())
                 .get(0);
 
-        long paidRent = deletedNode.payableRent(world.getBlockByName("b02").getTimestamp()); // node was deleted at b02
+        long paidRent = payableRent(world.getBlockByName("b02").getTimestamp(), deletedNode); // node was deleted at b02
         assertEquals(RENT_CAP, paidRent); // pays rent cap
 
         // check deleted storage cell
@@ -363,20 +363,20 @@ public class StorageRentDSLTests {
         assertTrue(storageRentResult.getRentedNodes().contains(contractAccountState));
         assertTrue(storageRentResult.getRentedNodes().contains(code));
 
-        assertEquals(12500, StorageRentUtil.mismatchesRent(storageRentResult.getMismatchCount()));
+        long mismatchesRent = mismatchesRent(storageRentResult.getMismatchCount());
+
+        assertEquals(12500, mismatchesRent);
 
         // payable rent is calculated with the most recent timestamp
-        long rentedNodesRent = senderAccountState.payableRent(finalTimestamp) +
-                contractAccountState.payableRent(finalTimestamp) +
-                code.payableRent(finalTimestamp);
+        long rentedNodesRent = payableRent(finalTimestamp, senderAccountState) +
+                payableRent(finalTimestamp, contractAccountState) +
+                payableRent(finalTimestamp, code);
 
         // the first tx to reach a node pays rent
         assertEquals(expectedRentedNodesRent, rentedNodesRent);
 
         // pays mismatches penalty
-        checkStorageRent(world, txName,
-                rentedNodesRent + 5 * MISMATCH_PENALTY, 0,
-                3, 0, 5);
+        checkStorageRent(world, txName, rentedNodesRent + mismatchesRent, 0, 3, 0, 5);
     }
 
     @Test
