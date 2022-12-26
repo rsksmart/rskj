@@ -15,11 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -30,9 +30,16 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
  * Created by ajlopez on 28/02/2018.
  */
 class TransactionSetTest {
+
+    private SignatureCache signatureCache;
+
+    @BeforeEach
+    public void setup() {
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+    }
     @Test
     void getEmptyTransactionList() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
 
         List<Transaction> result = txset.getTransactions();
 
@@ -42,7 +49,7 @@ class TransactionSetTest {
 
     @Test
     void transactionIsNotInEmptySet() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction transaction = createSampleTransaction();
 
         Assertions.assertFalse(txset.hasTransaction(transaction));
@@ -54,7 +61,7 @@ class TransactionSetTest {
 
     @Test
     void hasTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction transaction1 = createSampleTransaction(10);
         Transaction transaction2 = createSampleTransaction(20);
         Transaction transaction3 = createSampleTransaction(30);
@@ -69,7 +76,7 @@ class TransactionSetTest {
 
     @Test
     void addAndRemoveTransactions() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
 
         Transaction transaction1 = createSampleTransaction(1, 2, 100, 0);
         Transaction transaction2 = createSampleTransaction(2, 3, 200, 0);
@@ -95,7 +102,7 @@ class TransactionSetTest {
 
     @Test
     void addTransactionAndGetListWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction tx = createSampleTransaction();
 
         txset.addTransaction(tx);
@@ -110,7 +117,7 @@ class TransactionSetTest {
 
     @Test
     void addtTransactionTwiceAndGetListWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);
@@ -126,7 +133,7 @@ class TransactionSetTest {
 
     @Test
     void getEmptyTransactionListByUnknownSender() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
 
         List<Transaction> result = txset.getTransactionsWithSender(new RskAddress(new byte[20]));
 
@@ -136,7 +143,7 @@ class TransactionSetTest {
 
     @Test
     void addTransactionAndGetListBySenderWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);
@@ -151,7 +158,7 @@ class TransactionSetTest {
 
     @Test
     void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(signatureCache);
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);

@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
@@ -72,7 +71,8 @@ class CallContractTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 btcBlockStoreFactory,
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(),
+                world.getBlockTxSignatureCache());
 
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
@@ -81,7 +81,7 @@ class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory),
+                    new PrecompiledContracts(config, bridgeSupportFactory, world.getBlockTxSignatureCache()),
                     world.getBlockTxSignatureCache()
             );
 

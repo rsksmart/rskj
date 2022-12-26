@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
@@ -30,10 +29,7 @@ import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.program.Program;
@@ -71,7 +67,7 @@ public abstract class VMTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     private static MockedStatic<LoggerFactory> loggerFactoryMocked;
 
@@ -3393,7 +3389,7 @@ public abstract class VMTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction, boolean preFixStaticCall) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction, new HashSet<>());
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 
     private byte[] compile(String code) {

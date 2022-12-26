@@ -438,10 +438,12 @@ class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
@@ -452,7 +454,7 @@ class RemascStorageProviderTest {
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
                 config.isRemascEnabled());

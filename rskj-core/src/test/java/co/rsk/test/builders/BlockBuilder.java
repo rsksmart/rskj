@@ -126,7 +126,7 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new PrecompiledContracts(config, bridgeSupportFactory, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     ),
                     config.isRemascEnabled());

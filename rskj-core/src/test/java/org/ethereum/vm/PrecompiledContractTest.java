@@ -23,6 +23,8 @@ import co.rsk.config.TestSystemProperties;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -44,7 +46,7 @@ class PrecompiledContractTest {
 
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     @Test
     void identityTest1() throws VMException {

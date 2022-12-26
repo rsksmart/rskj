@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
@@ -8,6 +26,7 @@ import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
@@ -32,11 +51,13 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
 
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig.ForBlock activations;
+    private final SignatureCache signatureCache;
     private List<LogInfo> logs;
 
-    public BrigeEventLoggerLegacyImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
+    public BrigeEventLoggerLegacyImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
         this.bridgeConstants = bridgeConstants;
         this.activations = activations;
+        this.signatureCache = signatureCache;
         this.logs = logs;
     }
 
@@ -50,7 +71,7 @@ public class BrigeEventLoggerLegacyImpl implements BridgeEventLogger {
         this.logs.add(
             new LogInfo(BRIDGE_CONTRACT_ADDRESS,
                 Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                RLP.encodeElement(rskTx.getSender().getBytes())
+                RLP.encodeElement(rskTx.getSender(signatureCache).getBytes())
             )
         );
     }

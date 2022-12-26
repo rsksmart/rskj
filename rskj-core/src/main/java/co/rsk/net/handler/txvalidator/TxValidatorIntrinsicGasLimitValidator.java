@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
@@ -35,15 +34,20 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
 
     private final Constants constants;
     private final ActivationConfig activationConfig;
+    private final SignatureCache signatureCache;
 
-    public TxValidatorIntrinsicGasLimitValidator(Constants constants, ActivationConfig activationConfig) {
+    public TxValidatorIntrinsicGasLimitValidator(
+            Constants constants,
+            ActivationConfig activationConfig,
+            SignatureCache signatureCache) {
         this.constants = constants;
         this.activationConfig = activationConfig;
+        this.signatureCache = signatureCache;
     }
 
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber))).compareTo(tx.getGasLimitAsInteger()) <= 0) {
+        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache)).compareTo(tx.getGasLimitAsInteger()) <= 0) {
             return TransactionValidationResult.ok();
         }
 

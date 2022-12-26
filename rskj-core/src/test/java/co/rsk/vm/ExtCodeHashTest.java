@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
@@ -7,9 +24,7 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -36,13 +51,14 @@ class ExtCodeHashTest {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
             config,
             new BridgeSupportFactory(
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig()));
+                    config.getActivationConfig(), signatureCache), signatureCache);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
@@ -93,7 +109,7 @@ class ExtCodeHashTest {
         byte[] code = compiler.compile(stringCode);
         VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>());
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         try {
             while (!program.isStopped()) {
                 vm.step(program);
@@ -111,7 +127,7 @@ class ExtCodeHashTest {
         byte[] code = compiler.compile(stringCode);
         VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>());
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         while (!program.isStopped()) {
             vm.step(program);

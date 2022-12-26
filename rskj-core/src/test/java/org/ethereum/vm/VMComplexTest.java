@@ -16,7 +16,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
@@ -25,9 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -53,7 +50,7 @@ class VMComplexTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
     @Disabled("//TODO #POC9")
     @Test // contract call recursive
@@ -696,6 +693,6 @@ class VMComplexTest {
     }
 
     private Program getProgram(byte[] code, ProgramInvoke pi) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, pi, null, new HashSet<>());
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, pi, null, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 }

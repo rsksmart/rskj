@@ -15,9 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
-
 
 import static co.rsk.util.HexUtils.jsonHexToInt;
 import static co.rsk.util.HexUtils.jsonHexToLong;
@@ -46,10 +44,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -135,6 +130,8 @@ public class Web3Impl implements Web3 {
     private final RskModule rskModule;
     private final SyncProcessor syncProcessor;
 
+    private final SignatureCache signatureCache;
+
     private Ethereum eth;
 
     protected Web3Impl(
@@ -162,7 +159,8 @@ public class Web3Impl implements Web3 {
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore,
             Web3InformationRetriever web3InformationRetriever,
-            SyncProcessor syncProcessor) {
+            SyncProcessor syncProcessor,
+            SignatureCache signatureCache) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -188,6 +186,7 @@ public class Web3Impl implements Web3 {
         this.blocksBloomStore = blocksBloomStore;
         this.web3InformationRetriever = web3InformationRetriever;
         this.syncProcessor = syncProcessor;
+        this.signatureCache = signatureCache;
 
         personalModule.init();
     }
@@ -637,7 +636,7 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResultDTO getBlockResult(Block b, boolean fullTx) {
-        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc());
+        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc(), config.rpcZeroSignatureIfRemasc(), signatureCache);
     }
 
     public BlockInformationResult[] eth_getBlocksByNumber(String number) {
@@ -705,7 +704,7 @@ public class Web3Impl implements Web3 {
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
-                        return s = new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc());
+                        return s = new TransactionResultDTO(null, null, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
                     }
                 }
             } else {
@@ -722,7 +721,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), config.rpcZeroSignatureIfRemasc());
+            return s = new TransactionResultDTO(block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), config.rpcZeroSignatureIfRemasc(), signatureCache);
         } finally {
             logger.debug("eth_getTransactionByHash({}): {}", transactionHash, s);
         }
@@ -746,7 +745,7 @@ public class Web3Impl implements Web3 {
 
             Transaction tx = b.getTransactionsList().get(idx);
 
-            return s = new TransactionResultDTO(b, idx, tx, config.rpcZeroSignatureIfRemasc());
+            return s = new TransactionResultDTO(b, idx, tx, config.rpcZeroSignatureIfRemasc(), signatureCache);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionByBlockHashAndIndex({}, {}): {}", blockHash, index, s);
@@ -769,7 +768,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            s = new TransactionResultDTO(block.get(), idx, txs.get(idx), config.rpcZeroSignatureIfRemasc());
+            s = new TransactionResultDTO(block.get(), idx, txs.get(idx), config.rpcZeroSignatureIfRemasc(), signatureCache);
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -794,7 +793,7 @@ public class Web3Impl implements Web3 {
         Transaction tx = block.getTransactionsList().get(txInfo.getIndex());
         txInfo.setTransaction(tx);
 
-        return new TransactionReceiptDTO(block, txInfo);
+        return new TransactionReceiptDTO(block, txInfo, signatureCache);
     }
 
     @Override

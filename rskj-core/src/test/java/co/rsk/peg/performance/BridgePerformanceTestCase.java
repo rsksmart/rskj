@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
@@ -30,9 +29,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
@@ -96,6 +93,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         null,
                         null,
                         sender.getBytes(),
+                        null,
                         null,
                         null,
                         null,
@@ -255,11 +253,13 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 //                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
 //                        constants.getBridgeConstants().getBtcParams());
 
+                SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
                 BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
+                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig, signatureCache);
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                        bridgeSupportFactory);
+                        bridgeSupportFactory, signatureCache);
                 BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
                 Blockchain blockchain = blockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);

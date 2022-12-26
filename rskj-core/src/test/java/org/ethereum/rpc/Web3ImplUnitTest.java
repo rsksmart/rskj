@@ -17,10 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -92,7 +89,8 @@ class Web3ImplUnitTest {
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
                 retriever,
-                null);
+                null,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 
     @Test

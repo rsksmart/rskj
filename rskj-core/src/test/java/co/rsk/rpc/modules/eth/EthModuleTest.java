@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.BridgeConstants;
@@ -53,6 +52,7 @@ import static org.mockito.Mockito.*;
 class EthModuleTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
     @Test
     void callSmokeTest() {
@@ -84,7 +84,7 @@ class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null),
+                        null, null, null, signatureCache),
                 config.getGasEstimationCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
@@ -123,7 +123,7 @@ class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null),
+                        null, null, null, signatureCache),
                 config.getGasEstimationCap());
 
         String expectedResult = HexUtils.toUnformattedJsonHex(hReturn);
@@ -167,7 +167,7 @@ class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null),
+                        null, null, null, signatureCache),
                 config.getGasEstimationCap());
 
         try {
@@ -257,7 +257,8 @@ class EthModuleTest {
                 new BridgeSupportFactory(
                         null,
                         null,
-                        null
+                        null,
+                        signatureCache
                 ),
                 config.getGasEstimationCap()
         );

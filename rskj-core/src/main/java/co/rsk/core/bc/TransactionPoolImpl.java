@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
@@ -52,8 +51,8 @@ import static org.ethereum.util.BIUtil.toBI;
 public class TransactionPoolImpl implements TransactionPool {
     private static final Logger logger = LoggerFactory.getLogger("txpool");
 
-    private final TransactionSet pendingTransactions = new TransactionSet();
-    private final TransactionSet queuedTransactions = new TransactionSet();
+    private final TransactionSet pendingTransactions;
+    private final TransactionSet queuedTransactions;
 
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
@@ -95,7 +94,10 @@ public class TransactionPoolImpl implements TransactionPool {
         this.quotaChecker = txQuotaChecker;
         this.gasPriceTracker = gasPriceTracker;
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
+        pendingTransactions = new TransactionSet(this.signatureCache);
+        queuedTransactions = new TransactionSet(this.signatureCache);
+
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots(), signatureCache);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
@@ -158,7 +160,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
-        return new PendingState(currentRepository, new TransactionSet(pendingTransactions), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0));
+        return new PendingState(currentRepository, new TransactionSet(pendingTransactions, signatureCache), (repository, tx) -> transactionExecutorFactory.newInstance(tx, 0, bestBlock.getCoinbase(), repository, createFakePendingBlock(bestBlock), 0), signatureCache);
     }
 
     private RepositorySnapshot getCurrentRepository() {
@@ -215,7 +217,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
-        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender());
+        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender(signatureCache));
 
         if (txsaccount == null) {
             return Optional.empty();
@@ -243,7 +245,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Keccak256 hash = tx.getHash();
         logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
+        Optional<Transaction> replacedTx = pendingTransactions.getTransactionsWithSender(tx.getSender(signatureCache)).stream().filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger())).findFirst();
         if (replacedTx.isPresent() && !isBumpingGasPriceForSameNonceTx(tx, replacedTx.get())) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
         }
@@ -253,7 +255,7 @@ public class TransactionPoolImpl implements TransactionPool {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender());
+        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
@@ -454,8 +456,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        AccountState state = currentRepository.getAccountState(tx.getSender(signatureCache));
-        return validator.isValid(tx, bestBlock, state);
+        return validator.isValid(tx, bestBlock, currentRepository.getAccountState(tx.getSender(signatureCache)));
     }
 
     /**
@@ -464,7 +465,7 @@ public class TransactionPoolImpl implements TransactionPool {
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(Transaction newTx, RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender(signatureCache));
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
@@ -472,7 +473,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender())) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender(signatureCache))) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
@@ -486,7 +487,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private long getTransactionCost(Transaction tx, long number) {
-        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number));
+        return tx.transactionCost(config.getNetworkConstants(), config.getActivationConfig().forBlock(number), signatureCache);
     }
 
 }

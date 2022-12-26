@@ -89,6 +89,7 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -116,6 +117,13 @@ class Web3ImplTest {
     private final SyncProcessor syncProcessor = mock(SyncProcessor.class);
 
     private Wallet wallet;
+
+    private SignatureCache signatureCache;
+
+    @BeforeEach
+    public void setup() {
+        signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+    }
 
     @Test
     void web3_clientVersion() {
@@ -651,7 +659,7 @@ class Web3ImplTest {
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         Web3 web3 = new Web3Impl(
                 ethMock,
@@ -677,7 +685,8 @@ class Web3ImplTest {
                 null,
                 null,
                 mock(Web3InformationRetriever.class),
-                null);
+                null,
+                signatureCache);
 
         assertFalse(web3.eth_mining(), "Node is not mining");
         try {
@@ -1917,7 +1926,8 @@ class Web3ImplTest {
                 null,
                 null,
                 mock(Web3InformationRetriever.class),
-                null);
+                null,
+                signatureCache);
 
         assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
         verify(minerServerMock, times(1)).getCoinbaseAddress();
@@ -2198,7 +2208,7 @@ class Web3ImplTest {
     private Web3Impl createWeb3() {
         return createWeb3(
                 Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
-                Web3Mocks.getMockBlockStore(), null, null, null
+                Web3Mocks.getMockBlockStore(), null, null, null, signatureCache
         );
     }
 
@@ -2378,10 +2388,10 @@ class Web3ImplTest {
                 null, new ExecutionBlockRetriever(blockchain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap()
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
@@ -2414,6 +2424,7 @@ class Web3ImplTest {
                         blockchain,
                         mock(RepositoryLocator.class),
                         mock(ExecutionBlockRetriever.class)),
+                null,
                 null);
     }
 
@@ -2437,7 +2448,7 @@ class Web3ImplTest {
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         return createWeb3(
                 eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockStore(),
-                null, new SimpleConfigCapabilities(), receiptStore
+                null, new SimpleConfigCapabilities(), receiptStore, signatureCache
         );
     }
 
@@ -2445,7 +2456,7 @@ class Web3ImplTest {
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         return createWeb3CallNoReturn(
                 eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockStore(),
-                null, new SimpleConfigCapabilities(), receiptStore
+                null, new SimpleConfigCapabilities(), receiptStore, signatureCache
         );
     }
 
@@ -2459,7 +2470,8 @@ class Web3ImplTest {
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
                 blockStore, blockProcessor,
-                new SimpleConfigCapabilities(), receiptStore
+                new SimpleConfigCapabilities(), receiptStore,
+                signatureCache
         );
     }
 
@@ -2471,7 +2483,8 @@ class Web3ImplTest {
             BlockStore blockStore,
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
-            ReceiptStore receiptStore) {
+            ReceiptStore receiptStore,
+            SignatureCache signatureCache) {
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2488,10 +2501,10 @@ class Web3ImplTest {
                 new ExecutionBlockRetriever(blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway),
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap()
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
         MinerClient minerClient = new SimpleMinerClient();
@@ -2522,7 +2535,8 @@ class Web3ImplTest {
                 new BuildInfo("test", "test"),
                 null,
                 retriever,
-                syncProcessor
+                syncProcessor,
+                signatureCache
         );
     }
 
@@ -2534,7 +2548,8 @@ class Web3ImplTest {
             BlockStore blockStore,
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
-            ReceiptStore receiptStore) {
+            ReceiptStore receiptStore,
+            SignatureCache signatureCache) {
         ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
@@ -2549,9 +2564,9 @@ class Web3ImplTest {
                 new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, null),
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), signatureCache),
                 config.getGasEstimationCap());
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
         MinerClient minerClient = new SimpleMinerClient();
@@ -2582,7 +2597,8 @@ class Web3ImplTest {
                 new BuildInfo("test", "test"),
                 null,
                 retriever,
-                null);
+                null,
+                signatureCache);
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(
@@ -2593,7 +2609,7 @@ class Web3ImplTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, null),
+                new PrecompiledContracts(config, null, signatureCache),
                 blockTxSignatureCache);
     }
 

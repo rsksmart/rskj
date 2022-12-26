@@ -12,8 +12,7 @@ import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 
 public class BridgeSupportBuilder {
     private BridgeConstants bridgeConstants;
@@ -25,6 +24,7 @@ public class BridgeSupportBuilder {
     private Block executionBlock;
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
+    private SignatureCache signatureCache;
 
     public BridgeSupportBuilder() {
         this.bridgeConstants = mock(BridgeConstants.class);
@@ -36,6 +36,7 @@ public class BridgeSupportBuilder {
         this.executionBlock = mock(Block.class);
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
+        this.signatureCache = mock(BlockTxSignatureCache.class);
     }
 
     public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
@@ -83,6 +84,11 @@ public class BridgeSupportBuilder {
         return this;
     }
 
+    public BridgeSupportBuilder withSignatureCache(SignatureCache signatureCache) {
+        this.signatureCache = signatureCache;
+        return this;
+    }
+
     public BridgeSupport build() {
         return new BridgeSupport(
             bridgeConstants,
@@ -95,7 +101,8 @@ public class BridgeSupportBuilder {
             new Context(bridgeConstants.getBtcParams()),
             new FederationSupport(bridgeConstants, provider, executionBlock),
             btcBlockStoreFactory,
-            activations
+            activations,
+            signatureCache
         );
     }
 }

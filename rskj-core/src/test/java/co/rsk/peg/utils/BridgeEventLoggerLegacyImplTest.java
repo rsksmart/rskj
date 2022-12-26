@@ -27,8 +27,7 @@ import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -70,7 +69,7 @@ class BridgeEventLoggerLegacyImplTest {
         activations = mock(ActivationConfig.ForBlock.class);
         eventLogs = new LinkedList<>();
         constantsMock = mock(BridgeConstants.class);
-        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs);
+        eventLogger = new BrigeEventLoggerLegacyImpl(constantsMock, activations, eventLogs, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         btcTxMock = mock(BtcTransaction.class);
         rskTxHash = PegTestUtils.createHash3(1);
     }
@@ -83,7 +82,7 @@ class BridgeEventLoggerLegacyImplTest {
         Transaction tx = mock(Transaction.class);
         RskAddress sender = mock(RskAddress.class);
         when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
-        when(tx.getSender()).thenReturn(sender);
+        when(tx.getSender(any(SignatureCache.class))).thenReturn(sender);
 
         // Act
         eventLogger.logUpdateCollections(tx);
@@ -98,7 +97,7 @@ class BridgeEventLoggerLegacyImplTest {
         }
 
         // Assert log data
-        byte[] encodedData = RLP.encodeElement(tx.getSender().getBytes());
+        byte[] encodedData = RLP.encodeElement(tx.getSender(new BlockTxSignatureCache(new ReceivedTxSignatureCache())).getBytes());
         Assertions.assertArrayEquals(encodedData, logResult.getData());
     }
 

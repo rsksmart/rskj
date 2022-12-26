@@ -22,6 +22,8 @@ package org.ethereum.vm;
 import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -46,9 +48,10 @@ class ProgramMemoryTest {
     void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
 
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null),
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null, new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class),
-                ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>());
+                ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
     }
 
     @Test

@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -38,9 +37,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
+import org.ethereum.core.*;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
@@ -50,8 +47,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
 import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -172,7 +167,7 @@ class Web3ImplSnapshotTest {
                                                 )
         );
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ethereum.blockchain = blockchain;
@@ -193,6 +188,7 @@ class Web3ImplSnapshotTest {
                 dm,
                 null, null,
                 Web3Mocks.getMockChannelManager(),
+                null,
                 null,
                 null,
                 null,
@@ -233,7 +229,8 @@ class Web3ImplSnapshotTest {
                         blockFactory,
                         factory.getBlockExecutor(),
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
                 clock,
                 blockFactory,

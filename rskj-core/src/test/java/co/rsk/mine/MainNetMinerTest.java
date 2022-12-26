@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2019 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -19,10 +36,7 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
@@ -31,11 +45,9 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.nio.file.Path;
 import java.time.Clock;
 
 import static org.mockito.Mockito.spy;
@@ -222,7 +234,8 @@ class MainNetMinerTest {
                 blockFactory,
                 blockExecutor,
                 new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                new MinerUtils()
+                new MinerUtils(),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache())
         );
     }
 }

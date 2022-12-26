@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.*;
@@ -28,6 +27,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -50,13 +50,16 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private final BridgeConstants bridgeConstants;
 
+    private final SignatureCache signatureCache;
+
     private List<LogInfo> logs;
 
     private ActivationConfig.ForBlock activations;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs, SignatureCache signatureCache) {
         this.activations = activations;
         this.bridgeConstants = bridgeConstants;
+        this.signatureCache = signatureCache;
         this.logs = logs;
     }
 
@@ -65,7 +68,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics();
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(rskTx.getSender().toString());
+        byte[] encodedData = event.encodeEventData(rskTx.getSender(signatureCache).toString());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
@@ -196,6 +199,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender);
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(btcDestinationAddress, amount.getValue());
+
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 

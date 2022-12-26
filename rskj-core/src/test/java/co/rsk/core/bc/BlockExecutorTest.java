@@ -1400,7 +1400,9 @@ public class BlockExecutorTest {
                 cfg.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, cfg.getNetworkConstants().getBridgeConstants(), cfg.getActivationConfig());
+                btcBlockStoreFactory, cfg.getNetworkConstants().getBridgeConstants(), cfg.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
+
+        BlockTxSignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         return new BlockExecutor(
                 cfg.getActivationConfig(),
@@ -1411,8 +1413,8 @@ public class BlockExecutorTest {
                         null,
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(cfg, bridgeSupportFactory),
-                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+                        new PrecompiledContracts(cfg, bridgeSupportFactory, signatureCache),
+                        signatureCache
                 ),
                 cfg.isRemascEnabled());
     }

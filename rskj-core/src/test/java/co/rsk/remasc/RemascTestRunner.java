@@ -133,8 +133,8 @@ class RemascTestRunner {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
                 builder.getConfig().getNetworkConstants().getBridgeConstants(),
-                builder.getConfig().getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
+                builder.getConfig().getActivationConfig(), blockTxSignatureCache);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, blockTxSignatureCache);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),

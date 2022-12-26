@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc.dto;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
@@ -44,7 +44,7 @@ public class TransactionReceiptDTO {
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
-    public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo, SignatureCache signatureCache) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getStatus());
@@ -57,7 +57,7 @@ public class TransactionReceiptDTO {
         }
 
         cumulativeGasUsed = HexUtils.toQuantityJsonHex(receipt.getCumulativeGas());
-        from = receipt.getTransaction().getSender().toJsonString();
+        from = receipt.getTransaction().getSender(signatureCache).toJsonString();
         gasUsed = HexUtils.toQuantityJsonHex(receipt.getGasUsed());
 
         logs = new LogFilterElement[receipt.getLogInfoList().size()];

@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
@@ -46,8 +46,8 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
 
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore) {
-        return generalInvoke(tx, txindex, repository, blockStore);
+    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore, SignatureCache signatureCache) {
+        return generalInvoke(tx, txindex, repository, blockStore, signatureCache);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         return null;
     }
 
-    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
+    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore, SignatureCache signatureCache) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
@@ -67,11 +67,11 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        RskAddress origin = tx.getSender();
+        RskAddress origin = tx.getSender(signatureCache);
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        RskAddress caller = tx.getSender();
+        RskAddress caller = tx.getSender(signatureCache);
 
         /***         BALANCE op       ***/
         Coin balance = repository.getBalance(addr);

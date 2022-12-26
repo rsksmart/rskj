@@ -38,6 +38,8 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
 import org.ethereum.TestUtils;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
@@ -407,10 +409,10 @@ class Web3ImplScoringTest {
                 null, new ExecutionBlockRetriever(world.getBlockChain(), null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap()
         );
-        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new ReceivedTxSignatureCache());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         return new Web3RskImpl(
                 rsk,
@@ -427,6 +429,7 @@ class Web3ImplScoringTest {
                 null, null,
                 Web3Mocks.getMockChannelManager(),
                 peerScoringManager,
+                null,
                 null,
                 null,
                 null,

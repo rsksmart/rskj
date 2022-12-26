@@ -793,11 +793,13 @@ class SyncProcessorTest {
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockChainBuilder.getRepository().getRoot());
 
+        SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), signatureCache);
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
@@ -808,7 +810,7 @@ class SyncProcessorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
                 config.isRemascEnabled());

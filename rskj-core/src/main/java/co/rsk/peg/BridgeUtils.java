@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
@@ -48,6 +47,7 @@ import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -649,7 +649,7 @@ public class BridgeUtils {
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
-    public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations) {
+    public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations, SignatureCache signatureCache) {
         RskAddress receiveAddress = rskTx.getReceiveAddress();
         if (receiveAddress.equals(RskAddress.nullAddress())) {
             return false;
@@ -664,10 +664,10 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
-                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
-                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants) ||
-                       isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants)
+                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation(), signatureCache) ||
+                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache) ||
+                       isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants, signatureCache)
                );
     }
 
@@ -681,8 +681,8 @@ public class BridgeUtils {
         return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
     }
 
-    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
-        return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
+    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation, SignatureCache signatureCache) {
+        return federation.hasMemberWithRskAddress(rskTx.getSender(signatureCache).getBytes());
     }
 
     public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
@@ -696,19 +696,19 @@ public class BridgeUtils {
         }
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
-    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration, SignatureCache signatureCache) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(rskTx, signatureCache);
     }
 
     public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {

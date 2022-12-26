@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
@@ -26,6 +25,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +50,12 @@ public class TxPendingValidator {
     private final Constants constants;
     private final ActivationConfig activationConfig;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots) {
+    private final SignatureCache signatureCache;
+
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots, SignatureCache signatureCache) {
         this.constants = constants;
         this.activationConfig = activationConfig;
+        this.signatureCache = signatureCache;
 
         validatorSteps.add(new TxNotNullValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
@@ -61,7 +64,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
-        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
+        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, signatureCache));
         validatorSteps.add(new TxValidatorMaximumGasPriceValidator(activationConfig));
     }
 
@@ -69,10 +72,12 @@ public class TxPendingValidator {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
+        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber), signatureCache);
 
         if (state == null && basicTxCost != 0) {
-            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
+            if (logger.isTraceEnabled()) {
+                logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender(signatureCache));
+            }
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 

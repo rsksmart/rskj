@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
@@ -34,7 +33,9 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
+import org.ethereum.core.BlockTxSignatureCache;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.ReceivedTxSignatureCache;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -79,7 +80,8 @@ class Web3EthModuleTest {
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
                 mock(Web3InformationRetriever.class),
-                mock(SyncProcessor.class));
+                mock(SyncProcessor.class),
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         assertThat(web3.eth_chainId(), is("0x21"));
     }

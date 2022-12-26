@@ -1,5 +1,3 @@
-package co.rsk.vm;
-
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
@@ -17,6 +15,7 @@ package co.rsk.vm;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
@@ -29,9 +28,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
@@ -51,7 +48,6 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 /**
  * Created by Sebastian Sicardi on 22/05/2019.
  */
@@ -62,13 +58,15 @@ class Create2Test {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
+    private final SignatureCache signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
             config,
             new BridgeSupportFactory(
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig()));
+                    config.getActivationConfig(), signatureCache),
+                    signatureCache);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
@@ -412,7 +410,7 @@ class Create2Test {
         byte[] code = compiler.compile(stringCode);
         VM vm = new VM(vmConfig,precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>());
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>(), new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         while (!program.isStopped()){
             vm.step(program);

@@ -72,9 +72,11 @@ public class BlockChainBuilder {
     private RepositoryLocator repositoryLocator;
     private TrieStore trieStore;
     private boolean requireUnclesValidation;
+    private SignatureCache signatureCache;
 
     public BlockChainBuilder() {
         this.requireUnclesValidation = true; // default
+        this.signatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
     }
 
     public BlockChainBuilder setTesting(boolean value) {
@@ -212,7 +214,8 @@ public class BlockChainBuilder {
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig());
+                    config.getActivationConfig(),
+                    signatureCache);
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -235,7 +238,7 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory),
+                new PrecompiledContracts(config, bridgeSupportFactory, signatureCache),
                 blockTxSignatureCache
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);

@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
@@ -46,7 +46,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     // Invocation by the wire tx
     @Override
     public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository,
-                                             BlockStore blockStore) {
+                                             BlockStore blockStore, SignatureCache signatureCache) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
@@ -54,11 +54,11 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        byte[] origin = tx.getSender().getBytes();
+        byte[] origin = tx.getSender(signatureCache).getBytes();
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        byte[] caller = tx.getSender().getBytes();
+        byte[] caller = tx.getSender(signatureCache).getBytes();
 
         /***         BALANCE op       ***/
         Coin balance = repository.getBalance(addr);

@@ -74,7 +74,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
         for (Transaction tx : txs) {
             try {
-                tx.verify();
+                tx.verify(signatureCache);
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
                 return false;

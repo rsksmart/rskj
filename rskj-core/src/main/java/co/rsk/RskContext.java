@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -402,7 +401,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (this.txQuotaChecker == null) {
-            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis);
+            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis, getReceivedTxSignatureCache());
         }
         return txQuotaChecker;
     }
@@ -415,6 +414,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return receivedTxSignatureCache;
+    }
+
+    public BlockTxSignatureCache getBlockTxSignatureCache() {
+        checkIfNotClosed();
+
+        if (blockTxSignatureCache == null) {
+            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
+        }
+
+        return blockTxSignatureCache;
     }
 
     public synchronized RepositoryLocator getRepositoryLocator() {
@@ -486,7 +495,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory());
+            precompiledContracts = new PrecompiledContracts(
+                    getRskSystemProperties(),
+                    getBridgeSupportFactory(),
+                    getBlockTxSignatureCache());
         }
 
         return precompiledContracts;
@@ -498,7 +510,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig());
+                    getRskSystemProperties().getActivationConfig(), getBlockTxSignatureCache());
         }
 
         return bridgeSupportFactory;
@@ -816,7 +828,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockExecutor(),
-                    getExecutionBlockRetriever()
+                    getExecutionBlockRetriever(),
+                    getBlockTxSignatureCache()
             );
         }
 
@@ -837,7 +850,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (txPoolModule == null) {
-            txPoolModule = new TxPoolModuleImpl(getTransactionPool());
+            txPoolModule = new TxPoolModuleImpl(getTransactionPool(), getReceivedTxSignatureCache());
         }
 
         return txPoolModule;
@@ -1103,7 +1116,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(),
+                    new BlockTxsFieldsValidationRule(getBlockTxSignatureCache()),
                     new BlockTxsValidationRule(getRepositoryLocator(), getBlockTxSignatureCache()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
@@ -1290,7 +1303,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getBuildInfo(),
                 getBlocksBloomStore(),
                 getWeb3InformationRetriever(),
-                getSyncProcessor());
+                getSyncProcessor(),
+                getBlockTxSignatureCache());
     }
 
     protected synchronized Web3InformationRetriever getWeb3InformationRetriever() {
@@ -1442,14 +1456,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private void initializeNativeLibs() {
         Secp256k1.initialize(getRskSystemProperties());
         AbstractAltBN128.init();
-    }
-
-    private BlockTxSignatureCache getBlockTxSignatureCache() {
-        if (blockTxSignatureCache == null) {
-            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
-        }
-
-        return blockTxSignatureCache;
     }
 
     private KeyValueDataSource getBlocksBloomDataSource() {
@@ -1768,7 +1774,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockFactory(),
                     getBlockExecutor(),
                     new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
-                    new MinerUtils()
+                    new MinerUtils(),
+                    getBlockTxSignatureCache()
             );
         }
 

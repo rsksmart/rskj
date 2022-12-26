@@ -15,15 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
-import org.ethereum.core.Bloom;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.Test;
@@ -32,6 +28,7 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +45,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -59,7 +56,7 @@ class TransactionReceiptDTOTest {
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
-        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         String actualStatus = transactionReceiptDTO.getStatus();
 
@@ -78,7 +75,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -89,7 +86,7 @@ class TransactionReceiptDTOTest {
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
-        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         String actualStatus = transactionReceiptDTO.getStatus();
 
@@ -108,7 +105,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -119,7 +116,7 @@ class TransactionReceiptDTOTest {
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
-        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         String actualStatus = transactionReceiptDTO.getStatus();
 
@@ -138,7 +135,7 @@ class TransactionReceiptDTOTest {
 
         Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(hash);
-        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getSender(any(SignatureCache.class))).thenReturn(rskAddress);
         when(transaction.getReceiveAddress()).thenReturn(rskAddress);
 
         TransactionReceipt txReceipt = mock(TransactionReceipt.class);
@@ -149,7 +146,7 @@ class TransactionReceiptDTOTest {
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
-        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo, new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
 
         String actualStatus = transactionReceiptDTO.getStatus();
 

@@ -258,8 +258,9 @@ class TransactionTest {
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig());
-                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory);
+                            config.getActivationConfig(),
+                            signatureCache);
+                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, signatureCache);
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),

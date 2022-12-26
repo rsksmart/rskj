@@ -38,6 +38,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -122,6 +123,7 @@ class Web3ImplLogsTest {
     private Web3Impl web3;
     private TrieStore trieStore;
     private BlockStore blockStore;
+    private SignatureCache signatureCache;
 
     //20965255 getValue()
     //371303c0 inc()
@@ -138,6 +140,7 @@ class Web3ImplLogsTest {
         eth = factory.getRsk();
         receiptStore = factory.getReceiptStore();
         web3 = createWeb3();
+        signatureCache = new ReceivedTxSignatureCache();
     }
 
     @Test
@@ -1075,10 +1078,10 @@ class Web3ImplLogsTest {
                 null, new ExecutionBlockRetriever(blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new BlockTxSignatureCache(new ReceivedTxSignatureCache())),
                 config.getGasEstimationCap()
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, signatureCache);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
         return new Web3RskImpl(
                 eth,
@@ -1105,6 +1108,7 @@ class Web3ImplLogsTest {
                 null,
                 new BlocksBloomStore(2, 0, new HashMapDB()),
                 mock(Web3InformationRetriever.class),
+                null,
                 null);
     }
 
