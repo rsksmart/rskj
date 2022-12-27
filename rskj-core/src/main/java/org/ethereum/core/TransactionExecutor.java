@@ -110,6 +110,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
     private boolean storageRentEnabled; // todo(fedejinich) this is a workaround to enable storage rent just in StorageRentDSLTest, it will be removed
     private final StorageRentManager storageRentManager = new StorageRentManager();
+    private StorageRentResult storageRentResult;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -571,7 +572,7 @@ public class TransactionExecutor {
     private void payStorageRent() {
         Metric storageRentMetric = profiler.start(Profiler.PROFILING_TYPE.STORAGE_RENT);
 
-        StorageRentResult storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
+        this.storageRentResult = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(),
                 (MutableRepositoryTracked) blockTrack, (MutableRepositoryTracked) transactionTrack
         );
 
@@ -742,7 +743,7 @@ public class TransactionExecutor {
 
     @VisibleForTesting
     public StorageRentResult getStorageRentResult() {
-        return storageRentManager.getResult();
+        return this.storageRentResult;
     }
 
     @VisibleForTesting

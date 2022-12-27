@@ -17,7 +17,6 @@ public class StorageRentResult {
     private final long payableRent;
     private final long rollbacksRent;
 
-
     private StorageRentResult(Set<RentedNode> rentedNodes, Set<RentedNode> rollbackNodes, long gasAfterPayingRent,
                               long mismatchesCount, boolean outOfGas, long paidRent,
                               long payableRent, long rollbacksRent) {

@@ -23,8 +23,6 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 public class StorageRentManager {
     private static final Logger LOGGER = LoggerFactory.getLogger("execute"); // NOSONAR
 
-    private StorageRentResult result;
-
      /**
      * Pay storage rent.
      *
@@ -55,12 +53,12 @@ public class StorageRentManager {
 
         int mismatchesCount = blockTrack.getMismatchesCount() + transactionTrack.getMismatchesCount();
 
-        this.result = payRent(mismatchesCount, rentedNodes, rollbackNodes, gasRemaining, executionBlockTimestamp);
+        StorageRentResult result = payRent(mismatchesCount, rentedNodes, rollbackNodes, gasRemaining, executionBlockTimestamp);
 
         if(result.isOutOfGas()) {
             LOGGER.debug("out of gas at rent payment - storage rent result: {}", result);
 
-            return this.result;
+            return result;
         }
 
         // update rent timestamps
@@ -71,7 +69,7 @@ public class StorageRentManager {
 
         LOGGER.debug("storage rent result: {}", result);
 
-        return this.result;
+        return result;
     }
 
     private static boolean hasEnoughRent(long executionBlockTimestamp, RentedNode rentedNode) {
@@ -116,10 +114,5 @@ public class StorageRentManager {
         nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
 
         return merged;
-    }
-
-    @VisibleForTesting
-    public StorageRentResult getResult() {
-        return this.result;
     }
 }
