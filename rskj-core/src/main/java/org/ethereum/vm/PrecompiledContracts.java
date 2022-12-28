@@ -32,6 +32,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -77,6 +78,7 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String INSTALL_CODE_ADDR_STR = "0000000000000000000000000000000001000010";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -91,6 +93,7 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    private static final DataWord INSTALL_CODE_ADDR_DW = DataWord.valueFromHex(INSTALL_CODE_ADDR_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -105,6 +108,7 @@ public class PrecompiledContracts {
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
+    public static final RskAddress INSTALL_CODE_ADDR = new RskAddress(INSTALL_CODE_ADDR_STR);
 
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
@@ -124,7 +128,8 @@ public class PrecompiledContracts {
             new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137),
-            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153)
+            new AbstractMap.SimpleEntry<>(BLAKE2F_ADDR, ConsensusRule.RSKIP153),
+            new AbstractMap.SimpleEntry<>(INSTALL_CODE_ADDR, ConsensusRule.RSKIP999)
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -201,6 +206,10 @@ public class PrecompiledContracts {
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
             return new Blake2F();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP999) && address.equals(INSTALL_CODE_ADDR_DW)) {
+            return new InstallCode();
         }
 
         return null;
@@ -531,6 +540,19 @@ public class PrecompiledContracts {
                 output.putLong(h[i]);
             }
             return output.array();
+        }
+    }
+
+    public static class InstallCode extends PrecompiledContract {
+
+        @Override
+        public long getGasForData(byte[] data) {
+            throw new NotImplementedException();
+        }
+
+        @Override
+        public byte[] execute(byte[] data) throws VMException {
+            throw new NotImplementedException();
         }
     }
 
