@@ -30,7 +30,8 @@ public enum NetworkUpgrade {
     IRIS300("iris300"),
     HOP400("hop400"),
     HOP401("hop401"),
-    FINGERROOT500("fingerroot500");
+    FINGERROOT500("fingerroot500"),
+    INSTALLCODE("installcode");
 
     private String name;
 

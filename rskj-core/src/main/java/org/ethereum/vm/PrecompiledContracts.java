@@ -32,6 +32,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.trie.Trie;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -45,7 +46,9 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.crypto.cryptohash.Blake2b;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.VMException;
@@ -78,7 +81,7 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
-    public static final String INSTALL_CODE_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String INSTALL_CODE_ADDR_STR = "0000000000000000000000000000000001000011";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
@@ -544,15 +547,40 @@ public class PrecompiledContracts {
     }
 
     public static class InstallCode extends PrecompiledContract {
+        private Repository repository;
+
+        @Override
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+            super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
+            this.repository = repository;
+        }
 
         @Override
         public long getGasForData(byte[] data) {
-            throw new NotImplementedException();
+            return 1;
         }
 
         @Override
         public byte[] execute(byte[] data) throws VMException {
-            throw new NotImplementedException();
+            try {
+                // todo(fedejinich) still need to check which the proper way to encode parameters
+                ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+
+                byte[] addr = new byte[RskAddress.LENGTH_IN_BYTES];
+                byteBuffer.get(addr);
+                RskAddress rskAddress = new RskAddress(addr);
+
+                byte[] code = new byte[data.length - RskAddress.LENGTH_IN_BYTES];
+                byteBuffer.get(code);
+
+                repository.setupContract(rskAddress);
+                repository.saveCode(rskAddress, code);
+
+                return BigInteger.ONE.toByteArray();
+            } catch (Exception e) {
+                // todo(fedejinich) improve error handling
+                throw new VMException("error produced");
+            }
         }
     }
 
