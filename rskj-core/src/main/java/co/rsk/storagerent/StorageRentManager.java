@@ -1,6 +1,5 @@
 package co.rsk.storagerent;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.db.OperationType;
@@ -13,7 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static co.rsk.storagerent.StorageRentUtil.*;
+import static co.rsk.storagerent.StorageRentUtil.payableRent;
+import static co.rsk.storagerent.StorageRentUtil.rollbackFee;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 
 /**
