@@ -240,6 +240,10 @@ public class LogFilter extends Filter {
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
         for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
+            if (Thread.interrupted()) {
+                return; // TODO log sth maybe
+            }
+
             boolean isConfirmedBlock = blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
             if (isConfirmedBlock) {

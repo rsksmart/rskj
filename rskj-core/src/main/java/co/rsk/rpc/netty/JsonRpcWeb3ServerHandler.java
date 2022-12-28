@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
@@ -58,10 +59,34 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
-        try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-            
-            responseCode = jsonRpcServer.handleRequest(is, os);
+        Future<Integer> future = null;
+        String methodName = "unknown";
+        try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent); ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
+            int timeout = 30;
+            // TODO this block is just for POC purposes, it should be replaced with a proper way to get timeout per module/method
+            {
+                final JsonNode jsonNodeRequest = JacksonParserUtil.readTree(mapper, is);
+                methodName = jsonNodeRequest.get("method").asText();
+                if ("eth_getLogs".equals(methodName)) {
+                    timeout = 2;
+                }
+                // TODO tmp hack for ByteBufInputStream to be available to jsonRpcServer.handleRequest
+                is.reset();
+            }
+
+            future = Executors.newSingleThreadExecutor().submit(() -> jsonRpcServer.handleRequest(is, os));
+            responseCode = future.get(timeout, TimeUnit.SECONDS);
+        } catch (TimeoutException toe) {
+            if (!future.cancel(true)) {
+                LOGGER.warn("Could not cancel RPC {} after timeout", methodName);
+            }
+            LOGGER.error("RPC " + methodName +" timed out", toe);
+
+            int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
+            responseContent = buildErrorContent(errorCode, "RPC request timed out");
+            responseCode = errorCode;
+        } catch (InterruptedException ie) {
+            throw ie;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
