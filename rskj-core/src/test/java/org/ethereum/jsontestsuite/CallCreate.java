@@ -55,8 +55,8 @@ public class CallCreate {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
 
         this.destination = Hex.decode(destination);
-        this.gasLimit = TestCase.toBigInt(gasLimit).longValueExact();
-        this.value = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(value));
+        this.gasLimit = TestingCase.toBigInt(gasLimit).longValueExact();
+        this.value = ByteUtil.bigIntegerToBytes(TestingCase.toBigInt(value));
     }
 
     public byte[] getData() {

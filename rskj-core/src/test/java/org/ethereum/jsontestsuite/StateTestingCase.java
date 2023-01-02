@@ -27,7 +27,7 @@ import org.ethereum.jsontestsuite.model.TransactionTck;
 import java.util.List;
 import java.util.Map;
 
-public class StateTestCase {
+public class StateTestingCase {
 
 
     private EnvTck env;
@@ -39,7 +39,7 @@ public class StateTestCase {
     private TransactionTck transaction;
 
 
-    public StateTestCase() {
+    public StateTestingCase() {
     }
 
     public EnvTck getEnv() {

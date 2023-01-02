@@ -46,8 +46,10 @@ import static org.ethereum.crypto.ECKey.CURVE;
 
 public class ECIESCoder {
 
-
     public static final int KEY_SIZE = 128;
+    private static final String UNEXPECTED_CIPHER_LENGTH_EXCEPTION = "Unexpected cipher length";
+
+    private ECIESCoder(){}
 
     public static byte[] decrypt(BigInteger privKey, byte[] cipher) throws IOException, InvalidCipherTextException {
         return decrypt(privKey, cipher, null);
@@ -60,12 +62,19 @@ public class ECIESCoder {
         ByteArrayInputStream is = new ByteArrayInputStream(cipher);
         byte[] ephemBytes = new byte[2*((CURVE.getCurve().getFieldSize()+7)/8) + 1];
 
-        is.read(ephemBytes);
+        if(is.read(ephemBytes) < 0){
+            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
+        }
         ECPoint ephem = CURVE.getCurve().decodePoint(ephemBytes);
         byte[] iv = new byte[KEY_SIZE /8];
-        is.read(iv);
+
+        if(is.read(iv) < 0){
+            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
+        }
         byte[] cipherBody = new byte[is.available()];
-        is.read(cipherBody);
+        if(is.read(cipherBody) < 0){
+            throw new IOException(UNEXPECTED_CIPHER_LENGTH_EXCEPTION);
+        }
 
         plaintext = decrypt(ephem, privKey, iv, cipherBody, macData);
 
@@ -106,7 +115,7 @@ public class ECIESCoder {
      *
      *  Used for Whisper V3
      */
-    public static byte[] decryptSimple(BigInteger privKey, byte[] cipher) throws IOException, InvalidCipherTextException {
+    public static byte[] decryptSimple(BigInteger privKey, byte[] cipher) throws InvalidCipherTextException {
         EthereumIESEngine iesEngine = new EthereumIESEngine(
                 new ECDHBasicAgreement(),
                 new MGF1BytesGeneratorExt(new SHA1Digest(), 1),
@@ -161,9 +170,7 @@ public class ECIESCoder {
             bos.write(iv);
             bos.write(cipher);
             return bos.toByteArray();
-        } catch (InvalidCipherTextException e) {
-            throw Throwables.propagate(e);
-        } catch (IOException e) {
+        } catch (InvalidCipherTextException | IOException e) {
             throw Throwables.propagate(e);
         }
     }
@@ -193,4 +200,5 @@ public class ECIESCoder {
         // 256 bit EC public key, IV, 256 bit MAC
         return 65 + KEY_SIZE/8 + 32;
     }
+
 }

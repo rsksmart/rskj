@@ -61,13 +61,13 @@ public class RunTck {
         JsonNode testSuiteObj = parser.readTree(content);
 
         StateTestSuite stateTestSuite = new StateTestSuite(testSuiteObj.toString());
-        Map<String, StateTestCase> testCases = stateTestSuite.getTestCases();
+        Map<String, StateTestingCase> testCases = stateTestSuite.getTestCases();
 
         for (String testName : testCases.keySet()) {
 
             logger.info(" Test case: {}", testName);
 
-            StateTestCase stateTestCase = testCases.get(testName);
+            StateTestingCase stateTestCase = testCases.get(testName);
             List<String> result = StateTestRunner.run(stateTestCase);
 
             if (!result.isEmpty())

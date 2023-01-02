@@ -21,16 +21,14 @@ package co.rsk.net.discovery.message;
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.OptionalInt;
 
-import static org.ethereum.util.ByteUtil.*;
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.longToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Created by mario on 16/02/17.
@@ -108,7 +106,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         }
 
         byte[] ipB = fromList.get(0).getRLPData();
-        this.host = new String(ipB, Charset.forName("UTF-8"));
+        this.host = new String(ipB, StandardCharsets.UTF_8);
         this.port = ByteUtil.byteArrayToInt(fromList.get(1).getRLPData());
 
         RLPItem chk = (RLPItem) dataList.get(2);

@@ -32,18 +32,18 @@ public class BlockTestSuite {
 
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
 
-    Map<String, BlockTestCase> testCases = new HashMap<>();
+    Map<String, BlockTestingCase> testCases = new HashMap<>();
 
     public BlockTestSuite(String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, BlockTestCase.class);
+                constructMapType(HashMap.class, String.class, BlockTestingCase.class);
 
         testCases = new ObjectMapper().readValue(json, type);
     }
 
-    public Map<String, BlockTestCase> getTestCases() {
+    public Map<String, BlockTestingCase> getTestCases() {
         return testCases;
     }
 

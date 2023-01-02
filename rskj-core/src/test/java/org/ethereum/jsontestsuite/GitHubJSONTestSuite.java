@@ -49,9 +49,9 @@ public class GitHubJSONTestSuite {
         JsonNode testSuiteObj = parser.readTree(json);
 
         TestSuite testSuite = new TestSuite(testSuiteObj);
-        Iterator<TestCase> testIterator = testSuite.iterator();
+        Iterator<TestingCase> testIterator = testSuite.iterator();
 
-        for (TestCase testCase : testSuite.getAllTests()) {
+        for (TestingCase testCase : testSuite.getAllTests()) {
 
             String prefix = "    ";
             if (testName.equals(testCase.getName())) prefix = " => ";
@@ -61,7 +61,7 @@ public class GitHubJSONTestSuite {
 
         while (testIterator.hasNext()) {
 
-            TestCase testCase = testIterator.next();
+            TestingCase testCase = testIterator.next();
             if (testName.equals((testCase.getName()))) {
                 TestRunner runner = new TestRunner();
                 List<String> result = runner.runTestCase(testCase);
@@ -88,10 +88,10 @@ public class GitHubJSONTestSuite {
         JsonNode testSuiteObj = parser.readTree(json);
 
         TestSuite testSuite = new TestSuite(testSuiteObj);
-        Iterator<TestCase> testIterator = testSuite.iterator();
+        Iterator<TestingCase> testIterator = testSuite.iterator();
 
         if (logger.isDebugEnabled()) {
-        for (TestCase testCase : testSuite.getAllTests()) {
+        for (TestingCase testCase : testSuite.getAllTests()) {
             String prefix = "    ";
             if (excluded.contains(testCase.getName())) prefix = "[-] ";
             if (included!=null)
@@ -104,7 +104,7 @@ public class GitHubJSONTestSuite {
 
         while (testIterator.hasNext()) {
 
-            TestCase testCase = testIterator.next();
+            TestingCase testCase = testIterator.next();
             if (excluded.contains(testCase.getName()))
                 continue;
             if ((included!=null) && (!included.contains(testCase.getName())))
@@ -188,7 +188,7 @@ public class GitHubJSONTestSuite {
 
     private static List<String> runSingleBlockTest(BlockTestSuite testSuite, String testName){
 
-        BlockTestCase blockTestCase =  testSuite.getTestCases().get(testName);
+        BlockTestingCase blockTestCase =  testSuite.getTestCases().get(testName);
         TestRunner runner = new TestRunner();
 
         logger.info("\n\n ***************** Running test: {} ***************************** \n\n", testName);
@@ -212,7 +212,7 @@ public class GitHubJSONTestSuite {
     public static void runStateTest(String jsonSuite, String testName) throws IOException {
 
         StateTestSuite stateTestSuite = new StateTestSuite(jsonSuite);
-        Map<String, StateTestCase> testCases = stateTestSuite.getTestCases();
+        Map<String, StateTestingCase> testCases = stateTestSuite.getTestCases();
 
         for (String testCase : testCases.keySet()) {
             if (testCase.equals(testName))
@@ -221,7 +221,7 @@ public class GitHubJSONTestSuite {
                 logger.info("     " + testCase);
         }
 
-        StateTestCase testCase = testCases.get(testName);
+        StateTestingCase testCase = testCases.get(testName);
         if (testCase != null){
             String output = String.format("*  running: %s  *", testName);
             String line = output.replaceAll(".", "*");
@@ -241,7 +241,7 @@ public class GitHubJSONTestSuite {
     public static void runStateTest(String jsonSuite, Set<String> excluded) throws IOException {
 
         StateTestSuite stateTestSuite = new StateTestSuite(jsonSuite);
-        Map<String, StateTestCase> testCases = stateTestSuite.getTestCases();
+        Map<String, StateTestingCase> testCases = stateTestSuite.getTestCases();
         Map<String, Boolean> summary = new HashMap<>();
 
 

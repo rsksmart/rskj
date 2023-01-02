@@ -31,29 +31,29 @@ import java.util.*;
  */
 public class DifficultyTestSuite {
 
-    List<DifficultyTestCase> testCases = new ArrayList<>();
+    List<DifficultyTestingCase> testCases = new ArrayList<>();
 
     public DifficultyTestSuite(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, DifficultyTestCase.class);
+                constructMapType(HashMap.class, String.class, DifficultyTestingCase.class);
 
-        Map<String, DifficultyTestCase> caseMap = new ObjectMapper().readValue(json, type);
+        Map<String, DifficultyTestingCase> caseMap = new ObjectMapper().readValue(json, type);
 
-        for (Map.Entry<String, DifficultyTestCase> e : caseMap.entrySet()) {
+        for (Map.Entry<String, DifficultyTestingCase> e : caseMap.entrySet()) {
             e.getValue().setName(e.getKey());
             testCases.add(e.getValue());
         }
 
-        Collections.sort(testCases, new Comparator<DifficultyTestCase>() {
+        Collections.sort(testCases, new Comparator<DifficultyTestingCase>() {
             @Override
-            public int compare(DifficultyTestCase t1, DifficultyTestCase t2) {
+            public int compare(DifficultyTestingCase t1, DifficultyTestingCase t2) {
                 return t1.getName().compareTo(t2.getName());
             }
         });
     }
 
-    public List<DifficultyTestCase> getTestCases() {
+    public List<DifficultyTestingCase> getTestCases() {
         return testCases;
     }
 

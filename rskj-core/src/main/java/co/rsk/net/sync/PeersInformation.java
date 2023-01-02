@@ -92,10 +92,6 @@ public class PeersInformation {
         reportEventToPeerScoring(peer, eventType, message, arguments);
     }
 
-    private int getScore(NodeID peerId) {
-        return peerScoringManager.getPeerScoring(peerId).getScore();
-    }
-
     public int count() {
         return peerStatuses.size();
     }
@@ -212,19 +208,6 @@ public class PeersInformation {
         Instant otherFailInstant = getFailInstant(other.getKey());
         // note that this is in inverse order
         return otherFailInstant.compareTo(failInstant);
-    }
-
-    private int comparePeerScoring(
-            Map.Entry<NodeID, SyncPeerStatus> entry,
-            Map.Entry<NodeID, SyncPeerStatus> other) {
-        int score = getScore(entry.getKey());
-        int scoreOther = getScore(other.getKey());
-        // Treats all non-negative scores the same for calculating the best peer
-        if (score >= 0 && scoreOther >= 0) {
-            return 0;
-        }
-
-        return Integer.compare(score, scoreOther);
     }
 
     private int comparePeerTotalDifficulty(

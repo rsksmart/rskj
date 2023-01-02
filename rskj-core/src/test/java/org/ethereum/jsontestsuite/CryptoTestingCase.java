@@ -32,7 +32,7 @@ import java.math.BigInteger;
  * @author Roman Mandeleil
  * @since 08.02.2015
  */
-public class CryptoTestCase {
+public class CryptoTestingCase {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
 
@@ -42,7 +42,7 @@ public class CryptoTestCase {
     private String payload = "";
 
 
-    public CryptoTestCase(){
+    public CryptoTestingCase(){
     }
 
 
