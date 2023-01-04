@@ -5,6 +5,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.storagerent.RentedNode;
 import co.rsk.storagerent.StorageRentManager;
 import co.rsk.storagerent.StorageRentResult;
+import co.rsk.storagerent.StorageRentUtil;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -305,13 +306,13 @@ public class MutableRepositoryTrackedTest {
     public void track_trackAllDifferentKeys() {
         Map<ByteArrayWrapper, OperationType> trackedNodes = new HashMap<>();
 
-        MutableRepositoryTracked.track(key("1"), READ_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("2"), READ_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("3"), WRITE_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("4"), READ_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("5"), DELETE_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("6"), WRITE_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key("7"), DELETE_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("1"), READ_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("2"), READ_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("3"), WRITE_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("4"), READ_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("5"), DELETE_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("6"), WRITE_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key("7"), DELETE_OPERATION, trackedNodes);
 
         assertEquals(7, trackedNodes.size());
 
@@ -343,15 +344,15 @@ public class MutableRepositoryTrackedTest {
 
         ByteArrayWrapper key = key("1");
 
-        MutableRepositoryTracked.track(key, READ_OPERATION, trackedNodes);
-        MutableRepositoryTracked.track(key, READ_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key, READ_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key, READ_OPERATION, trackedNodes);
 
         // contains just one element (no duplicates)
         assertEquals(1, trackedNodes.size());
         assertEquals(READ_OPERATION, trackedNodes.get(key));
 
         // add the same key but with a lower threshold
-        MutableRepositoryTracked.track(key, WRITE_OPERATION, trackedNodes);
+        StorageRentUtil.addKey(key, WRITE_OPERATION, trackedNodes);
 
         // the key should've been replaced by the node with the lowest threshold
         assertEquals(1, trackedNodes.size());

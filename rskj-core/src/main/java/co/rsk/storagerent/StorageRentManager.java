@@ -110,8 +110,8 @@ public class StorageRentManager {
                                                                    Map<ByteArrayWrapper, OperationType> nodes2) {
         Map<ByteArrayWrapper, OperationType> merged = new HashMap<>();
 
-        nodes1.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
-        nodes2.forEach((key, operationType) -> MutableRepositoryTracked.track(key, operationType, merged));
+        nodes1.forEach((key, operationType) -> StorageRentUtil.addKey(key, operationType, merged));
+        nodes2.forEach((key, operationType) -> StorageRentUtil.addKey(key, operationType, merged));
 
         return merged;
     }

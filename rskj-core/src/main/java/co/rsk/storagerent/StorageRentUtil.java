@@ -20,12 +20,14 @@
 package co.rsk.storagerent;
 
 import co.rsk.trie.Trie;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.OperationType;
 import org.ethereum.vm.GasCost;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -220,5 +222,24 @@ public class StorageRentUtil {
         }
 
         return Math.subtractExact(currentBlockTimestamp, rentTimestamp); // this prevents overflows
+    }
+
+    /**
+     * Adds a (key, operation) entry to a map following storage-rent replacement rules
+     * @param keyToTrack a trie key
+     * @param operationTypeToTrack an operation type
+     * @param trackedNodesMap a map to add the entry
+     * */
+    public static void addKey(ByteArrayWrapper keyToTrack, OperationType operationTypeToTrack, Map<ByteArrayWrapper, OperationType> trackedNodesMap) {
+        OperationType alreadyContainedOperationType = trackedNodesMap.get(keyToTrack);
+
+        if(alreadyContainedOperationType == null) {
+            trackedNodesMap.put(keyToTrack, operationTypeToTrack);
+        } else {
+            // track nodes with the lowest threshold
+            if(rentThreshold(operationTypeToTrack) < rentThreshold(alreadyContainedOperationType)) {
+                trackedNodesMap.put(keyToTrack, operationTypeToTrack);
+            }
+        }
     }
 }

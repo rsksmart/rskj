@@ -4,6 +4,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.storagerent.RentedNode;
+import co.rsk.storagerent.StorageRentUtil;
 import co.rsk.trie.MutableTrie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static co.rsk.storagerent.StorageRentUtil.*;
 import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 import static org.ethereum.db.OperationType.*;
 
@@ -109,13 +109,13 @@ public class MutableRepositoryTracked extends MutableRepository {
 
     public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
         rentedNodes.forEach(node -> {
-            long updatedRentTimestamp = newTimestamp(
+            long updatedRentTimestamp = StorageRentUtil.newTimestamp(
                     node.getNodeSize(),
-                    rentDue(node.getNodeSize(), duration(executionBlockTimestamp, node.getRentTimestamp())),
+                    StorageRentUtil.rentDue(node.getNodeSize(), StorageRentUtil.duration(executionBlockTimestamp, node.getRentTimestamp())),
                     node.getRentTimestamp(),
                     executionBlockTimestamp,
-                    RENT_CAP,
-                    rentThreshold(node.getOperationType()));
+                    StorageRentUtil.RENT_CAP,
+                    StorageRentUtil.rentThreshold(node.getOperationType()));
 
             // only updates to bigger timestamps
             if(updatedRentTimestamp > node.getRentTimestamp()) {
@@ -195,29 +195,16 @@ public class MutableRepositoryTracked extends MutableRepository {
             return;
         }
 
-        track(new ByteArrayWrapper(rawKeyToTrack), operationType, this.trackedNodes);
-    }
-
-    public static void track(ByteArrayWrapper keyToTrack, OperationType operationTypeToTrack, Map<ByteArrayWrapper, OperationType> trackedNodesMap) {
-        OperationType alreadyContainedOperationType = trackedNodesMap.get(keyToTrack);
-
-        if(alreadyContainedOperationType == null) {
-            trackedNodesMap.put(keyToTrack, operationTypeToTrack);
-        } else {
-            // track nodes with the lowest threshold
-            if(rentThreshold(operationTypeToTrack) < rentThreshold(alreadyContainedOperationType)) {
-                trackedNodesMap.put(keyToTrack, operationTypeToTrack);
-            }
-        }
+        StorageRentUtil.addKey(new ByteArrayWrapper(rawKeyToTrack), operationType, this.trackedNodes);
     }
 
     private void mergeTrackedNodes(Map<ByteArrayWrapper, OperationType> trackedNodes) {
         // tracked nodes should ONLY be added by the trackNode() method
-        trackedNodes.forEach((key, operationType) -> track(key, operationType, this.trackedNodes));
+        trackedNodes.forEach((key, operationType) -> StorageRentUtil.addKey(key, operationType, this.trackedNodes));
     }
 
     private void addRollbackNodes(Map<ByteArrayWrapper, OperationType> rollbackNodes) {
-        rollbackNodes.forEach((key, operationType) -> track(key, operationType, this.rollbackNodes));
+        rollbackNodes.forEach((key, operationType) -> StorageRentUtil.addKey(key, operationType, this.rollbackNodes));
     }
 
     private void sumReadMismatchesCount(int childReadMismatchesCount) {
