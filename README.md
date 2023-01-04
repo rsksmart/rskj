@@ -11,7 +11,7 @@ If you have questions about the code please find us on [![Gitter](https://badges
 You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 # Getting Started
-Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
+Information about compiling and running a Rootstock node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
 The stable versions are the tags published in [releases tab](https://github.com/rsksmart/rskj/releases).
 
 # Report Security Vulnerabilities
