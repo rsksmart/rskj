@@ -29,8 +29,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
-import org.junit.Assert;
-import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -39,17 +37,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 public class PowpegMigrationTest {
-
-    private enum FederationType {
-        erp,
-        p2sh,
-        standard
-    }
 
     /***
      * Key is BtcTxHash and output index. Value is the address that received the funds
@@ -58,37 +50,38 @@ public class PowpegMigrationTest {
     private final Map<Sha256Hash, Address> whoCanSpendTheseUtxos = new HashMap<>();
 
     private void testChangePowpeg(
-            FederationType federationTypeFrom,
-            List<Triple<BtcECKey, ECKey, ECKey>> keysFrom,
-            Address expectedAddressFrom,
-            List<UTXO> existingUtxos,
-            FederationType federationTypeTo,
-            List<Triple<BtcECKey, ECKey, ECKey>> keysTo,
-            Address expectedAddressTo,
-            BridgeConstants bridgeConstants,
-            ActivationConfig.ForBlock activations,
-            long migrationShouldFinishAfterThisAmountOfBlocks
+        FederationType federationTypeFrom,
+        List<Triple<BtcECKey, ECKey, ECKey>> keysFrom,
+        Address expectedAddressFrom,
+        List<UTXO> existingUtxos,
+        FederationType federationTypeTo,
+        List<Triple<BtcECKey, ECKey, ECKey>> keysTo,
+        Address expectedAddressTo,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long migrationShouldFinishAfterThisAmountOfBlocks
     ) throws Exception {
 
         Repository repository = new MutableRepository(
-                new MutableTrieCache(
-                        new MutableTrieImpl(null, new Trie())
-                )
+            new MutableTrieCache(
+                new MutableTrieImpl(null, new Trie())
+            )
         );
         BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
-                activations
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
         );
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                bridgeConstants.getBtcParams(),
-                100,
-                100
+            bridgeConstants.getBtcParams(),
+            100,
+            100
         );
 
-        BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstants, bridgeStorageProvider, activations);
+        BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstants,
+            bridgeStorageProvider, activations);
 
         // Setting a chain head different than genesis to avoid having to read the checkpoints file
         addNewBtcBlockOnTipOfChain(btcBlockStore, bridgeConstants);
@@ -107,40 +100,42 @@ public class PowpegMigrationTest {
         when(initialBlock.getNumber()).thenReturn(blockNumber);
 
         BridgeSupport bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(initialBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(initialBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
-        List<FederationMember> originalPowpegMembers = keysFrom.stream().map(theseKeys -> new FederationMember(theseKeys.getLeft(), theseKeys.getMiddle(), theseKeys.getRight())).collect(Collectors.toList());
+        List<FederationMember> originalPowpegMembers = keysFrom.stream().map(
+            theseKeys -> new FederationMember(theseKeys.getLeft(), theseKeys.getMiddle(),
+                theseKeys.getRight())).collect(Collectors.toList());
 
         Federation originalPowpeg;
         switch (federationTypeFrom) {
             case erp:
                 originalPowpeg = new ErpFederation(
-                        originalPowpegMembers,
-                        Instant.now(),
-                        0,
-                        bridgeConstants.getBtcParams(),
-                        bridgeConstants.getErpFedPubKeysList(),
-                        bridgeConstants.getErpFedActivationDelay(),
-                        activations
+                    originalPowpegMembers,
+                    Instant.now(),
+                    0,
+                    bridgeConstants.getBtcParams(),
+                    bridgeConstants.getErpFedPubKeysList(),
+                    bridgeConstants.getErpFedActivationDelay(),
+                    activations
                 );
                 break;
             case p2sh:
                 originalPowpeg = new P2shErpFederation(
-                        originalPowpegMembers,
-                        Instant.now(),
-                        0,
-                        bridgeConstants.getBtcParams(),
-                        bridgeConstants.getErpFedPubKeysList(),
-                        bridgeConstants.getErpFedActivationDelay(),
-                        activations
+                    originalPowpegMembers,
+                    Instant.now(),
+                    0,
+                    bridgeConstants.getBtcParams(),
+                    bridgeConstants.getErpFedPubKeysList(),
+                    bridgeConstants.getErpFedActivationDelay(),
+                    activations
                 );
                 // TODO: CHECK REDEEMSCRIPT
                 break;
@@ -148,17 +143,20 @@ public class PowpegMigrationTest {
                 throw new Exception();
         }
 
-        Assert.assertEquals(expectedAddressFrom, originalPowpeg.getAddress());
+        assertEquals(expectedAddressFrom, originalPowpeg.getAddress());
 
         // Set original powpeg informatino
         bridgeStorageProvider.setNewFederation(originalPowpeg);
         bridgeStorageProvider.getNewFederationBtcUTXOs().addAll(existingUtxos);
 
         // Create Pending federation (Doing this to avoid voting the pending Federation)
-        List<FederationMember> newPowpegMembers = keysTo.stream().map(theseKeys -> new FederationMember(theseKeys.getLeft(), theseKeys.getMiddle(), theseKeys.getRight())).collect(Collectors.toList());
+        List<FederationMember> newPowpegMembers = keysTo.stream().map(
+            theseKeys -> new FederationMember(theseKeys.getLeft(), theseKeys.getMiddle(),
+                theseKeys.getRight())).collect(Collectors.toList());
         PendingFederation pendingFederation = new PendingFederation(newPowpegMembers);
         // Create the Federation just to provide it to utilitary methods
-        Federation newFederation = pendingFederation.buildFederation(Instant.now(), 0, bridgeConstants, activations);
+        Federation newFederation = pendingFederation.buildFederation(Instant.now(), 0,
+            bridgeConstants, activations);
 
         // Set pending powpeg information
         bridgeStorageProvider.setPendingFederation(pendingFederation);
@@ -169,7 +167,8 @@ public class PowpegMigrationTest {
         bridgeSupport.commitFederation(false, pendingFederation.getHash());
 
         ArgumentCaptor<Federation> argumentCaptor = ArgumentCaptor.forClass(Federation.class);
-        verify(bridgeEventLogger).logCommitFederation(any(), eq(originalPowpeg), argumentCaptor.capture());
+        verify(bridgeEventLogger).logCommitFederation(any(), eq(originalPowpeg),
+            argumentCaptor.capture());
 
         // Verify new powpeg information
         Federation newPowPeg = argumentCaptor.getValue();
@@ -188,7 +187,7 @@ public class PowpegMigrationTest {
 
         // Verify UTXOs were moved to pending POWpeg
         List<UTXO> utxosToMigrate = bridgeStorageProvider.getOldFederationBtcUTXOs();
-        for (UTXO utxo: existingUtxos) {
+        for (UTXO utxo : existingUtxos) {
             assertTrue(utxosToMigrate.stream().anyMatch(storedUtxo -> storedUtxo.equals(utxo)));
         }
         assertTrue(bridgeStorageProvider.getNewFederationBtcUTXOs().isEmpty());
@@ -212,9 +211,11 @@ public class PowpegMigrationTest {
          * peg-in after commiting new fed
          */
 
-        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, false);
+        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            expectedAddressFrom, expectedAddressTo, true, false);
 
-        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, false);
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            originalPowpeg, newFederation, true, false);
 
         /**
          * peg-out after committing new fed
@@ -222,7 +223,8 @@ public class PowpegMigrationTest {
 
         assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().isEmpty());
 
-        testPegouts(bridgeSupport, bridgeStorageProvider, bridgeConstants, activations, blockNumber, repository, bridgeEventLogger, btcBlockStoreFactory, expectedAddressFrom);
+        testPegouts(bridgeSupport, bridgeStorageProvider, bridgeConstants, activations, blockNumber,
+            repository, bridgeEventLogger, btcBlockStoreFactory, expectedAddressFrom);
 
         /***
          * Activation phase
@@ -234,15 +236,15 @@ public class PowpegMigrationTest {
         doReturn(blockNumber).when(activationBlock).getNumber();
 
         bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(activationBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(activationBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
         // New active powpeg and retiring powpeg
         assertEquals(expectedAddressTo, bridgeSupport.getFederationAddress());
@@ -265,9 +267,11 @@ public class PowpegMigrationTest {
          * peg-in after new fed activates
          */
 
-        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, true);
+        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            expectedAddressFrom, expectedAddressTo, true, true);
 
-        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, true);
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            originalPowpeg, newFederation, true, true);
 
         /***
          * Migration phase
@@ -280,15 +284,15 @@ public class PowpegMigrationTest {
         doReturn(blockNumber).when(migrationBlock).getNumber();
 
         bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(migrationBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(migrationBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
         // New active powpeg and retiring powpeg
         assertEquals(expectedAddressTo, bridgeSupport.getFederationAddress());
@@ -302,7 +306,9 @@ public class PowpegMigrationTest {
         assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
 
         // This might not be true if the transaction exceeds the max bitcoin transaction size!!!
-        int expectedMigrations = activations.isActive(ConsensusRule.RSKIP294) ? (int)Math.ceil((double)utxosToMigrate.size() / bridgeConstants.getMaxInputsPerPegoutTransaction()): 1;
+        int expectedMigrations = activations.isActive(ConsensusRule.RSKIP294) ? (int) Math.ceil(
+            (double) utxosToMigrate.size() / bridgeConstants.getMaxInputsPerPegoutTransaction())
+            : 1;
 
         // Migrate while there are still utxos to migrate
         do {
@@ -311,35 +317,43 @@ public class PowpegMigrationTest {
             bridgeSupport.updateCollections(updateCollectionsTx);
 
         } while (!bridgeStorageProvider.getOldFederationBtcUTXOs().isEmpty());
-        assertEquals(expectedMigrations, bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
-        for (ReleaseTransactionSet.Entry pegout: bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+        assertEquals(expectedMigrations,
+            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
+        for (ReleaseTransactionSet.Entry pegout : bridgeStorageProvider.getReleaseTransactionSet()
+            .getEntries()) {
             // This would fail if we were to implement UTXO expansion at some point
             assertEquals(1, pegout.getTransaction().getOutputs().size());
-            assertEquals(expectedAddressTo, pegout.getTransaction().getOutput(0).getAddressFromP2SH(bridgeConstants.getBtcParams()));
-            for (TransactionInput input: pegout.getTransaction().getInputs()) {
-                Script redeemScript = new Script(input.getScriptSig().getChunks().get(input.getScriptSig().getChunks().size() - 1).data);
+            assertEquals(expectedAddressTo, pegout.getTransaction().getOutput(0)
+                .getAddressFromP2SH(bridgeConstants.getBtcParams()));
+            for (TransactionInput input : pegout.getTransaction().getInputs()) {
+                Script redeemScript = new Script(input.getScriptSig().getChunks()
+                    .get(input.getScriptSig().getChunks().size() - 1).data);
                 Address spendingAddress = getAddressFromRedeemScript(redeemScript, bridgeConstants);
-                assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()), spendingAddress);
+                assertEquals(whoCanSpendTheseUtxos.get(input.getOutpoint().getHash()),
+                    spendingAddress);
             }
         }
 
         verifyPegouts(bridgeStorageProvider);
 
-
         /***
          * peg-in during migration
          */
 
-        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, true, true);
+        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            expectedAddressFrom, expectedAddressTo, true, true);
 
-        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, true, true);
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            originalPowpeg, newFederation, true, true);
 
         // Should be migrated
 
-        int newlyAddedUtxos = activations.isActive(ConsensusRule.RSKIP294) ? (int)Math.ceil((double)bridgeStorageProvider.getOldFederationBtcUTXOs().size() / bridgeConstants.getMaxInputsPerPegoutTransaction()): 1;
+        int newlyAddedUtxos = activations.isActive(ConsensusRule.RSKIP294) ? (int) Math.ceil(
+            (double) bridgeStorageProvider.getOldFederationBtcUTXOs().size()
+                / bridgeConstants.getMaxInputsPerPegoutTransaction()) : 1;
 
         // Migrate while there are still utxos to migrate
-        while(true) {
+        while (true) {
             updateCollectionsTx = mock(Transaction.class);
             when(updateCollectionsTx.getHash()).thenReturn(Keccak256.ZERO_HASH);
             bridgeSupport.updateCollections(updateCollectionsTx);
@@ -349,7 +363,8 @@ public class PowpegMigrationTest {
             }
         }
 
-        assertEquals(expectedMigrations + newlyAddedUtxos, bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(expectedMigrations + newlyAddedUtxos,
+            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
 
         verifyPegouts(bridgeStorageProvider);
 
@@ -359,29 +374,32 @@ public class PowpegMigrationTest {
 
         assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().isEmpty());
 
-        testPegouts(bridgeSupport, bridgeStorageProvider, bridgeConstants, activations, blockNumber, repository, bridgeEventLogger, btcBlockStoreFactory, expectedAddressTo);
+        testPegouts(bridgeSupport, bridgeStorageProvider, bridgeConstants, activations, blockNumber,
+            repository, bridgeEventLogger, btcBlockStoreFactory, expectedAddressTo);
 
         /***
          * After Migration phase
          */
 
         // Move the height to the block previous to the migration finishing, it should keep on migrating
-        blockNumber = blockNumber + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) - 2;
+        blockNumber =
+            blockNumber + bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations) - 2;
         Block migrationFinishingBlock = mock(Block.class);
         // Substracting 2 as the previous height was activation + 1 and migration is exclusive
         doReturn(blockNumber).when(migrationFinishingBlock).getNumber();
-        assertEquals(migrationShouldFinishAfterThisAmountOfBlocks, bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations));
+        assertEquals(migrationShouldFinishAfterThisAmountOfBlocks,
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations));
 
         bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(migrationFinishingBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(migrationFinishingBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
         // New active powpeg and retiring powpeg is still there
         assertEquals(expectedAddressTo, bridgeSupport.getFederationAddress());
@@ -400,18 +418,19 @@ public class PowpegMigrationTest {
         blockNumber = blockNumber + 3;
         Block migrationFinishedBlock = mock(Block.class);
         doReturn(blockNumber).when(migrationFinishedBlock).getNumber();
-        assertEquals(migrationShouldFinishAfterThisAmountOfBlocks, bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations));
+        assertEquals(migrationShouldFinishAfterThisAmountOfBlocks,
+            bridgeConstants.getFundsMigrationAgeSinceActivationEnd(activations));
 
         bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(migrationFinishedBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(migrationFinishedBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
         // New active powpeg and retiring powpeg is still there
         assertEquals(expectedAddressTo, bridgeSupport.getFederationAddress());
@@ -430,38 +449,47 @@ public class PowpegMigrationTest {
          * peg-in after migration
          */
 
-        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, expectedAddressFrom, expectedAddressTo, false, true);
+        testPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            expectedAddressFrom, expectedAddressTo, false, true);
 
-        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore, originalPowpeg, newFederation, false, true);
+        testFlyoverPegins(bridgeSupport, bridgeConstants, bridgeStorageProvider, btcBlockStore,
+            originalPowpeg, newFederation, false, true);
 
     }
 
     private void verifyPegouts(
-            BridgeStorageProvider bridgeStorageProvider
+        BridgeStorageProvider bridgeStorageProvider
     ) throws IOException {
         Federation activeFederation = bridgeStorageProvider.getNewFederation();
         Federation retiringFederation = bridgeStorageProvider.getOldFederation();
 
-        for(ReleaseTransactionSet.Entry pegoutEntry: bridgeStorageProvider.getReleaseTransactionSet().getEntries()) {
+        for (ReleaseTransactionSet.Entry pegoutEntry : bridgeStorageProvider.getReleaseTransactionSet()
+            .getEntries()) {
             BtcTransaction pegoutBtcTransaction = pegoutEntry.getTransaction();
-            for(TransactionInput input: pegoutBtcTransaction.getInputs()) {
+            for (TransactionInput input : pegoutBtcTransaction.getInputs()) {
                 // Each input should contain the right scriptsig
                 List<ScriptChunk> scriptChunks = input.getScriptSig().getChunks();
                 Federation spendingFederation = null;
-                if (Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data, activeFederation.getRedeemScript().getProgram())) {
+                if (Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data,
+                    activeFederation.getRedeemScript().getProgram())) {
                     spendingFederation = activeFederation;
                 } else if (retiringFederation != null &&
-                        Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data, retiringFederation.getRedeemScript().getProgram())) {
+                    Arrays.equals(scriptChunks.get(scriptChunks.size() - 1).data,
+                        retiringFederation.getRedeemScript().getProgram())) {
                     spendingFederation = retiringFederation;
                 } else {
                     // Does not match any? should be a flyover redeem script
-                    ScriptParserResult result = ScriptParser.parseScriptProgram(scriptChunks.get(scriptChunks.size() - 1).data);
+                    ScriptParserResult result = ScriptParser.parseScriptProgram(
+                        scriptChunks.get(scriptChunks.size() - 1).data);
                     assertFalse(result.getException().isPresent());
-                    Script standardRedeemScript = RedeemScriptParserFactory.get(result.getChunks()).extractStandardRedeemScript();
-                    if (Arrays.equals(standardRedeemScript.getProgram(), activeFederation.getStandardRedeemScript().getProgram())) {
+                    Script standardRedeemScript = RedeemScriptParserFactory.get(result.getChunks())
+                        .extractStandardRedeemScript();
+                    if (Arrays.equals(standardRedeemScript.getProgram(),
+                        activeFederation.getStandardRedeemScript().getProgram())) {
                         spendingFederation = activeFederation;
                     } else if (retiringFederation != null &&
-                            Arrays.equals(standardRedeemScript.getProgram(), retiringFederation.getStandardRedeemScript().getProgram())) {
+                        Arrays.equals(standardRedeemScript.getProgram(),
+                            retiringFederation.getStandardRedeemScript().getProgram())) {
                         spendingFederation = retiringFederation;
                     } else {
                         fail("pegout scriptsig does not match any Federation");
@@ -482,15 +510,15 @@ public class PowpegMigrationTest {
     }
 
     private void testPegouts(
-            BridgeSupport bridgeSupport,
-            BridgeStorageProvider bridgeStorageProvider,
-            BridgeConstants bridgeConstants,
-            ActivationConfig.ForBlock activations,
-            long blockNumber,
-            Repository repository,
-            BridgeEventLogger bridgeEventLogger,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            Address powpegAddress
+        BridgeSupport bridgeSupport,
+        BridgeStorageProvider bridgeStorageProvider,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations,
+        long blockNumber,
+        Repository repository,
+        BridgeEventLogger bridgeEventLogger,
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+        Address powpegAddress
     ) throws IOException {
         BtcECKey pegoutRecipient = new BtcECKey();
         ECKey pegoutSigner = ECKey.fromPrivate(pegoutRecipient.getPrivKeyBytes());
@@ -500,21 +528,22 @@ public class PowpegMigrationTest {
         int existingPegouts = bridgeStorageProvider.getReleaseTransactionSet().getEntries().size();
 
         Transaction pegoutTx = Transaction.builder()
-                .chainId((byte)1)
-                .destination(PrecompiledContracts.BRIDGE_ADDR)
-                .value(peggedOutAmount)
-                .nonce(new BtcECKey().getPrivKey()) // Using a private key to generate randomness through the nonce
-                .build();
+            .chainId((byte) 1)
+            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .value(peggedOutAmount)
+            .nonce(
+                new BtcECKey().getPrivKey()) // Using a private key to generate randomness through the nonce
+            .build();
 
         pegoutTx.sign(pegoutSigner.getPrivKeyBytes());
 
         bridgeSupport.releaseBtc(pegoutTx);
 
         assertTrue(bridgeStorageProvider.getReleaseRequestQueue().getEntries().stream()
-                .anyMatch(request ->
-                        request.getDestination().equals(pegoutRecipientAddress) &&
-                                request.getAmount().equals(peggedOutAmount.toBitcoin())
-                )
+            .anyMatch(request ->
+                request.getDestination().equals(pegoutRecipientAddress) &&
+                    request.getAmount().equals(peggedOutAmount.toBitcoin())
+            )
         );
 
         if (activations.isActive(ConsensusRule.RSKIP271)) {
@@ -525,15 +554,15 @@ public class PowpegMigrationTest {
             doReturn(blockNumber).when(nexPegoutEventBlock).getNumber();
 
             bridgeSupport = new BridgeSupportBuilder()
-                    .withProvider(bridgeStorageProvider)
-                    .withRepository(repository)
-                    .withEventLogger(bridgeEventLogger)
-                    .withExecutionBlock(nexPegoutEventBlock)
-                    .withActivations(activations)
-                    .withBridgeConstants(bridgeConstants)
-                    .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                    .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                    .build();
+                .withProvider(bridgeStorageProvider)
+                .withRepository(repository)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(nexPegoutEventBlock)
+                .withActivations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .build();
         }
 
         Transaction pegoutCreationTx = mock(Transaction.class);
@@ -541,21 +570,26 @@ public class PowpegMigrationTest {
         bridgeSupport.updateCollections(pegoutCreationTx);
 
         // Verify the recipients are the expected ones
-        assertEquals(existingPegouts + 1, bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
+        assertEquals(existingPegouts + 1,
+            bridgeStorageProvider.getReleaseTransactionSet().getEntries().size());
 
         // The last pegout is the one just created
         ReleaseTransactionSet.Entry lastPegout = null;
-        for (Iterator<ReleaseTransactionSet.Entry> collectionItr = bridgeStorageProvider.getReleaseTransactionSet().getEntries().stream().iterator(); collectionItr.hasNext(); ) {
+        for (
+            Iterator<ReleaseTransactionSet.Entry> collectionItr = bridgeStorageProvider.getReleaseTransactionSet()
+                .getEntries().stream().iterator(); collectionItr.hasNext(); ) {
             lastPegout = (ReleaseTransactionSet.Entry) collectionItr.next();
         }
 
-        for (TransactionOutput output: lastPegout.getTransaction().getOutputs()) {
+        for (TransactionOutput output : lastPegout.getTransaction().getOutputs()) {
             switch (output.getScriptPubKey().getScriptType()) {
                 case P2PKH:
-                    assertEquals(pegoutRecipientAddress, output.getAddressFromP2PKHScript(bridgeConstants.getBtcParams()));
+                    assertEquals(pegoutRecipientAddress,
+                        output.getAddressFromP2PKHScript(bridgeConstants.getBtcParams()));
                     break;
                 case P2SH:
-                    assertEquals(powpegAddress, output.getAddressFromP2SH(bridgeConstants.getBtcParams()));
+                    assertEquals(powpegAddress,
+                        output.getAddressFromP2SH(bridgeConstants.getBtcParams()));
                     break;
                 default:
                     fail("Unexpected script type");
@@ -571,233 +605,262 @@ public class PowpegMigrationTest {
         doReturn(blockNumber).when(confirmedPegoutBlock).getNumber();
 
         bridgeSupport = new BridgeSupportBuilder()
-                .withProvider(bridgeStorageProvider)
-                .withRepository(repository)
-                .withEventLogger(bridgeEventLogger)
-                .withExecutionBlock(confirmedPegoutBlock)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .withBtcBlockStoreFactory(btcBlockStoreFactory)
-                .withPeginInstructionsProvider(new PeginInstructionsProvider())
-                .build();
+            .withProvider(bridgeStorageProvider)
+            .withRepository(repository)
+            .withEventLogger(bridgeEventLogger)
+            .withExecutionBlock(confirmedPegoutBlock)
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcBlockStoreFactory(btcBlockStoreFactory)
+            .withPeginInstructionsProvider(new PeginInstructionsProvider())
+            .build();
 
         int confirmedPegouts = bridgeStorageProvider.getRskTxsWaitingForSignatures().size();
 
         // Confirm all existing pegouts
         for (int i = 0; i < existingPegouts + 1; i++) {
             // Adding a random nonce ensure the rskTxHash is different each time
-            bridgeSupport.updateCollections(Transaction.builder().nonce(new BtcECKey().getPrivKey()).build());
+            bridgeSupport.updateCollections(
+                Transaction.builder().nonce(new BtcECKey().getPrivKey()).build());
         }
         bridgeSupport.save();
 
         assertTrue(bridgeStorageProvider.getReleaseTransactionSet().getEntries().isEmpty());
-        assertEquals(confirmedPegouts + existingPegouts + 1, bridgeStorageProvider.getRskTxsWaitingForSignatures().size());
+        assertEquals(confirmedPegouts + existingPegouts + 1,
+            bridgeStorageProvider.getRskTxsWaitingForSignatures().size());
     }
 
     private void testPegins(
-            BridgeSupport bridgeSupport,
-            BridgeConstants bridgeConstants,
-            BridgeStorageProvider bridgeStorageProvider,
-            BtcBlockStore btcBlockStore,
-            Address expectedAddressFrom,
-            Address expectedAddressTo,
-            boolean shouldPeginToOldPowpegWork,
-            boolean shouldPeginToNewPowpegWork
+        BridgeSupport bridgeSupport,
+        BridgeConstants bridgeConstants,
+        BridgeStorageProvider bridgeStorageProvider,
+        BtcBlockStore btcBlockStore,
+        Address expectedAddressFrom,
+        Address expectedAddressTo,
+        boolean shouldPeginToOldPowpegWork,
+        boolean shouldPeginToNewPowpegWork
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
 
         // Perform valid peg-in to active powpeg - should work
         BtcTransaction peginToRetiringPowpeg = createPegin(
-                bridgeSupport,
-                bridgeConstants,
-                btcBlockStore,
-                Arrays.asList(new TransactionOutput(bridgeConstants.getBtcParams(), null, Coin.COIN, expectedAddressFrom)),
-                true,
-                true,
-                true
+            bridgeSupport,
+            bridgeConstants,
+            btcBlockStore,
+            Arrays.asList(new TransactionOutput(bridgeConstants.getBtcParams(), null, Coin.COIN,
+                expectedAddressFrom)),
+            true,
+            true,
+            true
         );
 
-        assertEquals(true, bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowpeg.getHash()));
-        assertEquals(shouldPeginToOldPowpegWork, bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowpeg.getHash())));
-        assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowpeg.getHash())));
+        assertEquals(true,
+            bridgeSupport.isBtcTxHashAlreadyProcessed(peginToRetiringPowpeg.getHash()));
+        assertEquals(shouldPeginToOldPowpegWork,
+            bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowpeg.getHash())));
+        assertFalse(bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+            .anyMatch(utxo -> utxo.getHash().equals(peginToRetiringPowpeg.getHash())));
 
         if (!expectedAddressFrom.equals(expectedAddressTo)) {
             // Perform valid peg-in to future powpeg - should be ignored
             BtcTransaction peginToFuturePowpeg = createPegin(
-                    bridgeSupport,
-                    bridgeConstants,
-                    btcBlockStore,
-                    Arrays.asList(new TransactionOutput(bridgeConstants.getBtcParams(), null, Coin.COIN, expectedAddressTo)),
-                    true,
-                    true,
-                    true
+                bridgeSupport,
+                bridgeConstants,
+                btcBlockStore,
+                Arrays.asList(new TransactionOutput(bridgeConstants.getBtcParams(), null, Coin.COIN,
+                    expectedAddressTo)),
+                true,
+                true,
+                true
             );
 
             // This assertion should change when we change peg-in verification
-            assertEquals(true, bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowpeg.getHash()));
-            assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream().anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowpeg.getHash())));
-            assertEquals(shouldPeginToNewPowpegWork, bridgeStorageProvider.getNewFederationBtcUTXOs().stream().anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowpeg.getHash())));
+            assertEquals(true,
+                bridgeSupport.isBtcTxHashAlreadyProcessed(peginToFuturePowpeg.getHash()));
+            assertFalse(bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                .anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowpeg.getHash())));
+            assertEquals(shouldPeginToNewPowpegWork,
+                bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+                    .anyMatch(utxo -> utxo.getHash().equals(peginToFuturePowpeg.getHash())));
         }
 
     }
 
-    private void attemptToCreateNewFederation(BridgeSupport bridgeSupport, BridgeConstants bridgeConstants, int expectedResult) throws BridgeIllegalArgumentException {
+    private void attemptToCreateNewFederation(BridgeSupport bridgeSupport,
+        BridgeConstants bridgeConstants, int expectedResult) throws BridgeIllegalArgumentException {
         ABICallSpec createSpec = new ABICallSpec("create", new byte[][]{});
         Transaction voteTx = mock(Transaction.class);
-        when(voteTx.getSender()).thenReturn(new RskAddress(bridgeConstants.getFederationChangeAuthorizer().authorizedAddresses.get(0)));
-        assertEquals(expectedResult, bridgeSupport.voteFederationChange(voteTx, createSpec).intValue());
+        when(voteTx.getSender()).thenReturn(new RskAddress(
+            bridgeConstants.getFederationChangeAuthorizer().authorizedAddresses.get(0)));
+        assertEquals(expectedResult,
+            bridgeSupport.voteFederationChange(voteTx, createSpec).intValue());
     }
 
-    private Address getAddressFromRedeemScript(Script redeemScript, BridgeConstants bridgeConstants) {
+    private Address getAddressFromRedeemScript(Script redeemScript,
+        BridgeConstants bridgeConstants) {
         return Address.fromP2SHHash(
-                bridgeConstants.getBtcParams(),
-                ScriptBuilder.createP2SHOutputScript(redeemScript).getPubKeyHash()
+            bridgeConstants.getBtcParams(),
+            ScriptBuilder.createP2SHOutputScript(redeemScript).getPubKeyHash()
         );
     }
 
     private void testFlyoverPegins(
-            BridgeSupport bridgeSupport,
-            BridgeConstants bridgeConstants,
-            BridgeStorageProvider bridgeStorageProvider,
-            BtcBlockStore btcBlockStore,
-            Federation recipientOldFederation,
-            Federation recipientNewFederation,
-            boolean shouldPeginToOldPowpegWork,
-            boolean shouldPeginToNewPowpegWork
+        BridgeSupport bridgeSupport,
+        BridgeConstants bridgeConstants,
+        BridgeStorageProvider bridgeStorageProvider,
+        BtcBlockStore btcBlockStore,
+        Federation recipientOldFederation,
+        Federation recipientNewFederation,
+        boolean shouldPeginToOldPowpegWork,
+        boolean shouldPeginToNewPowpegWork
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Pair<BtcTransaction, Keccak256> flyoverPeginToRetiringPowpeg =
-                createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore, recipientOldFederation, true, true, true);
+            createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore,
+                recipientOldFederation, true, true, true);
 
         assertEquals(
-                shouldPeginToOldPowpegWork,
-                bridgeStorageProvider.isFlyoverDerivationHashUsed(
-                        flyoverPeginToRetiringPowpeg.getLeft().getHash(),
-                        flyoverPeginToRetiringPowpeg.getRight()
-                )
+            shouldPeginToOldPowpegWork,
+            bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                flyoverPeginToRetiringPowpeg.getLeft().getHash(),
+                flyoverPeginToRetiringPowpeg.getRight()
+            )
         );
         assertEquals(
-                shouldPeginToOldPowpegWork,
-                bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
-                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
+            shouldPeginToOldPowpegWork,
+            bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                .anyMatch(
+                    utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
         );
         assertFalse(
-                bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
-                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
+            bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+                .anyMatch(
+                    utxo -> utxo.getHash().equals(flyoverPeginToRetiringPowpeg.getLeft().getHash()))
         );
 
         Pair<BtcTransaction, Keccak256> flyoverPeginToNewPowpeg =
-                createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore, recipientNewFederation, true, true, true);
+            createFlyoverPegin(bridgeSupport, bridgeConstants, btcBlockStore,
+                recipientNewFederation, true, true, true);
 
         assertEquals(
-                shouldPeginToNewPowpegWork,
-                bridgeStorageProvider.isFlyoverDerivationHashUsed(
-                        flyoverPeginToNewPowpeg.getLeft().getHash(),
-                        flyoverPeginToNewPowpeg.getRight()
-                )
+            shouldPeginToNewPowpegWork,
+            bridgeStorageProvider.isFlyoverDerivationHashUsed(
+                flyoverPeginToNewPowpeg.getLeft().getHash(),
+                flyoverPeginToNewPowpeg.getRight()
+            )
         );
         assertFalse(
-                bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
-                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
+            bridgeStorageProvider.getOldFederationBtcUTXOs().stream()
+                .anyMatch(
+                    utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
         );
         assertEquals(
-                shouldPeginToNewPowpegWork,
-                bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
-                        .anyMatch(utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
+            shouldPeginToNewPowpegWork,
+            bridgeStorageProvider.getNewFederationBtcUTXOs().stream()
+                .anyMatch(
+                    utxo -> utxo.getHash().equals(flyoverPeginToNewPowpeg.getLeft().getHash()))
         );
     }
 
     private Pair<BtcTransaction, Keccak256> createFlyoverPegin(
-            BridgeSupport bridgeSupport,
-            BridgeConstants bridgeConstants,
-            BtcBlockStore blockStore,
-            Federation recipientFederation,
-            boolean shouldExistInBlockStore,
-            boolean shouldBeConfirmed,
-            boolean shouldHaveValidPmt
+        BridgeSupport bridgeSupport,
+        BridgeConstants bridgeConstants,
+        BtcBlockStore blockStore,
+        Federation recipientFederation,
+        boolean shouldExistInBlockStore,
+        boolean shouldBeConfirmed,
+        boolean shouldHaveValidPmt
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         InternalTransaction flyoverPeginTx = new InternalTransaction(
-                Keccak256.ZERO_HASH.getBytes(),
-                0,
-                0,
-                null,
-                null,
-                null,
-                lbcAddress.getBytes(),
-                null,
-                null,
-                null,
-                null
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
         );
 
         BtcTransaction peginBtcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         // Randomize the input to avoid repeating same Btc tx hash
-        peginBtcTx.addInput(PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1), 0, new Script(new byte[]{}));
+        peginBtcTx.addInput(PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1), 0,
+            new Script(new byte[]{}));
 
         // The derivation arguments will be randomly calculated
         // The serialization and hashing was extracted from https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP176.md#bridge
-        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(blockStore.getChainHead().getHeight() + 1);
-        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
-        Address liquidityProviderBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(bridgeConstants.getBtcParams());
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(
+            blockStore.getChainHead().getHeight() + 1);
+        Address userRefundBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(
+            bridgeConstants.getBtcParams());
+        Address liquidityProviderBtcAddress = PegTestUtils.createRandomP2PKHBtcAddress(
+            bridgeConstants.getBtcParams());
 
         byte[] infoToHash = new byte[94];
         System.arraycopy(
-                derivationArgumentsHash.getBytes(),
-                0,
-                infoToHash,
-                0,
-                32
+            derivationArgumentsHash.getBytes(),
+            0,
+            infoToHash,
+            0,
+            32
         );
         System.arraycopy(
-                userRefundBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(userRefundBtcAddress.getVersion()) : new byte[]{0},
-                0,
-                infoToHash,
-                32,
-                1
+            userRefundBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(
+                userRefundBtcAddress.getVersion()) : new byte[]{0},
+            0,
+            infoToHash,
+            32,
+            1
         );
         System.arraycopy(
-                userRefundBtcAddress.getHash160(),
-                0,
-                infoToHash,
-                33,
-                20
+            userRefundBtcAddress.getHash160(),
+            0,
+            infoToHash,
+            33,
+            20
         );
         System.arraycopy(
-                lbcAddress.getBytes(),
-                0,
-                infoToHash,
-                53,
-                20
+            lbcAddress.getBytes(),
+            0,
+            infoToHash,
+            53,
+            20
         );
 
         System.arraycopy(
-                liquidityProviderBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(liquidityProviderBtcAddress.getVersion()) : new byte[]{0},
-                0,
-                infoToHash,
-                73,
-                1
+            liquidityProviderBtcAddress.getVersion() != 0 ? ByteUtil.intToBytesNoLeadZeroes(
+                liquidityProviderBtcAddress.getVersion()) : new byte[]{0},
+            0,
+            infoToHash,
+            73,
+            1
         );
         System.arraycopy(
-                liquidityProviderBtcAddress.getHash160(),
-                0,
-                infoToHash,
-                74,
-                20
+            liquidityProviderBtcAddress.getHash160(),
+            0,
+            infoToHash,
+            74,
+            20
         );
         Keccak256 derivationHash = new Keccak256(HashUtil.keccak256(infoToHash));
 
         Script flyoverRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                recipientFederation.getRedeemScript(),
-                Sha256Hash.wrap(derivationHash.toHexString()) // Parsing to Sha256Hash in order to use helper. Does not change functionality
+            recipientFederation.getRedeemScript(),
+            Sha256Hash.wrap(derivationHash.toHexString())
+            // Parsing to Sha256Hash in order to use helper. Does not change functionality
         );
 
         Address recipient = Address.fromP2SHHash(
-                bridgeConstants.getBtcParams(),
-                ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript).getPubKeyHash()
+            bridgeConstants.getBtcParams(),
+            ScriptBuilder.createP2SHOutputScript(flyoverRedeemScript).getPubKeyHash()
         );
         peginBtcTx.addOutput(
-                Coin.COIN,
-                recipient
+            Coin.COIN,
+            recipient
         );
         whoCanSpendTheseUtxos.put(peginBtcTx.getHash(), recipient);
 
@@ -805,14 +868,14 @@ public class PowpegMigrationTest {
         if (shouldExistInBlockStore) {
             StoredBlock chainHead = blockStore.getChainHead();
             BtcBlock btcBlock = new BtcBlock(
-                    bridgeConstants.getBtcParams(),
-                    1,
-                    chainHead.getHeader().getHash(),
-                    peginBtcTx.getHash(),
-                    0,
-                    0,
-                    0,
-                    Arrays.asList(peginBtcTx)
+                bridgeConstants.getBtcParams(),
+                1,
+                chainHead.getHeader().getHash(),
+                peginBtcTx.getHash(),
+                0,
+                0,
+                0,
+                Arrays.asList(peginBtcTx)
             );
             height = chainHead.getHeight() + 1;
             StoredBlock storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, height);
@@ -828,22 +891,22 @@ public class PowpegMigrationTest {
         }
 
         PartialMerkleTree pmt = new PartialMerkleTree(
-                bridgeConstants.getBtcParams(),
-                new byte[] { 1 },
-                Arrays.asList(shouldHaveValidPmt ? peginBtcTx.getHash() : Sha256Hash.ZERO_HASH),
-                1
+            bridgeConstants.getBtcParams(),
+            new byte[]{1},
+            Arrays.asList(shouldHaveValidPmt ? peginBtcTx.getHash() : Sha256Hash.ZERO_HASH),
+            1
         );
 
         bridgeSupport.registerFlyoverBtcTransaction(
-                flyoverPeginTx,
-                peginBtcTx.bitcoinSerialize(),
-                height,
-                pmt.bitcoinSerialize(),
-                derivationArgumentsHash,
-                userRefundBtcAddress,
-                lbcAddress,
-                liquidityProviderBtcAddress,
-                true
+            flyoverPeginTx,
+            peginBtcTx.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize(),
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lbcAddress,
+            liquidityProviderBtcAddress,
+            true
         );
 
         bridgeSupport.save();
@@ -852,37 +915,41 @@ public class PowpegMigrationTest {
     }
 
     private BtcTransaction createPegin(
-            BridgeSupport bridgeSupport,
-            BridgeConstants bridgeConstants,
-            BtcBlockStore blockStore,
-            List<TransactionOutput> outputs,
-            boolean shouldExistInBlockStore,
-            boolean shouldBeConfirmed,
-            boolean shouldHaveValidPmt
+        BridgeSupport bridgeSupport,
+        BridgeConstants bridgeConstants,
+        BtcBlockStore blockStore,
+        List<TransactionOutput> outputs,
+        boolean shouldExistInBlockStore,
+        boolean shouldBeConfirmed,
+        boolean shouldHaveValidPmt
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Transaction peginRegistrationTx = mock(Transaction.class);
 
         BtcTransaction peginBtcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         // Randomize the input to avoid repeating same Btc tx hash
-        peginBtcTx.addInput(PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1), 0, new Script(new byte[]{}));
+        peginBtcTx.addInput(PegTestUtils.createHash(blockStore.getChainHead().getHeight() + 1), 0,
+            new Script(new byte[]{}));
         outputs.forEach(peginBtcTx::addOutput);
         // Adding OP_RETURN output to identify this peg-in as v1 and avoid sender identification
-        peginBtcTx.addOutput(Coin.ZERO, PegTestUtils.createOpReturnScriptForRsk(1, PrecompiledContracts.BRIDGE_ADDR, Optional.empty()));
+        peginBtcTx.addOutput(Coin.ZERO,
+            PegTestUtils.createOpReturnScriptForRsk(1, PrecompiledContracts.BRIDGE_ADDR,
+                Optional.empty()));
 
-        outputs.forEach(output -> whoCanSpendTheseUtxos.put(peginBtcTx.getHash(), output.getAddressFromP2SH(bridgeConstants.getBtcParams())));
+        outputs.forEach(output -> whoCanSpendTheseUtxos.put(peginBtcTx.getHash(),
+            output.getAddressFromP2SH(bridgeConstants.getBtcParams())));
 
         int height = 0;
         if (shouldExistInBlockStore) {
             StoredBlock chainHead = blockStore.getChainHead();
             BtcBlock btcBlock = new BtcBlock(
-                    bridgeConstants.getBtcParams(),
-                    1,
-                    chainHead.getHeader().getHash(),
-                    peginBtcTx.getHash(),
-                    0,
-                    0,
-                    0,
-                    Arrays.asList(peginBtcTx)
+                bridgeConstants.getBtcParams(),
+                1,
+                chainHead.getHeader().getHash(),
+                peginBtcTx.getHash(),
+                0,
+                0,
+                0,
+                Arrays.asList(peginBtcTx)
             );
             height = chainHead.getHeight() + 1;
             StoredBlock storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, height);
@@ -898,17 +965,17 @@ public class PowpegMigrationTest {
         }
 
         PartialMerkleTree pmt = new PartialMerkleTree(
-                bridgeConstants.getBtcParams(),
-                new byte[] { 1 },
-                Arrays.asList(shouldHaveValidPmt ? peginBtcTx.getHash() : Sha256Hash.ZERO_HASH),
-                1
+            bridgeConstants.getBtcParams(),
+            new byte[]{1},
+            Arrays.asList(shouldHaveValidPmt ? peginBtcTx.getHash() : Sha256Hash.ZERO_HASH),
+            1
         );
 
         bridgeSupport.registerBtcTransaction(
-                peginRegistrationTx,
-                peginBtcTx.bitcoinSerialize(),
-                height,
-                pmt.bitcoinSerialize()
+            peginRegistrationTx,
+            peginBtcTx.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize()
         );
 
         bridgeSupport.save();
@@ -916,19 +983,21 @@ public class PowpegMigrationTest {
         return peginBtcTx;
     }
 
-    private void addNewBtcBlockOnTipOfChain(BtcBlockStore blockStore, BridgeConstants bridgeConstants) throws BlockStoreException {
+    private void addNewBtcBlockOnTipOfChain(BtcBlockStore blockStore,
+        BridgeConstants bridgeConstants) throws BlockStoreException {
         StoredBlock chainHead = blockStore.getChainHead();
         BtcBlock btcBlock = new BtcBlock(
-                bridgeConstants.getBtcParams(),
-                1,
-                chainHead.getHeader().getHash(),
-                PegTestUtils.createHash(chainHead.getHeight() + 1),
-                0,
-                0,
-                0,
-                Collections.emptyList()
+            bridgeConstants.getBtcParams(),
+            1,
+            chainHead.getHeader().getHash(),
+            PegTestUtils.createHash(chainHead.getHeight() + 1),
+            0,
+            0,
+            0,
+            Collections.emptyList()
         );
-        StoredBlock storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO, chainHead.getHeight() + 1);
+        StoredBlock storedBlock = new StoredBlock(btcBlock, BigInteger.ZERO,
+            chainHead.getHeight() + 1);
         blockStore.put(storedBlock);
         blockStore.setChainHead(storedBlock);
     }
@@ -937,49 +1006,76 @@ public class PowpegMigrationTest {
         List<Triple<BtcECKey, ECKey, ECKey>> keys = new ArrayList<>();
 
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
-                ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
-                ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
-                ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
-                ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(
+                Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
-                ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
-                ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(
+                Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c")),
-                ECKey.fromPublicOnly(Hex.decode("0353dda9ae319eab0d3e1235896d58bd9840eadcf76c84244a5d7f60b1c66e45ce")),
-                ECKey.fromPublicOnly(Hex.decode("030165892c353cd3752143b5b6c55372528e7279259fe1088d6f4dc957e146e557"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("026b472f7d59d201ff1f540f111b6eb329e071c30a9d23e3d2bcd128fe73dc254c")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0353dda9ae319eab0d3e1235896d58bd9840eadcf76c84244a5d7f60b1c66e45ce")),
+            ECKey.fromPublicOnly(
+                Hex.decode("030165892c353cd3752143b5b6c55372528e7279259fe1088d6f4dc957e146e557"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
-                ECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
-                ECKey.fromPublicOnly(Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03250c11be0561b1d7ae168b1f59e39cbc1fd1ba3cf4d2140c1a365b2723a2bf93"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("0357f7ed4c118e581f49cd3b4d9dd1edb4295f4def49d6dcf2faaaaac87a1a0a42")),
-                ECKey.fromPublicOnly(Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20")),
-                ECKey.fromPublicOnly(Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("0357f7ed4c118e581f49cd3b4d9dd1edb4295f4def49d6dcf2faaaaac87a1a0a42")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03ff13a966f1e53af37ad1fa3681b1352238f4885c1d4159730f3503bb52d63b20"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("03ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f6")),
-                ECKey.fromPublicOnly(Hex.decode("03d7ff9b1de5cc746a93036b36f8d832ac1bfc64099f8aa37612745770d7fc4961")),
-                ECKey.fromPublicOnly(Hex.decode("0300754b9dc92f27cd6702f06c460607a43c16de4531bfdc569bcdecdb12c54ccf"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("03ae72827d25030818c4947a800187b1fbcc33ae751e248ae60094cc989fb880f6")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03d7ff9b1de5cc746a93036b36f8d832ac1bfc64099f8aa37612745770d7fc4961")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0300754b9dc92f27cd6702f06c460607a43c16de4531bfdc569bcdecdb12c54ccf"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299")),
-                ECKey.fromPublicOnly(Hex.decode("03095aba7a4f1fa0f98728e5230823d603abe517bdfeeb928861a73c4b9404aaf1")),
-                ECKey.fromPublicOnly(Hex.decode("02b3e34f0898759a2b5e6acd88281638d41c8da04e1fba13b5b9c3c4bf42bea3b0"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("03e05bf6002b62651378b1954820539c36ca405cbb778c225395dd9ebff6780299")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03095aba7a4f1fa0f98728e5230823d603abe517bdfeeb928861a73c4b9404aaf1")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02b3e34f0898759a2b5e6acd88281638d41c8da04e1fba13b5b9c3c4bf42bea3b0"))
         ));
         keys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("03ecd8af1e93c57a1b8c7f917bd9980af798adeb0205e9687865673353eb041e8d")),
-                ECKey.fromPublicOnly(Hex.decode("03f4d76ec9a7a2722c0b06f5f4a489152244c8801e5ff2a43df7fefd75ce8e068f")),
-                ECKey.fromPublicOnly(Hex.decode("02a935a8d59b92f9df82265cb983a76cca0308f82e9dc9dd92ff8887e2667d2a38"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("03ecd8af1e93c57a1b8c7f917bd9980af798adeb0205e9687865673353eb041e8d")),
+            ECKey.fromPublicOnly(
+                Hex.decode("03f4d76ec9a7a2722c0b06f5f4a489152244c8801e5ff2a43df7fefd75ce8e068f")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02a935a8d59b92f9df82265cb983a76cca0308f82e9dc9dd92ff8887e2667d2a38"))
         ));
 
         return keys;
@@ -992,7 +1088,7 @@ public class PowpegMigrationTest {
     private List<UTXO> createRandomUtxos(Script owner, BridgeConstants bridgeConstants) {
         List<UTXO> result = new ArrayList<>();
 
-        int howMany = getRandomInt(100,1000);
+        int howMany = getRandomInt(100, 1000);
         for (int i = 1; i <= howMany; i++) {
             Coin randomValue = Coin.valueOf(getRandomInt(10_000, 1_000_000_000));
             Sha256Hash utxoHash = PegTestUtils.createHash(i);
@@ -1004,148 +1100,201 @@ public class PowpegMigrationTest {
     }
 
     @Test
-    public void test_change_powpeg__from_erpFederation__with_mainnet_powpeg_pre_RSKIP_353__creates_erpFederation() throws Exception {
+    public void test_change_powpeg__from_erpFederation__with_mainnet_powpeg_pre_RSKIP_353__creates_erpFederation()
+        throws Exception {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
-        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(), "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh");
-        List<UTXO> utxos = createRandomUtxos(ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
+        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(),
+            "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh");
+        List<UTXO> utxos = createRandomUtxos(
+            ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
 
         List<Triple<BtcECKey, ECKey, ECKey>> otherKeys = new ArrayList<>();
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
-                ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
-                ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
-                ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
-                ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(
+                Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
-                ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
-                ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(
+                Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
         ));
 
         testChangePowpeg(
-                FederationType.erp,
-                getMainnetPowpegKeys(),
-                originalPowpegAddress,
-                utxos,
-                FederationType.erp,
-                otherKeys,
-                Address.fromBase58(bridgeConstants.getBtcParams(), "3Lqn662zEgbPU4nRYowUo9UY7HNRkbBNgN"),
-                bridgeConstants,
-                activations,
-                10585L // This value was extracted from co.rsk.config.BridgeConstants.fundsMigrationAgeSinceActivationEnd
+            FederationType.erp,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.erp,
+            otherKeys,
+            Address.fromBase58(bridgeConstants.getBtcParams(),
+                "3Lqn662zEgbPU4nRYowUo9UY7HNRkbBNgN"),
+            bridgeConstants,
+            activations,
+            10585L
+            // This value was extracted from co.rsk.config.BridgeConstants.fundsMigrationAgeSinceActivationEnd
         );
     }
 
     @Test
-    public void test_change_powpeg__from_erpFederation__with_mainnet_powpeg_post_RSKIP_353__creates_p2shErpFederation() throws Exception {
+    public void test_change_powpeg__from_erpFederation__with_mainnet_powpeg_post_RSKIP_353__creates_p2shErpFederation()
+        throws Exception {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
-        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(), "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh");
-        List<UTXO> utxos = createRandomUtxos(ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
+        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(),
+            "3DsneJha6CY6X9gU2M9uEc4nSdbYECB4Gh");
+        List<UTXO> utxos = createRandomUtxos(
+            ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
 
         testChangePowpeg(
-                FederationType.erp,
-                getMainnetPowpegKeys(),
-                originalPowpegAddress,
-                utxos,
-                FederationType.p2sh,
-                getMainnetPowpegKeys(), // Using same keys as the original powpeg
-                Address.fromBase58(bridgeConstants.getBtcParams(), "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"),
-                bridgeConstants,
-                activations,
-                172_800L // This value was extracted from co.rsk.config.BridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd
+            FederationType.erp,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.p2sh,
+            getMainnetPowpegKeys(), // Using same keys as the original powpeg
+            Address.fromBase58(bridgeConstants.getBtcParams(),
+                "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7"),
+            bridgeConstants,
+            activations,
+            172_800L
+            // This value was extracted from co.rsk.config.BridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd
         );
     }
 
     @Test
-    public void test_change_powpeg__from_p2shErpFederation__with_mainnet_powpeg_post_RSKIP_353__creates_p2shErpFederation() throws Exception {
+    public void test_change_powpeg__from_p2shErpFederation__with_mainnet_powpeg_post_RSKIP_353__creates_p2shErpFederation()
+        throws Exception {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
-        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(), "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7");
-        List<UTXO> utxos = createRandomUtxos(ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
+        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(),
+            "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7");
+        List<UTXO> utxos = createRandomUtxos(
+            ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
 
         List<Triple<BtcECKey, ECKey, ECKey>> otherKeys = new ArrayList<>();
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
-                ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
-                ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
-                ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
-                ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(
+                Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
-                ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
-                ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(
+                Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
         ));
 
         testChangePowpeg(
-                FederationType.p2sh,
-                getMainnetPowpegKeys(),
-                originalPowpegAddress,
-                utxos,
-                FederationType.p2sh,
-                otherKeys,
-                Address.fromBase58(bridgeConstants.getBtcParams(), "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"),
-                bridgeConstants,
-                activations,
-                172_800L // This value was extracted from co.rsk.config.BridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd
+            FederationType.p2sh,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.p2sh,
+            otherKeys,
+            Address.fromBase58(bridgeConstants.getBtcParams(),
+                "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"),
+            bridgeConstants,
+            activations,
+            172_800L
+            // This value was extracted from co.rsk.config.BridgeConstants.specialCaseFundsMigrationAgeSinceActivationEnd
         );
     }
 
     @Test
-    public void test_change_powpeg__from_p2shErpFederation__with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled__creates_p2shErpFederation() throws Exception {
+    public void test_change_powpeg__from_p2shErpFederation__with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled__creates_p2shErpFederation()
+        throws Exception {
         BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
 
         ActivationConfig.ForBlock activations = ActivationConfigsForTest
-                .hop401(Collections.singletonList(ConsensusRule.RSKIP357))
-                .forBlock(0);
+            .hop401(Collections.singletonList(ConsensusRule.RSKIP357))
+            .forBlock(0);
 
-        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(), "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7");
-        List<UTXO> utxos = createRandomUtxos(ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
+        Address originalPowpegAddress = Address.fromBase58(bridgeConstants.getBtcParams(),
+            "3AboaP7AAJs4us95cWHxK4oRELmb4y7Pa7");
+        List<UTXO> utxos = createRandomUtxos(
+            ScriptBuilder.createOutputScript(originalPowpegAddress), bridgeConstants);
 
         List<Triple<BtcECKey, ECKey, ECKey>> otherKeys = new ArrayList<>();
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
-                ECKey.fromPublicOnly(Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
-                ECKey.fromPublicOnly(Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("020ace50bab1230f8002a0bfe619482af74b338cc9e4c956add228df47e6adae1c")),
+            ECKey.fromPublicOnly(
+                Hex.decode("0305a99716bcdbb4c0686906e77daf8f7e59e769d1f358a88a23e3552376f14ed2")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be1c54e8582e744d0d5d6a9b8e4a6d810029bcefc30e39b54688c4f1b718c0ee"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
-                ECKey.fromPublicOnly(Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
-                ECKey.fromPublicOnly(Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("0231a395e332dde8688800a0025cccc5771ea1aa874a633b8ab6e5c89d300c7c36")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02e3f03aa985357dc356c2a763b44310b22be3b960303a67cde948fcfba97f5309")),
+            ECKey.fromPublicOnly(
+                Hex.decode("029963d972f8a4ccac4bad60ed8b20ec83f6a15ca7076e057cccb4a34eed1a14d0"))
         ));
         otherKeys.add(Triple.of(
-                BtcECKey.fromPublicOnly(Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
-                ECKey.fromPublicOnly(Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
-                ECKey.fromPublicOnly(Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
+            BtcECKey.fromPublicOnly(
+                Hex.decode("025093f439fb8006fd29ab56605ffec9cdc840d16d2361004e1337a2f86d8bd2db")),
+            ECKey.fromPublicOnly(
+                Hex.decode("02be5d357d62be7b2d42de0343d1297129a0a8b5f6b8bb8c46eefc9504db7b56e1")),
+            ECKey.fromPublicOnly(
+                Hex.decode("032706b02f64b38b4ef7c75875aaf65de868c4aa0d2d042f724e16924fa13ffa6c"))
         ));
 
         testChangePowpeg(
-                FederationType.p2sh,
-                getMainnetPowpegKeys(),
-                originalPowpegAddress,
-                utxos,
-                FederationType.p2sh,
-                otherKeys,
-                Address.fromBase58(bridgeConstants.getBtcParams(), "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"),
-                bridgeConstants,
-                activations,
-                10585L // This value was extracted from co.rsk.config.BridgeConstants.fundsMigrationAgeSinceActivationEnd
+            FederationType.p2sh,
+            getMainnetPowpegKeys(),
+            originalPowpegAddress,
+            utxos,
+            FederationType.p2sh,
+            otherKeys,
+            Address.fromBase58(bridgeConstants.getBtcParams(),
+                "3BqwgR9sxEsKUaApV6zJ5eU7DnabjjCvSU"),
+            bridgeConstants,
+            activations,
+            10585L
+            // This value was extracted from co.rsk.config.BridgeConstants.fundsMigrationAgeSinceActivationEnd
         );
+    }
+
+    private enum FederationType {
+        erp,
+        p2sh,
+        standard
     }
 
 }
