@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.squareup.okhttp.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValueFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.ethereum.rpc.Web3;
@@ -21,11 +24,14 @@ import org.mockito.Mockito;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -67,7 +73,7 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -113,7 +119,7 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -159,7 +165,7 @@ class Web3HttpServerTest {
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", InetAddress.getLoopbackAddress(), new ArrayList<>());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 1, new TestSystemProperties());
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
 
@@ -233,13 +239,48 @@ class Web3HttpServerTest {
         smokeTest(APPLICATION_JSON, "127.0.0.0", google, new ArrayList<>());
     }
 
+    @Test
+    void smokeTestProducesTimeout() throws Exception {
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+
+        Function<Config, Config> decorator = rawConfig -> {
+            Config config = rawConfig.withValue("rpc.timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
+            List<? extends ConfigObject> list = config.getObjectList("rpc.modules");
+
+            ConfigObject configElement = list.get(0);
+            configElement = configElement.withValue("name", ConfigValueFactory.fromAnyRef("web3"));
+            configElement = configElement.withValue("timeout", ConfigValueFactory.fromAnyRef(1));
+            configElement = configElement.withValue("timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
+
+            List<ConfigObject> modules = new ArrayList<>(list);
+            modules.add(configElement);
+
+            config = config.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
+
+            return config;
+        };
+
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}\n";
+        smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
+    }
+
     private void smokeTest(String contentType, String host) throws Exception {
         smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
     }
 
+    private void smokeTest(String contentType, String host, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult) throws Exception {
+        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), filteredModules, decorator, mockResult);
+    }
+
     private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
-        Web3 web3Mock = Mockito.mock(Web3.class);
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         String mockResult = "output";
+
+        smokeTest(contentType, host, rpcAddress, rpcHost, filteredModules, null, mockResult);
+    }
+
+    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult) throws Exception {
+        Web3 web3Mock = Mockito.mock(Web3.class);
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
         CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
         Mockito.when(mockCorsConfiguration.hasHeader()).thenReturn(true);
@@ -247,9 +288,9 @@ class Web3HttpServerTest {
 
         int randomPort = 9999;//new ServerSocket(0).getLocalPort();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
+        TestSystemProperties testSystemProperties = decorator == null ? new TestSystemProperties() : new TestSystemProperties(decorator);
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 5, new TestSystemProperties());
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules, 5, testSystemProperties);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
         try {
@@ -261,7 +302,12 @@ class Web3HttpServerTest {
             assertThat(response.header("Content-Length"), is(notNullValue()));
             assertThat(Integer.parseInt(response.header("Content-Length")), is(responseBody.getBytes().length));
             assertThat(response.header("Connection"), is("close"));
-            assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+
+            if (mockResult.equals("output")) {
+                assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+            } else {
+                Assertions.assertEquals(jsonRpcResponse.get("result").asText(), mockResult);
+            }
         } finally {
             server.stop();
         }

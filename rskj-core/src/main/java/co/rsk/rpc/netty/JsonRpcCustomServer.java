@@ -124,7 +124,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             });
 
             try {
-                response = future.get(timeout, TimeUnit.SECONDS);
+                response = future.get(timeout, this.rskSystemProperties.getRpcTimeoutUnit());
             } catch (Throwable t) {
                 future.cancel(true);
                 ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName());
