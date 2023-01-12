@@ -74,12 +74,12 @@ public class Node implements Serializable {
             idB = nodeRLP.get(2).getRLPData();
         }
 
-        String host = new String(hostB, StandardCharsets.UTF_8);
-        int port = byteArrayToInt(portB);
+        String nodeHost = new String(hostB, StandardCharsets.UTF_8);
+        int nodePort = byteArrayToInt(portB);
 
         this.id = idB;
-        this.host = host;
-        this.port = port;
+        this.host = nodeHost;
+        this.port = nodePort;
     }
 
 
