@@ -306,17 +306,6 @@ public class ActivationConfigsForTest {
         return new ActivationConfig(consensusRules);
     }
 
-    public static ActivationConfig only(List<ConsensusRule> upgradesToEnable) {
-        Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
-        for (ConsensusRule consensusRule : upgradesToEnable) {
-            consensusRules.put(consensusRule, 0L);
-        }
-
-        return new ActivationConfig(consensusRules);
-    }
-
     public static ActivationConfig only(ConsensusRule... upgradesToEnable) {
         Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class)
             .stream()
