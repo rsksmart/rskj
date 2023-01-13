@@ -140,6 +140,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     private ReasonCode getNewPeerDisconnectionReason(Channel channel) {
         if (activePeers.containsKey(channel.getNodeId())) {
+            logger.warn("Cannot activate peer [{}], already exists with channel [{}] which  disconnection was not notified", channel.getNodeId(), activePeers.get(channel.getNodeId()));
             return ReasonCode.DUPLICATE_PEER;
         }
 
