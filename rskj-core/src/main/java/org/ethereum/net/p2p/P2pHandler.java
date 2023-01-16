@@ -135,9 +135,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     }
 
     private void processDisconnect(DisconnectMessage msg) {
-        if (msg.getReason() == ReasonCode.DUPLICATE_PEER) {
-            logger.warn("Peer rejected connection with reason DUPLICATE_PEER");
-        }
 
         if (!logger.isInfoEnabled() || msg.getReason() != ReasonCode.USELESS_PEER) {
             return;
