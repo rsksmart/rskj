@@ -203,13 +203,6 @@ public class EthModule
     }
 
     public String chainId() {
-        for (int i = 0; i < 100_000_000; i++) {
-            System.out.println(Math.random() * 7 / 4 * i);
-            
-            if (i > 500) {
-                throw new RuntimeException("error");
-            }
-        }
         return HexUtils.toJsonHex(new byte[]{chainId});
     }
 
