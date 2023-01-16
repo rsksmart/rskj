@@ -31,6 +31,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.util.HexUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
@@ -38,6 +40,8 @@ import javax.annotation.Nullable;
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilter extends Filter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogFilter.class);
+
     class LogFilterEvent extends FilterEvent {
         private final LogFilterElement el;
 
@@ -248,7 +252,8 @@ public class LogFilter extends Filter {
 
         do {
             if (Thread.interrupted()) {
-                return; // TODO log sth maybe
+                LOGGER.error("Current operation was interrupted by thread. Quitting from 'processBlocks'");
+                return;
             }
 
             boolean isConfirmedBlock = blockNumber <= bestBlockNumber - blocksBloomStore.getNoConfirmations();

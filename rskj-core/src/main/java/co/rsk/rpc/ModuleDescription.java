@@ -89,8 +89,8 @@ public class ModuleDescription {
         return timeout;
     }
 
-    public Map<String, Integer> getMethodTimeoutMap() {
-        return methodTimeoutMap;
+    public Integer getMethodTimeout(String methodName) {
+        return methodTimeoutMap.get(methodName);
     }
 
     public boolean methodIsEnable(String methodName) {

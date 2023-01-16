@@ -260,7 +260,7 @@ class Web3HttpServerTest {
             return config;
         };
 
-        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}\n";
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -306,7 +306,7 @@ class Web3HttpServerTest {
             if (mockResult.equals("output")) {
                 assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
             } else {
-                Assertions.assertEquals(jsonRpcResponse.get("result").asText(), mockResult);
+                Assertions.assertEquals(jsonRpcResponse.toString(), mockResult);
             }
         } finally {
             server.stop();

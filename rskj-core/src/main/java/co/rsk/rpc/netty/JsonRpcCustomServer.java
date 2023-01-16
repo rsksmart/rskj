@@ -18,8 +18,6 @@
 
 package co.rsk.rpc.netty;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,58 +26,29 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.googlecode.jsonrpc4j.*;
 
 import io.netty.channel.ChannelHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.*;
+import java.util.function.Function;
 
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.INTERNAL_ERROR;
 
 @ChannelHandler.Sharable
 public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("JsonRpcCustomServer");
-    private final RskSystemProperties rskSystemProperties;
-    private final List<ModuleDescription> modules;
     private final ObjectMapper mapper;
+    private final Function<String, Integer> getTimeoutFn;
+    private final TimeUnit timeoutUnit;
 
-    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, RskSystemProperties rskSystemProperties) {
+    public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, Function<String, Integer> getTimeoutFn, TimeUnit timeoutUnit) {
         super(new ObjectMapper(), handler, remoteInterface);
 
-        this.rskSystemProperties = rskSystemProperties;
-        this.modules = rskSystemProperties.getRpcModules();
+        this.getTimeoutFn = getTimeoutFn;
+        this.timeoutUnit = timeoutUnit;
         this.mapper = new ObjectMapper();
     }
 
-    private int getTimeoutByModuleAndMethod(String method) {
-        if (method.isEmpty()) {
-            return this.rskSystemProperties.getRpcTimeout();
-        }
-
-        String[] methodParts = method.split("_");
-        String moduleName = methodParts[0];
-        String methodName = methodParts[1];
-        Optional<ModuleDescription> optModule = modules.stream()
-                .filter(m -> m.getName().equals(moduleName) && m.getTimeout() > 0)
-                .findFirst();
-
-        Optional<Integer> optMethodTimeout = optModule.map(ModuleDescription::getMethodTimeoutMap).map(m -> m.get(methodName));
-
-        return optMethodTimeout.orElseGet(
-                () -> optModule.map(ModuleDescription::getTimeout).orElseGet(this.rskSystemProperties::getRpcTimeout)
-        );
-
-    }
-
     private JsonResponse createResponseError(String jsonRpc, Object id, ErrorResolver.JsonError errorObject) {
-        return createResponse(jsonRpc, id, null, errorObject);
-    }
-
-    private JsonResponse createResponse(String jsonRpc, Object id, JsonNode result, ErrorResolver.JsonError errorObject) {
         ObjectNode response = mapper.createObjectNode();
         response.put(JSONRPC, jsonRpc);
 
@@ -96,7 +65,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             responseCode = errorObject.code;
             response.set(ERROR, error);
         } else {
-            response.set(RESULT, result);
+            response.set(RESULT, null);
         }
 
         return new JsonResponse(response, responseCode);
@@ -104,37 +73,21 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
 
     @Override
     protected JsonResponse handleJsonNodeRequest(final JsonNode node) throws JsonParseException, JsonMappingException {
-        int timeout = this.getTimeoutByModuleAndMethod(
+        int timeout = getTimeoutFn.apply(
                 Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("")
         );
 
         if (node.isObject() && timeout > 0) {
-            Set<Exception> exceptions = new HashSet<>();
             JsonResponse response;
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
-            Future<JsonResponse> future = executorService.submit(() -> {
-                try {
-                    return super.handleJsonNodeRequest(node);
-                } catch (Exception e) {
-                    exceptions.add(e);
-                }
-
-                return null;
-            });
+            Future<JsonResponse> future = executorService.submit(() -> super.handleJsonNodeRequest(node));
 
             try {
-                response = future.get(timeout, this.rskSystemProperties.getRpcTimeoutUnit());
+                response = future.get(timeout, timeoutUnit);
             } catch (Throwable t) {
                 future.cancel(true);
                 ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, t.getMessage(), t.getClass().getName());
-                response = createResponseError(VERSION, NULL, jsonError);
-            }
-
-            if (!exceptions.isEmpty()) {
-                Exception exception = exceptions.iterator().next();
-
-                ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, exception.getMessage(), exception.getClass().getName());
                 response = createResponseError(VERSION, NULL, jsonError);
             }
 

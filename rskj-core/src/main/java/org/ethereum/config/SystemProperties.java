@@ -93,8 +93,6 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_GAS_CAP = "rpc.gascap";
     private static final String PROPERTY_RPC_TIMEOUT = "rpc.timeout";
     private static final String PROPERTY_RPC_TIMEOUT_UNIT = "rpc.timeoutunit";
-    private static final String PROPERTY_RPC_EVM_TIMEOUT = "rpc.evmtimeout";
-    private static final String PROPERTY_RPC_GET_LOGS_TIMEOUT = "rpc.getlogstimeout";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -742,13 +740,5 @@ public abstract class SystemProperties {
 
     public TimeUnit getRpcTimeoutUnit() {
         return configFromFiles.hasPath(PROPERTY_RPC_TIMEOUT_UNIT) ? TimeUnit.valueOf(configFromFiles.getString(PROPERTY_RPC_TIMEOUT_UNIT)) : TimeUnit.SECONDS;
-    }
-
-    public int getEvmTimeout() {
-        return configFromFiles.getInt(PROPERTY_RPC_EVM_TIMEOUT);
-    }
-
-    public int getGetLogsTimeout() {
-        return configFromFiles.getInt(PROPERTY_RPC_GET_LOGS_TIMEOUT);
     }
 }

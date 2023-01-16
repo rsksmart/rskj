@@ -32,7 +32,6 @@ import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -268,12 +267,7 @@ public class RskSystemProperties extends SystemProperties {
             }
 
             if (configElement.hasPath("methodTimeout")) {
-                configElement.getObject("methodTimeout")
-                        .unwrapped()
-                        .entrySet()
-                        .stream()
-                        .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (Integer) entry.getValue()))
-                        .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
+                fetchMethodTimeout(configElement, methodTimeoutMap);
             }
 
             List<String> enabledMethods = null;
@@ -432,5 +426,14 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean rpcZeroSignatureIfRemasc() {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
+    }
+
+    private void fetchMethodTimeout(Config configElement, Map<String, Integer> methodTimeoutMap) {
+        configElement.getObject("methodTimeout")
+                .unwrapped()
+                .entrySet()
+                .stream()
+                .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), (Integer) entry.getValue()))
+                .forEach(entry -> methodTimeoutMap.put(entry.getKey(), entry.getValue()));
     }
 }
