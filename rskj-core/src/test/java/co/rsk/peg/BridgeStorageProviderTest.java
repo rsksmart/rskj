@@ -62,7 +62,6 @@ import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -71,6 +70,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static co.rsk.peg.BridgeStorageIndexKey.*;
 
 /**
  * Created by ajlopez on 6/7/2016.
@@ -80,10 +80,6 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class BridgeStorageProviderTest {
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP = DataWord.fromString("newFederationBtcUTXOsForTestnet");
-    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP = DataWord.fromString("newFedBtcUTXOsForTestnetPostHop");
-    private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
     private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
     private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
@@ -150,11 +146,11 @@ class BridgeStorageProviderTest {
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         assertTrue(repository.isContract(contractAddress));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseRequestQueue".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseTransactionSet".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("rskTxsWaitingFS".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("newFederationBtcUTXOs".getBytes())));
-        assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("oldFederationBtcUTXOs".getBytes())));
+        assertNotNull(repository.getStorageBytes(contractAddress, RELEASE_REQUEST_QUEUE.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, RELEASE_TX_SET.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, NEW_FEDERATION_BTC_UTXOS_KEY.getKey()));
+        assertNotNull(repository.getStorageBytes(contractAddress, OLD_FEDERATION_BTC_UTXOS_KEY.getKey()));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             track,
@@ -328,12 +324,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
                 Assertions.assertEquals(2, storageCalls.size());
-                Assertions.assertEquals(DataWord.fromString("newFederation"), address);
+                Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -377,13 +373,13 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                     // First call is storage version getter
                     return new byte[0];
                 } else {
                     // Second and third calls are actual storage getters
                     Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
-                    Assertions.assertEquals(DataWord.fromString("newFederation"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -458,13 +454,13 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                     // First call is storage version getter
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
                     // Second and third calls are the actual storage getters
-                    assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
-                    assertEquals(DataWord.fromString("newFederation"), address);
+                    Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                    Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -514,8 +510,9 @@ class BridgeStorageProviderTest {
                 DataWord address = invocation.getArgument(1);
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                assertEquals(DataWord.valueOf("newFederation".getBytes(StandardCharsets.UTF_8)), address);
+                assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd},
+                        contractAddress.getBytes());
+                Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                 assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -606,12 +603,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
                 Assertions.assertEquals(2, storageCalls.size());
-                Assertions.assertEquals(DataWord.fromString("oldFederation"), address);
+                Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -653,13 +650,13 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                     // First call is storage version getter
                     return new byte[0];
                 } else {
                     // Second and third calls are actual storage getters
                     Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
-                    Assertions.assertEquals(DataWord.fromString("oldFederation"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -733,13 +730,13 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                     // First call is storage version getter
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
                     // Second and third calls are actual storage getters
-                    assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
-                    assertEquals(DataWord.fromString("oldFederation"), address);
+                    Assertions.assertTrue(storageCalls.size() == 2 || storageCalls.size() == 3);
+                    Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -790,7 +787,7 @@ class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                assertEquals(DataWord.fromString("oldFederation"), address);
+                Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -872,7 +869,7 @@ class BridgeStorageProviderTest {
 
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is null
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                Assertions.assertEquals(DataWord.fromString("oldFederation"), address);
+                Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 assertNull(data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -905,13 +902,13 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is null
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("oldFederation"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     assertNull(data);
                 }
                 return null;
@@ -946,12 +943,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return new byte[0];
             } else {
                 // Second call is the actual storage getter
-                assertEquals(2, storageCalls.size());
-                assertEquals(DataWord.fromString("pendingFederation"), address);
+                Assertions.assertEquals(2, storageCalls.size());
+                Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -988,12 +985,12 @@ class BridgeStorageProviderTest {
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
                     return new byte[0];
                 } else {
                     // Second call is the actual storage getter
                     Assertions.assertEquals(2, storageCalls.size());
-                    Assertions.assertEquals(DataWord.fromString("pendingFederation"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -1022,12 +1019,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
                 Assertions.assertEquals(2, storageCalls.size());
-                Assertions.assertEquals(DataWord.fromString("pendingFederation"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -1068,12 +1065,12 @@ class BridgeStorageProviderTest {
 
                 if (storageCalls.size() == 1) {
                     // First call is storage version getter
-                    assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
                     return RLP.encodeBigInteger(BigInteger.valueOf(1234));
                 } else {
                     // Second call is the actual storage getter
-                    assertEquals(2, storageCalls.size());
-                    assertEquals(DataWord.fromString("pendingFederation"), address);
+                    Assertions.assertEquals(2, storageCalls.size());
+                    Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                     return null;
                 }
             });
@@ -1107,7 +1104,7 @@ class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                assertEquals(DataWord.fromString("pendingFederation"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                 assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -1137,7 +1134,7 @@ class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                Assertions.assertEquals(DataWord.fromString("pendingFederation"), address);
+                Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                 assertNull(data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -1179,12 +1176,12 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageBytesCalls.size() == 1) {
-                    assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
-                    assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
+                    Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                    assertEquals(DataWord.fromString("pendingFederation"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                     assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 }
                 return null;
@@ -1217,12 +1214,12 @@ class BridgeStorageProviderTest {
                 assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
 
                 if (storageBytesCalls.size() == 1) {
-                    Assertions.assertEquals(DataWord.fromString("pendingFederationFormatVersion"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(1000), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                    Assertions.assertEquals(DataWord.fromString("pendingFederation"), address);
+                    Assertions.assertEquals(PENDING_FEDERATION_KEY.getKey(), address);
                     assertNull(data);
                 }
                 return null;
@@ -1254,7 +1251,7 @@ class BridgeStorageProviderTest {
             DataWord address = invocation.getArgument(1);
             // Make sure the bytes are got from the correct address in the repo
             assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-            assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+            Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
             return new byte[]{(byte)0xaa};
         });
 
@@ -1286,8 +1283,8 @@ class BridgeStorageProviderTest {
             RskAddress contractAddress = invocation.getArgument(0);
             DataWord address = invocation.getArgument(1);
             // Make sure the bytes are got from the correct address in the repo
-            assertArrayEquals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes());
-            assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+            assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
+            Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
             return null;
         });
 
@@ -1327,7 +1324,7 @@ class BridgeStorageProviderTest {
                 byte[] data = invocation.getArgument(2);
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                Assertions.assertEquals(DataWord.valueOf("federationElection".getBytes(StandardCharsets.UTF_8)), address);
+                Assertions.assertEquals(FEDERATION_ELECTION_KEY.getKey(), address);
                 assertArrayEquals(Hex.decode("aabb"), data);
                 return null;
             }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any(byte[].class));
@@ -1360,26 +1357,26 @@ class BridgeStorageProviderTest {
             activationsAllForks
         );
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
-            .then((InvocationOnMock invocation) -> {
-                calls.add(0);
-                RskAddress contractAddress = invocation.getArgument(0);
-                DataWord address = invocation.getArgument(1);
-                // Make sure the bytes are got from the correct address in the repo
-                assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-                assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
-                return new byte[]{(byte)0xaa};
-            });
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)))))
-            .then((InvocationOnMock invocation) -> {
-                calls.add(0);
-                RskAddress contractAddress = invocation.getArgument(0);
-                DataWord address = invocation.getArgument(1);
-                // Make sure the bytes are got from the correct address in the repo
-                assertArrayEquals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes());
-                assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
-                return new byte[]{(byte)0xbb};
-            });
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey())))
+                .then((InvocationOnMock invocation) -> {
+                    calls.add(0);
+                    RskAddress contractAddress = invocation.getArgument(0);
+                    DataWord address = invocation.getArgument(1);
+                    // Make sure the bytes are got from the correct address in the repo
+                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
+                    Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
+                    return new byte[]{(byte)0xaa};
+                });
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKey())))
+                .then((InvocationOnMock invocation) -> {
+                    calls.add(0);
+                    RskAddress contractAddress = invocation.getArgument(0);
+                    DataWord address = invocation.getArgument(1);
+                    // Make sure the bytes are got from the correct address in the repo
+                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
+                    Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), address);
+                    return new byte[]{(byte)0xbb};
+                });
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
             bridgeSerializationUtilsMocked
                 .when(() -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
@@ -1421,15 +1418,15 @@ class BridgeStorageProviderTest {
             activationsAllForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
-            .then((InvocationOnMock invocation) -> {
-                calls.add(0);
-                RskAddress contractAddress = invocation.getArgument(0);
-                DataWord address = invocation.getArgument(1);
-                // Make sure the bytes are got from the correct address in the repo
-                assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
-                Assertions.assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
-                return new byte[]{(byte)0xee};
-            });
+                .then((InvocationOnMock invocation) -> {
+                    calls.add(0);
+                    RskAddress contractAddress = invocation.getArgument(0);
+                    DataWord address = invocation.getArgument(1);
+                    // Make sure the bytes are got from the correct address in the repo
+                    assertArrayEquals(new byte[]{(byte) 0xaa, (byte) 0xbb, (byte) 0xcc, (byte) 0xdd}, contractAddress.getBytes());
+                    Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
+                    return new byte[]{(byte)0xee};
+                });
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
             bridgeSerializationUtilsMocked
                 .when(() -> BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(any(byte[].class), any(NetworkParameters.class)))
@@ -1474,18 +1471,19 @@ class BridgeStorageProviderTest {
                     return Hex.decode("ccdd");
                 });
 
-            doAnswer((InvocationOnMock invocation) -> {
-                storageBytesCalls.add(0);
-                RskAddress contractAddress = invocation.getArgument(0);
-                DataWord address = invocation.getArgument(1);
-                byte[] data = invocation.getArgument(2);
-                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                assertEquals(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
-                assertArrayEquals(Hex.decode("ccdd"), data);
-                return null;
-            })
-                .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+            Mockito
+                    .doAnswer((InvocationOnMock invocation) -> {
+                        storageBytesCalls.add(0);
+                        RskAddress contractAddress = invocation.getArgument(0);
+                        DataWord address = invocation.getArgument(1);
+                        byte[] data = invocation.getArgument(2);
+                        // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                        assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
+                        Assertions.assertEquals(LOCK_ONE_OFF_WHITELIST_KEY.getKey(), address);
+                        assertArrayEquals(Hex.decode("ccdd"), data);
+                        return null;
+                    })
+                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey()), any(byte[].class));
 
             // Mock the Unlimited serialization
             bridgeSerializationUtilsMocked
@@ -1497,18 +1495,19 @@ class BridgeStorageProviderTest {
                     return Hex.decode("bbcc");
                 });
 
-            doAnswer((InvocationOnMock invocation) -> {
-                storageBytesCalls.add(0);
-                RskAddress contractAddress = invocation.getArgument(0);
-                DataWord address = invocation.getArgument(1);
-                byte[] data = invocation.getArgument(2);
-                // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
-                assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                assertEquals(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
-                assertArrayEquals(Hex.decode("bbcc"), data);
-                return null;
-            })
-                .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("unlimitedLockWhitelist".getBytes(StandardCharsets.UTF_8))), any(byte[].class));
+            Mockito
+                    .doAnswer((InvocationOnMock invocation) -> {
+                        storageBytesCalls.add(0);
+                        RskAddress contractAddress = invocation.getArgument(0);
+                        DataWord address = invocation.getArgument(1);
+                        byte[] data = invocation.getArgument(2);
+                        // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+                        assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
+                        Assertions.assertEquals(LOCK_UNLIMITED_WHITELIST_KEY.getKey(), address);
+                        assertArrayEquals(Hex.decode("bbcc"), data);
+                        return null;
+                    })
+                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_UNLIMITED_WHITELIST_KEY.getKey()), any(byte[].class));
 
             storageProvider.saveLockWhitelist();
             // Shouldn't have tried to save nor serialize anything
@@ -1530,8 +1529,8 @@ class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
             config.getActivationConfig().forBlock(500L));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
-            .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey())))
+                .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
 
         try (MockedStatic<BridgeSerializationUtils> bridgeSerializationUtilsMocked = mockStatic(BridgeSerializationUtils.class)) {
             bridgeSerializationUtilsMocked
@@ -1546,14 +1545,12 @@ class BridgeStorageProviderTest {
                 .when(() -> BridgeSerializationUtils.serializeOneOffLockWhitelist(any(Pair.class)))
                 .thenReturn(new byte[]{(byte) 0xee});
 
-            doAnswer((InvocationOnMock invocation) -> {
-                storageCalled.set(Boolean.TRUE);
-                return null;
-            }).when(repositoryMock).addStorageBytes(
-                any(RskAddress.class),
-                eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8))),
-                eq(new byte[]{(byte) 0xee})
-            );
+            Mockito
+                    .doAnswer((InvocationOnMock invocation) -> {
+                        storageCalled.set(Boolean.TRUE);
+                        return null;
+                    })
+                    .when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(LOCK_ONE_OFF_WHITELIST_KEY.getKey()), eq(new byte[]{(byte) 0xee}));
 
             Assertions.assertTrue(storageProvider.getLockWhitelist().getSize() > 0);
 
@@ -1573,13 +1570,13 @@ class BridgeStorageProviderTest {
                 Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
                 Coin.COIN)));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue"))))
-            .then((InvocationOnMock invocation) ->
-                BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(oldEntriesList)));
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey())))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(oldEntriesList)));
 
         ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
 
-        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")));
+        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()));
 
         Assertions.assertEquals(1, result.getEntries().size());
         Assertions.assertTrue(result.getEntries().containsAll(oldEntriesList));
@@ -1602,8 +1599,8 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseRequestQueue")))).
-            thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
             activations);
@@ -1639,12 +1636,12 @@ class BridgeStorageProviderTest {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
             Assertions.assertEquals(oldEntriesList, entries);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey()), any(byte[].class));
 
         storageProvider.saveReleaseRequestQueue();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
-        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey()), any(byte[].class));
+        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()), any(byte[].class));
     }
 
     @Test
@@ -1666,8 +1663,8 @@ class BridgeStorageProviderTest {
             );
 
         Repository repositoryMock = mock(Repository.class);
-        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseRequestQueue")))).
-            thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_REQUEST_QUEUE.getKey()))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
@@ -1681,18 +1678,18 @@ class BridgeStorageProviderTest {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
             Assertions.assertEquals(entries, new ArrayList<>(Arrays.asList(oldEntry)));
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey()), any(byte[].class));
 
         doAnswer((i) -> {
             List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters, true);
             Assertions.assertEquals(entries, new ArrayList<>(Arrays.asList(newEntry)));
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()), any(byte[].class));
 
         storageProvider.saveReleaseRequestQueue();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE.getKey()), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_REQUEST_QUEUE_WITH_TXHASH.getKey()), any(byte[].class));
         Assertions.assertEquals(2, storageProvider.getReleaseRequestQueue().getEntries().size());
     }
 
@@ -1706,13 +1703,13 @@ class BridgeStorageProviderTest {
             new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
         ));
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
-            .then((InvocationOnMock invocation) ->
-                BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey())))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
         ReleaseTransactionSet result = storageProvider.getReleaseTransactionSet();
 
-        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")));
+        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET_WITH_TXHASH.getKey()));
 
         Assertions.assertEquals(1, result.getEntries().size());
         Assertions.assertTrue(result.getEntries().containsAll(oldEntriesSet));
@@ -1735,8 +1732,8 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
-            .thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey())))
+                .thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
             config.getNetworkConstants().getBridgeConstants(), activations);
@@ -1768,12 +1765,12 @@ class BridgeStorageProviderTest {
             Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
             Assertions.assertEquals(oldEntriesSet, entries);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey()), any(byte[].class));
 
         storageProvider.saveReleaseTransactionSet();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
-        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey()), any(byte[].class));
+        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET_WITH_TXHASH.getKey()), any(byte[].class));
     }
 
     @Test
@@ -1791,8 +1788,8 @@ class BridgeStorageProviderTest {
 
         Repository repositoryMock = mock(Repository.class);
 
-        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseTransactionSet")))).
-            thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+        when(repositoryMock.getStorageBytes(any(),eq(RELEASE_TX_SET.getKey()))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
 
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
         ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
@@ -1805,18 +1802,18 @@ class BridgeStorageProviderTest {
             Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
             Assertions.assertEquals(entries, oldEntriesSet);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey()), any(byte[].class));
 
         doAnswer((i) -> {
             Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters, true).getEntries();
             Assertions.assertEquals(entries, newEntriesSet);
             return true;
-        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET_WITH_TXHASH.getKey()), any(byte[].class));
 
         storageProvider.saveReleaseTransactionSet();
 
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
-        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET.getKey()), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(RELEASE_TX_SET_WITH_TXHASH.getKey()), any(byte[].class));
         Assertions.assertEquals(2, storageProvider.getReleaseTransactionSet().getEntries().size());
     }
 
@@ -1945,7 +1942,7 @@ class BridgeStorageProviderTest {
         // Once the network upgrade is active, we will store the locking cap in the repository
         verify(repository, times(1)).addStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("lockingCap"),
+            LOCKING_CAP_KEY.getKey(),
             BridgeSerializationUtils.serializeCoin(Coin.ZERO)
         );
     }
@@ -1964,14 +1961,14 @@ class BridgeStorageProviderTest {
         assertNull(provider0.getLockingCap());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LOCKING_CAP_KEY.getKey());
     }
 
     @Test
     void getLockingCap_after_fork() {
         Repository repository = mock(Repository.class);
         // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"))).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LOCKING_CAP_KEY.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
@@ -1983,7 +1980,7 @@ class BridgeStorageProviderTest {
         assertEquals(Coin.SATOSHI, provider0.getLockingCap());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LOCKING_CAP_KEY.getKey());
     }
 
     @Test
@@ -2027,8 +2024,8 @@ class BridgeStorageProviderTest {
 
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash, 1L);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-            .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey()))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -2039,8 +2036,8 @@ class BridgeStorageProviderTest {
         assertTrue(result.isPresent());
         assertEquals(Long.valueOf(1), result.get());
 
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash.toString()));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKey("-", hash.toString()));
     }
 
     @Test
@@ -2053,11 +2050,11 @@ class BridgeStorageProviderTest {
 
         HashMap<Sha256Hash, Long> hashes = new HashMap<>();
         hashes.put(hash1, 1L);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
-            .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey()))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
-            .thenReturn(BridgeSerializationUtils.serializeLong(2L));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString())))
+                .thenReturn(BridgeSerializationUtils.serializeLong(2L));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository,
@@ -2072,8 +2069,8 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(1), result.get());
 
         // old storage was accessed and new storage not
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
 
         // Get hash2 which is stored in new storage
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -2081,8 +2078,8 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
 
         // Get hash2 again
         result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
@@ -2090,8 +2087,8 @@ class BridgeStorageProviderTest {
         assertEquals(Long.valueOf(2), result.get());
 
         // No more accesses to repository, as both values are in cache
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASH_AP.getCompoundKey("-", hash2.toString()));
     }
 
     @Test
@@ -2111,7 +2108,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is accessed once to set the value
-        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2135,7 +2132,7 @@ class BridgeStorageProviderTest {
         provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2160,7 +2157,7 @@ class BridgeStorageProviderTest {
         provider0.saveHeightBtcTxHashAlreadyProcessed();
 
         // The repository is never accessed as the new storage keeps the values in cache until save
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getKey());
 
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
@@ -2431,14 +2428,14 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.empty(), provider0.getActiveFederationCreationBlockHeight());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
     }
 
     @Test
     void getActiveFederationCreationBlockHeight_after_fork() {
         Repository repository = mock(Repository.class);
         // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -2448,7 +2445,7 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.of(1L), provider0.getActiveFederationCreationBlockHeight());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
     }
 
     @Test
@@ -2493,9 +2490,9 @@ class BridgeStorageProviderTest {
 
         // Once the network upgrade is active, we will store it in the repository
         verify(repository, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("activeFedCreationBlockHeight"),
-            BridgeSerializationUtils.serializeLong(10L)
+                PrecompiledContracts.BRIDGE_ADDR,
+                ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(),
+                BridgeSerializationUtils.serializeLong(10L)
         );
     }
 
@@ -2513,9 +2510,9 @@ class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be saving to the repository
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("activeFedCreationBlockHeight")),
-            any()
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey()),
+                any()
         );
     }
 
@@ -2531,14 +2528,14 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.empty(), provider0.getNextFederationCreationBlockHeight());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
     }
 
     @Test
     void getNextFederationCreationBlockHeight_after_fork() {
         Repository repository = mock(Repository.class);
         // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -2548,7 +2545,7 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.of(1L), provider0.getNextFederationCreationBlockHeight());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey());
     }
 
     @Test
@@ -2591,9 +2588,9 @@ class BridgeStorageProviderTest {
 
         // Once the network upgrade is active, we will store it in the repository
         verify(repository1, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("nextFedCreationBlockHeight"),
-            BridgeSerializationUtils.serializeLong(10L)
+                PrecompiledContracts.BRIDGE_ADDR,
+                NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(),
+                BridgeSerializationUtils.serializeLong(10L)
         );
 
         Repository repository2 = mock(Repository.class);
@@ -2608,9 +2605,9 @@ class BridgeStorageProviderTest {
 
         // Once the network upgrade is active, we will store it in the repository
         verify(repository2, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("nextFedCreationBlockHeight"),
-            null
+                PrecompiledContracts.BRIDGE_ADDR,
+                NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey(),
+                null
         );
     }
 
@@ -2753,9 +2750,9 @@ class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be saving to the repository
         verify(repository1, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("nextFedCreationBlockHeight")),
-            any()
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey()),
+                any()
         );
 
         Repository repository2 = mock(Repository.class);
@@ -2770,9 +2767,9 @@ class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be saving to the repository
         verify(repository2, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("nextFedCreationBlockHeight")),
-            any()
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY.getKey()),
+                any()
         );
     }
 
@@ -2788,7 +2785,7 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.empty(), provider0.getLastRetiredFederationP2SHScript());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey());
     }
 
     @Test
@@ -2796,8 +2793,8 @@ class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
         Script script = new Script(new byte[] {});
         // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript")))
-            .thenReturn(BridgeSerializationUtils.serializeScript(script));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey()))
+                .thenReturn(BridgeSerializationUtils.serializeScript(script));
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -2807,7 +2804,7 @@ class BridgeStorageProviderTest {
         assertEquals(Optional.of(script), provider0.getLastRetiredFederationP2SHScript());
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"));
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey());
     }
 
     @Test
@@ -2855,9 +2852,9 @@ class BridgeStorageProviderTest {
 
         // Once the network upgrade is active, we will store it in the repository
         verify(repository, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("lastRetiredFedP2SHScript"),
-            BridgeSerializationUtils.serializeScript(script)
+                PrecompiledContracts.BRIDGE_ADDR,
+                LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey(),
+                BridgeSerializationUtils.serializeScript(script)
         );
     }
 
@@ -2879,9 +2876,9 @@ class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be saving to the repository
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("lastRetiredFedP2SHScript")),
-            any()
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY.getKey()),
+                any()
         );
     }
 
@@ -3237,8 +3234,8 @@ class BridgeStorageProviderTest {
 
         long actualTimeStamp = System.currentTimeMillis();
         byte[] encodedTimeStamp = RLP.encodeBigInteger(BigInteger.valueOf(actualTimeStamp));
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("receiveHeadersLastTimestamp")))
-            .thenReturn(encodedTimeStamp);
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, RECEIVE_HEADERS_TIMESTAMP.getKey()))
+                .thenReturn(encodedTimeStamp);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -3276,9 +3273,9 @@ class BridgeStorageProviderTest {
 
         provider.save();
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("receiveHeadersLastTimestamp")),
-            any(byte[].class)
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(RECEIVE_HEADERS_TIMESTAMP.getKey()),
+                any(byte[].class)
         );
     }
 
@@ -3296,9 +3293,9 @@ class BridgeStorageProviderTest {
 
         provider.save();
         verify(repository, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("receiveHeadersLastTimestamp"),
-            BridgeSerializationUtils.serializeLong(timeInMillis)
+                PrecompiledContracts.BRIDGE_ADDR,
+                RECEIVE_HEADERS_TIMESTAMP.getKey(),
+                BridgeSerializationUtils.serializeLong(timeInMillis)
         );
     }
 
@@ -3313,9 +3310,9 @@ class BridgeStorageProviderTest {
 
         provider.save();
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("receiveHeadersLastTimestamp")),
-            any(byte[].class)
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(RECEIVE_HEADERS_TIMESTAMP.getKey()),
+                any(byte[].class)
         );
     }
 
@@ -3330,14 +3327,14 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.empty(), provider.getNextPegoutHeight());
 
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKey());
     }
 
     @Test
     void getNextPegoutHeight_after_RSKIP271_activation() {
         Repository repository = mock(Repository.class);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY)).thenReturn(new byte[] { 1 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKey())).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository, PrecompiledContracts.BRIDGE_ADDR,
@@ -3346,7 +3343,7 @@ class BridgeStorageProviderTest {
 
         assertEquals(Optional.of(1L), provider.getNextPegoutHeight());
 
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY);
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_PEGOUT_HEIGHT_KEY.getKey());
     }
 
     @Test
@@ -3386,9 +3383,9 @@ class BridgeStorageProviderTest {
         provider.saveNextPegoutHeight();
 
         verify(repository, never()).addStorageBytes(
-            eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(DataWord.fromString("nextPegoutHeight")),
-            any()
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(NEXT_PEGOUT_HEIGHT_KEY.getKey()),
+                any()
         );
     }
 
@@ -3405,9 +3402,9 @@ class BridgeStorageProviderTest {
         provider.saveNextPegoutHeight();
 
         verify(repository, times(1)).addStorageBytes(
-            PrecompiledContracts.BRIDGE_ADDR,
-            DataWord.fromString("nextPegoutHeight"),
-            BridgeSerializationUtils.serializeLong(10L)
+                PrecompiledContracts.BRIDGE_ADDR,
+                NEXT_PEGOUT_HEIGHT_KEY.getKey(),
+                BridgeSerializationUtils.serializeLong(10L)
         );
     }
 
@@ -3468,7 +3465,7 @@ class BridgeStorageProviderTest {
 
         verify(repository, times(0)).addStorageBytes(
             eq(PrecompiledContracts.BRIDGE_ADDR),
-            eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+            eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKey()),
             any()
         );
     }
@@ -3548,12 +3545,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
+                Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
                 Assertions.assertEquals(2, storageCalls.size());
-                Assertions.assertEquals(DataWord.fromString("oldFederation"), address);
+                Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -3609,13 +3606,13 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    assertEquals(DataWord.fromString("oldFederationFormatVersion"), address);
-                    assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
+                    Assertions.assertEquals(OLD_FEDERATION_FORMAT_VERSION.getKey(), address);
+                    Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    assertEquals(DataWord.fromString("oldFederation"), address);
+                    Assertions.assertEquals(OLD_FEDERATION_KEY.getKey(), address);
                     assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 }
                 return null;
@@ -3656,12 +3653,12 @@ class BridgeStorageProviderTest {
 
             if (storageCalls.size() == 1) {
                 // First call is storage version getter
-                Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                 return RLP.encodeBigInteger(BigInteger.valueOf(1234));
             } else {
                 // Second call is the actual storage getter
                 Assertions.assertEquals(2, storageCalls.size());
-                Assertions.assertEquals(DataWord.fromString("newFederation"), address);
+                Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                 return new byte[]{(byte) 0xaa};
             }
         });
@@ -3716,13 +3713,13 @@ class BridgeStorageProviderTest {
                 if (storageBytesCalls.size() == 1) {
                     // First call is the version setting
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("newFederationFormatVersion"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_FORMAT_VERSION.getKey(), address);
                     Assertions.assertEquals(BigInteger.valueOf(version), RLP.decodeBigInteger(data, 0));
                 } else {
                     Assertions.assertEquals(2, storageBytesCalls.size());
                     // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                     assertArrayEquals(Hex.decode("aabbccdd"), contractAddress.getBytes());
-                    Assertions.assertEquals(DataWord.fromString("newFederation"), address);
+                    Assertions.assertEquals(NEW_FEDERATION_KEY.getKey(), address);
                     assertArrayEquals(new byte[]{(byte) 0xbb}, data);
                 }
                 return null;
@@ -3756,7 +3753,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY
+            NEW_FEDERATION_BTC_UTXOS_KEY.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskip284Activation = Arrays.asList(
@@ -3765,7 +3762,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip284Activation));
 
         List<UTXO> federationUtxosAfterRskip293Activation = Arrays.asList(
@@ -3774,7 +3771,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_POST_HOP.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskip293Activation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3813,7 +3810,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY
+            NEW_FEDERATION_BTC_UTXOS_KEY.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
 
         List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
@@ -3822,7 +3819,7 @@ class BridgeStorageProviderTest {
         );
         when(repository.getStorageBytes(
             PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()
         )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -3838,23 +3835,23 @@ class BridgeStorageProviderTest {
         if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
             verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY.getKey()),
                 any()
             );
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP,
+                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey(),
                 BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation)
             );
         } else {
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                NEW_FEDERATION_BTC_UTXOS_KEY,
+                NEW_FEDERATION_BTC_UTXOS_KEY.getKey(),
                 BridgeSerializationUtils.serializeUTXOList(federationUtxos)
             );
             verify(repository, never()).addStorageBytes(
                 eq(PrecompiledContracts.BRIDGE_ADDR),
-                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET_PRE_HOP.getKey()),
                 any()
             );
         }

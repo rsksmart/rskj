@@ -76,8 +76,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
+import static co.rsk.peg.BridgeSupportTestUtil.*;
+import static co.rsk.peg.PegTestUtils.createUTXO;
 
-class BridgeSupportTest extends BridgeSupportTestBase {
+class BridgeSupportTest {
+    private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
+    private BridgeSupportBuilder bridgeSupportBuilder;
+
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");

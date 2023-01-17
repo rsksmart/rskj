@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.math.BigInteger;
 import java.util.*;
 
+import co.rsk.config.BridgeConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -31,6 +32,7 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 
+import static co.rsk.peg.BridgeSupportTestUtil.createRepository;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,11 +47,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.*;
 
-class BridgeSupportAddSignatureTest extends BridgeSupportTestBase {
+class BridgeSupportAddSignatureTest {
 
-    protected ActivationConfig.ForBlock activationsBeforeForks;
-    protected ActivationConfig.ForBlock activationsAfterForks;
+    private ActivationConfig.ForBlock activationsBeforeForks;
+    private ActivationConfig.ForBlock activationsAfterForks;
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private BridgeSupportBuilder bridgeSupportBuilder;
+    private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
 
     @BeforeEach
     void setUpOnEachTest() {
