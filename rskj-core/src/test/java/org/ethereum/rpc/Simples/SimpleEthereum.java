@@ -28,7 +28,8 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 
 import javax.annotation.Nonnull;
-import static org.mockito.Mockito.*;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -68,8 +69,9 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void submitTransaction(Transaction transaction) {
+    public TransactionPoolAddResult submitTransaction(Transaction transaction) {
         tx = transaction;
+        return TransactionPoolAddResult.okPendingTransaction(transaction);
     }
 
     @Override
