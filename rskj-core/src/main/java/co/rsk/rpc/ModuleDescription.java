@@ -21,6 +21,7 @@ package co.rsk.rpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 19/04/2017.
@@ -89,6 +90,16 @@ public class ModuleDescription {
         return timeout;
     }
 
+    public int getTimeout(String methodName, int defaultTimeout) {
+        if (methodName.isEmpty()) {
+            return defaultTimeout;
+        }
+
+        Optional<Integer> optMethodTimeout = Optional.ofNullable(getMethodTimeout(methodName));
+
+        return optMethodTimeout.orElseGet(this::getTimeout);
+    }
+
     public Integer getMethodTimeout(String methodName) {
         return methodTimeoutMap.get(methodName);
     }
@@ -120,6 +131,4 @@ public class ModuleDescription {
 
         return true;
     }
-
-
 }

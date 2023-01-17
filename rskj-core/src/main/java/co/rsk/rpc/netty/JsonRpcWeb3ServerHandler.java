@@ -24,7 +24,6 @@ import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.JsonRpcRequestValidatorInterceptor;
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.util.GeneralUtil;
 import co.rsk.util.JacksonParserUtil;
 import co.rsk.rpc.exception.JsonRpcRequestPayloadException;
 import com.fasterxml.jackson.core.JsonProcessingException;

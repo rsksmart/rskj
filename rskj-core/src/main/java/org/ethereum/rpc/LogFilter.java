@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilter extends Filter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LogFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogFilter.class);
 
     class LogFilterEvent extends FilterEvent {
         private final LogFilterElement el;
@@ -252,7 +252,7 @@ public class LogFilter extends Filter {
 
         do {
             if (Thread.interrupted()) {
-                LOGGER.error("Current operation was interrupted by thread. Quitting from 'processBlocks'");
+                logger.error("Current operation was interrupted by thread. Quitting from 'processBlocks'");
                 return;
             }
 
