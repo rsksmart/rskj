@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.listener.EthereumListener;
 
 /**
@@ -39,9 +40,9 @@ public interface Ethereum {
 
     /**
      * @param transaction submit transaction to the net, return option to wait for net
-     *                    return this transaction as approved
+     * @return the result of adding the transaction to the pool.
      */
-    void submitTransaction(Transaction transaction);
+    TransactionPoolAddResult submitTransaction(Transaction transaction);
 
     /**
      * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices

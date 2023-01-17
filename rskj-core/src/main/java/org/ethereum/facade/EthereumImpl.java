@@ -74,8 +74,8 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public void submitTransaction(Transaction transaction) {
-        transactionGateway.receiveTransaction(transaction);
+    public TransactionPoolAddResult submitTransaction(Transaction transaction) {
+        return transactionGateway.receiveTransaction(transaction);
     }
 
     @Override
