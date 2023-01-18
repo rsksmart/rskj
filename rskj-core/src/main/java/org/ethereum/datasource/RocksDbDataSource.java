@@ -50,13 +50,15 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
     private final String databaseDir;
     private final String name;
+
+    private final Options options = createOptions();
     private RocksDB db;
     private boolean alive;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
     // accessing a closed DB.
-    // The rocksdbJNI lib has a protection over accessing closed DB but it is not synchronized
+    // The rocksdbJNI lib has a protection over accessing closed DB, but it is not synchronized
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
     // however blocks them on init/close/delete operations
     private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
@@ -73,11 +75,14 @@ public class RocksDbDataSource implements KeyValueDataSource {
         return ds;
     }
 
+
+
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_INIT);
-        try (Options options = new Options()) {
+
+        try {
             logger.debug("~> RocksDbDataSource.init(): {}", name);
 
             if (isAlive()) {
@@ -86,20 +91,13 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
             Objects.requireNonNull(name, "no name set to the db");
 
-            options.setCreateIfMissing(true);
-            options.setCompressionType(CompressionType.NO_COMPRESSION);
-            options.setArenaBlockSize(GENERAL_SIZE);
-            options.setWriteBufferSize(GENERAL_SIZE);
-
-            options.setParanoidChecks(true);
-
             logger.debug("Opening database");
             Path dbPath = getPathForName(name, databaseDir);
 
             Files.createDirectories(dbPath.getParent());
 
             logger.debug("Initializing new or existing database: '{}'", name);
-            openDb(options, dbPath);
+            openDb(dbPath);
 
             logger.debug("<~ RocksDbDataSource.init(): {}", name);
         } catch (RocksDBException ioe) {
@@ -116,7 +114,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void openDb(Options options, Path dbPath) throws RocksDBException {
+    private void openDb(Path dbPath) throws RocksDBException {
         db = RocksDB.open(options, dbPath.toString());
 
         alive = true;
@@ -369,5 +367,15 @@ public class RocksDbDataSource implements KeyValueDataSource {
     @Override
     public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
+    }
+
+    private static Options createOptions() {
+        Options options = new Options();
+        options.setCreateIfMissing(true);
+        options.setCompressionType(CompressionType.NO_COMPRESSION);
+        options.setArenaBlockSize(GENERAL_SIZE);
+        options.setWriteBufferSize(GENERAL_SIZE);
+        options.setParanoidChecks(true);
+        return options;
     }
 }
