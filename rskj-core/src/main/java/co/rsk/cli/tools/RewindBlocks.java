@@ -95,6 +95,8 @@ public class RewindBlocks extends CliToolRskContextAware {
         long minInconsistentBlockNum = findMinInconsistentBlock(blockStore, repositoryLocator);
         if (minInconsistentBlockNum == -1) {
             printer.println("No inconsistent block has been found. Nothing to do");
+        } else if (minInconsistentBlockNum < blockStore.getMinNumber()) {
+            printer.println("Cannot rewind to " + minInconsistentBlockNum + ", such block is not in store.");
         } else {
             printer.println("Min inconsistent block number: " + minInconsistentBlockNum);
             rewindBlocks(minInconsistentBlockNum - 1, blockStore);
@@ -122,7 +124,7 @@ public class RewindBlocks extends CliToolRskContextAware {
     }
 
     private void rewindBlocks(long blockNumber, BlockStore blockStore) {
-        long maxNumber = blockStore.getMaxNumber();
+        long maxNumber = tryGetMaxNumber(blockStore);
 
         printInfo("Highest block number stored in db: {}", maxNumber);
         printInfo("Block number to rewind to: {}", blockNumber);
@@ -134,10 +136,20 @@ public class RewindBlocks extends CliToolRskContextAware {
 
             printer.println("Done");
 
-            maxNumber = blockStore.getMaxNumber();
+            maxNumber = tryGetMaxNumber(blockStore);
             printer.println("New highest block number stored in db: " + maxNumber);
         } else {
             printer.println("No need to rewind");
         }
+    }
+
+    private static long tryGetMaxNumber(BlockStore blockStore) {
+        long maxNumber;
+        try {
+            maxNumber = blockStore.getMaxNumber();
+        } catch (IllegalStateException ise) {
+            maxNumber = -1;
+        }
+        return maxNumber;
     }
 }
