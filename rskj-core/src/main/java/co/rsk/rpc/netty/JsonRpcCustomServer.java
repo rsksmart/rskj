@@ -19,8 +19,6 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.ModuleDescription;
-import co.rsk.rpc.exception.JsonRpcMethodInvalidException;
-import co.rsk.rpc.exception.JsonRpcMethodNotFoundException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,6 +28,7 @@ import com.googlecode.jsonrpc4j.*;
 
 import io.netty.channel.ChannelHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -47,13 +46,13 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
     public JsonRpcCustomServer(final Object handler, final Class<?> remoteInterface, List<ModuleDescription> modules, int defaultTimeout, TimeUnit timeoutUnit) {
         super(new ObjectMapper(), handler, remoteInterface);
 
-        this.modules = modules;
+        this.modules = new ArrayList<>(modules);
         this.defaultTimeout = defaultTimeout;
         this.timeoutUnit = timeoutUnit;
         this.mapper = new ObjectMapper();
     }
 
-    private JsonResponse createResponseError(String jsonRpc, Object id, ErrorResolver.JsonError errorObject) {
+    private JsonResponse customCreateResponseError(String jsonRpc, Object id, ErrorResolver.JsonError errorObject) {
         ObjectNode response = mapper.createObjectNode();
         response.put(JSONRPC, jsonRpc);
 
@@ -80,15 +79,7 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
     protected JsonResponse handleJsonNodeRequest(final JsonNode node) throws JsonParseException, JsonMappingException {
         String method = Optional.ofNullable(node.get("method")).map(JsonNode::asText).orElse("");
 
-        if (method.isEmpty()) {
-            throw new JsonRpcMethodNotFoundException();
-        }
-
         String[] methodParts = method.split("_");
-
-        if (methodParts.length < 2) {
-            throw new JsonRpcMethodInvalidException();
-        }
 
         String moduleName = methodParts[0];
         String methodName = methodParts[1];
@@ -105,17 +96,19 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             return super.handleJsonNodeRequest(node);
         }
 
-        JsonResponse response;
+        JsonResponse response = null;
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         Future<JsonResponse> future = executorService.submit(() -> super.handleJsonNodeRequest(node));
 
         try {
             response = future.get(timeout, timeoutUnit);
-        } catch (ExecutionException | TimeoutException | InterruptedException e) {
+        } catch (ExecutionException | TimeoutException e) {
             future.cancel(true);
             ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, e.getMessage(), e.getClass().getName());
-            response = createResponseError(VERSION, NULL, jsonError);
+            response = customCreateResponseError(VERSION, NULL, jsonError);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
 
         return response;

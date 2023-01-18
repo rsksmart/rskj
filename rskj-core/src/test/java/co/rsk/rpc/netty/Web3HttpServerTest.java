@@ -24,7 +24,6 @@ import org.mockito.Mockito;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -264,22 +263,69 @@ class Web3HttpServerTest {
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
+    @Test
+    void smokeTestProducesTimeoutDueToMethodTimeout() throws Exception {
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+
+        Function<Config, Config> decorator = rawConfig -> {
+            Config config = rawConfig.withValue("rpc.timeoutunit", ConfigValueFactory.fromAnyRef(TimeUnit.MICROSECONDS.name()));
+            List<? extends ConfigObject> list = config.getObjectList("rpc.modules");
+
+            Map<String, Integer> methodTimeoutMap = new HashMap<>();
+            methodTimeoutMap.put("sha3", 1);
+
+            ConfigObject configElement = list.get(0);
+            configElement = configElement.withValue("name", ConfigValueFactory.fromAnyRef("web3"));
+            configElement = configElement.withValue("methodTimeout", ConfigValueFactory.fromAnyRef(methodTimeoutMap));
+
+            List<ConfigObject> modules = new ArrayList<>(list);
+            modules.add(configElement);
+
+            config = config.withValue("rpc.modules", ConfigValueFactory.fromAnyRef(modules));
+
+            return config;
+        };
+
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}";
+        smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
+    }
+
+    @Test
+    void smokeTestProducesMethodNotFoundException() throws Exception {
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+
+        String mockResult = "{\"error\":{\"code\":-32099,\"message\":\"Unexpected error\"}}";
+        smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "");
+    }
+
+    @Test
+    void smokeTestProducesMethodInvalidException() throws Exception {
+        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 1, new HashMap<>()));
+
+        String mockResult = "{\"error\":{\"code\":-32099,\"message\":\"Unexpected error\"}}";
+        smokeTest(APPLICATION_JSON, "localhost", filteredModules, null, mockResult, "web3sha3");
+    }
+
     private void smokeTest(String contentType, String host) throws Exception {
         smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
     }
 
+    private void smokeTest(String contentType, String host, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult, String method) throws Exception {
+        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), filteredModules, decorator, mockResult, method);
+    }
+
     private void smokeTest(String contentType, String host, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult) throws Exception {
-        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), filteredModules, decorator, mockResult);
+        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), filteredModules, decorator, mockResult, "web3_sha3");
     }
 
     private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList(), 0, new HashMap<>()));
         String mockResult = "output";
 
-        smokeTest(contentType, host, rpcAddress, rpcHost, filteredModules, null, mockResult);
+        smokeTest(contentType, host, rpcAddress, rpcHost, filteredModules, null, mockResult, "web3_sha3");
     }
 
-    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult) throws Exception {
+    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost, List<ModuleDescription> filteredModules, Function<Config, Config> decorator, String mockResult, String method) throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
         CorsConfiguration mockCorsConfiguration = Mockito.mock(CorsConfiguration.class);
@@ -294,7 +340,7 @@ class Web3HttpServerTest {
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler, 52428800);
         server.start();
         try {
-            Response response = sendJsonRpcMessage(randomPort, contentType, host);
+            Response response = sendJsonRpcMessage(randomPort, contentType, host, method);
             String responseBody = response.body().string();
             JsonNode jsonRpcResponse = JacksonParserUtil.readTree(OBJECT_MAPPER, responseBody);
 
@@ -318,14 +364,18 @@ class Web3HttpServerTest {
     }
 
     private Response sendJsonRpcMessage(int port, String contentType, String host) throws IOException {
-        return sendJsonRpcMessage(port, contentType, host, null);
+        return sendJsonRpcMessage(port, contentType, host, null, "web3_sha3");
     }
 
     private Response sendJsonRpcMessage(int port, String contentType, String host, String content) throws IOException {
+        return sendJsonRpcMessage(port, contentType, host, content, "web3_sha3");
+    }
+
+    private Response sendJsonRpcMessage(int port, String contentType, String host, String content, String method) throws IOException {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
         jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
-        jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode("web3_sha3"));
+        jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode(method));
         jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add("value"));
 
         RequestBody requestBody = RequestBody.create(MediaType.parse(contentType),
