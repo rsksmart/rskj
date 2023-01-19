@@ -18,6 +18,10 @@
 
 package co.rsk.rpc.modules.personal;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
@@ -26,7 +30,9 @@ import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionFactoryHelper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,21 +41,21 @@ import static org.mockito.Mockito.when;
 
 class PersonalModuleTest {
 
-	private static final String PASS_FRASE = "passfrase";
+    private static final String PASS_FRASE = "passfrase";
 
-	@Test
-	void sendTransactionWithGasLimitTest() throws Exception {
+    @Test
+    void sendTransactionWithGasLimitTest() throws Exception {
 
-		TestSystemProperties props = new TestSystemProperties();
+        TestSystemProperties props = new TestSystemProperties();
 
-		Wallet wallet = new Wallet(new HashMapDB());
-		RskAddress sender = wallet.addAccount(PASS_FRASE);
-		RskAddress receiver = wallet.addAccount();
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount(PASS_FRASE);
+        RskAddress receiver = wallet.addAccount();
 
-		// Hash of the expected transaction
-		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
-		Transaction tx = TransactionFactoryHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
-		String txExpectedResult = tx.getHash().toJsonString();
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        Transaction tx = TransactionFactoryHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
+        String txExpectedResult = tx.getHash().toJsonString();
 
         TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
         when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
@@ -57,12 +63,35 @@ class PersonalModuleTest {
         Ethereum ethereum = mock(Ethereum.class);
         when(ethereum.submitTransaction(tx)).thenReturn(transactionPoolAddResult);
 
-		PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
 
-		// Hash of the actual transaction builded inside the sendTransaction
-		String txResult = personalModuleWalletEnabled.sendTransaction(args, PASS_FRASE);
+        // Hash of the actual transaction builded inside the sendTransaction
+        String txResult = personalModuleWalletEnabled.sendTransaction(args, PASS_FRASE);
 
-		assertEquals(txExpectedResult, txResult);
-	}
+        assertEquals(txExpectedResult, txResult);
+    }
+
+    @Test
+    void sendTransactionThrowsErrorOnChainIdValidationTest() {
+
+        TestSystemProperties props = new TestSystemProperties();
+
+        Wallet wallet = new Wallet(new HashMapDB());
+        RskAddress sender = wallet.addAccount(PASS_FRASE);
+        RskAddress receiver = wallet.addAccount();
+
+        // Hash of the expected transaction
+        CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+        args.setChainId("" + ((int) props.getNetworkConstants().getChainId() - 2));
+
+        TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+        when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+        Ethereum ethereum = mock(Ethereum.class);
+
+        PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
+
+        Assertions.assertThrows(RskJsonRpcRequestException.class, () -> personalModuleWalletEnabled.sendTransaction(args, PASS_FRASE));
+    }
 
 }

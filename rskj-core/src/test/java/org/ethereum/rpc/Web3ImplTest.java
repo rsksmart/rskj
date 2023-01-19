@@ -2089,6 +2089,7 @@ class Web3ImplTest {
         BigInteger gasLimit = BigInteger.valueOf(9);
         String data = "0xff";
         BigInteger nonce = BigInteger.ONE;
+        byte chainId = config.getNetworkConstants().getChainId();
 
         CallArguments args = new CallArguments();
         args.setFrom(fromAddress);
@@ -2098,6 +2099,8 @@ class Web3ImplTest {
         args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(nonce.toString());
+        args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
+
         // ***** Verifies tx hash
         Transaction expectedTx = Transaction
                 .builder()
@@ -2116,10 +2119,8 @@ class Web3ImplTest {
 
         when(ethereumMock.submitTransaction(expectedTx)).thenReturn(pendingTransactionResult);
 
-        String txHash = null;
-
         // ***** Executes the transaction *******************
-        txHash = web3.personal_sendTransaction(args, "passphrase1");
+       String txHash = web3.personal_sendTransaction(args, "passphrase1");
 
 
         // ***** Checking expected result *******************

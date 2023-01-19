@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.util.HexUtils;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
@@ -45,12 +46,14 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final Wallet wallet;
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
+    private final Constants constants;
 
     public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
         this.transactionPool = transactionPool;
+        this.constants = config.getNetworkConstants();
     }
 
     @Override
@@ -184,17 +187,21 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         return wallet.getAccount(new RskAddress(from), passphrase);
     }
 
-	private String sendTransaction(CallArguments args, Account senderAccount) throws Exception {
+    private String sendTransaction(CallArguments args, Account senderAccount) throws Exception {
 
-		if (senderAccount == null) {
-			throw new Exception("From address private key could not be found in this node");
-		}
+        if (senderAccount == null) {
+            throw new Exception("From address private key could not be found in this node");
+        }
 
-		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
+        TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
 
-		Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
+        Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
 
-		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+        tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+
+        if (!tx.acceptTransactionSignature(constants.getChainId())) {
+            throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + tx.getChainId());
+        }
 
         TransactionPoolAddResult result = eth.submitTransaction(tx);
         if (!result.transactionsWereAdded()) {
