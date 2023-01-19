@@ -160,6 +160,7 @@ public class BlockChainImpl implements Blockchain {
                     String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
 
                     if (BlockUtils.tooMuchProcessTime(totalTime)) {
+
                         logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
                     }
                     else {

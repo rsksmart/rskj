@@ -30,6 +30,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.MutableRepositoryTracked;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -218,7 +219,7 @@ public class BlockExecutor {
     }
 
     @VisibleForTesting
-    BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
+    public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
         return execute(block, parent, discardInvalidTxs, false, true);
     }
 
@@ -266,9 +267,9 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        Repository track = repositoryLocator.startTrackingAt(parent);
+        MutableRepositoryTracked blockTrack = repositoryLocator.trackedRepositoryAt(parent);
 
-        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
+        maintainPrecompiledContractStorageRoots(blockTrack, activationConfig.forBlock(block.getNumber()));
 
         int i = 1;
         long totalGasUsed = 0;
@@ -282,17 +283,20 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
+            // ensures that blockTrack only tracks trie-nodes ONLY from the current transaction
+            blockTrack.clearTrackedNodes();
+
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
                     txindex++,
                     block.getCoinbase(),
-                    track,
+                    blockTrack,
                     block,
                     totalGasUsed,
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+            boolean transactionExecuted = executeTransaction(txExecutor);
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
@@ -318,9 +322,9 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
-            // No need to commit the changes here. track.commit();
+            // No need to commit the changes here. blockTrack.commit();
 
-            logger.trace("track commit");
+            logger.trace("blockTrack commit");
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
@@ -354,11 +358,11 @@ public class BlockExecutor {
         logger.trace("End txs executions.");
         if (saveState) {
             logger.trace("Saving track.");
-            track.save();
+            blockTrack.save();
             logger.trace("End saving track.");
         } else {
             logger.trace("Committing track.");
-            track.commit();
+            blockTrack.commit();
             logger.trace("End committing track.");
         }
 
@@ -369,11 +373,18 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                vmTrace ? null : track.getTrie()
+                vmTrace ? null : blockTrack.getTrie()
         );
         profiler.stop(metric);
         logger.trace("End executeInternal.");
         return result;
+    }
+
+    /**
+     * This method is then overridden for testing purposes at BlockExecutorDSL
+     * */
+    protected boolean executeTransaction(TransactionExecutor txExecutor) {
+        return txExecutor.executeTransaction();
     }
 
     /**

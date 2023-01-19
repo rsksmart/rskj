@@ -36,7 +36,9 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.storagerent.StorageRentManager;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.test.dsl.BlockExecutorDSL;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -59,10 +61,12 @@ import java.util.Map;
  * Created by ajlopez on 8/7/2016.
  */
 public class World {
+    public static final long TIME_BETWEEN_BLOCKS_DISABLED = -1;
+
     private RskSystemProperties config;
     private BlockChainImpl blockChain;
     private NodeBlockProcessor blockProcessor;
-    private BlockExecutor blockExecutor;
+    private BlockExecutorDSL blockExecutor;
     private Map<String, Block> blocks = new HashMap<>();
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
@@ -75,6 +79,7 @@ public class World {
     private BridgeSupportFactory bridgeSupportFactory;
     private BlockTxSignatureCache blockTxSignatureCache;
     private ReceivedTxSignatureCache receivedTxSignatureCache;
+    private long customTimeBetweenBlocks = TIME_BETWEEN_BLOCKS_DISABLED;
 
     public World() {
         this(new BlockChainBuilder());
@@ -173,7 +178,7 @@ public class World {
                 btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockTxSignatureCache);
 
         if (this.blockExecutor == null) {
-            this.blockExecutor = new BlockExecutor(
+            this.blockExecutor = new BlockExecutorDSL(
                     config.getActivationConfig(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(
@@ -266,4 +271,31 @@ public class World {
 
     public ReceivedTxSignatureCache getReceivedTxSignatureCache() { return receivedTxSignatureCache; }
 
+    public ReceiptStore getReceiptStore() {
+        return this.receiptStore;
+    }
+
+    public TransactionExecutor getTransactionExecutor(String txName) {
+        String txHash = getTransactionByName(txName)
+                .getHash()
+                .toHexString();
+
+        return this.blockExecutor.getTransactionExecutors().get(txHash);
+    }
+
+    /**
+     * Set a custom time between each block
+     * @param timeBetweenBlocks a custom time (expressed in milliseconds)
+     * */
+    public void setCustomTimeBetweenBlocks(long timeBetweenBlocks) {
+        this.customTimeBetweenBlocks = timeBetweenBlocks;
+    }
+
+    public long getCustomTimeBetweenBlocks() {
+        return this.customTimeBetweenBlocks;
+    }
+
+    public boolean useCustomTimeBetweenBlocks() {
+        return this.customTimeBetweenBlocks != -1;
+    }
 }

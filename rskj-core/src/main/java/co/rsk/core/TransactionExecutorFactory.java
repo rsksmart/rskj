@@ -61,17 +61,17 @@ public class TransactionExecutorFactory {
             Transaction tx,
             int txindex,
             RskAddress coinbase,
-            Repository track,
+            Repository blockTrack,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
+        return newInstance(tx, txindex, coinbase, blockTrack, block, totalGasUsed, false, 0, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
             Transaction tx,
             int txindex,
             RskAddress coinbase,
-            Repository track,
+            Repository blockTrack,
             Block block,
             long totalGasUsed,
             boolean vmTrace,
@@ -92,13 +92,13 @@ public class TransactionExecutorFactory {
             );
         }
 
-        return new TransactionExecutor(
+        TransactionExecutor transactionExecutor = new TransactionExecutor(
                 config.getNetworkConstants(),
                 config.getActivationConfig(),
                 tx,
                 txindex,
                 coinbase,
-                track,
+                blockTrack,
                 blockStore,
                 receiptStore,
                 blockFactory,
@@ -111,5 +111,9 @@ public class TransactionExecutorFactory {
                 deletedAccounts,
                 blockTxSignatureCache
         );
+
+        transactionExecutor.setStorageRentEnabled(config.getStorageRentEnabled());
+
+        return transactionExecutor;
     }
 }

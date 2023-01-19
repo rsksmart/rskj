@@ -105,7 +105,7 @@ public class BlockToMineBuilder {
         this.minerUtils = minerUtils;
         this.signatureCache = signatureCache;
     }
-
+    
     /**
      * Creates a pending block based on the parent block header. Pending block is temporary, not connected to the chain and
      * includes txs from the mempool.

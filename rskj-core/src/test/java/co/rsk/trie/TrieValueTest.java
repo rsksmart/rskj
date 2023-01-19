@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by ajlopez on 04/12/2017.
  */
-class TrieValueTest {
+public class TrieValueTest {
     @Test
-    void noLongValueInEmptyTrie() {
+    public void noLongValueInEmptyTrie() {
         Trie trie = new Trie();
 
         Assertions.assertFalse(trie.hasLongValue());
@@ -36,7 +36,7 @@ class TrieValueTest {
     }
 
     @Test
-    void noLongValueInTrieWithShortValue() {
+    public void noLongValueInTrieWithShortValue() {
         byte[] value = new byte[] { 0x01, 0x02, 0x03 };
         byte[] key = new byte[] { 0x04, 0x05 };
         Trie trie = new Trie().put(key, value);
@@ -49,7 +49,7 @@ class TrieValueTest {
     }
 
     @Test
-    void noValueInTrieWith32BytesValue() {
+    public void noValueInTrieWith32BytesValue() {
         byte[] value = makeValue(32);
 
         for (int k = 0; k < value.length; k++)
@@ -65,7 +65,7 @@ class TrieValueTest {
     }
 
     @Test
-    void longValueInTrieWith33BytesValue() {
+    public void longValueInTrieWith33BytesValue() {
         byte[] value = makeValue(33);
 
         for (int k = 0; k < value.length; k++)

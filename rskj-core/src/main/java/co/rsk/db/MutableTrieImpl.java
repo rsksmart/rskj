@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -29,7 +30,6 @@ import org.ethereum.vm.DataWord;
 import java.util.*;
 
 public class MutableTrieImpl implements MutableTrie {
-
     private Trie trie;
     private TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
     private TrieStore trieStore;
@@ -37,6 +37,10 @@ public class MutableTrieImpl implements MutableTrie {
     public MutableTrieImpl(TrieStore trieStore, Trie trie) {
         this.trieStore = trieStore;
         this.trie = trie;
+    }
+
+    public MutableTrieImpl(TrieStore trieStore) {
+        this(trieStore, new Trie(trieStore));
     }
 
     @Override
@@ -64,9 +68,9 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
-    @Override
+    @Override // todo(techdebt) this is only used for testing, it should be removed from production
     public void put(String key, byte[] value) {
-        trie = trie.put(key, value);
+        trie = trie.put(key, value); // NOSONAR (sonar is refusing for @VisibleForTesting)
     }
 
     @Override
@@ -101,6 +105,29 @@ public class MutableTrieImpl implements MutableTrie {
             return new StorageKeysIterator(storageIterator, storageKeyOffset);
         }
         return Collections.emptyIterator();
+    }
+
+    @Override
+    public void putRentTimestamp(byte[] key, long updatedTimestamp) {
+        this.trie = this.trie.updateLastRentPaidTimestamp(TrieKeySlice.fromKey(key), updatedTimestamp);
+    }
+
+    @Override @VisibleForTesting
+    public MutableTrie find(byte[] key) {
+        return new MutableTrieImpl(this.trieStore, this.trie.find(key));
+    }
+
+    @Override
+    public Optional<Long> getRentTimestamp(byte[] key) {
+        Trie trie = this.trie.find(key);
+
+        if(trie == null) {
+            return Optional.empty();
+        }
+
+        long lastRentPaidTimestamp = trie.getLastRentPaidTimestamp();
+
+        return Optional.of(lastRentPaidTimestamp);
     }
 
     @Override

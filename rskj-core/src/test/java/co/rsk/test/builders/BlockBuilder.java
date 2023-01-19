@@ -33,6 +33,8 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -102,6 +104,21 @@ public class BlockBuilder {
     public Block build() {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
+        executeAndFill(blockChain, trieStore, blockStore, bridgeSupportFactory, block, parent);
+
+        return block;
+    }
+
+    public Block buildWithCustomTimeBetweenBlocks(long customTimeBetweenBlocks) {
+        Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty,
+                this.minGasPrice, gasLimit, customTimeBetweenBlocks);
+
+        executeAndFill(blockChain, trieStore, blockStore, bridgeSupportFactory, block, parent);
+
+        return block;
+    }
+
+    private void executeAndFill(Blockchain blockChain, TrieStore trieStore, BlockStore blockStore, BridgeSupportFactory bridgeSupportFactory, Block block, Block parent) {
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
@@ -120,10 +137,7 @@ public class BlockBuilder {
             );
             executor.executeAndFill(block, parent.getHeader());
         }
-
-        return block;
     }
-
     public Block buildWithoutExecution() {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 

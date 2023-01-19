@@ -16,18 +16,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.trie;
+package co.rsk.trie.message;
 
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieValueTest;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static co.rsk.trie.message.TrieWasabiMessageTest.LONG_VALUE;
+
 /**
  * Created by ajlopez on 11/01/2017.
  */
-class TrieOrchidMessageTest {
+public class TrieOrchidMessageTest {
+
     @Test
-    void emptyTrieToMessage() {
+    public void emptyTrieToMessageOrchid() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(false);
@@ -43,8 +48,8 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithValueToMessage() {
-        Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
+    public void trieWithValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[0], new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -63,7 +68,7 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithLongValueToMessage() {
+    public void trieWithLongValueToMessageOrchid() {
         Trie trie = new Trie().put(new byte[0], TrieValueTest.makeValue(33));
 
         byte[] message = trie.toMessageOrchid(false);
@@ -85,8 +90,8 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithSubtrieAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
+    public void trieWithSubtrieAndNoValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -109,9 +114,9 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithSubtriesAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
+    public void trieWithSubtriesAndNoValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4})
+                .put(new byte[]{0x12}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -127,7 +132,7 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void emptyTrieToMessageSecure() {
+    public void emptyTrieToMessageOrchidSecure() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(true);
@@ -143,7 +148,7 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithValueToMessageSecure() {
+    public void trieWithValueToMessageOrchidSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
@@ -170,11 +175,11 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithLongValueToMessageSecure() {
+    public void trieWithLongValueToMessageOrchidSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, TrieValueTest.makeValue(33));
+        Trie trie = new Trie().put(key, TrieValueTest.makeValue(LONG_VALUE));
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -198,8 +203,8 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithSubtrieAndNoValueToMessageSecure() {
-        byte[] oldKey = new byte[] { 0x02 };
+    public void trieWithSubtrieAndNoValueToMessageOrchidSecure() {
+        byte[] oldKey = new byte[]{0x02};
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
         Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
@@ -225,7 +230,7 @@ class TrieOrchidMessageTest {
     }
 
     @Test
-    void trieWithSubtriesAndNoValueToMessageSecure() {
+    public void trieWithSubtriesAndNoValueToMessageOrchidSecure() {
         Trie trie = new Trie()
                 .put(Keccak256Helper.keccak256(new byte[] { 0x2 }), new byte[] { 1, 2, 3, 4 })
                 .put(Keccak256Helper.keccak256(new byte[] { 0x12 }), new byte[] { 1, 2, 3, 4 });

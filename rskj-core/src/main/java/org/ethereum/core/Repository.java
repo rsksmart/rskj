@@ -35,7 +35,7 @@ public interface Repository extends RepositorySnapshot {
      *
      * @param addr of the contract
      * @return newly created account state
-     *
+     * <p>
      * This method creates an account, but is DOES NOT create a contract.
      * To create a contract, internally the account node is extended with a root node
      * for storage. To avoid creating the root node for storage each time a storage cell
@@ -43,17 +43,15 @@ public interface Repository extends RepositorySnapshot {
      * contract. This is done in setupContract().
      * Note that we can't use the length or existence of the code node for this,
      * because a contract's code can be empty!
-     *
      */
     AccountState createAccount(RskAddress addr);
 
     /**
      * Create a new account in the database, and optionally carry over any existing balance
      *
-     * @param addr of the contract
+     * @param addr             of the contract
      * @param carryOverBalance if true, then carry over any existing balance
      * @return newly created account state
-     *
      * @see #createAccount(RskAddress)
      */
     default AccountState createAccount(RskAddress addr, boolean carryOverBalance) {
@@ -93,7 +91,7 @@ public interface Repository extends RepositorySnapshot {
      */
     BigInteger increaseNonce(RskAddress addr);
 
-    void setNonce(RskAddress addr,BigInteger  nonce);
+    void setNonce(RskAddress addr, BigInteger nonce);
 
     /**
      * Store code associated with an account
@@ -106,8 +104,8 @@ public interface Repository extends RepositorySnapshot {
     /**
      * Put a value in storage of an account at a given key
      *
-     * @param addr of the account
-     * @param key of the data to store
+     * @param addr  of the account
+     * @param key   of the data to store
      * @param value is the data to store
      */
     void addStorageRow(RskAddress addr, DataWord key, DataWord value);
@@ -117,7 +115,7 @@ public interface Repository extends RepositorySnapshot {
     /**
      * Add value to the balance of an account
      *
-     * @param addr of the account
+     * @param addr  of the account
      * @param value to be added
      * @return new balance of the account
      */

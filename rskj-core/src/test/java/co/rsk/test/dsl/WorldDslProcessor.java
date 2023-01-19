@@ -295,7 +295,6 @@ public class WorldDslProcessor {
         }
         return diff;
     }
-
     private void processBlockChainCommand(DslCommand cmd) {
         Block parent = world.getBlockByName(cmd.getArgument(0));
 
@@ -313,7 +312,7 @@ public class WorldDslProcessor {
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
-            BlockExecutor executor = new BlockExecutor(
+            BlockExecutor executor = new BlockExecutorDSL(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     new TransactionExecutorFactory(

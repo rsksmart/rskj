@@ -36,7 +36,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
@@ -44,16 +47,24 @@ public class MutableRepository implements Repository {
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
-    private final TrieKeyMapper trieKeyMapper;
-    private final MutableTrie mutableTrie;
+    protected TrieKeyMapper trieKeyMapper;
+    protected MutableTrie mutableTrie;
 
+    // default constructor
+    public MutableRepository(MutableTrie mutableTrie) {
+        this.trieKeyMapper = new TrieKeyMapper();
+        this.mutableTrie = mutableTrie;
+    }
+
+    // another way to create a repository (tracking disabled)
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie));
     }
 
-    public MutableRepository(MutableTrie mutableTrie) {
-        this.trieKeyMapper = new TrieKeyMapper();
-        this.mutableTrie = mutableTrie;
+    // another way to create a repository (tracking disabled),
+    // by using this way we avoid instantiating Trie instances from undesired class
+    public MutableRepository(TrieStore trieStore) {
+        this(trieStore, new Trie(trieStore));
     }
 
     @Override
@@ -71,13 +82,14 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        mutableTrie.put(prefix, ONE_BYTE_ARRAY);
+        internalPut(prefix, ONE_BYTE_ARRAY);
     }
 
     @Override
     public synchronized boolean isExist(RskAddress addr) {
         // Here we assume size != 0 means the account exists
-        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO) > 0;
+        return internalGetValueLength(trieKeyMapper.getAccountKey(addr))
+                .compareTo(Uint24.ZERO) > 0;
     }
 
     @Override
@@ -94,7 +106,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void delete(RskAddress addr) {
-        mutableTrie.deleteRecursive(trieKeyMapper.getAccountKey(addr));
+        internalDeleteRecursive(trieKeyMapper.getAccountKey(addr));
     }
 
     @Override
@@ -137,7 +149,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        mutableTrie.put(key, code);
+        internalPut(key, code);
 
         if (code != null && code.length != 0 && !isExist(addr)) {
             createAccount(addr);
@@ -152,7 +164,7 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueLength(key).intValue();
+        return internalGetValueLength(key).intValue();
     }
 
     @Override
@@ -167,7 +179,7 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
+        Optional<Keccak256> valueHash = internalGetValueHash(key);
 
         //Returning ZERO_HASH is the non standard implementation we had pre RSKIP169 implementation
         //and thus me must honor it.
@@ -187,7 +199,7 @@ public class MutableRepository implements Repository {
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
 
-        return mutableTrie.getValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
+        return internalGetValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
     }
 
     @Override
@@ -202,13 +214,13 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.get(key);
+        return internalGet(key);
     }
 
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        return mutableTrie.get(prefix) != null;
+        return internalGet(prefix) != null;
     }
 
     @Override
@@ -233,29 +245,40 @@ public class MutableRepository implements Repository {
         // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
-            mutableTrie.put(triekey, null);
+            internalPut(triekey, null);
         } else {
-            mutableTrie.put(triekey, value);
+            internalPut(triekey, value);
         }
     }
 
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = mutableTrie.get(triekey);
+        byte[] value = internalGet(triekey);
         if (value == null) {
             return null;
         }
-
         return DataWord.valueOf(value);
     }
 
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        return mutableTrie.get(triekey);
+        return internalGet(triekey);
     }
 
+    /**
+     * Gets all the storage keys for a given address.<br/>
+     * This method is never called  by consensus code, but only by debug code
+     * or other RPC functionality.<br/>
+     * Rent should never be tracked (If it is tracked, then the result of processing
+     * will differ if a certain debug mode is activated or deactivated).
+     *
+     * @param addr an rsk address
+     * @return an iterator with all the storage keys for the provided address.
+     * */
+    // todo(fedejinich) rename it to getDebugStorageKeys to avoid confusion
+    //  (this will be done in a different PR)
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         // -1 b/c the first bit is implicit in the storage node
@@ -311,22 +334,22 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie));
+        return new MutableRepository(new MutableTrieCache(this.mutableTrie));//, this, this.enableTracking);
     }
 
     @Override
     public void save() {
-        mutableTrie.save();
+        this.mutableTrie.save();
     }
 
     @Override
     public synchronized void commit() {
-        mutableTrie.commit();
+        this.mutableTrie.commit();
     }
 
     @Override
     public synchronized void rollback() {
-        mutableTrie.rollback();
+        this.mutableTrie.rollback();
     }
 
     @Override
@@ -341,10 +364,20 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
-        mutableTrie.put(accountKey, accountState.getEncoded());
+        internalPut(accountKey, accountState.getEncoded());
     }
 
-    @VisibleForTesting
+    @Nonnull
+    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        return (account == null) ? createAccount(addr) : account;
+    }
+
+    private byte[] getAccountData(RskAddress addr) {
+        return internalGet(trieKeyMapper.getAccountKey(addr));
+    }
+
+    @VisibleForTesting // todo(techdebt) this method shouldn't be here
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
@@ -360,13 +393,23 @@ public class MutableRepository implements Repository {
         return storageRootNode.getHash().getBytes();
     }
 
-    @Nonnull
-    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
-        AccountState account = getAccountState(addr);
-        return (account == null) ? createAccount(addr) : account;
+    protected void internalPut(byte[] key, byte[] value) {
+        mutableTrie.put(key, value);
     }
 
-    private byte[] getAccountData(RskAddress addr) {
-        return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
+    protected void internalDeleteRecursive(byte[] key) {
+        mutableTrie.deleteRecursive(key);
+    }
+
+    protected byte[] internalGet(byte[] key) {
+        return mutableTrie.get(key);
+    }
+
+    protected Optional<Keccak256> internalGetValueHash(byte[] key) {
+        return mutableTrie.getValueHash(key);
+    }
+
+    protected Uint24 internalGetValueLength(byte[] key) {
+        return mutableTrie.getValueLength(key);
     }
 }

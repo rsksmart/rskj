@@ -532,15 +532,6 @@ public class Program {
                             programResult.getException());
                 }
 
-                // The programResult is empty and internalTx was not created so we skip this part
-                /*if (internalTx == null) {
-                    throw new NullPointerException();
-                }
-
-                internalTx.reject();
-                programResult.rejectInternalTransactions();
-                programResult.rejectLogInfos();*/
-
                 track.rollback();
                 stackPushZero();
 
@@ -697,7 +688,7 @@ public class Program {
         }
         return d;
     }
-
+    
     /**
      * That method is for internal code invocations
      * <p/>
@@ -707,7 +698,6 @@ public class Program {
      * @param msg         is the message call object
      */
     public void callToAddress(MessageCall msg) {
-
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), " call deep limit reach");

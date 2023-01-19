@@ -47,7 +47,6 @@ class BlockResultDTOTest {
     private Block block;
     private BlockStore blockStore;
 
-    // todo(fedejinich) currently RemascTx(blockNumber) has a bug, thats why I initialize this way
     public static final RemascTransaction REMASC_TRANSACTION = new RemascTransaction(new RemascTransaction(1).getEncoded());
     public static final Transaction TRANSACTION = new TransactionBuilder().buildRandomTransaction();
 
