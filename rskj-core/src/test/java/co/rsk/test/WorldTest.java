@@ -80,7 +80,7 @@ class WorldTest {
     void saveAndGetAccount() {
         World world = new World();
 
-        Account account = new Account(TestUtils.getRandomECKey("worldTest"));
+        Account account = new Account(TestUtils.generateECKey("worldTest"));
 
         world.saveAccount("acc1", account);
         Assertions.assertSame(account, world.getAccountByName("acc1"));

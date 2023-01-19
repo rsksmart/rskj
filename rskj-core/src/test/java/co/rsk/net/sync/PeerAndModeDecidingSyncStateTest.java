@@ -127,7 +127,7 @@ class PeerAndModeDecidingSyncStateTest {
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knownPeer"))));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.generatePeerId("knownPeer"))));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -148,7 +148,7 @@ class PeerAndModeDecidingSyncStateTest {
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knowPeer"))));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.generatePeerId("knowPeer"))));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -170,7 +170,7 @@ class PeerAndModeDecidingSyncStateTest {
 
         when(blockStore.getMinNumber()).thenReturn(1L);
 
-        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.randomPeerId("knownPeer"))));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(TestUtils.generatePeerId("knownPeer"))));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());

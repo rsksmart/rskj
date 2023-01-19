@@ -51,7 +51,7 @@ class BlockProcessResultTest {
         Duration processingTime = Duration.ofNanos(123_000_000L);
         Map<Keccak256, ImportResult> connections = new HashMap<>();
 
-        Keccak256 hash = TestUtils.randomHash("blockHash");
+        Keccak256 hash = TestUtils.generateHash("blockHash");
 
         connections.put(hash, ImportResult.IMPORTED_BEST);
 

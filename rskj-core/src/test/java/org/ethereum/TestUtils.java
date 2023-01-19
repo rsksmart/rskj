@@ -44,24 +44,23 @@ import java.util.*;
 
 
 public final class TestUtils {
-    private static SecureRandom random = new SecureRandom("testUtils".getBytes());
 
     private TestUtils() {
     }
 
-    public static DataWord randomDataWord() {
+    public static DataWord generateDataWord() {
         return DataWord.valueOf(generateBytes(DataWord.class.hashCode(), 32));
     }
 
-    public static RskAddress randomAddress(String discriminator) {
+    public static RskAddress generateAddress(String discriminator) {
         return new RskAddress(generateBytes(TestUtils.class, discriminator, 20));
     }
 
-    public static Keccak256 randomHash(String discriminator) {
+    public static Keccak256 generateHash(String discriminator) {
         return new Keccak256(generateBytes(TestUtils.class, discriminator, 32));
     }
 
-    public static ECKey getRandomECKey(String discriminator){
+    public static ECKey generateECKey(String discriminator){
         return new ECKey(new SecureRandom(discriminator.getBytes()));
     }
 
@@ -128,12 +127,12 @@ public final class TestUtils {
         return StringUtils.leftPad(s, n, '0');
     }
 
-    public static InetAddress randomIpAddressV4(String discriminator) throws UnknownHostException {
+    public static InetAddress generateIpAddressV4(String discriminator) throws UnknownHostException {
         byte[] bytes = TestUtils.generateBytes(discriminator, 4);
         return InetAddress.getByAddress(bytes);
     }
 
-    public static InetAddress randomIpAddressV6(String discriminator) throws UnknownHostException {
+    public static InetAddress generateIpAddressV6(String discriminator) throws UnknownHostException {
         byte[] bytes = TestUtils.generateBytes(discriminator, 16);
         return InetAddress.getByAddress(bytes);
     }
@@ -242,7 +241,7 @@ public final class TestUtils {
     /**
      * @return - generate random 32 byte hash
      */
-    public static byte[] randomHashInBytes(String discriminator) {
+    public static byte[] generateHashInBytes(String discriminator) {
         byte[] randomHash = new byte[32];
         SecureRandom random = new SecureRandom();
         random.nextBytes(randomHash);
@@ -252,7 +251,7 @@ public final class TestUtils {
     /**
      * @return generates random peer id for the HelloMessage
      */
-    public static byte[] randomPeerId(String discriminator) {
+    public static byte[] generatePeerId(String discriminator) {
         Random random = new SecureRandom(discriminator.getBytes());
         byte[] peerIdBytes = new BigInteger(512, random).toByteArray();
 

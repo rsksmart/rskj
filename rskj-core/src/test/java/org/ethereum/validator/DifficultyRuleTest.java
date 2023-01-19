@@ -60,7 +60,7 @@ class DifficultyRuleTest {
         byte[] difficulty = DataWord.valueOf(difficultyValue).getData();
 
         return blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress(String.valueOf(difficultyValue)))
+                .setCoinbase(TestUtils.generateAddress(String.valueOf(difficultyValue)))
                 .setDifficultyFromBytes(difficulty)
                 .build();
     }

@@ -198,7 +198,7 @@ class GasPriceTrackerTest {
         Block block = mock(Block.class);
 
         when(block.getMinimumGasPrice()).thenReturn(mgp);
-        when(block.getParentHash()).thenReturn(TestUtils.randomHash("parentHash"));
+        when(block.getParentHash()).thenReturn(TestUtils.generateHash("parentHash"));
         when(block.getGasUsed()).thenReturn(700_000L);
         when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6_800_000));
 

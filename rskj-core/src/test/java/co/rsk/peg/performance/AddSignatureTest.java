@@ -145,7 +145,7 @@ class AddSignatureTest extends BridgePerformanceTestCase {
             federatorThatSignsKey = keysSelection.get(index);
 
             // Random tx hash that we then use for the method call
-            rskTxHash = TestUtils.randomHash(String.valueOf(numSignatures));
+            rskTxHash = TestUtils.generateHash(String.valueOf(numSignatures));
 
             // Get the tx into the txs waiting for signatures
             try {

@@ -102,7 +102,7 @@ class BlockToMineBuilderTest {
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);
         when(miningConfig.getUncleListLimit()).thenReturn(10);
-        when(miningConfig.getCoinbaseAddress()).thenReturn(TestUtils.randomAddress("coinbaseAddress"));
+        when(miningConfig.getCoinbaseAddress()).thenReturn(TestUtils.generateAddress("coinbaseAddress"));
         when(difficultyCalculator.calcDifficulty(any(), any())).thenReturn(blockDifficulty);
     }
 
@@ -141,7 +141,7 @@ class BlockToMineBuilderTest {
 
     @Test
     void buildBlockBeforeUMMActivation() {
-        Keccak256 parentHash = TestUtils.randomHash("parentHash");
+        Keccak256 parentHash = TestUtils.generateHash("parentHash");
 
         BlockHeader parent = mock(BlockHeader.class);
         when(parent.getNumber()).thenReturn(500L);
@@ -165,7 +165,7 @@ class BlockToMineBuilderTest {
 
     @Test
     void buildBlockAfterUMMActivation() {
-        Keccak256 parentHash = TestUtils.randomHash("parentHash");
+        Keccak256 parentHash = TestUtils.generateHash("parentHash");
 
         BlockHeader parent = mock(BlockHeader.class);
         when(parent.getNumber()).thenReturn(500L);
@@ -191,7 +191,7 @@ class BlockToMineBuilderTest {
         BlockHeader blockHeader = mock(BlockHeader.class);
         long blockNumber = 42L;
         when(blockHeader.getNumber()).thenReturn(blockNumber);
-        Keccak256 blockHash = TestUtils.randomHash("mockedHash");
+        Keccak256 blockHash = TestUtils.generateHash("mockedHash");
         when(blockHeader.getHash()).thenReturn(blockHash);
         when(blockHeader.getMinimumGasPrice()).thenReturn(mock(Coin.class));
         when(blockHeader.getGasLimit()).thenReturn(new byte[0]);
@@ -207,7 +207,7 @@ class BlockToMineBuilderTest {
 
     private BlockHeader createBlockHeader() {
         return new BlockHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress("blockHeader"),
+                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.generateAddress("blockHeader"),
                 EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,

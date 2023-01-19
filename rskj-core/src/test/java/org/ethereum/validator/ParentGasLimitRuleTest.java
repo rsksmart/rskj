@@ -89,7 +89,7 @@ public class ParentGasLimitRuleTest {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
         return blockFactory.getBlockHeaderBuilder()
-                .setCoinbase(TestUtils.randomAddress(String.valueOf(gasLimitValue)))
+                .setCoinbase(TestUtils.generateAddress(String.valueOf(gasLimitValue)))
                 .setDifficulty(BlockDifficulty.ZERO)
                 .setGasLimit(gasLimit)
                 .build();

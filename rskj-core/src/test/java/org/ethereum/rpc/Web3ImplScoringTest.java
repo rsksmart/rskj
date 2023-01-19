@@ -21,8 +21,6 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainView;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -178,7 +176,7 @@ class Web3ImplScoringTest {
     void addBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -191,7 +189,7 @@ class Web3ImplScoringTest {
     void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -204,7 +202,7 @@ class Web3ImplScoringTest {
     void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -221,7 +219,7 @@ class Web3ImplScoringTest {
     void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         Assertions.assertTrue(peerScoringManager.hasGoodReputation(address));
 

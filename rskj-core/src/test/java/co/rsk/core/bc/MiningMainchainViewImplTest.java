@@ -368,7 +368,7 @@ class MiningMainchainViewImplTest {
                 blockStore,
                 4);
 
-        Block newBestBlock = createBlock(13, TestUtils.randomHash("newBestBlock"));
+        Block newBestBlock = createBlock(13, TestUtils.generateHash("newBestBlock"));
         when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
         when(blockStore.getChainBlockByNumber(13L)).thenReturn(newBestBlock);
 
@@ -432,7 +432,7 @@ class MiningMainchainViewImplTest {
 
         when(header.isGenesis()).thenReturn(Boolean.TRUE);
         when(header.getNumber()).thenReturn(Long.valueOf(0));
-        Keccak256 blockHash = TestUtils.randomHash("genesis");
+        Keccak256 blockHash = TestUtils.generateHash("genesis");
         when(header.getHash()).thenReturn(blockHash);
 
         return header;
@@ -456,7 +456,7 @@ class MiningMainchainViewImplTest {
 
     private BlockHeader createHeader(long number, Keccak256 parentHash){
         BlockHeader header = mock(BlockHeader.class);
-        Keccak256 blockHash = TestUtils.randomHash("hash"+number);
+        Keccak256 blockHash = TestUtils.generateHash("hash"+number);
 
         when(header.getNumber()).thenReturn(number);
         when(header.getHash()).thenReturn(blockHash);

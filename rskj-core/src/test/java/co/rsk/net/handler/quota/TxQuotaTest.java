@@ -44,10 +44,10 @@ class TxQuotaTest {
     @Test
     void acceptVirtualGasConsumption() {
         Transaction tx = mock(Transaction.class);
-        Keccak256 txHash = TestUtils.randomHash("txHash");
+        Keccak256 txHash = TestUtils.generateHash("txHash");
         when(tx.getHash()).thenReturn(txHash);
 
-        RskAddress address = TestUtils.randomAddress("address");
+        RskAddress address = TestUtils.generateAddress("address");
 
         TxQuota txQuota = TxQuota.createNew(address, txHash, 10, System::currentTimeMillis);
 
@@ -59,10 +59,10 @@ class TxQuotaTest {
     @Test
     void forceVirtualGasSubtraction() {
         Transaction tx = mock(Transaction.class);
-        Keccak256 txHash = TestUtils.randomHash("txHash");
+        Keccak256 txHash = TestUtils.generateHash("txHash");
         when(tx.getHash()).thenReturn(txHash);
 
-        RskAddress address = TestUtils.randomAddress("address");
+        RskAddress address = TestUtils.generateAddress("address");
 
         TxQuota txQuota = TxQuota.createNew(address, txHash, 10, System::currentTimeMillis);
         assertTrue(txQuota.forceVirtualGasSubtraction(5, tx, 10));
@@ -77,10 +77,10 @@ class TxQuotaTest {
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime);
 
         Transaction tx = mock(Transaction.class);
-        Keccak256 txHash = TestUtils.randomHash("txHash");
+        Keccak256 txHash = TestUtils.generateHash("txHash");
         when(tx.getHash()).thenReturn(txHash);
 
-        RskAddress address = TestUtils.randomAddress("address");
+        RskAddress address = TestUtils.generateAddress("address");
 
         TxQuota txQuota = TxQuota.createNew(address, tx.getHash(), MAX_QUOTA, timeProvider);
         assertFalse(txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, tx, 10), "should reject tx over initial limit");

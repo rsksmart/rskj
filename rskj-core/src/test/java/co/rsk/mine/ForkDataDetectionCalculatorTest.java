@@ -243,7 +243,7 @@ class ForkDataDetectionCalculatorTest {
         when(header.isGenesis()).thenReturn(Boolean.TRUE);
         when(header.getNumber()).thenReturn(Long.valueOf(0));
 
-        Keccak256 blockHash = TestUtils.randomHash("rawBH");
+        Keccak256 blockHash = TestUtils.generateHash("rawBH");
         when(header.getHash()).thenReturn(blockHash);
         byte[] randomHash = TestUtils.generateBytes("rh",32);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(randomHash);
@@ -258,7 +258,7 @@ class ForkDataDetectionCalculatorTest {
     private Block createBlock(long number, Keccak256 parentHash, long bitcoinBlockTime){
         BlockHeader header =  mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(number);
-        Keccak256 blockHash = TestUtils.randomHash("rawBH");
+        Keccak256 blockHash = TestUtils.generateHash("rawBH");
         when(header.getHash()).thenReturn(blockHash);
         when(header.getParentHash()).thenReturn(parentHash);
         byte[] bitcoinHeader = getBtcBlock(bitcoinBlockTime).cloneAsHeader().bitcoinSerialize();

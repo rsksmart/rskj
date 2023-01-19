@@ -188,7 +188,7 @@ class ReceiptStoreImplTest {
     void getUnknownTransactionByBlock(String version, KeyValueDataSource baseDataSource, ReceiptStore store) {
         TransactionReceipt receipt = createReceipt();
 
-        Keccak256 blockHash = TestUtils.randomHash("blockHash");
+        Keccak256 blockHash = TestUtils.generateHash("blockHash");
 
         Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes());
 

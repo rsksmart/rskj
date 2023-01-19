@@ -75,7 +75,7 @@ class LogsNotificationTest {
 
     @Test
     void getBlockHash() {
-        Keccak256 blockHash = TestUtils.randomHash("blockHash");
+        Keccak256 blockHash = TestUtils.generateHash("blockHash");
         doReturn(blockHash).when(block).getHash();
         doCallRealMethod().when(block).getHashJsonString();
         assertThat(logsNotification.getBlockHash(), is(HexUtils.toUnformattedJsonHex(blockHash.getBytes())));
@@ -83,7 +83,7 @@ class LogsNotificationTest {
 
     @Test
     void getTransactionHash() {
-        Keccak256 transactionHash = TestUtils.randomHash("transactionHash");
+        Keccak256 transactionHash = TestUtils.generateHash("transactionHash");
         doReturn(transactionHash).when(transaction).getHash();
         assertThat(logsNotification.getTransactionHash(), is(HexUtils.toUnformattedJsonHex(transactionHash.getBytes())));
 
@@ -96,7 +96,7 @@ class LogsNotificationTest {
 
     @Test
     void getAddress() {
-        byte[] logSender = TestUtils.randomAddress("logSender").getBytes();
+        byte[] logSender = TestUtils.generateAddress("logSender").getBytes();
         doReturn(logSender).when(logInfo).getAddress();
         assertThat(logsNotification.getAddress(), is(HexUtils.toJsonHex(logSender)));
     }
@@ -110,7 +110,7 @@ class LogsNotificationTest {
 
     @Test
     void getTopics() {
-        List<DataWord> logTopics = IntStream.range(0, 128).mapToObj(i -> TestUtils.randomDataWord()).collect(Collectors.toList());
+        List<DataWord> logTopics = IntStream.range(0, 128).mapToObj(i -> TestUtils.generateDataWord()).collect(Collectors.toList());
         doReturn(logTopics).when(logInfo).getTopics();
         for (int i = 0; i < logTopics.size(); i++) {
             assertThat(logsNotification.getTopics().get(i), is(HexUtils.toJsonHex(logTopics.get(i).getData())));

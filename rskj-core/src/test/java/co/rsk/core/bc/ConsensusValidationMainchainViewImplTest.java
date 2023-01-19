@@ -43,7 +43,7 @@ class ConsensusValidationMainchainViewImplTest {
         BlockStore blockStore = mock(BlockStore.class);
         ConsensusValidationMainchainView view = new ConsensusValidationMainchainViewImpl(blockStore);
 
-        List<BlockHeader> result = view.get(TestUtils.randomHash("blockStore"), 0);
+        List<BlockHeader> result = view.get(TestUtils.generateHash("blockStore"), 0);
 
         assertNotNull(result);
         assertThat(result.size(), is(0));
@@ -148,13 +148,13 @@ class ConsensusValidationMainchainViewImplTest {
 
         Map<Keccak256, BlockHeader> pendingHeadersByHash = new ConcurrentHashMap<>();
         BlockHeader headerOnTopOfBestBlock = mock(BlockHeader.class);
-        when(headerOnTopOfBestBlock.getHash()).thenReturn(TestUtils.randomHash("headerOnTopOfBestBlock"));
+        when(headerOnTopOfBestBlock.getHash()).thenReturn(TestUtils.generateHash("headerOnTopOfBestBlock"));
         Keccak256 bestBlockHash = bestBlock.getHash();
         when(headerOnTopOfBestBlock.getParentHash()).thenReturn(bestBlockHash);
         pendingHeadersByHash.put(headerOnTopOfBestBlock.getHash(), headerOnTopOfBestBlock);
 
         BlockHeader headerOnTopOfHeader = mock(BlockHeader.class);
-        when(headerOnTopOfHeader.getHash()).thenReturn(TestUtils.randomHash("headerOnTopOfHeader"));
+        when(headerOnTopOfHeader.getHash()).thenReturn(TestUtils.generateHash("headerOnTopOfHeader"));
         Keccak256 headerOnTopOfBestBlockHash = headerOnTopOfBestBlock.getHash();
         when(headerOnTopOfHeader.getParentHash()).thenReturn(headerOnTopOfBestBlockHash);
         pendingHeadersByHash.put(headerOnTopOfHeader.getHash(), headerOnTopOfHeader);
@@ -182,7 +182,7 @@ class ConsensusValidationMainchainViewImplTest {
     private BlockStore createBlockStore(int numberOfBlocks) {
         BlockStore blockstore = mock(BlockStore.class);
 
-        Block previousBlock = createBlock(420, TestUtils.randomHash("previousBlock"));
+        Block previousBlock = createBlock(420, TestUtils.generateHash("previousBlock"));
         when(blockstore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
 
         for(long i = 421; i < 420 + numberOfBlocks; i++) {
@@ -202,7 +202,7 @@ class ConsensusValidationMainchainViewImplTest {
     private Block createBlock(long number, Keccak256 parentHash){
         Block block = mock(Block.class);
         when(block.getNumber()).thenReturn(number);
-        Keccak256 blockHash = TestUtils.randomHash("blockHash");
+        Keccak256 blockHash = TestUtils.generateHash("blockHash");
         when(block.getHash()).thenReturn(blockHash);
         when(block.getParentHash()).thenReturn(parentHash);
         BlockHeader header = mock(BlockHeader.class);

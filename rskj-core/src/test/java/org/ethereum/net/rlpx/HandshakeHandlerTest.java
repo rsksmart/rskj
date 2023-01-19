@@ -116,7 +116,7 @@ class HandshakeHandlerTest {
         responsePacketByteBuf.readBytes(responsePacket);
         handshake.handleAuthResponseV4(remoteKey, initiatePacket, responsePacket);
 
-        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, ByteUtil.toHexString(TestUtils.randomPeerId("hello")));
+        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, ByteUtil.toHexString(TestUtils.generatePeerId("hello")));
         byte[] payload = helloMessage.getEncoded();
         FrameCodec frameCodec = new FrameCodec(handshake.getSecrets());
         ByteBuf byteBufMsg = ch.alloc().buffer();

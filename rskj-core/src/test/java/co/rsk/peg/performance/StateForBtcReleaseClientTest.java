@@ -96,7 +96,7 @@ class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 }
 
 
-                Keccak256 rskTxHash = TestUtils.randomHash("rskTxHash");
+                Keccak256 rskTxHash = TestUtils.generateHash("rskTxHash");
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
             }
         };

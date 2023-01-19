@@ -34,7 +34,7 @@ import org.ethereum.core.Blockchain;
 public class SimpleNode {
     private MessageHandler handler;
     private final Blockchain blockchain;
-    private NodeID nodeID = new NodeID(TestUtils.randomPeerId("simpleNode"));
+    private NodeID nodeID = new NodeID(TestUtils.generatePeerId("simpleNode"));
 
     public SimpleNode(MessageHandler handler, Blockchain blockchain) {
         this.handler = handler;

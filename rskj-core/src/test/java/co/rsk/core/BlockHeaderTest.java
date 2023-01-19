@@ -55,7 +55,7 @@ class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         byte[] hashForMergedMining = concatenate(hashForMergedMiningPrefix, forkDetectionData);
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, hashForMergedMining);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -78,7 +78,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOn() {
-        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, true, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -92,7 +92,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWithForkDetectionDataAndIncludedOff() {
-        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, false, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
@@ -104,7 +104,7 @@ class BlockHeaderTest {
 
     @Test
     void getEncodedWithUmmRootWithMergedMiningFields() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, ummRoot);
 
         byte[] headerEncoded = header.getFullEncoded();
@@ -115,7 +115,7 @@ class BlockHeaderTest {
 
     @Test
     void getEncodedWithUmmRootWithoutMergedMiningFields() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, ummRoot);
 
         byte[] headerEncoded = header.getFullEncoded();
@@ -170,7 +170,7 @@ class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         byte[] coinbase = concatenate(hashForMergedMining, forkDetectionData);
         coinbase = concatenate(RskMiningConstants.RSK_TAG, coinbase);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
@@ -181,7 +181,7 @@ class BlockHeaderTest {
 
     @Test
     void getUmmRoot() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         MatcherAssert.assertThat(header.getUmmRoot(), is(ummRoot));
@@ -189,7 +189,7 @@ class BlockHeaderTest {
 
     @Test
     void isUMMBlockWhenUmmRoot() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         MatcherAssert.assertThat(header.isUMMBlock(), is(true));
@@ -213,8 +213,8 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRoot() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
-        byte[] forkDetectionData = new byte[]{20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",20);
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot, forkDetectionData);
 
         byte[] encodedBlock = header.getEncoded(false, false);
@@ -243,7 +243,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRootWithLengthUnder20() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",19);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
@@ -251,7 +251,7 @@ class BlockHeaderTest {
 
     @Test
     void getHashForMergedMiningWhenUmmRootWithLengthOver20() {
-        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+        byte[] ummRoot = TestUtils.generateBytes("ummRoot",21);
         BlockHeader header = createBlockHeaderWithUmmRoot(ummRoot);
 
         Assertions.assertThrows(IllegalStateException.class, header::getHashForMergedMining);
@@ -264,7 +264,7 @@ class BlockHeaderTest {
     void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
-        byte[] forkDetectionData = new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] forkDetectionData = TestUtils.generateBytes("forkDetectionData",12);
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
@@ -367,7 +367,7 @@ class BlockHeaderTest {
         return new BlockHeader(
                 PegTestUtils.createHash3().getBytes(),
                 HashUtil.keccak256(RLP.encodeList()),
-                TestUtils.randomAddress("address"),
+                TestUtils.generateAddress("address"),
                 HashUtil.EMPTY_TRIE_HASH,
                 "tx_trie_root".getBytes(),
                 HashUtil.EMPTY_TRIE_HASH,

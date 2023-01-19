@@ -48,11 +48,11 @@ class RepositoryLocatorTest {
     @Test
     void getsSnapshotFromTranslatedStateRoot() {
         BlockHeader header = mock(BlockHeader.class);
-        Keccak256 stateRoot = TestUtils.randomHash("stateRoot");
+        Keccak256 stateRoot = TestUtils.generateHash("stateRoot");
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
         Trie underlyingTrie = mock(Trie.class);
-        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash("underlyingTrie"));
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.generateHash("underlyingTrie"));
         when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(underlyingTrie));
 
         RepositorySnapshot actualRepository = target.snapshotAt(header);
@@ -62,11 +62,11 @@ class RepositoryLocatorTest {
     @Test
     void findSnapshotAt_notFound() {
         BlockHeader header = mock(BlockHeader.class);
-        Keccak256 stateRoot = TestUtils.randomHash("stateRoot");
+        Keccak256 stateRoot = TestUtils.generateHash("stateRoot");
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
         Trie underlyingTrie = mock(Trie.class);
-        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash("underlyingTrie"));
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.generateHash("underlyingTrie"));
         when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.empty());
 
         Optional<RepositorySnapshot> result = target.findSnapshotAt(header);
@@ -77,11 +77,11 @@ class RepositoryLocatorTest {
     @Test
     void findSnapshotAt_found() {
         BlockHeader header = mock(BlockHeader.class);
-        Keccak256 stateRoot = TestUtils.randomHash("stateRoot");
+        Keccak256 stateRoot = TestUtils.generateHash("stateRoot");
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
         Trie underlyingTrie = mock(Trie.class);
-        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash("underlyingTrie"));
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.generateHash("underlyingTrie"));
         when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(mock(Trie.class)));
 
         Optional<RepositorySnapshot> result = target.findSnapshotAt(header);

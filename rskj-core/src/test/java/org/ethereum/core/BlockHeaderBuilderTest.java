@@ -54,7 +54,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithParentHash() {
-        Keccak256 parentHash = TestUtils.randomHash("parentHash");
+        Keccak256 parentHash = TestUtils.generateHash("parentHash");
 
         BlockHeader header = blockHeaderBuilder
                                 .setParentHash(parentHash.getBytes())
@@ -65,7 +65,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithUnclesHash() {
-        byte[] unclesHash = TestUtils.randomHash("unclesHash").getBytes();
+        byte[] unclesHash = TestUtils.generateHash("unclesHash").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setUnclesHash(unclesHash)
@@ -85,7 +85,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithCoinbase() {
-        RskAddress coinbase = TestUtils.randomAddress("coinbase");
+        RskAddress coinbase = TestUtils.generateAddress("coinbase");
 
         BlockHeader header = blockHeaderBuilder
                 .setCoinbase(coinbase)
@@ -96,7 +96,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithStateRoot() {
-        byte[] stateRoot = TestUtils.randomHash("stateRoot").getBytes();
+        byte[] stateRoot = TestUtils.generateHash("stateRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setStateRoot(stateRoot)
@@ -114,7 +114,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithTxTrieRoot() {
-        byte[] txTrieRoot = TestUtils.randomHash("txTrieRoot").getBytes();
+        byte[] txTrieRoot = TestUtils.generateHash("txTrieRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setTxTrieRoot(txTrieRoot)
@@ -132,7 +132,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithReceiptTrieRoot() {
-        byte[] receiptTrieRoot = TestUtils.randomHash("receiptTrieRoot").getBytes();
+        byte[] receiptTrieRoot = TestUtils.generateHash("receiptTrieRoot").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setReceiptTrieRoot(receiptTrieRoot)
@@ -150,7 +150,7 @@ class BlockHeaderBuilderTest {
 
     @Test
     void createsHeaderWithLogsBloom() {
-        byte[] logsBloom = TestUtils.randomHash("logsBloom").getBytes();
+        byte[] logsBloom = TestUtils.generateHash("logsBloom").getBytes();
 
         BlockHeader header = blockHeaderBuilder
                 .setLogsBloom(logsBloom)

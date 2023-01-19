@@ -45,7 +45,7 @@ public class TransactionUtils {
     }
 
     public static String getAddress() {
-        Account targetAcc = new Account(TestUtils.getRandomECKey("targetAcc"));
+        Account targetAcc = new Account(TestUtils.generateECKey("targetAcc"));
         return ByteUtil.toHexString(targetAcc.getAddress().getBytes());
     }
 

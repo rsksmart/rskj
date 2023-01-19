@@ -116,7 +116,7 @@ class LogsNotificationEmitterTest {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
-        RskAddress logSender = TestUtils.randomAddress("logSender");
+        RskAddress logSender = TestUtils.generateAddress("logSender");
         when(params.getAddresses()).thenReturn(new RskAddress[]{logSender});
         emitter.subscribe(subscriptionId, channel, params);
 
@@ -223,19 +223,19 @@ class LogsNotificationEmitterTest {
 
     private Block block(Transaction transaction, String discriminator) {
         Block block = mock(Block.class);
-        when(block.getHash()).thenReturn(TestUtils.randomHash("blockHash" + discriminator));
+        when(block.getHash()).thenReturn(TestUtils.generateHash("blockHash" + discriminator));
         when(block.getTransactionsList()).thenReturn(Collections.singletonList(transaction));
         return block;
     }
 
     private Transaction transaction(String discriminator) {
         Transaction tx = mock(Transaction.class);
-        when(tx.getHash()).thenReturn(TestUtils.randomHash("txHash" + discriminator));
+        when(tx.getHash()).thenReturn(TestUtils.generateHash("txHash" + discriminator));
         return tx;
     }
 
     private LogInfo logInfo(byte... data) {
-        return logInfo(TestUtils.randomAddress(String.valueOf(data.hashCode())), data);
+        return logInfo(TestUtils.generateAddress(String.valueOf(data.hashCode())), data);
     }
 
     private LogInfo logInfo(final RskAddress logSource, byte... data) {

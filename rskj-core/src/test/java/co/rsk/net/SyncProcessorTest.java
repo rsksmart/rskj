@@ -459,7 +459,7 @@ class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
 
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random(100).nextLong(), headers);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(3135465432132L, headers);
         processor.registerExpectedMessage(response);
         processor.processBlockHeadersResponse(sender, response);
         Assertions.assertEquals(0, sender.getMessages().size());

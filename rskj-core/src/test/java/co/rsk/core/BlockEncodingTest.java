@@ -67,7 +67,7 @@ class BlockEncodingTest {
         FreeBlock fblock = new FreeBlock(
                 PegTestUtils.createHash3().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
-                TestUtils.randomAddress("coinbase").getBytes(),            // coinbase
+                TestUtils.generateAddress("coinbase").getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
                 bigBadByteArray,

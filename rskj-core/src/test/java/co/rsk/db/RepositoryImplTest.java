@@ -47,7 +47,7 @@ class RepositoryImplTest {
     @Test
     void getNonceUnknownAccount() {
         Repository repository = createRepository();
-        BigInteger nonce = repository.getNonce(TestUtils.randomAddress("nonce"));
+        BigInteger nonce = repository.getNonce(TestUtils.generateAddress("nonce"));
 
         Assertions.assertEquals(BigInteger.ZERO, nonce);
     }
@@ -63,7 +63,7 @@ class RepositoryImplTest {
     void createAccount() {
         Repository repository = createRepository();
 
-        AccountState accState = repository.createAccount(TestUtils.randomAddress("accState"));
+        AccountState accState = repository.createAccount(TestUtils.generateAddress("accState"));
 
         Assertions.assertNotNull(accState);
         Assertions.assertEquals(BigInteger.ZERO, accState.getNonce());
@@ -74,7 +74,7 @@ class RepositoryImplTest {
 
     @Test
     void updateAccountState() {
-        RskAddress accAddress = TestUtils.randomAddress("accAddress");
+        RskAddress accAddress = TestUtils.generateAddress("accAddress");
 
         Repository repository = createRepository();
 
@@ -93,7 +93,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountNonceForNewAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -104,7 +104,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountNonceForAlreadyCreatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -116,7 +116,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountNonceTwiceForAlreadyCreatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("address");
+        RskAddress accAddress = TestUtils.generateAddress("address");
 
         Repository repository = createRepository();
 
@@ -129,7 +129,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountBalanceForNewAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -140,7 +140,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountBalanceForAlreadyCreatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -152,7 +152,7 @@ class RepositoryImplTest {
 
     @Test
     void incrementAccountBalanceTwiceForAlreadyCreatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -167,12 +167,12 @@ class RepositoryImplTest {
     void isExistReturnsFalseForUnknownAccount() {
         Repository repository = createRepository();
 
-        Assertions.assertFalse(repository.isExist(TestUtils.randomAddress("acc")));
+        Assertions.assertFalse(repository.isExist(TestUtils.generateAddress("acc")));
     }
 
     @Test
     void isExistReturnsTrueForCreatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -185,7 +185,7 @@ class RepositoryImplTest {
     void getCodeFromUnknownAccount() {
         Repository repository = createRepository();
 
-        byte[] code = repository.getCode(TestUtils.randomAddress("code"));
+        byte[] code = repository.getCode(TestUtils.generateAddress("code"));
 
         Assertions.assertNotNull(code);
         Assertions.assertEquals(0, code.length);
@@ -193,7 +193,7 @@ class RepositoryImplTest {
 
     @Test
     void getCodeFromAccountWithoutCode() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -209,7 +209,7 @@ class RepositoryImplTest {
 
     @Test
     void saveAndGetCodeFromAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
         byte[] accCode = new byte[] { 0x01, 0x02, 0x03 };
 
         Repository repository = createRepository();
@@ -226,7 +226,7 @@ class RepositoryImplTest {
 
     @Test
     void hibernateAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -241,7 +241,7 @@ class RepositoryImplTest {
 
     @Test
     void getCodeFromHibernatedAccount() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
         byte[] accCode = new byte[] { 0x01, 0x02, 0x03 };
 
         Repository repository = createRepository();
@@ -268,7 +268,7 @@ class RepositoryImplTest {
 
     @Test
     void createAccountInTrackAndCommit() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
         Repository repository = createRepository();
 
         Repository track = repository.startTracking();
@@ -282,7 +282,7 @@ class RepositoryImplTest {
 
     @Test
     void createAccountInTrackAndRollback() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
         Repository repository = createRepository();
 
         Repository track = repository.startTracking();
@@ -296,7 +296,7 @@ class RepositoryImplTest {
 
     @Test
     void getEmptyStorageValue() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -308,7 +308,7 @@ class RepositoryImplTest {
 
     @Test
     void setAndGetStorageValue() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -325,7 +325,7 @@ class RepositoryImplTest {
 
     @Test
     void setAndGetStorageValueUsingNewRepositoryForTest() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
@@ -339,7 +339,7 @@ class RepositoryImplTest {
 
     @Test
     void setAndGetStorageValueUsingTrack() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -356,7 +356,7 @@ class RepositoryImplTest {
 
     @Test
     void getEmptyStorageBytes() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
 
         Repository repository = createRepository();
 
@@ -367,7 +367,7 @@ class RepositoryImplTest {
 
     @Test
     void setAndGetStorageBytesUsingTrack() {
-        RskAddress accAddress = TestUtils.randomAddress("acc");
+        RskAddress accAddress = TestUtils.generateAddress("acc");
         byte[] bytes = new byte[] { 0x01, 0x02, 0x03 };
 
         Repository repository = createRepository();
@@ -395,8 +395,8 @@ class RepositoryImplTest {
 
     @Test
     void getAccountsKeys() {
-        RskAddress accAddress1 = TestUtils.randomAddress("acc");
-        RskAddress accAddress2 = TestUtils.randomAddress("acc2");
+        RskAddress accAddress1 = TestUtils.generateAddress("acc");
+        RskAddress accAddress2 = TestUtils.generateAddress("acc2");
 
         Repository repository = createRepositoryWithCache();
 
@@ -414,8 +414,8 @@ class RepositoryImplTest {
     @Test
     void isContract() {
         Repository repository = createRepository();
-        RskAddress rskAddressA = TestUtils.randomAddress("rskAddressA");
-        RskAddress rskAddressB = TestUtils.randomAddress("rskAddressB");
+        RskAddress rskAddressA = TestUtils.generateAddress("rskAddressA");
+        RskAddress rskAddressB = TestUtils.generateAddress("rskAddressB");
 
         repository.createAccount(rskAddressA);
         repository.setupContract(rskAddressA);

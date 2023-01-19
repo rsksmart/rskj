@@ -93,7 +93,7 @@ class RemascStorageProviderTest {
 
     @Test
     void getDefautRewardBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -103,7 +103,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetRewardBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -115,7 +115,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setSaveRetrieveAndGetRewardBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -131,7 +131,7 @@ class RemascStorageProviderTest {
 
     @Test
     void getDefautBurnedBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -141,7 +141,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetBurnedBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -153,7 +153,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setSaveRetrieveAndGetBurnedBalance() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -169,7 +169,7 @@ class RemascStorageProviderTest {
 
     @Test
     void getDefaultBrokenSelectionRule() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -179,7 +179,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setAndGetBrokenSelectionRule() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = createRepository();
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -191,7 +191,7 @@ class RemascStorageProviderTest {
 
     @Test
     void setSaveRetrieveAndGetBrokenSelectionRule() {
-        RskAddress accountAddress = TestUtils.randomAddress("account");
+        RskAddress accountAddress = TestUtils.generateAddress("account");
         Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
@@ -415,7 +415,7 @@ class RemascStorageProviderTest {
         long lowGasPrice = 1L;
         long minerFee = 21000;
 
-        RskAddress coinbase = TestUtils.randomAddress("coinbase");
+        RskAddress coinbase = TestUtils.generateAddress("coinbase");
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
 
         RemascTestRunner testRunner = new RemascTestRunner(builder, this.genesisBlock).txValue(txValue).minerFee(minerFee)

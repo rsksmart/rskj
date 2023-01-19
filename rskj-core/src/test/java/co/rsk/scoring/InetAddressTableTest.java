@@ -16,20 +16,20 @@ class InetAddressTableTest {
     void doesNotContainsNewIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
-        Assertions.assertFalse(table.contains(TestUtils.randomIpAddressV4("addressV4")));
+        Assertions.assertFalse(table.contains(TestUtils.generateIpAddressV4("addressV4")));
     }
 
     @Test
     void doesNotContainsNewIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
 
-        Assertions.assertFalse(table.contains(TestUtils.randomIpAddressV6("addressV6")));
+        Assertions.assertFalse(table.contains(TestUtils.generateIpAddressV6("addressV6")));
     }
 
     @Test
     void addIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV4("addressV4");
+        InetAddress address = TestUtils.generateIpAddressV4("addressV4");
 
         table.addAddress(address);
         Assertions.assertTrue(table.contains(address));
@@ -37,7 +37,7 @@ class InetAddressTableTest {
 
     @Test
     void containExactAddressForMask32() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("addressV4");
+        InetAddress address = TestUtils.generateIpAddressV4("addressV4");
 
         InetAddressTable table = new InetAddressTable();
         InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(address, 32);
@@ -49,16 +49,16 @@ class InetAddressTableTest {
     @Test
     void doesNotContainRandomAddressForMask32() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(TestUtils.randomIpAddressV4("addressV4"), 32);
+        InetAddressCidrBlock addressBlock = new InetAddressCidrBlock(TestUtils.generateIpAddressV4("addressV4"), 32);
 
         table.addAddressBlock(addressBlock);
-        Assertions.assertFalse(table.contains(TestUtils.randomIpAddressV4("addressV4-2")));
+        Assertions.assertFalse(table.contains(TestUtils.generateIpAddressV4("addressV4-2")));
     }
 
     @Test
     void addAndRemoveIPV4Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV4("addressV4");
+        InetAddress address = TestUtils.generateIpAddressV4("addressV4");
 
         table.addAddress(address);
         Assertions.assertTrue(table.contains(address));
@@ -69,7 +69,7 @@ class InetAddressTableTest {
     @Test
     void addIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         table.addAddress(address);
         Assertions.assertTrue(table.contains(address));
@@ -78,7 +78,7 @@ class InetAddressTableTest {
     @Test
     void addAndRemoveIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV6("addressV6");
+        InetAddress address = TestUtils.generateIpAddressV6("addressV6");
 
         table.addAddress(address);
         Assertions.assertTrue(table.contains(address));
@@ -89,7 +89,7 @@ class InetAddressTableTest {
     @Test
     void addAddressTwice() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV4("addressV4");
+        InetAddress address = TestUtils.generateIpAddressV4("addressV4");
 
         table.addAddress(address);
         table.addAddress(address);
@@ -99,7 +99,7 @@ class InetAddressTableTest {
     @Test
     void removeUnknownAddress() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
-        InetAddress address = TestUtils.randomIpAddressV4("addressV4");
+        InetAddress address = TestUtils.generateIpAddressV4("addressV4");
 
         table.removeAddress(address);
         Assertions.assertFalse(table.contains(address));

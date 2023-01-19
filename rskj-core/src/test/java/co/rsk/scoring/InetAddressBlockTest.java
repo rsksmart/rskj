@@ -14,7 +14,7 @@ class InetAddressBlockTest {
 
     @Test
     void recognizeIPV4AddressMask8Bits() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assertions.assertTrue(mask.contains(address));
@@ -22,7 +22,7 @@ class InetAddressBlockTest {
 
     @Test
     void containsIPV4() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         InetAddress address2 = alterByte(address, 3);
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
@@ -32,7 +32,7 @@ class InetAddressBlockTest {
 
     @Test
     void doesNotContainIPV4WithAlteredByte() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         InetAddress address2 = alterByte(address, 2);
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
@@ -42,8 +42,8 @@ class InetAddressBlockTest {
 
     @Test
     void doesNotContainIPV6() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
-        InetAddress address2 = TestUtils.randomIpAddressV6("address2");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
+        InetAddress address2 = TestUtils.generateIpAddressV6("address2");
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
@@ -52,7 +52,7 @@ class InetAddressBlockTest {
 
     @Test
     void using16BitsMask() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         InetAddress address2 = alterByte(address, 2);
 
         InetAddressBlock mask = new InetAddressBlock(address, 16);
@@ -62,7 +62,7 @@ class InetAddressBlockTest {
 
     @Test
     void usingIPV4With9BitsMask() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         byte[] bytes = address.getAddress();
         bytes[2] ^= 1;
         InetAddress address2 = InetAddress.getByAddress(bytes);
@@ -77,7 +77,7 @@ class InetAddressBlockTest {
 
     @Test
     void usingIPV6With9BitsMask() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV6("v6");
+        InetAddress address = TestUtils.generateIpAddressV6("v6");
         byte[] bytes = address.getAddress();
         bytes[14] ^= 1;
         InetAddress address2 = InetAddress.getByAddress(bytes);
@@ -92,7 +92,7 @@ class InetAddressBlockTest {
 
     @Test
     void usingIPV4With18BitsMask() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV4("address");
         byte[] bytes = address.getAddress();
         bytes[1] ^= 2;
         InetAddress address2 = InetAddress.getByAddress(bytes);
@@ -107,7 +107,7 @@ class InetAddressBlockTest {
 
     @Test
     void usingIPV6With18BitsMask() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV6("v6");
+        InetAddress address = TestUtils.generateIpAddressV6("v6");
         byte[] bytes = address.getAddress();
         bytes[13] ^= 2;
         InetAddress address2 = InetAddress.getByAddress(bytes);
@@ -122,8 +122,8 @@ class InetAddressBlockTest {
 
     @Test
     void doesNotContainIPV4() throws UnknownHostException {
-        InetAddress address = TestUtils.randomIpAddressV6("v6");
-        InetAddress address2 = TestUtils.randomIpAddressV4("address");
+        InetAddress address = TestUtils.generateIpAddressV6("v6");
+        InetAddress address2 = TestUtils.generateIpAddressV4("address");
 
         InetAddressBlock mask = new InetAddressBlock(address, 8);
 
@@ -132,9 +132,9 @@ class InetAddressBlockTest {
 
     @Test
     void equals() throws UnknownHostException {
-        InetAddress address1 = TestUtils.randomIpAddressV4("address");
+        InetAddress address1 = TestUtils.generateIpAddressV4("address");
         InetAddress address2 = alterByte(address1, 0);
-        InetAddress address3 = TestUtils.randomIpAddressV6("v6");
+        InetAddress address3 = TestUtils.generateIpAddressV6("v6");
 
         InetAddressBlock block1 = new InetAddressBlock(address1, 8);
         InetAddressBlock block2 = new InetAddressBlock(address2, 9);

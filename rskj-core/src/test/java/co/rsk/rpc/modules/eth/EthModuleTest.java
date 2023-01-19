@@ -60,8 +60,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 class EthModuleTest {
 
@@ -329,7 +327,7 @@ class EthModuleTest {
                 config.getGasEstimationCap()
         );
 
-        String addr = eth.getCode(TestUtils.randomAddress("addr").toHexString(), "pending");
+        String addr = eth.getCode(TestUtils.generateAddress("addr").toHexString(), "pending");
         MatcherAssert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 

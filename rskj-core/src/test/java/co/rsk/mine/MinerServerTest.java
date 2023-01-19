@@ -457,17 +457,17 @@ public abstract class MinerServerTest {
     void gasUnitInDollarsIsInitializedOkAtConstructor() {
         Block block1 = mock(Block.class);
         when(block1.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(10)));
-        when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash("block1MM").getBytes());
-        when(block1.getHash()).thenReturn(TestUtils.randomHash("block1Hash"));
+        when(block1.getHashForMergedMining()).thenReturn(TestUtils.generateHash("block1MM").getBytes());
+        when(block1.getHash()).thenReturn(TestUtils.generateHash("block1Hash"));
         when(block1.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
-        when(block1.getParentHashJsonString()).thenReturn(TestUtils.randomHash("block1Parent").toJsonString());
+        when(block1.getParentHashJsonString()).thenReturn(TestUtils.generateHash("block1Parent").toJsonString());
 
         Block block2 = mock(Block.class);
         when(block2.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(24)));
-        when(block2.getHashForMergedMining()).thenReturn(TestUtils.randomHash("block2MM").getBytes());
-        when(block2.getHash()).thenReturn(TestUtils.randomHash("bock2Hash"));
+        when(block2.getHashForMergedMining()).thenReturn(TestUtils.generateHash("block2MM").getBytes());
+        when(block2.getHash()).thenReturn(TestUtils.generateHash("bock2Hash"));
         when(block2.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
-        when(block2.getParentHashJsonString()).thenReturn(TestUtils.randomHash("block2Parent").toJsonString());
+        when(block2.getParentHashJsonString()).thenReturn(TestUtils.generateHash("block2Parent").toJsonString());
 
         BlockToMineBuilder builder = mock(BlockToMineBuilder.class);
         BlockResult blockResult = mock(BlockResult.class);
