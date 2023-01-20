@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -42,160 +43,139 @@ class BridgeStorageProviderFederationTests {
 
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
     private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
-    private ActivationConfig.ForBlock activations;
+    private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @Test
     void getNewFederation_should_return_P2shErpFederation() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
 
         testGetNewFederation(
             P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation,
-            false,
-            createFederationFrom(P2SH_ERP_FEDERATION_FORMAT_VERSION, federation)
+            federation
         );
     }
 
     @Test
     void getNewFederation_should_return_erp_federation() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-
         Federation federation = createFederation(ERP_FEDERATION_FORMAT_VERSION);
         testGetNewFederation(
             ERP_FEDERATION_FORMAT_VERSION,
-            federation,
-            false,
-            createFederationFrom(ERP_FEDERATION_FORMAT_VERSION, federation)
+            federation
         );
     }
 
     @Test
     void getNewFederation_should_return_legacy_federation() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
         testGetNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
-            federation,
-            false,
-            createFederationFrom(FEDERATION_FORMAT_VERSION_MULTIKEY, federation)
+            federation
         );
     }
 
     @Test
     void getNewFederation_format_version_different_from_fed() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
 
         // assert that the federation type does not depend on the persisted federation itself but on the format version saved
         testGetNewFederation(
             ERP_FEDERATION_FORMAT_VERSION,
-            federation,
-            false,
-            createFederationFrom(ERP_FEDERATION_FORMAT_VERSION, federation)
+            federation
         );
 
         testGetNewFederation(
             P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation,
-            false,
-            createFederationFrom(P2SH_ERP_FEDERATION_FORMAT_VERSION, federation)
+            federation
         );
 
         federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
 
         testGetNewFederation(
             ERP_FEDERATION_FORMAT_VERSION,
-            federation,
-            false,
-            createFederationFrom(ERP_FEDERATION_FORMAT_VERSION, federation)
+            federation
         );
 
         testGetNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
-            federation,
-            false,
-            createFederationFrom(FEDERATION_FORMAT_VERSION_MULTIKEY, federation)
+            federation
         );
     }
 
     @Test
     void getNewFederation_should_return_null() {
-        activations = ActivationConfigsForTest.only().forBlock(0);
         testGetNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
-            null,
-            true,
             null
         );
 
         testGetNewFederation(
             ERP_FEDERATION_FORMAT_VERSION,
-            null,
-            true,
             null
         );
 
         testGetNewFederation(
             P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            null,
-            true,
             null
         );
     }
 
-    private <T extends Federation, K extends Federation> void testGetNewFederation(
-        int format,
-        T savedFederation,
-        boolean shouldReturnNull,
-        K expectedFederation
+    private void testGetNewFederation(
+        int federationFormat,
+        Federation storedFederation
     ) {
         // Arrange
-        Repository repository = spy(createRepository());
+        Repository repository = mock(Repository.class);
+
+        // Mock federation format in storage
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey())
+        ).thenReturn(BridgeSerializationUtils.serializeInteger(federationFormat));
+
+        // Mock federation
+        byte[] serializedFederation = null;
+        if (storedFederation != null) {
+            serializedFederation = BridgeSerializationUtils.serializeFederation(storedFederation);
+        }
+
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey())
+        ).thenReturn(serializedFederation);
+
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
-            BridgeRegTestConstants.getInstance(),
+            bridgeConstantsRegtest,
             activations
         );
 
-        // Mock format storage version
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey())).thenReturn(
-            BridgeSerializationUtils.serializeInteger(format)
-        );
-
-        // Mock federation
-        byte[] serializeFederation = shouldReturnNull?
-                                         null:
-                                         BridgeSerializationUtils.serializeFederation(savedFederation);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey())).thenReturn(
-            serializeFederation
-        );
-
         // Act
-        Federation resultFederation = provider.getNewFederation();
+        Federation obtainedFederation = provider.getNewFederation();
 
         // Assert
 
-        // assert that resultFederation is the same instance of the first time we called `getNewFederation` method
-        Federation resultFederation2 = provider.getNewFederation();
-        assertEquals(resultFederation, resultFederation2);
-
-       /* verify that repository.getStorageBytes to get the NEW_FEDERATION_FORMAT_VERSION,
-         is call one time with the given values pass through the method parameters */
-        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
+        // Assert that the NEW_FEDERATION_FORMAT_VERSION key is read from the storage
+        verify(repository, times(1)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
             BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey()
         );
 
-        verify(repository, times(shouldReturnNull? 2:1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
-            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey());
+        // Call getNewFederation again and assert the same federation is returned
+        assertEquals(obtainedFederation, provider.getNewFederation());
 
-        if (!shouldReturnNull){
-            assertEquals(resultFederation, expectedFederation);
-        } else {
-            assertNull(resultFederation);
+        // The second call to getNewFederation() should return the federation stored in memory
+        int timesFederationIsReadFromRepository = 1;
+        if (storedFederation == null) {
+            // If there is no federation in storage it will try to get it every time getNewFederation() is called
+            timesFederationIsReadFromRepository = 2;
         }
+        verify(repository, times(timesFederationIsReadFromRepository)).getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey()
+        );
+
+        assertEquals(storedFederation, obtainedFederation);
     }
 
     @Test
