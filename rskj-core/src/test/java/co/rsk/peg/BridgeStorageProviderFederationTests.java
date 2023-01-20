@@ -1,5 +1,15 @@
 package co.rsk.peg;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
@@ -9,6 +19,11 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -18,26 +33,9 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-public class BridgeStorageProviderFederationTests {
+class BridgeStorageProviderFederationTests {
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_KEY = DataWord.fromString("newFederation");
@@ -54,7 +52,7 @@ public class BridgeStorageProviderFederationTests {
     private ActivationConfig.ForBlock activations;
 
     @Test
-    public void getNewFederation_should_return_P2shErpFederation() {
+    void getNewFederation_should_return_P2shErpFederation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
@@ -68,7 +66,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getNewFederation_should_return_erp_federation() {
+    void getNewFederation_should_return_erp_federation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         Federation federation = createFederation(ERP_FEDERATION_FORMAT_VERSION);
@@ -81,7 +79,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getNewFederation_should_return_legacy_federation() {
+    void getNewFederation_should_return_legacy_federation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
         testGetNewFederation(
@@ -93,7 +91,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getNewFederation_format_version_different_from_fed() {
+    void getNewFederation_format_version_different_from_fed() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
 
@@ -130,7 +128,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getNewFederation_should_return_null() {
+    void getNewFederation_should_return_null() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testGetNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -208,7 +206,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getOldFederation_should_return_P2shErpFederation() {
+    void getOldFederation_should_return_P2shErpFederation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
@@ -221,7 +219,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getOldFederation_should_return_erp_federation() {
+    void getOldFederation_should_return_erp_federation() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         Federation federation = createFederation(ERP_FEDERATION_FORMAT_VERSION);
@@ -234,7 +232,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getOldFederation_should_return_legacy_fed() {
+    void getOldFederation_should_return_legacy_fed() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
@@ -247,7 +245,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getOldFederation_format_version_different_from_fed() {
+    void getOldFederation_format_version_different_from_fed() {
         activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
 
@@ -284,7 +282,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void getOldFederation_should_return_null() {
+    void getOldFederation_should_return_null() {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         testGetOldFederation(
@@ -361,7 +359,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -383,7 +381,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -393,7 +391,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -406,7 +404,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -420,7 +418,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_before_RSKIP123_should_save_erp_fed_format() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveNewFederation(
             ERP_FEDERATION_FORMAT_VERSION,
@@ -430,7 +428,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP123_should_not_save_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_not_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -440,7 +438,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -453,7 +451,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -467,7 +465,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_before_RSKIP123_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
         testSaveNewFederation(
@@ -478,7 +476,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP123_should_not_save_p2sh_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_not_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -488,7 +486,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP201_should_not_save_p2sh_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP201_should_not_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -504,7 +502,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -518,7 +516,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederationFederation_before_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederationFederation_before_RSKIP123_should_not_save_null() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveNewFederation(
             null,
@@ -528,7 +526,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveNewFederationFederation_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederationFederation_RSKIP123_should_not_save_null() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -597,7 +595,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveOldFederationFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -617,8 +615,9 @@ public class BridgeStorageProviderFederationTests {
             false
         );
     }
+
     @Test
-    public void saveOldFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederationFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -628,7 +627,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -641,7 +640,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_legacy_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -655,7 +654,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_before_RSKIP123_should_save_erp_fed_format() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
 
         testSaveOldFederationFederation(
@@ -666,7 +665,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP123_should_not_save_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_not_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederationFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -676,7 +675,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -689,7 +688,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -703,7 +702,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_before_RSKIP123_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveOldFederationFederation(
             P2SH_ERP_FEDERATION_FORMAT_VERSION,
@@ -713,7 +712,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP123_should_not_save_p2sh_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP123_should_not_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederationFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -723,7 +722,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP201_should_not_save_p2sh_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP201_should_not_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201
@@ -736,7 +735,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
+    void saveOldFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
             ConsensusRule.RSKIP201,
@@ -750,7 +749,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_before_RSKIP123_should_save_null() throws IOException {
+    void saveOldFederation_before_RSKIP123_should_save_null() throws IOException {
         activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveOldFederationFederation(
             null,
@@ -760,7 +759,7 @@ public class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    public void saveOldFederation_RSKIP123_should_save_null() throws IOException {
+    void saveOldFederation_RSKIP123_should_save_null() throws IOException {
         activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
         testSaveOldFederationFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -888,7 +887,7 @@ public class BridgeStorageProviderFederationTests {
         }
     }
 
-    protected static Repository createRepository() {
+    private static Repository createRepository() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
     }
