@@ -1,37 +1,22 @@
 package co.rsk.peg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +27,6 @@ class BridgeStorageProviderFederationTests {
     private static final int P2SH_ERP_FEDERATION_FORMAT_VERSION = 3000;
 
     private final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
-    private final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     private ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
     @Test
@@ -493,7 +477,7 @@ class BridgeStorageProviderFederationTests {
         boolean isSavingNull
     ) throws IOException {
         // Arrange
-        Repository repository = spy(createRepository());
+        Repository repository = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
@@ -725,7 +709,7 @@ class BridgeStorageProviderFederationTests {
         boolean isSavingNull
     ) throws IOException {
         // Arrange
-        Repository repository = spy(createRepository());
+        Repository repository = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
@@ -770,18 +754,17 @@ class BridgeStorageProviderFederationTests {
     }
 
     private Federation createFederation(int version) {
-        List<FederationMember> members = IntStream.
-            range(0, 7).
-            mapToObj(j -> new FederationMember(new BtcECKey(), new ECKey(), new ECKey()))
-            .collect(Collectors.toList());
+        List<FederationMember> members = FederationMember.getFederationMembersFromKeys(
+            PegTestUtils.createRandomBtcECKeys(7)
+        );
 
         switch (version) {
             case P2SH_ERP_FEDERATION_FORMAT_VERSION:
                 return new P2shErpFederation(
                     members,
                     Instant.now(),
-                    123,
-                    btcRegTestParams,
+                    1L,
+                    bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
                     activations
@@ -790,8 +773,8 @@ class BridgeStorageProviderFederationTests {
                 return new ErpFederation(
                     members,
                     Instant.now(),
-                    123,
-                    btcRegTestParams,
+                    1L,
+                    bridgeConstantsRegtest.getBtcParams(),
                     bridgeConstantsRegtest.getErpFedPubKeysList(),
                     bridgeConstantsRegtest.getErpFedActivationDelay(),
                     activations
@@ -800,14 +783,9 @@ class BridgeStorageProviderFederationTests {
                 return new Federation(
                     members,
                     Instant.now(),
-                    123,
-                    btcRegTestParams
+                    1L,
+                    bridgeConstantsRegtest.getBtcParams()
                 );
         }
-    }
-
-    private static Repository createRepository() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
     }
 }
