@@ -31,17 +31,10 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
 
 class BridgeStorageProviderFederationTests {
-
-    // Version keys and versions
-    private static final DataWord NEW_FEDERATION_KEY = DataWord.fromString("newFederation");
-    private static final DataWord OLD_FEDERATION_KEY = DataWord.fromString("oldFederation");
-    private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
-    private static final DataWord OLD_FEDERATION_FORMAT_VERSION = DataWord.fromString("oldFederationFormatVersion");
 
     private static final int FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
     private static final int ERP_FEDERATION_FORMAT_VERSION = 2000;
@@ -168,7 +161,7 @@ class BridgeStorageProviderFederationTests {
         );
 
         // Mock format storage version
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEW_FEDERATION_FORMAT_VERSION)).thenReturn(
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey())).thenReturn(
             BridgeSerializationUtils.serializeInteger(format)
         );
 
@@ -176,7 +169,7 @@ class BridgeStorageProviderFederationTests {
         byte[] serializeFederation = shouldReturnNull?
                                          null:
                                          BridgeSerializationUtils.serializeFederation(savedFederation);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEW_FEDERATION_KEY)).thenReturn(
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey())).thenReturn(
             serializeFederation
         );
 
@@ -192,11 +185,11 @@ class BridgeStorageProviderFederationTests {
        /* verify that repository.getStorageBytes to get the NEW_FEDERATION_FORMAT_VERSION,
          is call one time with the given values pass through the method parameters */
         verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_FORMAT_VERSION
+            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey()
         );
 
         verify(repository, times(shouldReturnNull? 2:1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
-            NEW_FEDERATION_KEY);
+            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey());
 
         if (!shouldReturnNull){
             assertEquals(resultFederation, expectedFederation);
@@ -322,7 +315,7 @@ class BridgeStorageProviderFederationTests {
             activations
         );
         // Mock format storage version
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, OLD_FEDERATION_FORMAT_VERSION)).thenReturn(
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey())).thenReturn(
             BridgeSerializationUtils.serializeInteger(format)
         );
 
@@ -330,7 +323,7 @@ class BridgeStorageProviderFederationTests {
         byte[] serializeFederation = shouldReturnNull?
                                          null:
                                          BridgeSerializationUtils.serializeFederation(savedFederation);
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, OLD_FEDERATION_KEY)).thenReturn(
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey())).thenReturn(
             serializeFederation
         );
 
@@ -346,10 +339,10 @@ class BridgeStorageProviderFederationTests {
         /* verify that repository.getStorageBytes to get the OLD_FEDERATION_FORMAT_VERSION,
          is call one time with the given values pass through the method parameters */
         verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_FORMAT_VERSION);
+            BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey());
 
         verify(repository, times(shouldReturnNull? 2:1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR,
-            OLD_FEDERATION_KEY);
+            BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey());
 
         if (!shouldReturnNull){
             assertEquals(resultFederation, expectedFederation);
@@ -559,23 +552,23 @@ class BridgeStorageProviderFederationTests {
             if (activations.isActive(ConsensusRule.RSKIP123)){
                 verify(repository, times(1)).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
-                    NEW_FEDERATION_FORMAT_VERSION,
+                    BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
                 );
                 verify(repository, times(1)).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
-                    NEW_FEDERATION_KEY,
+                    BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
                     BridgeSerializationUtils.serializeFederation(federationToSave)
                 );
             } else {
                 verify(repository, never()).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
-                    NEW_FEDERATION_FORMAT_VERSION,
+                    BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
                     BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
                 );
                 verify(repository, times(1)).addStorageBytes(
                     PrecompiledContracts.BRIDGE_ADDR,
-                    NEW_FEDERATION_KEY,
+                    BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
                     BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federationToSave)
                 );
             }
@@ -790,23 +783,23 @@ class BridgeStorageProviderFederationTests {
         if (activations.isActive(ConsensusRule.RSKIP123)){
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                OLD_FEDERATION_FORMAT_VERSION,
+                BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey(),
                 BridgeSerializationUtils.serializeInteger(expectedFormat)
             );
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                OLD_FEDERATION_KEY,
+                BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey(),
                 isSavingNull? null:BridgeSerializationUtils.serializeFederation(federationToSave)
             );
         } else {
             verify(repository, never()).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                OLD_FEDERATION_FORMAT_VERSION,
+                BridgeStorageIndexKey.OLD_FEDERATION_FORMAT_VERSION.getKey(),
                 isSavingNull? null: BridgeSerializationUtils.serializeInteger(expectedFormat)
             );
             verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                OLD_FEDERATION_KEY,
+                BridgeStorageIndexKey.OLD_FEDERATION_KEY.getKey(),
                 isSavingNull? null:BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federationToSave)
             );
         }
