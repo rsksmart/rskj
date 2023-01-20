@@ -72,7 +72,7 @@ class P2shErpFederationTest {
     }
 
     @Test
-    public void getPowPegAddress_testnet() {
+    void getPowPegAddress_testnet() {
         BridgeConstants bridgeTestNetConstants = BridgeTestNetConstants.getInstance();
 
         List<BtcECKey> powpegKeys = Arrays.stream(new String[]{
@@ -105,7 +105,7 @@ class P2shErpFederationTest {
     }
 
     @Test
-    public void getPowPegAddress_mainnet() {
+    void getPowPegAddress_mainnet() {
         BridgeConstants bridgeMainNetConstants = BridgeMainNetConstants.getInstance();
 
         List<BtcECKey> powpegKeys = Arrays.stream(new String[]{

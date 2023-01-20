@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class PowpegMigrationTest {
+class PowpegMigrationTest {
 
     /***
      * Key is BtcTxHash and output index. Value is the address that received the funds
@@ -1240,7 +1240,7 @@ public class PowpegMigrationTest {
     }
 
     @Test
-    public void test_change_powpeg_from_erpFederation_with_mainnet_powpeg_pre_RSKIP_353_creates_erpFederation() throws Exception {
+    void test_change_powpeg_from_erpFederation_with_mainnet_powpeg_pre_RSKIP_353_creates_erpFederation() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop400().forBlock(0);
 
         Address originalPowpegAddress = getMainnetPowpegAddress();
@@ -1283,7 +1283,7 @@ public class PowpegMigrationTest {
     }
 
     @Test
-    public void test_change_powpeg_from_erpFederation_with_mainnet_powpeg_post_RSKIP_353_creates_p2shErpFederation() throws Exception {
+    void test_change_powpeg_from_erpFederation_with_mainnet_powpeg_post_RSKIP_353_creates_p2shErpFederation() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
         Address originalPowpegAddress = getMainnetPowpegAddress();
@@ -1309,7 +1309,7 @@ public class PowpegMigrationTest {
     }
 
     @Test
-    public void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_353_creates_p2shErpFederation() throws Exception {
+    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_353_creates_p2shErpFederation() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest.hop401().forBlock(0);
 
         Address originalPowpegAddress = Address.fromBase58(
@@ -1355,7 +1355,7 @@ public class PowpegMigrationTest {
     }
 
     @Test
-    public void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled_creates_p2shErpFederation() throws Exception {
+    void test_change_powpeg_from_p2shErpFederation_with_mainnet_powpeg_post_RSKIP_353_with_RSKIP_357_disabled_creates_p2shErpFederation() throws Exception {
         ActivationConfig.ForBlock activations = ActivationConfigsForTest
             .hop401(Collections.singletonList(ConsensusRule.RSKIP357))
             .forBlock(0);
