@@ -313,7 +313,6 @@ class BridgeStorageProviderFederationTests {
 
     @Test
     void saveNewFederation_before_RSKIP123_should_allow_to_save_any_fed_type() throws IOException {
-        activations = ActivationConfigsForTest.only().forBlock(0);
         testSaveNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
             createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY),
@@ -492,7 +491,6 @@ class BridgeStorageProviderFederationTests {
         Integer expectedFormatToSave,
         Federation federationToSave,
         boolean isSavingNull
-
     ) throws IOException {
         // Arrange
         Repository repository = spy(createRepository());
@@ -769,38 +767,6 @@ class BridgeStorageProviderFederationTests {
             any(),
             any()
         );
-    }
-
-    private Federation createFederationFrom(int version, Federation federation){
-        switch (version) {
-            case P2SH_ERP_FEDERATION_FORMAT_VERSION:
-                return new P2shErpFederation(
-                    federation.getMembers(),
-                    federation.getCreationTime(),
-                    federation.getCreationBlockNumber(),
-                    federation.getBtcParams(),
-                    bridgeConstantsRegtest.getErpFedPubKeysList(),
-                    bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations
-                );
-            case ERP_FEDERATION_FORMAT_VERSION:
-                return new ErpFederation(
-                    federation.getMembers(),
-                    federation.getCreationTime(),
-                    federation.getCreationBlockNumber(),
-                    federation.getBtcParams(),
-                    bridgeConstantsRegtest.getErpFedPubKeysList(),
-                    bridgeConstantsRegtest.getErpFedActivationDelay(),
-                    activations
-                );
-            default:
-                return new Federation(
-                    federation.getMembers(),
-                    federation.getCreationTime(),
-                    federation.getCreationBlockNumber(),
-                    federation.getBtcParams()
-                );
-        }
     }
 
     private Federation createFederation(int version) {
