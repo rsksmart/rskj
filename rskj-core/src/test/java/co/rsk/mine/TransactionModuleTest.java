@@ -568,7 +568,6 @@ class TransactionModuleTest {
                         config,
                         new SyncPool(
                                 compositeEthereumListener,
-                                blockchain,
                                 config,
                                 null,
                                 null,

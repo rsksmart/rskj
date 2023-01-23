@@ -30,8 +30,6 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.server.EthereumChannelInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,8 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @see <a href="http://netty.io">http://netty.io</a>
  */
 public class PeerClient {
-
-    private static final Logger logger = LoggerFactory.getLogger("net");
 
     private final SystemProperties config;
     private final EthereumListener ethereumListener;

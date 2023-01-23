@@ -1894,7 +1894,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         if (syncPool == null) {
             syncPool = new SyncPool(
                     getCompositeEthereumListener(),
-                    getBlockchain(),
                     getRskSystemProperties(),
                     getNodeManager(),
                     getNodeBlockProcessor(),

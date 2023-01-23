@@ -34,11 +34,11 @@ public interface BlockProcessor {
 
     BlockNodeInformation getNodeInformation();
 
-    long getLastKnownBlockNumber();
+    long getLastKnownBlockNumber(); // TODO(iago) clean
 
     void processNewBlockHashesMessage(Peer sender, NewBlockHashesMessage message);
 
-    void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders);
+    void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders); // TODO(iago) not used? confirm not used from anywhere that's using rskj as a dependency
 
     boolean hasBlock(byte[] hash);
 
