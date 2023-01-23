@@ -78,6 +78,7 @@ public class Web3HttpServer implements InternalService {
                             .build())
                         );
                     }
+                    p.addLast(new LogTracingFilterHandler());
                     p.addLast(jsonRpcWeb3FilterHandler);
                     p.addLast(new Web3HttpMethodFilterHandler());
                     p.addLast(jsonRpcWeb3ServerHandler);

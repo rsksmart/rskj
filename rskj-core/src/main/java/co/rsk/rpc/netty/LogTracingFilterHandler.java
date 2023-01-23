@@ -15,19 +15,21 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.rpc.netty;
 
-package co.rsk.net;
+import co.rsk.util.TraceUtils;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
+import org.slf4j.MDC;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+public class LogTracingFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-import co.rsk.net.messages.Message;
-
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
-
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
-
-    long getMessageQueueSize();
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws InterruptedException {
+        // retain the request so it isn't released automatically by SimpleChannelInboundHandler
+        try (MDC.MDCCloseable traceId = MDC.putCloseable(TraceUtils.JSON_RPC_REQ_ID, TraceUtils.getRandomId())) {
+            ctx.fireChannelRead(request.retain());
+        }
+    }
 }

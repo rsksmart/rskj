@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2022 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,18 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.util;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import co.rsk.net.messages.Message;
+public class TraceUtils {
+    public static final String MSG_ID = "peerMsgId";
+    public static final String SESSION_ID = "peerSID";
+    public static final String JSON_RPC_REQ_ID = "rpcReqID";
+    public static final int MAX_ID_LENGTH = 15;
 
-public interface MessageHandler {
-    void processMessage(Peer sender, Message message);
+    private TraceUtils() {}
 
-    void postMessage(Peer sender, Message message, NodeMsgTraceInfo traceInfo) throws InterruptedException;
+    public static String getRandomId(){
+        return RandomStringUtils.randomAlphanumeric(MAX_ID_LENGTH);
+    }
 
-    long getMessageQueueSize();
+    public static String toId(String id) {
+        return StringUtils.substring(id,0,MAX_ID_LENGTH);
+    }
 }

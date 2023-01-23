@@ -4,12 +4,14 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeMsgTraceInfo;
 import co.rsk.net.Status;
 import co.rsk.net.StatusResolver;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.TraceUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.core.Block;
@@ -25,9 +27,14 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 class RskWireProtocolTest {
@@ -144,7 +151,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message);
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
@@ -163,7 +170,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message);
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
@@ -182,7 +189,7 @@ class RskWireProtocolTest {
 
         target.channelRead0(ctx, rskMessage);
 
-        verify(messageHandler).postMessage(channel, message);
+        verify(messageHandler).postMessage(eq(channel),eq(message),any());
     }
 
     @Test
@@ -199,5 +206,33 @@ class RskWireProtocolTest {
         target.activate();
 
         verify(messageQueue, times(2)).sendMessage(any());
+    }
+
+    @Test
+    void correlation_ids_are_passed() throws InterruptedException {
+        final String peerIdValue = "peerId";
+        final String msgIdValue = "msgId";
+
+        NodeStatistics.StatHandler statHandler = mock(NodeStatistics.StatHandler.class);
+        NodeStatistics nodeStatistics = mock(NodeStatistics.class);
+        Message message = new GetBlockMessage(new byte[32]);
+        EthMessage rskMessage = new RskMessage(message);
+        ArgumentCaptor<NodeMsgTraceInfo> msgCaptor = ArgumentCaptor.forClass(NodeMsgTraceInfo.class);
+
+        when(channel.getNodeStatistics()).thenReturn(nodeStatistics);
+        when(nodeStatistics.getEthInbound()).thenReturn(statHandler);
+        when(channel.getPeerId()).thenReturn(peerIdValue);
+
+        try (MockedStatic<TraceUtils> utilities = Mockito.mockStatic(TraceUtils.class)) {
+            utilities.when(TraceUtils::getRandomId).thenReturn(msgIdValue);
+            utilities.when(() -> TraceUtils.toId(peerIdValue)).thenReturn(peerIdValue);
+            target.channelRead0(ctx, rskMessage);
+            verify(messageHandler).postMessage(eq(channel), eq(message), msgCaptor.capture());
+        }
+        NodeMsgTraceInfo traceInfo = msgCaptor.getValue();
+
+        assertNotNull(traceInfo);
+        assertEquals(peerIdValue, traceInfo.getSessionId());
+        assertEquals(msgIdValue, traceInfo.getMessageId());
     }
 }
