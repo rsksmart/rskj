@@ -35,16 +35,6 @@ import org.ethereum.sync.SyncStatistics;
 public interface Eth {
 
     /**
-     * @return true if StatusMessage was processed, false otherwise
-     */
-    boolean hasStatusPassed();
-
-    /**
-     * @return true if Status has succeeded
-     */
-    boolean hasStatusSucceeded();
-
-    /**
      * @return sync statistics
      */
     SyncStatistics getStats();
@@ -68,5 +58,4 @@ public interface Eth {
     // Send eth message directly
     void sendMessage(EthMessage message);
 
-    boolean isUsingNewProtocol();
 }

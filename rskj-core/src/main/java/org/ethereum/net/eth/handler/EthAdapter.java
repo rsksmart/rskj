@@ -41,16 +41,6 @@ public class EthAdapter implements Eth {
     private final SyncStatistics syncStats = new SyncStatistics();
 
     @Override
-    public boolean hasStatusPassed() {
-        return false;
-    }
-
-    @Override
-    public boolean hasStatusSucceeded() {
-        return false;
-    }
-
-    @Override
     public SyncStatistics getStats() {
         return syncStats;
     }
@@ -72,8 +62,4 @@ public class EthAdapter implements Eth {
     public void sendMessage(EthMessage message) {
     }
 
-    @Override
-    public boolean isUsingNewProtocol() {
-        return false;
-    }
 }

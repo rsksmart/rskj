@@ -42,7 +42,7 @@ import java.util.Set;
  * Added to make unit testing easier
  */
 
-public interface ChannelManager extends InternalService {
+public interface ChannelManager extends InternalService, ChannelObserver.Observer {
 
     boolean isRecentlyDisconnected(InetAddress peerAddr);
 

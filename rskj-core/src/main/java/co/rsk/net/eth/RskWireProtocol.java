@@ -69,7 +69,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private final SyncStatistics syncStats = new SyncStatistics();
     private final Channel channel;
     private final EthVersion version;
-    private EthState ethState = EthState.INIT;
 
     private final RskSystemProperties config;
     private final StatusResolver statusResolver;
@@ -127,13 +126,13 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 return;
             }
 
-            switch (msg.getCommand()) {
-                case STATUS:
-                    processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
-                    break;
-                case RSK_MESSAGE:
-                    RskMessage rskmessage = (RskMessage) msg;
-                    Message message = rskmessage.getMessage();
+        switch (msg.getCommand()) {
+            case STATUS:
+                processEthStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
+                break;
+            case RSK_MESSAGE:
+                RskMessage rskmessage = (RskMessage)msg;
+                Message message = rskmessage.getMessage();
 
                     switch (message.getMessageType()) {
                         case BLOCK_MESSAGE:
@@ -165,7 +164,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
      *  Message Processing   *
      *************************/
 
-    protected void processStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) {
+    protected void processEthStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) {
         try {
             byte protocolVersion = msg.getProtocolVersion();
             byte versionCode = version.getCode();
@@ -174,7 +173,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 loggerNet.info("Protocol version {} - message protocol version {}",
                         versionCode,
                         protocolVersion);
-                ethState = EthState.STATUS_FAILED;
                 reportEventToPeerScoring(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(this); // Peer is not compatible for the 'eth' sub-protocol
@@ -187,7 +185,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 loggerNet.info("Removing EthHandler for {} due to invalid network", ctx.channel().remoteAddress());
                 loggerNet.info("Different network received: config network ID {} - message network ID {}",
                         networkId, msgNetworkId);
-                ethState = EthState.STATUS_FAILED;
                 reportEventToPeerScoring(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
                 ctx.pipeline().remove(this);
@@ -200,7 +197,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 loggerNet.info("Removing EthHandler for {} due to unexpected genesis", ctx.channel().remoteAddress());
                 loggerNet.info("Config genesis hash {} - message genesis hash {}",
                         genesisHash, msgGenesisHash);
-                ethState = EthState.STATUS_FAILED;
                 reportEventToPeerScoring(EventType.UNEXPECTED_GENESIS);
                 disconnect(ReasonCode.UNEXPECTED_GENESIS);
                 ctx.pipeline().remove(this);
@@ -272,19 +268,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
                 status.getBestBlockNumber(),
                 channel.getPeerNodeID());
         sendMessage(rskmessage);
-
-        ethState = EthState.STATUS_SENT;
-    }
-
-
-    @Override
-    public boolean hasStatusPassed() {
-        return ethState.ordinal() > EthState.STATUS_SENT.ordinal();
-    }
-
-    @Override
-    public boolean hasStatusSucceeded() {
-        return ethState == EthState.STATUS_SUCCEEDED;
     }
 
     @Override
@@ -307,11 +290,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     }
 
     @Override
-    public boolean isUsingNewProtocol() {
-        return true;
-    }
-
-    @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         loggerNet.error("Eth handling failed", cause);
         ctx.close();
@@ -325,6 +303,9 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     public void activate() {
         loggerNet.info("RSK protocol activated");
         ethereumListener.trace("RSK protocol activated");
+
+        channel.wireActivated();
+
         sendStatus();
     }
 
@@ -339,13 +320,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         msgQueue.sendMessage(message);
         channel.getNodeStatistics().getEthOutbound().add();
-    }
-
-    private enum EthState {
-        INIT,
-        STATUS_SENT,
-        STATUS_SUCCEEDED,
-        STATUS_FAILED
     }
 
     public interface Factory {

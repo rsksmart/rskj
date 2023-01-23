@@ -51,9 +51,11 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Objects;
 
-public class Channel implements Peer {
+public class Channel implements Peer, ChannelObserver.Observable {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
@@ -74,7 +76,9 @@ public class Channel implements Peer {
 
     private final PeerStatistics peerStats = new PeerStatistics();
 
-    private Stats stats;
+    private final Stats stats;
+
+    private final Set<ChannelObserver.Observer> observers;
 
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
@@ -91,6 +95,7 @@ public class Channel implements Peer {
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
         this.stats = new Stats();
+        this.observers = new HashSet<>();
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
@@ -156,17 +161,6 @@ public class Channel implements Peer {
         messageCodec.initMessageCodes(caps);
     }
 
-    public boolean isProtocolsInitialized() {
-        return eth.isUsingNewProtocol() || eth.hasStatusPassed();
-    }
-
-    public boolean isUsingNewProtocol() {
-        return eth.isUsingNewProtocol();
-    }
-
-    public void onDisconnect() {
-    }
-
     public String getPeerId() {
         return node == null ? "<null>" : node.getHexId();
     }
@@ -195,10 +189,6 @@ public class Channel implements Peer {
     }
 
     // RSK sub protocol
-
-    public boolean hasEthStatusSucceeded() {
-        return eth.hasStatusSucceeded();
-    }
 
     public BigInteger getTotalDifficulty() {
         return nodeStatistics.getEthTotalDifficulty();
@@ -243,7 +233,6 @@ public class Channel implements Peer {
 
         return Objects.equals(inetSocketAddress, channel.inetSocketAddress) &&
                 Objects.equals(node, channel.node);
-
     }
 
     @Override
@@ -261,6 +250,16 @@ public class Channel implements Peer {
     @Override
     public void imported(boolean best) {
         stats.imported(best);
+    }
+
+    @Override
+    public void wireActivated() {
+        this.observers.forEach(o -> o.notifyWireActivated(this));
+    }
+
+    @Override
+    public void addObserver(ChannelObserver.Observer observer) {
+        this.observers.add(observer);
     }
 
     @Override

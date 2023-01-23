@@ -21,6 +21,7 @@ package org.ethereum.sync;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeID;
 import org.ethereum.core.Blockchain;
@@ -34,6 +35,7 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -41,6 +43,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Math.min;
+import static org.ethereum.util.BIUtil.isIn20PercentRange;
 
 /**
  * <p>Encapsulates logic which manages peers involved in blockchain sync</p>
@@ -60,9 +64,13 @@ public class SyncPool implements InternalService {
 
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(30);
     private final Map<NodeID, Channel> peers = new HashMap<>();
+    private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, Instant> pendingConnections = new HashMap<>();
 
+    private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
+
     private final EthereumListener ethereumListener;
+    private final Blockchain blockchain;
     private final RskSystemProperties config;
     private final NodeManager nodeManager;
     private final NodeBlockProcessor nodeBlockProcessor;
@@ -72,12 +80,13 @@ public class SyncPool implements InternalService {
 
     public SyncPool(
             EthereumListener ethereumListener,
-            Blockchain blockchain, // TODO(iago) remove if finally this clase is cleaned up
+            Blockchain blockchain,
             RskSystemProperties config,
             NodeManager nodeManager,
             NodeBlockProcessor nodeBlockProcessor,
             PeerClientFactory peerClientFactory) {
         this.ethereumListener = ethereumListener;
+        this.blockchain = blockchain;
         this.config = config;
         this.nodeManager = nodeManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
@@ -88,6 +97,8 @@ public class SyncPool implements InternalService {
     public void start() {
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
+        updateLowerUsefulDifficulty();
+
         syncPoolExecutor.scheduleWithFixedDelay(
             () -> {
                 try {
@@ -95,7 +106,9 @@ public class SyncPool implements InternalService {
                         heartBeat();
                     }
                     processConnections();
+                    updateLowerUsefulDifficulty();
                     fillUp();
+                    prepareActive();
                 } catch (Throwable t) {
                     logger.error("Unhandled exception", t);
                 }
@@ -120,6 +133,7 @@ public class SyncPool implements InternalService {
     }
 
     public void add(Channel peer) {
+
         if (!config.isSyncEnabled()) {
             return;
         }
@@ -139,7 +153,14 @@ public class SyncPool implements InternalService {
         logger.info("Peer {}: added to pool", peerId);
     }
 
+    public void remove(Channel peer) {
+        synchronized (peers) {
+            peers.values().remove(peer);
+        }
+    }
+
     public void onDisconnect(Channel peer) {
+
         if (peer.getNodeId() == null) {
             return;
         }
@@ -148,6 +169,9 @@ public class SyncPool implements InternalService {
 
         synchronized (peers) {
             existed = peers.values().remove(peer);
+            synchronized (activePeers) {
+                activePeers.remove(peer);
+            }
         }
 
         // do not count disconnects for nodeId
@@ -176,14 +200,6 @@ public class SyncPool implements InternalService {
             }
 
             return;
-        }
-
-        synchronized (peers) {
-            peers.forEach((nodeId, channel) -> {
-                if (node.getId().equals(nodeId)) {
-                    logger.warn("Opening a new connection to peer when a previous one is still open: old [{}] - new [{}]", channel.getAddress(), node.getAddress().getAddress());
-                }
-            });
         }
 
         synchronized (pendingConnections) {
@@ -243,6 +259,40 @@ public class SyncPool implements InternalService {
         }
     }
 
+    private void prepareActive() {
+        synchronized (peers) {
+
+            List<Channel> active = new ArrayList<>(peers.values());
+
+            if (active.isEmpty()) {
+                return;
+            }
+
+            // filtering by 20% from top difficulty
+            active.sort(Comparator.comparing(Channel::getTotalDifficulty).reversed());
+
+            BigInteger highestDifficulty = active.get(0).getTotalDifficulty();
+            int thresholdIdx = min(config.syncPeerCount(), active.size()) - 1;
+
+            for (int i = thresholdIdx; i >= 0; i--) {
+                if (isIn20PercentRange(active.get(i).getTotalDifficulty(), highestDifficulty)) {
+                    thresholdIdx = i;
+                    break;
+                }
+            }
+
+            List<Channel> filtered = active.subList(0, thresholdIdx + 1);
+
+            // sorting by latency in asc order
+            filtered.sort(Comparator.comparingDouble(c -> c.getPeerStats().getAvgLatency()));
+
+            synchronized (activePeers) {
+                activePeers.clear();
+                activePeers.addAll(filtered);
+            }
+        }
+    }
+
     private void logDiscoveredNodes(List<NodeHandler> nodes) {
         StringBuilder sb = new StringBuilder();
 
@@ -261,13 +311,20 @@ public class SyncPool implements InternalService {
         );
     }
 
+    private void updateLowerUsefulDifficulty() {
+        BlockDifficulty td = blockchain.getTotalDifficulty();
+
+        if (td.compareTo(lowerUsefulDifficulty) > 0) {
+            lowerUsefulDifficulty = td;
+        }
+    }
+
     private void heartBeat() {
         synchronized (peers) {
             for (Channel peer : peers.values()) {
                 if (peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
                     logger.info("Peer {}: no response after {} seconds", peer.getPeerId(), config.peerChannelReadTimeout());
                     peer.dropConnection();
-                    // TODO(iago) shouldn't peer be removed from peers list here?
                 }
             }
         }
