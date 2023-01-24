@@ -19,6 +19,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.jupiter.api.Test;
+import org.mockito.verification.VerificationMode;
 
 class BridgeStorageProviderFederationTests {
 
@@ -292,24 +293,6 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_before_RSKIP123_should_save_erp_fed_format() throws IOException {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-        testSaveNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveNewFederation_after_RSKIP123_should_not_save_erp_fed_format() throws IOException {
-        activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
-        testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
     void saveNewFederation_after_RSKIP201_should_save_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
@@ -335,40 +318,6 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederation_before_RSKIP123_should_save_p2sh_erp_fed_format() throws IOException {
-        activations = ActivationConfigsForTest.only().forBlock(0);
-        Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
-        testSaveNewFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-    }
-
-    @Test
-    void saveNewFederation_after_RSKIP123_should_not_save_p2sh_erp_fed_format() throws IOException {
-        activations = ActivationConfigsForTest.only(ConsensusRule.RSKIP123).forBlock(0);
-        testSaveNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION)
-        );
-    }
-
-    @Test
-    void saveNewFederation_after_RSKIP201_should_not_save_p2sh_erp_fed_format() throws IOException {
-        activations = ActivationConfigsForTest.only(
-            ConsensusRule.RSKIP123,
-            ConsensusRule.RSKIP201
-        ).forBlock(0);
-
-        Federation federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
-
-        testSaveNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-    }
-
-    @Test
     void saveNewFederation_after_RSKIP353_should_save_p2sh_erp_fed_format() throws IOException {
         activations = ActivationConfigsForTest.only(
             ConsensusRule.RSKIP123,
@@ -382,7 +331,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederationFederation_before_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederation_before_RSKIP123_should_not_save_null() throws IOException {
         Repository repository = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(
             repository,
@@ -403,7 +352,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void saveNewFederationFederation_after_RSKIP123_should_not_save_null() throws IOException {
+    void saveNewFederation_after_RSKIP123_should_not_save_null() throws IOException {
         Repository repository = mock(Repository.class);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP123)).thenReturn(true);
@@ -427,7 +376,7 @@ class BridgeStorageProviderFederationTests {
     }
 
     private void testSaveNewFederation(
-        Integer expectedFormatToSave,
+        int expectedFormatToSave,
         Federation federationToSave
     ) throws IOException {
         // Arrange
@@ -444,34 +393,22 @@ class BridgeStorageProviderFederationTests {
         storageProvider.save();
 
         // Assert
-        if (activations.isActive(ConsensusRule.RSKIP123)){
-            verify(repository, times(1)).addStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
-            );
-            verify(repository, times(1)).addStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
-                BridgeSerializationUtils.serializeFederation(federationToSave)
-            );
-        } else {
-            verify(repository, never()).addStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
-                BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
-            );
-            verify(repository, times(1)).addStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
-                BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federationToSave)
-            );
-        }
-        // assert that addStorageBytes it is only called the right number of time to store above values
-        verify(repository, times(activations.isActive(ConsensusRule.RSKIP123)? 2:1)).addStorageBytes(
-            any(),
-            any(),
-            any()
+        byte[] serializedFederation = activations.isActive(ConsensusRule.RSKIP123) ?
+            BridgeSerializationUtils.serializeFederation(federationToSave) :
+            BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federationToSave);
+        VerificationMode shouldSaveNewFederationFormatVersion = activations.isActive(ConsensusRule.RSKIP123) ?
+            times(1) :
+            never();
+
+        verify(repository, shouldSaveNewFederationFormatVersion).addStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeStorageIndexKey.NEW_FEDERATION_FORMAT_VERSION.getKey(),
+            BridgeSerializationUtils.serializeInteger(expectedFormatToSave)
+        );
+        verify(repository, times(1)).addStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeStorageIndexKey.NEW_FEDERATION_KEY.getKey(),
+            serializedFederation
         );
     }
 
