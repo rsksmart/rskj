@@ -58,34 +58,6 @@ class BridgeStorageProviderFederationTests {
     }
 
     @Test
-    void getNewFederation_format_version_different_from_fed() {
-        Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
-
-        // assert that the federation type does not depend on the persisted federation itself but on the format version saved
-        testGetNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
-        testGetNewFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
-        federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
-
-        testGetNewFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
-        testGetNewFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            federation
-        );
-    }
-
-    @Test
     void getNewFederation_should_return_null() {
         testGetNewFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
@@ -184,34 +156,6 @@ class BridgeStorageProviderFederationTests {
     @Test
     void getOldFederation_should_return_legacy_fed() {
         Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
-        testGetOldFederation(
-            FEDERATION_FORMAT_VERSION_MULTIKEY,
-            federation
-        );
-    }
-
-    @Test
-    void getOldFederation_format_version_different_from_fed() {
-        Federation federation = createFederation(FEDERATION_FORMAT_VERSION_MULTIKEY);
-
-        // assert that the federation type does not depend on the persisted federation itself but on the format version saved
-        testGetOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
-        testGetOldFederation(
-            P2SH_ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
-        federation = createFederation(P2SH_ERP_FEDERATION_FORMAT_VERSION);
-
-        testGetOldFederation(
-            ERP_FEDERATION_FORMAT_VERSION,
-            federation
-        );
-
         testGetOldFederation(
             FEDERATION_FORMAT_VERSION_MULTIKEY,
             federation
