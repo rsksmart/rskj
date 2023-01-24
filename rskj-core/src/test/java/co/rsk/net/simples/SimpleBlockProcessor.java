@@ -96,11 +96,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders) {
-
-    }
-
-    @Override
     public void processSkeletonRequest(final Peer sender, long requestId, final long startNumber) {
 
     }

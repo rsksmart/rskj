@@ -110,25 +110,6 @@ public class NodeBlockProcessor implements BlockProcessor {
                 );
     }
 
-
-    @Override
-    public void processBlockHeaders(@Nonnull final Peer sender, @Nonnull final List<BlockHeader> blockHeaders) {
-        blockHeaders.stream()
-                .filter(h -> !hasHeader(h.getHash()))
-                // sort block headers in ascending order, so we can process them in that order.
-                .sorted(Comparator.comparingLong(BlockHeader::getNumber))
-                .forEach(h -> processBlockHeader(sender, h));
-    }
-
-    private boolean hasHeader(Keccak256 hash) {
-        return hasBlock(hash.getBytes()) || store.hasHeader(hash);
-    }
-
-    private void processBlockHeader(@Nonnull final Peer sender, @Nonnull final BlockHeader header) {
-        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
-        this.store.saveHeader(header);
-    }
-
     /**
      * processGetBlock sends a requested block to a peer if the block is available.
      *
