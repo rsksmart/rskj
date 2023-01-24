@@ -124,11 +124,27 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void disconnect(Channel peer, ReasonCode reason) {
-        logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
-        peer.disconnect(reason);
+        if (reason == ReasonCode.DUPLICATE_PEER) {
+            disconnectDuplicatePeer(peer);
+        } else {
+            logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
+            peer.disconnect(reason);
+        }
+
         synchronized (disconnectionTimeoutsLock) {
             disconnectionsTimeouts.put(peer.getInetSocketAddress().getAddress(),
                     Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
+        }
+    }
+
+    private void disconnectDuplicatePeer(Channel offendingChannel) {
+        logger.warn("Disconnecting DUPLICATE_PEER channel: {}", offendingChannel);
+        offendingChannel.disconnect(ReasonCode.DUPLICATE_PEER);
+
+        Channel activeChannel = activePeers.remove(offendingChannel.getPeerNodeID());
+        if (activeChannel != null) {
+            logger.warn("Disconnecting active channel after DUPLICATE_PEER: {}", offendingChannel);
+            activeChannel.disconnect(ReasonCode.DUPLICATE_PEER);
         }
     }
 
