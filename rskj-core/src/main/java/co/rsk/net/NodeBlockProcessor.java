@@ -390,8 +390,4 @@ public class NodeBlockProcessor implements BlockProcessor {
         return blockSyncService.hasBetterBlockToSync();
     }
 
-    @Override
-    public long getLastKnownBlockNumber() {
-        return blockSyncService.getLastKnownBlockNumber();
-    }
 }
