@@ -96,19 +96,14 @@ public class JsonRpcCustomServer extends JsonRpcBasicServer {
             return super.handleJsonNodeRequest(node);
         }
 
-        JsonResponse response = null;
+        JsonResponse response;
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        Future<JsonResponse> future = executorService.submit(() -> super.handleJsonNodeRequest(node));
-
-        try {
-            response = future.get(timeout, timeoutUnit);
-        } catch (ExecutionException | TimeoutException e) {
-            future.cancel(true);
+        try (ExecTimeoutContext ignored = ExecTimeoutContext.create(timeout, timeoutUnit)) {
+            response = super.handleJsonNodeRequest(node);
+            ExecTimeoutContext.checkIfExpired();
+        } catch (ExecTimeoutContext.TimeoutException e) {
             ErrorResolver.JsonError jsonError = new ErrorResolver.JsonError(INTERNAL_ERROR.code, e.getMessage(), e.getClass().getName());
             response = customCreateResponseError(VERSION, NULL, jsonError);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
 
         return response;

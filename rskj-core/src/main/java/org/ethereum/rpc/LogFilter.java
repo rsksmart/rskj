@@ -21,7 +21,12 @@ package org.ethereum.rpc;
 import java.util.Collection;
 import java.util.List;
 
-import org.ethereum.core.*;
+import co.rsk.rpc.netty.ExecTimeoutContext;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
@@ -31,8 +36,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.util.HexUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
@@ -40,8 +43,6 @@ import javax.annotation.Nullable;
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilter extends Filter {
-    private static final Logger logger = LoggerFactory.getLogger(LogFilter.class);
-
     class LogFilterEvent extends FilterEvent {
         private final LogFilterElement el;
 
@@ -251,6 +252,8 @@ public class LogFilter extends Filter {
         boolean skippingToNumber = false;
 
         do {
+            ExecTimeoutContext.checkIfExpired();
+
             if (Thread.interrupted()) {
                 logger.error("Current operation was interrupted by thread. Quitting from 'processBlocks'");
                 return;

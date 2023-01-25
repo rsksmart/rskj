@@ -259,7 +259,7 @@ class Web3HttpServerTest {
             return config;
         };
 
-        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}";
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\",\"data\":\"co.rsk.rpc.netty.ExecTimeoutContext$TimeoutException\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -286,7 +286,7 @@ class Web3HttpServerTest {
             return config;
         };
 
-        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":null,\"data\":\"java.util.concurrent.TimeoutException\"}}";
+        String mockResult = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"error\":{\"code\":-32603,\"message\":\"Execution has expired.\",\"data\":\"co.rsk.rpc.netty.ExecTimeoutContext$TimeoutException\"}}";
         smokeTest(APPLICATION_JSON, "localhost", filteredModules, decorator, mockResult);
     }
 
@@ -351,6 +351,8 @@ class Web3HttpServerTest {
 
             if (mockResult.equals("output")) {
                 assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+            } else if (!jsonRpcResponse.at("/result").asText().isEmpty()) {
+                Assertions.assertEquals(jsonRpcResponse.at("/result").asText(), mockResult);
             } else {
                 Assertions.assertEquals(jsonRpcResponse.toString(), mockResult);
             }
