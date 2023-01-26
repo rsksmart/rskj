@@ -17,6 +17,7 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.cli.exceptions.PicocliBadResultException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JavaType;
@@ -25,11 +26,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,6 +38,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,7 +58,9 @@ import java.util.stream.Stream;
  *     <li><b>args[2]</b>: destination file containing the final OpenRPC json doc</li>
  * </ol>
  */
-public class GenerateOpenRpcDoc {
+@CommandLine.Command(name = "gen-rpc-docs", mixinStandardHelpOptions = true, version = "gen-rpc-docs 1.0",
+        description = "Generates OpenRPC json doc file by merging a static template with several json files under {workdir}/doc/rpc dir")
+public class GenerateOpenRpcDoc implements Callable<Integer> {
 
     public static final JavaType TEMPLATE_DOC_TYPE = TypeFactory.defaultInstance().constructType(TemplateDoc.class);
     private static final JavaType OBJECT_TYPE = TypeFactory.defaultInstance().constructType(Object.class);
@@ -65,19 +68,41 @@ public class GenerateOpenRpcDoc {
 
     private static final Logger logger = LoggerFactory.getLogger(GenerateOpenRpcDoc.class);
 
+    @CommandLine.Option(names = {"-v", "--version"}, description = "RSKj version, will be present on final doc", required = true)
+    private String version;
+
+    @CommandLine.Option(names = {"-d", "--dir"}, description = "work directory where the json template and individual json files are present", required = true)
+    private String dir;
+
+    @CommandLine.Option(names = {"-o", "--outputFile"}, description = "destination file containing the final OpenRPC json doc", required = true)
+    private String outputFile;
+
     protected static final ObjectMapper JSON_MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
 
-    public static void main(String[] args) {
-        new GenerateOpenRpcDoc().execute(args);
+    public GenerateOpenRpcDoc() {
     }
 
-    @VisibleForTesting
-    void execute(@Nonnull String[] args) {
-        String version = args[0];
-        String workDirPath = args[1];
-        String destPath = args[2];
+    public GenerateOpenRpcDoc(String version, String dir, String outputFile) {
+        this.version = version;
+        this.dir = dir;
+        this.outputFile = outputFile;
+    }
+
+    public static void main(String[] args) {
+        int result = new CommandLine(new GenerateOpenRpcDoc()).setUnmatchedArgumentsAllowed(true).execute(args);
+
+        if (result != 0) {
+            throw new PicocliBadResultException(result);
+        }
+    }
+
+    @Override
+    public Integer call() {
+        String version = this.version;
+        String workDirPath = this.dir;
+        String destPath = this.outputFile;
 
         TemplateDoc templateDoc = loadTemplate(workDirPath);
         templateDoc.info.version = version;
@@ -86,6 +111,8 @@ public class GenerateOpenRpcDoc {
         templateDoc.components.contentDescriptors.putAll(loadContentDescriptors(workDirPath));
 
         writeToFile(destPath, templateDoc);
+
+        return 0;
     }
 
     private TemplateDoc loadTemplate(String workDirPath) {

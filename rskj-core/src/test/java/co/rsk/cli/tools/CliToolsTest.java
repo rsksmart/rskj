@@ -19,6 +19,7 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -58,6 +59,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import picocli.CommandLine;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +92,7 @@ class CliToolsTest {
         processor.processCommands(parser);
 
         File blocksFile = tempDir.resolve( "blocks.txt").toFile();
-        String[] args = new String[]{"0", "2", blocksFile.getAbsolutePath()};
+        String[] args = new String[]{"--fromBlock", "0", "--toBlock", "2", "--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -127,7 +130,7 @@ class CliToolsTest {
         processor.processCommands(parser);
 
         File stateFile = tempDir.resolve("state.txt").toFile();
-        String[] args = new String[]{"2", stateFile.getAbsolutePath()};
+        String[] args = new String[]{"--block", "2", "--file", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -167,7 +170,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[]{"best"};
+        String[] args = new String[]{"--block", "best"};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -204,7 +207,7 @@ class CliToolsTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[]{"1", "2"};
+        String[] args = new String[]{"--fromBlock", "1", "--toBlock", "2"};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -258,7 +261,7 @@ class CliToolsTest {
             writer.write(stringBuilder.toString());
         }
 
-        String[] args = new String[]{blocksFile.getAbsolutePath()};
+        String[] args = new String[]{"--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -315,7 +318,7 @@ class CliToolsTest {
             writer.write(stringBuilder.toString());
         }
 
-        String[] args = new String[]{blocksFile.getAbsolutePath()};
+        String[] args = new String[]{"--file", blocksFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -351,7 +354,7 @@ class CliToolsTest {
         }
 
         String databaseDir = tempDir.resolve( "db").toAbsolutePath().toString();
-        String[] args = new String[]{stateFile.getAbsolutePath()};
+        String[] args = new String[]{"--file", stateFile.getAbsolutePath()};
 
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
@@ -416,7 +419,7 @@ class CliToolsTest {
 
         StringBuilder output = new StringBuilder();
         RewindBlocks rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"fmi"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-fmi"}, () -> rskContext, stopper);
 
         String data = output.toString();
         Assertions.assertTrue(data.contains("No inconsistent block has been found"));
@@ -429,7 +432,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{String.valueOf(blockToRewind)}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"--block", String.valueOf(blockToRewind)}, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         MatcherAssert.assertThat(bestBlock.getNumber(), is(blockToRewind));
@@ -443,7 +446,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{String.valueOf(blocksToGenerate + 1)}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"--block", String.valueOf(blocksToGenerate + 1)}, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         MatcherAssert.assertThat(bestBlock.getNumber(), is(blockToRewind));
@@ -459,7 +462,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"fmi"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-fmi"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assertions.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -470,7 +473,7 @@ class CliToolsTest {
 
         output = new StringBuilder();
         rewindBlocksCliTool = new RewindBlocks(output::append);
-        rewindBlocksCliTool.execute(new String[]{"rbc"}, () -> rskContext, stopper);
+        rewindBlocksCliTool.execute(new String[]{"-rbc"}, () -> rskContext, stopper);
 
         data = output.toString();
         Assertions.assertTrue(data.contains("Min inconsistent block number: 0"));
@@ -503,7 +506,7 @@ class CliToolsTest {
         NodeStopper stopper = mock(NodeStopper.class);
 
         DbMigrate dbMigrateCliTool = new DbMigrate();
-        dbMigrateCliTool.execute(new String[]{"rocksdb"}, () -> rskContext, stopper);
+        dbMigrateCliTool.execute(new String[]{"-t", "rocksdb"}, () -> rskContext, stopper);
 
         String nodeIdPropsFileLine = null;
 
@@ -574,29 +577,29 @@ class CliToolsTest {
         doReturn(10L).when(blockStore).getMaxNumber();
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{}, blockStore);
+            IndexBlooms.makeBlockRange(null, null, blockStore);
             fail();
         } catch (IllegalArgumentException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"0"}, blockStore);
+            IndexBlooms.makeBlockRange("0", null, blockStore);
             fail();
         } catch (IllegalArgumentException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"0", "abc"}, blockStore);
+            IndexBlooms.makeBlockRange("0", "abc", blockStore);
             fail();
         } catch (NumberFormatException ignored) { /* ignored */ }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"-1", "1"}, blockStore);
+            IndexBlooms.makeBlockRange("-1", "1", blockStore);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
         }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"2", "1"}, blockStore);
+            IndexBlooms.makeBlockRange("2", "1", blockStore);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
@@ -605,20 +608,20 @@ class CliToolsTest {
         doReturn(2L).when(blockStore).getMinNumber();
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"1", "10"}, blockStore); // min block num is 10
+            IndexBlooms.makeBlockRange("1", "10", blockStore); // min block num is 10
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("'from' block number is lesser than the min block number stored", e.getMessage());
         }
 
         try {
-            IndexBlooms.makeBlockRange(new String[]{"5", "11"}, blockStore); // best block num is 10
+            IndexBlooms.makeBlockRange("5", "11", blockStore); // best block num is 10
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("'to' block number is greater than the best block number", e.getMessage());
         }
 
-        IndexBlooms.Range range = IndexBlooms.makeBlockRange(new String[]{"5", "10"}, blockStore);
+        IndexBlooms.Range range = IndexBlooms.makeBlockRange("5", "10", blockStore);
 
         assertEquals(5, range.fromBlockNumber);
         assertEquals(10, range.toBlockNumber);
@@ -680,12 +683,14 @@ class CliToolsTest {
         File workDir = new File(classLoader.getResource("doc/rpc").getFile());
         File destFile = tempDir.resolve( "generated_openrpc.json").toFile();
 
-        GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc();
-
-        String[] args = new String[]{version, workDir.getAbsolutePath(), destFile.getAbsolutePath()};
+        GenerateOpenRpcDoc generateOpenRpcDocCliTool = new GenerateOpenRpcDoc(
+                version,
+                workDir.getAbsolutePath(),
+                destFile.getAbsolutePath()
+        );
 
         try {
-            generateOpenRpcDocCliTool.execute(args);
+            generateOpenRpcDocCliTool.call();
         } catch (RuntimeException e) {
             fail("should have not thrown " + e.getMessage());
         }
@@ -700,5 +705,33 @@ class CliToolsTest {
         Object expected = jsonMapper.readValue(expectedResultFile, Object.class);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testErrorHandlingInPicocli() {
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
+        doReturn(tempDir.getRoot().toFile().getPath()).when(rskSystemProperties).databaseDir();
+        doReturn(true).when(rskSystemProperties).databaseReset();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        @CommandLine.Command(name = "dummy-tool", mixinStandardHelpOptions = true, version = "1.0",
+                description = "This is just a dummy tool")
+        class DummyCliTool extends PicoCliToolRskContextAware {
+            @Override
+            public Integer call() {
+                return -1;
+            }
+        }
+
+        DummyCliTool dummyTool = new DummyCliTool();
+
+        dummyTool.execute(new String[]{}, () -> rskContext, stopper);
+
+        verify(stopper, times(1)).stop(Mockito.eq(1));
     }
 }

@@ -17,18 +17,18 @@
  */
 package co.rsk.cli.tools;
 
-import co.rsk.RskContext;
-import co.rsk.cli.CliToolRskContextAware;
+import co.rsk.cli.PicoCliToolRskContextAware;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
+import picocli.CommandLine;
 
-import javax.annotation.Nonnull;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.invoke.MethodHandles;
 import java.util.Optional;
@@ -41,26 +41,32 @@ import java.util.Optional;
  * - args[0] - block number
  * - args[1] - file path
  */
-public class ExportState extends CliToolRskContextAware {
+@CommandLine.Command(name = "export-state", mixinStandardHelpOptions = true, version = "export-state 1.0",
+        description = "Exports state at specific block number to a file")
+public class ExportState extends PicoCliToolRskContextAware {
+    @CommandLine.Option(names = {"-b", "--block"}, description = "Block number", required = true)
+    private Long blockNumber;
+
+    @CommandLine.Option(names = {"-f", "--file"}, description = "Path to a file to export state to", required = true)
+    private String filePath;
 
     public static void main(String[] args) {
         create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        String filePath = args[1];
+    public Integer call() throws IOException {
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
 
         try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
-            exportState(args, blockStore, trieStore, writer);
+            exportState(blockStore, trieStore, writer);
         }
+
+        return 0;
     }
 
-    private void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
-        long blockNumber = Long.parseLong(args[0]);
-
+    private void exportState(BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         Block block = blockStore.getChainBlockByNumber(blockNumber);
 
         Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
