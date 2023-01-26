@@ -188,6 +188,7 @@ class ErpFederationTest {
             assertEquals(alternativeScript, rskjScript);
         }
     }
+
     @Test
     void getErpRedeemScript_compareOtherImplementation_P2SHERPFederation() throws IOException {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
@@ -218,6 +219,7 @@ class ErpFederationTest {
             assertEquals(alternativeScript, rskjScript);
         }
     }
+
     @Test
     void createErpFederation_testnet_constants_before_RSKIP293() {
         createErpFederation(BridgeTestNetConstants.getInstance(), false);
