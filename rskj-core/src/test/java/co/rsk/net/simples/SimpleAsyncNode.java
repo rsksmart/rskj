@@ -137,7 +137,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 blockValidationRule,
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
-                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager, config.getPercentageOfPeersToConsiderInRandomSelection()),
                 mock(Genesis.class),
                 mock(EthereumListener.class)
         );

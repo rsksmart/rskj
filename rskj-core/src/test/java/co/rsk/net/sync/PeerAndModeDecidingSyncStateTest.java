@@ -123,7 +123,7 @@ class PeerAndModeDecidingSyncStateTest {
         Blockchain blockchain = mock(Blockchain.class);
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager, 0.0D);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -141,7 +141,7 @@ class PeerAndModeDecidingSyncStateTest {
         Blockchain blockchain = mock(Blockchain.class);
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager, 0.0D);
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);
         Assertions.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -162,7 +162,7 @@ class PeerAndModeDecidingSyncStateTest {
         Blockchain blockchain = mock(Blockchain.class);
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager, 0.0D);
 
         BlockStore blockStore = mock(BlockStore.class);
         SyncState syncState = new PeerAndModeDecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, blockStore);

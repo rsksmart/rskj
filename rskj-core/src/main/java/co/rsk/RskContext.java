@@ -1891,7 +1891,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getChannelManager(),
                     getSyncConfiguration(),
                     getBlockchain(),
-                    getPeerScoringManager());
+                    getPeerScoringManager(),
+                    getRskSystemProperties().getPercentageOfPeersToConsiderInRandomSelection());
         }
         return peersInformation;
     }

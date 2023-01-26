@@ -64,7 +64,7 @@ class OneAsyncNodeTest {
                 new DummyBlockValidationRule(),
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
-                new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager(), config.getPercentageOfPeersToConsiderInRandomSelection()),
                 mock(Genesis.class),
                 mock(EthereumListener.class)
         );

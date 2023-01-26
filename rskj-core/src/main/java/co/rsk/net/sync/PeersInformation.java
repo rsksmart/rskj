@@ -51,11 +51,13 @@ public class PeersInformation {
     private final PeerScoringManager peerScoringManager;
     private final Comparator<Map.Entry<Peer, SyncPeerStatus>> peerComparator;
     private Map<Peer, SyncPeerStatus> peerStatuses = new HashMap<>();
+    private final double percentageOfPeersToConsiderInRandomSelection;
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
-                            PeerScoringManager peerScoringManager) {
+                            PeerScoringManager peerScoringManager,
+                            double percentageOfPeersToConsiderInRandomSelection) {
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
@@ -65,6 +67,7 @@ public class PeersInformation {
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
 //                .thenComparing(this::comparePeerScoring)
                 .thenComparing(this::comparePeerTotalDifficulty);
+        this.percentageOfPeersToConsiderInRandomSelection = percentageOfPeersToConsiderInRandomSelection;
     }
 
     public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
@@ -106,6 +109,25 @@ public class PeersInformation {
     }
 
     public Optional<Peer> getBestPeer() {
+        if (percentageOfPeersToConsiderInRandomSelection > 0.0D) {
+            List<Map.Entry<Peer, SyncPeerStatus>> entries = getBestCandidatesStream()
+                    .sorted(this.peerComparator.reversed())
+                    .collect(Collectors.toList());
+
+            if (entries.isEmpty()) {
+                return Optional.empty();
+            }
+
+            int numberOfPeersToConsider = (int) Math.floor(entries.size() * (percentageOfPeersToConsiderInRandomSelection / 100));
+
+            List<Map.Entry<Peer, SyncPeerStatus>> entriesToConsider = entries.subList(0, numberOfPeersToConsider - 1);
+
+            Random random = new Random();
+            int randomIndex = random.nextInt(entries.size() - 1);
+
+            return Optional.of(entriesToConsider.get(randomIndex).getKey());
+        }
+
         return getBestCandidatesStream()
                 .max(this.peerComparator)
                 .map(Map.Entry::getKey);
