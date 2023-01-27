@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
@@ -56,7 +57,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
 
         if(block == null || parent == null) {
             logger.warn("BlockTxsValidationRule - block or parent are null");

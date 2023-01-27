@@ -187,7 +187,7 @@ public abstract class MinerServerTest {
         when(localTransactionPool.getPendingTransactions()).thenReturn(txs);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(mock(Ethereum.class), unclesValidationRule, clock, localTransactionPool);
 
@@ -208,7 +208,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -252,7 +252,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -282,7 +282,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -315,7 +315,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -355,7 +355,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -387,7 +387,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
@@ -424,7 +424,7 @@ public abstract class MinerServerTest {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
 
@@ -443,7 +443,7 @@ public abstract class MinerServerTest {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
         try {
@@ -462,7 +462,7 @@ public abstract class MinerServerTest {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
 
@@ -533,7 +533,7 @@ public abstract class MinerServerTest {
         Ethereum ethereum = mock(EthereumImpl.class);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = makeMinerServer(ethereum, unclesValidationRule, clock, transactionPool);
         try {
@@ -559,7 +559,7 @@ public abstract class MinerServerTest {
         when(ethereum.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         SubmissionRateLimitHandler submissionRateLimitHandler = mock(SubmissionRateLimitHandler.class);
         doReturn(false).when(submissionRateLimitHandler).isEnabled();
@@ -584,7 +584,7 @@ public abstract class MinerServerTest {
         when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         SubmissionRateLimitHandler submissionRateLimitHandler = mock(SubmissionRateLimitHandler.class);
         doReturn(true).when(submissionRateLimitHandler).isEnabled();
@@ -723,7 +723,7 @@ public abstract class MinerServerTest {
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
 
@@ -755,7 +755,7 @@ public abstract class MinerServerTest {
         doReturn(ImportResult.IMPORTED_BEST).when(ethereum).addNewMinedBlock(any());
 
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        when(unclesValidationRule.isValid(any(), null)).thenReturn(true);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
 

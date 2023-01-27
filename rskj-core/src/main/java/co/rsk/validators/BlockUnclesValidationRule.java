@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
@@ -71,9 +72,9 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
 
-        if (!blockValidationRule.isValid(block)) {
+        if (!blockValidationRule.isValid(block, null)) {
             return false;
         }
 

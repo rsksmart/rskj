@@ -36,11 +36,13 @@ public class BlockValidatorImpl implements BlockValidator {
     private BlockParentDependantValidationRule blockParentValidator;
 
     private BlockValidationRule blockValidator;
+    private BlockExecutor blockExecutor;
 
-    public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator) {
+    public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator, BlockExecutor blockExecutor) {
         this.blockStore = blockStore;
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;
+        this.blockExecutor = blockExecutor;
     }
 
     /**
@@ -62,11 +64,11 @@ public class BlockValidatorImpl implements BlockValidator {
 
         Block parent = getParent(block);
 
-        if(!this.blockParentValidator.isValid(block, parent)) {
+        if(!this.blockParentValidator.isValid(block, parent, blockExecutor)) {
             return false;
         }
 
-        if(!this.blockValidator.isValid(block)) {
+        if(!this.blockValidator.isValid(block, blockExecutor)) {
             return false;
         }
 

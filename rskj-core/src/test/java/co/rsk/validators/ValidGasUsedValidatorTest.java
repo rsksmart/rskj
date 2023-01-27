@@ -49,7 +49,7 @@ class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assertions.assertTrue(gasUsedRule.isValid(block));
+        Assertions.assertTrue(gasUsedRule.isValid(block, null));
     }
 
     @Test
@@ -59,7 +59,7 @@ class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assertions.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block, null));
     }
 
     @Test
@@ -69,6 +69,6 @@ class ValidGasUsedValidatorTest {
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
-        Assertions.assertFalse(gasUsedRule.isValid(block));
+        Assertions.assertFalse(gasUsedRule.isValid(block, null));
     }
 }

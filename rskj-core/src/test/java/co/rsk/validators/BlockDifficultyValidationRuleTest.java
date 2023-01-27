@@ -96,7 +96,7 @@ class BlockDifficultyValidationRuleTest {
         Mockito.when(parent.getTimestamp())
                 .thenReturn(parentTimestamp);
 
-        Assertions.assertEquals(true,validationRule.isValid(block,parent));
+        Assertions.assertEquals(true,validationRule.isValid(block,parent, null));
     }
 
 }

@@ -129,7 +129,7 @@ public class BlockBuilder {
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     ),
-                    config.isRemascEnabled());
+                    config.isRemascEnabled(), false, false);
             executor.executeAndFill(block, parent.getHeader());
         }
 

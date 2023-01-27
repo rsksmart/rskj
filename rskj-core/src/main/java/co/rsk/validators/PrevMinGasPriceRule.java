@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.mine.BlockGasPriceRange;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
@@ -34,7 +35,7 @@ public class PrevMinGasPriceRule implements BlockParentDependantValidationRule, 
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         return isValid(block.getHeader(), parent);
     }
 

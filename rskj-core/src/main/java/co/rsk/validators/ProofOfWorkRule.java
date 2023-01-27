@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -73,7 +74,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         return isValid(block.getHeader());
     }
 

@@ -189,7 +189,7 @@ public class World {
                             new PrecompiledContracts(config, bridgeSupportFactory),
                             blockTxSignatureCache
                     ),
-                    config.isRemascEnabled());
+                    config.isRemascEnabled(), false, false);
         }
 
         return this.blockExecutor;

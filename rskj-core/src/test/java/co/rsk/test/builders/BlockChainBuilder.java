@@ -247,7 +247,7 @@ public class BlockChainBuilder {
                 config.getActivationConfig(),
                 repositoryLocator,
                 transactionExecutorFactory,
-                config.isRemascEnabled());
+                config.isRemascEnabled(), false, false);
         BlockChainImpl blockChain = new BlockChainLoader(
                 blockStore,
                 receiptStore,

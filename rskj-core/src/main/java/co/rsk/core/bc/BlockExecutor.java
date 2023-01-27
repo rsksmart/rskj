@@ -24,6 +24,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.remasc.RemascTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -60,19 +61,37 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
     private boolean remascEnabled;
+    private boolean isPlay;
+    private boolean isMetrics;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
+    private final String filePath_validRule;
+    private final String filePath_forMetrics;
+    private final String filePath_timesSplitted;
+    private final String filePath_timesValidity;
+    private final String filePath_times;
+    private final String filePath_timesSplitted_saveReceipts;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
             TransactionExecutorFactory transactionExecutorFactory,
-            boolean remascEnabled) {
+            boolean remascEnabled,
+            boolean isPlay,
+            boolean isMetrics) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.activationConfig = activationConfig;
         this.remascEnabled = remascEnabled;
+        this.isPlay = isPlay;
+        this.isMetrics = isMetrics;
+        this.filePath_times = "/home/ubuntu/output/times.csv";
+        this.filePath_forMetrics = "/home/ubuntu/output/metrics.csv";
+        this.filePath_timesSplitted = "/home/ubuntu/output/timesSplitted.csv";
+        this.filePath_timesValidity = "/home/ubuntu/output/validitySplitted.csv";
+        this.filePath_validRule = "/home/ubuntu/output/blockTxsValidRuleSplitted.csv";
+        this.filePath_timesSplitted_saveReceipts = "/home/ubuntu/output/saveReceiptsSplitted.csv";
     }
 
     /**
@@ -100,6 +119,34 @@ public class BlockExecutor {
         }
     }
 
+    public boolean isMetrics() {
+        return isMetrics;
+    }
+
+    public String getFilePath_forMetrics() {
+        return filePath_forMetrics;
+    }
+
+    public String getFilePath_times() {
+        return filePath_times;
+    }
+
+    public String getFilePath_timesSplitted() {
+        return filePath_timesSplitted;
+    }
+
+    public String getFilePath_timesSplitted_sr() {
+        return filePath_timesSplitted_saveReceipts;
+    }
+
+    public String getFilePath_timesValidity() {
+        return filePath_timesValidity;
+    }
+
+    public String getFilePath_timesRules() {
+        return filePath_validRule;
+    }
+
     @VisibleForTesting
     public static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
         Bloom logBloom = new Bloom();
@@ -109,6 +156,10 @@ public class BlockExecutor {
         }
 
         return logBloom.getData();
+    }
+
+    public ActivationConfig getActivationConfig() {
+        return activationConfig;
     }
 
     /**
@@ -263,7 +314,7 @@ public class BlockExecutor {
         if (rskip144Active || (block.getHeader().getTxExecutionSublistsEdges() != null)) {
             return executeForMiningAfterRSKIP144(block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
         } else {
-            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState);
+            return executePreviousRSKIP144(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute, saveState, true);
         }
     }
 
@@ -296,8 +347,12 @@ public class BlockExecutor {
             if (rskip144Active && block.getHeader().getTxExecutionSublistsEdges() != null) {
                 return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
             } else {
-                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState);
+                return executePreviousRSKIP144(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions, saveState, false);
             }
+    }
+
+    public boolean isPlay() {
+        return this.isPlay;
     }
 
     private BlockResult executePreviousRSKIP144(
@@ -307,7 +362,8 @@ public class BlockExecutor {
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions,
-            boolean saveState) {
+            boolean saveState,
+            boolean mining) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start execute pre RSKIP144.");
         loggingApplyBlock(block);
@@ -629,7 +685,8 @@ public class BlockExecutor {
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
 
-        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()));
+        //ejecucion 1 en los buckets paralelos la mitad de esto, y en el secuencial este nro para poder meter las mismas txs exactamente que tiene cada bloque de ethereum en uno de rsk paralelo
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler((short) Constants.getTransactionExecutionThreads(), GasCost.toGas(block.getGasLimit()), GasCost.toGas(block.getGasLimit())/2);
 
         int txindex = 0;
 
@@ -637,7 +694,7 @@ public class BlockExecutor {
             loggingApplyBlockToTx(block, i);
 
             int numberOfTransactions = transactionsList.size();
-            boolean isRemascTransaction = tx.isRemascTransaction(txindex, numberOfTransactions);
+            boolean isRemascTransaction = tx.isRemascTransaction(txindex, numberOfTransactions) || tx.getClass() == RemascTransaction.class;
 
             addFeesToRemascIfRemascTxAndTrack(track, totalPaidFees, isRemascTransaction);
 
@@ -662,7 +719,7 @@ public class BlockExecutor {
                 continue;
             }
 
-            Optional<Long> sublistGasAccumulated = calculateSublistGasAccumulated(readWrittenKeysTracker, parallelizeTransactionHandler, tx, isRemascTransaction, txExecutor);
+            Optional<Long> sublistGasAccumulated = calculateSublistGasAccumulated(readWrittenKeysTracker, parallelizeTransactionHandler, tx, isRemascTransaction, txExecutor, block);
 
             if (!acceptInvalidTransactions && !sublistGasAccumulated.isPresent()) {
                 if (discardIfInvalid(block, discardInvalidTxs, track, totalPaidFees, txindex, tx, numberOfTransactions, isRemascTransaction)) {
@@ -749,7 +806,7 @@ public class BlockExecutor {
         return false;
     }
 
-    private Optional<Long> calculateSublistGasAccumulated(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, TransactionExecutor txExecutor) {
+    private Optional<Long> calculateSublistGasAccumulated(IReadWrittenKeysTracker readWrittenKeysTracker, ParallelizeTransactionHandler parallelizeTransactionHandler, Transaction tx, boolean isRemascTransaction, TransactionExecutor txExecutor, Block block) {
         Optional<Long> sublistGasAccumulated;
         if (isRemascTransaction) {
             sublistGasAccumulated = parallelizeTransactionHandler.addRemascTransaction(tx, txExecutor.getGasUsed());

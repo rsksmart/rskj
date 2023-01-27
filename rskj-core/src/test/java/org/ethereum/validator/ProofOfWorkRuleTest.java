@@ -66,7 +66,7 @@ public abstract class ProofOfWorkRuleTest {
     void test_1() {
         // mined block
         Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
-        Assertions.assertTrue(rule.isValid(b));
+        Assertions.assertTrue(rule.isValid(b, null));
     }
 
     @Disabled("TODO improve, the mutated block header could be still valid")
@@ -79,7 +79,7 @@ public abstract class ProofOfWorkRuleTest {
         // TODO improve, the mutated block header could be still valid
         mergeMiningHeader[0]++;
         b.setBitcoinMergedMiningHeader(mergeMiningHeader);
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     // This test must be moved to the appropiate place
@@ -109,7 +109,7 @@ public abstract class ProofOfWorkRuleTest {
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < iterCnt; i++)
-            rule.isValid(b);
+            rule.isValid(b, null);
 
         long total = System.currentTimeMillis() - start;
 
@@ -125,7 +125,7 @@ public abstract class ProofOfWorkRuleTest {
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), new byte[100]);
 
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     @Test
@@ -138,7 +138,7 @@ public abstract class ProofOfWorkRuleTest {
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
 
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     @Test
@@ -169,7 +169,7 @@ public abstract class ProofOfWorkRuleTest {
 
         Block newBlock1 = new BlockMiner(config).mineBlock(newBlock, bitcoinMergedMiningCoinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
-        Assertions.assertTrue(rule.isValid(newBlock1));
+        Assertions.assertTrue(rule.isValid(newBlock1, null));
     }
 
     @Test
@@ -205,7 +205,7 @@ public abstract class ProofOfWorkRuleTest {
 
         Block block = new BlockMiner(config).mineBlock(newBlock, coinbaseTransaction);
         ProofOfWorkRule rule = new ProofOfWorkRule(props);
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {

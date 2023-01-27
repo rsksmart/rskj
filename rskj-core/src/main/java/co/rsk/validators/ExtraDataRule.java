@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class ExtraDataRule implements BlockValidationRule {
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         if (block.getHeader().getExtraData() != null && block.getHeader().getExtraData().length > this.maximumExtraDataSize) {
 
             String logMessage = String.format("#%d: header.getExtraData().length > MAXIMUM_EXTRA_DATA_SIZE", block.getHeader().getNumber());

@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         if (block == null) {
             logger.warn("BlockTxsFieldsValidationRule - block is null");
             return false;

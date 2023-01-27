@@ -18,6 +18,8 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,14 +48,14 @@ public class BlockParentCompositeRule implements BlockParentDependantValidationR
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(Block block, Block parent, BlockExecutor blockExecutor) {
         final String shortHash = block.getPrintableHash();
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
         for(BlockParentDependantValidationRule rule : this.rules) {
             logger.debug("Validation rule {}", rule.getClass().getSimpleName());
 
-            if(!rule.isValid(block, parent)) {
+            if(!rule.isValid(block, parent, blockExecutor)) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }

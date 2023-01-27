@@ -1023,6 +1023,6 @@ class RemascProcessMinerFeesTest {
                         new PrecompiledContracts(config, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config.isRemascEnabled());
+                config.isRemascEnabled(), false, false);
     }
 }

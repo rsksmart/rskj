@@ -47,7 +47,7 @@ class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assertions.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block, null));
     }
 
     @Test
@@ -56,7 +56,7 @@ class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assertions.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block, null));
     }
 
     @Test
@@ -65,6 +65,6 @@ class ExtraDataRuleTests {
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 }

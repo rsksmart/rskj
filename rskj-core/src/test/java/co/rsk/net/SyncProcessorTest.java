@@ -811,7 +811,7 @@ class SyncProcessorTest {
                         new PrecompiledContracts(config, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 ),
-                config.isRemascEnabled());
+                config.isRemascEnabled(), false, false);
         Assertions.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assertions.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());

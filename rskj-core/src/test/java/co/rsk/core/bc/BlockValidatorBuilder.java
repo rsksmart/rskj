@@ -140,7 +140,7 @@ public class BlockValidatorBuilder {
             this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule, this.blockTxsValidationRule, this.prevMinGasPriceRule);
         }
 
-        return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
+        return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule, null);
     }
 
     public BlockValidatorBuilder addBlockTimeStampValidation(

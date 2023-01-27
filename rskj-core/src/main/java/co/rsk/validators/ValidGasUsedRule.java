@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -35,7 +36,7 @@ public class ValidGasUsedRule implements BlockValidationRule, BlockHeaderValidat
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         return isValid(block.getHeader());
     }
 

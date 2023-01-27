@@ -354,7 +354,7 @@ public class MinerServerImpl implements MinerServer {
 
     private boolean isValid(Block block) {
         try {
-            return powRule.isValid(block);
+            return powRule.isValid(block, null);
         } catch (Exception e) {
             logger.error("Failed to validate PoW from block {}: {}", block.getPrintableHash(), e);
             return false;

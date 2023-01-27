@@ -43,7 +43,7 @@ class TxsMinGasPriceValidatorTest {
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assertions.assertTrue(tmgpv.isValid(block));
+        Assertions.assertTrue(tmgpv.isValid(block, null));
     }
 
     @Test
@@ -51,7 +51,7 @@ class TxsMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assertions.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block, null));
     }
 
     @Test
@@ -63,7 +63,7 @@ class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assertions.assertTrue(tmgpv.isValid(block));
+        Assertions.assertTrue(tmgpv.isValid(block, null));
     }
 
     @Test
@@ -75,7 +75,7 @@ class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assertions.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block, null));
     }
 
     @Test
@@ -87,7 +87,7 @@ class TxsMinGasPriceValidatorTest {
 
         TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
 
-        Assertions.assertFalse(tmgpv.isValid(block));
+        Assertions.assertFalse(tmgpv.isValid(block, null));
     }
 
     private List<Transaction> buildTxList(int validTxNbr, int invalidTxNbr, Coin blockGasPrice) {

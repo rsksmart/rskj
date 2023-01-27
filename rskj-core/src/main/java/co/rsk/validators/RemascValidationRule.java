@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
@@ -37,7 +38,7 @@ public class RemascValidationRule implements BlockValidationRule{
 
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         List<Transaction> txs = block.getTransactionsList();
         boolean result = !txs.isEmpty() && (txs.get(txs.size()-1) instanceof RemascTransaction);
         if(!result) {

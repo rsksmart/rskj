@@ -1,5 +1,6 @@
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import org.ethereum.core.Block;
 
 /**
@@ -17,7 +18,7 @@ public class SyncBlockValidatorRule implements BlockValidationRule{
         );
     }
 
-    public boolean isValid(Block block) {
-        return blockCompositeRule.isValid(block);
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
+        return blockCompositeRule.isValid(block, null);
     }
 }

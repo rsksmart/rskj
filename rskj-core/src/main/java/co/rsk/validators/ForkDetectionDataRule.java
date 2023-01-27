@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.mine.ForkDetectionDataCalculator;
 import co.rsk.panic.PanicProcessor;
@@ -59,7 +60,7 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
     }
 
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         return isValid(block.getHeader());
     }
 

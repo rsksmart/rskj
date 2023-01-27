@@ -205,7 +205,7 @@ class MainNetMinerTest {
 
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        when(unclesValidationRule.isValid(Mockito.any(), null)).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new BlockToMineBuilder(

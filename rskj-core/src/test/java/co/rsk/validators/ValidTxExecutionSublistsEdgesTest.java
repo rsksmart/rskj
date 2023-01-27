@@ -38,21 +38,21 @@ public class ValidTxExecutionSublistsEdgesTest {
     void blockWithValidEdges() {
         mockGetTxExecutionListsEdges(new short[]{2, 5, 6});
 
-        Assertions.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block, null));
     }
 
     @Test
     void blockWithNullEdges() {
         mockGetTxExecutionListsEdges(null);
 
-        Assertions.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block, null));
     }
 
     @Test
     void blockWithEmptyEdges() {
         mockGetTxExecutionListsEdges(new short[0]);
 
-        Assertions.assertTrue(rule.isValid(block));
+        Assertions.assertTrue(rule.isValid(block, null));
     }
 
     // invalid cases
@@ -60,7 +60,7 @@ public class ValidTxExecutionSublistsEdgesTest {
     void blockWithTooManyEdges() {
         mockGetTxExecutionListsEdges(new short[]{1, 2, 3, 4, 5});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
@@ -70,41 +70,41 @@ public class ValidTxExecutionSublistsEdgesTest {
         // is the remasc transaction and cannot be parallelized
         mockGetTxExecutionListsEdges(new short[]{10});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
     void blockWithOutOfBoundsEdges() {
         mockGetTxExecutionListsEdges(new short[]{12});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
     void blockWithNegativeEdge() {
         mockGetTxExecutionListsEdges(new short[]{-2});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
     void blockWithEdgeZero() {
         mockGetTxExecutionListsEdges(new short[]{0, 2});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
     void blockWithRepeatedEdge() {
         mockGetTxExecutionListsEdges(new short[]{2, 2});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 
     @Test
     void blockWithEdgesNotInOrder() {
         mockGetTxExecutionListsEdges(new short[]{2, 4, 3});
 
-        Assertions.assertFalse(rule.isValid(block));
+        Assertions.assertFalse(rule.isValid(block, null));
     }
 }

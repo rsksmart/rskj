@@ -147,7 +147,7 @@ class RemascTestRunner {
                         precompiledContracts,
                         blockTxSignatureCache
                 ),
-                builder.getConfig().isRemascEnabled());
+                builder.getConfig().isRemascEnabled(), false, false);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;

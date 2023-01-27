@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.bc.BlockExecutor;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
@@ -50,14 +51,14 @@ public class BlockCompositeRule implements BlockValidationRule {
         }
     }
     @Override
-    public boolean isValid(Block block) {
+    public boolean isValid(Block block, BlockExecutor blockExecutor) {
         String shortHash = block.getPrintableHash();
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
         for(BlockValidationRule rule : this.rules) {
             logger.debug("Validation rule {}", rule.getClass().getSimpleName());
 
-            if(!rule.isValid(block)) {
+            if(!rule.isValid(block, blockExecutor)) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }

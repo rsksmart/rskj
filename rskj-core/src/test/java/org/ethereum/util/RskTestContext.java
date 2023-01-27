@@ -40,7 +40,7 @@ import java.nio.file.Path;
  */
 public class RskTestContext extends RskContext {
     public RskTestContext(String[] args) {
-        super(args);
+        super(args, false, true);
     }
 
     @Override

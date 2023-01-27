@@ -42,7 +42,7 @@ class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     @Test
@@ -66,7 +66,7 @@ class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     @Test
@@ -91,7 +91,7 @@ class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assertions.assertFalse(rule.isValid(b));
+        Assertions.assertFalse(rule.isValid(b, null));
     }
 
     @Test
@@ -116,6 +116,6 @@ class RemascValidationRuleTest {
 
         RemascValidationRule rule = new RemascValidationRule();
 
-        Assertions.assertTrue(rule.isValid(b));
+        Assertions.assertTrue(rule.isValid(b, null));
     }
 }
