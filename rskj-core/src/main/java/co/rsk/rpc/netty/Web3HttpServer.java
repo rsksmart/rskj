@@ -32,6 +32,7 @@ public class Web3HttpServer implements InternalService {
     private final CorsConfiguration corsConfiguration;
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
+    private final int maxAggregatedFrameSize;
 
     public Web3HttpServer(InetAddress bindAddress,
                           int port,
@@ -39,7 +40,8 @@ public class Web3HttpServer implements InternalService {
                           boolean reuseAddress,
                           CorsConfiguration corsConfiguration,
                           JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
-                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler,
+                          int maxAggregatedFrameSize) {
         this.bindAddress = bindAddress;
         this.port = port;
         this.socketLinger = socketLinger;
@@ -49,6 +51,7 @@ public class Web3HttpServer implements InternalService {
         this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
+        this.maxAggregatedFrameSize = maxAggregatedFrameSize;
     }
 
     @Override
@@ -67,7 +70,7 @@ public class Web3HttpServer implements InternalService {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpRequestDecoder());
                     p.addLast(new HttpResponseEncoder());
-                    p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
+                    p.addLast(new HttpObjectAggregator(maxAggregatedFrameSize));
                     p.addLast(new HttpContentCompressor());
                     if (corsConfiguration.hasHeader()) {
                         p.addLast(new CorsHandler(

@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+
 class JacksonBasedRpcSerializerTest {
 
 	private JacksonBasedRpcSerializer serializer;
@@ -22,6 +24,24 @@ class JacksonBasedRpcSerializerTest {
 		serializer = new JacksonBasedRpcSerializer();
 
 	}
+
+    // This is a negative test to ensure polymorphic types are not enabled in an insecure manner
+    // Jackson unsafe deserialization can lead to remote code execution
+    //
+    // For details, see:
+    // - https://cowtowncoder.medium.com/jackson-2-10-safe-default-typing-2d018f0ce2ba
+    // - https://adamcaudill.com/2017/10/04/exploiting-jackson-rce-cve-2017-7525/
+    @Test
+    void testJackson_deserialization_Unsafe() throws IOException {
+        String injectedObject = "{\"method\":\"eth_subscribe\",\"@class\":\"co.rsk.rpc.ArbitraryObject\"}";
+        String injectedObjectMessage = "Cannot construct instance of `co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest`";
+
+        ValueInstantiationException e = Assertions
+                .assertThrows(ValueInstantiationException.class, () -> convertJson(injectedObject));
+
+        String exceptionMessage = e.getMessage();
+        Assertions.assertTrue(exceptionMessage.contains(injectedObjectMessage));
+    }
 
 	@Test
 	void testIntegerId_then_convertSuccessfully() throws IOException {

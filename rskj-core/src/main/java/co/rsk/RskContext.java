@@ -1937,9 +1937,11 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
                     getWeb3(),
-                    getRskSystemProperties().getRpcModules()
+                    getRskSystemProperties().getRpcModules(),
+                    rskSystemProperties.getMaxBatchRequestsSize()
             );
         }
 
@@ -1988,7 +1990,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     true,
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
                     getJsonRpcWeb3FilterHandler(),
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonRpcWeb3ServerHandler(),
+                    rskSystemProperties.rpcHttpMaxAggregatedFrameSize()
             );
         }
 
